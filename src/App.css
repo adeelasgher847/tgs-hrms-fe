@@ -2,7 +2,7 @@
 #root {
   max-width: 1100px;
   margin: 0 auto;
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
 }
 :root {
   --dark-color: #484c7f;
@@ -12,5 +12,5 @@
   --border-radius: 4px;
 }
 body::-webkit-scrollbar {
-    display: none;
+  display: none;
 }

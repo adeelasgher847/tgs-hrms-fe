@@ -1,7 +1,7 @@
 import './App.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Login';
-import Forget from './components/Forget';  // fixed typo here
+import Forget from './components/Forget';
 
 
 function App() {
