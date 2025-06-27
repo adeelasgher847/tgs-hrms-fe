@@ -65,7 +65,6 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               color: "text.secondary",
               textAlign: isRtl ? "right" : "left",
               mb: 2,
-
               fontWeight: 700,
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -107,10 +106,10 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
             size="small"
             sx={{
               border: "1px solid gray",
-              borderTopLeftRadius: "5px",
-              borderBottomLeftRadius: "5px",
-              borderTopRightRadius: 0,
-              borderBottomRightRadius: 0,
+              borderTopLeftRadius: isRtl ? 0 : "5px",
+              borderBottomLeftRadius: isRtl ? 0 : "5px",
+              borderTopRightRadius: isRtl ? "5px" : 0,
+              borderBottomRightRadius: isRtl ? "5px" : 0,
               "&:hover": {
                 backgroundColor: "orange",
                 color: "white",
@@ -126,12 +125,12 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
             size="small"
             sx={{
               border: "1px solid gray",
-              borderLeft: "none", //
-              borderTopRightRadius: "5px",
-              borderBottomRightRadius: "5px",
-              borderTopLeftRadius: 0,
-              borderBottomLeftRadius: 0,
-              m: 0, // remove margin
+              borderLeft: isRtl ? "1px solid gray" : "none",
+              borderRight: isRtl ? "none" : "1px solid gray",
+              borderTopLeftRadius: isRtl ? "5px" : 0,
+              borderBottomLeftRadius: isRtl ? "5px" : 0,
+              borderTopRightRadius: isRtl ? 0 : "5px",
+              borderBottomRightRadius: isRtl ? 0 : "5px",
               "&:hover": {
                 backgroundColor: "orange",
                 color: "white",
