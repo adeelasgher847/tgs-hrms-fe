@@ -32,30 +32,60 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState<string>(mockData.email);
   const [password, setPassword] = useState<string>(mockData.password);
 
+  const [emailError, setEmailError] = useState<string>("");
+  const [passwordError, setPasswordError] = useState<string>("");
+
   const handleTogglePassword = (): void => setShowPassword((prev) => !prev);
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    return passwordRegex.test(password);
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
-    try {
-      e.preventDefault();
-      if (email === mockData.email && password === mockData.password) {
-        alert(lang === "ar" ? "تم تسجيل الدخول بنجاح!" : "Login Successful!");
-        console.log(
-          lang === "ar" ? "تم تسجيل الدخول بنجاح!" : "Login Successful!"
-        );
-        console.log("Submitted credentials:", { email, password });
-      } else {
-        alert(
-          lang === "ar" ? "بيانات الاعتماد غير صحيحة!" : "Invalid credentials!"
-        );
-        console.log(
-          lang === "ar" ? "بيانات الاعتماد غير صحيحة!" : "Invalid credentials!"
-        );
-        console.log("Submitted credentials:", { email, password });
-      }
-    } catch (error) {
-      console.error("Error during login:", error);
+    e.preventDefault();
+
+    let valid = true;
+
+    if (!email || !validateEmail(email)) {
+      setEmailError(
+        lang === "ar" ? "بريد إلكتروني غير صالح" : "Invalid email address"
+      );
+      valid = false;
+    } else {
+      setEmailError("");
+    }
+
+    if (!password || !validatePassword(password)) {
+      setPasswordError(
+        lang === "ar"
+          ? "كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل، حرف كبير وصغير ورقم"
+          : "Password must be at least 8 characters, include uppercase, lowercase and number"
+      );
+      valid = false;
+    } else {
+      setPasswordError("");
+    }
+
+    if (!valid) return;
+
+    // Check credentials
+    if (email === mockData.email && password === mockData.password) {
+      alert(lang === "ar" ? "تم تسجيل الدخول بنجاح!" : "Login Successful!");
+      console.log("Submitted credentials:", { email, password });
+    } else {
+      alert(
+        lang === "ar" ? "بيانات الاعتماد غير صحيحة!" : "Invalid credentials!"
+      );
+      console.log("Submitted credentials:", { email, password });
     }
   };
+
   return (
     <Box
       className="login-scroll"
@@ -200,7 +230,6 @@ const Login: React.FC = () => {
                     fontFamily: "Open Sans, sans-serif",
                     mb: 1,
                     fontWeight: 400,
-                    
                   }}
                 >
                   {lang === "ar" ? "تسجيل الدخول" : "Sign in"}
@@ -302,6 +331,8 @@ const Login: React.FC = () => {
                   sx={{ mt: 1 }}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  error={Boolean(emailError)}
+                  helperText={emailError}
                   InputProps={{
                     sx: {
                       backgroundColor: "#eee",
@@ -362,10 +393,10 @@ const Login: React.FC = () => {
                     sx={{ mt: 1 }}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    error={Boolean(passwordError)}
+                    helperText={passwordError}
                     inputProps={{
                       maxLength: 15,
-                      pattern:
-                        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$", // At least 8 characters, one uppercase, one lowercase, one number
                     }}
                     InputProps={{
                       sx: {

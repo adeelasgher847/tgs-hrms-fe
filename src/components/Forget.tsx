@@ -10,13 +10,44 @@ import {
   MenuItem,
   InputLabel,
   FormControl,
+  CircularProgress,
 } from "@mui/material";
-// import GoogleIcon from '../assets/icons/google.svg';
 import ForgetImage from "../assets/icons/forget-image.svg";
-// import { CenterFocusStrong } from '@mui/icons-material';
 
 const Forget = () => {
   const [lang, setLang] = useState<"en" | "ar">("en");
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const validateEmail = (value: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(value);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+    setEmailError(value.length > 0 && !validateEmail(value));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateEmail(email)) {
+      setEmailError(true);
+      return;
+    }
+    setLoading(true);
+    setEmailError(false);
+
+    setTimeout(() => {
+      setLoading(false);
+      setSubmitted(true);
+      console.log("Reset link sent to email:", email);
+    }, 2000);
+  };
+
   return (
     <Box
       className="login-scroll"
@@ -50,7 +81,7 @@ const Forget = () => {
               id="language-select"
               value={lang}
               label={lang === "ar" ? "اللغة" : "Language"}
-              onChange={(e) => setLang(e.target.value)}
+              onChange={(e) => setLang(e.target.value as "en" | "ar")}
               sx={{
                 bgcolor: "white",
                 borderRadius: 1,
@@ -72,7 +103,6 @@ const Forget = () => {
             </Select>
           </FormControl>
         </Box>
-
         {/* Left Side - Image and Title */}
         <Box
           sx={{
@@ -123,7 +153,7 @@ const Forget = () => {
           />
         </Box>
 
-        {/* Right Side - forget Form */}
+        {/* Right Side - Forget Form */}
         <Box
           sx={{
             alignItems: "center",
@@ -153,35 +183,40 @@ const Forget = () => {
               alt="Login Illustration"
               sx={{ width: "100%", maxWidth: 240, mb: 4 }}
             />
-            <Box sx={{ textAlign: "center", mb: { xs: 1, sm: 6 } }}>
-              <Typography
-                variant="h1"
-                // fontWeight="500"
-                width="100%"
-                gutterBottom
-                sx={{
-                  fontSize: "40px",
-                  fontFamily: "Open Sans, sans-serif",
-                  mb: 1,
-                  fontWeight: 500,
-                }}
-              >
-                {lang === "ar" ? "تسجيل الدخول" : "Forgot password?"}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: "14px",
-                  fontFamily: "Open Sans, sans-serif",
-                  textAlign: "center",
-                }}
-              >
-                {lang === "ar"
-                  ? "وصول مجاني إلى لوحة التحكم الخاصة بنا."
-                  : "Enter the email address you used when you joined and we shall send you instructions to reset your password."}
-              </Typography>
-            </Box>
 
-            <Box component="form" noValidate sx={{ width: "100%" }}>
+            <Box
+              component="form"
+              noValidate
+              sx={{ width: "100%" }}
+              onSubmit={handleSubmit}
+            >
+              <Box sx={{ textAlign: "center", mb: { xs: 1, sm: 6 } }}>
+                <Typography
+                  variant="h1"
+                  width="100%"
+                  gutterBottom
+                  sx={{
+                    fontSize: "40px",
+                    fontFamily: "Open Sans, sans-serif",
+                    mb: 1,
+                    fontWeight: 500,
+                  }}
+                >
+                  {lang === "ar" ? "تسجيل الدخول" : "Forgot password?"}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "14px",
+                    fontFamily: "Open Sans, sans-serif",
+                    textAlign: "center",
+                  }}
+                >
+                  {lang === "ar"
+                    ? "وصول مجاني إلى لوحة التحكم الخاصة بنا."
+                    : "Enter the email address you used when you joined and we shall send you instructions to reset your password."}
+                </Typography>
+              </Box>
+
               <Typography
                 component="label"
                 htmlFor="email"
@@ -197,6 +232,13 @@ const Forget = () => {
                 type="email"
                 margin="normal"
                 placeholder="name@example.com"
+                value={email}
+                onChange={handleEmailChange}
+                error={emailError}
+                helperText={
+                  emailError &&
+                  (lang === "ar" ? "بريد إلكتروني غير صالح" : "Invalid email")
+                }
                 sx={{ mt: 1 }}
                 InputProps={{
                   sx: {
@@ -211,10 +253,12 @@ const Forget = () => {
                   },
                 }}
               />
+
               <Box sx={{ display: "flex", justifyContent: "center" }}>
                 <Button
                   type="submit"
                   variant="contained"
+                  disabled={!email || emailError || loading}
                   sx={{
                     mt: 4,
                     p: 1.5,
@@ -231,9 +275,33 @@ const Forget = () => {
                     },
                   }}
                 >
-                  {lang === "ar" ? "تسجيل الدخول" : "Submit"}
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : lang === "ar" ? (
+                    "إرسال رابط إعادة التعيين"
+                  ) : (
+                    "Send Reset Link"
+                  )}
                 </Button>
               </Box>
+
+              {/* Confirmation message shown after form submission */}
+              {submitted && (
+                <Typography
+                  sx={{
+                    fontSize: "16px",
+                    fontFamily: "Open Sans, sans-serif",
+                    textAlign: "center",
+                    mt: 4,
+                    color: "white",
+                  }}
+                >
+                  {lang === "ar"
+                    ? "إذا كان البريد الإلكتروني موجودًا، سيتم إرسال رابط إعادة التعيين."
+                    : "If the email exists, a reset link will be sent."}
+                </Typography>
+              )}
+
               <Typography
                 variant="body2"
                 align="center"
