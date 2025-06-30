@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
 import {
   Box,
   Paper,
@@ -27,6 +29,8 @@ const mockData = {
 };
 
 const Login: React.FC = () => {
+  const navigate = useNavigate();
+
   const [lang, setLang] = useState<"en" | "ar">("en");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [email, setEmail] = useState<string>(mockData.email);
@@ -78,6 +82,7 @@ const Login: React.FC = () => {
     if (email === mockData.email && password === mockData.password) {
       alert(lang === "ar" ? "تم تسجيل الدخول بنجاح!" : "Login Successful!");
       console.log("Submitted credentials:", { email, password });
+      navigate("/dashboard");  
     } else {
       alert(
         lang === "ar" ? "بيانات الاعتماد غير صحيحة!" : "Invalid credentials!"
@@ -92,7 +97,7 @@ const Login: React.FC = () => {
       sx={{
         minHeight: "100vh",
         height: "100vh",
-        m: { xs: "30px", sm: 0 },
+        m: { xs: "14px", sm: 0 },
         position: "relative",
       }}
     >
