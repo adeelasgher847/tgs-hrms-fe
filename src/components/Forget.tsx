@@ -32,7 +32,7 @@ const Forget = () => {
     setEmailError(value.length > 0 && !validateEmail(value));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateEmail(email)) {
       setEmailError(true);
@@ -54,7 +54,7 @@ const Forget = () => {
       sx={{
         minHeight: "100vh",
         height: "100vh",
-        m: { xs: "30px", sm: 0 },
+        m: { xs: "14px", lg: "0" },
         position: "relative",
       }}
     >
@@ -104,6 +104,7 @@ const Forget = () => {
           </FormControl>
         </Box>
         {/* Left Side - Image and Title */}
+        <Box sx={{ display:'flex' ,justifyContent: 'center', alignItems: 'center'}}>
         <Box
           sx={{
             display: { xs: "none", md: "flex" },
@@ -158,9 +159,8 @@ const Forget = () => {
           sx={{
             alignItems: "center",
             flex: 1,
-            width: { xs: "100%", lg: "600px" },
+            width: { xs: "100%",sm:"500px", lg: "600px" },
             mx: "auto",
-            height: "100vh",
           }}
         >
           <Paper
@@ -181,7 +181,7 @@ const Forget = () => {
               component="img"
               src={ForgetImage}
               alt="Login Illustration"
-              sx={{ width: "100%", maxWidth: 240, mb: 4 }}
+              sx={{ width: "100%", maxWidth: 240, mb: 4 ,mt:{ xs: 2, md: 12 }}}
             />
 
             <Box
@@ -196,7 +196,7 @@ const Forget = () => {
                   width="100%"
                   gutterBottom
                   sx={{
-                    fontSize: "40px",
+                    fontSize: { xs: "22px", md: "40px" },
                     fontFamily: "Open Sans, sans-serif",
                     mb: 1,
                     fontWeight: 500,
@@ -206,7 +206,7 @@ const Forget = () => {
                 </Typography>
                 <Typography
                   sx={{
-                    fontSize: "14px",
+                   fontSize: { xs: "12px", md: "14px" },
                     fontFamily: "Open Sans, sans-serif",
                     textAlign: "center",
                   }}
@@ -260,7 +260,7 @@ const Forget = () => {
                   variant="contained"
                   disabled={!email || emailError || loading}
                   sx={{
-                    mt: 4,
+                    mt:{xs: 2, md: 4},
                     p: 1.5,
                     px: 2,
                     bgcolor: "white",
@@ -331,6 +331,7 @@ const Forget = () => {
               </Typography>
             </Box>
           </Paper>
+        </Box>
         </Box>
       </Box>
     </Box>
