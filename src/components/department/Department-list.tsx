@@ -13,11 +13,11 @@ import {
   ToggleButton,
 } from "@mui/material";
 import { Add as AddIcon, Business as BusinessIcon } from "@mui/icons-material";
-import type { Department, DepartmentFormData } from "../types";
-import { mockDepartments } from "../data/mock-departments";
-import { DepartmentCard } from "../components/department-card";
-import { DepartmentFormModal } from "../components/Department-form-modal";
-import { DeleteConfirmationModal } from "../components/Delete-confirmation-modal";
+import type { Department, DepartmentFormData } from "../../types";
+import { mockDepartments } from "../../data/mock-departments";
+import { DepartmentCard } from "./DepartmentCard";
+import { DepartmentFormModal } from "./Department-form-modal";
+import { DeleteConfirmationModal } from "./Delete-confirmation-modal";
 
 export const DepartmentList: React.FC = () => {
   const theme = useTheme();

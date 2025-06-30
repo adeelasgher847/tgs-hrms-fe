@@ -1,5 +1,5 @@
 import "./App.css";
-import { DepartmentList } from "./components/Department-list";
+import { DepartmentList } from "./components/department/Department-list";
 
 function App() {
   return (
