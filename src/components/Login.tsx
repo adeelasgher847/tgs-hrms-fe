@@ -524,7 +524,7 @@ const Login: React.FC = () => {
                     variant="body2"
                     align="center"
                     sx={{
-                      mt: 3,
+                      mt: 2,
                       color: "#9a9b9d",
                       fontSize: "14px",
                       fontFamily: "Open Sans, sans-serif",
