@@ -1,8 +1,12 @@
 /* @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap'); */
-#root {
-  max-width: 1100px;
+.loginpage {
+  max-width: 1060px;
   margin: 0 auto;
   font-family: "Open Sans", sans-serif;
+  overflow: hidden;
+}
+body{
+padding: 0;margin: 0;
 }
 :root {
   --dark-color: #484c7f;
@@ -11,6 +15,6 @@
   --text-color: #333;
   --border-radius: 4px;
 }
-body::-webkit-scrollbar {
+/* body::-webkit-scrollbar {
   display: none;
-}
+} */
