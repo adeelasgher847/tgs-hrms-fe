@@ -9,7 +9,7 @@ import {
   Divider,
 } from "@mui/material";
 import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
-import type { Department } from "../types";
+import type { Department } from "../../types";
 
 interface DepartmentCardProps {
   department: Department;
@@ -32,10 +32,6 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
         px: 2,
         flexDirection: "column",
         transition: "all 0.3s ease",
-        "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: 4,
-        },
         direction: isRtl ? "rtl" : "ltr",
       }}
     >
@@ -105,7 +101,9 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
             color="success"
             size="small"
             sx={{
-              border: "1px solid gray",
+              borderWidth: 1,
+              borderStyle: "solid",
+              borderColor: "#f0f0f0",
               borderTopLeftRadius: isRtl ? 0 : "5px",
               borderBottomLeftRadius: isRtl ? 0 : "5px",
               borderTopRightRadius: isRtl ? "5px" : 0,
@@ -124,9 +122,9 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
             color="error"
             size="small"
             sx={{
-              border: "1px solid gray",
-              borderLeft: isRtl ? "1px solid gray" : "none",
-              borderRight: isRtl ? "none" : "1px solid gray",
+              borderWidth: 1,
+              borderStyle: "solid",
+              borderColor: "#f0f0f0",
               borderTopLeftRadius: isRtl ? "5px" : 0,
               borderBottomLeftRadius: isRtl ? "5px" : 0,
               borderTopRightRadius: isRtl ? 0 : "5px",
