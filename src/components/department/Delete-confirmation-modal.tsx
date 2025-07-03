@@ -1,4 +1,3 @@
-import type React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -16,7 +15,7 @@ import {
   Warning as WarningIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
-import type { Department } from "../types";
+import type { Department } from "../../types";
 
 interface DeleteConfirmationModalProps {
   open: boolean;

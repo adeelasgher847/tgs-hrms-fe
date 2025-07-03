@@ -1,4 +1,3 @@
-import type React from "react";
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -20,7 +19,7 @@ import type {
   Department,
   DepartmentFormData,
   DepartmentFormErrors,
-} from "../types";
+} from "../../types";
 
 interface DepartmentFormModalProps {
   open: boolean;
@@ -140,14 +139,14 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   const handleInputChange =
     (field: keyof DepartmentFormData) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({
+      setFormData((prev: DepartmentFormData) => ({
         ...prev,
         [field]: e.target.value,
       }));
 
       // Clear error when user starts typing
       if (errors[field]) {
-        setErrors((prev) => ({
+        setErrors((prev: DepartmentFormErrors) => ({
           ...prev,
           [field]: undefined,
         }));
