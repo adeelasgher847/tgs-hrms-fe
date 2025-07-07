@@ -18,24 +18,19 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
     <Box
       sx={{
         display: "flex",
-        alignItems: "center",
-       justifyContent:"space-between",
+        justifyContent: "space-between",
         bgcolor: "#484c7f",
         p: 2,
-        borderRadius: 1,
-        boxShadow: 2,
-        width: 280,
+        borderRadius: "0.375rem",
         minHeight: 120,
-
       }}
     >
       {/* Left Icon */}
-       <Box >
+      <Box>
         <Avatar
           src={imageSrc}
           alt="Right side image"
-          sx={{ width: 48, height: 48}}
-          
+          sx={{ width: 48, height: 48 }}
         />
         <Typography fontWeight={700} fontSize={40} color="white">
           {label}
@@ -44,15 +39,11 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
           {title}
         </Typography>
       </Box>
-     
 
       {/* Right image & text */}
       <Box
         sx={{
           borderRadius: "50%",
-         maxWidth:"104px",
-         width:"100%",
-         height:"100%",
           fontSize: 28,
         }}
       >

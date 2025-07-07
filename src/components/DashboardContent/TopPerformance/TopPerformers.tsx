@@ -24,28 +24,31 @@ const TopPerformers: React.FC<TopPerformersProps> = ({
   performers,
 }) => {
   return (
-    <Box p={3} bgcolor="#f1c8db" borderRadius={3} boxShadow={2}>
-      <Typography variant="h6" fontWeight={700} gutterBottom>
-        {title}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" mb={3}>
-        {subtitle}
-      </Typography>
-
+    <Box p={1} bgcolor="#f1c8db" borderRadius={"0.375rem"} boxShadow={2}>
+      <Box p={2}>
+        <Typography variant="h6" fontWeight={700} gutterBottom>
+          {title}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" mb={3}>
+          {subtitle}
+        </Typography>
+      </Box>
       <Box
         display="flex"
+        justifyContent={"space-between"}
         gap={2}
-        mb={4}
+        mb={1}
         p={2}
-        borderRadius={2}
-        maxWidth={400}
-        width={"100%"}
+        borderRadius={"0.375rem"}
+        sx={{
+          maxWidth: { md: 279 },
+        }}
       >
         <Box>
-          <Typography variant="h5" fontWeight={700}>
+          <Typography variant="h5" fontWeight={700} textAlign={"center"}>
             {newTask}
           </Typography>
-          <Typography fontSize={14} color="text.secondary">
+          <Typography fontSize={14} color="text.secondary" textAlign={"center"}>
             New Task
           </Typography>
         </Box>
@@ -70,7 +73,8 @@ const TopPerformers: React.FC<TopPerformersProps> = ({
                 sm: "0 0 calc(33.33% - 16px)",
               },
               maxWidth: "100%",
-              borderRadius: 3,
+              borderRadius: "0.375rem",
+              boxShadow: "0 .5rem 1rem rgba(0, 0, 0, 0.15)",
               textAlign: "center",
             }}
           >
@@ -78,13 +82,20 @@ const TopPerformers: React.FC<TopPerformersProps> = ({
               <Avatar sx={{ margin: "0 auto", bgcolor: "#1976d2" }}>
                 {p.icon}
               </Avatar>
-              <Typography mt={1} fontWeight={600}>
+              <Typography mt={1} fontWeight={600} fontSize={"14px"}>
                 {p.name}
               </Typography>
-              <Typography fontSize={13} color="text.secondary">
+              <Typography color="text.secondary" fontSize={"12px"}>
                 {p.email}
               </Typography>
-              <Typography mt={1} fontWeight={700} fontSize={38} color="#484c7f">
+              <Typography
+                mt={1}
+                fontWeight={700}
+                sx={{
+                  fontSize: { xs: "29px", md: "38px" },
+                }}
+                color="#484c7f"
+              >
                 {p.percentage}%
               </Typography>
             </CardContent>

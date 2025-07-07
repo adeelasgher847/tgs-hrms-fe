@@ -1,5 +1,13 @@
 import { Box, Typography } from "@mui/material";
-import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 
 const data = [
   { date: "01 Jan", value: 30 },
@@ -19,28 +27,59 @@ export default function EmployeesInfoChart() {
     <Box
       sx={{
         p: 2,
+        border: "1px solid #f0f0f0",
+        borderRadius: "0.375rem",
         backgroundColor: "#fff",
-        borderRadius: 2,
-        boxShadow: 1,
       }}
     >
       <Typography fontWeight="bold" mb={2}>
         Employees Info
       </Typography>
 
-      <ResponsiveContainer width="100%" height={170}>
-        <LineChart data={data}>
-          <XAxis dataKey="date" interval={0} tick={{ fontSize: 12 }} />
-          <Tooltip />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke="#f5558d"
-            strokeWidth={3}
-            dot={{ r: 3, fill: "#ffc107" }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <Box
+        sx={{
+          "& svg": {
+            outline: "none",
+            border: "none",
+          },
+        }}
+      >
+        <ResponsiveContainer width="100%" height={170}>
+          <LineChart data={data}>
+            {/* X-axis grid line only */}
+            <CartesianGrid
+              horizontal={false}
+              vertical={false}
+            />
+
+            {/* 👇 XAxis: show month text, gray bottom line */}
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 12 }}
+              axisLine={{ stroke: "#f0f0f0" }}
+             tickLine={{ stroke: "#f0f0f0" }}
+            />
+
+            {/* 👇 YAxis: line visible, but no text */}
+            <YAxis
+              stroke="#f0f0f0"
+              axisLine={{ stroke: "#f0f0f0" }}
+              tickLine={false}
+              tick={false} // hide text
+            />
+
+            <Tooltip />
+
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke="#f5558d"
+              strokeWidth={3}
+              dot={{ r: 3, fill: "#ffc107" }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </Box>
     </Box>
   );
 }

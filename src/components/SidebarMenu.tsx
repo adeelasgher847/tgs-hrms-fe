@@ -1,6 +1,5 @@
-// components/SidebarMenu.tsx
-import { List, ListItemButton, ListItemText } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { List, ListItemButton, ListItemText } from "@mui/material";
+import { Link } from "react-router-dom";
 
 const SidebarMenu = () => {
   return (

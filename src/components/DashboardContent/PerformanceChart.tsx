@@ -52,8 +52,18 @@ const PerformanceChart: React.FC = () => {
     },
     xaxis: {
       categories: [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
       ],
     },
     yaxis: {
@@ -73,9 +83,10 @@ const PerformanceChart: React.FC = () => {
       horizontalAlign: "right",
       fontSize: "12px",
       markers: {
-        width: 12,
-        height: 12,
-        radius: 2,
+        size: 12,
+        //  width: 12,
+        // height: 12,
+        // radius: 2,
       },
     },
     colors: ["#484c7f", "#f19828", "#f5558d", "#a7daff"],
@@ -85,12 +96,21 @@ const PerformanceChart: React.FC = () => {
   };
 
   return (
-    <Box className="apex-chart-container" sx={{boxShadow:1 , borderRadius:1, mt:4,p:2 ,mb:4 ,backgroundColor:"#fff", borderColor:"#f0f0f0"}}>
-        
-         <Typography fontWeight="bold" fontSize={18} mb={2}>
+    <Box
+      className="apex-chart-container"
+      sx={{
+        mt: 1,
+        p: 2,
+        mb: 1,
+        border: "1px solid #f0f0f0",
+        borderRadius: "0.375rem",
+        backgroundColor: "#fff",
+      }}
+    >
+      <Typography fontWeight="bold" fontSize={18} mb={2}>
         Top Hiring Sources
       </Typography>
-      <Chart options={options} series={series} type="bar" height={300}  />
+      <Chart options={options} series={series} type="bar" height={300} />
     </Box>
   );
 };

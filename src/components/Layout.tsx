@@ -8,9 +8,8 @@ import EmployeeInviteModal from "./Modal/EmployeeInviteModal";
 
 const Layout = () => {
   const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up("lg")); // ⬅️ check if screen is lg+
-
-  const [sidebarOpen, setSidebarOpen] = useState(isLargeScreen); // default: true on lg+
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up("lg"));
+  const [sidebarOpen, setSidebarOpen] = useState(isLargeScreen);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
   // Update sidebar state when screen size changes
@@ -43,8 +42,8 @@ const Layout = () => {
             display: "flex",
             flexDirection: "column",
             height: {
-              xs: "100vh", // for small screens
-              lg: "calc(100vh - 90px)", // for large screens and up
+              xs: "100vh",
+              lg: "calc(100vh - 90px)",
             },
 
             position: {
@@ -77,7 +76,8 @@ const Layout = () => {
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          overflowY: "auto",
+          overflow: "auto",
+          height: "100%",
           marginLeft: {
             xs: 0,
             lg: sidebarOpen ? "274px" : "0px",
@@ -98,8 +98,14 @@ const Layout = () => {
             mb: 3,
           }}
         >
-          <Navbar  onOpenInviteModal={() => setInviteModalOpen(true)} onToggleSidebar={toggleSidebar} />
-            <EmployeeInviteModal open={inviteModalOpen} onClose={() => setInviteModalOpen(false)}/>
+          <Navbar
+            onOpenInviteModal={() => setInviteModalOpen(true)}
+            onToggleSidebar={toggleSidebar}
+          />
+          <EmployeeInviteModal
+            open={inviteModalOpen}
+            onClose={() => setInviteModalOpen(false)}
+          />
         </Box>
 
         {/* Scrollable Content */}
@@ -108,7 +114,7 @@ const Layout = () => {
           component="main"
           sx={{
             flex: 1,
-            padding: "20px",
+
             backgroundColor: "#fff",
           }}
         >

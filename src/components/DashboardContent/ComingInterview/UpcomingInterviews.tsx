@@ -4,7 +4,15 @@ import { upcomingInterviews } from "../../../data/upcomingInterviews";
 
 export default function UpcomingInterviews() {
   return (
-    <Box sx={{ mt: 4, p: 2, backgroundColor: "#fff", borderRadius: 2, boxShadow: 1 }}>
+    <Box
+      sx={{
+        mt: 1,
+        p: 2,
+        border: "1px solid #f0f0f0",
+        borderRadius: "0.375rem",
+        backgroundColor: "#fff",
+      }}
+    >
       <Typography fontWeight="bold" fontSize={18} mb={2}>
         Upcoming Interviews
       </Typography>

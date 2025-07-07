@@ -8,40 +8,85 @@ type GenderDataItem = {
 };
 
 const data: GenderDataItem[] = [
-  { name: "Man", value: 214, color: "#6366f1" }, 
-  { name: "Woman", value: 135, color: "#ec4899" },
+  { name: "Man", value: 50, color: "#a7daff" },
+  { name: "Woman", value: 55, color: "#f5558d" },
 ];
+
+//Custom Tooltip
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const item = payload[0];
+    const color = item.payload.color;
+
+    return (
+      <Box
+        sx={{
+          backgroundColor: color,
+          color: "#fff",
+          p: "8px 12px",
+          borderRadius: "8px",
+          fontSize: "14px",
+        }}
+      >
+        {item.name}: <b>{item.value}</b>
+      </Box>
+    );
+  }
+
+  return null;
+};
 
 export default function TotalEmployeesDonut() {
   return (
     <Box
       sx={{
         p: 2,
+        border: "1px solid #f0f0f0",
+        borderRadius: "0.375rem",
         backgroundColor: "#fff",
-        borderRadius: 2,
-        boxShadow: 1,
       }}
     >
-      <Typography fontWeight="bold" mb={2}>
-        Total Employees
-      </Typography>
+      <Box display={"flex"} justifyContent={"space-between"}>
+        <Typography fontWeight="bold" mb={2}>
+          Total Employees
+        </Typography>
+        <Typography fontWeight="bold" fontSize={"25px"}>
+          423
+        </Typography>
+      </Box>
 
-      <ResponsiveContainer width="100%" height={220}>
-        <PieChart>
-          <Pie
-            data={data}
-            innerRadius={50}
-            outerRadius={80}
-            paddingAngle={4}
-            dataKey="value"
-          >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
-            ))}
-          </Pie>
-          <Tooltip />
-        </PieChart>
-      </ResponsiveContainer>
+      <Box
+        tabIndex={-1}
+        sx={{
+          "& svg, & path": {
+            outline: "none",
+            border: "none",
+          },
+          "& svg:focus, & path:focus": {
+            outline: "none",
+          },
+          "& svg:active, & path:active": {
+            outline: "none",
+          },
+        }}
+      >
+        <ResponsiveContainer width="100%" height={220}>
+          <PieChart>
+            <Pie
+              data={data}
+              innerRadius={50}
+              outerRadius={80}
+              paddingAngle={4}
+              dataKey="value"
+            >
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+          </PieChart>
+        </ResponsiveContainer>
+      </Box>
 
       {/* Gender labels */}
       <Stack direction="row" spacing={3} justifyContent="center" mt={2}>

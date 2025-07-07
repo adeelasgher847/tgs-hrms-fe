@@ -52,7 +52,10 @@ const employees: Employee[] = [
   },
 ];
 
-const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({ open, onClose }) => {
+const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
+  open,
+  onClose,
+}) => {
   const [email, setEmail] = useState<string>("");
 
   const handleSend = () => {
@@ -66,8 +69,15 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({ open, onClose
     <Modal open={open} onClose={onClose}>
       <Box sx={style}>
         {/* Header */}
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" sx={{fontSize:25,fontWeight:700}}>Employee Invitation</Typography>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={2}
+        >
+          <Typography variant="h6" sx={{ fontSize: 25, fontWeight: 700 }}>
+            Employee Invitation
+          </Typography>
           <IconButton onClick={onClose}>
             <CloseIcon />
           </IconButton>
@@ -75,12 +85,12 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({ open, onClose
 
         {/* Email input + Send button */}
         <Box
-  display="flex"
-  mb={3}
-  sx={{
-    borderRadius: "4px 0px 0px 4px !important", // top-left and bottom-left corners rounded
-  }}
->
+          display="flex"
+          mb={3}
+          sx={{
+            borderRadius: "4px 0px 0px 4px !important",
+          }}
+        >
           <TextField
             fullWidth
             size="small"
@@ -88,14 +98,19 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({ open, onClose
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             sx={{
-                    backgroundColor:"#efefef",
-                    borderRadius: "4px 0px 0px 4px !important", // top-left and bottom-left corners rounded
+              backgroundColor: "#efefef",
+              borderRadius: "4px 0px 0px 4px !important", 
             }}
           />
           <Button
             variant="contained"
-           
-            sx={{fontSize:14, backgroundColor: "var(--dark-color)", whiteSpace: "nowrap",px:0, borderRadius: "0px 4px 4px 0px", }}
+            sx={{
+              fontSize: 14,
+              backgroundColor: "var(--dark-color)",
+              whiteSpace: "nowrap",
+              px: 0,
+              borderRadius: "0px 4px 4px 0px",
+            }}
             onClick={handleSend}
           >
             Send
@@ -104,7 +119,11 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({ open, onClose
 
         {/* Employee List */}
         <Box>
-          <Typography variant="subtitle1" mb={1} sx={{fontSize:16, fontWeight: 700 }}>
+          <Typography
+            variant="subtitle1"
+            mb={1}
+            sx={{ fontSize: 16, fontWeight: 700 }}
+          >
             Employees
           </Typography>
           {employees.map((emp, index) => (
@@ -122,7 +141,9 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({ open, onClose
               <Stack direction="row" spacing={2} alignItems="center">
                 <Avatar>{emp.name[0]}</Avatar>
                 <Box>
-                  <Typography fontWeight={700} fontSize={16}>{emp.name}</Typography>
+                  <Typography fontWeight={700} fontSize={16}>
+                    {emp.name}
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {emp.email}
                   </Typography>
@@ -144,10 +165,17 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({ open, onClose
         {/* Bottom Buttons */}
         <Divider sx={{ my: 3 }} />
         <Box display="flex" justifyContent="end" gap={1}>
-          <Button variant="outlined" sx={{color:"white", backgroundColor:"var(--background-dark)"}} onClick={onClose}>
+          <Button
+            variant="outlined"
+            sx={{ color: "white", backgroundColor: "var(--background-dark)" }}
+            onClick={onClose}
+          >
             Done
           </Button>
-          <Button variant="contained" sx={{ backgroundColor: "var(--dark-color)" }}>
+          <Button
+            variant="contained"
+            sx={{ backgroundColor: "var(--dark-color)" }}
+          >
             Save
           </Button>
         </Box>

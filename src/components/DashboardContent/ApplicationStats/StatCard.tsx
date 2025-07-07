@@ -1,51 +1,62 @@
+import React from "react";
 import { Box, Typography } from "@mui/material";
-import type  { StatCardProps } from "../../../types/stat";
 
-export default function StatCard({
-  title,
-  value,
-  icon,
-  iconColor,
-}: StatCardProps) {
+interface StatCardProps {
+  iconLeft: React.ReactNode;
+  iconRight: React.ReactNode;
+  count: number;
+  label: string;
+}
+
+const StatCard: React.FC<StatCardProps> = ({
+  iconLeft,
+  iconRight,
+  count,
+  label,
+}) => {
   return (
     <Box
       sx={{
-        backgroundColor: "#fff",
-        borderRadius: 2,
-        p: 2,
-        boxShadow: 1,
         display: "flex",
         alignItems: "center",
-        gap: 2,
-        minHeight: 80,
+        justifyContent: "space-between",
+        p: 2,
+        border: "1px solid #f0f0f0",
+        borderRadius: "0.375rem",
+        backgroundColor: "#fff",
       }}
     >
-      {/* Icon box */}
-      <Box
-        sx={{
-          backgroundColor: `${iconColor}1A`, // light background from iconColor
-          borderRadius: "50%",
-          width: 48,
-          height: 48,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Box component="span" sx={{ color: iconColor, fontSize: 28 }}>
-          {icon}
+      {/* Left Icon + Text */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box
+          sx={{
+            bgcolor: "#b9f3d3",
+            p: 1.5,
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 40,
+            height: 40,
+          }}
+        >
+          {iconLeft}
+        </Box>
+
+        <Box>
+          <Typography variant="h6" fontWeight={600} lineHeight={1.2}>
+            {count}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {label}
+          </Typography>
         </Box>
       </Box>
 
-      {/* Text content */}
-      <Box>
-        <Typography fontSize={14} color="text.secondary">
-          {title}
-        </Typography>
-        <Typography fontWeight={700} fontSize={18}>
-          {value}
-        </Typography>
-      </Box>
+      {/* Right Icon */}
+      <Box>{iconRight}</Box>
     </Box>
   );
-}
+};
+
+export default StatCard;

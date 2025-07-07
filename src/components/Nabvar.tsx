@@ -1,4 +1,3 @@
-// Navbar.tsx
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
@@ -110,7 +109,6 @@ const Navbar: React.FC<NavbarProps> = ({
                 borderRadius: "6px",
                 px: 1,
                 height: "44px",
-                
               }}
             >
               <Search
@@ -148,7 +146,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     sx={{
                       cursor: "pointer",
                       color: "#555",
-                      fontSize: "26px", // font size of the icon
+                      fontSize: "26px",
                       width: "31px",
                       height: "31px",
                     }}
@@ -252,7 +250,7 @@ const Navbar: React.FC<NavbarProps> = ({
             sx={{
               display: {
                 xs: "block",
-                lg: "none", 
+                lg: "none",
               },
             }}
           >

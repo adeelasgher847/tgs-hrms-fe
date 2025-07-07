@@ -1,5 +1,5 @@
 import { Avatar, Box, Typography } from "@mui/material";
-import  type { Interview } from "../../../types/interview";
+import type { Interview } from "../../../types/interview";
 
 export default function InterviewItem({
   name,
@@ -15,7 +15,7 @@ export default function InterviewItem({
         backgroundColor: "#fff",
         p: 1.5,
         mb: 1,
-        borderBottom:"1px solid #f0f0f0"
+        borderBottom: "1px solid #f0f0f0",
       }}
     >
       <Avatar alt={name} src={avatarUrl} sx={{ width: 48, height: 48 }} />
