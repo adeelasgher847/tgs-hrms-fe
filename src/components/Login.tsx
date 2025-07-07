@@ -14,7 +14,6 @@ import {
   FormControlLabel,
   Select,
   MenuItem,
-  InputLabel,
   FormControl,
   IconButton,
   InputAdornment,
