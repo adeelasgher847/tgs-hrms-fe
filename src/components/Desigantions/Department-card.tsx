@@ -1,8 +1,5 @@
-"use client";
-
 import { Card, CardContent, Typography, Box, Chip } from "@mui/material";
-import type { Department } from "./designation-manager";
-
+import type { Department } from "../../Data/mockData";
 interface DepartmentCardProps {
   department: Department;
   isSelected: boolean;
@@ -73,7 +70,6 @@ export default function DepartmentCard({
           size="small"
           sx={{
             bgcolor: isSelected ? department.color : `${department.color}20`,
-            color: isSelected ? "white" : department.color,
             fontWeight: 500,
             fontSize: "0.75rem",
           }}

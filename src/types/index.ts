@@ -1,18 +1,18 @@
 // Mock Data for Designation Management System
-import type { Department, Designation, DataStatistics } from "../Data/mockData"// Departments Mock Data
+import type { Department, Designation } from "../Data/mockData"// Departments Mock Data
 export const mockDepartments: Department[] = [
-  { id: 1, name: "Human Resources", nameAr: "الموارد البشرية" },
-  { id: 2, name: "Information Technology", nameAr: "تكنولوجيا المعلومات" },
-  { id: 3, name: "Finance & Accounting", nameAr: "المالية والمحاسبة" },
-  { id: 4, name: "Marketing & Sales", nameAr: "التسويق والمبيعات" },
-  { id: 5, name: "Operations & Logistics", nameAr: "العمليات واللوجستيات" },
-  { id: 6, name: "Legal & Compliance", nameAr: "القانونية والامتثال" },
-  { id: 7, name: "Research & Development", nameAr: "البحث والتطوير" },
-  { id: 8, name: "Customer Service", nameAr: "خدمة العملاء" },
-  { id: 9, name: "Quality Assurance", nameAr: "ضمان الجودة" },
-  { id: 10, name: "Administration", nameAr: "الإدارة العامة" },
-  { id: 11, name: "Security & Safety", nameAr: "الأمن والسلامة" },
-  { id: 12, name: "Training & Development", nameAr: "التدريب والتطوير" },
+  { id: 1, name: "Human Resources", nameAr: "الموارد البشرية", color: "#FFB300", icon: "people" },
+  { id: 2, name: "Information Technology", nameAr: "تكنولوجيا المعلومات", color: "#1976D2", icon: "computer" },
+  { id: 3, name: "Finance & Accounting", nameAr: "المالية والمحاسبة", color: "#388E3C", icon: "account_balance" },
+  { id: 4, name: "Marketing & Sales", nameAr: "التسويق والمبيعات", color: "#E64A19", icon: "trending_up" },
+  { id: 5, name: "Operations & Logistics", nameAr: "العمليات واللوجستيات", color: "#7B1FA2", icon: "local_shipping" },
+  { id: 6, name: "Legal & Compliance", nameAr: "القانونية والامتثال", color: "#455A64", icon: "gavel" },
+  { id: 7, name: "Research & Development", nameAr: "البحث والتطوير", color: "#0288D1", icon: "science" },
+  { id: 8, name: "Customer Service", nameAr: "خدمة العملاء", color: "#FBC02D", icon: "support_agent" },
+  { id: 9, name: "Quality Assurance", nameAr: "ضمان الجودة", color: "#C62828", icon: "verified" },
+  { id: 10, name: "Administration", nameAr: "الإدارة العامة", color: "#6D4C41", icon: "admin_panel_settings" },
+  { id: 11, name: "Security & Safety", nameAr: "الأمن والسلامة", color: "#2E7D32", icon: "security" },
+  { id: 12, name: "Training & Development", nameAr: "التدريب والتطوير", color: "#512DA8", icon: "school" },
 ]
 
 // Designations Mock Data
@@ -175,6 +175,15 @@ export const mockDesignations: Designation[] = [
   { id: 133, title: "Corporate Trainer", titleAr: "مدرب مؤسسي", departmentId: 12 },
   { id: 134, title: "Training Coordinator", titleAr: "منسق التدريب", departmentId: 12 },
 ]
+
+// DataStatistics type definition
+export type DataStatistics = {
+  totalDepartments: number;
+  totalDesignations: number;
+  averageDesignationsPerDepartment: number;
+  departmentWithMostDesignations: Department;
+  departmentWithLeastDesignations: Department;
+}
 
 // Helper functions for data manipulation
 export const getDepartmentById = (id: number): Department | undefined => {

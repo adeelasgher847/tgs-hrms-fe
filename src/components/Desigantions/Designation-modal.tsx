@@ -1,5 +1,3 @@
-"use client";
-
 import type React from "react";
 import { useState, useEffect } from "react";
 import {
@@ -16,17 +14,29 @@ import {
   useTheme,
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
-import type {
-  DesignationModalProps,
-  FormErrors,
-} from "../Desigantions/designation-modal.types";
+
+interface Designation {
+  id: number;
+  title: string;
+  titleAr: string;
+  departmentId: number;
+}
+
+interface DesignationModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSave: (data: { title: string; titleAr: string }) => void;
+  designation: Designation | null;
+  isRTL: boolean;
+  getText: (en: string, ar: string) => string;
+}
 
 export default function DesignationModal({
   open,
   onClose,
   onSave,
   designation,
-  isRTL,
+
   getText,
 }: DesignationModalProps) {
   const theme = useTheme();
@@ -34,7 +44,9 @@ export default function DesignationModal({
 
   const [title, setTitle] = useState("");
   const [titleAr, setTitleAr] = useState("");
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<{ title?: string; titleAr?: string }>(
+    {}
+  );
 
   // Reset form when modal opens/closes or designation changes
   useEffect(() => {
@@ -50,7 +62,7 @@ export default function DesignationModal({
 
   // Form validation
   const validateForm = () => {
-    const newErrors: FormErrors = {};
+    const newErrors: { title?: string; titleAr?: string } = {};
 
     if (!title.trim()) {
       newErrors.title = getText(
