@@ -88,7 +88,7 @@ const Sidebar = ({ isMobile, mobileOpen, onToggleDrawer }: SidebarProps) => {
       </List>
 
       {/* Switches */}
-      <Box sx={{ mt: 6 }}>
+      <Box sx={{ mt: 0 }}>
         <Box display="flex" justifyContent="center" alignItems="center">
           <Switch checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
           <Typography>Enable Dark Mode!</Typography>
@@ -135,7 +135,7 @@ const Sidebar = ({ isMobile, mobileOpen, onToggleDrawer }: SidebarProps) => {
               md: 3,
             },
             maxHeight: "100vh",
-            overflowY: "auto",
+            overflowY: "hidden",
             overflowX: "hidden",
           },
         }}
