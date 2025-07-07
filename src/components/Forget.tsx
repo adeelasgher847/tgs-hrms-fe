@@ -10,6 +10,8 @@ import {
   MenuItem,
   FormControl,
   CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import ForgetImage from "../assets/icons/forget-image.svg";
 
@@ -19,6 +21,7 @@ const Forget = () => {
   const [emailError, setEmailError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [openToast, setOpenToast] = useState(false);
 
   const validateEmail = (value: string) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -43,6 +46,7 @@ const Forget = () => {
     setTimeout(() => {
       setLoading(false);
       setSubmitted(true);
+      setOpenToast(true);
       console.log("Reset link sent to email:", email);
     }, 2000);
   };
@@ -64,7 +68,6 @@ const Forget = () => {
             direction: lang === "ar" ? "rtl" : "ltr",
           }}
         >
-          {/* Left Side - Image and Title */}
           <Box
             sx={{
               display: "flex",
@@ -165,15 +168,17 @@ const Forget = () => {
                           borderColor: "#f19828",
                         },
                       }}
-                      renderValue={(selected) => {
-                        return selected === "ar" ? "عربى" : "English";
-                      }}
+                      renderValue={(selected) =>
+                        selected === "ar" ? "عربى" : "English"
+                      }
                     >
                       <MenuItem value="en">English</MenuItem>
                       <MenuItem value="ar">عربى</MenuItem>
                     </Select>
                   </FormControl>
                 </Box>
+
+                {/* Form */}
                 <Box
                   sx={{
                     display: "flex",
@@ -256,12 +261,6 @@ const Forget = () => {
                         sx: {
                           backgroundColor: "#eee",
                           borderRadius: "8px",
-                          "&.Mui-focused, &:active": {
-                            backgroundColor: "white",
-                            border: "none",
-                            outline: "none",
-                            boxShadow: "none",
-                          },
                         },
                       }}
                     />
@@ -281,7 +280,6 @@ const Forget = () => {
                           borderRadius: "8px",
                           fontSize: "14px",
                           fontFamily: "Open Sans, sans-serif",
-                          minWidth: 40,
                           "&:hover": {
                             bgcolor: "grey.200",
                           },
@@ -296,23 +294,6 @@ const Forget = () => {
                         )}
                       </Button>
                     </Box>
-
-                    {/* Confirmation message shown after form submission */}
-                    {submitted && (
-                      <Typography
-                        sx={{
-                          fontSize: "16px",
-                          fontFamily: "Open Sans, sans-serif",
-                          textAlign: "center",
-                          mt: 4,
-                          color: "white",
-                        }}
-                      >
-                        {lang === "ar"
-                          ? "إذا كان البريد الإلكتروني موجودًا، سيتم إرسال رابط إعادة التعيين."
-                          : "If the email exists, a reset link will be sent."}
-                      </Typography>
-                    )}
 
                     <Typography
                       variant="body2"
@@ -348,6 +329,23 @@ const Forget = () => {
           </Box>
         </Box>
       </Box>
+      {/*Snackbar Toast */}
+      <Snackbar
+        open={openToast}
+        autoHideDuration={4000}
+        onClose={() => setOpenToast(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setOpenToast(false)}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          {lang === "ar"
+            ? "إذا كان البريد الإلكتروني موجودًا، سيتم إرسال رابط إعادة التعيين."
+            : "If the email exists, a reset link will be sent."}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
