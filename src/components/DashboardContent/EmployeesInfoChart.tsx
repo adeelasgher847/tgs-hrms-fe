@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import {
   LineChart,
   Line,
@@ -23,6 +23,9 @@ const data = [
 ];
 
 export default function EmployeesInfoChart() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   return (
     <Box
       sx={{
@@ -45,27 +48,29 @@ export default function EmployeesInfoChart() {
         }}
       >
         <ResponsiveContainer width="100%" height={170}>
-          <LineChart data={data}>
-            {/* X-axis grid line only */}
-            <CartesianGrid
-              horizontal={false}
-              vertical={false}
-            />
-
-            {/* 👇 XAxis: show month text, gray bottom line */}
+          <LineChart
+            data={data}
+            margin={{ top: 0, right: 20, bottom: 20, left: -40 }}
+          >
+            <CartesianGrid horizontal={false} vertical={false} />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 12 }}
+              tick={{
+                fontSize: 12,
+                angle: isMobile ? -45 : 0,
+                textAnchor: isMobile ? "end" : "middle",
+              }}
+              height={isMobile ? 50 : 30}
+              interval={0}
               axisLine={{ stroke: "#f0f0f0" }}
-             tickLine={{ stroke: "#f0f0f0" }}
+              tickLine={{ stroke: "#f0f0f0" }}
             />
 
-            {/* 👇 YAxis: line visible, but no text */}
             <YAxis
               stroke="#f0f0f0"
               axisLine={{ stroke: "#f0f0f0" }}
               tickLine={false}
-              tick={false} // hide text
+              tick={false}
             />
 
             <Tooltip />

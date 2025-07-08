@@ -24,6 +24,8 @@ import {
   Widgets,
   ChevronLeft,
 } from "@mui/icons-material";
+import dotted from "../assets/dashboardIcon/dotted-down.svg";
+import Clipboard from "../assets/dashboardIcon/Clipboard";
 import { useState } from "react";
 
 // ✅ Menu item type
@@ -117,11 +119,11 @@ export default function Sidebar() {
     >
       {/* Top Section */}
       <Box>
-        <Box sx={{ py: 2, display: "flex", alignItems: "center", gap: 3 }}>
+        <Box sx={{ py: 2, display: "flex", alignItems: "center", gap: 2 }}>
           <Box
             sx={{
-              width: 40,
-              height: 40,
+              width: 45,
+              height: 45,
               bgcolor: "white",
               color: "#464b8a",
               borderRadius: "50%",
@@ -133,7 +135,7 @@ export default function Sidebar() {
               p: 1,
             }}
           >
-            📝
+            <Clipboard />
           </Box>
           <Typography sx={{ mt: 1, fontWeight: "700", fontSize: "18px" }}>
             My-Task
@@ -152,12 +154,24 @@ export default function Sidebar() {
                 }}
               >
                 <ListItemIcon
-                  sx={{ color: openItem === item.label ? "orange" : "white" }}
+                  sx={{
+                    color: openItem === item.label ? "orange" : "white",
+                    minWidth: "36px",
+                  }}
                 >
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText primary={item.label} />
-                {openItem === item.label ? <ExpandLess /> : <ExpandMore />}
+                <img
+                  src={dotted}
+                  alt="dotted"
+                  style={{
+                    width: 23,
+                    height: 23,
+                    filter:
+                      "invert(57%) sepia(9%) saturate(388%) hue-rotate(195deg) brightness(89%) contrast(85%)",
+                  }}
+                />
               </ListItemButton>
 
               <Collapse
@@ -187,10 +201,8 @@ export default function Sidebar() {
           ))}
         </List>
       </Box>
-
       {/* Bottom Controls */}
       <Box sx={{ px: 2, pb: 2 }}>
-        <Divider sx={{ borderColor: "white", my: 1 }} />
         <Box
           display="flex"
           alignItems="center"

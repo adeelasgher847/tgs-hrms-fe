@@ -13,7 +13,7 @@ export default function UpcomingInterviews() {
         backgroundColor: "#fff",
       }}
     >
-      <Typography fontWeight="bold" fontSize={18} mb={2}>
+      <Typography fontWeight="bold" fontSize={16} mb={2}>
         Upcoming Interviews
       </Typography>
 

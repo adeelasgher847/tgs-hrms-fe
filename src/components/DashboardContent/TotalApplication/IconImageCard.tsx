@@ -30,9 +30,9 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
         <Avatar
           src={imageSrc}
           alt="Right side image"
-          sx={{ width: 48, height: 48 }}
+          sx={{ width: 22, height: 22, background: "white", p: 2 }}
         />
-        <Typography fontWeight={700} fontSize={40} color="white">
+        <Typography fontWeight={700} fontSize={40} color="white" mt={3} lineHeight={1}>
           {label}
         </Typography>
         <Typography fontSize={14} color="white">

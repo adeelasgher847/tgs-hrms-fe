@@ -1,5 +1,6 @@
 import IconImageCard from "./IconImageCard";
 import ApplicationIcon from "../../../assets/icons/Application.svg";
+import filetextIcon from "../../../assets/dashboardIcon/file-text.svg";
 import { Box } from "@mui/material";
 
 const IconImageCardProps = () => {
@@ -10,10 +11,10 @@ const IconImageCardProps = () => {
           <img
             src={ApplicationIcon}
             alt="icon"
-            style={{ width: "100%", maxWidth: "100px", height: "auto" }}
+            style={{ width: "100%", maxWidth: "130px", height: "auto" }}
           />
         }
-        imageSrc="/images/sample.png"
+        imageSrc={filetextIcon}
         label={1573}
         title="Applications"
       />

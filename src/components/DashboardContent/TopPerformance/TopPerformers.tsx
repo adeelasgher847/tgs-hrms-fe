@@ -26,10 +26,16 @@ const TopPerformers: React.FC<TopPerformersProps> = ({
   return (
     <Box p={1} bgcolor="#f1c8db" borderRadius={"0.375rem"} boxShadow={2}>
       <Box p={2}>
-        <Typography variant="h6" fontWeight={700} gutterBottom>
+        <Typography
+          variant="h6"
+          fontWeight={700}
+          fontSize={16}
+          gutterBottom
+          mb={3}
+        >
           {title}
         </Typography>
-        <Typography variant="body2" color="text.secondary" mb={3}>
+        <Typography variant="body2" color="text.secondary">
           {subtitle}
         </Typography>
       </Box>
@@ -39,6 +45,7 @@ const TopPerformers: React.FC<TopPerformersProps> = ({
         gap={2}
         mb={1}
         p={2}
+        pt={0}
         borderRadius={"0.375rem"}
         sx={{
           maxWidth: { md: 279 },

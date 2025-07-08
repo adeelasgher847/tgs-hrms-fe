@@ -3,7 +3,7 @@ import TopPerformers from "./TopPerformers";
 import { Email, Person, Code } from "@mui/icons-material";
 
 const TopPerformersProps = () => {
-    const performers = [
+  const performers = [
     {
       name: "Ali Raza",
       email: "@ali",
@@ -22,19 +22,19 @@ const TopPerformersProps = () => {
       percentage: 76,
       icon: <Code />,
     },
-       {
+    {
       name: "Usman Tariq",
       email: "@usman",
       percentage: 76,
       icon: <Code />,
     },
-       {
+    {
       name: "Usman Tariq",
       email: "@usman",
       percentage: 76,
       icon: <Code />,
     },
-       {
+    {
       name: "Usman Tariq",
       email: "@usman",
       percentage: 76,
@@ -43,8 +43,8 @@ const TopPerformersProps = () => {
   ];
 
   return (
-     <div>
-      {/* Other dashboard widgets/components */}
+    <div>
+      {/* dashboard components */}
       <TopPerformers
         title="Top Performers"
         subtitle="You have 140 influencers in your company."
@@ -53,7 +53,7 @@ const TopPerformersProps = () => {
         performers={performers}
       />
     </div>
-  )
-}
+  );
+};
 
-export default TopPerformersProps
+export default TopPerformersProps;

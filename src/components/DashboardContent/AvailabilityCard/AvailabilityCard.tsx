@@ -39,7 +39,9 @@ export default function AvailabilityCard({
 
       {/* Text content */}
       <Box>
-        <Typography fontSize={14}>{title}</Typography>
+        <Typography fontSize={14} fontWeight={700}>
+          {title}
+        </Typography>
         <Typography variant="h6" fontSize={16} color="#9a9b9d">
           {value}
         </Typography>

@@ -107,7 +107,7 @@ const PerformanceChart: React.FC = () => {
         backgroundColor: "#fff",
       }}
     >
-      <Typography fontWeight="bold" fontSize={18} mb={2}>
+      <Typography fontWeight="bold" fontSize={16} mb={2}>
         Top Hiring Sources
       </Typography>
       <Chart options={options} series={series} type="bar" height={300} />

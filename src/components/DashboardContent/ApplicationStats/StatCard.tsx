@@ -30,7 +30,7 @@ const StatCard: React.FC<StatCardProps> = ({
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
         <Box
           sx={{
-            bgcolor: "#b9f3d3",
+            bgcolor: "#a0d9b4",
             p: 1.5,
             borderRadius: "50%",
             display: "flex",

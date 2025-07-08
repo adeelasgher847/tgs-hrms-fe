@@ -47,7 +47,7 @@ export default function TotalEmployeesDonut() {
       }}
     >
       <Box display={"flex"} justifyContent={"space-between"}>
-        <Typography fontWeight="bold" mb={2}>
+        <Typography fontWeight="bold" fontSize={16} mb={2}>
           Total Employees
         </Typography>
         <Typography fontWeight="bold" fontSize={"25px"}>

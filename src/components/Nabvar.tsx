@@ -32,7 +32,7 @@ const Search = styled("div")(({ theme }) => ({
   backgroundColor: "#efefef",
   height: "44px",
   display: "flex",
-  gap: "40px",
+  // gap: "40px",
   alignItems: "center",
   paddingLeft: theme.spacing(1),
   width: "100%",
@@ -121,9 +121,27 @@ const Navbar: React.FC<NavbarProps> = ({
                 <SearchIconWrapper>
                   <SearchIcon />
                 </SearchIconWrapper>
+
                 <StyledInputBase
                   placeholder="Search"
                   inputProps={{ "aria-label": "search" }}
+                  sx={{
+                    transition: "all 0.3s ease-in-out",
+                    "& input": {
+                      backgroundColor: "transparent",
+                      transition: "all 0.3s ease-in-out",
+                      height: "43px",
+                      // width:"100%"
+                    },
+                    "&:focus-within": {
+                      // border: "1px solid black",
+                      // padding: "10px",
+                      height: "45px",
+                      "& input": {
+                        // backgroundColor: "#fff",
+                      },
+                    },
+                  }}
                 />
               </Search>
 

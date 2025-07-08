@@ -48,7 +48,6 @@ const Dashboard: React.FC = () => {
 
           <PerformanceChart />
         </Box>
-
         {/* Right Section */}
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
           <IconImageCardProps />

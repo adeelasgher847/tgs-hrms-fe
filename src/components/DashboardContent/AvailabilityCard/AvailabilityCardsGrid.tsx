@@ -1,34 +1,55 @@
 import { Box, Typography } from "@mui/material";
 import AvailabilityCard from "./AvailabilityCard";
-import { AccessTime, Person } from "@mui/icons-material";
-import BeachAccessIcon from "@mui/icons-material/BeachAccess";
-import DoDisturbAltIcon from "@mui/icons-material/DoDisturbAlt";
+import CheckedIcon from "../../../assets/dashboardIcon/checked.svg";
+import stopwatchIcon from "../../../assets/dashboardIcon/stopwatch.svg";
+import banIcon from "../../../assets/dashboardIcon/ban.svg";
+import beachIcon from "../../../assets/dashboardIcon/beach-bed.svg";
 export default function AvailabilityCardsGrid() {
   const cards = [
     {
       title: "Attendance",
       value: 148,
-      icon: <Person />,
+      icon: (
+        <img
+          src={CheckedIcon}
+          alt="Attendance"
+          style={{ width: 30, height: 30 }}
+        />
+      ),
       BorderColor: "#f0f0f0",
     },
     {
       title: "Late Coming",
       value: 12,
-      icon: <AccessTime />,
+      icon: (
+        <img
+          src={stopwatchIcon}
+          alt="Attendance"
+          style={{ width: 30, height: 30 }}
+        />
+      ),
       BorderColor: "#f0f0f0",
       color: "black",
     },
     {
       title: "Absent",
       value: 5,
-      icon: <DoDisturbAltIcon />,
+      icon: (
+        <img src={banIcon} alt="Attendance" style={{ width: 30, height: 30 }} />
+      ),
       BorderColor: "#f0f0f0",
       color: "black",
     },
     {
       title: "Leave Apply",
       value: 32,
-      icon: <BeachAccessIcon />,
+      icon: (
+        <img
+          src={beachIcon}
+          alt="Attendance"
+          style={{ width: 30, height: 30 }}
+        />
+      ),
       BorderColor: "#f0f0f0",
       color: "black",
     },
@@ -44,7 +65,7 @@ export default function AvailabilityCardsGrid() {
       p={2}
     >
       {/* Section Title */}
-      <Typography fontWeight="bold" fontSize={18} mb={2}>
+      <Typography fontWeight="bold" fontSize={16} mb={2}>
         Employees Availability
       </Typography>
 

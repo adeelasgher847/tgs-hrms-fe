@@ -11,10 +11,8 @@ import {
   Divider,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import SettingsIcon from "@mui/icons-material/Settings";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import GroupIcon from "@mui/icons-material/Group";
-
+import settings from "../../assets/dashboardIcon/ui-settings.svg";
 interface Employee {
   name: string;
   email: string;
@@ -66,7 +64,7 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
   };
 
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={onClose} sx={{ overflowY: "auto" }}>
       <Box sx={style}>
         {/* Header */}
         <Box
@@ -99,7 +97,7 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
             onChange={(e) => setEmail(e.target.value)}
             sx={{
               backgroundColor: "#efefef",
-              borderRadius: "4px 0px 0px 4px !important", 
+              borderRadius: "4px 0px 0px 4px !important",
             }}
           />
           <Button
@@ -151,12 +149,18 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
               </Stack>
 
               <Stack direction="row" spacing={2} alignItems="center">
-                {emp.role === "Admin" ? (
-                  <AdminPanelSettingsIcon sx={{ color: "#1976d2" }} />
+                {emp.role === "Admin" || emp.role === "Member" ? (
+                  <Typography variant="body2" color="text.secondary">
+                    {emp.role}
+                  </Typography>
                 ) : (
                   <GroupIcon sx={{ color: "#4caf50" }} />
                 )}
-                <SettingsIcon />
+                <img
+                  src={settings}
+                  alt="settings"
+                  style={{ width: 18, height: 18 }}
+                />
               </Stack>
             </Box>
           ))}

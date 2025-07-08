@@ -1,7 +1,7 @@
 export type AvailabilityCardProps = {
-  title: string;
+title: string;
   value: number;
   icon: React.ReactNode;
-  BorderColor?: string;
+  BorderColor: string;
   color?: string;
 };

@@ -1,4 +1,4 @@
-import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { Box,useMediaQuery, useTheme } from "@mui/material";
 import Sidebar from "./Sidebar";
 import Navbar from "./Nabvar";
 import { Outlet } from "react-router-dom";
@@ -68,7 +68,6 @@ const Layout = () => {
           <Sidebar />
         </Box>
       )}
-
       {/* Right Section */}
       <Box
         className="main-area"
