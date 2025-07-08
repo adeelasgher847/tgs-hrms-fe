@@ -1,13 +1,20 @@
-import DesignationManager from "./components/Desigantions/Designation-manager";
-import { useState } from "react";
+import  { useState } from "react";
+import "./App.css";
+
 import Box from "@mui/material/Box";
-import Navbar from "../src/components/Desigantions/Navbar";
-import Sidebar from "../src/components/Desigantions/Sidebar";
+import { useTheme, useMediaQuery } from "@mui/material";
+
+import DesignationManager from "./components/Desigantions/Designation-manager";
+import Sidebar from "./components/Desigantions/Sidebar";
+import Navbar from "./components/Desigantions/Navbar";
+//import { DepartmentList } from "./components/department/Department-list"; // optional, if you use it
 
 function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isMobile = window.innerWidth < 600;
   const [direction, setDirection] = useState<"ltr" | "rtl">("ltr");
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const toggleDrawer = () => {
     setMobileOpen((prev) => !prev);
@@ -35,8 +42,8 @@ function App() {
         sx={{
           flexGrow: 1,
           overflowY: "auto",
-          p: { xs: 1, sm: 2 }, // Add padding on small screen
-          mt: { xs: "2px", md: 0 }, // Add space on small screen
+          p: { xs: 1, sm: 2 },
+          mt: { xs: "2px", md: 0 },
         }}
       >
         <Navbar onToggleDrawer={toggleDrawer} />
@@ -44,6 +51,8 @@ function App() {
           direction={direction}
           onDirectionChange={setDirection}
         />
+        {/* Optional: Only use DepartmentList if needed */}
+        {/* <DepartmentList /> */}
       </Box>
     </Box>
   );
