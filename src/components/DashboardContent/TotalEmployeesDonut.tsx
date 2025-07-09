@@ -1,6 +1,6 @@
 import { Box, Typography, Stack } from "@mui/material";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-
+import { useOutletContext } from "react-router-dom";
 type GenderDataItem = {
   name: string;
   value: number;
@@ -37,20 +37,24 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function TotalEmployeesDonut() {
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const bgColor = darkMode ? "#111" : "#fff";
+  const borderColor = darkMode ? "#252525" : "#f0f0f0";
+  const textColor = darkMode ? "#8f8f8f" : "#000";
   return (
     <Box
       sx={{
         p: 2,
-        border: "1px solid #f0f0f0",
+        border: `1px solid ${borderColor}`,
         borderRadius: "0.375rem",
-        backgroundColor: "#fff",
+        backgroundColor: bgColor,
       }}
     >
       <Box display={"flex"} justifyContent={"space-between"}>
-        <Typography fontWeight="bold" fontSize={16} mb={2}>
+        <Typography fontWeight="bold" fontSize={16} mb={2} color={textColor}>
           Total Employees
         </Typography>
-        <Typography fontWeight="bold" fontSize={"25px"}>
+        <Typography fontWeight="bold" fontSize={"25px"} color={textColor}>
           423
         </Typography>
       </Box>
@@ -105,7 +109,7 @@ export default function TotalEmployeesDonut() {
                 backgroundColor: item.color,
               }}
             />
-            <Typography fontSize={14}>
+            <Typography fontSize={14} color={textColor}>
               {item.name}: <b>{item.value}</b>
             </Typography>
           </Stack>

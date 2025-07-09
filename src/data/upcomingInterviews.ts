@@ -37,4 +37,10 @@ export const upcomingInterviews: Interview[] = [
     time: "11:43 am",
     avatarUrl: "https://i.pravatar.cc/150?img=7",
   },
+   {
+    name: "roman",
+    role: "React Developer",
+    time: "11:43 am",
+    avatarUrl: "https://i.pravatar.cc/150?img=7",
+  },
 ];

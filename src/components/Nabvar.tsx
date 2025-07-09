@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
+
 import {
   AppBar,
   Box,
@@ -62,11 +63,13 @@ const StyledInputBase = styled(InputBase)(() => ({
 }));
 
 interface NavbarProps {
+  darkMode: boolean;
   onToggleSidebar: () => void;
   onOpenInviteModal: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({
+  darkMode,
   onToggleSidebar,
   onOpenInviteModal,
 }) => {
@@ -83,12 +86,14 @@ const Navbar: React.FC<NavbarProps> = ({
   const handleLogout = () => {
     navigate("/");
   };
+  const textColor = darkMode ? "#8f8f8f" : "#000";
+  const iconColor = darkMode ? "#8f8f8f" : "#000"; 
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar
         position="static"
         elevation={0}
-        sx={{ backgroundColor: "#f8fafc", color: "black" }}
+        sx={{ backgroundColor: darkMode ? "unset" : "#fff", color: "black" }}
       >
         <Toolbar
           disableGutters
@@ -105,7 +110,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 display: "flex",
                 alignItems: "center",
                 gap: 1,
-                backgroundColor: "#efefef",
+                backgroundColor: darkMode ? "#262727" : "#efefef",
                 borderRadius: "6px",
                 px: 1,
                 height: "44px",
@@ -232,7 +237,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
             <IconButton>
               <Badge variant="dot" color="error">
-                <NotificationsNoneOutlinedIcon />
+                <NotificationsNoneOutlinedIcon  sx={{ color: textColor }}  />
               </Badge>
             </IconButton>
 
@@ -246,10 +251,11 @@ const Navbar: React.FC<NavbarProps> = ({
               <Typography
                 variant="subtitle2"
                 sx={{ fontWeight: 600, fontSize: "14px" }}
+                color={textColor}
               >
                 Dylan Hunter
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" color={textColor}>
                 Admin Profile
               </Typography>
             </Box>
@@ -272,7 +278,7 @@ const Navbar: React.FC<NavbarProps> = ({
               },
             }}
           >
-            <MenuIcon />
+            <MenuIcon sx={{ color: iconColor }}/>
           </IconButton>
         </Toolbar>
       </AppBar>
@@ -290,8 +296,10 @@ const Navbar: React.FC<NavbarProps> = ({
             borderRadius: "10px",
             width: 280,
             p: 2,
+            backgroundColor:darkMode ? "#111" : "#fff"
           },
         }}
+        
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
           <Avatar
@@ -300,37 +308,45 @@ const Navbar: React.FC<NavbarProps> = ({
             sx={{ width: 50, height: 50 }}
           />
           <Box>
-            <Typography fontWeight={600}>Dylan Hunter</Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography fontWeight={600} color={textColor}>Dylan Hunter</Typography>
+            <Typography variant="body2" color={textColor}>
               Dylan.hunter@gmail.com
             </Typography>
           </Box>
         </Box>
         <Divider sx={{ mb: 1 }} />
-        <MenuItem>
+        <MenuItem color={textColor}>
           <ListItemIcon>
-            <AssignmentOutlinedIcon fontSize="small" />
+            <AssignmentOutlinedIcon fontSize="small"  sx={{ color: textColor }}  />
           </ListItemIcon>
+          <Typography color={textColor}>
           My Task
+          </Typography>
         </MenuItem>
         <MenuItem>
           <ListItemIcon>
-            <GroupOutlinedIcon fontSize="small" />
+            <GroupOutlinedIcon fontSize="small"  sx={{ color: textColor }} />
           </ListItemIcon>
+          <Typography color={textColor}>
           Members
+          </Typography>
         </MenuItem>
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>
-            <LogoutIcon fontSize="small" />
+            <LogoutIcon fontSize="small"  sx={{ color: textColor }}  />
           </ListItemIcon>
+          <Typography color={textColor}>
           Signout
+          </Typography>
         </MenuItem>
         <Divider sx={{ my: 1 }} />
-        <MenuItem>
+        <MenuItem color={textColor}>
           <ListItemIcon>
-            <PersonAddAltIcon fontSize="small" />
+            <PersonAddAltIcon fontSize="small"  sx={{ color: textColor }} />
           </ListItemIcon>
+          <Typography color={textColor}>
           Add personal account
+          </Typography>
         </MenuItem>
       </Menu>
     </Box>

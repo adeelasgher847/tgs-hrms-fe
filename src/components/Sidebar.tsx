@@ -26,6 +26,7 @@ import {
 } from "@mui/icons-material";
 import dotted from "../assets/dashboardIcon/dotted-down.svg";
 import Clipboard from "../assets/dashboardIcon/Clipboard";
+import bubbleleft from "../assets/dashboardIcon/bubble-left.svg";
 import { useState } from "react";
 
 // ✅ Menu item type
@@ -35,7 +36,12 @@ interface MenuItem {
   subItems: string[];
   color?: string;
 }
-
+interface SidebarProps {
+  rtlMode: boolean;
+  setRtlMode: React.Dispatch<React.SetStateAction<boolean>>;
+  darkMode: boolean;
+  setDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
+}
 // ✅ Menu data with type safety
 const menuItems: MenuItem[] = [
   {
@@ -91,10 +97,14 @@ const menuItems: MenuItem[] = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({
+  rtlMode,
+  setRtlMode,
+  darkMode,
+  setDarkMode,
+}: SidebarProps) {
   const [openItem, setOpenItem] = useState<string>("Dashboard");
-  const [darkMode, setDarkMode] = useState<boolean>(false);
-  const [rtlMode, setRtlMode] = useState<boolean>(false);
+  // const [darkMode, setDarkMode] = useState<boolean>(false);
 
   const handleClick = (label: string): void => {
     setOpenItem(openItem === label ? "" : label);
@@ -212,20 +222,36 @@ export default function Sidebar() {
           <Typography variant="body2">Enable Dark Mode!</Typography>
           <Switch
             checked={darkMode}
-            onChange={() => setDarkMode((prev: boolean) => !prev)}
+            onChange={() => setDarkMode((prev) => !prev)}
           />
         </Box>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="body2">Enable RTL Mode!</Typography>
           <Switch
             checked={rtlMode}
-            onChange={() => setRtlMode((prev: boolean) => !prev)}
+            onChange={() => setRtlMode((prev) => !prev)}
           />
         </Box>
-
         {/* Sidebar Collapse Icon */}
         <Box textAlign="center" mt={2}>
-          <ChevronLeft sx={{ color: "white", cursor: "pointer" }} />
+          <Box
+            sx={{
+              display: "inline-block",
+              paddingBottom: "4px",
+            }}
+          />
+          <Box
+            component="img"
+            src={bubbleleft}
+            alt="bubble"
+            sx={{
+              width: 40,
+              height: 40,
+              cursor: "pointer",
+              filter: "brightness(0) invert(1)",
+              borderBottom: "4px solid white",
+            }}
+          />
         </Box>
       </Box>
     </Box>

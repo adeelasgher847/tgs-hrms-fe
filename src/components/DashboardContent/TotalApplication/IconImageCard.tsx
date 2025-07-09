@@ -32,7 +32,13 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
           alt="Right side image"
           sx={{ width: 22, height: 22, background: "white", p: 2 }}
         />
-        <Typography fontWeight={700} fontSize={40} color="white" mt={3} lineHeight={1}>
+        <Typography
+          fontWeight={700}
+          fontSize={40}
+          color="white"
+          mt={3}
+          lineHeight={1}
+        >
           {label}
         </Typography>
         <Typography fontSize={14} color="white">

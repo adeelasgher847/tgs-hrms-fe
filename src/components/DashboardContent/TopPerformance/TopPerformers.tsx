@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Typography, Card, CardContent, Avatar } from "@mui/material";
-
+import { useOutletContext } from "react-router-dom";
 type Performer = {
   name: string;
   email: string;
@@ -23,6 +23,11 @@ const TopPerformers: React.FC<TopPerformersProps> = ({
   completedTask,
   performers,
 }) => {
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const bgColor = darkMode ? "#111" : "#fff";
+  // const borderColor = darkMode ? "#252525" : "#f0f0f0";
+  const textColor = darkMode ? "#8f8f8f" : "#000";
+
   return (
     <Box p={1} bgcolor="#f1c8db" borderRadius={"0.375rem"} boxShadow={2}>
       <Box p={2}>
@@ -32,10 +37,11 @@ const TopPerformers: React.FC<TopPerformersProps> = ({
           fontSize={16}
           gutterBottom
           mb={3}
+          color={textColor}
         >
           {title}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color={textColor}>
           {subtitle}
         </Typography>
       </Box>
@@ -52,18 +58,23 @@ const TopPerformers: React.FC<TopPerformersProps> = ({
         }}
       >
         <Box>
-          <Typography variant="h5" fontWeight={700} textAlign={"center"}>
+          <Typography
+            variant="h5"
+            fontWeight={700}
+            textAlign={"center"}
+            color={textColor}
+          >
             {newTask}
           </Typography>
-          <Typography fontSize={14} color="text.secondary" textAlign={"center"}>
+          <Typography fontSize={14} color={textColor} textAlign={"center"}>
             New Task
           </Typography>
         </Box>
         <Box>
-          <Typography variant="h5" fontWeight={700}>
+          <Typography variant="h5" fontWeight={700} color={textColor}>
             {completedTask}
           </Typography>
-          <Typography fontSize={14} color="text.secondary">
+          <Typography fontSize={14} color={textColor}>
             Task Completed
           </Typography>
         </Box>
@@ -83,16 +94,22 @@ const TopPerformers: React.FC<TopPerformersProps> = ({
               borderRadius: "0.375rem",
               boxShadow: "0 .5rem 1rem rgba(0, 0, 0, 0.15)",
               textAlign: "center",
+              backgroundColor: bgColor,
             }}
           >
             <CardContent>
               <Avatar sx={{ margin: "0 auto", bgcolor: "#1976d2" }}>
                 {p.icon}
               </Avatar>
-              <Typography mt={1} fontWeight={600} fontSize={"14px"}>
+              <Typography
+                mt={1}
+                fontWeight={600}
+                fontSize={"14px"}
+                color={textColor}
+              >
                 {p.name}
               </Typography>
-              <Typography color="text.secondary" fontSize={"12px"}>
+              <Typography fontSize={"12px"} color={textColor}>
                 {p.email}
               </Typography>
               <Typography

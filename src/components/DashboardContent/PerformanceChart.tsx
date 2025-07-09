@@ -1,24 +1,29 @@
 import { Box, Typography } from "@mui/material";
 import React from "react";
 import Chart from "react-apexcharts";
+import { useOutletContext } from "react-router-dom";
 
 const PerformanceChart: React.FC = () => {
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const bgColor = darkMode ? "#111" : "#fff";
+  const borderColor = darkMode ? "#252525" : "#f0f0f0";
+  const textColor = darkMode ? "#8f8f8f" : "#000";
   const series = [
     {
       name: "Ui/Ux Designer",
-      data: [40, 50, 60, 70, 60, 80, 90, 85, 70, 60, 50, 40],
+      data: [45, 25, 44, 23, 25, 41, 32, 25, 22, 65, 22, 29],
     },
     {
       name: "App Development",
-      data: [30, 40, 50, 60, 70, 60, 50, 60, 70, 80, 90, 100],
+      data: [45, 12, 25, 22, 19, 22, 29, 23, 23, 25, 41, 32],
     },
     {
       name: "Quality Assurance",
-      data: [20, 30, 40, 50, 40, 60, 70, 75, 80, 70, 60, 50],
+      data: [45, 25, 32, 25, 22, 65, 44, 23, 25, 41, 22, 29],
     },
     {
       name: "Web Developer",
-      data: [20, 30, 40, 50, 40, 60, 70, 75, 80, 70, 60, 50],
+      data: [32, 25, 22, 11, 22, 29, 16, 25, 9, 23, 25, 13],
     },
   ];
 
@@ -33,10 +38,11 @@ const PerformanceChart: React.FC = () => {
       bar: {
         horizontal: false,
         columnWidth: "70%", // Reduce bar thickness
-        borderRadius: 4,
+        // borderRadius: 4,
       },
     },
     grid: {
+      borderColor: darkMode ? "#333" : "#e0e0e0",
       padding: {
         top: 20,
         bottom: 10,
@@ -93,6 +99,9 @@ const PerformanceChart: React.FC = () => {
     fill: {
       opacity: 1,
     },
+    tooltip: {
+      theme: darkMode ? "dark" : "light",
+    },
   };
 
   return (
@@ -102,15 +111,15 @@ const PerformanceChart: React.FC = () => {
         mt: 1,
         p: 2,
         mb: 1,
-        border: "1px solid #f0f0f0",
+        border: `1px solid ${borderColor}`,
         borderRadius: "0.375rem",
-        backgroundColor: "#fff",
+        backgroundColor: bgColor,
       }}
     >
-      <Typography fontWeight="bold" fontSize={16} mb={2}>
+      <Typography fontWeight="bold" fontSize={16} mb={2} color={textColor}>
         Top Hiring Sources
       </Typography>
-      <Chart options={options} series={series} type="bar" height={300} />
+      <Chart options={options} series={series} type="bar" height={350} />
     </Box>
   );
 };

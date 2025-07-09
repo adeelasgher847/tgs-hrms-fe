@@ -4,7 +4,12 @@ import CheckedIcon from "../../../assets/dashboardIcon/checked.svg";
 import stopwatchIcon from "../../../assets/dashboardIcon/stopwatch.svg";
 import banIcon from "../../../assets/dashboardIcon/ban.svg";
 import beachIcon from "../../../assets/dashboardIcon/beach-bed.svg";
+import { useOutletContext } from "react-router-dom";
 export default function AvailabilityCardsGrid() {
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const bgColor = darkMode ? "#111" : "#fff";
+  const borderColor = darkMode ? "#252525" : "#f0f0f0";
+  const textColor = darkMode ? "#8f8f8f" : "#000";
   const cards = [
     {
       title: "Attendance",
@@ -13,7 +18,13 @@ export default function AvailabilityCardsGrid() {
         <img
           src={CheckedIcon}
           alt="Attendance"
-          style={{ width: 30, height: 30 }}
+          style={{
+            width: 30,
+            height: 30,
+            filter: darkMode
+              ? "invert(1) brightness(0.4)"
+              : "grayscale(100%) brightness(55%)",
+          }}
         />
       ),
       BorderColor: "#f0f0f0",
@@ -24,8 +35,14 @@ export default function AvailabilityCardsGrid() {
       icon: (
         <img
           src={stopwatchIcon}
-          alt="Attendance"
-          style={{ width: 30, height: 30 }}
+          alt="LateComing"
+          style={{
+            width: 30,
+            height: 30,
+            filter: darkMode
+              ? "invert(1) brightness(0.4)"
+              : "grayscale(100%) brightness(55%)",
+          }}
         />
       ),
       BorderColor: "#f0f0f0",
@@ -35,7 +52,17 @@ export default function AvailabilityCardsGrid() {
       title: "Absent",
       value: 5,
       icon: (
-        <img src={banIcon} alt="Attendance" style={{ width: 30, height: 30 }} />
+        <img
+          src={banIcon}
+          alt="Absent"
+          style={{
+            width: 30,
+            height: 30,
+            filter: darkMode
+              ? "invert(1) brightness(0.4)"
+              : "grayscale(100%) brightness(55%)",
+          }}
+        />
       ),
       BorderColor: "#f0f0f0",
       color: "black",
@@ -46,8 +73,14 @@ export default function AvailabilityCardsGrid() {
       icon: (
         <img
           src={beachIcon}
-          alt="Attendance"
-          style={{ width: 30, height: 30 }}
+          alt="LeaveApply"
+          style={{
+            width: 30,
+            height: 30,
+            filter: darkMode
+              ? "invert(1) brightness(0.4)"
+              : "grayscale(100%) brightness(55%)",
+          }}
         />
       ),
       BorderColor: "#f0f0f0",
@@ -58,14 +91,14 @@ export default function AvailabilityCardsGrid() {
   return (
     <Box
       sx={{
-        border: "1px solid #f0f0f0",
+        border: `1px solid  ${borderColor}`,
         borderRadius: "0.375rem",
-        backgroundColor: "#fff",
+        backgroundColor: bgColor,
       }}
       p={2}
     >
       {/* Section Title */}
-      <Typography fontWeight="bold" fontSize={16} mb={2}>
+      <Typography fontWeight="bold" fontSize={16} mb={2} color={textColor}>
         Employees Availability
       </Typography>
 

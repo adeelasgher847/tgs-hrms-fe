@@ -1,4 +1,5 @@
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
+import { useOutletContext } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -25,17 +26,21 @@ const data = [
 export default function EmployeesInfoChart() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const bgColor = darkMode ? "#111" : "#fff";
+  const textColor = darkMode ? "#8f8f8f" : "#000";
+  const borderColor = darkMode ? "#252525" : "#f0f0f0";
 
   return (
     <Box
       sx={{
         p: 2,
-        border: "1px solid #f0f0f0",
+        border: `1px solid ${borderColor}`,
         borderRadius: "0.375rem",
-        backgroundColor: "#fff",
+        backgroundColor: bgColor,
       }}
     >
-      <Typography fontWeight="bold" mb={2}>
+      <Typography fontWeight="bold" mb={2} color={textColor}>
         Employees Info
       </Typography>
 
@@ -55,10 +60,21 @@ export default function EmployeesInfoChart() {
             <CartesianGrid horizontal={false} vertical={false} />
             <XAxis
               dataKey="date"
-              tick={{
-                fontSize: 12,
-                angle: isMobile ? -45 : 0,
-                textAnchor: isMobile ? "end" : "middle",
+              tick={(props) => {
+                const { x, y, payload } = props;
+                return (
+                  <text
+                    x={x}
+                    y={y}
+                    dy={16}
+                    fontSize={12}
+                    transform={isMobile ? `rotate(-45, ${x}, ${y})` : undefined}
+                    textAnchor={isMobile ? "end" : "middle"}
+                    fill={textColor}
+                  >
+                    {payload.value}
+                  </text>
+                );
               }}
               height={isMobile ? 50 : 30}
               interval={0}
@@ -73,7 +89,19 @@ export default function EmployeesInfoChart() {
               tick={false}
             />
 
-            <Tooltip />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: darkMode ? "#1e1e1e" : "#fff",
+                border: "1px solid #ccc",
+                borderRadius: "6px",
+                color: darkMode ? "#fff" : "#000",
+                fontSize: "14px",
+              }}
+              labelStyle={{
+                color: darkMode ? "#ccc" : "#333",
+                fontWeight: 600,
+              }}
+            />
 
             <Line
               type="monotone"

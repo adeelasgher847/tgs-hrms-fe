@@ -9,15 +9,17 @@ import PerformanceChart from "./DashboardContent/PerformanceChart";
 import TopPerformersProps from "./DashboardContent/TopPerformance/TopPerformersProps";
 import IconImageCardProps from "./DashboardContent/TotalApplication/IconImageCardProps";
 import ApplicationStats from "./DashboardContent/ApplicationStats/ApplicationStats";
-
+import { useOutletContext } from "react-router-dom";
 const Dashboard: React.FC = () => {
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   return (
     <Box
       sx={{
         minHeight: "100vh",
         px: { xs: 2, md: 4 },
         py: 3,
-        backgroundColor: "#f9fafb",
+        //  backgroundColor: darkMode ? "#1a1a2e" : "#f9fafb",
+        color: darkMode ? "#fff" : "#000",
       }}
     >
       {/* Grid*/}

@@ -6,9 +6,18 @@
   font-family: "Open Sans", sans-serif;
   overflow: hidden;
 }
-body{
-padding: 0;
-margin: 0;
+body {
+  padding: 0;
+  margin: 0;
+}
+body.dark-mode {
+  background-color: #1e1f20;
+  /* color: #ffffff; */
+}
+
+body.light-mode {
+  background-color: #f9fafb;
+  color: #000000;
 }
 :root {
   --dark-color: #484c7f;

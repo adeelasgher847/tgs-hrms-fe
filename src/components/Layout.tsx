@@ -1,4 +1,4 @@
-import { Box,useMediaQuery, useTheme } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import Sidebar from "./Sidebar";
 import Navbar from "./Nabvar";
 import { Outlet } from "react-router-dom";
@@ -11,11 +11,14 @@ const Layout = () => {
   const isLargeScreen = useMediaQuery(theme.breakpoints.up("lg"));
   const [sidebarOpen, setSidebarOpen] = useState(isLargeScreen);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
-
+  const [rtlMode, setRtlMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   // Update sidebar state when screen size changes
   useEffect(() => {
     setSidebarOpen(isLargeScreen); // lg+ → open by default, others → closed
-  }, [isLargeScreen]);
+    document.body.classList.toggle("dark-mode", darkMode);
+    document.body.classList.toggle("light-mode", !darkMode);
+  }, [isLargeScreen, darkMode]);
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
@@ -28,6 +31,7 @@ const Layout = () => {
         height: "100vh",
         fontFamily: "sans-serif",
         overflow: "hidden",
+        // flexDirection: rtlMode ? "row-reverse" : "row",
       }}
     >
       {/* Sidebar */}
@@ -41,6 +45,7 @@ const Layout = () => {
             padding: "20px",
             display: "flex",
             flexDirection: "column",
+            direction: rtlMode ? "rtl" : "ltr",
             height: {
               xs: "100vh",
               lg: "calc(100vh - 90px)",
@@ -50,22 +55,28 @@ const Layout = () => {
               xs: "absolute",
               lg: "fixed",
             },
-            left: 0,
+            // left: 0,
             top: 0,
+            left: rtlMode ? "auto" : 0,
+            right: rtlMode ? 0 : "auto",
             m: {
               xs: 0,
               lg: 3,
             },
-
             mr: 0,
             borderRadius: {
               xs: 0,
-              lg: "24px",
+              lg: "17.6px",
             },
             zIndex: 1000,
           }}
         >
-          <Sidebar />
+          <Sidebar
+            rtlMode={rtlMode}
+            setRtlMode={setRtlMode}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+          />
         </Box>
       )}
       {/* Right Section */}
@@ -77,12 +88,17 @@ const Layout = () => {
           flexDirection: "column",
           overflow: "auto",
           height: "100%",
-          marginLeft: {
-            xs: 0,
-            lg: sidebarOpen ? "274px" : "0px",
-          },
+          // marginLeft: {
+          //   xs: 0,
+          //   lg: sidebarOpen ? "274px" : "0px",
+          // },
           transition: "margin 0.3s ease",
+          marginLeft: isLargeScreen && sidebarOpen && !rtlMode ? "274px" : 0,
+          marginRight: isLargeScreen && sidebarOpen && rtlMode ? "274px" : 0,
+          // bgcolor: "#fff", // 🔁 Here
+          color: darkMode ? "#fff" : "#000",
           width: "100%",
+          direction: rtlMode ? "rtl" : "ltr",
         }}
       >
         {/* Navbar */}
@@ -100,9 +116,11 @@ const Layout = () => {
           <Navbar
             onOpenInviteModal={() => setInviteModalOpen(true)}
             onToggleSidebar={toggleSidebar}
+            darkMode={darkMode}
           />
           <EmployeeInviteModal
             open={inviteModalOpen}
+            darkMode={darkMode}
             onClose={() => setInviteModalOpen(false)}
           />
         </Box>
@@ -114,10 +132,10 @@ const Layout = () => {
           sx={{
             flex: 1,
 
-            backgroundColor: "#fff",
+            // backgroundColor: "#fff",
           }}
         >
-          <Outlet />
+          <Outlet context={{ darkMode }} />
         </Box>
       </Box>
     </Box>
