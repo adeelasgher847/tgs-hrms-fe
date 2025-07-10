@@ -409,6 +409,7 @@ const Login: React.FC = () => {
                           "&.Mui-focused": {
                             backgroundColor: "white",
                           },
+                          
                         },
                         endAdornment: (
                           <InputAdornment position="end">
@@ -533,7 +534,8 @@ const Login: React.FC = () => {
                       ? "ليس لديك حساب بعد؟ "
                       : "Don't have an account yet? "}
                     <Link
-                      href="#"
+                      component={RouterLink}
+                      to="/Signup"
                       sx={{
                         color: "var(--yellow-color)",
                         fontWeight: 400,

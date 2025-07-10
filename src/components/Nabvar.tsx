@@ -52,7 +52,6 @@ const SearchIconWrapper = styled("div")(({ theme }) => ({
 }));
 
 const StyledInputBase = styled(InputBase)(() => ({
-  color: "black",
   fontSize: "16px",
   "& .MuiInputBase-input": {
     padding: 0,
@@ -132,6 +131,7 @@ const Navbar: React.FC<NavbarProps> = ({
                   inputProps={{ "aria-label": "search" }}
                   sx={{
                     transition: "all 0.3s ease-in-out",
+                    color: darkMode ? "white" : "black",
                     "& input": {
                       backgroundColor: "transparent",
                       transition: "all 0.3s ease-in-out",
