@@ -15,6 +15,7 @@ import {
   Alert,
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
+import { useOutletContext } from "react-router-dom";
 import type {
   Department,
   DepartmentFormData,
@@ -38,6 +39,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
   const [formData, setFormData] = useState<DepartmentFormData>({
     name: "",
@@ -118,15 +120,11 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Fake API
       onSubmit(formData);
       onClose();
     } catch (error) {
@@ -139,17 +137,12 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   const handleInputChange =
     (field: keyof DepartmentFormData) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev: DepartmentFormData) => ({
+      setFormData((prev) => ({
         ...prev,
         [field]: e.target.value,
       }));
-
-      // Clear error when user starts typing
       if (errors[field]) {
-        setErrors((prev: DepartmentFormErrors) => ({
-          ...prev,
-          [field]: undefined,
-        }));
+        setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
     };
 
@@ -162,6 +155,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         flexDirection: "column",
         gap: 3,
         direction: isRtl ? "rtl" : "ltr",
+        color: darkMode ? "#e0e0e0" : "inherit",
       }}
     >
       <TextField
@@ -174,11 +168,17 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         required
         autoFocus={!isRtl}
         InputLabelProps={{
-          style: { textAlign: isRtl ? "right" : "left" },
+          style: {
+            textAlign: isRtl ? "right" : "left",
+            color: darkMode ? "#ccc" : undefined,
+          },
         }}
         sx={{
+          "& .MuiInputBase-root": {
+            color: darkMode ? "#fff" : undefined,
+          },
           "& .MuiInputBase-input": {
-            textAlign: "left", // Always left for English
+            textAlign: "left",
           },
         }}
       />
@@ -193,11 +193,17 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         required
         autoFocus={isRtl}
         InputLabelProps={{
-          style: { textAlign: isRtl ? "right" : "left" },
+          style: {
+            textAlign: isRtl ? "right" : "left",
+            color: darkMode ? "#ccc" : undefined,
+          },
         }}
         sx={{
+          "& .MuiInputBase-root": {
+            color: darkMode ? "#fff" : undefined,
+          },
           "& .MuiInputBase-input": {
-            textAlign: "right", // Always right for Arabic
+            textAlign: "right",
             fontFamily: "Arial, sans-serif",
           },
         }}
@@ -217,11 +223,17 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         multiline
         rows={3}
         InputLabelProps={{
-          style: { textAlign: isRtl ? "right" : "left" },
+          style: {
+            textAlign: isRtl ? "right" : "left",
+            color: darkMode ? "#ccc" : undefined,
+          },
         }}
         sx={{
+          "& .MuiInputBase-root": {
+            color: darkMode ? "#fff" : undefined,
+          },
           "& .MuiInputBase-input": {
-            textAlign: "left", // Always left for English
+            textAlign: "left",
           },
         }}
       />
@@ -240,18 +252,31 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         multiline
         rows={3}
         InputLabelProps={{
-          style: { textAlign: isRtl ? "right" : "left" },
+          style: {
+            textAlign: isRtl ? "right" : "left",
+            color: darkMode ? "#ccc" : undefined,
+          },
         }}
         sx={{
+          "& .MuiInputBase-root": {
+            color: darkMode ? "#fff" : undefined,
+          },
           "& .MuiInputBase-input": {
-            textAlign: "right", // Always right for Arabic
+            textAlign: "right",
             fontFamily: "Arial, sans-serif",
           },
         }}
       />
 
       {Object.keys(errors).length > 0 && (
-        <Alert severity="error" sx={{ textAlign: isRtl ? "right" : "left" }}>
+        <Alert
+          severity="error"
+          sx={{
+            textAlign: isRtl ? "right" : "left",
+            bgcolor: darkMode ? "#2b2b2b" : undefined,
+            color: darkMode ? "#f44336" : undefined,
+          }}
+        >
           {isRtl
             ? "يرجى تصحيح الأخطاء أعلاه"
             : "Please correct the errors above"}
@@ -290,6 +315,12 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     </>
   );
 
+  const paperSx = {
+    direction: isRtl ? "rtl" : "ltr",
+    backgroundColor: darkMode ? "#1e1e1e" : "#fff",
+    color: darkMode ? "#e0e0e0" : undefined,
+  };
+
   if (isMobile) {
     return (
       <Drawer
@@ -297,11 +328,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         open={open}
         onClose={onClose}
         PaperProps={{
-          sx: {
-            width: "100%",
-            maxWidth: 400,
-            direction: isRtl ? "rtl" : "ltr",
-          },
+          sx: { width: "100%", maxWidth: 400, ...paperSx },
         }}
       >
         <Box sx={{ p: 3 }}>
@@ -310,12 +337,10 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
               {title}
             </Typography>
             <IconButton onClick={onClose} size="small">
-              <CloseIcon />
+              <CloseIcon sx={{ color: darkMode ? "#fff" : undefined }} />
             </IconButton>
           </Box>
-
           {formContent}
-
           <Box
             sx={{ display: "flex", gap: 1, mt: 3, justifyContent: "flex-end" }}
           >
@@ -327,19 +352,18 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   }
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        sx: {
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle
+        sx={{  }}
+        style={{
           direction: isRtl ? "rtl" : "ltr",
-        },
-      }}
-    >
-      <DialogTitle sx={{ textAlign: isRtl ? "right" : "left" }}>
-        {title}
+          backgroundColor: darkMode ? "#1e1e1e" : "#fff",
+          color: darkMode ? "#e0e0e0" : undefined,
+        }}
+      >
+        <Typography sx={{ textAlign: isRtl ? "right" : "left" }}>
+          {title}
+        </Typography>
         <IconButton
           onClick={onClose}
           sx={{
@@ -347,15 +371,26 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
             right: isRtl ? "auto" : 8,
             left: isRtl ? 8 : "auto",
             top: 8,
+            color: darkMode ? "#fff" : undefined,
           }}
         >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-
-      <DialogContent sx={{ pt: 2 }}>{formContent}</DialogContent>
-
-      <DialogActions sx={{ p: 3, pt: 2 }}>{actionButtons}</DialogActions>
+      <DialogContent
+        sx={{
+          backgroundColor: darkMode ? "#1e1e1e" : "#fff",
+          color: darkMode ? "#e0e0e0" : undefined,
+          pt: 2,
+        }}
+      >
+        <Box sx={{ direction: isRtl ? "rtl" : "ltr" }}>{formContent}</Box>
+      </DialogContent>
+      <DialogActions
+        sx={{ p: 3, pt: 2, backgroundColor: darkMode ? "#1e1e1e" : "#fff" }}
+      >
+        {actionButtons}
+      </DialogActions>
     </Dialog>
   );
 };

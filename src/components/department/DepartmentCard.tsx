@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import type { Department } from "../../types";
+import { useOutletContext } from "react-router-dom";
 
 interface DepartmentCardProps {
   department: Department;
@@ -23,6 +24,11 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
   onDelete,
   isRtl = false,
 }) => {
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const bgColor = darkMode ? "#111" : "#fff";
+  const textColor = darkMode ? "#ccc" : "#000";
+  const borderColor = darkMode ? "#333" : "#f0f0f0";
+
   return (
     <Card
       sx={{
@@ -32,6 +38,13 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
         flexDirection: "column",
         transition: "all 0.3s ease",
         direction: isRtl ? "rtl" : "ltr",
+        backgroundColor: bgColor,
+        color: textColor,
+        border: `1px solid ${borderColor}`,
+        "&:hover": {
+          transform: "translateY(-4px)",
+          boxShadow: 4,
+        },
       }}
     >
       <CardContent sx={{ flexGrow: 1, pb: 1 }}>
@@ -41,12 +54,12 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
             component="h2"
             sx={{
               fontWeight: 600,
-              color: "text.primary",
               textAlign: isRtl ? "right" : "left",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
               maxWidth: "100%",
+              color: textColor,
             }}
           >
             {isRtl ? department.nameAr : department.name}
@@ -57,7 +70,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
           <Typography
             variant="body2"
             sx={{
-              color: "text.secondary",
+              color: darkMode ? "#aaa" : "text.secondary",
               textAlign: isRtl ? "right" : "left",
               mb: 2,
               fontWeight: 700,
@@ -70,16 +83,16 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
           </Typography>
         )}
 
-        <Divider sx={{ mb: 2 }} />
+        <Divider sx={{ mb: 2, borderColor: borderColor }} />
 
         {(isRtl ? department.descriptionAr : department.description) && (
           <Typography
             variant="body2"
-            color="text.secondary"
             sx={{
               mb: 2,
               lineHeight: 1.6,
               textAlign: isRtl ? "right" : "left",
+              color: darkMode ? "#aaa" : "text.secondary",
             }}
           >
             {isRtl ? department.descriptionAr : department.description}
@@ -89,7 +102,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
 
       <CardActions
         sx={{
-          justifyContent: isRtl ? "flex-start" : "flex-start",
+          justifyContent: "flex-start",
           px: 2,
           pb: 2,
         }}
@@ -100,9 +113,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
             color="success"
             size="small"
             sx={{
-              borderWidth: 1,
-              borderStyle: "solid",
-              borderColor: "#f0f0f0",
+              border: `1px solid ${borderColor}`,
               borderTopLeftRadius: isRtl ? 0 : "5px",
               borderBottomLeftRadius: isRtl ? 0 : "5px",
               borderTopRightRadius: isRtl ? "5px" : 0,
@@ -121,9 +132,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
             color="error"
             size="small"
             sx={{
-              borderWidth: 1,
-              borderStyle: "solid",
-              borderColor: "#f0f0f0",
+              border: `1px solid ${borderColor}`,
               borderTopLeftRadius: isRtl ? "5px" : 0,
               borderBottomLeftRadius: isRtl ? "5px" : 0,
               borderTopRightRadius: isRtl ? 0 : "5px",

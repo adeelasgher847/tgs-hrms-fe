@@ -12,6 +12,7 @@ import {
   Divider,
 } from "@mui/material";
 import { Add as AddIcon, Business as BusinessIcon } from "@mui/icons-material";
+import { useOutletContext } from "react-router-dom";
 import type { Department, DepartmentFormData } from "../../types";
 import { mockDepartments } from "../../data/mock-departments";
 import { DepartmentCard } from "./DepartmentCard";
@@ -21,7 +22,17 @@ import { DeleteConfirmationModal } from "./Delete-confirmation-modal";
 export const DepartmentList: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
+  /* ---------- palette helpers ---------- */
+  // const bgPage = darkMode ? "#0f0f0f" : "#f8f8f8";
+  const bgPaper = darkMode ? "#1b1b1b" : "#fff";
+  const textPrimary = darkMode ? "#e0e0e0" : theme.palette.text.primary;
+  const textSecond = darkMode ? "#9a9a9a" : theme.palette.text.secondary;
+  const dividerCol = darkMode ? "#333" : "#ccc";
+  const textColor = darkMode ? "#8f8f8f" : "#000";
+
+  /* ---------- local state ---------- */
   const [departments, setDepartments] = useState<Department[]>(mockDepartments);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -29,6 +40,7 @@ export const DepartmentList: React.FC = () => {
     useState<Department | null>(null);
   const [isRtl, setIsRtl] = useState(false);
 
+  /* ---------- handlers ---------- */
   const handleCreateDepartment = (data: DepartmentFormData) => {
     const newDepartment: Department = {
       id: Date.now().toString(),
@@ -43,15 +55,14 @@ export const DepartmentList: React.FC = () => {
   const handleEditDepartment = (data: DepartmentFormData) => {
     if (!selectedDepartment) return;
     setDepartments((prev) =>
-      prev.map((dept) =>
-        dept.id === selectedDepartment.id
+      prev.map((d) =>
+        d.id === selectedDepartment.id
           ? {
-              ...dept,
+              ...d,
               name: data.name,
               description: data.description || undefined,
-              updatedAt: new Date(),
             }
-          : dept
+          : d
       )
     );
     setSelectedDepartment(null);
@@ -61,31 +72,13 @@ export const DepartmentList: React.FC = () => {
   const handleDeleteDepartment = () => {
     if (!selectedDepartment) return;
     setDepartments((prev) =>
-      prev.filter((dept) => dept.id !== selectedDepartment.id)
+      prev.filter((d) => d.id !== selectedDepartment.id)
     );
     setSelectedDepartment(null);
     setIsDeleteModalOpen(false);
   };
 
-  const openEditModal = (department: Department) => {
-    setSelectedDepartment(department);
-    setIsFormModalOpen(true);
-  };
-
-  const openDeleteModal = (department: Department) => {
-    setSelectedDepartment(department);
-    setIsDeleteModalOpen(true);
-  };
-
-  const openCreateModal = () => {
-    setSelectedDepartment(null);
-    setIsFormModalOpen(true);
-  };
-
-  const toggleLanguage = () => {
-    setIsRtl(!isRtl);
-  };
-
+  /* ---------- UI ---------- */
   return (
     <Box
       sx={{
@@ -94,8 +87,9 @@ export const DepartmentList: React.FC = () => {
         minHeight: "100vh",
         px: { xs: 2, sm: 3, md: 4 },
         py: 3,
+        // bgcolor: bgPage,
+        color: textPrimary,
         boxSizing: "border-box",
-        // backgroundColor: "#f8f8f8",
       }}
     >
       {/* Header */}
@@ -110,52 +104,73 @@ export const DepartmentList: React.FC = () => {
           flexWrap: "wrap",
           gap: 2,
           boxShadow: "none",
+          backgroundColor: "unset",
+          // bgcolor: bgPaper,
+          color: textColor,
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-          }}
+        <Typography
+          variant="h4"
+          fontWeight={700}
+          boxShadow="none"
+          sx={{ textAlign: isRtl ? "right" : "left", px: 2, py: 1.5 }}
         >
-          <Box>
-            <Typography
-              variant="h4"
-              component="h1"
-              sx={{
-                fontWeight: 700,
+          {isRtl ? "إدارة الأقسام" : "Departments"}
+        </Typography>
 
-                textAlign: isRtl ? "right" : "left",
-              }}
-            >
-              {isRtl ? "إدارة الأقسام" : "Departments"}
-            </Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, px: 2 }}>
           <ToggleButtonGroup
             value={isRtl ? "ar" : "en"}
             exclusive
-            onChange={toggleLanguage}
+            onChange={() => setIsRtl(!isRtl)}
             size="small"
+            color={darkMode ? "primary" : "standard"}
           >
-            <ToggleButton value="en">EN</ToggleButton>
-            <ToggleButton value="ar">عربي</ToggleButton>
+            <ToggleButton
+              value="en"
+              sx={{
+                color: darkMode ? "#fff" : "#000",
+                borderColor: darkMode ? "#555" : "#ccc",
+                "&.Mui-selected": {
+                  color: "#fff",
+                  backgroundColor: darkMode ? "#6c757d" : "#484c7f",
+                },
+              }}
+            >
+              EN
+            </ToggleButton>
+            <ToggleButton
+              value="ar"
+              sx={{
+                color: darkMode ? "#fff" : "#000",
+                borderColor: darkMode ? "#444" : "#ccc",
+                "&.Mui-selected": {
+                  color: "#fff",
+                  backgroundColor: darkMode ? "#555" : "#484c7f",
+                },
+                "&:hover": {
+                  backgroundColor: darkMode ? "#333" : "#f0f0f0",
+                },
+              }}
+            >
+              عربي
+            </ToggleButton>
           </ToggleButtonGroup>
 
           {!isMobile && (
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={openCreateModal}
-              size="large"
+              onClick={() => {
+                setSelectedDepartment(null);
+                setIsFormModalOpen(true);
+              }}
               sx={{
                 borderRadius: 2,
                 textTransform: "none",
                 fontWeight: 600,
-                bgcolor: "#45407A",
+                bgcolor: darkMode ? "#605bd4" : "#45407A",
+                "&:hover": { bgcolor: darkMode ? "#726df0" : "#5b56a0" },
               }}
             >
               {isRtl ? "إنشاء قسم" : "Create Department"}
@@ -163,23 +178,24 @@ export const DepartmentList: React.FC = () => {
           )}
         </Box>
       </Paper>
-      <Divider sx={{ mb: 4, borderColor: "#ccc" }} />
+
+      <Divider sx={{ mb: 4, borderColor: dividerCol }} />
 
       {/* Content */}
       {departments.length === 0 ? (
         <Paper
           sx={{
             p: 4,
-
             textAlign: "center",
-            backgroundColor: "background.paper",
+            bgcolor: bgPaper,
+            color: textPrimary,
           }}
         >
-          <BusinessIcon sx={{ fontSize: 64, color: "grey.400", mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
+          <BusinessIcon sx={{ fontSize: 64, color: textSecond, mb: 2 }} />
+          <Typography variant="h6" color={textSecond} gutterBottom>
             {isRtl ? "لا توجد أقسام" : "No Departments Found"}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography variant="body2" color={textSecond} sx={{ mb: 3 }}>
             {isRtl
               ? "ابدأ بإنشاء قسم جديد لإدارة مؤسستك"
               : "Get started by creating your first department"}
@@ -187,7 +203,10 @@ export const DepartmentList: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={openCreateModal}
+            onClick={() => {
+              setSelectedDepartment(null);
+              setIsFormModalOpen(true);
+            }}
           >
             {isRtl ? "إنشاء قسم جديد" : "Create First Department"}
           </Button>
@@ -201,21 +220,27 @@ export const DepartmentList: React.FC = () => {
             justifyContent: "flex-start",
           }}
         >
-          {departments.map((department) => (
+          {departments.map((d) => (
             <Box
-              key={department.id}
+              key={d.id}
               sx={{
                 width: {
                   xs: "100%",
-                  sm: "calc(50% - 12px)", // 2 cards
+                  sm: "calc(50% - 12px)",
                   md: "calc(50% - 12px)",
                 },
               }}
             >
               <DepartmentCard
-                department={department}
-                onEdit={openEditModal}
-                onDelete={openDeleteModal}
+                department={d}
+                onEdit={(dept) => {
+                  setSelectedDepartment(dept);
+                  setIsFormModalOpen(true);
+                }}
+                onDelete={(dept) => {
+                  setSelectedDepartment(dept);
+                  setIsDeleteModalOpen(true);
+                }}
                 isRtl={isRtl}
               />
             </Box>
@@ -223,11 +248,14 @@ export const DepartmentList: React.FC = () => {
         </Box>
       )}
 
-      {/* FAB for Mobile */}
+      {/* FAB (mobile) */}
       {isMobile && (
         <Fab
           color="primary"
-          onClick={openCreateModal}
+          onClick={() => {
+            setSelectedDepartment(null);
+            setIsFormModalOpen(true);
+          }}
           sx={{
             position: "fixed",
             bottom: 24,
