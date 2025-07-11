@@ -123,7 +123,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 }}
               >
                 <SearchIconWrapper>
-                  <SearchIcon />
+                  <SearchIcon  sx={{color:darkMode ? "#8f8f8f" : "#000"}}/>
                 </SearchIconWrapper>
 
                 <StyledInputBase

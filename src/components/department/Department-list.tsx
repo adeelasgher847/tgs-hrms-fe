@@ -133,7 +133,7 @@ export const DepartmentList: React.FC = () => {
                 borderColor: darkMode ? "#555" : "#ccc",
                 "&.Mui-selected": {
                   color: "#fff",
-                  backgroundColor: darkMode ? "#6c757d" : "#484c7f",
+                  backgroundColor: darkMode ? "transparent" : "#484c7f",
                 },
               }}
             >
@@ -216,7 +216,7 @@ export const DepartmentList: React.FC = () => {
           sx={{
             display: "flex",
             flexWrap: "wrap",
-            gap: 3,
+            gap: 2,
             justifyContent: "flex-start",
           }}
         >

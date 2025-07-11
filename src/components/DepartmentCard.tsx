@@ -41,8 +41,8 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
         backgroundColor: cardBg,
         boxShadow: cardShadow,
         "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: hoverShadow,
+          // transform: "translateY(-4px)",
+          // boxShadow: hoverShadow,
         },
       }}
     >

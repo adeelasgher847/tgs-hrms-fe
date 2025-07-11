@@ -49,7 +49,7 @@ const menuItems: MenuItem[] = [
     label: "Dashboard",
     icon: <Dashboard />,
     subItems: [
-      { label: "Hr Dashboard", path: "" }, // ✅ default index route
+      { label: "Hr Dashboard", path: "" },
       { label: "Project Dashboard", path: "project-dashboard" },
     ],
   },
@@ -262,7 +262,6 @@ export default function Sidebar({
           })}
         </List>
       </Box>
-
       {/* Bottom Settings */}
       <Box sx={{ px: 2, pb: 2 }}>
         <Box
