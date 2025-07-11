@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
 import './App.css';
 import Signup from './components/Signup';
+import { DepartmentList } from "./components/department/Department-list";
 function App() {
   return (
     <Router>
@@ -14,9 +15,11 @@ function App() {
         <Route path="/Signup" element={<Signup/>} />
         <Route path="/dashboard" element={<Layout />}>
           <Route index element={<Dashboard />} />
+           <Route path="departments" element={<DepartmentList />} />
         </Route>
       </Routes>
     </Router>
+
   );
 }
 

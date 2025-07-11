@@ -7,12 +7,9 @@ import {
   ListItemText,
   Collapse,
   Switch,
-  Divider,
 } from "@mui/material";
 import {
   Dashboard,
-  ExpandLess,
-  ExpandMore,
   BusinessCenter,
   ConfirmationNumber,
   People,
@@ -22,18 +19,22 @@ import {
   Apps,
   Code,
   Widgets,
-  ChevronLeft,
 } from "@mui/icons-material";
 import dotted from "../assets/dashboardIcon/dotted-down.svg";
 import Clipboard from "../assets/dashboardIcon/Clipboard";
 import bubbleleft from "../assets/dashboardIcon/bubble-left.svg";
 import { useState } from "react";
+import { NavLink } from "react-router-dom";
 
-// ✅ Menu item type
+// 🔹 Types
+interface SubItem {
+  label: string;
+  path: string;
+}
 interface MenuItem {
   label: string;
   icon: React.ReactNode;
-  subItems: string[];
+  subItems: SubItem[];
   color?: string;
 }
 interface SidebarProps {
@@ -42,58 +43,90 @@ interface SidebarProps {
   darkMode: boolean;
   setDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
 }
-// ✅ Menu data with type safety
+
+// 🔹 Menu data
 const menuItems: MenuItem[] = [
   {
     label: "Dashboard",
     icon: <Dashboard />,
-    subItems: ["Hr Dashboard", "Project Dashboard"],
-    color: "orange",
+    subItems: [
+      { label: "Hr Dashboard", path: "" },
+      { label: "Project Dashboard", path: "" },
+    ],
   },
   {
     label: "Projects",
     icon: <BusinessCenter />,
-    subItems: ["Project List", "Add Project"],
+    subItems: [
+      { label: "Project List", path: "" },
+      { label: "Add Project", path: "" },
+    ],
   },
   {
     label: "Tickets",
     icon: <ConfirmationNumber />,
-    subItems: ["All Tickets", "Create Ticket"],
+    subItems: [
+      { label: "All Tickets", path: "" },
+      { label: "Create Ticket", path: "" },
+    ],
   },
   {
     label: "Our Clients",
     icon: <People />,
-    subItems: ["Client List", "Add Client"],
+    subItems: [
+      { label: "Client List", path: "departments" }, // ✅ ROUTE
+      { label: "Add Client", path: "departments/new" },
+    ],
   },
   {
     label: "Employees",
     icon: <Group />,
-    subItems: ["Employee List", "Add Employee"],
+    subItems: [
+      { label: "Employee List", path: "" },
+      { label: "Add Employee", path: "" },
+    ],
   },
   {
     label: "Accounts",
     icon: <Receipt />,
-    subItems: ["Invoice", "Payments"],
+    subItems: [
+      { label: "Invoice", path: "" },
+      { label: "Payments", path: "" },
+    ],
   },
   {
     label: "Payroll",
     icon: <Payments />,
-    subItems: ["Payroll Summary", "Payslips"],
+    subItems: [
+      { label: "Payroll Summary", path: "" },
+      { label: "Payslips", path: "" },
+    ],
   },
   {
     label: "App",
     icon: <Apps />,
-    subItems: ["Chat", "Calendar"],
+    subItems: [
+      { label: "Chat", path: "" },
+      { label: "Calendar", path: "" },
+    ],
   },
   {
     label: "Other Pages",
     icon: <Code />,
-    subItems: ["Login", "Register", "Error"],
+    subItems: [
+      { label: "Login", path: "" },
+      { label: "Register", path: "" },
+      { label: "Error", path: "" },
+    ],
   },
   {
     label: "UI Components",
     icon: <Widgets />,
-    subItems: ["Buttons", "Cards", "Modals"],
+    subItems: [
+      { label: "Buttons", path: "" },
+      { label: "Cards", path: "" },
+      { label: "Modals", path: "" },
+    ],
   },
 ];
 
@@ -104,7 +137,6 @@ export default function Sidebar({
   setDarkMode,
 }: SidebarProps) {
   const [openItem, setOpenItem] = useState<string>("Dashboard");
-  // const [darkMode, setDarkMode] = useState<boolean>(false);
 
   const handleClick = (label: string): void => {
     setOpenItem(openItem === label ? "" : label);
@@ -184,25 +216,22 @@ export default function Sidebar({
                 />
               </ListItemButton>
 
-              <Collapse
-                in={openItem === item.label}
-                timeout="auto"
-                unmountOnExit
-              >
+              {/* SubItems */}
+              <Collapse in={openItem === item.label} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
-                  {item.subItems.map((sub, index) => (
+                  {item.subItems.map((sub) => (
                     <ListItemButton
-                      key={index}
+                      key={sub.path + sub.label}
+                      component={NavLink}
+                      to={`/dashboard/${sub.path}`}
                       sx={{
                         pl: 6,
-                        color:
-                          item.label === "Dashboard" && index === 0
-                            ? "orange"
-                            : "white",
                         fontSize: "14px",
+                        color: ({ isActive }: any) =>
+                          isActive ? "orange" : "white",
                       }}
                     >
-                      <ListItemText primary={sub} />
+                      <ListItemText primary={sub.label} />
                     </ListItemButton>
                   ))}
                 </List>
@@ -211,35 +240,20 @@ export default function Sidebar({
           ))}
         </List>
       </Box>
-      {/* Bottom Controls */}
+
+      {/* Bottom Settings */}
       <Box sx={{ px: 2, pb: 2 }}>
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="space-between"
-          mb={1}
-        >
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
           <Typography variant="body2">Enable Dark Mode!</Typography>
-          <Switch
-            checked={darkMode}
-            onChange={() => setDarkMode((prev) => !prev)}
-          />
+          <Switch checked={darkMode} onChange={() => setDarkMode((prev) => !prev)} />
         </Box>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="body2">Enable RTL Mode!</Typography>
-          <Switch
-            checked={rtlMode}
-            onChange={() => setRtlMode((prev) => !prev)}
-          />
+          <Switch checked={rtlMode} onChange={() => setRtlMode((prev) => !prev)} />
         </Box>
-        {/* Sidebar Collapse Icon */}
+
+        {/* Collapse Button */}
         <Box textAlign="center" mt={2}>
-          <Box
-            sx={{
-              display: "inline-block",
-              paddingBottom: "4px",
-            }}
-          />
           <Box
             component="img"
             src={bubbleleft}
