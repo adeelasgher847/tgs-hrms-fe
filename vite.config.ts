@@ -2,17 +2,18 @@
 
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path from "path"; // ✅ Use without "node:"
-import { fileURLToPath } from "url"; // ✅ Use without "node:"
-import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
+import svgr from "vite-plugin-svgr"; // ✅ SVG support
+import path from "path";
+import { fileURLToPath } from "url";
+import storybookTest from "@storybook/addon-vitest/vitest-plugin";
 
-// ✅ Manual fix for __dirname (ESM compatible)
+// ✅ Fix __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Vite config with vitest + storybook plugin
+// ✅ Final merged config
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), svgr()], // 🟢 both react & svgr
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
@@ -22,11 +23,9 @@ export default defineConfig({
     projects: [
       {
         extends: true,
-        plugins: [
-          storybookTest({
-            configDir: path.join(__dirname, ".storybook"),
-          }),
-        ],
+        // plugins: [
+        //   storybookTest(),
+        // ],
         test: {
           name: "storybook",
           browser: {
