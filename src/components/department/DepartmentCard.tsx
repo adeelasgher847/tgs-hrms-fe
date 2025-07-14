@@ -7,9 +7,11 @@ import {
   Box,
   Divider,
 } from "@mui/material";
-import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
+// import { Delete as DeleteIcon } from "@mui/icons-material";
 import type { Department } from "../../types";
 import { useOutletContext } from "react-router-dom";
+import edit from "../../assets/dashboardIcon/edit.svg";
+import deleteIcon from "../../assets/dashboardIcon/ui-delete.svg";
 
 interface DepartmentCardProps {
   department: Department;
@@ -41,7 +43,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
         backgroundColor: bgColor,
         color: textColor,
         border: `1px solid ${borderColor}`,
-        boxShadow:"unset",
+        boxShadow: "unset",
         "&:hover": {
           // transform: "translateY(-4px)",
           // boxShadow: 4,
@@ -125,7 +127,17 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               },
             }}
           >
-            <EditIcon fontSize="small" />
+            <img
+              src={edit}
+              alt="Absent"
+              style={{
+                width: 15,
+                height: 15,
+                filter:
+                  "invert(48%) sepia(59%) saturate(528%) hue-rotate(85deg) brightness(90%) contrast(91%)",
+              }}
+            />
+            {/* <EditIcon fontSize="small" /> */}
           </IconButton>
 
           <IconButton
@@ -144,7 +156,16 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               },
             }}
           >
-            <DeleteIcon fontSize="small" />
+            <img
+              src={deleteIcon}
+              alt="Delete"
+              style={{
+                width: 15,
+                height: 15,
+                filter:
+                  "invert(28%) sepia(97%) saturate(1404%) hue-rotate(329deg) brightness(95%) contrast(96%)",
+              }}
+            />
           </IconButton>
         </Box>
       </CardActions>

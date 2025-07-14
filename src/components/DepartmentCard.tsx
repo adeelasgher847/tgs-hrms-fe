@@ -23,11 +23,11 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
   onEdit,
   onDelete,
   isRtl = false,
-  darkMode = false,
+  // darkMode = false,
 }) => {
   const cardBg = "transparent"; // no background in both modes
   const cardShadow = "none"; // no shadow
-  const hoverShadow = darkMode ? 4 : 2;
+  // const hoverShadow = darkMode ? 4 : 2;
 
   return (
     <Card

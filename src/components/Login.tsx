@@ -103,7 +103,7 @@ const Login: React.FC = () => {
         <Box
           sx={{
             height: "100%",
-            display: "flex",
+            // display: "flex",
             justifyContent: "center",
             alignItems: "center",
             direction: lang === "ar" ? "rtl" : "ltr",
@@ -115,7 +115,9 @@ const Login: React.FC = () => {
               flexDirection: { xs: "column", md: "row" },
               alignItems: "center",
               justifyContent: "center",
-              gap: "90px",
+              // gap: "2px",
+              height: "100%",
+              margin: "auto",
             }}
           >
             {/* Left Side - Image and Title */}

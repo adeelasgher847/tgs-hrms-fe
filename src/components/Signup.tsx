@@ -46,7 +46,7 @@ const Signup: React.FC = () => {
         <Box
           sx={{
             height: "100%",
-            display: "flex",
+            // display: "flex",
             justifyContent: "center",
             alignItems: "center",
             direction: lang === "ar" ? "rtl" : "ltr",
@@ -58,7 +58,9 @@ const Signup: React.FC = () => {
               flexDirection: { xs: "column", md: "row" },
               alignItems: "center",
               justifyContent: "center",
-              gap: "90px",
+              // gap: "90px",
+              height: "100%",
+              margin: "auto",
             }}
           >
             {/* Left Side */}

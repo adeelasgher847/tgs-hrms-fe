@@ -1,7 +1,11 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
-
+import AvatarOne from "../assets/NavbarAvatar/avatarone.jpg"
+import AvatarTwo from "../assets/NavbarAvatar/avatartwo.jpg"
+import AvatarThree from "../assets/NavbarAvatar/avatarthree.jpg"
+import AvatarFour from "../assets/NavbarAvatar/avatarfour.jpg"
+import AvatarProfile from "../assets/NavbarAvatar/ProfileAvatar.png"
 import {
   AppBar,
   Box,
@@ -206,22 +210,27 @@ const Navbar: React.FC<NavbarProps> = ({
             >
               <Avatar
                 alt="User 1"
-                src="/avatars/user1.png"
+                src={AvatarOne}
                 sx={{ width: 32, height: 32 }}
               />
               <Avatar
                 alt="User 2"
-                src="/avatars/user2.png"
+                src={AvatarTwo}
                 sx={{ width: 32, height: 32 }}
               />
               <Avatar
                 alt="User 3"
-                src="/avatars/user3.png"
+                src={AvatarThree}
                 sx={{ width: 32, height: 32 }}
               />
               <Avatar
                 alt="User 4"
-                src="/avatars/user4.png"
+                src={AvatarFour}
+                sx={{ width: 32, height: 32 }}
+              />
+                  <Avatar
+                alt="User 4"
+                src={AvatarTwo}
                 sx={{ width: 32, height: 32 }}
               />
               <Avatar
@@ -261,11 +270,20 @@ const Navbar: React.FC<NavbarProps> = ({
             </Box>
 
             <IconButton onClick={handleMenuOpen}>
-              <Avatar
-                alt="Dylan Hunter"
-                src="/avatars/dylan.png"
-                sx={{ width: 42, height: 42 }}
-              />
+          <Avatar
+  alt="Dylan Hunter"
+  src={AvatarProfile}
+  sx={{
+    width: "45px",
+    height: "45px",
+    border: "1px solid #dee2e6",
+    p:"3px",
+    "& img": {
+      borderRadius: "50%", // 👈 also apply to internal image
+    },
+  }}
+/>
+
             </IconButton>
           </Box>
           {/* Toggle Sidebar Button */}

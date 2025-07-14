@@ -131,7 +131,7 @@ const Layout = () => {
           component="main"
           sx={{
             flex: 1,
-
+            p:{xs:"7px", md:"26px"}
             // backgroundColor: "#fff",
           }}
         >

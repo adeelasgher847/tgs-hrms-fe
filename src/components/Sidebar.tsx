@@ -74,7 +74,7 @@ const menuItems: MenuItem[] = [
     icon: <People />,
     subItems: [
       { label: "Client List", path: "departments" },
-      { label: "Add Client", path: "departments/new" },
+      { label: "Add Client", path: "departments/AddEmployeeForm" },
     ],
   },
   {

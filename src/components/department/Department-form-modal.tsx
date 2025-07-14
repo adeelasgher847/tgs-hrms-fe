@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
+import type { SxProps, Theme } from "@mui/material/styles";
 import type {
   Department,
   DepartmentFormData,
@@ -275,7 +276,8 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     </>
   );
 
-  const paperSx = {
+
+  const paperSx: SxProps<Theme> = {
     direction: isRtl ? "rtl" : "ltr",
     backgroundColor: darkMode ? "#1e1e1e" : "#fff",
     color: darkMode ? "#e0e0e0" : undefined,

@@ -85,8 +85,8 @@ export const DepartmentList: React.FC = () => {
         flexGrow: 1,
         direction: isRtl ? "rtl" : "ltr",
         minHeight: "100vh",
-        px: { xs: 2, sm: 3, md: 4 },
-        py: 3,
+        // px: { xs: 2, sm: 3, md: 4 },
+        // py: 3,
         // bgcolor: bgPage,
         color: textPrimary,
         boxSizing: "border-box",
@@ -113,12 +113,12 @@ export const DepartmentList: React.FC = () => {
           variant="h4"
           fontWeight={700}
           boxShadow="none"
-          sx={{ textAlign: isRtl ? "right" : "left", px: 2, py: 1.5 }}
+          sx={{ textAlign: isRtl ? "right" : "left", py: 1.5 }}
         >
           {isRtl ? "إدارة الأقسام" : "Departments"}
         </Typography>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, px: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, }}>
           <ToggleButtonGroup
             value={isRtl ? "ar" : "en"}
             exclusive
@@ -166,7 +166,7 @@ export const DepartmentList: React.FC = () => {
                 setIsFormModalOpen(true);
               }}
               sx={{
-                borderRadius: 2,
+                borderRadius: "0.375rem",
                 textTransform: "none",
                 fontWeight: 600,
                 bgcolor: darkMode ? "#605bd4" : "#45407A",
