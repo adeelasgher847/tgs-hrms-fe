@@ -276,13 +276,13 @@ export default function Sidebar({
             onChange={() => setDarkMode((prev) => !prev)}
           />
         </Box>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
+        {/* <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="body2">Enable RTL Mode!</Typography>
           <Switch
             checked={rtlMode}
             onChange={() => setRtlMode((prev) => !prev)}
           />
-        </Box>
+        </Box> */}
 
         {/* Collapse Icon */}
         <Box textAlign="center" mt={2}>
