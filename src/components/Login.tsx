@@ -103,6 +103,9 @@ const Login: React.FC = () => {
         <Box
           sx={{
             height: "100%",
+            // display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
             direction: lang === "ar" ? "rtl" : "ltr",
           }}
         >
@@ -112,6 +115,9 @@ const Login: React.FC = () => {
               flexDirection: { xs: "column", md: "row" },
               alignItems: "center",
               justifyContent: "center",
+              // gap: "2px",
+              height: "100%",
+              margin: "auto",
             }}
           >
             {/* Left Side - Image and Title */}
@@ -409,7 +415,6 @@ const Login: React.FC = () => {
                           "&.Mui-focused": {
                             backgroundColor: "white",
                           },
-                          
                         },
                         endAdornment: (
                           <InputAdornment position="end">

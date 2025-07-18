@@ -16,8 +16,8 @@ const Dashboard: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        px: { xs: 2, md: 4 },
-        py: 3,
+        // px: { xs: 2, md: 4 },
+        // py: 3,
         //  backgroundColor: darkMode ? "#1a1a2e" : "#f9fafb",
         color: darkMode ? "#fff" : "#000",
       }}

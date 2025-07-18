@@ -23,8 +23,8 @@ import {
 import dotted from "../assets/dashboardIcon/dotted-down.svg";
 import Clipboard from "../assets/dashboardIcon/Clipboard";
 import bubbleleft from "../assets/dashboardIcon/bubble-left.svg";
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 
 // 🔹 Types
 interface SubItem {
@@ -35,7 +35,6 @@ interface MenuItem {
   label: string;
   icon: React.ReactNode;
   subItems: SubItem[];
-  color?: string;
 }
 interface SidebarProps {
   rtlMode: boolean;
@@ -51,81 +50,81 @@ const menuItems: MenuItem[] = [
     icon: <Dashboard />,
     subItems: [
       { label: "Hr Dashboard", path: "" },
-      { label: "Project Dashboard", path: "" },
+      { label: "Project Dashboard", path: "project-dashboard" },
     ],
   },
   {
     label: "Projects",
     icon: <BusinessCenter />,
     subItems: [
-      { label: "Project List", path: "" },
-      { label: "Add Project", path: "" },
+      { label: "Project List", path: "project-list" },
+      { label: "Add Project", path: "add-project" },
     ],
   },
   {
     label: "Tickets",
     icon: <ConfirmationNumber />,
     subItems: [
-      { label: "All Tickets", path: "" },
-      { label: "Create Ticket", path: "" },
+      { label: "All Tickets", path: "all-tickets" },
+      { label: "Create Ticket", path: "create-ticket" },
     ],
   },
   {
     label: "Our Clients",
     icon: <People />,
     subItems: [
-      { label: "Client List", path: "departments" }, // ✅ ROUTE
-      { label: "Add Client", path: "departments/new" },
+      { label: "Client List", path: "departments" },
+      { label: "Add Client", path: "departments/AddEmployeeForm" },
     ],
   },
   {
     label: "Employees",
     icon: <Group />,
     subItems: [
-      { label: "Employee List", path: "" },
-      { label: "Add Employee", path: "" },
+      { label: "Employee List", path: "employee-list" },
+      { label: "Add Employee", path: "add-employee" },
     ],
   },
   {
     label: "Accounts",
     icon: <Receipt />,
     subItems: [
-      { label: "Invoice", path: "" },
-      { label: "Payments", path: "" },
+      { label: "Invoice", path: "invoice" },
+      { label: "Payments", path: "payments" },
     ],
   },
   {
     label: "Payroll",
     icon: <Payments />,
     subItems: [
-      { label: "Payroll Summary", path: "" },
-      { label: "Payslips", path: "" },
+      { label: "Payroll Summary", path: "payroll-summary" },
+      { label: "Payslips", path: "payslips" },
     ],
   },
   {
     label: "App",
     icon: <Apps />,
     subItems: [
-      { label: "Chat", path: "" },
-      { label: "Calendar", path: "" },
+      { label: "Chat", path: "chat" },
+      { label: "Calendar", path: "calendar" },
     ],
   },
   {
     label: "Other Pages",
     icon: <Code />,
     subItems: [
-      { label: "Login", path: "" },
-      { label: "Register", path: "" },
-      { label: "Error", path: "" },
+      { label: "Login", path: "login" },
+      { label: "Register", path: "register" },
+      { label: "Error", path: "error" },
     ],
   },
   {
     label: "UI Components",
     icon: <Widgets />,
     subItems: [
-      { label: "Buttons", path: "" },
-      { label: "Cards", path: "" },
-      { label: "Modals", path: "" },
+      { label: "Buttons", path: "buttons" },
+      { label: "Cards", path: "cards" },
+      { label: "Modals", path: "modals" },
     ],
   },
 ];
@@ -136,10 +135,30 @@ export default function Sidebar({
   darkMode,
   setDarkMode,
 }: SidebarProps) {
-  const [openItem, setOpenItem] = useState<string>("Dashboard");
+  const location = useLocation();
+  const [openItem, setOpenItem] = useState<string>("");
+  const [activeSubItem, setActiveSubItem] = useState<string>("");
 
-  const handleClick = (label: string): void => {
-    setOpenItem(openItem === label ? "" : label);
+  // Auto expand parent & highlight subitem on URL change
+  useEffect(() => {
+    let currentPath = location.pathname.replace("/dashboard/", "");
+    if (location.pathname === "/dashboard") {
+      currentPath = ""; // handle Hr Dashboard
+    }
+
+    for (const item of menuItems) {
+      const matchedSub = item.subItems.find((sub) => sub.path === currentPath);
+      if (matchedSub) {
+        setOpenItem(item.label);
+        setActiveSubItem(matchedSub.label);
+        break;
+      }
+    }
+  }, [location.pathname]);
+
+  const handleSubItemClick = (parent: string, subLabel: string) => {
+    setOpenItem(parent);
+    setActiveSubItem(subLabel);
   };
 
   return (
@@ -155,8 +174,6 @@ export default function Sidebar({
         "&::-webkit-scrollbar": {
           display: "none",
         },
-        scrollbarWidth: "none",
-        msOverflowStyle: "none",
       }}
     >
       {/* Top Section */}
@@ -186,73 +203,88 @@ export default function Sidebar({
 
         {/* Sidebar Menu */}
         <List>
-          {menuItems.map((item) => (
-            <Box key={item.label}>
-              <ListItemButton
-                onClick={() => handleClick(item.label)}
-                sx={{
-                  color: openItem === item.label ? "orange" : "white",
-                  pl: 1,
-                }}
-              >
-                <ListItemIcon
+          {menuItems.map((item) => {
+            const isParentActive = openItem === item.label;
+            return (
+              <Box key={item.label}>
+                <ListItemButton
+                  onClick={() => setOpenItem(isParentActive ? "" : item.label)}
                   sx={{
-                    color: openItem === item.label ? "orange" : "white",
-                    minWidth: "36px",
+                    color: isParentActive ? "orange" : "white",
+                    pl: 1,
                   }}
                 >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.label} />
-                <img
-                  src={dotted}
-                  alt="dotted"
-                  style={{
-                    width: 23,
-                    height: 23,
-                    filter:
-                      "invert(57%) sepia(9%) saturate(388%) hue-rotate(195deg) brightness(89%) contrast(85%)",
-                  }}
-                />
-              </ListItemButton>
+                  <ListItemIcon
+                    sx={{
+                      color: isParentActive ? "orange" : "white",
+                      minWidth: "36px",
+                    }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText primary={item.label} />
+                  <img
+                    src={dotted}
+                    alt="dotted"
+                    style={{
+                      width: 23,
+                      height: 23,
+                      filter:
+                        "invert(57%) sepia(9%) saturate(388%) hue-rotate(195deg) brightness(89%) contrast(85%)",
+                    }}
+                  />
+                </ListItemButton>
 
-              {/* SubItems */}
-              <Collapse in={openItem === item.label} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding>
-                  {item.subItems.map((sub) => (
-                    <ListItemButton
-                      key={sub.path + sub.label}
-                      component={NavLink}
-                      to={`/dashboard/${sub.path}`}
-                      sx={{
-                        pl: 6,
-                        fontSize: "14px",
-                        color: ({ isActive }: any) =>
-                          isActive ? "orange" : "white",
-                      }}
-                    >
-                      <ListItemText primary={sub.label} />
-                    </ListItemButton>
-                  ))}
-                </List>
-              </Collapse>
-            </Box>
-          ))}
+                <Collapse in={isParentActive} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {item.subItems.map((sub) => (
+                      <ListItemButton
+                        key={sub.path}
+                        component={NavLink}
+                        to={`/dashboard/${sub.path}`}
+                        onClick={() =>
+                          handleSubItemClick(item.label, sub.label)
+                        }
+                        sx={{
+                          pl: 6,
+                          fontSize: "14px",
+                          color:
+                            activeSubItem === sub.label ? "orange" : "white",
+                        }}
+                      >
+                        <ListItemText primary={sub.label} />
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </Collapse>
+              </Box>
+            );
+          })}
         </List>
       </Box>
-
       {/* Bottom Settings */}
       <Box sx={{ px: 2, pb: 2 }}>
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          mb={1}
+        >
           <Typography variant="body2">Enable Dark Mode!</Typography>
-          <Switch checked={darkMode} onChange={() => setDarkMode((prev) => !prev)} />
+          <Switch
+            checked={darkMode}
+            onChange={() => setDarkMode((prev) => !prev)}
+          />
         </Box>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
+        {/* <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="body2">Enable RTL Mode!</Typography>
-          <Switch checked={rtlMode} onChange={() => setRtlMode((prev) => !prev)} />
-        </Box>
+          <Switch
+            checked={rtlMode}
+            onChange={() => setRtlMode((prev) => !prev)}
+          />
+        </Box> */}
 
-        {/* Collapse Button */}
+        {/* Collapse Icon */}
         <Box textAlign="center" mt={2}>
           <Box
             component="img"
