@@ -12,7 +12,6 @@ body {
 }
 body.dark-mode {
   background-color: #1e1f20;
-  /* color: #ffffff; */
 }
 
 body.light-mode {
@@ -26,6 +25,3 @@ body.light-mode {
   --text-color: #333;
   --border-radius: 4px;
 }
-/* body::-webkit-scrollbar {
-  display: none;
-} */

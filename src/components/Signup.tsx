@@ -46,6 +46,9 @@ const Signup: React.FC = () => {
         <Box
           sx={{
             height: "100%",
+            // display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
             direction: lang === "ar" ? "rtl" : "ltr",
           }}
         >
@@ -55,6 +58,9 @@ const Signup: React.FC = () => {
               flexDirection: { xs: "column", md: "row" },
               alignItems: "center",
               justifyContent: "center",
+              // gap: "90px",
+              height: "100%",
+              margin: "auto",
             }}
           >
             {/* Left Side */}
@@ -375,7 +381,12 @@ const Signup: React.FC = () => {
                           ) : (
                             <>
                               I accept the{" "}
-                              <span style={{ color: "var(--yellow-color)", fontWeight: 500 }}>
+                              <span
+                                style={{
+                                  color: "var(--yellow-color)",
+                                  fontWeight: 500,
+                                }}
+                              >
                                 Terms and Conditions
                               </span>
                             </>
@@ -385,7 +396,9 @@ const Signup: React.FC = () => {
                       // sx={{ m: 0, fontFamily: 'Open Sans, sans-serif', fontSize: '14px' }}
                     />
                   </Box>
-                  <Box sx={{ display: "flex", justifyContent: "center",mt:1 }}>
+                  <Box
+                    sx={{ display: "flex", justifyContent: "center", mt: 1 }}
+                  >
                     <Button
                       type="submit"
                       variant="contained"

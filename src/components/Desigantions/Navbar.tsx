@@ -21,7 +21,7 @@ import {
   Add as AddIcon,
   Menu as MenuIcon,
 } from "@mui/icons-material";
-import InviteModal from "../department/InviteModal"; // adjust path if needed
+import InviteModal from "../Desigantions/InviteModal"; // adjust path if needed
 
 const people = [
   "https://i.pravatar.cc/150?img=1",
