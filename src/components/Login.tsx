@@ -86,7 +86,9 @@ const Login: React.FC = () => {
       alert(
         lang === "ar" ? "بيانات الاعتماد غير صحيحة!" : "Invalid credentials!"
       );
+
       console.log("Submitted credentials:", { email, password });
+      
     }
   };
 
