@@ -96,7 +96,7 @@ const Navbar: React.FC<NavbarProps> = ({
       <AppBar
         position="static"
         elevation={0}
-        sx={{ backgroundColor: darkMode ? "unset" : "#fff", color: "black" }}
+        sx={{ backgroundColor: darkMode ? "unset" : "unset", color: "black" }}
       >
         <Toolbar
           disableGutters
