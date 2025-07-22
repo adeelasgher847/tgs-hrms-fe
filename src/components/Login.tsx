@@ -21,6 +21,7 @@ import {
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import GoogleIcon from "../assets/icons/google.svg";
+import axios from "axios";
 
 const mockData = {
   email: "testuser@example.com",
@@ -50,9 +51,8 @@ const Login: React.FC = () => {
     return passwordRegex.test(password);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-
     let valid = true;
 
     if (!email || !validateEmail(email)) {
@@ -77,16 +77,19 @@ const Login: React.FC = () => {
 
     if (!valid) return;
 
-    // Check credentials
-    if (email === mockData.email && password === mockData.password) {
-      alert(lang === "ar" ? "تم تسجيل الدخول بنجاح!" : "Login Successful!");
-      console.log("Submitted credentials:", { email, password });
+    try {
+      const res = await axios.post("http://localhost:3000/auth/login", {
+        email,
+        password,
+      });
+      localStorage.setItem("accessToken", res.data.accessToken);
+      localStorage.setItem("refreshToken", res.data.refreshToken);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/dashboard");
-    } else {
+    } catch (err: any) {
       alert(
-        lang === "ar" ? "بيانات الاعتماد غير صحيحة!" : "Invalid credentials!"
+        err.response?.data?.message || (lang === "ar" ? "فشل تسجيل الدخول. حاول مرة أخرى." : "Login failed. Please try again.")
       );
-      console.log("Submitted credentials:", { email, password });
     }
   };
 
