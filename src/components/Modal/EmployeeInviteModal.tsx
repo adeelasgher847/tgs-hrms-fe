@@ -30,7 +30,7 @@ const style = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 600,
+  width: 800,
   maxWidth: "95%",
   borderRadius: 3,
   boxShadow: 24,
@@ -44,6 +44,11 @@ const employees: Employee[] = [
     role: "Admin",
   },
   {
+    name: "Fatima Khan",
+    email: "fatima@example.com",
+    role: "Member",
+  },
+    {
     name: "Fatima Khan",
     email: "fatima@example.com",
     role: "Member",
@@ -65,9 +70,9 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
   };
 
   const bgColor = darkMode ? "#1e1e1e" : "#fff";
-  const fieldBg = darkMode ? "#2e2e2e" : "#efefef";
-  const textColor = darkMode ? "#8f8f8f" : "#000";
-  const employeeCardBg = darkMode ? "#2a2a2a" : "#f9f9f9";
+  const fieldBg = darkMode ? "#2e2e2e" : "#f1f1f1";
+  const textColor = darkMode ? "#e0e0e0" : "#000";
+  const cardBg = darkMode ? "#2a2a2a" : "#f9f9f9";
 
   return (
     <Modal open={open} onClose={onClose} sx={{ overflowY: "auto" }}>
@@ -126,44 +131,57 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
         {/* Employee List */}
         <Box>
           <Typography
-            variant="subtitle1"
+            fontWeight={700}
+            fontSize={16}
             mb={1}
-            sx={{ fontSize: 16, fontWeight: 700, color: textColor }}
+            color={textColor}
           >
-            Employees
+            Employee
           </Typography>
-          {employees.map((emp, index) => (
+          {employees.map((emp, idx) => (
             <Box
-              key={index}
+              key={idx}
+              bgcolor={cardBg}
+              borderRadius={2}
+              px={2}
+              py={1.5}
+              mb={1.2}
               display="flex"
               justifyContent="space-between"
               alignItems="center"
-              py={1}
-              px={1}
-              borderRadius={2}
-              bgcolor={employeeCardBg}
-              mb={1}
             >
               <Stack direction="row" spacing={2} alignItems="center">
-                <Avatar>{emp.name[0]}</Avatar>
+                <Avatar
+                  sx={{
+                    bgcolor: idx % 2 === 0 ? "#ffcd38" : "#e24c4c",
+                    color: "#fff",
+                  }}
+                >
+                  {emp.name[0]}
+                </Avatar>
                 <Box>
-                  <Typography fontWeight={700} fontSize={16} color={textColor}>
+                  <Typography fontWeight={700} fontSize={14} color={textColor}>
                     {emp.name}
                   </Typography>
-                  <Typography variant="body2" color={textColor}>
+                  <Typography fontSize={13} color={textColor}>
                     {emp.email}
                   </Typography>
                 </Box>
               </Stack>
-
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Typography variant="body2" color={textColor}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography fontSize={13} color={textColor}>
                   {emp.role}
                 </Typography>
                 <img
                   src={settings}
                   alt="settings"
-                 style={{ width: 18, height: 18 ,filter: darkMode ? "invert(1) brightness(0.8)" : "grayscale(100%) brightness(55%)",  }}
+                  style={{
+                    width: 16,
+                    height: 16,
+                    filter: darkMode
+                      ? "invert(1) brightness(0.8)"
+                      : "grayscale(100%) brightness(55%)",
+                  }}
                 />
               </Stack>
             </Box>

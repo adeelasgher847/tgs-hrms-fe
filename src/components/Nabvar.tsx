@@ -1,7 +1,12 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
-
+import AvatarOne from "../assets/NavbarAvatar/avatarone.jpg"
+import AvatarTwo from "../assets/NavbarAvatar/avatartwo.jpg"
+import AvatarThree from "../assets/NavbarAvatar/avatarthree.jpg"
+import AvatarFour from "../assets/NavbarAvatar/avatarfour.jpg"
+import AvatarProfile from "../assets/NavbarAvatar/ProfileAvatar.png"
+import { useEffect, useState } from "react";
 import {
   AppBar,
   Box,
@@ -83,16 +88,40 @@ const Navbar: React.FC<NavbarProps> = ({
     setAnchorEl(null);
   };
   const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
     navigate("/");
   };
   const textColor = darkMode ? "#8f8f8f" : "#000";
   const iconColor = darkMode ? "#8f8f8f" : "#000"; 
+
+  // Add state for user
+  const [user, setUser] = useState<{ name: string; role: string; email: string; avatarUrl?: string } | null>(null);
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData);
+        setUser({
+          name: parsed.name || "User",
+          email: parsed.email || "",
+          role: parsed.role || "",
+          avatarUrl: parsed.avatarUrl || undefined,
+        });
+      } catch {
+        setUser(null);
+      }
+    }
+  }, []);
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar
         position="static"
         elevation={0}
-        sx={{ backgroundColor: darkMode ? "unset" : "#fff", color: "black" }}
+        sx={{ backgroundColor: darkMode ? "unset" : "unset", color: "black" }}
       >
         <Toolbar
           disableGutters
@@ -123,7 +152,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 }}
               >
                 <SearchIconWrapper>
-                  <SearchIcon />
+                  <SearchIcon  sx={{color:darkMode ? "#8f8f8f" : "#000"}}/>
                 </SearchIconWrapper>
 
                 <StyledInputBase
@@ -206,22 +235,27 @@ const Navbar: React.FC<NavbarProps> = ({
             >
               <Avatar
                 alt="User 1"
-                src="/avatars/user1.png"
+                src={AvatarOne}
                 sx={{ width: 32, height: 32 }}
               />
               <Avatar
                 alt="User 2"
-                src="/avatars/user2.png"
+                src={AvatarTwo}
                 sx={{ width: 32, height: 32 }}
               />
               <Avatar
                 alt="User 3"
-                src="/avatars/user3.png"
+                src={AvatarThree}
                 sx={{ width: 32, height: 32 }}
               />
               <Avatar
                 alt="User 4"
-                src="/avatars/user4.png"
+                src={AvatarFour}
+                sx={{ width: 32, height: 32 }}
+              />
+                  <Avatar
+                alt="User 4"
+                src={AvatarTwo}
                 sx={{ width: 32, height: 32 }}
               />
               <Avatar
@@ -253,19 +287,29 @@ const Navbar: React.FC<NavbarProps> = ({
                 sx={{ fontWeight: 600, fontSize: "14px" }}
                 color={textColor}
               >
-                Dylan Hunter
+                {user?.name || "User"}
               </Typography>
               <Typography variant="caption" color={textColor}>
-                Admin Profile
+                {user?.role == "admin" ? "Admin Profile" : user?.role == "staff" ? "Staff Profile" : "User Profile"}
               </Typography>
             </Box>
 
             <IconButton onClick={handleMenuOpen}>
               <Avatar
-                alt="Dylan Hunter"
-                src="/avatars/dylan.png"
-                sx={{ width: 42, height: 42 }}
-              />
+                alt={user?.name || "User"}
+                src={user?.avatarUrl || AvatarProfile}
+                sx={{
+                  width: "45px",
+                  height: "45px",
+                  border: "1px solid #dee2e6",
+                  p: "3px",
+                  "& img": {
+                    borderRadius: "50%",
+                  },
+                }}
+              >
+                {!user?.avatarUrl && user?.name ? user.name[0] : null}
+              </Avatar>
             </IconButton>
           </Box>
           {/* Toggle Sidebar Button */}
@@ -303,14 +347,16 @@ const Navbar: React.FC<NavbarProps> = ({
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
           <Avatar
-            alt="Dylan Hunter"
-            src="/avatars/dylan.png"
+            alt={user?.name || "User"}
+            src={user?.avatarUrl || AvatarProfile}
             sx={{ width: 50, height: 50 }}
-          />
+          >
+            {!user?.avatarUrl && user?.name ? user.name[0] : null}
+          </Avatar>
           <Box>
-            <Typography fontWeight={600} color={textColor}>Dylan Hunter</Typography>
+            <Typography fontWeight={600} color={textColor}>{user?.name || "User"}</Typography>
             <Typography variant="body2" color={textColor}>
-              Dylan.hunter@gmail.com
+              {user?.email || ""}
             </Typography>
           </Box>
         </Box>

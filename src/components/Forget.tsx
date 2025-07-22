@@ -64,6 +64,9 @@ const Forget = () => {
         <Box
           sx={{
             height: "100%",
+            // display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
             gap: { xs: 1 },
             direction: lang === "ar" ? "rtl" : "ltr",
           }}
@@ -73,6 +76,8 @@ const Forget = () => {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
+              height: "100%",
+              margin: "auto",
             }}
           >
             <Box

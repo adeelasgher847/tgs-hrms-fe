@@ -1,4 +1,3 @@
-
 import {
   Card,
   CardContent,
@@ -16,6 +15,7 @@ interface DepartmentCardProps {
   onEdit: (department: Department) => void;
   onDelete: (department: Department) => void;
   isRtl?: boolean;
+  darkMode?: boolean;
 }
 
 export const DepartmentCard: React.FC<DepartmentCardProps> = ({
@@ -23,7 +23,12 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
   onEdit,
   onDelete,
   isRtl = false,
+  // darkMode = false,
 }) => {
+  const cardBg = "transparent"; // no background in both modes
+  const cardShadow = "none"; // no shadow
+  // const hoverShadow = darkMode ? 4 : 2;
+
   return (
     <Card
       sx={{
@@ -32,11 +37,13 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
         px: 2,
         flexDirection: "column",
         transition: "all 0.3s ease",
-        "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: 4,
-        },
         direction: isRtl ? "rtl" : "ltr",
+        backgroundColor: cardBg,
+        boxShadow: cardShadow,
+        "&:hover": {
+          // transform: "translateY(-4px)",
+          // boxShadow: hoverShadow,
+        },
       }}
     >
       <CardContent sx={{ flexGrow: 1, pb: 1 }}>

@@ -15,6 +15,8 @@ import {
   Alert,
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
+import { useOutletContext } from "react-router-dom";
+import type { SxProps, Theme } from "@mui/material/styles";
 import type {
   Department,
   DepartmentFormData,
@@ -38,6 +40,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
   const [formData, setFormData] = useState<DepartmentFormData>({
     name: "",
@@ -77,6 +80,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     setErrors({});
   }, [department, open]);
 
+  /* ---------- validation helpers ---------- */
   const validateForm = (): boolean => {
     const newErrors: DepartmentFormErrors = {};
 
@@ -116,21 +120,18 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  /* ---------- submit ---------- */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+      await new Promise((r) => setTimeout(r, 1000)); // fake delay
       onSubmit(formData);
       onClose();
-    } catch (error) {
-      console.error("Error submitting form:", error);
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsSubmitting(false);
     }
@@ -139,20 +140,11 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   const handleInputChange =
     (field: keyof DepartmentFormData) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev: DepartmentFormData) => ({
-        ...prev,
-        [field]: e.target.value,
-      }));
-
-      // Clear error when user starts typing
-      if (errors[field]) {
-        setErrors((prev: DepartmentFormErrors) => ({
-          ...prev,
-          [field]: undefined,
-        }));
-      }
+      setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+      if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
     };
 
+  /* ---------- form JSX ---------- */
   const formContent = (
     <Box
       component="form"
@@ -161,48 +153,47 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         display: "flex",
         flexDirection: "column",
         gap: 3,
+        mt: 2,
         direction: isRtl ? "rtl" : "ltr",
+        color: darkMode ? "#e0e0e0" : undefined,
       }}
     >
+      {/* English name */}
       <TextField
         fullWidth
         label={isRtl ? "اسم القسم (بالإنجليزية)" : "Department Name (English)"}
         value={formData.name}
         onChange={handleInputChange("name")}
-        error={Boolean(errors.name)}
+        error={!!errors.name}
         helperText={errors.name}
         required
-        autoFocus={!isRtl}
-        InputLabelProps={{
-          style: { textAlign: isRtl ? "right" : "left" },
-        }}
-        sx={{
-          "& .MuiInputBase-input": {
-            textAlign: "left", // Always left for English
+        InputLabelProps={{ style: { color: darkMode ? "#ccc" : undefined } }}
+        InputProps={{
+          sx: {
+            color: darkMode ? "#fff" : "inherit", // 👈 Input text color
           },
         }}
       />
 
+      {/* Arabic name */}
       <TextField
         fullWidth
         label={isRtl ? "اسم القسم (بالعربية)" : "Department Name (Arabic)"}
         value={formData.nameAr}
         onChange={handleInputChange("nameAr")}
-        error={Boolean(errors.nameAr)}
+        error={!!errors.nameAr}
         helperText={errors.nameAr}
         required
-        autoFocus={isRtl}
-        InputLabelProps={{
-          style: { textAlign: isRtl ? "right" : "left" },
-        }}
-        sx={{
-          "& .MuiInputBase-input": {
-            textAlign: "right", // Always right for Arabic
-            fontFamily: "Arial, sans-serif",
+        InputLabelProps={{ style: { color: darkMode ? "#ccc" : undefined } }}
+        InputProps={{
+          sx: {
+            color: darkMode ? "#fff" : "inherit", // 👈 Input text color
           },
         }}
+        sx={{ "& .MuiInputBase-input": { textAlign: "right" } }}
       />
 
+      {/* English description */}
       <TextField
         fullWidth
         label={
@@ -212,20 +203,19 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         }
         value={formData.description}
         onChange={handleInputChange("description")}
-        error={Boolean(errors.description)}
+        error={!!errors.description}
         helperText={errors.description}
         multiline
         rows={3}
-        InputLabelProps={{
-          style: { textAlign: isRtl ? "right" : "left" },
-        }}
-        sx={{
-          "& .MuiInputBase-input": {
-            textAlign: "left", // Always left for English
+        InputLabelProps={{ style: { color: darkMode ? "#ccc" : undefined } }}
+        InputProps={{
+          sx: {
+            color: darkMode ? "#fff" : "inherit", // 👈 Input text color
           },
         }}
       />
 
+      {/* Arabic description */}
       <TextField
         fullWidth
         label={
@@ -235,23 +225,21 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         }
         value={formData.descriptionAr}
         onChange={handleInputChange("descriptionAr")}
-        error={Boolean(errors.descriptionAr)}
+        error={!!errors.descriptionAr}
         helperText={errors.descriptionAr}
         multiline
         rows={3}
-        InputLabelProps={{
-          style: { textAlign: isRtl ? "right" : "left" },
-        }}
-        sx={{
-          "& .MuiInputBase-input": {
-            textAlign: "right", // Always right for Arabic
-            fontFamily: "Arial, sans-serif",
+        InputLabelProps={{ style: { color: darkMode ? "#ccc" : undefined } }}
+        InputProps={{
+          sx: {
+            color: darkMode ? "#fff" : "inherit", // 👈 Input text color
           },
         }}
+        sx={{ "& .MuiInputBase-input": { textAlign: "right" } }}
       />
 
       {Object.keys(errors).length > 0 && (
-        <Alert severity="error" sx={{ textAlign: isRtl ? "right" : "left" }}>
+        <Alert severity="error">
           {isRtl
             ? "يرجى تصحيح الأخطاء أعلاه"
             : "Please correct the errors above"}
@@ -260,13 +248,10 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     </Box>
   );
 
+  /* ---------- action buttons ---------- */
   const actionButtons = (
     <>
-      <Button
-        onClick={onClose}
-        disabled={isSubmitting}
-        sx={{ mr: isRtl ? 0 : 1, ml: isRtl ? 1 : 0 }}
-      >
+      <Button onClick={onClose} disabled={isSubmitting}>
         {isRtl ? "إلغاء" : "Cancel"}
       </Button>
       <Button
@@ -274,6 +259,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         variant="contained"
         disabled={isSubmitting}
         onClick={handleSubmit}
+        sx={{ bgcolor: "#484c7f" }}
       >
         {isSubmitting
           ? isRtl
@@ -290,32 +276,39 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     </>
   );
 
+
+  const paperSx: SxProps<Theme> = {
+    direction: isRtl ? "rtl" : "ltr",
+    backgroundColor: darkMode ? "#1e1e1e" : "#fff",
+    color: darkMode ? "#e0e0e0" : undefined,
+  };
+
+  /* ---------- MOBILE drawer ---------- */
   if (isMobile) {
     return (
       <Drawer
         anchor={isRtl ? "right" : "left"}
         open={open}
         onClose={onClose}
-        PaperProps={{
-          sx: {
-            width: "100%",
-            maxWidth: 400,
-            direction: isRtl ? "rtl" : "ltr",
-          },
-        }}
+        PaperProps={{ sx: { width: "100%", maxWidth: 400, ...paperSx } }}
       >
-        <Box sx={{ p: 3 }}>
+        <Box
+          sx={{
+            p: 3,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": { display: "none" },
+            scrollbarWidth: "none",
+          }}
+        >
           <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
               {title}
             </Typography>
             <IconButton onClick={onClose} size="small">
-              <CloseIcon />
+              <CloseIcon sx={{ color: darkMode ? "#fff" : undefined }} />
             </IconButton>
           </Box>
-
           {formContent}
-
           <Box
             sx={{ display: "flex", gap: 1, mt: 3, justifyContent: "flex-end" }}
           >
@@ -326,20 +319,13 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     );
   }
 
+  /* ---------- DESKTOP dialog ---------- */
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        sx: {
-          direction: isRtl ? "rtl" : "ltr",
-        },
-      }}
-    >
-      <DialogTitle sx={{ textAlign: isRtl ? "right" : "left" }}>
-        {title}
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={paperSx} style={{ position: "relative" }}>
+        <Typography sx={{ textAlign: isRtl ? "right" : "left" }}>
+          {title}
+        </Typography>
         <IconButton
           onClick={onClose}
           sx={{
@@ -347,15 +333,29 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
             right: isRtl ? "auto" : 8,
             left: isRtl ? 8 : "auto",
             top: 8,
+            color: darkMode ? "#fff" : undefined,
           }}
         >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 2 }}>{formContent}</DialogContent>
+      <DialogContent
+        sx={{
+          ...paperSx,
+          pt: 2,
+          maxHeight: "70vh",
+          overflowY: "auto",
+          "&::-webkit-scrollbar": { display: "none" },
+          scrollbarWidth: "none",
+        }}
+      >
+        {formContent}
+      </DialogContent>
 
-      <DialogActions sx={{ p: 3, pt: 2 }}>{actionButtons}</DialogActions>
+      <DialogActions sx={{ p: 3, pt: 2, ...paperSx }}>
+        {actionButtons}
+      </DialogActions>
     </Dialog>
   );
 };
