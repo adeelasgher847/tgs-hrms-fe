@@ -19,7 +19,7 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
 
-  const bgColor = darkMode ? "#222" : "#484c7f";
+  const bgColor = darkMode ? "#484c7f" : "#484c7f";
   const textColor = "#fff";
 
   // Title translations with language context

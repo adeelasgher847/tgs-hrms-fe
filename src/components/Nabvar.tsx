@@ -1,12 +1,12 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
-import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import AvatarOne from "../assets/NavbarAvatar/avatarone.jpg";
 import AvatarTwo from "../assets/NavbarAvatar/avatartwo.jpg";
 import AvatarThree from "../assets/NavbarAvatar/avatarthree.jpg";
 import AvatarFour from "../assets/NavbarAvatar/avatarfour.jpg";
 import AvatarProfile from "../assets/NavbarAvatar/ProfileAvatar.png";
+import { useLanguage } from "../context/LanguageContext";
 import {
   AppBar,
   Box,
@@ -32,8 +32,6 @@ import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 
-import { useLanguage } from "../context/LanguageContext";
-
 const labels = {
   en: {
     search: "Search",
@@ -43,6 +41,7 @@ const labels = {
     addAccount: "Add Personal Account",
     adminProfile: "Admin Profile",
     dylan: "Dylan Hunter",
+    email: "Dylan.hunter@gmail.com",
   },
   ar: {
     search: "بحث",
@@ -52,6 +51,7 @@ const labels = {
     addAccount: "إضافة حساب",
     adminProfile: "ملف المشرف",
     dylan: "ديلان هنتر",
+    email: "Dylan.hunter@gmail.com",
   },
 };
 
@@ -99,12 +99,11 @@ const Navbar: React.FC<NavbarProps> = ({
   onToggleSidebar,
   onOpenInviteModal,
 }) => {
-  const { language, setLanguage } = useLanguage();
-  const lang = labels[language];
-
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const lang = labels[language];
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -225,7 +224,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
             <IconButton onClick={handleMenuOpen}>
               <Avatar
-                alt="Dylan Hunter"
+                alt={lang.dylan}
                 src={AvatarProfile}
                 sx={{
                   width: "45px",
@@ -236,17 +235,6 @@ const Navbar: React.FC<NavbarProps> = ({
                 }}
               />
             </IconButton>
-
-            {/* Language Toggle */}
-            <ToggleButtonGroup
-              value={language}
-              exclusive
-              onChange={(_, value) => value && setLanguage(value)}
-              size="small"
-            >
-              <ToggleButton value="en">EN</ToggleButton>
-              <ToggleButton value="ar">عربي</ToggleButton>
-            </ToggleButtonGroup>
 
             <IconButton onClick={onToggleSidebar} sx={{ display: { xs: "block", lg: "none" } }}>
               <MenuIcon sx={{ color: textColor }} />
@@ -268,10 +256,10 @@ const Navbar: React.FC<NavbarProps> = ({
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
-          <Avatar alt="Dylan Hunter" src={AvatarProfile} sx={{ width: 50, height: 50 }} />
+          <Avatar alt={lang.dylan} src={AvatarProfile} sx={{ width: 50, height: 50 }} />
           <Box>
             <Typography fontWeight={600} color={textColor}>{lang.dylan}</Typography>
-            <Typography variant="body2" color={textColor}>Dylan.hunter@gmail.com</Typography>
+            <Typography variant="body2" color={textColor}>{lang.email}</Typography>
           </Box>
         </Box>
         <Divider sx={{ mb: 1 }} />
