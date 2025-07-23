@@ -20,7 +20,7 @@ import {
   Code,
   Widgets,
 } from "@mui/icons-material";
-import dotted from "../assets/dashboardIcon/dotted-down.svg";
+import dotted from "./../assets/dashboardIcon/dotted-down.svg";
 import Clipboard from "../assets/dashboardIcon/Clipboard";
 import bubbleleft from "../assets/dashboardIcon/bubble-left.svg";
 import { useEffect, useState } from "react";
@@ -70,11 +70,11 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    label: "Our Clients",
+    label: "Department",
     icon: <People />,
     subItems: [
-      { label: "Client List", path: "departments" },
-      { label: "Add Client", path: "departments/AddEmployeeForm" },
+      { label: "Department List", path: "departments" },
+      { label: "Add Designation", path: "Designations" },
     ],
   },
   {

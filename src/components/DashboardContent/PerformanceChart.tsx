@@ -2,15 +2,37 @@ import { Box, Typography } from "@mui/material";
 import React from "react";
 import Chart from "react-apexcharts";
 import { useOutletContext } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 
 const PerformanceChart: React.FC = () => {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const { language } = useLanguage();
+
   const bgColor = darkMode ? "#111" : "#fff";
   const borderColor = darkMode ? "#252525" : "#f0f0f0";
   const textColor = darkMode ? "#8f8f8f" : "#000";
-  const series = [
+
+  // Translations
+  const labels = {
+    en: "Top Hiring Sources",
+    ar: "أفضل مصادر التوظيف",
+  };
+
+  const seriesLabels = {
+    "UI/UX Designer": { en: "UI/UX Designer", ar: "مصمم UI/UX" },
+    "App Development": { en: "App Development", ar: "تطوير التطبيقات" },
+    "Quality Assurance": { en: "Quality Assurance", ar: "ضمان الجودة" },
+    "Web Developer": { en: "Web Developer", ar: "مطور ويب" },
+  };
+
+  const months = {
+    en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    ar: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
+  };
+
+  const rawSeries = [
     {
-      name: "Ui/Ux Designer",
+      name: "UI/UX Designer",
       data: [45, 25, 44, 23, 25, 41, 32, 25, 22, 65, 22, 29],
     },
     {
@@ -27,6 +49,11 @@ const PerformanceChart: React.FC = () => {
     },
   ];
 
+  const translatedSeries = rawSeries.map((item) => ({
+    name: seriesLabels[item.name][language],
+    data: item.data,
+  }));
+
   const options: ApexCharts.ApexOptions = {
     chart: {
       type: "bar",
@@ -37,8 +64,7 @@ const PerformanceChart: React.FC = () => {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "70%", // Reduce bar thickness
-        // borderRadius: 4,
+        columnWidth: "70%",
       },
     },
     grid: {
@@ -57,20 +83,13 @@ const PerformanceChart: React.FC = () => {
       colors: ["#fff"],
     },
     xaxis: {
-      categories: [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ],
+      categories: months[language],
+      labels: {
+        style: {
+          fontSize: "12px",
+          colors: textColor,
+        },
+      },
     },
     yaxis: {
       min: 0,
@@ -80,19 +99,19 @@ const PerformanceChart: React.FC = () => {
         formatter: (val) => `${val}`,
         style: {
           fontSize: "12px",
-          colors: "#555",
+          colors: textColor,
         },
       },
     },
     legend: {
       position: "top",
-      horizontalAlign: "right",
+      horizontalAlign: language === "ar" ? "left" : "right",
       fontSize: "12px",
       markers: {
         size: 12,
-        //  width: 12,
-        // height: 12,
-        // radius: 2,
+      },
+      labels: {
+        colors: textColor,
       },
     },
     colors: ["#484c7f", "#f19828", "#f5558d", "#a7daff"],
@@ -114,12 +133,13 @@ const PerformanceChart: React.FC = () => {
         border: `1px solid ${borderColor}`,
         borderRadius: "0.375rem",
         backgroundColor: bgColor,
+        direction: language === "ar" ? "rtl" : "ltr",
       }}
     >
       <Typography fontWeight="bold" fontSize={16} mb={2} color={textColor}>
-        Top Hiring Sources
+        {labels[language]}
       </Typography>
-      <Chart options={options} series={series} type="bar" height={350} />
+      <Chart options={options} series={translatedSeries} type="bar" height={350} />
     </Box>
   );
 };

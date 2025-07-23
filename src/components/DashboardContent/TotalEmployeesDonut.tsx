@@ -1,8 +1,10 @@
 import { Box, Typography, Stack } from "@mui/material";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { useOutletContext } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
+
 type GenderDataItem = {
-  name: string;
+  name: "Man" | "Woman";
   value: number;
   color: string;
 };
@@ -12,11 +14,22 @@ const data: GenderDataItem[] = [
   { name: "Woman", value: 55, color: "#f5558d" },
 ];
 
-//Custom Tooltip
-const CustomTooltip = ({ active, payload }: any) => {
+// Translations
+const labels = {
+  totalEmployees: { en: "Total Employees", ar: "إجمالي الموظفين" },
+  man: { en: "Man", ar: "رجل" },
+  woman: { en: "Woman", ar: "امرأة" },
+};
+
+// Custom Tooltip
+const CustomTooltip = ({ active, payload, language }: any) => {
   if (active && payload && payload.length) {
     const item = payload[0];
     const color = item.payload.color;
+    const translatedName =
+      item.name === "Man"
+        ? labels.man[language]
+        : labels.woman[language];
 
     return (
       <Box
@@ -28,7 +41,7 @@ const CustomTooltip = ({ active, payload }: any) => {
           fontSize: "14px",
         }}
       >
-        {item.name}: <b>{item.value}</b>
+        {translatedName}: <b>{item.value}</b>
       </Box>
     );
   }
@@ -38,9 +51,12 @@ const CustomTooltip = ({ active, payload }: any) => {
 
 export default function TotalEmployeesDonut() {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const { language } = useLanguage();
+
   const bgColor = darkMode ? "#111" : "#fff";
   const borderColor = darkMode ? "#252525" : "#f0f0f0";
   const textColor = darkMode ? "#8f8f8f" : "#000";
+
   return (
     <Box
       sx={{
@@ -48,11 +64,12 @@ export default function TotalEmployeesDonut() {
         border: `1px solid ${borderColor}`,
         borderRadius: "0.375rem",
         backgroundColor: bgColor,
+        direction: language === "ar" ? "rtl" : "ltr",
       }}
     >
       <Box display={"flex"} justifyContent={"space-between"}>
         <Typography fontWeight="bold" fontSize={16} mb={2} color={textColor}>
-          Total Employees
+          {labels.totalEmployees[language]}
         </Typography>
         <Typography fontWeight="bold" fontSize={"25px"} color={textColor}>
           423
@@ -65,12 +82,6 @@ export default function TotalEmployeesDonut() {
           "& svg, & path": {
             outline: "none",
             border: "none",
-          },
-          "& svg:focus, & path:focus": {
-            outline: "none",
-          },
-          "& svg:active, & path:active": {
-            outline: "none",
           },
         }}
       >
@@ -87,7 +98,7 @@ export default function TotalEmployeesDonut() {
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip language={language} />} />
           </PieChart>
         </ResponsiveContainer>
       </Box>
@@ -110,7 +121,10 @@ export default function TotalEmployeesDonut() {
               }}
             />
             <Typography fontSize={14} color={textColor}>
-              {item.name}: <b>{item.value}</b>
+              {item.name === "Man"
+                ? labels.man[language]
+                : labels.woman[language]
+              }: <b>{item.value}</b>
             </Typography>
           </Stack>
         ))}

@@ -12,9 +12,11 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import settings from "../../assets/dashboardIcon/ui-settings.svg";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface Employee {
-  name: string;
+  name_en: string;
+  name_ar: string;
   email: string;
   role: "Admin" | "Member";
 }
@@ -22,7 +24,7 @@ interface Employee {
 interface EmployeeInviteModalProps {
   open: boolean;
   onClose: () => void;
-  darkMode?: boolean; // Dark mode toggle
+  darkMode?: boolean;
 }
 
 const style = {
@@ -39,21 +41,47 @@ const style = {
 
 const employees: Employee[] = [
   {
-    name: "Ali Raza",
+    name_en: "Ali Raza",
+    name_ar: "علي رضا",
     email: "ali@example.com",
     role: "Admin",
   },
   {
-    name: "Fatima Khan",
+    name_en: "Fatima Khan",
+    name_ar: "فاطمة خان",
     email: "fatima@example.com",
     role: "Member",
   },
-    {
-    name: "Fatima Khan",
+  {
+    name_en: "Fatima Khan",
+    name_ar: "فاطمة خان",
     email: "fatima@example.com",
     role: "Member",
   },
 ];
+
+const labels = {
+  en: {
+    title: "Employee Invitation",
+    emailPlaceholder: "Email Address",
+    send: "Send",
+    employee: "Employee",
+    roleAdmin: "Admin",
+    roleMember: "Member",
+    done: "Done",
+    save: "Save",
+  },
+  ar: {
+    title: "دعوة الموظف",
+    emailPlaceholder: "البريد الإلكتروني",
+    send: "إرسال",
+    employee: "الموظف",
+    roleAdmin: "مسؤول",
+    roleMember: "عضو",
+    done: "تم",
+    save: "حفظ",
+  },
+};
 
 const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
   open,
@@ -61,6 +89,8 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
   darkMode = false,
 }) => {
   const [email, setEmail] = useState<string>("");
+  const { language } = useLanguage();
+  const lang = labels[language];
 
   const handleSend = () => {
     if (email.trim()) {
@@ -78,17 +108,9 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
     <Modal open={open} onClose={onClose} sx={{ overflowY: "auto" }}>
       <Box sx={{ ...style, bgcolor: bgColor }}>
         {/* Header */}
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={2}
-        >
-          <Typography
-            variant="h6"
-            sx={{ fontSize: 25, fontWeight: 700, color: textColor }}
-          >
-            Employee Invitation
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h6" sx={{ fontSize: 25, fontWeight: 700, color: textColor }}>
+            {lang.title}
           </Typography>
           <IconButton onClick={onClose} sx={{ color: textColor }}>
             <CloseIcon />
@@ -100,7 +122,7 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
           <TextField
             fullWidth
             size="small"
-            label="Email Address"
+            label={lang.emailPlaceholder}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             sx={{
@@ -119,25 +141,21 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
               fontSize: 14,
               backgroundColor: "var(--dark-color)",
               whiteSpace: "nowrap",
-              px: 0,
+              px: 2,
               borderRadius: "0px 4px 4px 0px",
             }}
             onClick={handleSend}
           >
-            Send
+            {lang.send}
           </Button>
         </Box>
 
         {/* Employee List */}
         <Box>
-          <Typography
-            fontWeight={700}
-            fontSize={16}
-            mb={1}
-            color={textColor}
-          >
-            Employee
+          <Typography fontWeight={700} fontSize={16} mb={1} color={textColor}>
+            {lang.employee}
           </Typography>
+
           {employees.map((emp, idx) => (
             <Box
               key={idx}
@@ -157,20 +175,21 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
                     color: "#fff",
                   }}
                 >
-                  {emp.name[0]}
+                  {(language === "ar" ? emp.name_ar : emp.name_en)[0]}
                 </Avatar>
                 <Box>
                   <Typography fontWeight={700} fontSize={14} color={textColor}>
-                    {emp.name}
+                    {language === "ar" ? emp.name_ar : emp.name_en}
                   </Typography>
                   <Typography fontSize={13} color={textColor}>
                     {emp.email}
                   </Typography>
                 </Box>
               </Stack>
+
               <Stack direction="row" spacing={1} alignItems="center">
                 <Typography fontSize={13} color={textColor}>
-                  {emp.role}
+                  {emp.role === "Admin" ? lang.roleAdmin : lang.roleMember}
                 </Typography>
                 <img
                   src={settings}
@@ -200,13 +219,10 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
             }}
             onClick={onClose}
           >
-            Done
+            {lang.done}
           </Button>
-          <Button
-            variant="contained"
-            sx={{ backgroundColor: "var(--dark-color)" }}
-          >
-            Save
+          <Button variant="contained" sx={{ backgroundColor: "var(--dark-color)" }}>
+            {lang.save}
           </Button>
         </Box>
       </Box>
