@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 
@@ -22,22 +22,42 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import GoogleIcon from "../assets/icons/google.svg";
 import axios from "axios";
+import Snackbar from "@mui/material/Snackbar";
+import MuiAlert, { type AlertProps } from "@mui/material/Alert";
 
-const mockData = {
-  email: "testuser@example.com",
-  password: "Password123!",
-};
+
+
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
+  props,
+  ref
+) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
 
   const [lang, setLang] = useState<"en" | "ar">("en");
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [email, setEmail] = useState<string>(mockData.email);
-  const [password, setPassword] = useState<string>(mockData.password);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [remembered, setRemembered] = useState<{ email: string; password: string } | null>(null);
 
   const [emailError, setEmailError] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({ open: false, message: "", severity: "success" });
+
+  useEffect(() => {
+    const rememberedStr = localStorage.getItem("rememberedLogin");
+    if (rememberedStr) {
+      try {
+        const parsed = JSON.parse(rememberedStr);
+        setRemembered(parsed);
+        setRememberMe(true);
+      } catch {}
+    }
+  }, []);
 
   const handleTogglePassword = (): void => setShowPassword((prev) => !prev);
 
@@ -49,6 +69,16 @@ const Login: React.FC = () => {
   const validatePassword = (password: string) => {
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
     return passwordRegex.test(password);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+    if (remembered && value === remembered.email) {
+      setPassword(remembered.password);
+    } else {
+      setPassword("");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
@@ -85,11 +115,29 @@ const Login: React.FC = () => {
       localStorage.setItem("accessToken", res.data.accessToken);
       localStorage.setItem("refreshToken", res.data.refreshToken);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      navigate("/dashboard");
+      if (rememberMe) {
+        localStorage.setItem("rememberedLogin", JSON.stringify({ email, password }));
+      } else {
+        localStorage.removeItem("rememberedLogin");
+      }
+      setSnackbar({
+        open: true,
+        message: lang === "ar" ? "تم تسجيل الدخول بنجاح!" : "Login Successful!",
+        severity: "success",
+      });
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1200);
     } catch (err: any) {
-      alert(
-        err.response?.data?.message || (lang === "ar" ? "فشل تسجيل الدخول. حاول مرة أخرى." : "Login failed. Please try again.")
-      );
+      setSnackbar({
+        open: true,
+        message:
+          err.response?.data?.message ||
+          (lang === "ar"
+            ? "فشل تسجيل الدخول. حاول مرة أخرى."
+            : "Login failed. Please try again."),
+        severity: "error",
+      });
     }
   };
 
@@ -234,7 +282,7 @@ const Login: React.FC = () => {
                     // fontWeight="500"
                     gutterBottom
                     sx={{
-                      fontSize: "40px",
+                      fontSize: "35px",
                       fontFamily: "Open Sans, sans-serif",
                       mb: 1,
                       fontWeight: 400,
@@ -341,7 +389,7 @@ const Login: React.FC = () => {
                     placeholder="name@example.com"
                     sx={{ mt: 1 }}
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={handleEmailChange}
                     error={Boolean(emailError)}
                     helperText={emailError}
                     InputProps={{
@@ -454,6 +502,8 @@ const Login: React.FC = () => {
                       }}
                       control={
                         <Checkbox
+                          checked={rememberMe}
+                          onChange={e => setRememberMe(e.target.checked)}
                           icon={
                             <Box
                               sx={{
@@ -565,6 +615,20 @@ const Login: React.FC = () => {
           </Box>
         </Box>
       </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%", fontSize: "1rem" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
