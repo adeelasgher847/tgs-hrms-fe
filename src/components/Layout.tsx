@@ -3,9 +3,10 @@ import Sidebar from "./Sidebar";
 import Navbar from "./Nabvar";
 import { Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import "../layout.css";
 import EmployeeInviteModal from "./Modal/EmployeeInviteModal";
-
+import { useLanguage } from "../context/LanguageContext";
 const Layout = () => {
   const theme = useTheme();
   const isLargeScreen = useMediaQuery(theme.breakpoints.up("lg"));
@@ -13,6 +14,8 @@ const Layout = () => {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [rtlMode, setRtlMode] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const { language, setLanguage } = useLanguage();
+
   // Update sidebar state when screen size changes
   useEffect(() => {
     setSidebarOpen(isLargeScreen); // lg+ → open by default, others → closed
@@ -131,10 +134,54 @@ const Layout = () => {
           component="main"
           sx={{
             flex: 1,
-            p:{xs:"7px", md:"26px"}
-            // backgroundColor: "#fff",
+            px: { xs: "7px", md: "26px" },
+            pt: 0
+
           }}
         >
+          <Box sx={{ display: "flex", justifyContent: "end", alignItems: "center", mb:1 }}>
+            {/* Language Toggle */}
+            <ToggleButtonGroup
+              value={language}
+              exclusive
+              onChange={(_, value) => value && setLanguage(value)}
+              size="small"
+            >
+              <ToggleButton
+                value="en"
+                sx={{
+                  color: darkMode ? "#fff" : "#000",
+                  "&.Mui-selected": {
+                    backgroundColor: "#484c7f",
+                    color: "#fff",
+                    "&:hover": {
+                      backgroundColor: "#484c7f",
+                    },
+                  },
+                }}
+              >
+                EN
+              </ToggleButton>
+
+              <ToggleButton
+                value="ar"
+                sx={{
+                  color: darkMode ? "#fff" : "#000",
+                  "&.Mui-selected": {
+                    backgroundColor: "#484c7f",
+                    color: "#fff",
+                    "&:hover": {
+                      backgroundColor: "#484c7f",
+                    },
+                  },
+                }}
+              >
+                عربي
+              </ToggleButton>
+            </ToggleButtonGroup>
+
+
+          </Box>
           <Outlet context={{ darkMode }} />
         </Box>
       </Box>

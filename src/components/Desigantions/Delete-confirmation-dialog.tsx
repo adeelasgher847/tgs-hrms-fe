@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -6,18 +7,17 @@ import {
   Button,
   Typography,
   Box,
-  useMediaQuery,
-  useTheme,
+  IconButton,
 } from "@mui/material";
-import { Warning as WarningIcon } from "@mui/icons-material";
+import { Close as CloseIcon } from "@mui/icons-material";
+import { useLanguage } from "../../context/LanguageContext";
 
-interface DeleteConfirmationDialogProps {
+interface Props {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
   designationTitle: string;
   isRTL: boolean;
-  getText: (en: string, ar: string) => string;
 }
 
 export default function DeleteConfirmationDialog({
@@ -25,85 +25,44 @@ export default function DeleteConfirmationDialog({
   onClose,
   onConfirm,
   designationTitle,
-
-  getText,
-}: DeleteConfirmationDialogProps) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  const handleConfirm = () => {
-    onConfirm();
-    onClose();
-  };
+  isRTL,
+}: Props) {
+  const { language } = useLanguage();
+  const getText = (en: string, ar: string) => (language === "ar" ? ar : en);
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth="xs"
       fullWidth
-      fullScreen={isMobile}
-      PaperProps={{
-        sx: {
-          m: isMobile ? 0 : 2,
-        },
-      }}
+      dir={isRTL ? "rtl" : "ltr"}
     >
       <DialogTitle>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <WarningIcon color="warning" />
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Typography variant="h6">
-            {getText("Confirm Deletion", "تأكيد الحذف")}
+            {getText("Confirm Delete", "تأكيد الحذف")}
           </Typography>
+          <IconButton onClick={onClose} size="small">
+            <CloseIcon />
+          </IconButton>
         </Box>
       </DialogTitle>
 
       <DialogContent>
-        <Typography variant="body1" sx={{ mb: 2 }}>
+        <Typography variant="body1" sx={{ mt: 2 }}>
           {getText(
-            "Are you sure you want to delete this designation?",
-            "هل أنت متأكد من أنك تريد حذف هذا المسمى الوظيفي؟"
-          )}
-        </Typography>
-
-        <Box
-          sx={{
-            p: 2,
-            bgcolor: "grey.100",
-            borderRadius: 1,
-            border: "1px solid",
-            borderColor: "grey.300",
-          }}
-        >
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-            {getText(
-              "Designation to be deleted:",
-              "المسمى الوظيفي المراد حذفه:"
-            )}
-          </Typography>
-          <Typography variant="body1" fontWeight="medium">
-            {designationTitle}
-          </Typography>
-        </Box>
-
-        <Typography variant="body2" color="error" sx={{ mt: 2 }}>
-          {getText(
-            "This action cannot be undone.",
-            "لا يمكن التراجع عن هذا الإجراء."
+            `Are you sure you want to delete "${designationTitle}"?`,
+            `هل أنت متأكد أنك تريد حذف "${designationTitle}"؟`
           )}
         </Typography>
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, pt: 2 }}>
-        <Button onClick={onClose} color="inherit">
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button onClick={onClose} color="inherit" size="large">
           {getText("Cancel", "إلغاء")}
         </Button>
-        <Button
-          onClick={handleConfirm}
-          variant="contained"
-          color="error"
-          autoFocus
-        >
+        <Button onClick={onConfirm} color="error" variant="contained" size="large">
           {getText("Delete", "حذف")}
         </Button>
       </DialogActions>

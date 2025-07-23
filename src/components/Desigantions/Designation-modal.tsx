@@ -14,6 +14,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface Designation {
   id: number;
@@ -28,7 +29,6 @@ interface DesignationModalProps {
   onSave: (data: { title: string; titleAr: string }) => void;
   designation: Designation | null;
   isRTL: boolean;
-  getText: (en: string, ar: string) => string;
 }
 
 export default function DesignationModal({
@@ -36,19 +36,18 @@ export default function DesignationModal({
   onClose,
   onSave,
   designation,
-
-  getText,
+  isRTL,
 }: DesignationModalProps) {
+  const { language } = useLanguage();
+  const getText = (en: string, ar: string) => (language === "ar" ? ar : en);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [title, setTitle] = useState("");
   const [titleAr, setTitleAr] = useState("");
-  const [errors, setErrors] = useState<{ title?: string; titleAr?: string }>(
-    {}
-  );
+  const [errors, setErrors] = useState<{ title?: string; titleAr?: string }>({});
 
-  // Reset form when modal opens/closes or designation changes
   useEffect(() => {
     if (designation) {
       setTitle(designation.title);
@@ -60,7 +59,6 @@ export default function DesignationModal({
     setErrors({});
   }, [designation, open]);
 
-  // Form validation
   const validateForm = () => {
     const newErrors: { title?: string; titleAr?: string } = {};
 
@@ -82,7 +80,6 @@ export default function DesignationModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
   const handleSubmit = () => {
     if (validateForm()) {
       onSave({ title: title.trim(), titleAr: titleAr.trim() });
@@ -90,7 +87,6 @@ export default function DesignationModal({
     }
   };
 
-  // Handle modal close
   const handleClose = () => {
     setTitle("");
     setTitleAr("");
@@ -98,7 +94,6 @@ export default function DesignationModal({
     onClose();
   };
 
-  // Handle Enter key press
   const handleKeyPress = (event: React.KeyboardEvent) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -118,6 +113,7 @@ export default function DesignationModal({
           m: isMobile ? 0 : 2,
         },
       }}
+      dir={isRTL ? "rtl" : "ltr"}
     >
       <DialogTitle>
         <Box
@@ -140,7 +136,6 @@ export default function DesignationModal({
 
       <DialogContent>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 1 }}>
-          {/* English Title Field */}
           <TextField
             label={getText(
               "Designation Title (English)",
@@ -159,7 +154,6 @@ export default function DesignationModal({
             }}
           />
 
-          {/* Arabic Title Field */}
           <TextField
             label={getText(
               "Designation Title (Arabic)",
@@ -180,20 +174,17 @@ export default function DesignationModal({
       </DialogContent>
 
       <DialogActions sx={{ p: 3, pt: 2 }}>
-        {/* Cancel Button */}
         <Button onClick={handleClose} color="inherit" size="large">
           {getText("Cancel", "إلغاء")}
         </Button>
-        {/* Submit Button */}
         <Button
           onClick={handleSubmit}
           variant="contained"
           disabled={!title.trim() || !titleAr.trim()}
           size="large"
+          sx={{backgroundColor: "#464b8a"}}
         >
-          {designation
-            ? getText("Update", "تحديث")
-            : getText("Create", "إنشاء")}
+          {designation ? getText("Update", "تحديث") : getText("Create", "إنشاء")}
         </Button>
       </DialogActions>
     </Dialog>
