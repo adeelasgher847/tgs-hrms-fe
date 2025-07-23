@@ -1,6 +1,8 @@
 import React from "react";
 import { Box, Typography, Card, CardContent, Avatar } from "@mui/material";
 import { useOutletContext } from "react-router-dom";
+import { useLanguage } from "../../../context/LanguageContext";
+
 type Performer = {
   name: string;
   email: string;
@@ -13,6 +15,8 @@ type TopPerformersProps = {
   subtitle?: string;
   newTask: number;
   completedTask: number;
+  newTaskLabel: string;
+  completedTaskLabel: string;
   performers: Performer[];
 };
 
@@ -21,30 +25,41 @@ const TopPerformers: React.FC<TopPerformersProps> = ({
   subtitle = "You have 140 influencers in your company.",
   newTask,
   completedTask,
+  newTaskLabel,
+  completedTaskLabel,
   performers,
 }) => {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const { language } = useLanguage();
+
   const bgColor = darkMode ? "#111" : "#fff";
-  // const borderColor = darkMode ? "#252525" : "#f0f0f0";
   const textColor = darkMode ? "#8f8f8f" : "#000";
 
   return (
-    <Box p={1} bgcolor="#f1c8db" borderRadius={"0.375rem"} boxShadow={2}>
-      <Box p={2}>
-        <Typography
-          variant="h6"
-          fontWeight={700}
-          fontSize={16}
-          gutterBottom
-          mb={3}
-          color={textColor}
-        >
-          {title}
-        </Typography>
-        <Typography variant="body2" color={textColor}>
-          {subtitle}
-        </Typography>
-      </Box>
+    <Box
+      p={1}
+      bgcolor="#f1c8db"
+      borderRadius={"0.375rem"}
+      boxShadow={2}
+      sx={{ direction: language === "ar" ? "rtl" : "ltr" }} // Apply RTL
+    >
+        <Box p={2}>
+          <Typography
+            variant="h6"
+            fontWeight={700}
+            fontSize={16}
+            gutterBottom
+            mb={3}
+            color={textColor}
+          >
+            {title}
+          </Typography>
+          <Typography variant="body2" color={textColor}>
+            {subtitle}
+          </Typography>
+        </Box>
+
+      {/* Task Stats */}
       <Box
         display="flex"
         justifyContent={"space-between"}
@@ -53,34 +68,27 @@ const TopPerformers: React.FC<TopPerformersProps> = ({
         p={2}
         pt={0}
         borderRadius={"0.375rem"}
-        sx={{
-          maxWidth: { md: 279 },
-        }}
+        sx={{ maxWidth: { md: 279 } }}
       >
         <Box>
-          <Typography
-            variant="h5"
-            fontWeight={700}
-            textAlign={"center"}
-            color={textColor}
-          >
-            {newTask}
+          <Typography variant="h5" fontWeight={700} textAlign={"center"} color={textColor}>
+            {newTask.toLocaleString(language)}
           </Typography>
           <Typography fontSize={14} color={textColor} textAlign={"center"}>
-            New Task
+            {newTaskLabel}
           </Typography>
         </Box>
         <Box>
           <Typography variant="h5" fontWeight={700} color={textColor}>
-            {completedTask}
+            {completedTask.toLocaleString(language)}
           </Typography>
           <Typography fontSize={14} color={textColor}>
-            Task Completed
+            {completedTaskLabel}
           </Typography>
         </Box>
       </Box>
 
-      {/* Performer Cards */}
+      {/* Performers */}
       <Box display="flex" flexWrap="wrap" justifyContent="center" gap={2}>
         {performers.map((p, i) => (
           <Card
@@ -101,26 +109,14 @@ const TopPerformers: React.FC<TopPerformersProps> = ({
               <Avatar sx={{ margin: "0 auto", bgcolor: "#1976d2" }}>
                 {p.icon}
               </Avatar>
-              <Typography
-                mt={1}
-                fontWeight={600}
-                fontSize={"14px"}
-                color={textColor}
-              >
+              <Typography mt={1} fontWeight={600} fontSize={"14px"} color={textColor}>
                 {p.name}
               </Typography>
               <Typography fontSize={"12px"} color={textColor}>
                 {p.email}
               </Typography>
-              <Typography
-                mt={1}
-                fontWeight={700}
-                sx={{
-                  fontSize: { xs: "29px", md: "38px" },
-                }}
-                color="#484c7f"
-              >
-                {p.percentage}%
+              <Typography mt={1} fontWeight={700} sx={{ fontSize: { xs: "29px", md: "38px" } }} color="#484c7f">
+                {p.percentage.toLocaleString(language)}%
               </Typography>
             </CardContent>
           </Card>

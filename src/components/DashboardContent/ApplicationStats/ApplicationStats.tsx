@@ -1,6 +1,6 @@
 import StatCard from "./StatCard";
 import { Box } from "@mui/material";
-import usersIcon from "../../../assets/dashboardIcon/users-alt-2.svg";
+import usersIcon from "../../../assets/dashboardIcon/users-alt-2.svg"
 import handsIcon from "../../../assets/dashboardIcon/holding-hands.svg";
 import chartbargraphIcon from "../../../assets/dashboardIcon/chart-bar-graph.svg";
 import chartlineIcon from "../../../assets/dashboardIcon/chart-line.svg";

@@ -6,8 +6,11 @@ import Layout from './components/Layout';
 import './App.css';
 import Signup from './components/Signup';
 import { DepartmentList } from "./components/department/Department-list";
+import { LanguageProvider } from "./context/LanguageContext";
+import DesignationManager from './components/Desigantions/Designation-manager';
 function App() {
   return (
+    <LanguageProvider>
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
@@ -16,10 +19,11 @@ function App() {
         <Route path="/dashboard" element={<Layout />}>
           <Route index element={<Dashboard />} />
            <Route path="departments" element={<DepartmentList />} />
+           <Route path="Designations" element={<DesignationManager />} />
         </Route>
       </Routes>
     </Router>
-
+    </LanguageProvider>
   );
 }
 

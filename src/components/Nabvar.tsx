@@ -1,12 +1,12 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
-import AvatarOne from "../assets/NavbarAvatar/avatarone.jpg"
-import AvatarTwo from "../assets/NavbarAvatar/avatartwo.jpg"
-import AvatarThree from "../assets/NavbarAvatar/avatarthree.jpg"
-import AvatarFour from "../assets/NavbarAvatar/avatarfour.jpg"
-import AvatarProfile from "../assets/NavbarAvatar/ProfileAvatar.png"
-import { useEffect, useState } from "react";
+import AvatarOne from "../assets/NavbarAvatar/avatarone.jpg";
+import AvatarTwo from "../assets/NavbarAvatar/avatartwo.jpg";
+import AvatarThree from "../assets/NavbarAvatar/avatarthree.jpg";
+import AvatarFour from "../assets/NavbarAvatar/avatarfour.jpg";
+import AvatarProfile from "../assets/NavbarAvatar/ProfileAvatar.png";
+import { useLanguage } from "../context/LanguageContext";
 import {
   AppBar,
   Box,
@@ -31,6 +31,30 @@ import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
+import { useState, useEffect } from "react";
+
+const labels = {
+  en: {
+    search: "Search",
+    myTask: "My Task",
+    members: "Members",
+    signout: "Sign Out",
+    addAccount: "Add Personal Account",
+    adminProfile: "Admin Profile",
+    dylan: "Dylan Hunter",
+    email: "Dylan.hunter@gmail.com",
+  },
+  ar: {
+    search: "بحث",
+    myTask: "مهامي",
+    members: "الأعضاء",
+    signout: "تسجيل الخروج",
+    addAccount: "إضافة حساب",
+    adminProfile: "ملف المشرف",
+    dylan: "ديلان هنتر",
+    email: "Dylan.hunter@gmail.com",
+  },
+};
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -38,7 +62,6 @@ const Search = styled("div")(({ theme }) => ({
   backgroundColor: "#efefef",
   height: "44px",
   display: "flex",
-  // gap: "40px",
   alignItems: "center",
   paddingLeft: theme.spacing(1),
   width: "100%",
@@ -80,23 +103,8 @@ const Navbar: React.FC<NavbarProps> = ({
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-    navigate("/");
-  };
-  const textColor = darkMode ? "#8f8f8f" : "#000";
-  const iconColor = darkMode ? "#8f8f8f" : "#000"; 
-
-  // Add state for user
+  const { language } = useLanguage();
+  const lang = labels[language];
   const [user, setUser] = useState<{ name: string; role: string; email: string; avatarUrl?: string } | null>(null);
 
   useEffect(() => {
@@ -116,19 +124,39 @@ const Navbar: React.FC<NavbarProps> = ({
     }
   }, []);
 
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    navigate("/");
+  };
+
+  const textColor = darkMode ? "#8f8f8f" : "#000";
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar
         position="static"
         elevation={0}
-        sx={{ backgroundColor: darkMode ? "unset" : "unset", color: "black" }}
+        sx={{
+          backgroundColor: "transparent",
+          color: darkMode ? "white" : "black",
+        }}
       >
         <Toolbar
           disableGutters
           sx={{
             px: { xs: 1, md: 3 },
             gap: "10px",
-            justifyContent: "space-between",
+            justifyContent: {xs:"center" , sm:"space-between"},
             flexWrap: "wrap",
           }}
         >
@@ -144,134 +172,66 @@ const Navbar: React.FC<NavbarProps> = ({
                 height: "44px",
               }}
             >
-              <Search
-                sx={{
-                  backgroundColor: "transparent",
-                  height: "100%",
-                  paddingLeft: 0,
-                }}
-              >
+              <Search sx={{ backgroundColor: "transparent", height: "100%", paddingLeft: 0 }}>
                 <SearchIconWrapper>
-                  <SearchIcon  sx={{color:darkMode ? "#8f8f8f" : "#000"}}/>
+                  <SearchIcon sx={{ color: darkMode ? "#8f8f8f" : "#000" }} />
                 </SearchIconWrapper>
-
                 <StyledInputBase
-                  placeholder="Search"
+                  placeholder={lang.search}
                   inputProps={{ "aria-label": "search" }}
                   sx={{
                     transition: "all 0.3s ease-in-out",
                     color: darkMode ? "white" : "black",
                     "& input": {
                       backgroundColor: "transparent",
-                      transition: "all 0.3s ease-in-out",
                       height: "43px",
-                      // width:"100%"
                     },
                     "&:focus-within": {
-                      // border: "1px solid black",
-                      // padding: "10px",
                       height: "45px",
-                      "& input": {
-                        // backgroundColor: "#fff",
-                      },
                     },
                   }}
                 />
               </Search>
 
-              {/* Add Icon with same bg and alignment */}
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  display: { xs: "block", sm: "none" },
+                  borderRadius: "6px",
+                  p: "6px",
                 }}
               >
-                <Box
+                <AddIcon
                   sx={{
-                    display: { xs: "block", sm: "none" },
-                    borderRadius: "6px",
-                    p: "6px",
+                    cursor: "pointer",
+                    color: "#555",
+                    fontSize: "26px",
+                    width: "31px",
+                    height: "31px",
                   }}
-                >
-                  <AddIcon
-                    sx={{
-                      cursor: "pointer",
-                      color: "#555",
-                      fontSize: "26px",
-                      width: "31px",
-                      height: "31px",
-                    }}
-                    onClick={onOpenInviteModal}
-                  />
-                </Box>
+                  onClick={onOpenInviteModal}
+                />
               </Box>
             </Box>
           </Box>
 
-          {/* Right Side Icons */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: { xs: 1, md: 2 },
-            }}
-          >
-            <IconButton
-              sx={{
-                backgroundColor: "#4b4f73",
-                color: "white",
-                width: 28,
-                height: 28,
-              }}
-            >
+          {/* Right Side */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.2, md: 2 } }}>
+            <IconButton sx={{ backgroundColor: "#4b4f73", color: "white", width: 28, height: 28 }}>
               <InfoOutlinedIcon fontSize="small" />
             </IconButton>
 
-            <Stack
-              direction="row"
-              spacing={-1}
-              sx={{ display: { xs: "none", sm: "flex" } }}
-            >
-              <Avatar
-                alt="User 1"
-                src={AvatarOne}
-                sx={{ width: 32, height: 32 }}
-              />
-              <Avatar
-                alt="User 2"
-                src={AvatarTwo}
-                sx={{ width: 32, height: 32 }}
-              />
-              <Avatar
-                alt="User 3"
-                src={AvatarThree}
-                sx={{ width: 32, height: 32 }}
-              />
-              <Avatar
-                alt="User 4"
-                src={AvatarFour}
-                sx={{ width: 32, height: 32 }}
-              />
-                  <Avatar
-                alt="User 4"
-                src={AvatarTwo}
-                sx={{ width: 32, height: 32 }}
-              />
-              <Avatar
-                sx={{ width: 32, height: 32, backgroundColor: "#4b4f73" }}
-              >
-                <AddIcon
-                  sx={{ cursor: "pointer" }}
-                  onClick={onOpenInviteModal}
-                  fontSize="small"
-                />
+            <Stack direction="row" spacing={-1} sx={{ display: { xs: "none", sm: "flex" } }}>
+              {[AvatarOne, AvatarTwo, AvatarThree, AvatarFour].map((src, index) => (
+                <Avatar key={index} alt={`User ${index + 1}`} src={src} sx={{ width: 32, height: 32 }} />
+              ))}
+              <Avatar sx={{ width: 32, height: 32, backgroundColor: "#4b4f73" }}>
+                <AddIcon sx={{ cursor: "pointer" }} onClick={onOpenInviteModal} fontSize="small" />
               </Avatar>
             </Stack>
 
             <IconButton>
               <Badge variant="dot" color="error">
-                <NotificationsNoneOutlinedIcon  sx={{ color: textColor }}  />
+                <NotificationsNoneOutlinedIcon sx={{ color: textColor }} />
               </Badge>
             </IconButton>
 
@@ -290,7 +250,11 @@ const Navbar: React.FC<NavbarProps> = ({
                 {user?.name || "User"}
               </Typography>
               <Typography variant="caption" color={textColor}>
-                {user?.role == "admin" ? "Admin Profile" : user?.role == "staff" ? "Staff Profile" : "User Profile"}
+                {user?.role == "admin"
+                  ? "Admin Profile"
+                  : user?.role == "staff"
+                  ? "Staff Profile"
+                  : "User Profile"}
               </Typography>
             </Box>
 
@@ -303,31 +267,21 @@ const Navbar: React.FC<NavbarProps> = ({
                   height: "45px",
                   border: "1px solid #dee2e6",
                   p: "3px",
-                  "& img": {
-                    borderRadius: "50%",
-                  },
+                  "& img": { borderRadius: "50%" },
                 }}
               >
                 {!user?.avatarUrl && user?.name ? user.name[0] : null}
               </Avatar>
             </IconButton>
+
+            <IconButton onClick={onToggleSidebar} sx={{ display: { xs: "block", lg: "none" } }}>
+              <MenuIcon sx={{ color: textColor }} />
+            </IconButton>
           </Box>
-          {/* Toggle Sidebar Button */}
-          <IconButton
-            onClick={onToggleSidebar}
-            sx={{
-              display: {
-                xs: "block",
-                lg: "none",
-              },
-            }}
-          >
-            <MenuIcon sx={{ color: iconColor }}/>
-          </IconButton>
         </Toolbar>
       </AppBar>
 
-      {/* Profile Dropdown Menu */}
+      {/* Menu */}
       <Menu
         anchorEl={anchorEl}
         open={open}
@@ -336,14 +290,8 @@ const Navbar: React.FC<NavbarProps> = ({
         transformOrigin={{ vertical: "top", horizontal: "right" }}
         PaperProps={{
           elevation: 4,
-          sx: {
-            borderRadius: "10px",
-            width: 280,
-            p: 2,
-            backgroundColor:darkMode ? "#111" : "#fff"
-          },
+          sx: { borderRadius: "10px", width: 280, p: 2, backgroundColor: darkMode ? "#111" : "#fff" },
         }}
-        
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
           <Avatar
@@ -361,38 +309,22 @@ const Navbar: React.FC<NavbarProps> = ({
           </Box>
         </Box>
         <Divider sx={{ mb: 1 }} />
-        <MenuItem color={textColor}>
-          <ListItemIcon>
-            <AssignmentOutlinedIcon fontSize="small"  sx={{ color: textColor }}  />
-          </ListItemIcon>
-          <Typography color={textColor}>
-          My Task
-          </Typography>
+        <MenuItem onClick={handleMenuClose}>
+          <ListItemIcon><AssignmentOutlinedIcon fontSize="small" sx={{ color: textColor }} /></ListItemIcon>
+          <Typography color={textColor}>{lang.myTask}</Typography>
         </MenuItem>
-        <MenuItem>
-          <ListItemIcon>
-            <GroupOutlinedIcon fontSize="small"  sx={{ color: textColor }} />
-          </ListItemIcon>
-          <Typography color={textColor}>
-          Members
-          </Typography>
+        <MenuItem onClick={handleMenuClose}>
+          <ListItemIcon><GroupOutlinedIcon fontSize="small" sx={{ color: textColor }} /></ListItemIcon>
+          <Typography color={textColor}>{lang.members}</Typography>
         </MenuItem>
         <MenuItem onClick={handleLogout}>
-          <ListItemIcon>
-            <LogoutIcon fontSize="small"  sx={{ color: textColor }}  />
-          </ListItemIcon>
-          <Typography color={textColor}>
-          Signout
-          </Typography>
+          <ListItemIcon><LogoutIcon fontSize="small" sx={{ color: textColor }} /></ListItemIcon>
+          <Typography color={textColor}>{lang.signout}</Typography>
         </MenuItem>
         <Divider sx={{ my: 1 }} />
-        <MenuItem color={textColor}>
-          <ListItemIcon>
-            <PersonAddAltIcon fontSize="small"  sx={{ color: textColor }} />
-          </ListItemIcon>
-          <Typography color={textColor}>
-          Add personal account
-          </Typography>
+        <MenuItem onClick={handleMenuClose}>
+          <ListItemIcon><PersonAddAltIcon fontSize="small" sx={{ color: textColor }} /></ListItemIcon>
+          <Typography color={textColor}>{lang.addAccount}</Typography>
         </MenuItem>
       </Menu>
     </Box>
