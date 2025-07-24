@@ -80,7 +80,6 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     setErrors({});
   }, [department, open]);
 
-  /* ---------- validation helpers ---------- */
   const validateForm = (): boolean => {
     const newErrors: DepartmentFormErrors = {};
 
@@ -120,14 +119,13 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  /* ---------- submit ---------- */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
     setIsSubmitting(true);
 
     try {
-      await new Promise((r) => setTimeout(r, 1000)); // fake delay
+      await new Promise((r) => setTimeout(r, 1000));
       onSubmit(formData);
       onClose();
     } catch (err) {
@@ -144,7 +142,22 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
       if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
     };
 
-  /* ---------- form JSX ---------- */
+  // Shared dark mode border styles
+  const darkInputStyles: SxProps<Theme> = darkMode
+    ? {
+        color: "#fff",
+        "& .MuiOutlinedInput-notchedOutline": {
+          borderColor: "#555",
+        },
+        "&:hover .MuiOutlinedInput-notchedOutline": {
+          borderColor: "#888",
+        },
+        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+          borderColor: "#90caf9",
+        },
+      }
+    : {};
+
   const formContent = (
     <Box
       component="form"
@@ -158,7 +171,6 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         color: darkMode ? "#e0e0e0" : undefined,
       }}
     >
-      {/* English name */}
       <TextField
         fullWidth
         label={isRtl ? "اسم القسم (بالإنجليزية)" : "Department Name (English)"}
@@ -169,13 +181,10 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         required
         InputLabelProps={{ style: { color: darkMode ? "#ccc" : undefined } }}
         InputProps={{
-          sx: {
-            color: darkMode ? "#fff" : "inherit", // 👈 Input text color
-          },
+          sx: darkInputStyles,
         }}
       />
 
-      {/* Arabic name */}
       <TextField
         fullWidth
         label={isRtl ? "اسم القسم (بالعربية)" : "Department Name (Arabic)"}
@@ -186,14 +195,13 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         required
         InputLabelProps={{ style: { color: darkMode ? "#ccc" : undefined } }}
         InputProps={{
-          sx: {
-            color: darkMode ? "#fff" : "inherit", // 👈 Input text color
-          },
+          sx: darkInputStyles,
         }}
-        sx={{ "& .MuiInputBase-input": { textAlign: "right" } }}
+        sx={{
+          "& .MuiInputBase-input": { textAlign: "right" },
+        }}
       />
 
-      {/* English description */}
       <TextField
         fullWidth
         label={
@@ -209,13 +217,10 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         rows={3}
         InputLabelProps={{ style: { color: darkMode ? "#ccc" : undefined } }}
         InputProps={{
-          sx: {
-            color: darkMode ? "#fff" : "inherit", // 👈 Input text color
-          },
+          sx: darkInputStyles,
         }}
       />
 
-      {/* Arabic description */}
       <TextField
         fullWidth
         label={
@@ -231,11 +236,11 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         rows={3}
         InputLabelProps={{ style: { color: darkMode ? "#ccc" : undefined } }}
         InputProps={{
-          sx: {
-            color: darkMode ? "#fff" : "inherit", // 👈 Input text color
-          },
+          sx: darkInputStyles,
         }}
-        sx={{ "& .MuiInputBase-input": { textAlign: "right" } }}
+        sx={{
+          "& .MuiInputBase-input": { textAlign: "right" },
+        }}
       />
 
       {Object.keys(errors).length > 0 && (
@@ -248,7 +253,6 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     </Box>
   );
 
-  /* ---------- action buttons ---------- */
   const actionButtons = (
     <>
       <Button onClick={onClose} disabled={isSubmitting}>
@@ -276,14 +280,12 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     </>
   );
 
-
   const paperSx: SxProps<Theme> = {
     direction: isRtl ? "rtl" : "ltr",
     backgroundColor: darkMode ? "#1e1e1e" : "#fff",
     color: darkMode ? "#e0e0e0" : undefined,
   };
 
-  /* ---------- MOBILE drawer ---------- */
   if (isMobile) {
     return (
       <Drawer
@@ -319,7 +321,6 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     );
   }
 
-  /* ---------- DESKTOP dialog ---------- */
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={paperSx} style={{ position: "relative" }}>
