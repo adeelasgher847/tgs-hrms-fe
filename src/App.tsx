@@ -8,6 +8,7 @@ import Signup from './components/Signup';
 import { DepartmentList } from "./components/department/Department-list";
 import { LanguageProvider } from "./context/LanguageContext";
 import DesignationManager from './components/Desigantions/Designation-manager';
+import Error404 from './components/Error404';
 function App() {
   return (
     <LanguageProvider>
@@ -21,6 +22,7 @@ function App() {
            <Route path="departments" element={<DepartmentList />} />
            <Route path="Designations" element={<DesignationManager />} />
         </Route>
+        <Route path="*" element={<Error404 />} />
       </Routes>
     </Router>
     </LanguageProvider>

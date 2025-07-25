@@ -30,8 +30,8 @@ import {
 import { useOutletContext } from "react-router-dom";
 import DesignationModal from "../Desigantions/Designation-modal";
 import DeleteConfirmationDialog from "./Delete-confirmation-dialog";
-import { mockDepartments, mockDesignations } from "../../Data/mockData";
-import type { Department, Designation } from "../../Data/mockData";
+import { mockDepartments, mockDesignations } from "../../data/mockData";
+import type { Department, Designation } from "../../data/mockData";
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function DesignationManager() {
@@ -199,7 +199,13 @@ export default function DesignationManager() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: "bold", color: darkMode ? "#fff" : "#000" }}>
+                  <TableCell
+                    sx={{
+                      fontWeight: "bold",
+                      color: darkMode ? "#fff" : "#000",
+                      ...(isRTL ? { textAlign: "right" } : { textAlign: "left" }),
+                    }}
+                  >
                     {getText("Designation Title", "المسمى الوظيفي")}
                   </TableCell>
                   <TableCell
@@ -213,7 +219,12 @@ export default function DesignationManager() {
               <TableBody>
                 {paginatedData.map((designation) => (
                   <TableRow key={designation.id} hover>
-                    <TableCell sx={{ color: darkMode ? "#fff" : "#000" }}>
+                    <TableCell
+                      sx={{
+                        color: darkMode ? "#fff" : "#000",
+                        ...(isRTL ? { textAlign: "right" } : { textAlign: "left" }),
+                      }}
+                    >
                       {getText(designation.title, designation.titleAr)}
                     </TableCell>
                     <TableCell align="center">

@@ -43,6 +43,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState<string>("");
   const [rememberMe, setRememberMe] = useState(false);
   const [remembered, setRemembered] = useState<{ email: string; password: string } | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const [emailError, setEmailError] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
@@ -58,6 +59,19 @@ const Login: React.FC = () => {
       } catch {}
     }
   }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      navigate("/dashboard", { replace: true });
+    } else {
+      setCheckingAuth(false);
+    }
+  }, [navigate]);
+
+  if (checkingAuth) {
+    return null; // Or a loader if you want
+  }
 
   const handleTogglePassword = (): void => setShowPassword((prev) => !prev);
 
@@ -85,21 +99,15 @@ const Login: React.FC = () => {
     e.preventDefault();
     let valid = true;
 
-    if (!email || !validateEmail(email)) {
-      setEmailError(
-        lang === "ar" ? "بريد إلكتروني غير صالح" : "Invalid email address"
-      );
+    if (!email) {
+      setEmailError(lang === "ar" ? "يرجى إدخال البريد الإلكتروني" : "Please enter your email");
       valid = false;
     } else {
       setEmailError("");
     }
 
-    if (!password || !validatePassword(password)) {
-      setPasswordError(
-        lang === "ar"
-          ? "كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل، حرف كبير وصغير ورقم"
-          : "Password must be at least 8 characters, include uppercase, lowercase and number"
-      );
+    if (!password) {
+      setPasswordError(lang === "ar" ? "يرجى إدخال كلمة المرور" : "Please enter your password");
       valid = false;
     } else {
       setPasswordError("");
@@ -108,7 +116,7 @@ const Login: React.FC = () => {
     if (!valid) return;
 
     try {
-      const res = await axios.post("http://localhost:3000/auth/login", {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, {
         email,
         password,
       });
@@ -129,15 +137,19 @@ const Login: React.FC = () => {
         navigate("/dashboard");
       }, 1200);
     } catch (err: any) {
-      setSnackbar({
-        open: true,
-        message:
-          err.response?.data?.message ||
-          (lang === "ar"
-            ? "فشل تسجيل الدخول. حاول مرة أخرى."
-            : "Login failed. Please try again."),
-        severity: "error",
-      });
+      // Backend may send { field: 'email' | 'password', message: string }
+      const data = err.response?.data;
+      if (data?.field === "email") {
+        setEmailError(data.message);
+        setPasswordError("");
+      } else if (data?.field === "password") {
+        setPasswordError(data.message);
+        setEmailError("");
+      } else {
+        setEmailError("");
+        setPasswordError("");
+        // No snackbar for error
+      }
     }
   };
 
@@ -392,6 +404,9 @@ const Login: React.FC = () => {
                     onChange={handleEmailChange}
                     error={Boolean(emailError)}
                     helperText={emailError}
+                    FormHelperTextProps={{
+                      style: { fontSize: '16px' } // or any size you want
+                    }}
                     InputProps={{
                       sx: {
                         backgroundColor: "#eee",
@@ -456,6 +471,9 @@ const Login: React.FC = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       error={Boolean(passwordError)}
                       helperText={passwordError}
+                      FormHelperTextProps={{
+                        style: { fontSize: '16px' } // or any size you want
+                      }}
                       inputProps={{
                         maxLength: 15,
                       }}
