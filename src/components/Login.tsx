@@ -25,8 +25,6 @@ import axios from "axios";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert, { type AlertProps } from "@mui/material/Alert";
 
-
-
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
   props,
   ref
@@ -42,11 +40,18 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [remembered, setRemembered] = useState<{ email: string; password: string } | null>(null);
+  const [remembered, setRemembered] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
 
   const [emailError, setEmailError] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({ open: false, message: "", severity: "success" });
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({ open: false, message: "", severity: "success" });
 
   useEffect(() => {
     const rememberedStr = localStorage.getItem("rememberedLogin");
@@ -81,7 +86,9 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
     let valid = true;
 
@@ -116,7 +123,10 @@ const Login: React.FC = () => {
       localStorage.setItem("refreshToken", res.data.refreshToken);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       if (rememberMe) {
-        localStorage.setItem("rememberedLogin", JSON.stringify({ email, password }));
+        localStorage.setItem(
+          "rememberedLogin",
+          JSON.stringify({ email, password })
+        );
       } else {
         localStorage.removeItem("rememberedLogin");
       }
@@ -503,7 +513,7 @@ const Login: React.FC = () => {
                       control={
                         <Checkbox
                           checked={rememberMe}
-                          onChange={e => setRememberMe(e.target.checked)}
+                          onChange={(e) => setRememberMe(e.target.checked)}
                           icon={
                             <Box
                               sx={{
