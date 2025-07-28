@@ -13,7 +13,7 @@ import {
   Delete as DeleteIcon,
   Work as WorkIcon,
 } from "@mui/icons-material";
-import type { Designation } from "../../Data/mockData";
+import type { Designation } from "../../data/mockData";
 
 interface DesignationsListProps {
   designations: Designation[];

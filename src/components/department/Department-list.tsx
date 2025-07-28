@@ -12,7 +12,7 @@ import {
 import { Add as AddIcon, Business as BusinessIcon } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
 import type { Department, DepartmentFormData } from "../../types";
-import { mockDepartments } from "../../Data/mock-departments";
+import { mockDepartments } from "../../data/mock-departments";
 import { DepartmentCard } from "./DepartmentCard";
 import { DepartmentFormModal } from "./Department-form-modal";
 import { DeleteConfirmationModal } from "./Delete-confirmation-modal";
@@ -39,7 +39,7 @@ export const DepartmentList: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
-  const { language, setLanguage } = useLanguage();
+  const { language } = useLanguage();
 
   const isRtl = language === "ar";
   const lang = labels[language];
@@ -61,7 +61,10 @@ export const DepartmentList: React.FC = () => {
       id: Date.now().toString(),
       name: data.name,
       nameAr: data.nameAr,
-      description: data.description || undefined,
+      description: data.description,
+      descriptionAr: data.descriptionAr, // ensure Arabic description is saved
+      subtitle: data.subtitle,
+      subtitleAr: data.subtitleAr,
     };
     setDepartments((prev) => [newDepartment, ...prev]);
     setIsFormModalOpen(false);
@@ -72,7 +75,15 @@ export const DepartmentList: React.FC = () => {
     setDepartments((prev) =>
       prev.map((d) =>
         d.id === selectedDepartment.id
-          ? { ...d, name: data.name, description: data.description || undefined }
+          ? {
+              ...d,
+              name: data.name,
+              nameAr: data.nameAr,
+              description: data.description,
+              descriptionAr: data.descriptionAr, // ensure Arabic description is updated
+              subtitle: data.subtitle,
+              subtitleAr: data.subtitleAr,
+            }
           : d
       )
     );

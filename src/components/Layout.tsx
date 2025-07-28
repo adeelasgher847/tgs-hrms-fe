@@ -84,7 +84,7 @@ const Layout = () => {
       )}
       {/* Right Section */}
       <Box
-        className="main-area"
+        className="main-area content"
         sx={{
           flex: 1,
           display: "flex",
@@ -130,12 +130,12 @@ const Layout = () => {
 
         {/* Scrollable Content */}
         <Box
-          className="content"
+          // className="content"
           component="main"
           sx={{
             flex: 1,
             px: { xs: "7px", md: "26px" },
-            pt: 0
+            pb: 3
 
           }}
         >

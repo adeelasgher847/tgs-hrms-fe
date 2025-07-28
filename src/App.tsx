@@ -8,9 +8,8 @@ import Signup from './components/Signup';
 import { DepartmentList } from "./components/department/Department-list";
 import { LanguageProvider } from "./context/LanguageContext";
 import DesignationManager from './components/Desigantions/Designation-manager';
-import AddEmployeeForm from './components/department/AddEmployeeForm';
-import EmployeeList from './components/department/EmployeeList';
-import EmployeeManager from './components/department/EmployeeManager';
+import EmployeeManager from './components/Employee/EmployeeManager';
+import Error404 from './components/Error404';
 function App() {
   return (
     <LanguageProvider>
@@ -23,10 +22,9 @@ function App() {
           <Route index element={<Dashboard />} />
            <Route path="departments" element={<DepartmentList />} />
            <Route path="Designations" element={<DesignationManager />} />
-           <Route path="departments/AddEmployeeForm" element={<AddEmployeeForm />} />
            <Route path="departments/EmployeeList" element={<EmployeeManager />} />
-           {/* <Route path="departments/DesignationManager" element={<DesignationManager />} /> */}
         </Route>
+        <Route path="*" element={<Error404 />} />
       </Routes>
     </Router>
     </LanguageProvider>

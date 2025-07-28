@@ -82,7 +82,7 @@ const menuItems: MenuItem[] = [
     icon: <Group />,
     subItems: [
       { label: "Employee List", path: "departments/EmployeeList" },
-      { label: "Add Employee", path: "departments/AddEmployeeForm" },
+      { label: "Add Employee", path: "" },
     ],
   },
   {

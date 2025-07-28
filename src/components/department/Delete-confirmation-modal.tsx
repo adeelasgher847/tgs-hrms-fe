@@ -129,7 +129,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
     );
   }
 
-  // 🔹 Desktop dialog version
+  // Desktop dialog version
   return (
     <Dialog
       open={open}
