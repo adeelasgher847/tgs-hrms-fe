@@ -145,7 +145,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
 
   return (
     <Box component="form" onSubmit={handleSubmit} dir={dir}>
-      <Box display="flex" flexWrap="wrap" gap={2}>
+      <Box display="flex" flexWrap="wrap" gap={2} sx={{ mt: 1 }}>
         {/* Name */}
         <Box flex={isSm ? "1 1 100%" : "1 1 48%"}>
           <TextField

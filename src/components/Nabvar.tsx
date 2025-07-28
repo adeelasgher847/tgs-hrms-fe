@@ -197,7 +197,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Side */}
           <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, md: 2 } }}>
-            <IconButton sx={{ backgroundColor: "#4b4f73", color: "white", width: 28, height: 28 }}>
+            <IconButton sx={{ backgroundColor: "#4b4f73", color: "white", width: 28, height: 28 ,":hover": { backgroundColor: "#484c7f" } }}>
               <InfoOutlinedIcon fontSize="small" />
             </IconButton>
 

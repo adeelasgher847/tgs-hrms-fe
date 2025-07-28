@@ -82,6 +82,7 @@ const EmployeeManager: React.FC = () => {
   const bgColor = darkMode ? "#1b1b1b" : "#fff";
   const textColor = darkMode ? "#e0e0e0" : "#000";
   const borderColor = darkMode ? "#555" : "#ccc";
+  const filterBtn = darkMode ? "#555" : "#484c7f";
 
   // Dark mode input styles
   const darkInputStyles = darkMode ? {
@@ -119,7 +120,6 @@ const EmployeeManager: React.FC = () => {
 
   return (
     <Box 
-      p={2}
       sx={{ 
         backgroundColor: bgColor,
         color: textColor,
@@ -158,7 +158,7 @@ const EmployeeManager: React.FC = () => {
               width: isMobile ? "100%" : 190,
               my: 0.5,
               "& .MuiInputBase-input": {
-                // textAlign: "center", // 👈 center the selected text
+                // textAlign: "center", center the selected text
               },
               "& .MuiInputBase-root": {
                 padding: "0px 8px",
@@ -194,9 +194,6 @@ const EmployeeManager: React.FC = () => {
             sx={{
               width: isMobile ? "100%" : 190,
               my: 0.5,
-              "& .MuiInputBase-input": {
-                // textAlign: "center", // 👈 center the selected text
-              },
               "& .MuiInputBase-root": {
                 padding: "0px 8px",
                 minHeight: "10px",
@@ -223,7 +220,7 @@ const EmployeeManager: React.FC = () => {
             variant="outlined" 
             onClick={handleClearFilters}
             sx={{
-              borderColor: borderColor,
+              borderColor:filterBtn,
               color: textColor,
               width: isMobile ? "100%" : "auto",
               "&:hover": {
