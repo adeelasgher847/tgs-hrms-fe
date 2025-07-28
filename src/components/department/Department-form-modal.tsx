@@ -63,9 +63,10 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
 
   useEffect(() => {
     if (department) {
+      // When editing, only populate English fields from database
       setFormData({
         name: department.name,
-        nameAr: department.nameAr,
+        nameAr: department.nameAr || "", // Arabic fields are optional
         description: department.description || "",
         descriptionAr: department.descriptionAr || "",
       });
@@ -84,6 +85,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   const validateForm = (): boolean => {
     const newErrors: DepartmentFormErrors = {};
 
+    // Only English name is required
     if (!formData.name.trim()) {
       newErrors.name = isRtl
         ? "اسم القسم مطلوب"
@@ -94,11 +96,8 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         : "Department name must be at least 2 characters";
     }
 
-    if (!formData.nameAr.trim()) {
-      newErrors.nameAr = isRtl
-        ? "الاسم العربي مطلوب"
-        : "Arabic name is required";
-    } else if (formData.nameAr.trim().length < 2) {
+    // Arabic name is optional but if provided, validate it
+    if (formData.nameAr && formData.nameAr.trim() && formData.nameAr.trim().length < 2) {
       newErrors.nameAr = isRtl
         ? "الاسم العربي يجب أن يكون على الأقل حرفين"
         : "Arabic name must be at least 2 characters";
@@ -178,12 +177,11 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
       {/* Arabic name */}
       <TextField
         fullWidth
-        label={isRtl ? "اسم القسم (بالعربية)" : "Department Name (Arabic)"}
-        value={formData.nameAr}
+        label={isRtl ? "اسم القسم (بالعربية - اختياري)" : "Department Name (Arabic - Optional)"}
+        value={formData.nameAr || ""}
         onChange={handleInputChange("nameAr")}
         error={!!errors.nameAr}
         helperText={errors.nameAr}
-        required
         InputLabelProps={{ style: { color: darkMode ? "#ccc" : undefined } }}
         InputProps={{
           sx: {
@@ -201,7 +199,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
             ? "الوصف (بالإنجليزية - اختياري)"
             : "Description (English - Optional)"
         }
-        value={formData.description}
+        value={formData.description || ""}
         onChange={handleInputChange("description")}
         error={!!errors.description}
         helperText={errors.description}
@@ -223,7 +221,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
             ? "الوصف (بالعربية - اختياري)"
             : "Description (Arabic - Optional)"
         }
-        value={formData.descriptionAr}
+        value={formData.descriptionAr || ""}
         onChange={handleInputChange("descriptionAr")}
         error={!!errors.descriptionAr}
         helperText={errors.descriptionAr}

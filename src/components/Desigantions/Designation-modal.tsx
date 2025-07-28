@@ -17,10 +17,10 @@ import { Close as CloseIcon } from "@mui/icons-material";
 import { useLanguage } from "../../context/LanguageContext";
 
 interface Designation {
-  id: number;
+  id: string;
   title: string;
   titleAr: string;
-  departmentId: number;
+  departmentId: string;
 }
 
 interface DesignationModalProps {
@@ -69,10 +69,11 @@ export default function DesignationModal({
       );
     }
 
-    if (!titleAr.trim()) {
+    // Arabic title is optional but if provided, validate it
+    if (titleAr.trim() && titleAr.trim().length < 2) {
       newErrors.titleAr = getText(
-        "Arabic title is required",
-        "العنوان بالعربية مطلوب"
+        "Arabic title must be at least 2 characters",
+        "العنوان بالعربية يجب أن يكون على الأقل حرفين"
       );
     }
 
@@ -156,8 +157,8 @@ export default function DesignationModal({
 
           <TextField
             label={getText(
-              "Designation Title (Arabic)",
-              "عنوان المسمى الوظيفي (بالعربية)"
+              "Designation Title (Arabic - Optional)",
+              "عنوان المسمى الوظيفي (بالعربية - اختياري)"
             )}
             value={titleAr}
             onChange={(e) => setTitleAr(e.target.value)}
@@ -165,7 +166,6 @@ export default function DesignationModal({
             error={!!errors.titleAr}
             helperText={errors.titleAr}
             fullWidth
-            required
             inputProps={{
               dir: "rtl",
             }}
@@ -180,7 +180,7 @@ export default function DesignationModal({
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={!title.trim() || !titleAr.trim()}
+          disabled={!title.trim()}
           size="large"
           sx={{backgroundColor: "#464b8a"}}
         >

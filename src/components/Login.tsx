@@ -79,14 +79,17 @@ const Login: React.FC = () => {
 
  
 
+
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEmail(value);
+    setEmailError(""); // Clear email error when user types
+    
+    // Only auto-fill password if email matches remembered email exactly
     if (remembered && value === remembered.email) {
       setPassword(remembered.password);
-    } else {
-      setPassword("");
     }
+    // Don't clear password if email doesn't match - let user keep their input
   };
 
   const handleSubmit = async (
@@ -95,18 +98,21 @@ const Login: React.FC = () => {
     e.preventDefault();
     let valid = true;
 
+    // Clear previous errors
+    setEmailError("");
+    setPasswordError("");
+
     if (!email) {
       setEmailError(lang === "ar" ? "يرجى إدخال البريد الإلكتروني" : "Please enter your email");
       valid = false;
-    } else {
-      setEmailError("");
+    } else if (!email.includes("@")) {
+      setEmailError(lang === "ar" ? "يرجى إدخال بريد إلكتروني صحيح" : "Please enter a valid email address");
+      valid = false;
     }
 
     if (!password) {
       setPasswordError(lang === "ar" ? "يرجى إدخال كلمة المرور" : "Please enter your password");
       valid = false;
-    } else {
-      setPasswordError("");
     }
 
     if (!valid) return;
