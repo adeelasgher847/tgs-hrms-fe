@@ -77,15 +77,7 @@ const Login: React.FC = () => {
 
   const handleTogglePassword = (): void => setShowPassword((prev) => !prev);
 
-  // const validateEmail = (email: string) => {
-  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  //   return emailRegex.test(email);
-  // };
-
-  // const validatePassword = (password: string) => {
-  //   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-  //   return passwordRegex.test(password);
-  // };
+ 
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
