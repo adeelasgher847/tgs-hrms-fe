@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -8,15 +8,17 @@ import {
   useTheme,
   Paper,
   Divider,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Add as AddIcon, Business as BusinessIcon } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
-import type { Department, DepartmentFormData } from "../../types";
-import { mockDepartments } from "../../data/mock-departments";
+import type { DepartmentFormData } from "../../types";
 import { DepartmentCard } from "./DepartmentCard";
 import { DepartmentFormModal } from "./Department-form-modal";
 import { DeleteConfirmationModal } from "./Delete-confirmation-modal";
 import { useLanguage } from "../../context/LanguageContext";
+import { departmentApiService, type FrontendDepartment } from "../../api/departmentApi";
 
 const labels = {
   en: {
@@ -50,52 +52,149 @@ export const DepartmentList: React.FC = () => {
   const dividerCol = darkMode ? "#333" : "#ccc";
   const textColor = darkMode ? "#8f8f8f" : "#000";
 
-  const [departments, setDepartments] = useState<Department[]>(mockDepartments);
+  const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<FrontendDepartment | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
-  /* ---------- handlers ---------- */
-  const handleCreateDepartment = (data: DepartmentFormData) => {
-    const newDepartment: Department = {
-      id: Date.now().toString(),
-      name: data.name,
-      nameAr: data.nameAr,
-      description: data.description,
-      descriptionAr: data.descriptionAr, // ensure Arabic description is saved
-      subtitle: data.subtitle,
-      subtitleAr: data.subtitleAr,
-    };
-    setDepartments((prev) => [newDepartment, ...prev]);
-    setIsFormModalOpen(false);
+  /* ---------- API handlers ---------- */
+  const fetchDepartments = async () => {
+    try {
+      setLoading(true);
+      const backendDepartments = await departmentApiService.getAllDepartments();
+      const frontendDepartments = backendDepartments.map(dept => 
+        departmentApiService.convertBackendToFrontend(dept)
+      );
+      setDepartments(frontendDepartments);
+    } catch (error: unknown) {
+      console.error("Error fetching departments:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch departments";
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEditDepartment = (data: DepartmentFormData) => {
-    if (!selectedDepartment) return;
-    setDepartments((prev) =>
-      prev.map((d) =>
-        d.id === selectedDepartment.id
-          ? {
-              ...d,
-              name: data.name,
-              nameAr: data.nameAr,
-              description: data.description,
-              descriptionAr: data.descriptionAr, // ensure Arabic description is updated
-              subtitle: data.subtitle,
-              subtitleAr: data.subtitleAr,
-            }
-          : d
-      )
-    );
-    setSelectedDepartment(null);
-    setIsFormModalOpen(false);
+  // Load departments on component mount
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  const handleCreateDepartment = async (data: DepartmentFormData) => {
+    try {
+      // Only send English fields to backend
+      const departmentDto = {
+        name: data.name,
+        description: data.description || undefined, // Only send if not empty
+      };
+      
+      const newBackendDepartment = await departmentApiService.createDepartment(departmentDto);
+      const newFrontendDepartment = departmentApiService.convertBackendToFrontend(newBackendDepartment);
+      
+      // Store Arabic fields in frontend state (not sent to backend)
+      const newDepartment: FrontendDepartment = {
+        ...newFrontendDepartment,
+        nameAr: data.nameAr || "",
+        descriptionAr: data.descriptionAr || "",
+        subtitle: data.subtitle || "",
+        subtitleAr: data.subtitleAr || "",
+      };
+      
+      setDepartments((prev) => [newDepartment, ...prev]);
+      setIsFormModalOpen(false);
+      setSnackbar({
+        open: true,
+        message: "Department created successfully",
+        severity: "success",
+      });
+    } catch (error: unknown) {
+      console.error("Error creating department:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to create department";
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
+    }
   };
 
-  const handleDeleteDepartment = () => {
+  const handleEditDepartment = async (data: DepartmentFormData) => {
     if (!selectedDepartment) return;
-    setDepartments((prev) => prev.filter((d) => d.id !== selectedDepartment.id));
-    setSelectedDepartment(null);
-    setIsDeleteModalOpen(false);
+    
+    try {
+      // Only send English fields to backend
+      const departmentDto = {
+        name: data.name,
+        description: data.description || undefined, // Only send if not empty
+      };
+      
+      const updatedBackendDepartment = await departmentApiService.updateDepartment(selectedDepartment.id, departmentDto);
+      const updatedFrontendDepartment = departmentApiService.convertBackendToFrontend(updatedBackendDepartment);
+      
+      // Store Arabic fields in frontend state (not sent to backend)
+      const updatedDepartment: FrontendDepartment = {
+        ...updatedFrontendDepartment,
+        nameAr: data.nameAr || "",
+        descriptionAr: data.descriptionAr || "",
+        subtitle: data.subtitle || "",
+        subtitleAr: data.subtitleAr || "",
+      };
+      
+      setDepartments((prev) =>
+        prev.map((d) =>
+          d.id === selectedDepartment.id ? updatedDepartment : d
+        )
+      );
+      setSelectedDepartment(null);
+      setIsFormModalOpen(false);
+      setSnackbar({
+        open: true,
+        message: "Department updated successfully",
+        severity: "success",
+      });
+    } catch (error: unknown) {
+      console.error("Error updating department:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to update department";
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
+    }
+  };
+
+  const handleDeleteDepartment = async () => {
+    if (!selectedDepartment) return;
+    
+    try {
+      await departmentApiService.deleteDepartment(selectedDepartment.id);
+      setDepartments((prev) => prev.filter((d) => d.id !== selectedDepartment.id));
+      setSelectedDepartment(null);
+      setIsDeleteModalOpen(false);
+      setSnackbar({
+        open: true,
+        message: "Department deleted successfully",
+        severity: "success",
+      });
+    } catch (error: unknown) {
+      console.error("Error deleting department:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete department";
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
+    }
   };
 
   return (
@@ -158,7 +257,13 @@ export const DepartmentList: React.FC = () => {
       <Divider sx={{ mb: 4, borderColor: dividerCol }} />
 
       {/* Content */}
-      {departments.length === 0 ? (
+      {loading ? (
+        <Paper sx={{ p: 4, textAlign: "center", bgcolor: bgPaper, color: textPrimary, boxShadow: "none" }}>
+          <Typography variant="h6" color={textSecond}>
+            Loading departments...
+          </Typography>
+        </Paper>
+      ) : departments.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: "center", bgcolor: bgPaper, color: textPrimary, boxShadow: "none" }}>
           <BusinessIcon sx={{ fontSize: 64, color: textSecond, mb: 2 }} />
           <Typography variant="h6" color={textSecond} gutterBottom>
@@ -247,6 +352,22 @@ export const DepartmentList: React.FC = () => {
         department={selectedDepartment}
         isRtl={isRtl}
       />
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

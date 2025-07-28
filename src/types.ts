@@ -10,9 +10,9 @@ export interface Department {
 
 export interface DepartmentFormData {
   name: string
-  nameAr: string
-  description: string
-  descriptionAr: string
+  nameAr?: string
+  description?: string
+  descriptionAr?: string
    subtitle?: string
   subtitleAr?: string
 }

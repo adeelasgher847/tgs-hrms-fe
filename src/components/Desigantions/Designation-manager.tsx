@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -20,6 +20,8 @@ import {
   Select,
   MenuItem,
   Pagination,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -30,9 +32,8 @@ import {
 import { useOutletContext } from "react-router-dom";
 import DesignationModal from "../Desigantions/Designation-modal";
 import DeleteConfirmationDialog from "./Delete-confirmation-dialog";
-import { mockDepartments, mockDesignations } from "../../data/mockData";
-import type { Department, Designation } from "../../data/mockData";
 import { useLanguage } from "../../context/LanguageContext";
+import { designationApiService, type FrontendDesignation, type FrontendDepartment } from "../../api/designationApi";
 
 export default function DesignationManager() {
   const { language, setLanguage } = useLanguage();
@@ -40,43 +41,200 @@ export default function DesignationManager() {
 
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
-  const [designations, setDesignations] =
-    useState<Designation[]>(mockDesignations);
-  const [departments] = useState<Department[]>(mockDepartments);
+  const [designations, setDesignations] = useState<FrontendDesignation[]>([]);
+  const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [departmentsLoading, setDepartmentsLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingDesignation, setEditingDesignation] = useState<Designation | null>(null);
+  const [editingDesignation, setEditingDesignation] = useState<FrontendDesignation | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [designationToDelete, setDesignationToDelete] = useState<Designation | null>(null);
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | "all">("all");
+  const [designationToDelete, setDesignationToDelete] = useState<FrontendDesignation | null>(null);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | "all">("all");
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const getText = (en: string, ar: string) => (language === "ar" ? ar : en);
 
-  const handleSaveDesignation = (data: { title: string; titleAr: string }) => {
-    if (editingDesignation) {
-      setDesignations((prev) =>
-        prev.map((d) =>
-          d.id === editingDesignation.id ? { ...d, ...data } : d
-        )
+  // Fetch all departments from backend
+  const fetchDepartments = async () => {
+    try {
+      setDepartmentsLoading(true);
+      const backendDepartments = await designationApiService.getAllDepartments();
+      const frontendDepartments = backendDepartments.map(department => 
+        designationApiService.convertBackendDepartmentToFrontend(department)
       );
-    } else {
-      const newDesignation: Designation = {
-        id: Math.max(...designations.map((d) => d.id), 0) + 1,
-        title: data.title,
-        titleAr: data.titleAr,
-        departmentId: selectedDepartmentId === "all" ? 0 : selectedDepartmentId,
-      };
-      setDesignations((prev) => [...prev, newDesignation]);
+      setDepartments(frontendDepartments);
+    } catch (error: unknown) {
+      console.error("Error fetching departments:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch departments";
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
+    } finally {
+      setDepartmentsLoading(false);
     }
-    setModalOpen(false);
-    setEditingDesignation(null);
   };
 
-  const handleDeleteDesignation = () => {
-    if (designationToDelete) {
-      setDesignations((prev) =>
-        prev.filter((d) => d.id !== designationToDelete.id)
+  // Fetch designations for a specific department
+  const fetchDesignations = async (departmentId: string) => {
+    try {
+      setLoading(true);
+      const backendDesignations = await designationApiService.getDesignationsByDepartment(departmentId);
+      const frontendDesignations = backendDesignations.map(designation => 
+        designationApiService.convertBackendToFrontend(designation)
       );
+      setDesignations(frontendDesignations);
+    } catch (error: unknown) {
+      console.error("Error fetching designations:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch designations";
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch all designations from all departments
+  const fetchAllDesignations = async () => {
+    try {
+      setLoading(true);
+      const backendDesignations = await designationApiService.getAllDesignations();
+      const frontendDesignations = backendDesignations.map(designation => 
+        designationApiService.convertBackendToFrontend(designation)
+      );
+      setDesignations(frontendDesignations);
+    } catch (error: unknown) {
+      console.error("Error fetching all designations:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch all designations";
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load departments on component mount
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  // Load designations when department changes
+  useEffect(() => {
+    if (selectedDepartmentId !== "all") {
+      fetchDesignations(selectedDepartmentId);
+    } else {
+      fetchAllDesignations();
+    }
+  }, [selectedDepartmentId]);
+
+  const handleSaveDesignation = async (data: { title: string; titleAr: string }) => {
+    try {
+      if (editingDesignation) {
+        // Update existing designation
+        const designationDto = {
+          title: data.title,
+          departmentId: editingDesignation.departmentId,
+        };
+        
+        const updatedBackendDesignation = await designationApiService.updateDesignation(editingDesignation.id, designationDto);
+        const updatedFrontendDesignation = designationApiService.convertBackendToFrontend(updatedBackendDesignation);
+        
+        // Add Arabic title from form data
+        const updatedDesignation: FrontendDesignation = {
+          ...updatedFrontendDesignation,
+          titleAr: data.titleAr || "",
+        };
+        
+        setDesignations((prev) =>
+          prev.map((d) =>
+            d.id === editingDesignation.id ? updatedDesignation : d
+          )
+        );
+        
+        setSnackbar({
+          open: true,
+          message: "Designation updated successfully",
+          severity: "success",
+        });
+      } else {
+        // Create new designation
+        if (selectedDepartmentId === "all") {
+          setSnackbar({
+            open: true,
+            message: "Please select a department first",
+            severity: "error",
+          });
+          return;
+        }
+        
+        const designationDto = {
+          title: data.title,
+          departmentId: selectedDepartmentId,
+        };
+        
+        const newBackendDesignation = await designationApiService.createDesignation(designationDto);
+        const newFrontendDesignation = designationApiService.convertBackendToFrontend(newBackendDesignation);
+        
+        // Add Arabic title from form data
+        const newDesignation: FrontendDesignation = {
+          ...newFrontendDesignation,
+          titleAr: data.titleAr || "",
+        };
+        
+        setDesignations((prev) => [...prev, newDesignation]);
+        
+        setSnackbar({
+          open: true,
+          message: "Designation created successfully",
+          severity: "success",
+        });
+      }
+      setModalOpen(false);
+      setEditingDesignation(null);
+    } catch (error: unknown) {
+      console.error("Error saving designation:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to save designation";
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
+    }
+  };
+
+  const handleDeleteDesignation = async () => {
+    if (designationToDelete) {
+      try {
+        await designationApiService.deleteDesignation(designationToDelete.id);
+        setDesignations((prev) =>
+          prev.filter((d) => d.id !== designationToDelete.id)
+        );
+        setSnackbar({
+          open: true,
+          message: "Designation deleted successfully",
+          severity: "success",
+        });
+      } catch (error: unknown) {
+        console.error("Error deleting designation:", error);
+        const errorMessage = error instanceof Error ? error.message : "Failed to delete designation";
+        setSnackbar({
+          open: true,
+          message: errorMessage,
+          severity: "error",
+        });
+      }
     }
     setDeleteDialogOpen(false);
     setDesignationToDelete(null);
@@ -160,9 +318,10 @@ export default function DesignationManager() {
               value={selectedDepartmentId}
               label={getText("Filter by Department", "تصفية حسب القسم")}
               onChange={(e) => {
-                setSelectedDepartmentId(e.target.value === "all" ? "all" : Number(e.target.value));
+                setSelectedDepartmentId(e.target.value === "all" ? "all" : e.target.value);
                 setCurrentPage(1);
               }}
+              disabled={departmentsLoading}
               sx={{
                 color: darkMode ? "#fff" : "#000",
                 ".MuiOutlinedInput-notchedOutline": {
@@ -171,11 +330,15 @@ export default function DesignationManager() {
               }}
             >
               <MenuItem value="all">{getText("All Departments", "كل الأقسام")}</MenuItem>
-              {departments.map((d) => (
-                <MenuItem key={d.id} value={d.id}>
-                  {getText(d.name, d.nameAr)}
-                </MenuItem>
-              ))}
+              {departmentsLoading ? (
+                <MenuItem disabled>{getText("Loading departments...", "جاري تحميل الأقسام...")}</MenuItem>
+              ) : (
+                departments.map((d) => (
+                  <MenuItem key={d.id} value={d.id}>
+                    {getText(d.name, d.nameAr)}
+                  </MenuItem>
+                ))
+              )}
             </Select>
           </FormControl>
         </CardContent>
@@ -208,6 +371,17 @@ export default function DesignationManager() {
                   >
                     {getText("Designation Title", "المسمى الوظيفي")}
                   </TableCell>
+                  {selectedDepartmentId === "all" && (
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        color: darkMode ? "#fff" : "#000",
+                        ...(isRTL ? { textAlign: "right" } : { textAlign: "left" }),
+                      }}
+                    >
+                      {getText("Department", "القسم")}
+                    </TableCell>
+                  )}
                   <TableCell
                     align="center"
                     sx={{ fontWeight: "bold", minWidth: 120, color: darkMode ? "#fff" : "#000" }}
@@ -217,44 +391,77 @@ export default function DesignationManager() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {paginatedData.map((designation) => (
-                  <TableRow key={designation.id} hover>
-                    <TableCell
-                      sx={{
-                        color: darkMode ? "#fff" : "#000",
-                        ...(isRTL ? { textAlign: "right" } : { textAlign: "left" }),
-                      }}
-                    >
-                      {getText(designation.title, designation.titleAr)}
-                    </TableCell>
-                    <TableCell align="center">
-                      <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                        <IconButton
-                          color="primary"
-                          size="small"
-                          onClick={() => {
-                            setEditingDesignation(designation);
-                            setModalOpen(true);
-                          }}
-                          title={getText("Edit", "تعديل")}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          color="error"
-                          size="small"
-                          onClick={() => {
-                            setDesignationToDelete(designation);
-                            setDeleteDialogOpen(true);
-                          }}
-                          title={getText("Delete", "حذف")}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
+                                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={selectedDepartmentId === "all" ? 3 : 2} align="center" sx={{ color: darkMode ? "#ccc" : "text.secondary" }}>
+                      {getText("Loading designations...", "جاري تحميل المسميات الوظيفية...")}
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : paginatedData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={selectedDepartmentId === "all" ? 3 : 2} align="center" sx={{ color: darkMode ? "#ccc" : "text.secondary" }}>
+                      {selectedDepartmentId === "all" 
+                        ? getText("No designations found", "لا توجد مسميات وظيفية")
+                        : getText("No designations found for this department", "لا توجد مسميات وظيفية لهذا القسم")
+                      }
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedData.map((designation) => {
+                    // Find department name for this designation
+                    const department = departments.find(d => d.id === designation.departmentId);
+                    const departmentName = department ? getText(department.name, department.nameAr) : "Unknown Department";
+                    
+                    return (
+                      <TableRow key={designation.id} hover>
+                        <TableCell
+                          sx={{
+                            color: darkMode ? "#fff" : "#000",
+                            ...(isRTL ? { textAlign: "right" } : { textAlign: "left" }),
+                          }}
+                        >
+                          {getText(designation.title, designation.titleAr)}
+                        </TableCell>
+                        {selectedDepartmentId === "all" && (
+                          <TableCell
+                            sx={{
+                              color: darkMode ? "#fff" : "#000",
+                              ...(isRTL ? { textAlign: "right" } : { textAlign: "left" }),
+                            }}
+                          >
+                            {departmentName}
+                          </TableCell>
+                        )}
+                        <TableCell align="center">
+                          <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                            <IconButton
+                              color="primary"
+                              size="small"
+                              onClick={() => {
+                                setEditingDesignation(designation);
+                                setModalOpen(true);
+                              }}
+                              title={getText("Edit", "تعديل")}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              color="error"
+                              size="small"
+                              onClick={() => {
+                                setDesignationToDelete(designation);
+                                setDeleteDialogOpen(true);
+                              }}
+                              title={getText("Delete", "حذف")}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -312,6 +519,22 @@ export default function DesignationManager() {
         }
         isRTL={isRTL}
       />
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
