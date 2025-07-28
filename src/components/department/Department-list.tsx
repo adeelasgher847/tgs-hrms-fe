@@ -12,7 +12,7 @@ import {
 import { Add as AddIcon, Business as BusinessIcon } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
 import type { Department, DepartmentFormData } from "../../types";
-import { mockDepartments } from "../../Data/mock-departments";
+import { mockDepartments } from "../../data/mock-departments";
 import { DepartmentCard } from "./DepartmentCard";
 import { DepartmentFormModal } from "./Department-form-modal";
 import { DeleteConfirmationModal } from "./Delete-confirmation-modal";
