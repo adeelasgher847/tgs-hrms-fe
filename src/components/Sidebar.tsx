@@ -75,7 +75,7 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: "Department List", path: "departments" },
       { label: "Add Designation", path: "Designations" },
-      
+      { label: "Add Employe", path: "addemploye" },
     ],
   },
   {
