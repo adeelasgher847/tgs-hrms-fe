@@ -62,10 +62,10 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    label: "Tickets",
+    label: "Tenant",
     icon: <ConfirmationNumber />,
     subItems: [
-      { label: "All Tickets", path: "all-tickets" },
+      { label: "Add Tenant", path: "tenant" },
       { label: "Create Ticket", path: "create-ticket" },
     ],
   },
@@ -75,6 +75,7 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: "Department List", path: "departments" },
       { label: "Add Designation", path: "Designations" },
+      
     ],
   },
   {

@@ -25,3 +25,13 @@ export interface DepartmentFormErrors {
    subtitle?: string
   subtitleAr?: string
 }
+
+export interface Tenant {
+  id: string;
+  name: string;
+  nameAr?: string;
+}
+
+export interface TenantFormData {
+  name: string;
+}

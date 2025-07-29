@@ -18,7 +18,10 @@ import { DepartmentCard } from "./DepartmentCard";
 import { DepartmentFormModal } from "./Department-form-modal";
 import { DeleteConfirmationModal } from "./Delete-confirmation-modal";
 import { useLanguage } from "../../context/LanguageContext";
-import { departmentApiService, type FrontendDepartment } from "../../api/departmentApi";
+import {
+  departmentApiService,
+  type FrontendDepartment,
+} from "../../api/departmentApi";
 
 const labels = {
   en: {
@@ -56,8 +59,13 @@ export const DepartmentList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState<FrontendDepartment | null>(null);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
+  const [selectedDepartment, setSelectedDepartment] =
+    useState<FrontendDepartment | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({
     open: false,
     message: "",
     severity: "success",
@@ -68,13 +76,14 @@ export const DepartmentList: React.FC = () => {
     try {
       setLoading(true);
       const backendDepartments = await departmentApiService.getAllDepartments();
-      const frontendDepartments = backendDepartments.map(dept => 
+      const frontendDepartments = backendDepartments.map((dept) =>
         departmentApiService.convertBackendToFrontend(dept)
       );
       setDepartments(frontendDepartments);
     } catch (error: unknown) {
       console.error("Error fetching departments:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to fetch departments";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to fetch departments";
       setSnackbar({
         open: true,
         message: errorMessage,
@@ -97,10 +106,13 @@ export const DepartmentList: React.FC = () => {
         name: data.name,
         description: data.description || undefined, // Only send if not empty
       };
-      
-      const newBackendDepartment = await departmentApiService.createDepartment(departmentDto);
-      const newFrontendDepartment = departmentApiService.convertBackendToFrontend(newBackendDepartment);
-      
+
+      const newBackendDepartment = await departmentApiService.createDepartment(
+        departmentDto
+      );
+      const newFrontendDepartment =
+        departmentApiService.convertBackendToFrontend(newBackendDepartment);
+
       // Store Arabic fields in frontend state (not sent to backend)
       const newDepartment: FrontendDepartment = {
         ...newFrontendDepartment,
@@ -109,7 +121,7 @@ export const DepartmentList: React.FC = () => {
         subtitle: data.subtitle || "",
         subtitleAr: data.subtitleAr || "",
       };
-      
+
       setDepartments((prev) => [newDepartment, ...prev]);
       setIsFormModalOpen(false);
       setSnackbar({
@@ -119,7 +131,8 @@ export const DepartmentList: React.FC = () => {
       });
     } catch (error: unknown) {
       console.error("Error creating department:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to create department";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create department";
       setSnackbar({
         open: true,
         message: errorMessage,
@@ -130,17 +143,22 @@ export const DepartmentList: React.FC = () => {
 
   const handleEditDepartment = async (data: DepartmentFormData) => {
     if (!selectedDepartment) return;
-    
+
     try {
       // Only send English fields to backend
       const departmentDto = {
         name: data.name,
         description: data.description || undefined, // Only send if not empty
       };
-      
-      const updatedBackendDepartment = await departmentApiService.updateDepartment(selectedDepartment.id, departmentDto);
-      const updatedFrontendDepartment = departmentApiService.convertBackendToFrontend(updatedBackendDepartment);
-      
+
+      const updatedBackendDepartment =
+        await departmentApiService.updateDepartment(
+          selectedDepartment.id,
+          departmentDto
+        );
+      const updatedFrontendDepartment =
+        departmentApiService.convertBackendToFrontend(updatedBackendDepartment);
+
       // Store Arabic fields in frontend state (not sent to backend)
       const updatedDepartment: FrontendDepartment = {
         ...updatedFrontendDepartment,
@@ -149,7 +167,7 @@ export const DepartmentList: React.FC = () => {
         subtitle: data.subtitle || "",
         subtitleAr: data.subtitleAr || "",
       };
-      
+
       setDepartments((prev) =>
         prev.map((d) =>
           d.id === selectedDepartment.id ? updatedDepartment : d
@@ -164,7 +182,8 @@ export const DepartmentList: React.FC = () => {
       });
     } catch (error: unknown) {
       console.error("Error updating department:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update department";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update department";
       setSnackbar({
         open: true,
         message: errorMessage,
@@ -175,10 +194,12 @@ export const DepartmentList: React.FC = () => {
 
   const handleDeleteDepartment = async () => {
     if (!selectedDepartment) return;
-    
+
     try {
       await departmentApiService.deleteDepartment(selectedDepartment.id);
-      setDepartments((prev) => prev.filter((d) => d.id !== selectedDepartment.id));
+      setDepartments((prev) =>
+        prev.filter((d) => d.id !== selectedDepartment.id)
+      );
       setSelectedDepartment(null);
       setIsDeleteModalOpen(false);
       setSnackbar({
@@ -188,7 +209,8 @@ export const DepartmentList: React.FC = () => {
       });
     } catch (error: unknown) {
       console.error("Error deleting department:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete department";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete department";
       setSnackbar({
         open: true,
         message: errorMessage,
@@ -245,7 +267,10 @@ export const DepartmentList: React.FC = () => {
                 fontWeight: 600,
                 bgcolor: darkMode ? "#605bd4" : "#45407A",
                 boxShadow: "none", // Remove button shadow
-                "&:hover": { bgcolor: darkMode ? "#726df0" : "#5b56a0", boxShadow: "none" },
+                "&:hover": {
+                  bgcolor: darkMode ? "#726df0" : "#5b56a0",
+                  boxShadow: "none",
+                },
               }}
             >
               {lang.create}
@@ -258,13 +283,29 @@ export const DepartmentList: React.FC = () => {
 
       {/* Content */}
       {loading ? (
-        <Paper sx={{ p: 4, textAlign: "center", bgcolor: bgPaper, color: textPrimary, boxShadow: "none" }}>
+        <Paper
+          sx={{
+            p: 4,
+            textAlign: "center",
+            bgcolor: bgPaper,
+            color: textPrimary,
+            boxShadow: "none",
+          }}
+        >
           <Typography variant="h6" color={textSecond}>
             Loading departments...
           </Typography>
         </Paper>
       ) : departments.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: "center", bgcolor: bgPaper, color: textPrimary, boxShadow: "none" }}>
+        <Paper
+          sx={{
+            p: 4,
+            textAlign: "center",
+            bgcolor: bgPaper,
+            color: textPrimary,
+            boxShadow: "none",
+          }}
+        >
           <BusinessIcon sx={{ fontSize: 64, color: textSecond, mb: 2 }} />
           <Typography variant="h6" color={textSecond} gutterBottom>
             {lang.noDepartments}
@@ -285,12 +326,23 @@ export const DepartmentList: React.FC = () => {
           </Button>
         </Paper>
       ) : (
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "flex-start" }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2,
+            justifyContent: "flex-start",
+          }}
+        >
           {departments.map((d) => (
             <Box
               key={d.id}
               sx={{
-                width: { xs: "100%", sm: "calc(50% - 12px)", md: "calc(50% - 12px)" },
+                width: {
+                  xs: "100%",
+                  sm: "calc(50% - 12px)",
+                  md: "calc(50% - 12px)",
+                },
               }}
             >
               <DepartmentCard
@@ -337,7 +389,9 @@ export const DepartmentList: React.FC = () => {
           setIsFormModalOpen(false);
           setSelectedDepartment(null);
         }}
-        onSubmit={selectedDepartment ? handleEditDepartment : handleCreateDepartment}
+        onSubmit={
+          selectedDepartment ? handleEditDepartment : handleCreateDepartment
+        }
         department={selectedDepartment}
         isRtl={isRtl}
       />
