@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -12,10 +12,12 @@ import {
   CardContent,
   CardActions,
   IconButton,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Add as AddIcon, Business as BusinessIcon } from "@mui/icons-material";
-import { mockTenants } from "../Data/mock-tenants";
-import type { Tenant } from "../types";
+import companyApi from "../api/companyApi";
+import type { BackendCompany, CompanyDto } from "../api/companyApi";
 import { useOutletContext } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import edit from "../assets/dashboardIcon/edit.svg";
@@ -69,43 +71,106 @@ export const TenantPage = () => {
   const cardText = darkMode ? "#ccc" : "#000";
   const cardBorder = darkMode ? "#333" : "#f0f0f0";
 
-  const [tenants, setTenants] = useState<Tenant[]>(mockTenants);
+  const [companies, setCompanies] = useState<BackendCompany[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [selectedTenant, setSelectedTenant] = useState<BackendCompany | null>(null);
   const [formName, setFormName] = useState("");
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
-  const handleCreateTenant = () => {
-    if (!formName.trim()) return;
-    const newTenant: Tenant = {
-      id: Date.now().toString(),
-      name: formName,
-      nameAr: formName, // For demo, use same as name. You can add a separate input for Arabic if needed.
+  // Fetch companies on mount
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      setIsLoading(true);
+      try {
+        const data = await companyApi.getAllCompanies();
+        setCompanies(data);
+      } catch (error) {
+        setCompanies([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    setTenants((prev) => [newTenant, ...prev]);
-    setIsFormModalOpen(false);
-    setFormName("");
+    fetchCompanies();
+  }, []);
+
+  // Create company
+  const handleCreateCompany = async () => {
+    if (!formName.trim()) return;
+    const newCompany: CompanyDto = { name: formName };
+    try {
+      const created = await companyApi.createCompany(newCompany);
+      setCompanies((prev) => [created, ...prev]);
+      setIsFormModalOpen(false);
+      setFormName("");
+      setSnackbar({
+        open: true,
+        message: "Company created successfully!",
+        severity: "success",
+      });
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error?.response?.data?.message || "Failed to create company.",
+        severity: "error",
+      });
+    }
   };
 
-  const handleEditTenant = () => {
+  // Edit company
+  const handleEditCompany = async () => {
     if (!selectedTenant || !formName.trim()) return;
-    setTenants((prev) =>
-      prev.map((t) =>
-        t.id === selectedTenant.id
-          ? { ...t, name: formName, nameAr: formName }
-          : t
-      )
-    );
-    setSelectedTenant(null);
-    setIsFormModalOpen(false);
-    setFormName("");
+    try {
+      const updated = await companyApi.updateCompany(selectedTenant.id, { name: formName });
+      setCompanies((prev) =>
+        prev.map((c) => (c.id === selectedTenant.id ? updated : c))
+      );
+      setSelectedTenant(null);
+      setIsFormModalOpen(false);
+      setFormName("");
+      setSnackbar({
+        open: true,
+        message: "Company updated successfully!",
+        severity: "success",
+      });
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error?.response?.data?.message || "Failed to update company.",
+        severity: "error",
+      });
+    }
   };
 
-  const handleDeleteTenant = () => {
+  // Delete company
+  const handleDeleteCompany = async () => {
     if (!selectedTenant) return;
-    setTenants((prev) => prev.filter((t) => t.id !== selectedTenant.id));
-    setSelectedTenant(null);
-    setIsDeleteModalOpen(false);
+    try {
+      await companyApi.deleteCompany(selectedTenant.id);
+      setCompanies((prev) => prev.filter((c) => c.id !== selectedTenant.id));
+      setSelectedTenant(null);
+      setIsDeleteModalOpen(false);
+      setSnackbar({
+        open: true,
+        message: "Company deleted successfully!",
+        severity: "success",
+      });
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error?.response?.data?.message || "Failed to delete company.",
+        severity: "error",
+      });
+    }
   };
 
   const openCreateModal = () => {
@@ -114,9 +179,9 @@ export const TenantPage = () => {
     setIsFormModalOpen(true);
   };
 
-  const openEditModal = (tenant: Tenant) => {
-    setSelectedTenant(tenant);
-    setFormName(isRtl && tenant.nameAr ? tenant.nameAr : tenant.name);
+  const openEditModal = (company: BackendCompany) => {
+    setSelectedTenant(company);
+    setFormName(company.name);
     setIsFormModalOpen(true);
   };
 
@@ -177,7 +242,21 @@ export const TenantPage = () => {
       </Paper>
       <Divider sx={{ mb: 4, borderColor: dividerCol }} />
       {/* Content */}
-      {tenants.length === 0 ? (
+      {isLoading ? (
+        <Paper
+          sx={{
+            p: 4,
+            textAlign: "center",
+            bgcolor: bgPaper,
+            color: textPrimary,
+            boxShadow: "none",
+          }}
+        >
+          <Typography variant="h6" color={textSecond} gutterBottom>
+            Loading companies...
+          </Typography>
+        </Paper>
+      ) : companies.length === 0 ? (
         <Paper
           sx={{
             p: 4,
@@ -212,9 +291,9 @@ export const TenantPage = () => {
             justifyContent: "flex-start",
           }}
         >
-          {tenants.map((t) => (
+          {companies.map((c) => (
             <Box
-              key={t.id}
+              key={c.id}
               sx={{
                 width: {
                   xs: "100%",
@@ -252,7 +331,7 @@ export const TenantPage = () => {
                         textAlign: isRtl ? "right" : "left",
                       }}
                     >
-                      {isRtl && t.nameAr ? t.nameAr : t.name}
+                      {c.name}
                     </Typography>
                   </Box>
                 </CardContent>
@@ -261,7 +340,7 @@ export const TenantPage = () => {
                 >
                   <Box display="flex" width={100}>
                     <IconButton
-                      onClick={() => openEditModal(t)}
+                      onClick={() => openEditModal(c)}
                       color="success"
                       size="small"
                       sx={{
@@ -289,7 +368,7 @@ export const TenantPage = () => {
                     </IconButton>
                     <IconButton
                       onClick={() => {
-                        setSelectedTenant(t);
+                        setSelectedTenant(c);
                         setIsDeleteModalOpen(true);
                       }}
                       color="error"
@@ -402,7 +481,7 @@ export const TenantPage = () => {
               </Button>
               <Button
                 variant="contained"
-                onClick={selectedTenant ? handleEditTenant : handleCreateTenant}
+                onClick={selectedTenant ? handleEditCompany : handleCreateCompany}
                 disabled={!formName.trim()}
                 sx={{
                   bgcolor: darkMode ? "#605bd4" : "#45407A",
@@ -461,7 +540,7 @@ export const TenantPage = () => {
               <Button
                 variant="contained"
                 color="error"
-                onClick={handleDeleteTenant}
+                onClick={handleDeleteCompany}
               >
                 {lang.delete}
               </Button>
@@ -469,6 +548,20 @@ export const TenantPage = () => {
           </Paper>
         </Box>
       )}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
