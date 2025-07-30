@@ -30,8 +30,8 @@ import {
 import { useOutletContext } from "react-router-dom";
 import DesignationModal from "../Desigantions/Designation-modal";
 import DeleteConfirmationDialog from "./Delete-confirmation-dialog";
-import { mockDepartments, mockDesignations } from "../../data/mockData";
-import type { Department, Designation } from "../../data/mockData";
+import { mockDepartments, mockDesignations } from "../../Data/mockData";
+import type { Department, Designation } from "../../Data/mockData";
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function DesignationManager() {
@@ -44,10 +44,14 @@ export default function DesignationManager() {
     useState<Designation[]>(mockDesignations);
   const [departments] = useState<Department[]>(mockDepartments);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingDesignation, setEditingDesignation] = useState<Designation | null>(null);
+  const [editingDesignation, setEditingDesignation] =
+    useState<Designation | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [designationToDelete, setDesignationToDelete] = useState<Designation | null>(null);
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | "all">("all");
+  const [designationToDelete, setDesignationToDelete] =
+    useState<Designation | null>(null);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<
+    number | "all"
+  >("all");
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   const getText = (en: string, ar: string) => (language === "ar" ? ar : en);
@@ -95,7 +99,7 @@ export default function DesignationManager() {
   );
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4 }} dir={isRTL ? "rtl" : "ltr"}>
+    <Container  maxWidth="xl" sx={{ mt: 4 }} dir={isRTL ? "rtl" : "ltr"}>
       {/* Top Bar */}
       <Box
         sx={{
@@ -152,7 +156,10 @@ export default function DesignationManager() {
       <Card sx={{ mb: 3, backgroundColor: darkMode ? "#222" : "#fff" }}>
         <CardContent>
           <FormControl fullWidth>
-            <InputLabel id="dept-select" sx={{ color: darkMode ? "#fff" : "#000" }}>
+            <InputLabel
+              id="dept-select"
+              sx={{ color: darkMode ? "#fff" : "#000" }}
+            >
               {getText("Filter by Department", "تصفية حسب القسم")}
             </InputLabel>
             <Select
@@ -160,7 +167,9 @@ export default function DesignationManager() {
               value={selectedDepartmentId}
               label={getText("Filter by Department", "تصفية حسب القسم")}
               onChange={(e) => {
-                setSelectedDepartmentId(e.target.value === "all" ? "all" : Number(e.target.value));
+                setSelectedDepartmentId(
+                  e.target.value === "all" ? "all" : Number(e.target.value)
+                );
                 setCurrentPage(1);
               }}
               sx={{
@@ -170,7 +179,9 @@ export default function DesignationManager() {
                 },
               }}
             >
-              <MenuItem value="all">{getText("All Departments", "كل الأقسام")}</MenuItem>
+              <MenuItem value="all">
+                {getText("All Departments", "كل الأقسام")}
+              </MenuItem>
               {departments.map((d) => (
                 <MenuItem key={d.id} value={d.id}>
                   {getText(d.name, d.nameAr)}
@@ -188,7 +199,8 @@ export default function DesignationManager() {
             variant="body2"
             sx={{ mb: 2, color: darkMode ? "#ccc" : "text.secondary" }}
           >
-            {filteredDesignations.length} {getText("designation(s)", "مسمى وظيفي")}
+            {filteredDesignations.length}{" "}
+            {getText("designation(s)", "مسمى وظيفي")}
           </Typography>
 
           <TableContainer
@@ -203,14 +215,20 @@ export default function DesignationManager() {
                     sx={{
                       fontWeight: "bold",
                       color: darkMode ? "#fff" : "#000",
-                      ...(isRTL ? { textAlign: "right" } : { textAlign: "left" }),
+                      ...(isRTL
+                        ? { textAlign: "right" }
+                        : { textAlign: "left" }),
                     }}
                   >
                     {getText("Designation Title", "المسمى الوظيفي")}
                   </TableCell>
                   <TableCell
                     align="center"
-                    sx={{ fontWeight: "bold", minWidth: 120, color: darkMode ? "#fff" : "#000" }}
+                    sx={{
+                      fontWeight: "bold",
+                      minWidth: 120,
+                      color: darkMode ? "#fff" : "#000",
+                    }}
                   >
                     {getText("Actions", "الإجراءات")}
                   </TableCell>
@@ -222,13 +240,21 @@ export default function DesignationManager() {
                     <TableCell
                       sx={{
                         color: darkMode ? "#fff" : "#000",
-                        ...(isRTL ? { textAlign: "right" } : { textAlign: "left" }),
+                        ...(isRTL
+                          ? { textAlign: "right" }
+                          : { textAlign: "left" }),
                       }}
                     >
                       {getText(designation.title, designation.titleAr)}
                     </TableCell>
                     <TableCell align="center">
-                      <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1,
+                          justifyContent: "center",
+                        }}
+                      >
                         <IconButton
                           color="primary"
                           size="small"
@@ -288,7 +314,6 @@ export default function DesignationManager() {
               />
             </Box>
           )}
-
         </CardContent>
       </Card>
 
