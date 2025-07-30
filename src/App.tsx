@@ -11,6 +11,7 @@ import DesignationManager from "./components/Desigantions/Designation-manager";
 import Error404 from "./components/Error404";
 import { TenantPage } from "./components/Tenant";
 import AddEmployeeForm from "./components/AddEmploye/AddEmploye";
+import EmployeeManager from "./components/Employee/EmployeeManager";
 function App() {
   return (
     <LanguageProvider>
@@ -25,6 +26,8 @@ function App() {
             <Route path="departments" element={<DepartmentList />} />
             <Route path="Designations" element={<DesignationManager />} />
             <Route path="addemploye" element={<AddEmployeeForm />} />
+            <Route path="EmployeeManager" element={<EmployeeManager />} />
+
           </Route>
           <Route path="*" element={<Error404 />} />
         </Routes>

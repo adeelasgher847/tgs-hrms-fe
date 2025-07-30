@@ -1,0 +1,171 @@
+import axiosInstance from "./axiosInstance";
+
+// Backend Designation interface (matches your NestJS entity)
+export interface BackendDesignation {
+  id: string;
+  title: string;
+  departmentId: string;
+  tenantId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Backend Department interface (matches your NestJS entity)
+export interface BackendDepartment {
+  id: string;
+  name: string;
+  description?: string;
+  tenantId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Frontend Designation interface (your current structure)
+export interface FrontendDesignation {
+  id: string;
+  title: string;
+  titleAr: string;
+  departmentId: string;
+}
+
+// Frontend Department interface (for display)
+export interface FrontendDepartment {
+  id: string;
+  name: string;
+  nameAr: string;
+  description?: string;
+  descriptionAr?: string;
+}
+
+// Create/Update DTO interface
+export interface DesignationDto {
+  title: string;
+  departmentId: string;
+}
+
+class DesignationApiService {
+  private baseUrl = "/designations";
+  private departmentUrl = "/departments";
+
+  // Get all departments
+  async getAllDepartments(): Promise<BackendDepartment[]> {
+    try {
+      const response = await axiosInstance.get<BackendDepartment[]>(this.departmentUrl);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      throw error;
+    }
+  }
+
+  // Get all designations for a department
+  async getDesignationsByDepartment(departmentId: string): Promise<BackendDesignation[]> {
+    try {
+      const response = await axiosInstance.get<BackendDesignation[]>(`${this.baseUrl}/department/${departmentId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching designations:", error);
+      throw error;
+    }
+  }
+
+  // Get all designations from all departments
+  async getAllDesignations(): Promise<BackendDesignation[]> {
+    try {
+      // Since your backend doesn't have a direct endpoint for all designations,
+      // we'll need to fetch all departments first and then get designations for each
+      const departments = await this.getAllDepartments();
+      const allDesignations: BackendDesignation[] = [];
+      
+      for (const department of departments) {
+        try {
+          const designations = await this.getDesignationsByDepartment(department.id);
+          allDesignations.push(...designations);
+        } catch (error) {
+          console.error(`Error fetching designations for department ${department.id}:`, error);
+          // Continue with other departments even if one fails
+        }
+      }
+      
+      return allDesignations;
+    } catch (error) {
+      console.error("Error fetching all designations:", error);
+      throw error;
+    }
+  }
+
+  // Get designation by ID
+  async getDesignationById(id: string): Promise<BackendDesignation> {
+    try {
+      const response = await axiosInstance.get<BackendDesignation>(`${this.baseUrl}/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching designation:", error);
+      throw error;
+    }
+  }
+
+  // Create new designation
+  async createDesignation(designationData: DesignationDto): Promise<BackendDesignation> {
+    try {
+      const response = await axiosInstance.post<BackendDesignation>(this.baseUrl, designationData);
+      return response.data;
+    } catch (error) {
+      console.error("Error creating designation:", error);
+      throw error;
+    }
+  }
+
+  // Update designation
+  async updateDesignation(id: string, designationData: DesignationDto): Promise<BackendDesignation> {
+    try {
+      const response = await axiosInstance.put<BackendDesignation>(`${this.baseUrl}/${id}`, designationData);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating designation:", error);
+      throw error;
+    }
+  }
+
+  // Delete designation
+  async deleteDesignation(id: string): Promise<{ deleted: true; id: string }> {
+    try {
+      const response = await axiosInstance.delete<{ deleted: true; id: string }>(`${this.baseUrl}/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting designation:", error);
+      throw error;
+    }
+  }
+
+  // Helper function to convert backend designation to frontend format
+  convertBackendToFrontend(backendDesignation: BackendDesignation): FrontendDesignation {
+    return {
+      id: backendDesignation.id,
+      title: backendDesignation.title,
+      titleAr: "", // Arabic title is optional, empty by default
+      departmentId: backendDesignation.departmentId,
+    };
+  }
+
+  // Helper function to convert backend department to frontend format
+  convertBackendDepartmentToFrontend(backendDepartment: BackendDepartment): FrontendDepartment {
+    return {
+      id: backendDepartment.id,
+      name: backendDepartment.name,
+      nameAr: backendDepartment.name, // Use English name for Arabic display for now
+      description: backendDepartment.description,
+      descriptionAr: backendDepartment.description, // Use English description for Arabic display for now
+    };
+  }
+
+  // Helper function to convert frontend designation to backend format
+  convertFrontendToBackend(frontendDesignation: FrontendDesignation): DesignationDto {
+    return {
+      title: frontendDesignation.title,
+      departmentId: frontendDesignation.departmentId,
+    };
+  }
+}
+
+export const designationApiService = new DesignationApiService(); 
