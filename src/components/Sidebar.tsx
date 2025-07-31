@@ -131,8 +131,8 @@ const menuItems: MenuItem[] = [
 ];
 
 export default function Sidebar({
-  rtlMode,
-  setRtlMode,
+  //rtlMode,
+  //setRtlMode,
   darkMode,
   setDarkMode,
 }: SidebarProps) {
