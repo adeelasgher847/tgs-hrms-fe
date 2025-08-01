@@ -3,11 +3,9 @@ import Sidebar from "./Sidebar";
 import Navbar from "./Nabvar";
 import { Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import "../layout.css";
 import EmployeeInviteModal from "./Modal/EmployeeInviteModal";
-import { useLanguage } from "../context/LanguageContext";
-import { useTheme, } from "../theme";
+import { useTheme } from "../theme";
 const Layout = () => {
   const muiTheme = useMuiTheme();
   const { mode: themeMode } = useTheme();
@@ -16,7 +14,6 @@ const Layout = () => {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [rtlMode, setRtlMode] = useState(false);
   const darkMode = themeMode === "dark";
-  const { language, setLanguage } = useLanguage();
 
   // Update sidebar state when screen size changes
   useEffect(() => {
@@ -143,46 +140,7 @@ const Layout = () => {
               alignItems: "center",
               mb: 1,
             }}
-          >
-
-            {/* Language Toggle */}
-            <ToggleButtonGroup
-              value={language}
-              exclusive
-              onChange={(_, value) => value && setLanguage(value)}
-              size="small"
-            >
-              <ToggleButton
-                value="en"
-                sx={{
-                  "&.Mui-selected": {
-                    backgroundColor: "#484c7f",
-                    color: "#fff",
-                    "&:hover": {
-                      backgroundColor: "#484c7f",
-                    },
-                  },
-                }}
-              >
-                EN
-              </ToggleButton>
-
-              <ToggleButton
-                value="ar"
-                sx={{
-                  "&.Mui-selected": {
-                    backgroundColor: "#484c7f",
-                    color: "#fff",
-                    "&:hover": {
-                      backgroundColor: "#484c7f",
-                    },
-                  },
-                }}
-              >
-                عربي
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
+          ></Box>
           <Outlet context={{ darkMode }} />
         </Box>
       </Box>
