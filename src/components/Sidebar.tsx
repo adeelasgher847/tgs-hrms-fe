@@ -8,6 +8,7 @@ import {
   Collapse,
   Switch,
 } from "@mui/material";
+import { useTheme } from "../theme";
 import {
   Dashboard,
   BusinessCenter,
@@ -40,7 +41,6 @@ interface SidebarProps {
   rtlMode: boolean;
   setRtlMode: React.Dispatch<React.SetStateAction<boolean>>;
   darkMode: boolean;
-  setDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // 🔹 Menu data
@@ -134,8 +134,8 @@ export default function Sidebar({
   //rtlMode,
   //setRtlMode,
   darkMode,
-  setDarkMode,
 }: SidebarProps) {
+  const { toggleTheme } = useTheme();
   const location = useLocation();
   const [openItem, setOpenItem] = useState<string>("");
   const [activeSubItem, setActiveSubItem] = useState<string>("");
@@ -272,10 +272,7 @@ export default function Sidebar({
           mb={1}
         >
           <Typography variant="body2">Enable Dark Mode!</Typography>
-          <Switch
-            checked={darkMode}
-            onChange={() => setDarkMode((prev) => !prev)}
-          />
+          <Switch checked={darkMode} onChange={toggleTheme} />
         </Box>
         {/* <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="body2">Enable RTL Mode!</Typography>

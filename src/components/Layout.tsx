@@ -1,4 +1,4 @@
-import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { Box, useMediaQuery, useTheme as useMuiTheme } from "@mui/material";
 import Sidebar from "./Sidebar";
 import Navbar from "./Nabvar";
 import { Outlet } from "react-router-dom";
@@ -7,21 +7,21 @@ import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import "../layout.css";
 import EmployeeInviteModal from "./Modal/EmployeeInviteModal";
 import { useLanguage } from "../context/LanguageContext";
+import { useTheme, } from "../theme";
 const Layout = () => {
-  const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up("lg"));
+  const muiTheme = useMuiTheme();
+  const { mode: themeMode } = useTheme();
+  const isLargeScreen = useMediaQuery(muiTheme.breakpoints.up("lg"));
   const [sidebarOpen, setSidebarOpen] = useState(isLargeScreen);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [rtlMode, setRtlMode] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const darkMode = themeMode === "dark";
   const { language, setLanguage } = useLanguage();
 
   // Update sidebar state when screen size changes
   useEffect(() => {
     setSidebarOpen(isLargeScreen); // lg+ → open by default, others → closed
-    document.body.classList.toggle("dark-mode", darkMode);
-    document.body.classList.toggle("light-mode", !darkMode);
-  }, [isLargeScreen, darkMode]);
+  }, [isLargeScreen]);
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
@@ -42,7 +42,7 @@ const Layout = () => {
         <Box
           className="sidebar"
           sx={{
-            width: "220px",
+            width: "240px",
             backgroundColor: "var(--dark-color)",
             color: "white",
             padding: "20px",
@@ -78,7 +78,6 @@ const Layout = () => {
             rtlMode={rtlMode}
             setRtlMode={setRtlMode}
             darkMode={darkMode}
-            setDarkMode={setDarkMode}
           />
         </Box>
       )}
@@ -99,7 +98,6 @@ const Layout = () => {
           marginLeft: isLargeScreen && sidebarOpen && !rtlMode ? "274px" : 0,
           marginRight: isLargeScreen && sidebarOpen && rtlMode ? "274px" : 0,
           // bgcolor: "#fff", // 🔁 Here
-          color: darkMode ? "#fff" : "#000",
           width: "100%",
           direction: rtlMode ? "rtl" : "ltr",
         }}
@@ -135,11 +133,18 @@ const Layout = () => {
           sx={{
             flex: 1,
             px: { xs: "7px", md: "26px" },
-            pt: 0
-
+            pt: 0,
           }}
         >
-          <Box sx={{ display: "flex", justifyContent: "end", alignItems: "center", mb:1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              mb: 1,
+            }}
+          >
+
             {/* Language Toggle */}
             <ToggleButtonGroup
               value={language}
@@ -150,7 +155,6 @@ const Layout = () => {
               <ToggleButton
                 value="en"
                 sx={{
-                  color: darkMode ? "#fff" : "#000",
                   "&.Mui-selected": {
                     backgroundColor: "#484c7f",
                     color: "#fff",
@@ -166,7 +170,6 @@ const Layout = () => {
               <ToggleButton
                 value="ar"
                 sx={{
-                  color: darkMode ? "#fff" : "#000",
                   "&.Mui-selected": {
                     backgroundColor: "#484c7f",
                     color: "#fff",
@@ -179,8 +182,6 @@ const Layout = () => {
                 عربي
               </ToggleButton>
             </ToggleButtonGroup>
-
-
           </Box>
           <Outlet context={{ darkMode }} />
         </Box>
