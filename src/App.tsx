@@ -13,6 +13,7 @@ import { TenantPage } from "./components/Tenant";
 import EmployeeManager from "./components/Employee/EmployeeManager";
 import { ThemeProvider } from "./theme";
 import UserList from "./components/ManagementUI/UserList";
+import UserProfile from "./components/UserProfile/UserProfile";
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
               <Route path="Designations" element={<DesignationManager />} />
               <Route path="EmployeeManager" element={<EmployeeManager />} />
               <Route path="UserList" element={<UserList />} />
+              <Route path="UserProfile" element={<UserProfile />} />
               ``
             </Route>
             <Route path="*" element={<Error404 />} />

@@ -76,6 +76,7 @@ const menuItems: MenuItem[] = [
       { label: "Department List", path: "departments" },
       { label: "Add Designation", path: "Designations" },
       { label: "User List", path: "UserList" },
+      { label: "UserProfile", path: "UserProfile" },
     ],
   },
   {
