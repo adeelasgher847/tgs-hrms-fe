@@ -36,9 +36,11 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ employees }) => {
 
   // Dark mode styles
   const textColor = darkMode ? "#e0e0e0" : "#000";
-  const cardBg = darkMode ? "#2a2a2a" : "#f9f9f9";
-  const borderColor = darkMode ? "#555" : "#ccc";
-  const secondaryTextColor = darkMode ? "#9a9a9a" : theme.palette.text.secondary;
+  const cardBg = darkMode ? "#2a2a2a" : "#fff";
+  const borderColor = darkMode ? "#555" : "#f0f0f0";
+  const secondaryTextColor = darkMode
+    ? "#9a9a9a"
+    : theme.palette.text.secondary;
 
   // ✅ Updated ID mappings with correct string keys
   const departments: Record<string, string> = {
@@ -50,8 +52,10 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ employees }) => {
   const designations: Record<string, string> = {
     "hr-mgr": direction === "rtl" ? "مدير الموارد البشرية" : "HR Manager",
     "hr-exec": direction === "rtl" ? "تنفيذي الموارد البشرية" : "HR Executive",
-    "eng-fe": direction === "rtl" ? "مهندس الواجهة الأمامية" : "Frontend Engineer",
-    "eng-be": direction === "rtl" ? "مهندس الواجهة الخلفية" : "Backend Engineer",
+    "eng-fe":
+      direction === "rtl" ? "مهندس الواجهة الأمامية" : "Frontend Engineer",
+    "eng-be":
+      direction === "rtl" ? "مهندس الواجهة الخلفية" : "Backend Engineer",
     "sales-ex": direction === "rtl" ? "تنفيذي المبيعات" : "Sales Executive",
     "sales-mgr": direction === "rtl" ? "مدير المبيعات" : "Sales Manager",
   };
@@ -60,22 +64,23 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ employees }) => {
   const getDesignation = (id?: string) => (id ? designations[id] || "—" : "—");
 
   return (
-    <Box sx={{ pt:2 }}>
-      <Typography 
-        variant="h5" 
-        gutterBottom 
+    <Box sx={{ pt: 2 }}>
+      <Typography
+        variant="h5"
+        gutterBottom
         textAlign="start"
         sx={{ color: textColor }}
       >
         {direction === "rtl" ? "قائمة الموظفين" : "Employee List"}
       </Typography>
 
-      <Paper 
+      <Paper
         elevation={1}
         sx={{
           backgroundColor: cardBg,
           border: `1px solid ${borderColor}`,
           overflowX: "auto",
+          boxShadow: "none",
         }}
       >
         <Table>
@@ -83,6 +88,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ employees }) => {
             <TableRow>
               <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
                 {direction === "rtl" ? "الاسم" : "Name"}
+              </TableCell>
+              <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
+                {direction === "rtl" ? "رقم الهاتف" : "Phone"}
               </TableCell>
               <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
                 {direction === "rtl" ? "البريد الإلكتروني" : "Email"}
@@ -97,18 +105,27 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ employees }) => {
           </TableHead>
           <TableBody>
             {employees.map((emp) => (
-              <TableRow 
+              <TableRow
                 key={emp.email}
                 sx={{
                   "&:hover": {
-                    backgroundColor: darkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)",
-                  }
+                    backgroundColor: darkMode
+                      ? "rgba(255,255,255,0.08)"
+                      : "rgba(0,0,0,0.04)",
+                  },
                 }}
               >
                 <TableCell sx={{ color: textColor }}>{emp.name}</TableCell>
-                <TableCell sx={{ color: secondaryTextColor }}>{emp.email}</TableCell>
-                <TableCell sx={{ color: textColor }}>{getDepartment(emp.departmentId)}</TableCell>
-                <TableCell sx={{ color: textColor }}>{getDesignation(emp.designationId)}</TableCell>
+                <TableCell sx={{ color: textColor }}>{emp.phone}</TableCell>
+                <TableCell sx={{ color: secondaryTextColor }}>
+                  {emp.email}
+                </TableCell>
+                <TableCell sx={{ color: textColor }}>
+                  {getDepartment(emp.departmentId)}
+                </TableCell>
+                <TableCell sx={{ color: textColor }}>
+                  {getDesignation(emp.designationId)}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

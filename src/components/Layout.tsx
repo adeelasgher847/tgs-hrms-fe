@@ -2,11 +2,12 @@ import { Box, useMediaQuery, useTheme } from "@mui/material";
 import Sidebar from "./Sidebar";
 import Navbar from "./Nabvar";
 import { Outlet } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import "../layout.css";
 import EmployeeInviteModal from "./Modal/EmployeeInviteModal";
 import { useLanguage } from "../context/LanguageContext";
+
 const Layout = () => {
   const theme = useTheme();
   const isLargeScreen = useMediaQuery(theme.breakpoints.up("lg"));
@@ -15,6 +16,7 @@ const Layout = () => {
   const [rtlMode, setRtlMode] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const { language, setLanguage } = useLanguage();
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   // Update sidebar state when screen size changes
   useEffect(() => {
@@ -27,6 +29,34 @@ const Layout = () => {
     setSidebarOpen((prev) => !prev);
   };
 
+  const closeSidebar = () => {
+    if (!isLargeScreen) {
+      setSidebarOpen(false);
+    }
+  };
+
+  // Handle clicks outside sidebar
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        sidebarOpen &&
+        !isLargeScreen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target as Node)
+      ) {
+        closeSidebar();
+      }
+    };
+
+    if (sidebarOpen && !isLargeScreen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [sidebarOpen, isLargeScreen]);
+
   return (
     <Box
       sx={{
@@ -37,9 +67,26 @@ const Layout = () => {
         // flexDirection: rtlMode ? "row-reverse" : "row",
       }}
     >
+      {/* Mobile Backdrop */}
+      {sidebarOpen && !isLargeScreen && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            zIndex: 999,
+          }}
+          onClick={closeSidebar}
+        />
+      )}
+
       {/* Sidebar */}
       {sidebarOpen && (
         <Box
+          ref={sidebarRef}
           className="sidebar"
           sx={{
             width: "220px",
@@ -79,12 +126,13 @@ const Layout = () => {
             setRtlMode={setRtlMode}
             darkMode={darkMode}
             setDarkMode={setDarkMode}
+            onMenuItemClick={closeSidebar}
           />
         </Box>
       )}
       {/* Right Section */}
       <Box
-        className="main-area"
+        className="main-area content"
         sx={{
           flex: 1,
           display: "flex",
@@ -130,16 +178,22 @@ const Layout = () => {
 
         {/* Scrollable Content */}
         <Box
-          className="content"
+          // className="content"
           component="main"
           sx={{
             flex: 1,
             px: { xs: "7px", md: "26px" },
-            pt: 0
-
+            pt: 0,
           }}
         >
-          <Box sx={{ display: "flex", justifyContent: "end", alignItems: "center", mb:1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "end",
+              alignItems: "center",
+              mb: 1,
+            }}
+          >
             {/* Language Toggle */}
             <ToggleButtonGroup
               value={language}
@@ -179,8 +233,6 @@ const Layout = () => {
                 عربي
               </ToggleButton>
             </ToggleButtonGroup>
-
-
           </Box>
           <Outlet context={{ darkMode }} />
         </Box>

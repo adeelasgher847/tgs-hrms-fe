@@ -26,7 +26,7 @@ import bubbleleft from "../assets/dashboardIcon/bubble-left.svg";
 import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
-// 🔹 Types
+//Types
 interface SubItem {
   label: string;
   path: string;
@@ -41,9 +41,10 @@ interface SidebarProps {
   setRtlMode: React.Dispatch<React.SetStateAction<boolean>>;
   darkMode: boolean;
   setDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
+  onMenuItemClick?: () => void;
 }
 
-// 🔹 Menu data
+//  Menu data
 const menuItems: MenuItem[] = [
   {
     label: "Dashboard",
@@ -75,15 +76,23 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: "Department List", path: "departments" },
       { label: "Add Designation", path: "Designations" },
-      
     ],
   },
   {
     label: "Employees",
     icon: <Group />,
     subItems: [
+      { label: "Employee Profile", path: "EmployeeProfileView" },
       { label: "Employee List", path: "EmployeeManager" },
-      { label: "Add Employee", path: "add-employee" },
+      { label: "Add Employee", path: "Add Employee" },
+    ],
+  },
+  {
+    label: "Attendance",
+    icon: <Receipt />,
+    subItems: [
+      { label: "Attendance History", path: "AttendanceHistory" },
+      { label: "Reports", path: "Reports" },
     ],
   },
   {
@@ -131,10 +140,9 @@ const menuItems: MenuItem[] = [
 ];
 
 export default function Sidebar({
-  rtlMode,
-  setRtlMode,
   darkMode,
   setDarkMode,
+  onMenuItemClick,
 }: SidebarProps) {
   const location = useLocation();
   const [openItem, setOpenItem] = useState<string>("");
@@ -160,6 +168,10 @@ export default function Sidebar({
   const handleSubItemClick = (parent: string, subLabel: string) => {
     setOpenItem(parent);
     setActiveSubItem(subLabel);
+    // Close sidebar on mobile when menu item is clicked
+    if (onMenuItemClick) {
+      onMenuItemClick();
+    }
   };
 
   return (

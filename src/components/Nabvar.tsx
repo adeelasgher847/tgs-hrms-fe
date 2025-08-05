@@ -37,6 +37,7 @@ const labels = {
   en: {
     search: "Search",
     myTask: "My Task",
+    myProfile: "My Profile",
     members: "Members",
     signout: "Sign Out",
     addAccount: "Add Personal Account",
@@ -47,6 +48,7 @@ const labels = {
   ar: {
     search: "بحث",
     myTask: "مهامي",
+    myProfile: "ملفي الشخصي",
     members: "الأعضاء",
     signout: "تسجيل الخروج",
     addAccount: "إضافة حساب",
@@ -105,7 +107,12 @@ const Navbar: React.FC<NavbarProps> = ({
   const navigate = useNavigate();
   const { language } = useLanguage();
   const lang = labels[language];
-  const [user, setUser] = useState<{ name: string; role: string; email: string; avatarUrl?: string } | null>(null);
+  const [user, setUser] = useState<{
+    name: string;
+    role: string;
+    email: string;
+    avatarUrl?: string;
+  } | null>(null);
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -130,6 +137,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+    navigate("EmployeeProfileView");
   };
 
   const handleLogout = () => {
@@ -154,9 +162,13 @@ const Navbar: React.FC<NavbarProps> = ({
         <Toolbar
           disableGutters
           sx={{
+            display: {
+              xs: "block",
+              sm: "flex",
+            },
             px: { xs: 1, md: 3 },
             gap: "10px",
-            justifyContent: {xs:"center" , sm:"space-between"},
+            justifyContent: { xs: "center", sm: "space-between" },
             flexWrap: "wrap",
           }}
         >
@@ -172,7 +184,13 @@ const Navbar: React.FC<NavbarProps> = ({
                 height: "44px",
               }}
             >
-              <Search sx={{ backgroundColor: "transparent", height: "100%", paddingLeft: 0 }}>
+              <Search
+                sx={{
+                  backgroundColor: "transparent",
+                  height: "100%",
+                  paddingLeft: 0,
+                }}
+              >
                 <SearchIconWrapper>
                   <SearchIcon sx={{ color: darkMode ? "#8f8f8f" : "#000" }} />
                 </SearchIconWrapper>
@@ -215,66 +233,109 @@ const Navbar: React.FC<NavbarProps> = ({
           </Box>
 
           {/* Right Side */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.2, md: 2 } }}>
-            <IconButton sx={{ backgroundColor: "#4b4f73", color: "white", width: 28, height: 28 }}>
-              <InfoOutlinedIcon fontSize="small" />
-            </IconButton>
-
-            <Stack direction="row" spacing={-1} sx={{ display: { xs: "none", sm: "flex" } }}>
-              {[AvatarOne, AvatarTwo, AvatarThree, AvatarFour].map((src, index) => (
-                <Avatar key={index} alt={`User ${index + 1}`} src={src} sx={{ width: 32, height: 32 }} />
-              ))}
-              <Avatar sx={{ width: 32, height: 32, backgroundColor: "#4b4f73" }}>
-                <AddIcon sx={{ cursor: "pointer" }} onClick={onOpenInviteModal} fontSize="small" />
-              </Avatar>
-            </Stack>
-
-            <IconButton>
-              <Badge variant="dot" color="error">
-                <NotificationsNoneOutlinedIcon sx={{ color: textColor }} />
-              </Badge>
-            </IconButton>
-
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              justifyContent: "space-between",
+              mt: { xs: 1, sm: 0}
+            }}
+          >
             <Box
               sx={{
                 display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
+                alignItems: "center",
+                gap: { xs: 0.9, md: 1 },
               }}
             >
-              <Typography
-                variant="subtitle2"
-                sx={{ fontWeight: 600, fontSize: "14px" }}
-                color={textColor}
-              >
-                {user?.name || "User"}
-              </Typography>
-              <Typography variant="caption" color={textColor}>
-                {user?.role == "admin"
-                  ? "Admin Profile"
-                  : user?.role == "staff"
-                  ? "Staff Profile"
-                  : "User Profile"}
-              </Typography>
-            </Box>
-
-            <IconButton onClick={handleMenuOpen}>
-              <Avatar
-                alt={user?.name || "User"}
-                src={user?.avatarUrl || AvatarProfile}
+              <IconButton
                 sx={{
-                  width: "45px",
-                  height: "45px",
-                  border: "1px solid #dee2e6",
-                  p: "3px",
-                  "& img": { borderRadius: "50%" },
+                  backgroundColor: "#4b4f73",
+                  color: "white",
+                  width: 28,
+                  height: 28,
+                  '&:hover': { backgroundColor: "#3a3d5c"}
                 }}
               >
-                {!user?.avatarUrl && user?.name ? user.name[0] : null}
-              </Avatar>
-            </IconButton>
+                <InfoOutlinedIcon fontSize="small" />
+              </IconButton>
 
-            <IconButton onClick={onToggleSidebar} sx={{ display: { xs: "block", lg: "none" } }}>
+              <Stack
+                direction="row"
+                spacing={-1}
+                sx={{ display: { xs: "none", sm: "flex" } }}
+              >
+                {[AvatarOne, AvatarTwo, AvatarThree, AvatarFour].map(
+                  (src, index) => (
+                    <Avatar
+                      key={index}
+                      alt={`User ${index + 1}`}
+                      src={src}
+                      sx={{ width: 32, height: 32 }}
+                    />
+                  )
+                )}
+                <Avatar
+                  sx={{ width: 32, height: 32, backgroundColor: "#4b4f73" }}
+                >
+                  <AddIcon
+                    sx={{ cursor: "pointer" }}
+                    onClick={onOpenInviteModal}
+                    fontSize="small"
+                  />
+                </Avatar>
+              </Stack>
+
+              <IconButton>
+                <Badge variant="dot" color="error">
+                  <NotificationsNoneOutlinedIcon sx={{ color: textColor }} />
+                </Badge>
+              </IconButton>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  sx={{ fontWeight: 600, fontSize: "14px" }}
+                  color={textColor}
+                >
+                  {user?.name || "User"}
+                </Typography>
+                <Typography variant="caption" color={textColor}>
+                  {user?.role == "admin"
+                    ? "Admin Profile"
+                    : user?.role == "staff"
+                    ? "Staff Profile"
+                    : "User Profile"}
+                </Typography>
+              </Box>
+
+              <IconButton onClick={handleMenuOpen}>
+                <Avatar
+                  alt={user?.name || "User"}
+                  src={user?.avatarUrl || AvatarProfile}
+                  sx={{
+                    width: "45px",
+                    height: "45px",
+                    border: "1px solid #dee2e6",
+                    p: "3px",
+                    "& img": { borderRadius: "50%" },
+                  }}
+                >
+                  {!user?.avatarUrl && user?.name ? user.name[0] : null}
+                </Avatar>
+              </IconButton>
+            </Box>
+            <IconButton
+              onClick={onToggleSidebar}
+              sx={{ display: { xs: "block", lg: "none" } }}
+            >
               <MenuIcon sx={{ color: textColor }} />
             </IconButton>
           </Box>
@@ -290,7 +351,12 @@ const Navbar: React.FC<NavbarProps> = ({
         transformOrigin={{ vertical: "top", horizontal: "right" }}
         PaperProps={{
           elevation: 4,
-          sx: { borderRadius: "10px", width: 280, p: 2, backgroundColor: darkMode ? "#111" : "#fff" },
+          sx: {
+            borderRadius: "10px",
+            width: 280,
+            p: 2,
+            backgroundColor: darkMode ? "#111" : "#fff",
+          },
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
@@ -302,28 +368,41 @@ const Navbar: React.FC<NavbarProps> = ({
             {!user?.avatarUrl && user?.name ? user.name[0] : null}
           </Avatar>
           <Box>
-            <Typography fontWeight={600} color={textColor}>{user?.name || "User"}</Typography>
+            <Typography fontWeight={600} color={textColor}>
+              {user?.name || "User"}
+            </Typography>
             <Typography variant="body2" color={textColor}>
               {user?.email || ""}
             </Typography>
           </Box>
         </Box>
         <Divider sx={{ mb: 1 }} />
-        <MenuItem onClick={handleMenuClose}>
-          <ListItemIcon><AssignmentOutlinedIcon fontSize="small" sx={{ color: textColor }} /></ListItemIcon>
-          <Typography color={textColor}>{lang.myTask}</Typography>
+              <MenuItem>
+          <ListItemIcon>
+            <AssignmentOutlinedIcon
+              fontSize="small"
+              sx={{ color: textColor }}
+            />
+          </ListItemIcon>
+          <Typography  color={textColor}>{lang.myTask}</Typography>
         </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
-          <ListItemIcon><GroupOutlinedIcon fontSize="small" sx={{ color: textColor }} /></ListItemIcon>
+        <MenuItem>
+          <ListItemIcon>
+            <GroupOutlinedIcon fontSize="small" sx={{ color: textColor }} />
+          </ListItemIcon>
           <Typography color={textColor}>{lang.members}</Typography>
         </MenuItem>
         <MenuItem onClick={handleLogout}>
-          <ListItemIcon><LogoutIcon fontSize="small" sx={{ color: textColor }} /></ListItemIcon>
+          <ListItemIcon>
+            <LogoutIcon fontSize="small" sx={{ color: textColor }} />
+          </ListItemIcon>
           <Typography color={textColor}>{lang.signout}</Typography>
         </MenuItem>
         <Divider sx={{ my: 1 }} />
-        <MenuItem onClick={handleMenuClose}>
-          <ListItemIcon><PersonAddAltIcon fontSize="small" sx={{ color: textColor }} /></ListItemIcon>
+        <MenuItem>
+          <ListItemIcon>
+            <PersonAddAltIcon fontSize="small" sx={{ color: textColor }} />
+          </ListItemIcon>
           <Typography color={textColor}>{lang.addAccount}</Typography>
         </MenuItem>
       </Menu>

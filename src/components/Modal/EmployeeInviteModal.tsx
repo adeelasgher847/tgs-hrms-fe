@@ -32,11 +32,18 @@ const style = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 800,
-  maxWidth: "95%",
-  borderRadius: 3,
+  borderRadius: 2,
   boxShadow: 24,
   p: 2,
+  bgcolor: "#fff",
+   outline: "none",
+  "&::-webkit-scrollbar": {
+    display: "none",
+  },
+  width: "calc(100% - 64px)",
+  maxWidth: 700,
+  maxHeight: "calc(100% - 64px)",
+  overflowY: "auto",
 };
 
 const employees: Employee[] = [
@@ -109,7 +116,7 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
       <Box sx={{ ...style, bgcolor: bgColor }}>
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" sx={{ fontSize: 25, fontWeight: 700, color: textColor }}>
+          <Typography variant="h6" sx={{ fontSize:{xs:18,  md:25}, fontWeight: 700, color: textColor }}>
             {lang.title}
           </Typography>
           <IconButton onClick={onClose} sx={{ color: textColor }}>
@@ -125,13 +132,17 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
             label={lang.emailPlaceholder}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            sx={{
-              backgroundColor: fieldBg,
-              borderRadius: "4px 0px 0px 4px",
-              input: { color: textColor },
-              label: { color: textColor },
-            }}
-            InputLabelProps={{
+                sx={{
+                  backgroundColor: fieldBg,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "4px 1px 1px 4px",
+                    backgroundColor: fieldBg,
+                    "&.Mui-focused fieldset": {
+                      borderColor: "transparent",
+                    },
+                  },
+                }}
+         InputLabelProps={{
               style: { color: textColor },
             }}
           />
@@ -161,7 +172,6 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
               key={idx}
               bgcolor={cardBg}
               borderRadius={2}
-              px={2}
               py={1.5}
               mb={1.2}
               display="flex"
@@ -181,7 +191,7 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
                   <Typography fontWeight={700} fontSize={14} color={textColor}>
                     {language === "ar" ? emp.name_ar : emp.name_en}
                   </Typography>
-                  <Typography fontSize={13} color={textColor}>
+                  <Typography sx={{fontSize:{xs:11, md:13}}}color={textColor}>
                     {emp.email}
                   </Typography>
                 </Box>

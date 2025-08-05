@@ -11,6 +11,9 @@ import DesignationManager from "./components/Desigantions/Designation-manager";
 import Error404 from "./components/Error404";
 import { TenantPage } from "./components/Tenant";
 import EmployeeManager from "./components/Employee/EmployeeManager";
+import EmployeeProfileView from "./components/Employee/EmployeeProfileView";
+import AttendanceHistory from "./components/Attendance/AttendanceHistory";
+import Reports from "./components/Attendance/Reports";
 function App() {
   return (
     <LanguageProvider>
@@ -25,6 +28,9 @@ function App() {
             <Route path="departments" element={<DepartmentList />} />
             <Route path="Designations" element={<DesignationManager />} />
             <Route path="EmployeeManager" element={<EmployeeManager />} />
+            <Route path="EmployeeProfileView" element={<EmployeeProfileView/>} />
+            <Route path="AttendanceHistory" element={<AttendanceHistory/>} />
+            <Route path="Reports" element={<Reports/>} />
 
           </Route>
           <Route path="*" element={<Error404 />} />

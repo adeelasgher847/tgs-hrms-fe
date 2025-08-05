@@ -81,7 +81,7 @@ const EmployeeManager: React.FC = () => {
   // Dark mode
   const bgColor = darkMode ? "#1b1b1b" : "#fff";
   const textColor = darkMode ? "#e0e0e0" : "#000";
-  const borderColor = darkMode ? "#555" : "#ccc";
+  // const borderColor = darkMode ? "#555" : "#ccc";
   const filterBtn = darkMode ? "#555" : "#484c7f";
 
   // Dark mode input styles
@@ -121,7 +121,7 @@ const EmployeeManager: React.FC = () => {
   return (
     <Box 
       sx={{ 
-        backgroundColor: bgColor,
+        // backgroundColor: bgColor,
         color: textColor,
         minHeight: "100vh"
       }}

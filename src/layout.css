@@ -1,3 +1,10 @@
 .main-area::-webkit-scrollbar {
   display: none;
 }
+
+@media  screen and (min-width: 2000px) {
+  .content{
+    max-width: 1560px;
+    margin: auto !important;
+  }
+}
