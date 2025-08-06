@@ -77,6 +77,7 @@ const menuItems: MenuItem[] = [
       { label: "Add Designation", path: "Designations" },
       { label: "User List", path: "UserList" },
       { label: "UserProfile", path: "UserProfile" },
+      { label: "User", path: "LeaveApprovalDialog" },
     ],
   },
   {
@@ -85,6 +86,8 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: "Employee List", path: "EmployeeManager" },
       { label: "Add Employee", path: "add-employee" },
+      
+      { label: "Leave Request", path: "leaves" },
     ],
   },
   {

@@ -1,7 +1,7 @@
 import { createTheme } from '@mui/material/styles';
 import type { ThemeOptions } from '@mui/material/styles';
 
-// Light theme colors
+// Light theme palette
 const lightPalette = {
   mode: 'light' as 'light' | 'dark',
   primary: {
@@ -59,7 +59,7 @@ const lightPalette = {
   },
 };
 
-// Dark theme colors
+// Dark theme palette
 const darkPalette = {
   mode: 'dark' as 'light' | 'dark',
   primary: {
@@ -117,32 +117,17 @@ const darkPalette = {
   },
 };
 
-// Common theme options
+// Common options for both themes
 const commonThemeOptions: ThemeOptions = {
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontWeight: 700,
-    },
-    h2: {
-      fontWeight: 700,
-    },
-    h3: {
-      fontWeight: 600,
-    },
-    h4: {
-      fontWeight: 600,
-    },
-    h5: {
-      fontWeight: 600,
-    },
-    h6: {
-      fontWeight: 600,
-    },
-    button: {
-      textTransform: 'none',
-      fontWeight: 600,
-    },
+    h1: { fontWeight: 700 },
+    h2: { fontWeight: 700 },
+    h3: { fontWeight: 600 },
+    h4: { fontWeight: 600 },
+    h5: { fontWeight: 600 },
+    h6: { fontWeight: 600 },
+    button: { textTransform: 'none', fontWeight: 600 },
   },
   shape: {
     borderRadius: 8,
@@ -153,14 +138,7 @@ const commonThemeOptions: ThemeOptions = {
         root: {
           borderRadius: '6px',
           boxShadow: 'none',
-          '&:hover': {
-            boxShadow: 'none',
-          },
-        },
-        contained: {
-          '&:hover': {
-            boxShadow: 'none',
-          },
+          '&:hover': { boxShadow: 'none' },
         },
       },
     },
@@ -168,14 +146,14 @@ const commonThemeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           boxShadow: 'none',
-          border: '1px solid',
+          border: '1px solid var(--mui-palette-card-border)',
         },
       },
     },
     MuiPaper: {
       styleOverrides: {
         root: {
-          backgroundImage: 'none',
+          backgroundImage: 'var(--mui-palette-form-background)',
         },
       },
     },
@@ -183,6 +161,8 @@ const commonThemeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
+            backgroundColor: 'var(--mui-palette-form-background)',
+            color: 'var(--mui-palette-form-text)',
             '& fieldset': {
               borderColor: 'var(--mui-palette-divider)',
             },
@@ -193,12 +173,22 @@ const commonThemeOptions: ThemeOptions = {
               borderColor: 'var(--mui-palette-primary-main)',
             },
           },
+          '& .MuiInputLabel-root': {
+            color: 'var(--mui-palette-form-label)',
+          },
         },
       },
     },
     MuiSelect: {
       styleOverrides: {
-        root: {
+        select: {
+          backgroundColor: 'var(--mui-palette-form-background)',
+          color: 'var(--mui-palette-form-text)',
+        },
+        icon: {
+          color: 'var(--mui-palette-form-text)',
+        },
+        outlined: {
           '& .MuiOutlinedInput-notchedOutline': {
             borderColor: 'var(--mui-palette-divider)',
           },
@@ -238,15 +228,20 @@ const commonThemeOptions: ThemeOptions = {
   },
 };
 
-// Create theme function
 export const createAppTheme = (mode: 'light' | 'dark') => {
   const palette = mode === 'dark' ? darkPalette : lightPalette;
-  
+
   return createTheme({
     ...commonThemeOptions,
     palette,
     components: {
       ...commonThemeOptions.components,
+
+  
+// MuiPickersDay styleOverrides should be applied via ThemeProvider from @mui/x-date-pickers in your app entry point.
+
+
+      // CSS Variables
       MuiCssBaseline: {
         styleOverrides: {
           ':root': {
@@ -269,6 +264,7 @@ export const createAppTheme = (mode: 'light' | 'dark') => {
             '--mui-palette-status-error': palette.status.error,
             '--mui-palette-status-warning': palette.status.warning,
             '--mui-palette-status-info': palette.status.info,
+            '--mui-palette-primary-main': palette.primary.main,
           },
         },
       },
@@ -276,6 +272,5 @@ export const createAppTheme = (mode: 'light' | 'dark') => {
   });
 };
 
-// Export theme types
 export type AppTheme = ReturnType<typeof createAppTheme>;
-export type AppPalette = typeof lightPalette | typeof darkPalette; 
+export type AppPalette = typeof lightPalette | typeof darkPalette;

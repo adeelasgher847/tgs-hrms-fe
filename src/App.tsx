@@ -14,10 +14,11 @@ import EmployeeManager from "./components/Employee/EmployeeManager";
 import { ThemeProvider } from "./theme";
 import UserList from "./components/ManagementUI/UserList";
 import UserProfile from "./components/UserProfile/UserProfile";
+import LeaveRequestPage from "./components/LeaveRequest/LeaveRequestPage";
 
 function App() {
   return (
-    <ThemeProvider>
+    
       <LanguageProvider>
         <Router>
           <Routes>
@@ -39,13 +40,14 @@ function App() {
               <Route path="EmployeeManager" element={<EmployeeManager />} />
               <Route path="UserList" element={<UserList />} />
               <Route path="UserProfile" element={<UserProfile />} />
-              ``
+              <Route path="leaves" element={<LeaveRequestPage />} />
+              
             </Route>
             <Route path="*" element={<Error404 />} />
           </Routes>
         </Router>
       </LanguageProvider>
-    </ThemeProvider>
+    
   );
 }
 
