@@ -51,6 +51,7 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: "Hr Dashboard", path: "" },
       { label: "Project Dashboard", path: "project-dashboard" },
+
     ],
   },
   {
@@ -59,6 +60,7 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: "Project List", path: "project-list" },
       { label: "Add Project", path: "add-project" },
+
     ],
   },
   {
@@ -67,6 +69,7 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: "Add Tenant", path: "tenant" },
       { label: "Create Ticket", path: "create-ticket" },
+
     ],
   },
   {
@@ -78,6 +81,7 @@ const menuItems: MenuItem[] = [
       { label: "User List", path: "UserList" },
       { label: "UserProfile", path: "UserProfile" },
       { label: "User", path: "LeaveApprovalDialog" },
+      { label: "Policies", path: "policies" },
     ],
   },
   {

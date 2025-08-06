@@ -15,6 +15,7 @@ import { ThemeProvider } from "./theme";
 import UserList from "./components/ManagementUI/UserList";
 import UserProfile from "./components/UserProfile/UserProfile";
 import LeaveRequestPage from "./components/LeaveRequest/LeaveRequestPage";
+import PolicyList from "./components/HRPoliciesModule/PolicyList";
 
 function App() {
   return (
@@ -41,7 +42,7 @@ function App() {
               <Route path="UserList" element={<UserList />} />
               <Route path="UserProfile" element={<UserProfile />} />
               <Route path="leaves" element={<LeaveRequestPage />} />
-              
+              <Route path="policies" element={<PolicyList />} />
             </Route>
             <Route path="*" element={<Error404 />} />
           </Routes>
