@@ -1,29 +1,26 @@
-import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { Box, useMediaQuery, useTheme as useMuiTheme } from "@mui/material";
 import Sidebar from "./Sidebar";
 import Navbar from "./Nabvar";
 import { Outlet } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import "../layout.css";
 import EmployeeInviteModal from "./Modal/EmployeeInviteModal";
-import { useLanguage } from "../context/LanguageContext";
 
+import { useTheme } from "../theme";
 const Layout = () => {
-  const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up("lg"));
+  const muiTheme = useMuiTheme();
+  const { mode: themeMode, setMode } = useTheme();
+  const isLargeScreen = useMediaQuery(muiTheme.breakpoints.up("lg"));
   const [sidebarOpen, setSidebarOpen] = useState(isLargeScreen);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [rtlMode, setRtlMode] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const { language, setLanguage } = useLanguage();
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const darkMode = themeMode === "dark";
 
   // Update sidebar state when screen size changes
   useEffect(() => {
-    setSidebarOpen(isLargeScreen); // lg+ → open by default, others → closed
-    document.body.classList.toggle("dark-mode", darkMode);
-    document.body.classList.toggle("light-mode", !darkMode);
-  }, [isLargeScreen, darkMode]);
+    setSidebarOpen(isLargeScreen);
+  }, [isLargeScreen]);
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
@@ -89,7 +86,6 @@ const Layout = () => {
           ref={sidebarRef}
           className="sidebar"
           sx={{
-            width: "220px",
             backgroundColor: "var(--dark-color)",
             color: "white",
             padding: "20px",
@@ -125,7 +121,10 @@ const Layout = () => {
             rtlMode={rtlMode}
             setRtlMode={setRtlMode}
             darkMode={darkMode}
-            setDarkMode={setDarkMode}
+            setDarkMode={(value: React.SetStateAction<boolean>) => {
+              const newValue = typeof value === 'function' ? value(darkMode) : value;
+              setMode(newValue ? 'dark' : 'light');
+            }}
             onMenuItemClick={closeSidebar}
           />
         </Box>
@@ -147,7 +146,6 @@ const Layout = () => {
           marginLeft: isLargeScreen && sidebarOpen && !rtlMode ? "274px" : 0,
           marginRight: isLargeScreen && sidebarOpen && rtlMode ? "274px" : 0,
           // bgcolor: "#fff", // 🔁 Here
-          color: darkMode ? "#fff" : "#000",
           width: "100%",
           direction: rtlMode ? "rtl" : "ltr",
         }}
@@ -189,51 +187,11 @@ const Layout = () => {
           <Box
             sx={{
               display: "flex",
-              justifyContent: "end",
+              justifyContent: "flex-end",
               alignItems: "center",
               mb: 1,
             }}
-          >
-            {/* Language Toggle */}
-            <ToggleButtonGroup
-              value={language}
-              exclusive
-              onChange={(_, value) => value && setLanguage(value)}
-              size="small"
-            >
-              <ToggleButton
-                value="en"
-                sx={{
-                  color: darkMode ? "#fff" : "#000",
-                  "&.Mui-selected": {
-                    backgroundColor: "#484c7f",
-                    color: "#fff",
-                    "&:hover": {
-                      backgroundColor: "#484c7f",
-                    },
-                  },
-                }}
-              >
-                EN
-              </ToggleButton>
-
-              <ToggleButton
-                value="ar"
-                sx={{
-                  color: darkMode ? "#fff" : "#000",
-                  "&.Mui-selected": {
-                    backgroundColor: "#484c7f",
-                    color: "#fff",
-                    "&:hover": {
-                      backgroundColor: "#484c7f",
-                    },
-                  },
-                }}
-              >
-                عربي
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
+          ></Box>
           <Outlet context={{ darkMode }} />
         </Box>
       </Box>

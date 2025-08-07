@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -9,59 +9,34 @@ import {
 } from "@mui/material";
 import type { SxProps, Theme } from "@mui/system";
 import { useOutletContext } from "react-router-dom";
+import type { EmployeeDto } from "../../api/employeeApi";
+import {
+  departmentApiService,
+  type BackendDepartment,
+} from "../../api/departmentApi";
+import {
+  designationApiService,
+  type BackendDesignation,
+} from "../../api/designationApi";
 
-
-// Mock data
-const departments = [
-  {
-    id: "hr",
-    en: "Human Resources",
-    ar: "الموارد البشرية",
-    designations: [
-      { id: "hr-mgr", en: "HR Manager", ar: "مدير الموارد البشرية" },
-      { id: "hr-exec", en: "HR Executive", ar: "تنفيذي الموارد البشرية" },
-    ],
-  },
-  {
-    id: "eng",
-    en: "Engineering",
-    ar: "الهندسة",
-    designations: [
-      { id: "eng-fe", en: "Frontend Engineer", ar: "مهندس الواجهة الأمامية" },
-      { id: "eng-be", en: "Backend Engineer", ar: "مهندس الواجهة الخلفية" },
-    ],
-  },
-  {
-    id: "sales",
-    en: "Sales",
-    ar: "المبيعات",
-    designations: [
-      { id: "sales-ex", en: "Sales Executive", ar: "تنفيذي المبيعات" },
-      { id: "sales-mgr", en: "Sales Manager", ar: "مدير المبيعات" },
-    ],
-  },
-];
 // Types
-interface FormValues {
-  name: string;
-  email: string;
-  phone: string;
-  departmentId: string;
-  designationId: string;
-}
+type FormValues = EmployeeDto;
 
-type Errors = {
-  [K in keyof FormValues]?: string;
+type Errors = Partial<FormValues> & {
+  general?: string;
 };
 
 interface AddEmployeeFormProps {
-  onSubmit?: (data: FormValues) => void;
+  onSubmit?: (
+    data: EmployeeDto
+  ) => Promise<{ success: boolean; errors?: Record<string, string> }>;
 }
 
 interface OutletContext {
   darkMode: boolean;
   language: "en" | "ar";
 }
+
 // Component
 const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
   const theme = useTheme();
@@ -77,17 +52,51 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
   });
 
   const [errors, setErrors] = useState<Errors>({});
+  const [departments, setDepartments] = useState<BackendDepartment[]>([]);
+  const [designations, setDesignations] = useState<BackendDesignation[]>([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [loadingDesignations, setLoadingDesignations] = useState(false);
 
-  const designationOptions = useMemo(() => {
-    if (!values.departmentId) return [];
-    return (
-      departments.find((d) => d.id === values.departmentId)?.designations || []
-    );
-  }, [values.departmentId]);
-
+  // Load departments on component mount
   useEffect(() => {
+    loadDepartments();
+  }, []);
+
+  // Load designations when department changes
+  useEffect(() => {
+    if (values.departmentId) {
+      loadDesignations(values.departmentId);
+    } else {
+      setDesignations([]);
+    }
     setValues((prev) => ({ ...prev, designationId: "" }));
   }, [values.departmentId]);
+
+  const loadDepartments = async () => {
+    try {
+      setLoadingDepartments(true);
+      const data = await departmentApiService.getAllDepartments();
+      setDepartments(data);
+    } catch (error) {
+      console.error("Error loading departments:", error);
+    } finally {
+      setLoadingDepartments(false);
+    }
+  };
+
+  const loadDesignations = async (departmentId: string) => {
+    try {
+      setLoadingDesignations(true);
+      const data = await designationApiService.getDesignationsByDepartment(
+        departmentId
+      );
+      setDesignations(data);
+    } catch (error) {
+      console.error("Error loading designations:", error);
+    } finally {
+      setLoadingDesignations(false);
+    }
+  };
 
   const dir = language === "ar" ? "rtl" : "ltr";
   const label = (en: string, ar: string) => (language === "ar" ? ar : en);
@@ -110,7 +119,13 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
     (field: keyof FormValues) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setValues({ ...values, [field]: e.target.value });
-      setErrors({ ...errors, [field]: undefined });
+      // Clear both field-specific and general errors when user starts typing
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        delete newErrors.general;
+        return newErrors;
+      });
     };
 
   const validate = (): boolean => {
@@ -126,7 +141,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
     if (!values.phone)
       newErrors.phone = label("Phone is required", "رقم الهاتف مطلوب");
     if (!values.departmentId)
-      newErrors.departmentId = label("Please select a department", "يرجى اختيار القسم");
+      newErrors.departmentId = label(
+        "Please select a department",
+        "يرجى اختيار القسم"
+      );
     if (!values.designationId)
       newErrors.designationId = label(
         "Please select a designation",
@@ -136,15 +154,52 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const resetForm = () => {
+    setValues({
+      name: "",
+      email: "",
+      phone: "",
+      departmentId: "",
+      designationId: "",
+    });
+    setErrors({});
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    onSubmit?.(values);
-    console.log(values);
+
+    try {
+      const result = await onSubmit?.(values);
+      if (result && result.success) {
+        // Reset form on successful submission
+        resetForm();
+      } else if (result && !result.success && result.errors) {
+        // Set backend validation errors
+        setErrors(result.errors);
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+    }
   };
 
   return (
     <Box component="form" onSubmit={handleSubmit} dir={dir}>
+      {/* General Error Display */}
+      {errors.general && (
+        <Box
+          sx={{
+            mb: 2,
+            p: 2,
+            bgcolor: "error.light",
+            color: "error.contrastText",
+            borderRadius: 1,
+          }}
+        >
+          {errors.general}
+        </Box>
+      )}
+
       <Box display="flex" flexWrap="wrap" gap={2} sx={{ mt: 1 }}>
         {/* Name */}
         <Box flex={isSm ? "1 1 100%" : "1 1 48%"}>
@@ -195,11 +250,12 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
             onChange={handleChange("departmentId")}
             error={!!errors.departmentId}
             helperText={errors.departmentId}
+            disabled={loadingDepartments}
             sx={darkInputStyles}
           >
             {departments.map((dept) => (
               <MenuItem key={dept.id} value={dept.id}>
-                {label(dept.en, dept.ar)}
+                {dept.name}
               </MenuItem>
             ))}
           </TextField>
@@ -210,7 +266,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
           <TextField
             select
             fullWidth
-            disabled={!values.departmentId}
+            disabled={!values.departmentId || loadingDesignations}
             label={label("Designation", "المسمى الوظيفي")}
             value={values.designationId}
             onChange={handleChange("designationId")}
@@ -218,9 +274,9 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
             helperText={errors.designationId}
             sx={darkInputStyles}
           >
-            {designationOptions.map((des) => (
+            {designations.map((des) => (
               <MenuItem key={des.id} value={des.id}>
-                {label(des.en, des.ar)}
+                {des.title}
               </MenuItem>
             ))}
           </TextField>
@@ -230,9 +286,15 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
         <Box
           flex="1 1 100%"
           display="flex"
-          justifyContent={isSm ? "center" : language === "ar" ? "flex-start" : "flex-end"}
+          justifyContent={
+            isSm ? "center" : language === "ar" ? "flex-start" : "flex-end"
+          }
         >
-          <Button variant="contained" type="submit" sx={{ backgroundColor: "#484c7f" }}>
+          <Button
+            variant="contained"
+            type="submit"
+            sx={{ backgroundColor: "#484c7f" }}
+          >
             {label("Add Employee", "إضافة موظف")}
           </Button>
         </Box>

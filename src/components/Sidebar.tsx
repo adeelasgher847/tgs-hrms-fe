@@ -8,6 +8,7 @@ import {
   Collapse,
   Switch,
 } from "@mui/material";
+import { useTheme } from "../theme";
 import {
   Dashboard,
   BusinessCenter,
@@ -76,6 +77,9 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: "Department List", path: "departments" },
       { label: "Add Designation", path: "Designations" },
+      { label: "User List", path: "UserList" },
+      { label: "UserProfile", path: "UserProfile" },
+      { label: "User", path: "LeaveApprovalDialog" },
     ],
   },
   {
@@ -91,9 +95,12 @@ const menuItems: MenuItem[] = [
     label: "Attendance",
     icon: <Receipt />,
     subItems: [
-      { label: "Attendance", path: "AttendanceHistory" },
+      { label: "Attendance", path: "AttendanceCheck" },
       { label: "Attendance Table", path: "AttendanceTable" },
       { label: "Reports", path: "Reports" },
+      { label: "Add Employee", path: "add-employee" },
+      
+      { label: "Leave Request", path: "leaves" },
     ],
   },
   {
@@ -142,9 +149,9 @@ const menuItems: MenuItem[] = [
 
 export default function Sidebar({
   darkMode,
-  setDarkMode,
   onMenuItemClick,
 }: SidebarProps) {
+  const { toggleTheme } = useTheme();
   const location = useLocation();
   const [openItem, setOpenItem] = useState<string>("");
   const [activeSubItem, setActiveSubItem] = useState<string>("");
@@ -285,10 +292,7 @@ export default function Sidebar({
           mb={1}
         >
           <Typography variant="body2">Enable Dark Mode!</Typography>
-          <Switch
-            checked={darkMode}
-            onChange={() => setDarkMode((prev) => !prev)}
-          />
+          <Switch checked={darkMode} onChange={toggleTheme} />
         </Box>
         {/* <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="body2">Enable RTL Mode!</Typography>
