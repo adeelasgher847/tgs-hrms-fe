@@ -40,7 +40,10 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [remembered, setRemembered] = useState<{ email: string; password: string } | null>(null);
+  const [remembered, setRemembered] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   const [emailError, setEmailError] = useState<string>("");
@@ -58,7 +61,9 @@ const Login: React.FC = () => {
         const parsed = JSON.parse(rememberedStr);
         setRemembered(parsed);
         setRememberMe(true);
-      } catch {}
+      } catch {
+        // Ignore parsing errors
+      }
     }
   }, []);
 
@@ -77,14 +82,11 @@ const Login: React.FC = () => {
 
   const handleTogglePassword = (): void => setShowPassword((prev) => !prev);
 
- 
-
-
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEmail(value);
     setEmailError(""); // Clear email error when user types
-    
+
     // Only auto-fill password if email matches remembered email exactly
     if (remembered && value === remembered.email) {
       setPassword(remembered.password);
@@ -103,25 +105,38 @@ const Login: React.FC = () => {
     setPasswordError("");
 
     if (!email) {
-      setEmailError(lang === "ar" ? "يرجى إدخال البريد الإلكتروني" : "Please enter your email");
+      setEmailError(
+        lang === "ar"
+          ? "يرجى إدخال البريد الإلكتروني"
+          : "Please enter your email"
+      );
       valid = false;
     } else if (!email.includes("@")) {
-      setEmailError(lang === "ar" ? "يرجى إدخال بريد إلكتروني صحيح" : "Please enter a valid email address");
+      setEmailError(
+        lang === "ar"
+          ? "يرجى إدخال بريد إلكتروني صحيح"
+          : "Please enter a valid email address"
+      );
       valid = false;
     }
 
     if (!password) {
-      setPasswordError(lang === "ar" ? "يرجى إدخال كلمة المرور" : "Please enter your password");
+      setPasswordError(
+        lang === "ar" ? "يرجى إدخال كلمة المرور" : "Please enter your password"
+      );
       valid = false;
     }
 
     if (!valid) return;
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, {
-        email,
-        password,
-      });
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
+        {
+          email,
+          password,
+        }
+      );
       localStorage.setItem("accessToken", res.data.accessToken);
       localStorage.setItem("refreshToken", res.data.refreshToken);
       localStorage.setItem("user", JSON.stringify(res.data.user));
@@ -410,7 +425,7 @@ const Login: React.FC = () => {
                     error={Boolean(emailError)}
                     helperText={emailError}
                     FormHelperTextProps={{
-                      style: { fontSize: '16px' } // or any size you want
+                      style: { fontSize: "16px" }, // or any size you want
                     }}
                     InputProps={{
                       sx: {
@@ -477,7 +492,7 @@ const Login: React.FC = () => {
                       error={Boolean(passwordError)}
                       helperText={passwordError}
                       FormHelperTextProps={{
-                        style: { fontSize: '16px' } // or any size you want
+                        style: { fontSize: "16px" }, // or any size you want
                       }}
                       inputProps={{
                         maxLength: 15,

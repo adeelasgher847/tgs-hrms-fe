@@ -75,7 +75,9 @@ export const TenantPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedTenant, setSelectedTenant] = useState<BackendCompany | null>(null);
+  const [selectedTenant, setSelectedTenant] = useState<BackendCompany | null>(
+    null
+  );
   const [formName, setFormName] = useState("");
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -94,7 +96,7 @@ export const TenantPage = () => {
       try {
         const data = await companyApi.getAllCompanies();
         setCompanies(data);
-      } catch (error) {
+      } catch {
         setCompanies([]);
       } finally {
         setIsLoading(false);
@@ -117,10 +119,14 @@ export const TenantPage = () => {
         message: "Company created successfully!",
         severity: "success",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorResponse = error as {
+        response?: { data?: { message?: string } };
+      };
       setSnackbar({
         open: true,
-        message: error?.response?.data?.message || "Failed to create company.",
+        message:
+          errorResponse?.response?.data?.message || "Failed to create company.",
         severity: "error",
       });
     }
@@ -130,7 +136,9 @@ export const TenantPage = () => {
   const handleEditCompany = async () => {
     if (!selectedTenant || !formName.trim()) return;
     try {
-      const updated = await companyApi.updateCompany(selectedTenant.id, { name: formName });
+      const updated = await companyApi.updateCompany(selectedTenant.id, {
+        name: formName,
+      });
       setCompanies((prev) =>
         prev.map((c) => (c.id === selectedTenant.id ? updated : c))
       );
@@ -142,10 +150,14 @@ export const TenantPage = () => {
         message: "Company updated successfully!",
         severity: "success",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorResponse = error as {
+        response?: { data?: { message?: string } };
+      };
       setSnackbar({
         open: true,
-        message: error?.response?.data?.message || "Failed to update company.",
+        message:
+          errorResponse?.response?.data?.message || "Failed to update company.",
         severity: "error",
       });
     }
@@ -164,10 +176,14 @@ export const TenantPage = () => {
         message: "Company deleted successfully!",
         severity: "success",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorResponse = error as {
+        response?: { data?: { message?: string } };
+      };
       setSnackbar({
         open: true,
-        message: error?.response?.data?.message || "Failed to delete company.",
+        message:
+          errorResponse?.response?.data?.message || "Failed to delete company.",
         severity: "error",
       });
     }
@@ -481,7 +497,9 @@ export const TenantPage = () => {
               </Button>
               <Button
                 variant="contained"
-                onClick={selectedTenant ? handleEditCompany : handleCreateCompany}
+                onClick={
+                  selectedTenant ? handleEditCompany : handleCreateCompany
+                }
                 disabled={!formName.trim()}
                 sx={{
                   bgcolor: darkMode ? "#605bd4" : "#45407A",
