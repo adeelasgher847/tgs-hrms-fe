@@ -17,6 +17,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 export interface Leave {
   id: string;
+  name: string; // Employee name
   from: string;
   to: string;
   applied: string;
@@ -65,15 +66,15 @@ const LeaveHistory = ({
   onAction: (id: string, action: "Approve" | "Reject") => void;
 }) => (
   <Box
-    // sx={{
-    //   p: 3,
-    //   borderRadius: 4,
-    //   boxShadow: 2,
-    //   background: "#fff",
-    //   maxWidth: "900px",
-    //   mx: "auto",
-    //   mt: 4,
-    // }}
+  // sx={{
+  //   p: 3,
+  //   borderRadius: 4,
+  //   boxShadow: 2,
+  //   background: "#fff",
+  //   maxWidth: "900px",
+  //   mx: "auto",
+  //   mt: 4,
+  // }}
   >
     <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
       <AccessTimeIcon color="primary" sx={{ fontSize: 32, mr: 1 }} />
@@ -85,6 +86,7 @@ const LeaveHistory = ({
       <Table>
         <TableHead>
           <TableRow>
+            <TableCell>Name</TableCell>
             <TableCell>Type</TableCell>
             <TableCell>From</TableCell>
             <TableCell>To</TableCell>
@@ -97,6 +99,7 @@ const LeaveHistory = ({
         <TableBody>
           {leaves.map((leave) => (
             <TableRow key={leave.id}>
+              <TableCell>{leave.name}</TableCell>
               <TableCell>
                 <Chip
                   label={leave.type}
