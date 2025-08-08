@@ -22,6 +22,7 @@ const isAdmin = true; // Replace with actual auth logic
 const initialLeaves: Leave[] = [
   {
     id: "1",
+    name: "John Doe",
     from: "Aug 10, 2024",
     to: "Aug 12, 2024",
     applied: "Aug 5, 2024",
@@ -32,6 +33,7 @@ const initialLeaves: Leave[] = [
   },
   {
     id: "2",
+    name: "Jane Smith",
     from: "Jul 20, 2024",
     to: "Jul 21, 2024",
     applied: "Jul 18, 2024",

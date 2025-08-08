@@ -82,6 +82,7 @@ const menuItems: MenuItem[] = [
       { label: "UserProfile", path: "UserProfile" },
       { label: "User", path: "LeaveApprovalDialog" },
       { label: "Policies", path: "policies" },
+      { label: "Holidays", path: "holidays" },
     ],
   },
   {
