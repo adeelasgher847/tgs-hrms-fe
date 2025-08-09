@@ -1,145 +1,210 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Typography,
   Paper,
-  TextField,
-  Button,
   Table,
-  TableBody,
-  TableCell,
-  TableContainer,
   TableHead,
   TableRow,
-  Pagination,
+  TableCell,
+  TableBody,
+  TableContainer,
+  TextField,
+  Button,
 } from "@mui/material";
+import axiosInstance from "../../api/axiosInstance";
+
+interface AttendanceRecord {
+  id: string;
+  userId: string;
+  date: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  workedHours: number | null;
+  user?: {
+    first_name: string;
+  };
+}
 
 const AttendanceTable = () => {
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
-
-  const [attendanceRecords, setAttendanceRecords] = useState(() => {
-    const stored = localStorage.getItem("attendance");
-    return stored ? JSON.parse(stored) : [];
-  });
-
-  const [filteredRecords, setFilteredRecords] = useState(attendanceRecords);
-
-  const [page, setPage] = useState(1);
-  const rowsPerPage = 5;
+  const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
+  const [filteredData, setFilteredData] = useState<AttendanceRecord[]>([]);
+  const [userRole, setUserRole] = useState<string>("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   useEffect(() => {
-    const stored = localStorage.getItem("attendance");
-    if (stored) {
-      const data = JSON.parse(stored);
-      setAttendanceRecords(data);
-      setFilteredRecords(data);
-    }
+    const fetchAttendance = async () => {
+      try {
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) return;
+
+        const currentUser = JSON.parse(storedUser);
+        setUserRole(currentUser.role.name);
+
+        const endpoint =
+          currentUser.role.name === "Admin"
+            ? "/attendance/all"
+            : `/attendance?userId=${currentUser.id}`;
+
+        const response = await axiosInstance.get(endpoint);
+        console.log("✅ Raw Attendance Data:", response.data);
+
+        const grouped: Record<string, AttendanceRecord> = {};
+
+        response.data.forEach((item: any) => {
+          const date = item.date
+            ? item.date
+            : new Date(item.timestamp).toISOString().split("T")[0];
+
+          const userId = item.user_id || item.userId;
+          const key = `${userId}_${date}`;
+
+          if (!grouped[key]) {
+            grouped[key] = {
+              id: item.id || Math.random().toString(),
+              userId,
+              date,
+              checkIn: null,
+              checkOut: null,
+              workedHours: null,
+              user: { first_name: item.user?.first_name || "N/A" },
+            };
+          }
+
+          if (item.type === "check-in") {
+            grouped[key].checkIn = new Date(item.timestamp).toLocaleTimeString();
+          }
+          if (item.type === "check-out") {
+            grouped[key].checkOut = new Date(item.timestamp).toLocaleTimeString();
+          }
+
+          if (item.checkIn || item.checkInTime) {
+            grouped[key].checkIn = new Date(
+              item.checkIn || item.checkInTime
+            ).toLocaleTimeString();
+          }
+          if (item.checkOut || item.checkOutTime) {
+            grouped[key].checkOut = new Date(
+              item.checkOut || item.checkOutTime
+            ).toLocaleTimeString();
+          }
+        });
+
+        const finalData = Object.values(grouped).map((rec) => {
+          if (rec.checkIn && rec.checkOut) {
+            const inTime = new Date(`1970-01-01T${rec.checkIn}`);
+            const outTime = new Date(`1970-01-01T${rec.checkOut}`);
+            rec.workedHours = parseFloat(
+              (
+                (outTime.getTime() - inTime.getTime()) /
+                (1000 * 60 * 60)
+              ).toFixed(2)
+            );
+          }
+          return rec;
+        });
+
+        finalData.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+
+        setAttendanceData(finalData);
+        setFilteredData(finalData);
+      } catch (error) {
+        console.error("❌ Error fetching attendance:", error);
+      }
+    };
+
+    fetchAttendance();
   }, []);
 
-  const handleFilter = () => {
-    const stored = JSON.parse(localStorage.getItem("attendance") || "[]");
-
-    if (startDate && endDate) {
-      const filtered = stored.filter((record: any) => {
-        return record.date >= startDate && record.date <= endDate;
-      });
-      setFilteredRecords(filtered);
-      setPage(1); // Reset to page 1 when filtering
-    } else {
-      setFilteredRecords(stored);
-      setPage(1);
+  // Filter data based on start/end date
+  useEffect(() => {
+    let data = [...attendanceData];
+    if (startDate) {
+      data = data.filter((rec) => new Date(rec.date) >= new Date(startDate));
     }
-  };
+    if (endDate) {
+      data = data.filter((rec) => new Date(rec.date) <= new Date(endDate));
+    }
+    setFilteredData(data);
+  }, [startDate, endDate, attendanceData]);
 
-  const handlePageChange = (
-    _event: React.ChangeEvent<unknown>,
-    value: number
-  ) => {
-    setPage(value);
+  const clearFilters = () => {
+    setStartDate("");
+    setEndDate("");
   };
-
-  const startIndex = (page - 1) * rowsPerPage;
-  const endIndex = startIndex + rowsPerPage;
-  const paginatedRecords = filteredRecords.slice(startIndex, endIndex);
 
   return (
-    <Box py={3}>
-      <Paper
-        sx={{
-          p: 3,
-          border: "1px solid #f0f0f0",
-          backgroundColor: "#fff",
-          borderRadius: 2,
-          boxShadow: "none",
-        }}
-      >
-        <Typography variant="h6" mb={3}>
-          Attendance History
-        </Typography>
+    <Box p={2}>
+      <Typography variant="h6" gutterBottom>
+        Attendance History
+      </Typography>
 
-        <Box display="flex" flexWrap="wrap" gap={2} mb={2}>
-          <TextField
-            label="Start Date"
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            size="small"
-          />
-          <TextField
-            label="End Date"
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            size="small"
-          />
-          <Button variant="contained" size="small" onClick={handleFilter}>
-            Filter
-          </Button>
-        </Box>
+      {/* Filter Box */}
+      <Box display="flex" gap={2} mb={2} flexWrap="wrap" alignItems="center">
+        <TextField
+          label="Start Date"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+        />
+        <TextField
+          label="End Date"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+        />
+        <Button variant="outlined" onClick={clearFilters}>
+          Clear Filter
+        </Button>
+      </Box>
 
-        <TableContainer component={Paper} sx={{ boxShadow: "none" }}>
+      <Paper elevation={3}>
+        <TableContainer>
           <Table>
             <TableHead>
-              <TableRow
-                sx={{
-                  "& th": {
-                    fontWeight: 600,
-                    fontSize: "15px",
-                  },
-                }}
-              >
-                <TableCell>Date</TableCell>
-                <TableCell>Check-in</TableCell>
-                <TableCell>Check-out</TableCell>
-                <TableCell>Total Hours</TableCell>
+              <TableRow>
+                {userRole === "Admin" && (
+                  <TableCell sx={{ fontWeight: "bold" }}>
+                    Employee Name
+                  </TableCell>
+                )}
+                <TableCell sx={{ fontWeight: "bold" }}>Date</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Check In</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Check Out</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Worked Hours</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedRecords.map((record: any, index: number) => (
-                <TableRow key={index}>
-                  <TableCell>{record.date}</TableCell>
-                  <TableCell>{record.checkIn}</TableCell>
-                  <TableCell>{record.checkOut}</TableCell>
-                  <TableCell>{record.totalHours}</TableCell>
+              {filteredData.length > 0 ? (
+                filteredData.map((record) => (
+                  <TableRow key={record.id}>
+                    {userRole === "Admin" && (
+                      <TableCell>{record.user?.first_name || "N/A"}</TableCell>
+                    )}
+                    <TableCell>{record.date || "--"}</TableCell>
+                    <TableCell>{record.checkIn || "--"}</TableCell>
+                    <TableCell>{record.checkOut || "--"}</TableCell>
+                    <TableCell>{record.workedHours ?? "--"}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={userRole === "Admin" ? 5 : 4}
+                    align="center"
+                  >
+                    No attendance records found.
+                  </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </TableContainer>
-
-        {filteredRecords.length > rowsPerPage && (
-          <Box display="flex" justifyContent="end" mt={2}>
-            <Pagination
-              count={Math.ceil(filteredRecords.length / rowsPerPage)}
-              page={page}
-              onChange={handlePageChange}
-              color="primary"
-            />
-          </Box>
-        )}
       </Paper>
     </Box>
   );
