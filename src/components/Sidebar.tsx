@@ -91,7 +91,8 @@ const menuItems: MenuItem[] = [
     label: "Attendance",
     icon: <Receipt />,
     subItems: [
-      { label: "Attendance History", path: "AttendanceHistory" },
+      { label: "Attendance", path: "AttendanceHistory" },
+      { label: "Attendance Table", path: "AttendanceTable" },
       { label: "Reports", path: "Reports" },
     ],
   },

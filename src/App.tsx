@@ -12,8 +12,10 @@ import Error404 from "./components/Error404";
 import { TenantPage } from "./components/Tenant";
 import EmployeeManager from "./components/Employee/EmployeeManager";
 import EmployeeProfileView from "./components/Employee/EmployeeProfileView";
-import AttendanceHistory from "./components/Attendance/AttendanceHistory";
+import AttendanceCheck from "./components/Attendance/AttendanceCheck";
 import Reports from "./components/Attendance/Reports";
+import AttendanceTable from "./components/Attendance/AttendanceTable";
+
 function App() {
   return (
     <LanguageProvider>
@@ -29,7 +31,8 @@ function App() {
             <Route path="Designations" element={<DesignationManager />} />
             <Route path="EmployeeManager" element={<EmployeeManager />} />
             <Route path="EmployeeProfileView" element={<EmployeeProfileView/>} />
-            <Route path="AttendanceHistory" element={<AttendanceHistory/>} />
+            <Route path="AttendanceCheck" element={<AttendanceCheck/>} />
+            <Route path="AttendanceTable" element={<AttendanceTable/>} />
             <Route path="Reports" element={<Reports/>} />
 
           </Route>
