@@ -14,6 +14,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import { useOutletContext } from "react-router-dom";
 
 interface Employee {
@@ -30,7 +31,7 @@ interface Employee {
     tenantId: string;
     createdAt: string;
     updatedAt: string;
-  };
+  } | null;
   designation: {
     id: string;
     title: string;
@@ -38,7 +39,7 @@ interface Employee {
     departmentId: string;
     createdAt: string;
     updatedAt: string;
-  };
+  } | null;
   tenantId: string;
   createdAt: string;
   updatedAt: string;
@@ -47,6 +48,7 @@ interface Employee {
 interface EmployeeListProps {
   employees: Employee[];
   onDelete?: (id: string) => void;
+  onEdit?: (employee: Employee) => void;
   loading?: boolean;
   departments?: Record<string, string>;
   designations?: Record<string, string>;
@@ -60,6 +62,7 @@ interface OutletContext {
 const EmployeeList: React.FC<EmployeeListProps> = ({
   employees,
   onDelete,
+  onEdit,
   loading,
   departments = {},
   designations = {},
@@ -102,7 +105,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           backgroundColor: cardBg,
           border: `1px solid ${borderColor}`,
           overflowX: "auto",
-          boxShadow: "none",
         }}
       >
         <Table>
@@ -110,9 +112,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             <TableRow>
               <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
                 {direction === "rtl" ? "الاسم" : "Name"}
-              </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
-                {direction === "rtl" ? "رقم الهاتف" : "Phone"}
               </TableCell>
               <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
                 {direction === "rtl" ? "البريد الإلكتروني" : "Email"}
@@ -126,9 +125,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
               <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
                 {direction === "rtl" ? "الوظيفة" : "Designation"}
               </TableCell>
-              {onDelete && (
+              {(onDelete || onEdit) && (
                 <TableCell
-                  sx={{ color: textColor, fontWeight: "bold", width: "80px" }}
+                  sx={{ color: textColor, fontWeight: "bold", width: "120px" }}
                 >
                   {direction === "rtl" ? "إجراءات" : "Actions"}
                 </TableCell>
@@ -164,28 +163,45 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                     emp.designationId ||
                     "—"}
                 </TableCell>
-                {onDelete && (
+                {(onDelete || onEdit) && (
                   <TableCell>
-                    <Tooltip
-                      title={
-                        direction === "rtl" ? "حذف الموظف" : "Delete Employee"
-                      }
-                    >
-                      <IconButton
-                        onClick={() => onDelete(emp.id)}
-                        disabled={loading}
-                        sx={{
-                          color: darkMode ? "#ff6b6b" : "#d32f2f",
-                          "&:hover": {
-                            backgroundColor: darkMode
-                              ? "rgba(255,107,107,0.1)"
-                              : "rgba(211,47,47,0.1)",
-                          },
-                        }}
+                    {onEdit && (
+                      <Tooltip
+                        title={
+                          direction === "rtl" ? "تعديل الموظف" : "Edit Employee"
+                        }
                       >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
+                        <IconButton
+                          onClick={() => onEdit(emp)}
+                          disabled={loading}
+                          sx={{ mr: 1 }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {onDelete && (
+                      <Tooltip
+                        title={
+                          direction === "rtl" ? "حذف الموظف" : "Delete Employee"
+                        }
+                      >
+                        <IconButton
+                          onClick={() => onDelete(emp.id)}
+                          disabled={loading}
+                          sx={{
+                            color: darkMode ? "#ff6b6b" : "#d32f2f",
+                            "&:hover": {
+                              backgroundColor: darkMode
+                                ? "rgba(255,107,107,0.1)"
+                                : "rgba(211,47,47,0.1)",
+                            },
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </TableCell>
                 )}
               </TableRow>
