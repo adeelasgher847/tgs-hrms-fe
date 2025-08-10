@@ -31,7 +31,39 @@ export interface BackendEmployee {
   updatedAt: string;
 }
 
+
+// New profile endpoint response types (EmployeeProfileService)
+export interface EmployeeProfileAttendanceSummaryItem {
+  date: string; // YYYY-MM-DD
+  checkIn: string | null; // ISO string
+  checkOut: string | null; // ISO string
+  workedHours: number; // decimal hours
+}
+
+export interface EmployeeProfileLeaveHistoryItem {
+  id: string;
+  fromDate: string; // YYYY-MM-DD
+  toDate: string; // YYYY-MM-DD
+  reason: string;
+  type: string;
+  status: string;
+}
+
+export interface EmployeeFullProfile {
+  id: string; // user id
+  name: string;
+  email: string;
+  role: string;
+  designation: string | null;
+  department: string | null;
+  joinedAt: string;
+  attendanceSummary: EmployeeProfileAttendanceSummaryItem[];
+  leaveHistory: EmployeeProfileLeaveHistoryItem[];
+}
+
+// Create/Update DTO interface
 // DTOs aligned with backend
+
 export interface EmployeeDto {
   first_name: string;
   last_name: string;
@@ -158,6 +190,20 @@ class EmployeeApiService {
       throw error;
     }
   }
+
+
+  // Get full employee profile by user id (designation, department, attendance, leaves)
+  async getEmployeeProfile(userId: string): Promise<EmployeeFullProfile> {
+    try {
+      const response = await axiosInstance.get<EmployeeFullProfile>(`${this.baseUrl}/users/${userId}/profile`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching employee profile:", error);
+      throw error;
+    }
+  }
+
+  // Create new company
 
   async createEmployee(employeeData: EmployeeDto): Promise<BackendEmployee> {
     try {
