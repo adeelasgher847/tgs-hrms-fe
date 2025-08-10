@@ -1,4 +1,3 @@
-// Navbar.tsx
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
@@ -26,7 +25,6 @@ import {
   ToggleButtonGroup,
   ToggleButton,
 } from "@mui/material";
-
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
@@ -36,12 +34,12 @@ import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
+import { useState, useEffect } from "react";
 
 const labels = {
   en: {
     search: "Search",
     myTask: "My Task",
-    myProfile: "My Profile",
     members: "Members",
     signout: "Sign Out",
     addAccount: "Add Personal Account",
@@ -52,7 +50,6 @@ const labels = {
   ar: {
     search: "بحث",
     myTask: "مهامي",
-    myProfile: "ملفي الشخصي",
     members: "الأعضاء",
     signout: "تسجيل الخروج",
     addAccount: "إضافة حساب",
@@ -109,17 +106,16 @@ const Navbar: React.FC<NavbarProps> = ({
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
-  const { language, setLanguage } = useLanguage();
+  const { language } = useLanguage();
   const lang = labels[language];
-
-  const [user, setUser] = React.useState<{
+  const [user, setUser] = useState<{
     name: string;
     role: string;
     email: string;
     avatarUrl?: string;
   } | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
       try {
@@ -146,7 +142,6 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-    navigate("EmployeeProfileView");
   };
 
   const handleLogout = () => {
@@ -157,6 +152,7 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const textColor = darkMode ? "#8f8f8f" : "#000";
+  const { setLanguage } = useLanguage();
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -171,17 +167,12 @@ const Navbar: React.FC<NavbarProps> = ({
         <Toolbar
           disableGutters
           sx={{
-            display: {
-              xs: "block",
-              sm: "flex",
-            },
             px: { xs: 1, md: 3 },
             gap: "10px",
             justifyContent: { xs: "center", sm: "space-between" },
             flexWrap: "wrap",
           }}
         >
-          {/* Left Side - Search + Add */}
           <Box sx={{ flexGrow: { xs: 1, sm: 0 }, minWidth: 0 }}>
             <Box
               sx={{
@@ -202,7 +193,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 }}
               >
                 <SearchIconWrapper>
-                  <SearchIcon />
+                  <SearchIcon sx={{ }} />
                 </SearchIconWrapper>
                 <StyledInputBase
                   placeholder={lang.search}
@@ -221,7 +212,6 @@ const Navbar: React.FC<NavbarProps> = ({
                 />
               </Search>
 
-              {/* Add Icon for small screens */}
               <Box
                 sx={{
                   display: { xs: "block", sm: "none" },
@@ -277,7 +267,9 @@ const Navbar: React.FC<NavbarProps> = ({
                   />
                 )
               )}
-              <Avatar sx={{ width: 32, height: 32, backgroundColor: "#4b4f73" }}>
+              <Avatar
+                sx={{ width: 32, height: 32, backgroundColor: "#4b4f73" }}
+              >
                 <AddIcon
                   sx={{ cursor: "pointer" }}
                   onClick={onOpenInviteModal}
@@ -295,12 +287,10 @@ const Navbar: React.FC<NavbarProps> = ({
             <Box
               sx={{
                 display: "flex",
-                alignItems: "center",
-                gap: { xs: 0.9, md: 1 },
+                flexDirection: "column",
+                alignItems: "flex-start",
               }}
             >
-
-
               <Typography
                 variant="subtitle2"
                 sx={{ fontWeight: 600, fontSize: "14px" }}
@@ -317,55 +307,69 @@ const Navbar: React.FC<NavbarProps> = ({
               </Typography>
             </Box>
 
-              {/* Language Toggle */}
-              <ToggleButtonGroup
-                value={language}
-                exclusive
-                onChange={(_, value) => value && setLanguage(value)}
-                size="small"
+            <IconButton onClick={handleMenuOpen}>
+              <Avatar
+                alt={user?.name || "User"}
+                src={user?.avatarUrl || AvatarProfile}
+                sx={{
+                  width: "45px",
+                  height: "45px",
+                  border: "1px solid #dee2e6",
+                  p: "3px",
+                  "& img": { borderRadius: "50%" },
+                }}
               >
-                <ToggleButton
-                  value="en"
-                  sx={{
-                    "&.Mui-selected": {
+                {!user?.avatarUrl && user?.name ? user.name[0] : null}
+              </Avatar>
+            </IconButton>
+            {/* Language Toggle */}
+            <ToggleButtonGroup
+              value={language}
+              exclusive
+              onChange={(_, value) => value && setLanguage(value)}
+              size="small"
+            >
+              <ToggleButton
+                value="en"
+                sx={{
+                  "&.Mui-selected": {
+                    backgroundColor: "#484c7f",
+                    color: "#fff",
+                    "&:hover": {
                       backgroundColor: "#484c7f",
-                      color: "#fff",
-                      "&:hover": {
-                        backgroundColor: "#484c7f",
-                      },
                     },
-                  }}
-                >
-                  EN
-                </ToggleButton>
-                <ToggleButton
-                  value="ar"
-                  sx={{
-                    "&.Mui-selected": {
-                      backgroundColor: "#484c7f",
-                      color: "#fff",
-                      "&:hover": {
-                        backgroundColor: "#484c7f",
-                      },
-                    },
-                  }}
-                >
-                  عربي
-                </ToggleButton>
-              </ToggleButtonGroup>
+                  },
+                }}
+              >
+                EN
+              </ToggleButton>
 
-              <IconButton
-                onClick={onToggleSidebar}
-                sx={{ display: { xs: "block", lg: "none" } }}
+              <ToggleButton
+                value="ar"
+                sx={{
+                  "&.Mui-selected": {
+                    backgroundColor: "#484c7f",
+                    color: "#fff",
+                    "&:hover": {
+                      backgroundColor: "#484c7f",
+                    },
+                  },
+                }}
               >
-                <MenuIcon sx={{ color: textColor }} />
-              </IconButton>
-            </Box>
+                عربي
+              </ToggleButton>
+            </ToggleButtonGroup>
+            <IconButton
+              onClick={onToggleSidebar}
+              sx={{ display: { xs: "block", lg: "none" } }}
+            >
+              <MenuIcon sx={{ color: textColor }} />
+            </IconButton>
           </Box>
         </Toolbar>
       </AppBar>
 
-      {/* User Menu */}
+      {/* Menu */}
       <Menu
         anchorEl={anchorEl}
         open={open}
@@ -402,7 +406,10 @@ const Navbar: React.FC<NavbarProps> = ({
         <Divider sx={{ mb: 1 }} />
         <MenuItem onClick={handleMenuClose}>
           <ListItemIcon>
-            <AssignmentOutlinedIcon fontSize="small" sx={{ color: textColor }} />
+            <AssignmentOutlinedIcon
+              fontSize="small"
+              sx={{ color: textColor }}
+            />
           </ListItemIcon>
           <Typography color={textColor}>{lang.myTask}</Typography>
         </MenuItem>
