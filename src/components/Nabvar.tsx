@@ -120,15 +120,19 @@ const Navbar: React.FC<NavbarProps> = ({
     if (userData) {
       try {
         const parsed = JSON.parse(userData);
+        console.log("Parsed user data:", parsed); // Debugging
         setUser({
-          name: parsed.name || "User",
+          name: parsed.first_name || "User",
           email: parsed.email || "",
-          role: parsed.role || "",
+          role: parsed.role.name || "",
           avatarUrl: parsed.avatarUrl || undefined,
         });
       } catch {
+        console.error("Failed to parse user data from localStorage");
         setUser(null);
       }
+    } else {
+      console.warn("No user data found in localStorage");
     }
   }, []);
 
@@ -295,9 +299,9 @@ const Navbar: React.FC<NavbarProps> = ({
                 {user?.name || "User"}
               </Typography>
               <Typography variant="caption" color={textColor}>
-                {user?.role == "admin"
+                {user?.role == "Admin"
                   ? "Admin Profile"
-                  : user?.role == "staff"
+                  : user?.role == "Staff"
                   ? "Staff Profile"
                   : "User Profile"}
               </Typography>
