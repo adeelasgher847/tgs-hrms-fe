@@ -19,6 +19,8 @@ import { ThemeProvider } from "./theme";
 import UserList from "./components/ManagementUI/UserList";
 import UserProfile from "./components/UserProfile/UserProfile";
 import LeaveRequestPage from "./components/LeaveRequest/LeaveRequestPage";
+import PolicyList from "./components/HRPoliciesModule/PolicyList";
+import HolidayList from "../src/components/HolidayCalendar /HolidayList";
 
 function App() {
   return (
@@ -44,10 +46,15 @@ function App() {
             <Route path="UserList" element={<UserList />} />
             <Route path="UserProfile" element={<UserProfile />} />
             <Route path="leaves" element={<LeaveRequestPage />} />
+
             <Route path="EmployeeProfileView" element={<EmployeeProfileView />}  />
             <Route path="AttendanceCheck" element={<AttendanceCheck />} />
             <Route path="AttendanceTable" element={<AttendanceTable />} />
             <Route path="Reports" element={<Reports />} />
+
+            <Route path="policies" element={<PolicyList />} />
+            <Route path="holidays" element={<HolidayList />} />
+
           </Route>
           <Route path="*" element={<Error404 />} />
         </Routes>

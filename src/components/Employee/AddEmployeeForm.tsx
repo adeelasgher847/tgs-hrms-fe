@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -20,7 +20,7 @@ import {
 } from "../../api/designationApi";
 
 // Types
-type FormValues = EmployeeDto;
+type FormValues = EmployeeDto & { departmentId?: string };
 
 type Errors = Partial<FormValues> & {
   general?: string;
@@ -28,8 +28,17 @@ type Errors = Partial<FormValues> & {
 
 interface AddEmployeeFormProps {
   onSubmit?: (
-    data: EmployeeDto
+    data: Partial<EmployeeDto> & { departmentId?: string; designationId?: string }
   ) => Promise<{ success: boolean; errors?: Record<string, string> }>;
+  initialData?: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+    phone: string;
+    designationId: string;
+    departmentId?: string;
+  } | null;
 }
 
 interface OutletContext {
@@ -38,17 +47,19 @@ interface OutletContext {
 }
 
 // Component
-const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
+const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit, initialData }) => {
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down("sm"));
   const { darkMode, language } = useOutletContext<OutletContext>();
 
   const [values, setValues] = useState<FormValues>({
-    name: "",
-    email: "",
-    phone: "",
-    departmentId: "",
-    designationId: "",
+    first_name: initialData?.firstName ?? "",
+    last_name: initialData?.lastName ?? "",
+    email: initialData?.email ?? "",
+    phone: initialData?.phone ?? "",
+    password: "",
+    designationId: initialData?.designationId ?? "",
+    departmentId: initialData?.departmentId ?? "",
   });
 
   const [errors, setErrors] = useState<Errors>({});
@@ -57,19 +68,63 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingDesignations, setLoadingDesignations] = useState(false);
 
+  // Track initialization to avoid clearing designation on first prefill
+  const isInitializingRef = useRef<boolean>(true);
+
   // Load departments on component mount
   useEffect(() => {
-    loadDepartments();
+    (async () => {
+      await loadDepartments();
+      // If we have initial department and designation, ensure options include them
+      if (initialData?.departmentId) {
+        await loadDesignations(initialData.departmentId);
+      }
+      isInitializingRef.current = false;
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Prefill from initialData when it changes
+  useEffect(() => {
+    if (initialData) {
+      setValues((prev) => ({
+        ...prev,
+        first_name: initialData.firstName ?? "",
+        last_name: initialData.lastName ?? "",
+        email: initialData.email,
+        phone: initialData.phone,
+        designationId: initialData.designationId,
+        departmentId: initialData.departmentId ?? prev.departmentId,
+      }));
+      if (initialData.departmentId) {
+        // Load designations for department; keep designationId as provided
+        (async () => {
+          await loadDesignations(initialData.departmentId!);
+          isInitializingRef.current = false;
+        })();
+      } else {
+        isInitializingRef.current = false;
+      }
+    } else {
+      isInitializingRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData?.id]);
 
   // Load designations when department changes
   useEffect(() => {
     if (values.departmentId) {
       loadDesignations(values.departmentId);
+      // If not initializing and current designationId may not belong, clear it
+      if (!isInitializingRef.current) {
+        setValues((prev) => ({ ...prev, designationId: "" }));
+      }
     } else {
       setDesignations([]);
+      if (!isInitializingRef.current) {
+        setValues((prev) => ({ ...prev, designationId: "" }));
+      }
     }
-    setValues((prev) => ({ ...prev, designationId: "" }));
   }, [values.departmentId]);
 
   const loadDepartments = async () => {
@@ -130,7 +185,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
 
   const validate = (): boolean => {
     const newErrors: Errors = {};
-    if (!values.name) newErrors.name = label("Name is required", "الاسم مطلوب");
+    if (!values.first_name)
+      newErrors.first_name = label("First name is required", "الاسم الأول مطلوب");
+    if (!values.last_name)
+      newErrors.last_name = label("Last name is required", "اسم العائلة مطلوب");
     if (!values.email)
       newErrors.email = label("Email is required", "البريد الإلكتروني مطلوب");
     else if (!/[^\s@]+@[^\s@]+\.[^\s@]+/.test(values.email))
@@ -140,27 +198,27 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
       );
     if (!values.phone)
       newErrors.phone = label("Phone is required", "رقم الهاتف مطلوب");
-    if (!values.departmentId)
-      newErrors.departmentId = label(
-        "Please select a department",
-        "يرجى اختيار القسم"
-      );
     if (!values.designationId)
       newErrors.designationId = label(
         "Please select a designation",
         "يرجى اختيار المسمى الوظيفي"
       );
+    const isEdit = Boolean(initialData);
+    if (!isEdit && !values.password)
+      newErrors.password = label("Password is required", "كلمة المرور مطلوبة");
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const resetForm = () => {
     setValues({
-      name: "",
+      first_name: "",
+      last_name: "",
       email: "",
       phone: "",
-      departmentId: "",
+      password: "",
       designationId: "",
+      departmentId: "",
     });
     setErrors({});
   };
@@ -201,15 +259,28 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
       )}
 
       <Box display="flex" flexWrap="wrap" gap={2} sx={{ mt: 1 }}>
-        {/* Name */}
+        {/* First Name */}
         <Box flex={isSm ? "1 1 100%" : "1 1 48%"}>
           <TextField
             fullWidth
-            label={label("Name", "الاسم")}
-            value={values.name}
-            onChange={handleChange("name")}
-            error={!!errors.name}
-            helperText={errors.name}
+            label={label("First Name", "الاسم الأول")}
+            value={values.first_name}
+            onChange={handleChange("first_name")}
+            error={!!errors.first_name}
+            helperText={errors.first_name}
+            sx={darkInputStyles}
+          />
+        </Box>
+
+        {/* Last Name */}
+        <Box flex={isSm ? "1 1 100%" : "1 1 48%"}>
+          <TextField
+            fullWidth
+            label={label("Last Name", "اسم العائلة")}
+            value={values.last_name}
+            onChange={handleChange("last_name")}
+            error={!!errors.last_name}
+            helperText={errors.last_name}
             sx={darkInputStyles}
           />
         </Box>
@@ -246,13 +317,16 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
             select
             fullWidth
             label={label("Department", "القسم")}
-            value={values.departmentId}
+            value={values.departmentId ?? ""}
             onChange={handleChange("departmentId")}
             error={!!errors.departmentId}
             helperText={errors.departmentId}
             disabled={loadingDepartments}
             sx={darkInputStyles}
           >
+            {departments.length === 0 && (
+              <MenuItem value="">{label("No departments", "لا توجد أقسام")}</MenuItem>
+            )}
             {departments.map((dept) => (
               <MenuItem key={dept.id} value={dept.id}>
                 {dept.name}
@@ -268,12 +342,15 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
             fullWidth
             disabled={!values.departmentId || loadingDesignations}
             label={label("Designation", "المسمى الوظيفي")}
-            value={values.designationId}
+            value={values.designationId ?? ""}
             onChange={handleChange("designationId")}
             error={!!errors.designationId}
             helperText={errors.designationId}
             sx={darkInputStyles}
           >
+            {designations.length === 0 && (
+              <MenuItem value="">{label("No designations", "لا توجد مسميات")}</MenuItem>
+            )}
             {designations.map((des) => (
               <MenuItem key={des.id} value={des.id}>
                 {des.title}
@@ -281,6 +358,22 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
             ))}
           </TextField>
         </Box>
+
+        {/* Password - show only on create (no initialData) */}
+        {!initialData && (
+          <Box flex={isSm ? "1 1 100%" : "1 1 48%"}>
+            <TextField
+              fullWidth
+              type="password"
+              label={label("Password", "كلمة المرور")}
+              value={values.password}
+              onChange={handleChange("password")}
+              error={!!errors.password}
+              helperText={errors.password}
+              sx={darkInputStyles}
+            />
+          </Box>
+        )}
 
         {/* Submit */}
         <Box
@@ -290,12 +383,8 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit }) => {
             isSm ? "center" : language === "ar" ? "flex-start" : "flex-end"
           }
         >
-          <Button
-            variant="contained"
-            type="submit"
-            sx={{ backgroundColor: "#484c7f" }}
-          >
-            {label("Add Employee", "إضافة موظف")}
+          <Button variant="contained" type="submit" sx={{ backgroundColor: "#484c7f" }}>
+            {label(initialData ? "Update Employee" : "Add Employee", initialData ? "تحديث الموظف" : "إضافة موظف")}
           </Button>
         </Box>
       </Box>

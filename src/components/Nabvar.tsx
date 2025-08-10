@@ -124,15 +124,19 @@ const Navbar: React.FC<NavbarProps> = ({
     if (userData) {
       try {
         const parsed = JSON.parse(userData);
+        console.log("Parsed user data:", parsed); // Debugging
         setUser({
-          name: parsed.name || "User",
+          name: parsed.first_name || "User",
           email: parsed.email || "",
-          role: parsed.role || "",
+          role: parsed.role.name || "",
           avatarUrl: parsed.avatarUrl || undefined,
         });
       } catch {
+        console.error("Failed to parse user data from localStorage");
         setUser(null);
       }
+    } else {
+      console.warn("No user data found in localStorage");
     }
   }, []);
 
@@ -295,21 +299,23 @@ const Navbar: React.FC<NavbarProps> = ({
                 gap: { xs: 0.9, md: 1 },
               }}
             >
-              <IconButton onClick={handleMenuOpen}>
-                <Avatar
-                  alt={user?.name || "User"}
-                  src={user?.avatarUrl || AvatarProfile}
-                  sx={{
-                    width: "45px",
-                    height: "45px",
-                    border: "1px solid #dee2e6",
-                    p: "3px",
-                    "& img": { borderRadius: "50%" },
-                  }}
-                >
-                  {!user?.avatarUrl && user?.name ? user.name[0] : null}
-                </Avatar>
-              </IconButton>
+
+
+              <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 600, fontSize: "14px" }}
+                color={textColor}
+              >
+                {user?.name || "User"}
+              </Typography>
+              <Typography variant="caption" color={textColor}>
+                {user?.role == "Admin"
+                  ? "Admin Profile"
+                  : user?.role == "Staff"
+                  ? "Staff Profile"
+                  : "User Profile"}
+              </Typography>
+            </Box>
 
               {/* Language Toggle */}
               <ToggleButtonGroup
