@@ -2,27 +2,57 @@ import { Box, useMediaQuery, useTheme as useMuiTheme } from "@mui/material";
 import Sidebar from "./Sidebar";
 import Navbar from "./Nabvar";
 import { Outlet } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import "../layout.css";
 import EmployeeInviteModal from "./Modal/EmployeeInviteModal";
+
 import { useTheme } from "../theme";
 const Layout = () => {
   const muiTheme = useMuiTheme();
-  const { mode: themeMode } = useTheme();
+  const { mode: themeMode, setMode } = useTheme();
   const isLargeScreen = useMediaQuery(muiTheme.breakpoints.up("lg"));
   const [sidebarOpen, setSidebarOpen] = useState(isLargeScreen);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [rtlMode, setRtlMode] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const darkMode = themeMode === "dark";
 
   // Update sidebar state when screen size changes
   useEffect(() => {
-    setSidebarOpen(isLargeScreen); // lg+ → open by default, others → closed
+    setSidebarOpen(isLargeScreen);
   }, [isLargeScreen]);
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
   };
+
+  const closeSidebar = () => {
+    if (!isLargeScreen) {
+      setSidebarOpen(false);
+    }
+  };
+
+  // Handle clicks outside sidebar
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        sidebarOpen &&
+        !isLargeScreen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target as Node)
+      ) {
+        closeSidebar();
+      }
+    };
+
+    if (sidebarOpen && !isLargeScreen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [sidebarOpen, isLargeScreen]);
 
   return (
     <Box
@@ -34,12 +64,28 @@ const Layout = () => {
         // flexDirection: rtlMode ? "row-reverse" : "row",
       }}
     >
+      {/* Mobile Backdrop */}
+      {sidebarOpen && !isLargeScreen && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            zIndex: 999,
+          }}
+          onClick={closeSidebar}
+        />
+      )}
+
       {/* Sidebar */}
       {sidebarOpen && (
         <Box
+          ref={sidebarRef}
           className="sidebar"
           sx={{
-            width: "240px",
             backgroundColor: "var(--dark-color)",
             color: "white",
             padding: "20px",
@@ -75,12 +121,17 @@ const Layout = () => {
             rtlMode={rtlMode}
             setRtlMode={setRtlMode}
             darkMode={darkMode}
+            setDarkMode={(value: React.SetStateAction<boolean>) => {
+              const newValue = typeof value === 'function' ? value(darkMode) : value;
+              setMode(newValue ? 'dark' : 'light');
+            }}
+            onMenuItemClick={closeSidebar}
           />
         </Box>
       )}
       {/* Right Section */}
       <Box
-        className="main-area"
+        className="main-area content"
         sx={{
           flex: 1,
           display: "flex",
@@ -125,7 +176,7 @@ const Layout = () => {
 
         {/* Scrollable Content */}
         <Box
-          className="content"
+          // className="content"
           component="main"
           sx={{
             flex: 1,

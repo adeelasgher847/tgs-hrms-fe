@@ -105,6 +105,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           backgroundColor: cardBg,
           border: `1px solid ${borderColor}`,
           overflowX: "auto",
+          boxShadow: "none",
         }}
       >
         <Table>
@@ -112,6 +113,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             <TableRow>
               <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
                 {direction === "rtl" ? "الاسم" : "Name"}
+              </TableCell>
+              <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
+                {direction === "rtl" ? "رقم الهاتف" : "Phone"}
               </TableCell>
               <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
                 {direction === "rtl" ? "البريد الإلكتروني" : "Email"}
