@@ -35,6 +35,7 @@ import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import { useState, useEffect } from "react";
+import AdminPanelSettings from "@mui/icons-material/AdminPanelSettings";
 
 const labels = {
   en: {
@@ -418,6 +419,17 @@ const Navbar: React.FC<NavbarProps> = ({
             <GroupOutlinedIcon fontSize="small" sx={{ color: textColor }} />
           </ListItemIcon>
           <Typography color={textColor}>{lang.members}</Typography>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            navigate('/dashboard/UserProfile');
+          }}
+        >
+          <ListItemIcon>
+            <AdminPanelSettings fontSize="small" sx={{ color: textColor }} />
+          </ListItemIcon>
+          <Typography color={textColor}>Profile</Typography>
         </MenuItem>
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>

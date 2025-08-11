@@ -1,4 +1,4 @@
-import type React from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,43 +8,55 @@ import {
   Divider,
   Chip,
   Paper,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   Person,
   Email,
-  Business,
-  Work,
   AdminPanelSettings,
+  Phone,
+  Business,
+  CalendarToday,
 } from "@mui/icons-material";
+import axiosInstance from "../../api/axiosInstance";
+import EmployeeProfileView from "../Employee/EmployeeProfileView";
 
-interface UserInfo {
-  name: string;
+interface UserProfileData {
+  id: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  department: string;
-  designation: string;
+  phone: string;
   role: string;
-  avatar?: string;
+  tenant: string;
+  created_at: string;
 }
 
-interface UserProfileProps {
-  user?: UserInfo;
-}
+const UserProfile = () => {
+  const [profile, setProfile] = useState<UserProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const UserProfile: React.FC<UserProfileProps> = ({
-  user = {
-    name: "John Doe",
-    email: "john.doe@company.com",
-    department: "Engineering",
-    designation: "Senior Software Engineer",
-    role: "Admin",
-  },
-}) => {
-  const getInitials = (name: string): string => {
-    return name
-      .split(" ")
-      .map((word) => word.charAt(0))
-      .join("")
-      .toUpperCase();
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await axiosInstance.get("/profile/me");
+        setProfile(res.data);
+      } catch {
+        setError("Profile not found or failed to load.");
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const getInitials = (first: string, last: string): string => {
+    return `${first?.charAt(0) || ""}${last?.charAt(0) || ""}`.toUpperCase();
   };
 
   const getRoleColor = (
@@ -57,43 +69,62 @@ const UserProfile: React.FC<UserProfileProps> = ({
     | "info"
     | "success"
     | "warning" => {
-    switch (role.toLowerCase()) {
+    switch (role?.toLowerCase()) {
       case "admin":
         return "error";
       case "manager":
         return "warning";
       case "user":
         return "primary";
+      case "employee":
+        return "success";
       default:
         return "default";
     }
   };
 
+  // Determine if the user is an employee based on role
+  const isEmployee = profile?.role?.toLowerCase() === "employee";
+
+  if (loading) return <Box display="flex" justifyContent="center" mt={6}><CircularProgress /></Box>;
+  if (error) return <Alert severity="error">{error}</Alert>;
+  if (!profile) return null;
+
   const profileItems = [
     {
       icon: <Person sx={{ color: "primary.main" }} />,
-      label: "Full Name",
-      value: user.name,
+      label: "First Name",
+      value: profile.first_name,
+    },
+    {
+      icon: <Person sx={{ color: "primary.main" }} />,
+      label: "Last Name",
+      value: profile.last_name,
     },
     {
       icon: <Email sx={{ color: "primary.main" }} />,
       label: "Email Address",
-      value: user.email,
+      value: profile.email,
     },
     {
-      icon: <Business sx={{ color: "primary.main" }} />,
-      label: "Department",
-      value: user.department,
-    },
-    {
-      icon: <Work sx={{ color: "primary.main" }} />,
-      label: "Designation",
-      value: user.designation,
+      icon: <Phone sx={{ color: "primary.main" }} />,
+      label: "Phone",
+      value: profile.phone,
     },
     {
       icon: <AdminPanelSettings sx={{ color: "primary.main" }} />,
       label: "Role",
-      value: user.role,
+      value: profile.role,
+    },
+    {
+      icon: <Business sx={{ color: "primary.main" }} />,
+      label: "Tenant",
+      value: profile.tenant,
+    },
+    {
+      icon: <CalendarToday sx={{ color: "primary.main" }} />,
+      label: "Joined",
+      value: new Date(profile.created_at).toLocaleDateString(),
     },
   ];
 
@@ -103,7 +134,6 @@ const UserProfile: React.FC<UserProfileProps> = ({
         elevation={0}
         sx={{
           bgcolor: "transparent",
-          // backgroundColor: "grey.50",
           alignItems: "flex-start",
           flexDirection: "column",
         }}
@@ -116,7 +146,6 @@ const UserProfile: React.FC<UserProfileProps> = ({
         >
           User Profile
         </Typography>
-
         <Card
           elevation={1}
           sx={{ borderRadius: 3, border: "none", bgcolor: "transparent" }}
@@ -125,7 +154,6 @@ const UserProfile: React.FC<UserProfileProps> = ({
             {/* Header Section with Avatar */}
             <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
               <Avatar
-                src={user.avatar}
                 sx={{
                   width: 80,
                   height: 80,
@@ -134,7 +162,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
                   bgcolor: "primary.main",
                 }}
               >
-                {!user.avatar && getInitials(user.name)}
+                {getInitials(profile.first_name, profile.last_name)}
               </Avatar>
               <Box>
                 <Typography
@@ -142,20 +170,18 @@ const UserProfile: React.FC<UserProfileProps> = ({
                   component="h2"
                   sx={{ fontWeight: 600, mb: 1 }}
                 >
-                  {user.name}
+                  {profile.first_name} {profile.last_name}
                 </Typography>
                 <Chip
-                  label={user.role}
-                  color={getRoleColor(user.role)}
+                  label={profile.role}
+                  color={getRoleColor(profile.role)}
                   size="small"
                   sx={{ fontWeight: 500 }}
                 />
               </Box>
             </Box>
-
             <Divider sx={{ mb: 3 }} />
-
-            {/* Profile Info Replaced Grid with Flex Box */}
+            {/* Profile Info */}
             <Box
               sx={{
                 display: "flex",
@@ -170,7 +196,6 @@ const UserProfile: React.FC<UserProfileProps> = ({
                     flex: { xs: "1 1 100%", sm: "1 1 48%" },
                     p: 2,
                     borderRadius: 2,
-                    // bgcolor: "grey.100",
                     display: "flex",
                     alignItems: "flex-start",
                   }}
@@ -194,10 +219,14 @@ const UserProfile: React.FC<UserProfileProps> = ({
                 </Box>
               ))}
             </Box>
-
-            {/* Additional Info Section */}
           </CardContent>
         </Card>
+        {/* Show EmployeeProfileView if user is an employee */}
+        {isEmployee && (
+          <Box mt={4}>
+            <EmployeeProfileView />
+          </Box>
+        )}
       </Paper>
     </Box>
   );
