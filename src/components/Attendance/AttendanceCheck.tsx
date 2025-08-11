@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, Paper, Button } from "@mui/material";
+import { Box, Typography, Paper, Button, Alert } from "@mui/material";
 import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { attendanceApiService } from "../../api/AttendanceApiService";
 
-// Use a string union type to avoid TS enum issues in some configs
 type AttendanceStatus = "Not Checked In" | "Checked In" | "Checked Out";
 
 const AttendanceCheck = () => {
@@ -12,102 +11,113 @@ const AttendanceCheck = () => {
   const [punchInTime, setPunchInTime] = useState<string | null>(null);
   const [punchOutTime, setPunchOutTime] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>("");
 
-  // Live clock for current time display
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date();
-      setCurrentTime(
-        now.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true,
-        })
-      );
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Persist today's check-in/out on refresh using daily summary endpoint
-  useEffect(() => {
-    const syncToday = async () => {
-      try {
-        const today = await attendanceApiService.getTodaySummary();
-        if (today) {
-          const checkIn = today.checkIn ? new Date(today.checkIn).toLocaleTimeString() : null;
-          const checkOut = today.checkOut ? new Date(today.checkOut).toLocaleTimeString() : null;
-          setPunchInTime(checkIn);
-          setPunchOutTime(checkOut);
-          if (checkIn && !checkOut) setStatus("Checked In");
-          else if (checkOut) setStatus("Checked Out");
-          else setStatus("Not Checked In");
-        } else {
-          setPunchInTime(null);
-          setPunchOutTime(null);
-          setStatus("Not Checked In");
-        }
-      } catch (e) {
-        console.error("Failed to sync today summary", e);
-      }
-    };
-    syncToday();
-  }, []);
-
-  const handlePunch = async () => {
+  // Get current userId from localStorage
+  const getCurrentUserId = () => {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return null;
     try {
-      // Always re-read today's summary before action to prevent duplicates
-      const today = await attendanceApiService.getTodaySummary();
-
-      // Prevent same-day duplicate records: if already checked out today, do nothing
-      if (today?.checkIn && today?.checkOut) {
-        return;
-      }
-
-      // If trying to check-in but there is already a check-in without checkout, block duplicate check-in
-      if (
-        (!today || !today.checkIn || today.checkOut) &&
-        (status === "Not Checked In" || status === "Checked Out")
-      ) {
-        const res = await attendanceApiService.createAttendance({ type: "check-in" });
-        const timeStr = new Date(res.timestamp).toLocaleTimeString();
-        setPunchInTime(timeStr);
-        setPunchOutTime(null);
-        setStatus("Checked In");
-      } else if (status === "Checked In") {
-        const res = await attendanceApiService.createAttendance({ type: "check-out" });
-        const timeStr = new Date(res.timestamp).toLocaleTimeString();
-        setPunchOutTime(timeStr);
-        setStatus("Checked Out");
-      }
-
-      // Re-sync from server to reflect persisted values
-      const latest = await attendanceApiService.getTodaySummary();
-      if (latest) {
-        setPunchInTime(latest.checkIn ? new Date(latest.checkIn).toLocaleTimeString() : null);
-        setPunchOutTime(latest.checkOut ? new Date(latest.checkOut).toLocaleTimeString() : null);
-        if (latest.checkIn && !latest.checkOut) setStatus("Checked In");
-        else if (latest.checkOut) setStatus("Checked Out");
-        else setStatus("Not Checked In");
-      }
-    } catch (error) {
-      console.error("Error punching attendance:", error);
+      const user = JSON.parse(userStr);
+      setUserName(user.first_name || "User");
+      return user.id;
+    } catch {
+      return null;
     }
   };
 
+  // Fetch today's summary from backend for the current user
+  const fetchToday = async () => {
+    setLoading(true);
+    setError(null);
+    const userId = getCurrentUserId();
+    if (!userId) {
+      setError("User not found. Please log in again.");
+      setLoading(false);
+      return;
+    }
+    try {
+      const today = await attendanceApiService.getTodaySummary(userId);
+      if (today) {
+        const checkIn = today.checkIn ? new Date(today.checkIn).toLocaleTimeString() : null;
+        const checkOut = today.checkOut ? new Date(today.checkOut).toLocaleTimeString() : null;
+        setPunchInTime(checkIn);
+        setPunchOutTime(checkOut);
+        if (checkIn && !checkOut) setStatus("Checked In");
+        else if (checkOut) setStatus("Checked Out");
+        else setStatus("Not Checked In");
+      } else {
+        setPunchInTime(null);
+        setPunchOutTime(null);
+        setStatus("Not Checked In");
+      }
+    } catch (e) {
+      setError("Failed to fetch today's attendance summary.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchToday();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleCheckIn = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await attendanceApiService.createAttendance({ type: "check-in" });
+      await fetchToday();
+    } catch (e) {
+      setError("Check-in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await attendanceApiService.createAttendance({ type: "check-out" });
+      await fetchToday();
+    } catch (e) {
+      setError("Check-out failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isCheckedIn = status === "Checked In";
+  const isCheckedOut = status === "Checked Out";
+  const isNotCheckedIn = status === "Not Checked In";
+
   return (
     <Box py={3}>
-      <Box display="flex" justifyContent="flex-end" mb={2}>
+      <Box display="flex" justifyContent="flex-end" mb={2} gap={2}>
         <Button
           variant="contained"
-          color={status === "Checked In" ? "warning" : "success"}
-          onClick={handlePunch}
+          color="success"
+          onClick={handleCheckIn}
           sx={{ minWidth: 120 }}
+          disabled={isCheckedIn || isCheckedOut || loading}
         >
-          {status === "Checked In" ? "Check Out" : "Check In"}
+          Check In
+        </Button>
+        <Button
+          variant="contained"
+          color="warning"
+          onClick={handleCheckOut}
+          sx={{ minWidth: 120 }}
+          disabled={isNotCheckedIn || isCheckedOut || loading}
+        >
+          Check Out
         </Button>
       </Box>
-
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <Paper
         sx={{
           p: 3,
@@ -116,9 +126,8 @@ const AttendanceCheck = () => {
           border: "1px solid #eee",
         }}
       >
-        <Typography variant="h6">Good morning, Ramish</Typography>
+        <Typography variant="h6">Good morning, {userName}</Typography>
         <Typography color="text.secondary">{currentTime} (GMT+5)</Typography>
-
         <Box display="flex" gap={3} mt={3}>
           <Box display="flex" alignItems="center">
             <LoginIcon sx={{ color: "#4caf50", mr: 1 }} />
