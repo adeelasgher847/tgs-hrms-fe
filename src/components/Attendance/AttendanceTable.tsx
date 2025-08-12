@@ -87,10 +87,9 @@ const AttendanceTable = () => {
           const inTime = new Date(`1970-01-01T${rec.checkIn}`);
           const outTime = new Date(`1970-01-01T${rec.checkOut}`);
           rec.workedHours = parseFloat(
-            (
-              (outTime.getTime() - inTime.getTime()) /
-              (1000 * 60 * 60)
-            ).toFixed(2)
+            ((outTime.getTime() - inTime.getTime()) / (1000 * 60 * 60)).toFixed(
+              2
+            )
           );
         }
         return rec;

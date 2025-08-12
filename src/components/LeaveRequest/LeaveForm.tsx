@@ -23,15 +23,46 @@ const LeaveForm = ({
   const [reason, setReason] = useState("");
   const [type, setType] = useState("sick");
 
+  // Get tomorrow's date (minimum selectable date)
+  const getTomorrow = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow;
+  };
+
+  const handleFromDateChange = (newValue: Date | null) => {
+    setFromDate(newValue);
+
+    // Auto-adjust toDate if it's before the new fromDate
+    if (newValue && toDate && newValue > toDate) {
+      setToDate(newValue);
+    }
+  };
+
+  const handleToDateChange = (newValue: Date | null) => {
+    setToDate(newValue);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fromDate || !toDate) return;
+
+    if (!fromDate || !toDate) {
+      return;
+    }
+
     onSubmit({
       fromDate: fromDate.toISOString().split("T")[0],
       toDate: toDate.toISOString().split("T")[0],
       reason,
       type,
     });
+
+    // Clear form fields after successful submission
+    setFromDate(null);
+    setToDate(null);
+    setReason("");
+    setType("sick");
   };
 
   return (
@@ -58,18 +89,26 @@ const LeaveForm = ({
         <DatePicker
           label="From Date"
           value={fromDate}
-          onChange={(newValue) => setFromDate(newValue)}
+          onChange={handleFromDateChange}
+          minDate={getTomorrow()}
           slotProps={{
-            textField: { fullWidth: true, required: true },
+            textField: {
+              fullWidth: true,
+              required: true,
+            },
           }}
         />
 
         <DatePicker
           label="To Date"
           value={toDate}
-          onChange={(newValue) => setToDate(newValue)}
+          onChange={handleToDateChange}
+          minDate={fromDate || getTomorrow()}
           slotProps={{
-            textField: { fullWidth: true, required: true },
+            textField: {
+              fullWidth: true,
+              required: true,
+            },
           }}
         />
 

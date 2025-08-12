@@ -105,6 +105,7 @@ const LeaveRequestPage = () => {
               day: "numeric",
               year: "numeric",
             }),
+          created_at: leave.created_at,
         }));
       } else if (userIsUser) {
         // Regular user gets their own leaves
@@ -132,6 +133,7 @@ const LeaveRequestPage = () => {
                 day: "numeric",
                 year: "numeric",
               }),
+            created_at: leave.created_at,
           }));
         }
       } else {
@@ -139,6 +141,22 @@ const LeaveRequestPage = () => {
         console.log("No valid role found, showing empty list");
         leavesData = [];
       }
+
+      // Sort leaves by creation date (newest first) for better admin experience
+      leavesData.sort((a, b) => {
+        // Sort by created_at if available, otherwise by applied date, then by ID
+        const dateA = a.created_at
+          ? new Date(a.created_at).getTime()
+          : a.applied
+          ? new Date(a.applied).getTime()
+          : new Date(a.id).getTime();
+        const dateB = b.created_at
+          ? new Date(b.created_at).getTime()
+          : b.applied
+          ? new Date(b.applied).getTime()
+          : new Date(b.id).getTime();
+        return dateB - dateA; // Newest first
+      });
 
       console.log("Loaded leaves:", leavesData);
       setLeaves(leavesData);
@@ -182,6 +200,7 @@ const LeaveRequestPage = () => {
             day: "numeric",
             year: "numeric",
           }),
+        created_at: newLeave.created_at || new Date().toISOString(),
       };
 
       console.log("Formatted leave for display:", leaveWithDisplay);

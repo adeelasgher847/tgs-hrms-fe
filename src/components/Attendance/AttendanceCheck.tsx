@@ -41,8 +41,12 @@ const AttendanceCheck = () => {
     try {
       const today = await attendanceApiService.getTodaySummary(userId);
       if (today) {
-        const checkIn = today.checkIn ? new Date(today.checkIn).toLocaleTimeString() : null;
-        const checkOut = today.checkOut ? new Date(today.checkOut).toLocaleTimeString() : null;
+        const checkIn = today.checkIn
+          ? new Date(today.checkIn).toLocaleTimeString()
+          : null;
+        const checkOut = today.checkOut
+          ? new Date(today.checkOut).toLocaleTimeString()
+          : null;
         setPunchInTime(checkIn);
         setPunchOutTime(checkOut);
         if (checkIn && !checkOut) setStatus("Checked In");
@@ -117,7 +121,11 @@ const AttendanceCheck = () => {
           Check Out
         </Button>
       </Box>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
       <Paper
         sx={{
           p: 3,
@@ -148,9 +156,3 @@ const AttendanceCheck = () => {
 };
 
 export default AttendanceCheck;
-
-
-
-
-
-
