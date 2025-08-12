@@ -286,7 +286,7 @@ export default function DesignationManager() {
   );
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4 }} dir={isRTL ? "rtl" : "ltr"}>
+    <Container  maxWidth="xl" sx={{ mt: 4}} dir={isRTL ? "rtl" : "ltr"}>
       {/* Top Bar */}
       <Box
         sx={{

@@ -351,7 +351,7 @@ const EmployeeManager: React.FC = () => {
   return (
     <Box
       sx={{
-        backgroundColor: bgColor,
+        // backgroundColor: bgColor,
         color: textColor,
         minHeight: "100vh",
       }}

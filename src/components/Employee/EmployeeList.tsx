@@ -83,7 +83,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   console.log("First employee department:", employees[0]?.department);
   console.log("First employee designation:", employees[0]?.designation);
   return (
-    <Box sx={{ pt: 2 }}>
+    <Box sx={{ py: 2 }}>
       <Typography
         variant="h5"
         gutterBottom
@@ -105,6 +105,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           backgroundColor: cardBg,
           border: `1px solid ${borderColor}`,
           overflowX: "auto",
+          boxShadow:'none'
         }}
       >
         <Table>
