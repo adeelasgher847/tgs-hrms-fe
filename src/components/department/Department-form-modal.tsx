@@ -197,7 +197,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         label={
           isRtl
             ? "الوصف (بالإنجليزية - اختياري)"
-            : "Description (English - Optional)"
+            : "Description (English)"
         }
         value={formData.description || ""}
         onChange={handleInputChange("description")}
