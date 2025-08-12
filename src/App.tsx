@@ -19,7 +19,6 @@ import { ThemeProvider } from "./theme";
 import UserList from "./components/ManagementUI/UserList";
 import UserProfile from "./components/UserProfile/UserProfile";
 import LeaveRequestPage from "./components/LeaveRequest/LeaveRequestPage";
-import TimerBambo from "./components/Attendance/TimerBambo";
 
 function App() {
   return (
@@ -49,7 +48,7 @@ function App() {
             <Route path="AttendanceCheck" element={<AttendanceCheck />} />
             <Route path="AttendanceTable" element={<AttendanceTable />} />
             <Route path="Reports" element={<Reports />} />
-            <Route path="TimerBambo" element={<TimerBambo />} />
+
           </Route>
           <Route path="*" element={<Error404 />} />
         </Routes>
