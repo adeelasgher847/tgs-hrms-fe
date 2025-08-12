@@ -68,6 +68,7 @@ const EmployeeManager: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { darkMode } = useOutletContext<OutletContext>();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<null | Employee>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -169,7 +170,7 @@ const EmployeeManager: React.FC = () => {
         setEmployees((prev) => [...prev, newEmployee]);
       }
 
-      // Reload department and designation mappings to ensure we have the latest data
+      // Reload department and designation mappings
       await loadDepartmentsAndDesignations();
 
       setSuccessMessage("Employee added successfully!");
@@ -215,15 +216,25 @@ const EmployeeManager: React.FC = () => {
           ) {
             fieldErrors.email = "Email already exists";
           } else if (
+            backendError.toLowerCase().includes("user") &&
+            backendError.toLowerCase().includes("already exists")
+          ) {
+            fieldErrors.email = "User already exists in this tenant";
+          } else if (
             backendError.toLowerCase().includes("phone") &&
             backendError.toLowerCase().includes("already exists")
           ) {
             fieldErrors.phone = "Phone number already exists";
           } else if (
-            backendError.toLowerCase().includes("name") &&
+            backendError.toLowerCase().includes("first") &&
             backendError.toLowerCase().includes("required")
           ) {
-            fieldErrors.name = "Name is required";
+            fieldErrors.first_name = "First name is required";
+          } else if (
+            backendError.toLowerCase().includes("last") &&
+            backendError.toLowerCase().includes("required")
+          ) {
+            fieldErrors.last_name = "Last name is required";
           } else if (
             backendError.toLowerCase().includes("email") &&
             backendError.toLowerCase().includes("required")
@@ -235,15 +246,15 @@ const EmployeeManager: React.FC = () => {
           ) {
             fieldErrors.phone = "Phone is required";
           } else if (
-            backendError.toLowerCase().includes("department") &&
-            backendError.toLowerCase().includes("required")
-          ) {
-            fieldErrors.departmentId = "Department is required";
-          } else if (
             backendError.toLowerCase().includes("designation") &&
             backendError.toLowerCase().includes("required")
           ) {
             fieldErrors.designationId = "Designation is required";
+          } else if (
+            backendError.toLowerCase().includes("password") &&
+            backendError.toLowerCase().includes("required")
+          ) {
+            fieldErrors.password = "Password is required";
           } else {
             // Generic error for other cases
             fieldErrors.general = backendError;
@@ -258,6 +269,48 @@ const EmployeeManager: React.FC = () => {
       // Generic error
       setError("Failed to add employee");
       return { success: false, errors: { general: "Failed to add employee" } };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditOpen = async (emp: Employee) => {
+    try {
+      setLoading(true);
+      const fresh = await employeeApi.getEmployeeById(emp.id);
+      setEditing(fresh as unknown as Employee);
+      setOpen(true);
+    } catch (e) {
+      setError("Failed to load employee details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateEmployee = async (updates: Partial<EmployeeDto> & { designationId?: string; password?: string }) => {
+    if (!editing) return { success: false } as any;
+    try {
+      setLoading(true);
+      setError(null);
+      // Ensure a valid designationId is sent if user selected a new one; otherwise keep current
+      const nextDesignationId = updates.designationId && updates.designationId !== "" ? updates.designationId : editing.designationId;
+      const updated = await employeeApi.updateEmployee(editing.id, {
+        first_name: (updates as any).first_name,
+        last_name: (updates as any).last_name,
+        email: updates.email,
+        phone: updates.phone,
+        password: updates.password,
+        designationId: nextDesignationId,
+      });
+      await loadEmployees();
+      setSuccessMessage("Employee updated successfully!");
+      setOpen(false);
+      setEditing(null);
+      return { success: true };
+    } catch (err) {
+      console.error("Error updating employee:", err);
+      setError("Failed to update employee");
+      return { success: false } as any;
     } finally {
       setLoading(false);
     }
@@ -298,7 +351,7 @@ const EmployeeManager: React.FC = () => {
   return (
     <Box
       sx={{
-        backgroundColor: bgColor,
+        // backgroundColor: bgColor,
         color: textColor,
         minHeight: "100vh",
       }}
@@ -417,7 +470,10 @@ const EmployeeManager: React.FC = () => {
         {/* Add Employee Button */}
         <Button
           variant="contained"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            setEditing(null);
+            setOpen(true);
+          }}
           sx={{
             backgroundColor: darkMode ? "#605bd4" : "#484c7f",
             width: isMobile ? "100%" : "auto",
@@ -434,6 +490,7 @@ const EmployeeManager: React.FC = () => {
       <EmployeeList
         employees={filteredEmployees}
         onDelete={handleDeleteEmployee}
+        onEdit={handleEditOpen}
         loading={loading}
         departments={departments}
         designations={designations}
@@ -473,7 +530,10 @@ const EmployeeManager: React.FC = () => {
       {/* Modal with AddEmployeeForm */}
       <Dialog
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={() => {
+          setOpen(false);
+          setEditing(null);
+        }}
         fullWidth
         maxWidth="md"
         PaperProps={{
@@ -492,7 +552,9 @@ const EmployeeManager: React.FC = () => {
             color: textColor,
           }}
         >
-          {getLabel("Add New Employee", "إضافة موظف جديد")}
+          {editing
+            ? getLabel("Edit Employee", "تعديل الموظف")
+            : getLabel("Add New Employee", "إضافة موظف جديد")}
 
           <IconButton
             onClick={() => setOpen(false)}
@@ -504,7 +566,23 @@ const EmployeeManager: React.FC = () => {
         </DialogTitle>
 
         <DialogContent>
-          <AddEmployeeForm onSubmit={handleAddEmployee} />
+          <AddEmployeeForm
+            key={editing ? `edit-${editing.id}` : "create"}
+            onSubmit={editing ? handleUpdateEmployee : handleAddEmployee}
+            initialData={
+              editing
+                ? {
+                    id: editing.id,
+                    firstName: (editing as any).firstName,
+                    lastName: (editing as any).lastName,
+                    email: editing.email,
+                    phone: editing.phone,
+                    designationId: editing.designationId,
+                    departmentId: editing.departmentId,
+                  }
+                : null
+            }
+          />
         </DialogContent>
       </Dialog>
     </Box>

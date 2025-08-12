@@ -13,7 +13,7 @@ interface LeaveApprovalDialogProps {
   open: boolean;
   onClose: () => void;
   onConfirm: (reason?: string) => void;
-  action: "Approve" | "Reject";
+  action: "approved" | "rejected";
 }
 
 const LeaveApprovalDialog = ({
@@ -28,16 +28,19 @@ const LeaveApprovalDialog = ({
     if (!open) setReason("");
   }, [open]);
 
+  const actionText = action === "approved" ? "Approve" : "Reject";
+  const actionLower = action === "approved" ? "approve" : "reject";
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ fontWeight: 600, textAlign: "center" }}>
-        Confirm {action}
+        Confirm {actionText}
       </DialogTitle>
       <DialogContent>
         <Typography align="center" sx={{ mb: 2 }}>
-          Are you sure you want to {action.toLowerCase()} this leave request?
+          Are you sure you want to {actionLower} this leave request?
         </Typography>
-        {action === "Reject" && (
+        {action === "rejected" && (
           <TextField
             label="Rejection Reason"
             value={reason}
@@ -52,9 +55,9 @@ const LeaveApprovalDialog = ({
       </DialogContent>
       <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
         <Button
-          onClick={() => onConfirm(action === "Reject" ? reason : undefined)}
+          onClick={() => onConfirm(action === "rejected" ? reason : undefined)}
           variant="contained"
-          color={action === "Approve" ? "success" : "error"}
+          color={action === "approved" ? "success" : "error"}
         >
           Yes
         </Button>

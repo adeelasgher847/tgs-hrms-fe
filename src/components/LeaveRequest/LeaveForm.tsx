@@ -1,47 +1,68 @@
 import React, { useState } from "react";
-import {
-  Box,
-  TextField,
-  Button,
-  MenuItem,
-  Typography,
-} from "@mui/material";
+import { Box, TextField, Button, MenuItem, Typography } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-
-export interface LeaveFormData {
-  from: string;
-  to: string;
-  reason: string;
-  type: string;
-}
+import type { CreateLeaveRequest } from "../../api/leaveApi";
 
 const leaveTypes = [
-  { value: "Sick", label: "Sick" },
-  { value: "Casual", label: "Casual" },
-  { value: "Other", label: "Other" },
+  { value: "sick", label: "Sick" },
+  { value: "casual", label: "Casual" },
+  { value: "vacation", label: "Vacation" },
+  { value: "emergency", label: "Emergency" },
+  { value: "other", label: "Other" },
 ];
 
 const LeaveForm = ({
   onSubmit,
 }: {
-  onSubmit: (data: LeaveFormData) => void;
+  onSubmit: (data: CreateLeaveRequest) => void;
 }) => {
-  const [from, setFrom] = useState<Date | null>(null);
-  const [to, setTo] = useState<Date | null>(null);
+  const [fromDate, setFromDate] = useState<Date | null>(null);
+  const [toDate, setToDate] = useState<Date | null>(null);
   const [reason, setReason] = useState("");
-  const [type, setType] = useState("Sick");
+  const [type, setType] = useState("sick");
+
+  // Get tomorrow's date (minimum selectable date)
+  const getTomorrow = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow;
+  };
+
+  const handleFromDateChange = (newValue: Date | null) => {
+    setFromDate(newValue);
+
+    // Auto-adjust toDate if it's before the new fromDate
+    if (newValue && toDate && newValue > toDate) {
+      setToDate(newValue);
+    }
+  };
+
+  const handleToDateChange = (newValue: Date | null) => {
+    setToDate(newValue);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!from || !to) return;
+
+    if (!fromDate || !toDate) {
+      return;
+    }
+
     onSubmit({
-      from: from.toISOString().split("T")[0],
-      to: to.toISOString().split("T")[0],
+      fromDate: fromDate.toISOString().split("T")[0],
+      toDate: toDate.toISOString().split("T")[0],
       reason,
       type,
     });
+
+    // Clear form fields after successful submission
+    setFromDate(null);
+    setToDate(null);
+    setReason("");
+    setType("sick");
   };
 
   return (
@@ -66,20 +87,28 @@ const LeaveForm = ({
         </Typography>
 
         <DatePicker
-          label="From"
-          value={from}
-          onChange={(newValue) => setFrom(newValue)}
+          label="From Date"
+          value={fromDate}
+          onChange={handleFromDateChange}
+          minDate={getTomorrow()}
           slotProps={{
-            textField: { fullWidth: true, required: true },
+            textField: {
+              fullWidth: true,
+              required: true,
+            },
           }}
         />
 
         <DatePicker
-          label="To"
-          value={to}
-          onChange={(newValue) => setTo(newValue)}
+          label="To Date"
+          value={toDate}
+          onChange={handleToDateChange}
+          minDate={fromDate || getTomorrow()}
           slotProps={{
-            textField: { fullWidth: true, required: true },
+            textField: {
+              fullWidth: true,
+              required: true,
+            },
           }}
         />
 
@@ -105,7 +134,12 @@ const LeaveForm = ({
           ))}
         </TextField>
 
-        <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          sx={{ mt: 2 }}
+        >
           Apply
         </Button>
       </Box>

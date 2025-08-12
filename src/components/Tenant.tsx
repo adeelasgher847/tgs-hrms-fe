@@ -95,6 +95,7 @@ export const TenantPage = () => {
       setIsLoading(true);
       try {
         const data = await companyApi.getAllCompanies();
+        console.log("Fetched companies:", data);
         setCompanies(data);
       } catch {
         setCompanies([]);
@@ -112,6 +113,7 @@ export const TenantPage = () => {
     try {
       const created = await companyApi.createCompany(newCompany);
       setCompanies((prev) => [created, ...prev]);
+      console.log("Created company:", created);
       setIsFormModalOpen(false);
       setFormName("");
       setSnackbar({

@@ -28,7 +28,6 @@ export default function DesignationsList({
   onEdit,
   onDelete,
   getText,
-  
 }: DesignationsListProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
