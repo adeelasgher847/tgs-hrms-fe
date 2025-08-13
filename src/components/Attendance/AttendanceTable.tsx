@@ -14,19 +14,30 @@ import {
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import axiosInstance from "../../api/axiosInstance";
-
+interface AttendanceEvent {
+  id: string;
+  user_id: string;
+  timestamp: string; // ISO
+  type: "check-in" | "check-out" | string;
+  user?: { first_name?: string };
+}
 interface AttendanceRecord {
   id: string;
   userId: string;
-  date: string;
-  checkIn: string | null;
-  checkOut: string | null;
+  date: string;                // YYYY-MM-DD (local)
+  checkInISO: string | null;   // ISO for calc/sort
+  checkOutISO: string | null;  // ISO for calc/sort
+  checkIn: string | null;      // display
+  checkOut: string | null;     // display
   workedHours: number | null;
-  user?: {
-    first_name: string;
-  };
+  user?: { first_name: string };
 }
-
+const formatLocalYMD = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
 const AttendanceTable = () => {
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [filteredData, setFilteredData] = useState<AttendanceRecord[]>([]);
@@ -34,7 +45,107 @@ const AttendanceTable = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const toDisplayTime = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleTimeString() : null;
+  const buildFromEvents = (
+    eventsRaw: AttendanceEvent[],
+    currentUserId: string
+  ): AttendanceRecord[] => {
+    const events = eventsRaw
+      .filter((e) => e && e.timestamp && e.type)
+      .map((e) => ({
+        id: e.id,
+        user_id: (e as any).user_id || currentUserId,
+        timestamp: e.timestamp,
+        type: e.type as "check-in" | "check-out",
+        user: e.user,
+      }))
+      .sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+    const sessions: AttendanceRecord[] = [];
+    const openByKey = new Map<
+      string,
+      { checkIn: AttendanceEvent | null; user?: { first_name?: string } }
+    >();
+    for (const ev of events) {
+      const dt = new Date(ev.timestamp);
+      const date = formatLocalYMD(dt); // LOCAL date (no UTC shift)
+      const key = `${ev.user_id}_${date}`;
+      if (!openByKey.has(key)) openByKey.set(key, { checkIn: null, user: ev.user });
+      const bucket = openByKey.get(key)!;
+      if (ev.type === "check-in") {
+        // If a previous check-in wasn't closed, push it as an open session
+        if (bucket.checkIn) {
+          sessions.push({
+            id: `${bucket.checkIn.id}-open`,
+            userId: ev.user_id,
+            date,
+            checkInISO: bucket.checkIn.timestamp,
+            checkOutISO: null,
+            checkIn: toDisplayTime(bucket.checkIn.timestamp),
+            checkOut: null,
+            workedHours: null,
+            user: { first_name: ev.user?.first_name || "N/A" },
+          });
+        }
+        bucket.checkIn = ev;
+        bucket.user = ev.user;
+      } else if (ev.type === "check-out") {
+        if (
+          bucket.checkIn &&
+          new Date(ev.timestamp) > new Date(bucket.checkIn.timestamp)
+        ) {
+          const inISO = bucket.checkIn.timestamp;
+          const outISO = ev.timestamp;
+          const worked = parseFloat(
+            (
+              (new Date(outISO).getTime() - new Date(inISO).getTime()) /
+              3600000
+            ).toFixed(2)
+          );
+          sessions.push({
+            id: `${bucket.checkIn.id}-${ev.id}`,
+            userId: ev.user_id,
+            date,
+            checkInISO: inISO,
+            checkOutISO: outISO,
+            checkIn: toDisplayTime(inISO),
+            checkOut: toDisplayTime(outISO),
+            workedHours: worked,
+            user: { first_name: ev.user?.first_name || "N/A" },
+          });
+          bucket.checkIn = null;
+        }
+      }
+    }
+    // Flush any open sessions without checkout
+    for (const [key, val] of openByKey.entries()) {
+      if (val.checkIn) {
+        const [userId, date] = key.split("_");
+        sessions.push({
+          id: `${val.checkIn.id}-open`,
+          userId,
+          date,
+          checkInISO: val.checkIn.timestamp,
+          checkOutISO: null,
+          checkIn: toDisplayTime(val.checkIn.timestamp),
+          checkOut: null,
+          workedHours: null,
+          user: { first_name: val.checkIn.user?.first_name || "N/A" },
+        });
+      }
+    }
+    // Sort by date (desc) then time (desc)
+    sessions.sort((a, b) => {
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1; // string compare
+      const at = a.checkInISO ? new Date(a.checkInISO).getTime() : 0;
+      const bt = b.checkInISO ? new Date(b.checkInISO).getTime() : 0;
+      return bt - at;
+    });
+    return sessions;
+  };
   const fetchAttendance = async () => {
     setLoading(true);
     try {
@@ -42,97 +153,41 @@ const AttendanceTable = () => {
       if (!storedUser) return;
       const currentUser = JSON.parse(storedUser);
       setUserRole(currentUser.role.name);
+      // Admin: raw events across tenant; User: raw events for self
       const endpoint =
         currentUser.role.name === "Admin"
           ? "/attendance/all"
-          : `/attendance?userId=${currentUser.id}`;
-      const response = await axiosInstance.get(endpoint);
-      const grouped: Record<string, AttendanceRecord> = {};
-      response.data.forEach((item: any) => {
-        const date = item.date
-          ? item.date
-          : new Date(item.timestamp).toISOString().split("T")[0];
-        const userId = item.user_id || item.userId;
-        const key = `${userId}_${date}`;
-        if (!grouped[key]) {
-          grouped[key] = {
-            id: item.id || Math.random().toString(),
-            userId,
-            date,
-            checkIn: null,
-            checkOut: null,
-            workedHours: null,
-            user: { first_name: item.user?.first_name || "N/A" },
-          };
-        }
-        if (item.type === "check-in") {
-          grouped[key].checkIn = new Date(item.timestamp).toLocaleTimeString();
-        }
-        if (item.type === "check-out") {
-          grouped[key].checkOut = new Date(item.timestamp).toLocaleTimeString();
-        }
-        if (item.checkIn || item.checkInTime) {
-          grouped[key].checkIn = new Date(
-            item.checkIn || item.checkInTime
-          ).toLocaleTimeString();
-        }
-        if (item.checkOut || item.checkOutTime) {
-          grouped[key].checkOut = new Date(
-            item.checkOut || item.checkOutTime
-          ).toLocaleTimeString();
-        }
-      });
-      const finalData = Object.values(grouped).map((rec) => {
-        if (rec.checkIn && rec.checkOut) {
-          const inTime = new Date(`1970-01-01T${rec.checkIn}`);
-          const outTime = new Date(`1970-01-01T${rec.checkOut}`);
-          rec.workedHours = parseFloat(
-            ((outTime.getTime() - inTime.getTime()) / (1000 * 60 * 60)).toFixed(
-              2
-            )
-          );
-        }
-        return rec;
-      });
-      finalData.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-      setAttendanceData(finalData);
-      setFilteredData(finalData);
+          : `/attendance/events?userId=${currentUser.id}`;
+      const res = await axiosInstance.get(endpoint);
+      const events: AttendanceEvent[] = res.data || [];
+      const rows = buildFromEvents(events, currentUser.id);
+      setAttendanceData(rows);
+      setFilteredData(rows);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error("❌ Error fetching attendance:", error);
+      console.error(":x: Error fetching attendance:", error);
     } finally {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchAttendance();
   }, []);
-
   useEffect(() => {
     let data = [...attendanceData];
-    if (startDate) {
-      data = data.filter((rec) => new Date(rec.date) >= new Date(startDate));
-    }
-    if (endDate) {
-      data = data.filter((rec) => new Date(rec.date) <= new Date(endDate));
-    }
+    if (startDate) data = data.filter((rec) => rec.date >= startDate); // string compare
+    if (endDate) data = data.filter((rec) => rec.date <= endDate);     // string compare
     setFilteredData(data);
   }, [startDate, endDate, attendanceData]);
-
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
   };
-
   return (
     <Box p={2}>
       <Typography variant="h6" gutterBottom>
-        Attendance History
+        Attendance Sessions
       </Typography>
-      {/* Filter Box */}
       <Box display="flex" gap={2} mb={2} flexWrap="wrap" alignItems="center">
         <TextField
           label="Start Date"
@@ -206,5 +261,4 @@ const AttendanceTable = () => {
     </Box>
   );
 };
-
 export default AttendanceTable;
