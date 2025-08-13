@@ -20,7 +20,7 @@ import UserList from "./components/ManagementUI/UserList";
 import UserProfile from "./components/UserProfile/UserProfile";
 import LeaveRequestPage from "./components/LeaveRequest/LeaveRequestPage";
 import PolicyList from "./components/HRPoliciesModule/PolicyList";
-import HolidayList from "../src/components/HolidayCalendar /HolidayList";
+import HolidayList from "./components/HolidayCalendar/HolidayList";
 
 function App() {
   return (

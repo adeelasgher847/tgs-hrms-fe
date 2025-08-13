@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
-import HolidayTable from "../../components/HolidayCalendar /HolidayTable";
-import AddHolidayDialog from "../HolidayCalendar /AddHolidayDialog";
-import HolidayCalendarView from "../../components/HolidayCalendar /HolidayCalendarView";
-import UpcomingHolidayList from "../../components/HolidayCalendar /UpcomingHolidayList";
+import HolidayTable from "./HolidayTable";
+import AddHolidayDialog from "./AddHolidayDialog";
+import HolidayCalendarView from "./HolidayCalendarView";
+import UpcomingHolidayList from "./UpcomingHolidayList";
 
 export interface Holiday {
   id: string;
