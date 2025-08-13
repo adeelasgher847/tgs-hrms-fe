@@ -69,7 +69,7 @@ export interface EmployeeDto {
   last_name: string;
   email: string;
   phone: string;
-  password: string;
+  password?: string; // Made optional since backend will generate temporary password
   designationId: string; // UX carries department selection separately
 }
 
