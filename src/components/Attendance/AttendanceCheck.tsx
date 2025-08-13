@@ -3,6 +3,7 @@ import { Box, Typography, Paper, Button, Alert } from "@mui/material";
 import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { attendanceApiService } from "../../api/AttendanceApiService";
+import MyTimeCard from "../TimerTracker/MyTimeCard";
 
 type AttendanceStatus = "Not Checked In" | "Checked In" | "Checked Out";
 
@@ -126,12 +127,15 @@ const AttendanceCheck = () => {
           {error}
         </Alert>
       )}
+      <Box display="flex" flexDirection={{ xs: "column", md: "row" }} gap={2}>
       <Paper
         sx={{
           p: 3,
           borderRadius: 2,
           position: "relative",
           border: "1px solid #eee",
+          flex: 1,
+          height: "100%",
         }}
       >
         <Typography variant="h6">Good morning, {userName}</Typography>
@@ -151,6 +155,10 @@ const AttendanceCheck = () => {
           </Box>
         </Box>
       </Paper>
+      <Box flex={1}>
+        <MyTimeCard/>
+      </Box>
+      </Box>
     </Box>
   );
 };

@@ -21,6 +21,7 @@ import UserProfile from "./components/UserProfile/UserProfile";
 import LeaveRequestPage from "./components/LeaveRequest/LeaveRequestPage";
 import PolicyList from "./components/HRPoliciesModule/PolicyList";
 import HolidayList from "./components/HolidayCalendar/HolidayList";
+import TimesheetLayout from "./components/TimerTracker/TimesheetLayout";
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
 
             <Route path="policies" element={<PolicyList />} />
             <Route path="holidays" element={<HolidayList />} />
+            <Route path="TimesheetLayout" element={<TimesheetLayout />} />
 
           </Route>
           <Route path="*" element={<Error404 />} />
