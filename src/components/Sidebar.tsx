@@ -52,7 +52,7 @@ const menuItems: MenuItem[] = [
     icon: <Dashboard />,
     subItems: [
       { label: "Hr Dashboard", path: "" },
-      { label: "Project Dashboard", path: "project-dashboard" },
+      // { label: "Project Dashboard", path: "project-dashboard" },
 
     ],
   },
@@ -70,7 +70,7 @@ const menuItems: MenuItem[] = [
     icon: <ConfirmationNumber />,
     subItems: [
       { label: "Add Tenant", path: "tenant" },
-      { label: "Create Ticket", path: "create-ticket" },
+      // { label: "Create Ticket", path: "create-ticket" },
 
     ],
   },
@@ -81,8 +81,6 @@ const menuItems: MenuItem[] = [
       { label: "Department List", path: "departments" },
       { label: "Add Designation", path: "Designations" },
       { label: "User List", path: "UserList" },
-      { label: "UserProfile", path: "UserProfile" },
-      { label: "User", path: "LeaveApprovalDialog" },
       { label: "Policies", path: "policies" },
       { label: "Holidays", path: "holidays" },
     ],
@@ -91,9 +89,7 @@ const menuItems: MenuItem[] = [
     label: "Employees",
     icon: <Group />,
     subItems: [
-      { label: "Employee Profile", path: "EmployeeProfileView" },
       { label: "Employee List", path: "EmployeeManager" },
-      { label: "Add Employee", path: "Add Employee" },
     ],
   },
   {
@@ -103,8 +99,6 @@ const menuItems: MenuItem[] = [
       { label: "Attendance", path: "AttendanceCheck" },
       { label: "Attendance Table", path: "AttendanceTable" },
       { label: "Reports", path: "Reports" },
-      { label: "Add Employee", path: "add-employee" },
-      
       { label: "Leave Request", path: "leaves" },
     ],
   },
@@ -196,6 +190,7 @@ export default function Sidebar({
         flexDirection: "column",
         justifyContent: "space-between",
         fontFamily: "Open Sans, sans-serif",
+        height:'100%',
         overflowY: "auto",
         "&::-webkit-scrollbar": {
           display: "none",

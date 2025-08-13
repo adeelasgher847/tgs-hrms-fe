@@ -170,11 +170,12 @@ const Navbar: React.FC<NavbarProps> = ({
           sx={{
             px: { xs: 1, md: 3 },
             gap: "10px",
+            display: { xs: 'block', sm: 'flex' },
             justifyContent: { xs: "center", sm: "space-between" },
             flexWrap: "wrap",
           }}
         >
-          <Box sx={{ flexGrow: { xs: 1, sm: 0 }, minWidth: 0 }}>
+          <Box sx={{ flexGrow: { xs: 1, sm: 0 }, minWidth: 0,}}>
             <Box
               sx={{
                 display: "flex",
@@ -235,6 +236,7 @@ const Navbar: React.FC<NavbarProps> = ({
           </Box>
 
           {/* Right Side */}
+          <Box sx={{display:'flex', justifyContent:'space-between',alignItems:'center' , mt:{xs:1, sm:0} }}>
           <Box
             sx={{
               display: "flex",
@@ -301,13 +303,12 @@ const Navbar: React.FC<NavbarProps> = ({
               </Typography>
               <Typography variant="caption" color={textColor}>
                 {user?.role == "Admin"
-                  ? "Admin Profile"
+                  ? "Admin"
                   : user?.role == "Staff"
                   ? "Staff Profile"
-                  : "User Profile"}
+                  : "User"}
               </Typography>
             </Box>
-
             <IconButton onClick={handleMenuOpen}>
               <Avatar
                 alt={user?.name || "User"}
@@ -360,12 +361,16 @@ const Navbar: React.FC<NavbarProps> = ({
                 عربي
               </ToggleButton>
             </ToggleButtonGroup>
+            
+            </Box>
+            <Box>
             <IconButton
               onClick={onToggleSidebar}
               sx={{ display: { xs: "block", lg: "none" } }}
             >
               <MenuIcon sx={{ color: textColor }} />
             </IconButton>
+            </Box>
           </Box>
         </Toolbar>
       </AppBar>

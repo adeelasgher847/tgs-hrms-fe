@@ -94,7 +94,7 @@ const Layout = () => {
             direction: rtlMode ? "rtl" : "ltr",
             height: {
               xs: "100vh",
-              lg: "calc(100vh - 90px)",
+              lg: "calc(100vh - 50px)",
             },
 
             position: {
@@ -181,7 +181,7 @@ const Layout = () => {
           sx={{
             flex: 1,
             px: { xs: "7px", md: "26px" },
-            pt: 0,
+            py: 3,
           }}
         >
           <Box
