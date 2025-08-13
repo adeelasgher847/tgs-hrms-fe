@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./components/Login";
 import Forget from "./components/Forget";
+import ResetPasswordPage from "./components/ResetPasswordPage";
 import Dashboard from "./components/Dashboard";
 import Layout from "./components/Layout";
 import "./App.css";
@@ -29,6 +30,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/forget" element={<Forget />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/Signup" element={<Signup />} />
           <Route
             path="/dashboard"
@@ -47,14 +49,16 @@ function App() {
             <Route path="UserProfile" element={<UserProfile />} />
             <Route path="leaves" element={<LeaveRequestPage />} />
 
-            <Route path="EmployeeProfileView" element={<EmployeeProfileView />}  />
+            <Route
+              path="EmployeeProfileView"
+              element={<EmployeeProfileView />}
+            />
             <Route path="AttendanceCheck" element={<AttendanceCheck />} />
             <Route path="AttendanceTable" element={<AttendanceTable />} />
             <Route path="Reports" element={<Reports />} />
 
             <Route path="policies" element={<PolicyList />} />
             <Route path="holidays" element={<HolidayList />} />
-
           </Route>
           <Route path="*" element={<Error404 />} />
         </Routes>

@@ -28,7 +28,10 @@ type Errors = Partial<FormValues> & {
 
 interface AddEmployeeFormProps {
   onSubmit?: (
-    data: Partial<EmployeeDto> & { departmentId?: string; designationId?: string }
+    data: Partial<EmployeeDto> & {
+      departmentId?: string;
+      designationId?: string;
+    }
   ) => Promise<{ success: boolean; errors?: Record<string, string> }>;
   initialData?: {
     id: string;
@@ -47,7 +50,10 @@ interface OutletContext {
 }
 
 // Component
-const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit, initialData }) => {
+const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
+  onSubmit,
+  initialData,
+}) => {
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down("sm"));
   const { darkMode, language } = useOutletContext<OutletContext>();
@@ -57,7 +63,6 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit, initialData
     last_name: initialData?.lastName ?? "",
     email: initialData?.email ?? "",
     phone: initialData?.phone ?? "",
-    password: "",
     designationId: initialData?.designationId ?? "",
     departmentId: initialData?.departmentId ?? "",
   });
@@ -186,7 +191,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit, initialData
   const validate = (): boolean => {
     const newErrors: Errors = {};
     if (!values.first_name)
-      newErrors.first_name = label("First name is required", "الاسم الأول مطلوب");
+      newErrors.first_name = label(
+        "First name is required",
+        "الاسم الأول مطلوب"
+      );
     if (!values.last_name)
       newErrors.last_name = label("Last name is required", "اسم العائلة مطلوب");
     if (!values.email)
@@ -203,9 +211,6 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit, initialData
         "Please select a designation",
         "يرجى اختيار المسمى الوظيفي"
       );
-    const isEdit = Boolean(initialData);
-    if (!isEdit && !values.password)
-      newErrors.password = label("Password is required", "كلمة المرور مطلوبة");
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -216,7 +221,6 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit, initialData
       last_name: "",
       email: "",
       phone: "",
-      password: "",
       designationId: "",
       departmentId: "",
     });
@@ -325,7 +329,9 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit, initialData
             sx={darkInputStyles}
           >
             {departments.length === 0 && (
-              <MenuItem value="">{label("No departments", "لا توجد أقسام")}</MenuItem>
+              <MenuItem value="">
+                {label("No departments", "لا توجد أقسام")}
+              </MenuItem>
             )}
             {departments.map((dept) => (
               <MenuItem key={dept.id} value={dept.id}>
@@ -349,7 +355,9 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit, initialData
             sx={darkInputStyles}
           >
             {designations.length === 0 && (
-              <MenuItem value="">{label("No designations", "لا توجد مسميات")}</MenuItem>
+              <MenuItem value="">
+                {label("No designations", "لا توجد مسميات")}
+              </MenuItem>
             )}
             {designations.map((des) => (
               <MenuItem key={des.id} value={des.id}>
@@ -359,19 +367,23 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit, initialData
           </TextField>
         </Box>
 
-        {/* Password - show only on create (no initialData) */}
+        {/* Password reset info - show only on create (no initialData) */}
         {!initialData && (
-          <Box flex={isSm ? "1 1 100%" : "1 1 48%"}>
-            <TextField
-              fullWidth
-              type="password"
-              label={label("Password", "كلمة المرور")}
-              value={values.password}
-              onChange={handleChange("password")}
-              error={!!errors.password}
-              helperText={errors.password}
-              sx={darkInputStyles}
-            />
+          <Box flex="1 1 100%">
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: "#484c7f",
+                color: "info.contrastText",
+                borderRadius: 1,
+                textAlign: "center",
+              }}
+            >
+              {label(
+                "A temporary password will be generated and sent to the employee's email for password reset.",
+                "سيتم إنشاء كلمة مرور مؤقتة وإرسالها إلى بريد الموظف الإلكتروني لإعادة تعيين كلمة المرور."
+              )}
+            </Box>
           </Box>
         )}
 
@@ -383,8 +395,15 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({ onSubmit, initialData
             isSm ? "center" : language === "ar" ? "flex-start" : "flex-end"
           }
         >
-          <Button variant="contained" type="submit" sx={{ backgroundColor: "#484c7f" }}>
-            {label(initialData ? "Update Employee" : "Add Employee", initialData ? "تحديث الموظف" : "إضافة موظف")}
+          <Button
+            variant="contained"
+            type="submit"
+            sx={{ backgroundColor: "#484c7f" }}
+          >
+            {label(
+              initialData ? "Update Employee" : "Add Employee",
+              initialData ? "تحديث الموظف" : "إضافة موظف"
+            )}
           </Button>
         </Box>
       </Box>

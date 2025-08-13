@@ -173,7 +173,9 @@ const EmployeeManager: React.FC = () => {
       // Reload department and designation mappings
       await loadDepartmentsAndDesignations();
 
-      setSuccessMessage("Employee added successfully!");
+      setSuccessMessage(
+        "Employee added successfully! A password reset link has been sent to their email."
+      );
       setOpen(false);
 
       return { success: true };
@@ -287,13 +289,21 @@ const EmployeeManager: React.FC = () => {
     }
   };
 
-  const handleUpdateEmployee = async (updates: Partial<EmployeeDto> & { designationId?: string; password?: string }) => {
+  const handleUpdateEmployee = async (
+    updates: Partial<EmployeeDto> & {
+      designationId?: string;
+      password?: string;
+    }
+  ) => {
     if (!editing) return { success: false } as any;
     try {
       setLoading(true);
       setError(null);
       // Ensure a valid designationId is sent if user selected a new one; otherwise keep current
-      const nextDesignationId = updates.designationId && updates.designationId !== "" ? updates.designationId : editing.designationId;
+      const nextDesignationId =
+        updates.designationId && updates.designationId !== ""
+          ? updates.designationId
+          : editing.designationId;
       const updated = await employeeApi.updateEmployee(editing.id, {
         first_name: (updates as any).first_name,
         last_name: (updates as any).last_name,
