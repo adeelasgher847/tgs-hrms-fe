@@ -153,7 +153,9 @@ export const cssVars = {
   // Get CSS custom property value
   get: (property: string): string => {
     if (typeof window !== 'undefined') {
-      return getComputedStyle(document.documentElement).getPropertyValue(property).trim();
+      return getComputedStyle(document.documentElement)
+        .getPropertyValue(property)
+        .trim();
     }
     return '';
   },
@@ -169,7 +171,11 @@ export const cssVars = {
 // Theme-aware color functions
 export const themeColors = {
   // Get color based on theme mode
-  getColor: (lightColor: string, darkColor: string, isDark: boolean): string => {
+  getColor: (
+    lightColor: string,
+    darkColor: string,
+    isDark: boolean
+  ): string => {
     return isDark ? darkColor : lightColor;
   },
 
@@ -193,7 +199,10 @@ export const responsiveTheme = {
   },
 
   // Get theme-aware breakpoints
-  breakpoint: (theme: Theme, breakpoint: 'xs' | 'sm' | 'md' | 'lg' | 'xl'): string => {
+  breakpoint: (
+    theme: Theme,
+    breakpoint: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+  ): string => {
     return theme.breakpoints.up(breakpoint);
   },
-}; 
+};

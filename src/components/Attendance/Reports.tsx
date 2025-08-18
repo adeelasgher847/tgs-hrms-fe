@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Box,
   Tabs,
@@ -16,65 +16,65 @@ import {
   TableCell,
   TableBody,
   useTheme,
-} from "@mui/material";
-import LeaveSummaryChart from "./LeaveSummaryChart";
+} from '@mui/material';
+import LeaveSummaryChart from './LeaveSummaryChart';
 
 const cardStyle = {
   width: { xs: '100%', sm: '250px' },
   flexShrink: 0,
-  boxShadow: "none",
-  border: "1px solid #f0f0f0",
-  borderRadius: "0.375rem",
-  backgroundColor: "#fff",
+  boxShadow: 'none',
+  border: '1px solid #f0f0f0',
+  borderRadius: '0.375rem',
+  backgroundColor: '#fff',
 };
 const Reports: React.FC = () => {
   const [tab, setTab] = useState(0);
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedUser, setSelectedUser] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedUser, setSelectedUser] = useState('');
   const theme = useTheme();
   const direction = theme.direction;
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTab(newValue);
   };
-  
+
   const attendanceData = [
     {
-      date: "01 Jan",
-      month: "January",
-      userId: "1",
-      checkIn: "09:00 AM",
-      status: "Present",
+      date: '01 Jan',
+      month: 'January',
+      userId: '1',
+      checkIn: '09:00 AM',
+      status: 'Present',
       hours: 8,
     },
     {
-      date: "02 Jan",
-      month: "January",
-      userId: "1",
-      checkIn: "-",
-      status: "Absent",
+      date: '02 Jan',
+      month: 'January',
+      userId: '1',
+      checkIn: '-',
+      status: 'Absent',
       hours: 0,
     },
     {
-      date: "01 Feb",
-      month: "February",
-      userId: "2",
-      checkIn: "09:30 AM",
-      status: "Present",
+      date: '01 Feb',
+      month: 'February',
+      userId: '2',
+      checkIn: '09:30 AM',
+      status: 'Present',
       hours: 7,
     },
   ];
 
   const filteredData = attendanceData.filter(
-    (item) =>
+    item =>
       (selectedMonth ? item.month === selectedMonth : true) &&
       (selectedUser ? item.userId === selectedUser : true)
   );
 
   const departmentData = [
-    { title: "HR Department", count: 12 },
-    { title: "Designers", count: 8 },
-    { title: "Developers", count: 15 },
+    { title: 'HR Department', count: 12 },
+    { title: 'Designers', count: 8 },
+    { title: 'Developers', count: 15 },
   ];
 
   return (
@@ -82,56 +82,55 @@ const Reports: React.FC = () => {
       <Tabs
         value={tab}
         onChange={handleTabChange}
-        variant="scrollable"
-        scrollButtons="auto"
+        variant='scrollable'
+        scrollButtons='auto'
         allowScrollButtonsMobile
-        sx={{ borderBottom: 1, borderColor: "divider" }}
+        sx={{ borderBottom: 1, borderColor: 'divider' }}
       >
-        <Tab label="Attendance Summary" />
-        <Tab label="Leave Summary" />
-        <Tab label="Headcount Report" />
+        <Tab label='Attendance Summary' />
+        <Tab label='Leave Summary' />
+        <Tab label='Headcount Report' />
       </Tabs>
 
       {/* --- ATTENDANCE SUMMARY --- */}
       {tab === 0 && (
         <Box mt={4}>
           <Box
-            display="flex"
-            flexDirection={{ xs: "column", sm: "row" }}
+            display='flex'
+            flexDirection={{ xs: 'column', sm: 'row' }}
             gap={2}
           >
-            <FormControl fullWidth size="small">
-              <InputLabel>{direction === "rtl" ? "شهر" : "Month"}</InputLabel>
+            <FormControl fullWidth size='small'>
+              <InputLabel>{direction === 'rtl' ? 'شهر' : 'Month'}</InputLabel>
               <Select
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
+                onChange={e => setSelectedMonth(e.target.value)}
               >
-                <MenuItem value="">
-                  {direction === "rtl" ? "تمام" : "All"}
+                <MenuItem value=''>
+                  {direction === 'rtl' ? 'تمام' : 'All'}
                 </MenuItem>
-                <MenuItem value="January">January</MenuItem>
-                <MenuItem value="February">February</MenuItem>
-                <MenuItem value="March">March</MenuItem>
+                <MenuItem value='January'>January</MenuItem>
+                <MenuItem value='February'>February</MenuItem>
+                <MenuItem value='March'>March</MenuItem>
               </Select>
             </FormControl>
 
-            <FormControl fullWidth size="small">
-              <InputLabel>{direction === "rtl" ? "صارف" : "User"}</InputLabel>
+            <FormControl fullWidth size='small'>
+              <InputLabel>{direction === 'rtl' ? 'صارف' : 'User'}</InputLabel>
               <Select
-              
                 value={selectedUser}
-                onChange={(e) => setSelectedUser(e.target.value)}
+                onChange={e => setSelectedUser(e.target.value)}
               >
-                <MenuItem value="">
-                  {direction === "rtl" ? "تمام" : "All"}
+                <MenuItem value=''>
+                  {direction === 'rtl' ? 'تمام' : 'All'}
                 </MenuItem>
-                <MenuItem value="1">Ali</MenuItem>
-                <MenuItem value="2">Sara</MenuItem>
+                <MenuItem value='1'>Ali</MenuItem>
+                <MenuItem value='2'>Sara</MenuItem>
               </Select>
             </FormControl>
           </Box>
 
-          <Box mt={4} sx={{ overflowX: "auto" }}>
+          <Box mt={4} sx={{ overflowX: 'auto' }}>
             <Table sx={{ minWidth: 600 }}>
               <TableHead>
                 <TableRow>
@@ -144,7 +143,7 @@ const Reports: React.FC = () => {
               <TableBody>
                 {filteredData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} align="center">
+                    <TableCell colSpan={4} align='center'>
                       No records found.
                     </TableCell>
                   </TableRow>
@@ -174,20 +173,20 @@ const Reports: React.FC = () => {
       {/* --- HEADCOUNT REPORT --- */}
       {tab === 2 && (
         <Box mt={4}>
-          <Typography variant="h6" mb={2}>
-            {direction === "rtl" ? "ملازمین کی رپورٹ" : "Headcount Report"}
+          <Typography variant='h6' mb={2}>
+            {direction === 'rtl' ? 'ملازمین کی رپورٹ' : 'Headcount Report'}
           </Typography>
           <Box
-            display="flex"
-            flexWrap="wrap"
+            display='flex'
+            flexWrap='wrap'
             gap={2}
-            justifyContent={{ xs: "start", md: "flex-start" }}
+            justifyContent={{ xs: 'start', md: 'flex-start' }}
           >
             {departmentData.map((dept, index) => (
               <Card key={index} sx={cardStyle}>
                 <CardContent>
-                  <Typography variant="subtitle1">{dept.title}</Typography>
-                  <Typography variant="h4">{dept.count}</Typography>
+                  <Typography variant='subtitle1'>{dept.title}</Typography>
+                  <Typography variant='h4'>{dept.count}</Typography>
                 </CardContent>
               </Card>
             ))}

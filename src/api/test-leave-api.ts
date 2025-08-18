@@ -3,7 +3,7 @@ import { leaveApi } from './leaveApi';
 // Test function to verify leave API integration
 export const testLeaveAPI = async () => {
   console.log('🧪 Testing Leave API Integration...');
-  
+
   try {
     // Test 1: Create a leave request
     console.log('📝 Testing CREATE leave request...');
@@ -11,10 +11,10 @@ export const testLeaveAPI = async () => {
       fromDate: '2025-01-15',
       toDate: '2025-01-17',
       reason: 'Test leave request',
-      type: 'sick'
+      type: 'sick',
     };
     console.log('Sending data:', testData);
-    
+
     const newLeave = await leaveApi.createLeave(testData);
     console.log('✅ CREATE successful:', newLeave);
 
@@ -31,7 +31,10 @@ export const testLeaveAPI = async () => {
     // Test 4: Update leave status (if there are leaves)
     if (newLeave.id) {
       console.log('🔄 Testing UPDATE leave status...');
-      const updatedLeave = await leaveApi.updateLeaveStatus(newLeave.id, 'approved');
+      const updatedLeave = await leaveApi.updateLeaveStatus(
+        newLeave.id,
+        'approved'
+      );
       console.log('✅ UPDATE status successful:', updatedLeave);
     }
 
@@ -54,7 +57,7 @@ export const debugLeaves = async () => {
   try {
     const userLeaves = await leaveApi.getUserLeaves();
     console.log('Current user leaves:', userLeaves);
-    
+
     const allLeaves = await leaveApi.getAllLeaves();
     console.log('All leaves (admin):', allLeaves);
   } catch (error: any) {
@@ -66,4 +69,4 @@ export const debugLeaves = async () => {
 if (typeof window !== 'undefined') {
   (window as any).testLeaveAPI = testLeaveAPI;
   (window as any).debugLeaves = debugLeaves;
-} 
+}

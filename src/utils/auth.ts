@@ -14,14 +14,14 @@ export const getCurrentUser = (): User | null => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       const user = JSON.parse(userStr);
-      console.log("🔍 Parsed user data:", user);
-      
+      console.log('🔍 Parsed user data:', user);
+
       // Validate user data
       if (!user.role) {
-        console.error("❌ User data missing role:", user);
+        console.error('❌ User data missing role:', user);
         return null;
       }
-      
+
       return user;
     }
     return null;
@@ -34,16 +34,16 @@ export const getCurrentUser = (): User | null => {
 export const isAdmin = (): boolean => {
   const user = getCurrentUser();
   if (!user) return false;
-  
+
   // Handle both string and object role formats
   const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
   const result = roleName === 'admin' || roleName === 'Admin';
-  
-  console.log("🔍 isAdmin check:", { 
-    user: roleName, 
+
+  console.log('🔍 isAdmin check:', {
+    user: roleName,
     result,
     roleType: typeof user.role,
-    roleObject: user.role
+    roleObject: user.role,
   });
   return result;
 };
@@ -51,16 +51,17 @@ export const isAdmin = (): boolean => {
 export const isUser = (): boolean => {
   const user = getCurrentUser();
   if (!user) return false;
-  
+
   // Handle both string and object role formats
   const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
-  const result = roleName === 'user' || roleName === 'User' || roleName === 'Employee';
-  
-  console.log("🔍 isUser check:", { 
-    user: roleName, 
+  const result =
+    roleName === 'user' || roleName === 'User' || roleName === 'Employee';
+
+  console.log('🔍 isUser check:', {
+    user: roleName,
     result,
     roleType: typeof user.role,
-    roleObject: user.role
+    roleObject: user.role,
   });
   return result;
 };
@@ -77,7 +78,7 @@ export const getUserName = (): string => {
   const user = getCurrentUser();
   if (user) {
     const name = `${user.first_name} ${user.last_name}`.trim();
-    console.log("🔍 getUserName:", { user, name });
+    console.log('🔍 getUserName:', { user, name });
     return name;
   }
   return 'Current User';
@@ -86,8 +87,8 @@ export const getUserName = (): string => {
 export const getUserRole = (): string => {
   const user = getCurrentUser();
   if (!user) return 'unknown';
-  
+
   // Handle both string and object role formats
   const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
   return roleName || 'unknown';
-}; 
+};

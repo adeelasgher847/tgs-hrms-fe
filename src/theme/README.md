@@ -35,11 +35,7 @@ src/theme/
 import { ThemeProvider } from './theme';
 
 function App() {
-  return (
-    <ThemeProvider>
-      {/* Your app components */}
-    </ThemeProvider>
-  );
+  return <ThemeProvider>{/* Your app components */}</ThemeProvider>;
 }
 ```
 
@@ -52,7 +48,7 @@ function MyComponent() {
   const { mode, toggleTheme } = useTheme();
   const isDark = useIsDarkMode();
   const themeMode = useThemeMode();
-  
+
   return (
     <div>
       <button onClick={toggleTheme}>
@@ -71,7 +67,7 @@ import { ThemeToggle } from '../theme';
 function Header() {
   return (
     <header>
-      <ThemeToggle size="small" />
+      <ThemeToggle size='small' />
     </header>
   );
 }
@@ -84,6 +80,7 @@ function Header() {
 The theme system includes comprehensive color palettes for both light and dark modes:
 
 #### Light Mode Colors
+
 - **Primary**: `#45407A` (Main brand color)
 - **Secondary**: `#464b8a` (Accent color)
 - **Background**: `#f5f5f5` (Default), `#ffffff` (Paper)
@@ -91,6 +88,7 @@ The theme system includes comprehensive color palettes for both light and dark m
 - **Divider**: `#e0e0e0`
 
 #### Dark Mode Colors
+
 - **Primary**: `#605bd4` (Brighter for dark backgrounds)
 - **Secondary**: `#6b6fa8` (Accent color)
 - **Background**: `#121212` (Default), `#1e1e1e` (Paper)
@@ -107,7 +105,7 @@ The theme system automatically sets CSS custom properties:
   --mui-palette-table-background: #ffffff;
   --mui-palette-card-background: #ffffff;
   --mui-palette-form-background: #ffffff;
-  --mui-palette-button-primary: #45407A;
+  --mui-palette-button-primary: #45407a;
   /* ... and many more */
 }
 ```
@@ -115,19 +113,25 @@ The theme system automatically sets CSS custom properties:
 ## Available Hooks
 
 ### `useTheme()`
+
 Returns the complete theme context:
+
 ```tsx
 const { mode, toggleTheme, setMode } = useTheme();
 ```
 
 ### `useIsDarkMode()`
+
 Returns a boolean indicating if dark mode is active:
+
 ```tsx
 const isDark = useIsDarkMode();
 ```
 
 ### `useThemeMode()`
+
 Returns the current theme mode ('light' | 'dark'):
+
 ```tsx
 const mode = useThemeMode();
 ```
@@ -135,6 +139,7 @@ const mode = useThemeMode();
 ## Theme Utilities
 
 ### `themeStyles`
+
 Pre-built theme-aware styling functions:
 
 ```tsx
@@ -156,6 +161,7 @@ sx={themeStyles.button.outlined(theme)}
 ```
 
 ### `themeColors`
+
 Color utility functions:
 
 ```tsx
@@ -171,39 +177,38 @@ const textColor = themeColors.getContrastText(backgroundColor);
 ## Component Migration Guide
 
 ### Before (Inline Dark Mode)
+
 ```tsx
 // ❌ Old way with inline dark mode
-<Card sx={{ backgroundColor: darkMode ? "#222" : "#fff" }}>
-  <Typography sx={{ color: darkMode ? "#fff" : "#000" }}>
-    Content
-  </Typography>
+<Card sx={{ backgroundColor: darkMode ? '#222' : '#fff' }}>
+  <Typography sx={{ color: darkMode ? '#fff' : '#000' }}>Content</Typography>
 </Card>
 ```
 
 ### After (Theme-Based)
+
 ```tsx
 // ✅ New way with theme system
 <Card>
-  <Typography>
-    Content
-  </Typography>
+  <Typography>Content</Typography>
 </Card>
 ```
 
 ### Using Theme Utilities
+
 ```tsx
 // ✅ With theme utilities
 <Card sx={themeStyles.card(theme)}>
-  <Typography sx={themeStyles.text.primary(theme)}>
-    Content
-  </Typography>
+  <Typography sx={themeStyles.text.primary(theme)}>Content</Typography>
 </Card>
 ```
 
 ## Best Practices
 
 ### 1. Use Theme Colors
+
 Instead of hardcoded colors, use theme-aware colors:
+
 ```tsx
 // ❌ Don't do this
 sx={{ color: '#000000' }}
@@ -213,16 +218,20 @@ sx={{ color: 'text.primary' }}
 ```
 
 ### 2. Leverage Material-UI's Built-in Theming
+
 Material-UI components automatically adapt to the theme:
+
 ```tsx
 // ✅ This automatically adapts to theme
-<Button variant="contained" color="primary">
+<Button variant='contained' color='primary'>
   Click me
 </Button>
 ```
 
 ### 3. Use CSS Custom Properties
+
 For custom styling, use the CSS custom properties:
+
 ```tsx
 // ✅ Use CSS custom properties
 sx={{
@@ -232,7 +241,9 @@ sx={{
 ```
 
 ### 4. Avoid Inline Dark Mode Checks
+
 Don't use inline dark mode conditionals:
+
 ```tsx
 // ❌ Avoid this
 sx={{ color: darkMode ? '#fff' : '#000' }}
@@ -256,16 +267,19 @@ To migrate existing components to the new theme system:
 ## Troubleshooting
 
 ### Theme Not Updating
+
 1. Ensure `ThemeProvider` wraps your component tree
 2. Check that you're using the correct theme hooks
 3. Verify localStorage permissions
 
 ### Colors Not Changing
+
 1. Use theme-aware color properties (`text.primary`, `background.paper`, etc.)
 2. Avoid hardcoded color values
 3. Use the `themeStyles` utilities
 
 ### TypeScript Errors
+
 1. Import types from the theme module
 2. Use proper type annotations for theme objects
 3. Check that all theme hooks are properly typed
@@ -273,6 +287,7 @@ To migrate existing components to the new theme system:
 ## Examples
 
 ### Complete Component Example
+
 ```tsx
 import React from 'react';
 import { Card, Typography, Button } from '@mui/material';
@@ -280,14 +295,14 @@ import { useTheme, themeStyles } from '../theme';
 
 function MyComponent() {
   const { mode, toggleTheme } = useTheme();
-  
+
   return (
     <Card sx={themeStyles.card(theme)}>
-      <Typography variant="h4" sx={themeStyles.text.primary(theme)}>
+      <Typography variant='h4' sx={themeStyles.text.primary(theme)}>
         Hello World
       </Typography>
-      <Button 
-        variant="contained" 
+      <Button
+        variant='contained'
         onClick={toggleTheme}
         sx={themeStyles.button.primary(theme)}
       >
@@ -298,4 +313,4 @@ function MyComponent() {
 }
 ```
 
-This theme system provides a robust, maintainable solution for handling dark and light modes across your entire application while following Material-UI best practices. 
+This theme system provides a robust, maintainable solution for handling dark and light modes across your entire application while following Material-UI best practices.

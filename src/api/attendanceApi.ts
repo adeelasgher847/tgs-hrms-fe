@@ -1,6 +1,6 @@
-import axiosInstance from "../api/axiosInstance";
+import axiosInstance from '../api/axiosInstance';
 
-const BASE_URL = "/attendance";
+const BASE_URL = '/attendance';
 
 export const getAttendance = async (userId?: string) => {
   const url = userId ? `${BASE_URL}?userId=${userId}` : BASE_URL;

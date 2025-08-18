@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -9,8 +9,8 @@ import {
   // IconButton,
   Divider,
   CircularProgress,
-} from "@mui/material";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
+} from '@mui/material';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 // import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 
 type Props = {
@@ -45,7 +45,7 @@ function formatHoursText(h: number) {
   const totalMinutes = Math.max(0, Math.round(h * 60));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+  return `${hours}h ${String(minutes).padStart(2, '0')}m`;
 }
 
 function formatElapsed(ms: number) {
@@ -53,10 +53,10 @@ function formatElapsed(ms: number) {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(
     2,
-    "0"
-  )}:${String(seconds).padStart(2, "0")}`;
+    '0'
+  )}:${String(seconds).padStart(2, '0')}`;
 }
 
 const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
@@ -68,7 +68,7 @@ const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
 
   // Restore from localStorage on load
   useEffect(() => {
-    const savedStart = localStorage.getItem("clockInTime");
+    const savedStart = localStorage.getItem('clockInTime');
     if (savedStart) {
       const start = parseInt(savedStart, 10);
       setStartTime(start);
@@ -94,9 +94,9 @@ const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
     let anim: number | undefined;
     if (isClockedIn) {
       const intervalMs = 100; // 0.1s
-      const step = 100 * (intervalMs / 1000) / 60; // complete in 60s
+      const step = (100 * (intervalMs / 1000)) / 60; // complete in 60s
       anim = window.setInterval(() => {
-        setProgress((old) => {
+        setProgress(old => {
           const next = old + step;
           return next >= 100 ? 0 : next;
         });
@@ -116,21 +116,23 @@ const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
     const base = Array.isArray(data)
       ? data.reduce((sum: number, e: any) => sum + (e?.hours || 0), 0)
       : 0;
-    const live = isClockedIn && startTime ? (Date.now() - startTime) / 3_600_000 : 0;
+    const live =
+      isClockedIn && startTime ? (Date.now() - startTime) / 3_600_000 : 0;
     setWeekTotalHours(base + live);
     // Also update when localStorage week changes (e.g., after clock-out in Timesheet UI)
     const onStorage = (e: StorageEvent) => {
-      if (e.key && e.key.startsWith("timesheet:")) {
+      if (e.key && e.key.startsWith('timesheet:')) {
         const d = loadWeek(ws);
         const b = Array.isArray(d)
           ? d.reduce((sum: number, x: any) => sum + (x?.hours || 0), 0)
           : 0;
-        const l = isClockedIn && startTime ? (Date.now() - startTime) / 3_600_000 : 0;
+        const l =
+          isClockedIn && startTime ? (Date.now() - startTime) / 3_600_000 : 0;
         setWeekTotalHours(b + l);
       }
     };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, [isClockedIn, startTime, elapsedMs]);
 
   const handleClockIn = () => {
@@ -138,7 +140,7 @@ const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
     setIsClockedIn(true);
     setStartTime(now);
     setElapsedMs(0);
-    localStorage.setItem("clockInTime", now.toString());
+    localStorage.setItem('clockInTime', now.toString());
     onClockIn?.();
   };
 
@@ -146,7 +148,7 @@ const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
     setIsClockedIn(false);
     setStartTime(null);
     setElapsedMs(0);
-    localStorage.removeItem("clockInTime");
+    localStorage.removeItem('clockInTime');
     onClockOut?.();
   };
 
@@ -155,26 +157,26 @@ const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
       sx={{
         borderRadius: 3,
         boxShadow: 2,
-        overflow: "visible",
-        mx: "auto",
+        overflow: 'visible',
+        mx: 'auto',
       }}
     >
       <CardContent sx={{ p: 0 }}>
         {/* Header */}
         <Box
           sx={{
-            bgcolor: "#f6fbf8",
+            bgcolor: '#f6fbf8',
             px: 3,
             py: 1.25,
-            display: "flex",
-            alignItems: "center",
+            display: 'flex',
+            alignItems: 'center',
             gap: 1.5,
             borderTopLeftRadius: 12,
             borderTopRightRadius: 12,
           }}
         >
-          <AccessTimeIcon sx={{ color: "#45407A" }} />
-          <Typography sx={{ color: "#45407A", fontWeight: 700 }}>
+          <AccessTimeIcon sx={{ color: '#45407A' }} />
+          <Typography sx={{ color: '#45407A', fontWeight: 700 }}>
             My Time
           </Typography>
         </Box>
@@ -184,30 +186,33 @@ const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
           sx={{
             px: 4,
             py: 3,
-            textAlign: "center",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
           }}
         >
           {/* Stopwatch circle */}
-          <Box sx={{ position: "relative", display: "inline-flex", mb: 2 }}>
+          <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2 }}>
             {/* Track */}
             <CircularProgress
-              variant="determinate"
+              variant='determinate'
               value={100}
               size={120}
               thickness={4}
-              sx={{ color: "#e5e5e5" }}
+              sx={{ color: '#e5e5e5' }}
             />
             {/* Animated ring */}
-            <Box sx={{ position: "absolute", inset: 0, display: "flex" }}>
+            <Box sx={{ position: 'absolute', inset: 0, display: 'flex' }}>
               <CircularProgress
-                variant="determinate"
+                variant='determinate'
                 value={progress}
                 size={120}
                 thickness={4}
-                sx={{ color: isClockedIn ? "#1f7a4f" : "#ccc", transition: "color 0.3s ease" }}
+                sx={{
+                  color: isClockedIn ? '#1f7a4f' : '#ccc',
+                  transition: 'color 0.3s ease',
+                }}
               />
             </Box>
             <Box
@@ -216,20 +221,20 @@ const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
                 left: 0,
                 bottom: 0,
                 right: 0,
-                position: "absolute",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexDirection: "column",
+                position: 'absolute',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
               }}
             >
               <Typography
-                variant="h6"
-                sx={{ fontWeight: 800, color: "#45407A" }}
+                variant='h6'
+                sx={{ fontWeight: 800, color: '#45407A' }}
               >
-                {isClockedIn ? formatElapsed(elapsedMs) : "00:00:00"}
+                {isClockedIn ? formatElapsed(elapsedMs) : '00:00:00'}
               </Typography>
-              <Typography sx={{ fontSize: 12, color: "#6b6b6b" }}>
+              <Typography sx={{ fontSize: 12, color: '#6b6b6b' }}>
                 Today
               </Typography>
             </Box>
@@ -238,28 +243,28 @@ const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
           {/* Clock In / Out Buttons */}
           <Box
             sx={{
-              display: "flex",
-              alignItems: "center",
+              display: 'flex',
+              alignItems: 'center',
               gap: 1,
               mb: 2,
             }}
           >
             <Button
-              variant="contained"
+              variant='contained'
               onClick={isClockedIn ? handleClockOut : handleClockIn}
               sx={{
-                bgcolor: "#1f7a4f",
-                textTransform: "none",
+                bgcolor: '#1f7a4f',
+                textTransform: 'none',
                 borderRadius: 5,
                 px: 5,
                 py: 1.5,
                 fontWeight: 700,
-                boxShadow: "none",
-                "&:hover": { bgcolor: "#16603a", boxShadow: "none" },
+                boxShadow: 'none',
+                '&:hover': { bgcolor: '#16603a', boxShadow: 'none' },
               }}
             >
-              <AccessTimeIcon sx={{ mr: 1 }} />{" "}
-              {isClockedIn ? "Clock Out" : "Clock In"}
+              <AccessTimeIcon sx={{ mr: 1 }} />{' '}
+              {isClockedIn ? 'Clock Out' : 'Clock In'}
             </Button>
 
             {/* <IconButton
@@ -280,18 +285,20 @@ const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
         {/* Footer */}
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             px: 3,
             py: 2,
           }}
         >
           <Box>
-            <Typography sx={{ fontSize: 12, color: "#9a9a9a" }}>
+            <Typography sx={{ fontSize: 12, color: '#9a9a9a' }}>
               This Week
             </Typography>
-            <Typography sx={{ fontWeight: 700 }}>{formatHoursText(weekTotalHours)}</Typography>
+            <Typography sx={{ fontWeight: 700 }}>
+              {formatHoursText(weekTotalHours)}
+            </Typography>
           </Box>
 
           {/* <Box sx={{ textAlign: "center" }}>
@@ -301,12 +308,12 @@ const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
             <Typography sx={{ fontWeight: 700 }}>0h 00m</Typography>
           </Box> */}
 
-          <Box sx={{ textAlign: "right" }}>
+          <Box sx={{ textAlign: 'right' }}>
             <Button
-              variant="outlined"
-              sx={{ borderRadius: 3, textTransform: "none" }}
+              variant='outlined'
+              sx={{ borderRadius: 3, textTransform: 'none' }}
               component={RouterLink}
-              to="/dashboard/TimesheetLayout"
+              to='/dashboard/TimesheetLayout'
             >
               My Timesheet
             </Button>

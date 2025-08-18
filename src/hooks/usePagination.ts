@@ -31,7 +31,9 @@ export const usePagination = <T>({
     setPage(newPage);
   };
 
-  const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRowsPerPageChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     setRowsPerPage(newRowsPerPage);
     setPage(0); // Reset to first page when changing rows per page
@@ -45,4 +47,4 @@ export const usePagination = <T>({
     handlePageChange,
     handleRowsPerPageChange,
   };
-}; 
+};
