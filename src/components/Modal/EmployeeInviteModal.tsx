@@ -155,7 +155,7 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
               },
             }}
             InputLabelProps={{
-              style: { color: textColor },
+              sx: { color: textColor },
             }}
           />
           <Button

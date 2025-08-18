@@ -170,7 +170,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         error={!!errors.name}
         helperText={errors.name}
         required
-        InputLabelProps={{ style: { color: darkMode ? '#ccc' : undefined } }}
+        InputLabelProps={{ sx: { color: darkMode ? '#ccc' : undefined } }}
         InputProps={{
           sx: {
             color: darkMode ? '#fff' : 'inherit', // 👈 Input text color
@@ -190,7 +190,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         onChange={handleInputChange('nameAr')}
         error={!!errors.nameAr}
         helperText={errors.nameAr}
-        InputLabelProps={{ style: { color: darkMode ? '#ccc' : undefined } }}
+        InputLabelProps={{ sx: { color: darkMode ? '#ccc' : undefined } }}
         InputProps={{
           sx: {
             color: darkMode ? '#fff' : 'inherit', // 👈 Input text color
@@ -211,7 +211,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         helperText={errors.description}
         multiline
         rows={3}
-        InputLabelProps={{ style: { color: darkMode ? '#ccc' : undefined } }}
+        InputLabelProps={{ sx: { color: darkMode ? '#ccc' : undefined } }}
         InputProps={{
           sx: {
             color: darkMode ? '#fff' : 'inherit', // 👈 Input text color
@@ -233,7 +233,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         helperText={errors.descriptionAr}
         multiline
         rows={3}
-        InputLabelProps={{ style: { color: darkMode ? '#ccc' : undefined } }}
+        InputLabelProps={{ sx: { color: darkMode ? '#ccc' : undefined } }}
         InputProps={{
           sx: {
             color: darkMode ? '#fff' : 'inherit', // 👈 Input text color
@@ -325,7 +325,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   /* ---------- DESKTOP dialog ---------- */
   return (
     <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
-      <DialogTitle sx={paperSx} style={{ position: 'relative' }}>
+      <DialogTitle sx={{ ...paperSx, position: 'relative' }}>
         <Typography sx={{ textAlign: isRtl ? 'right' : 'left' }}>
           {title}
         </Typography>
