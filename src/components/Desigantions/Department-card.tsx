@@ -1,5 +1,5 @@
-import { Card, CardContent, Typography, Box, Chip } from "@mui/material";
-import type { Department } from "../../Data/mockData";
+import { Card, CardContent, Typography, Box, Chip } from '@mui/material';
+import type { Department } from '../../Data/mockData';
 interface DepartmentCardProps {
   department: Department;
   isSelected: boolean;
@@ -18,15 +18,15 @@ export default function DepartmentCard({
   return (
     <Card
       sx={{
-        cursor: "pointer",
-        transition: "all 0.2s ease-in-out",
+        cursor: 'pointer',
+        transition: 'all 0.2s ease-in-out',
         border: isSelected
           ? `2px solid ${department.color}`
-          : "2px solid transparent",
-        bgcolor: isSelected ? `${department.color}08` : "background.paper",
-        "&:hover": {
-          transform: "translateY(-2px)",
-          boxShadow: "0 4px 12px 0 rgb(0 0 0 / 0.15)",
+          : '2px solid transparent',
+        bgcolor: isSelected ? `${department.color}08` : 'background.paper',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: '0 4px 12px 0 rgb(0 0 0 / 0.15)',
           bgcolor: isSelected
             ? `${department.color}12`
             : `${department.color}04`,
@@ -34,31 +34,31 @@ export default function DepartmentCard({
       }}
       onClick={onClick}
     >
-      <CardContent sx={{ p: 2.5, textAlign: "center" }}>
+      <CardContent sx={{ p: 2.5, textAlign: 'center' }}>
         <Box
           sx={{
             width: 56,
             height: 56,
-            borderRadius: "16px",
+            borderRadius: '16px',
             bgcolor: isSelected ? department.color : `${department.color}20`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "28px",
-            mx: "auto",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '28px',
+            mx: 'auto',
             mb: 2,
-            transition: "all 0.2s ease-in-out",
+            transition: 'all 0.2s ease-in-out',
           }}
         >
           {department.icon}
         </Box>
 
         <Typography
-          variant="subtitle1"
-          fontWeight="600"
+          variant='subtitle1'
+          fontWeight='600'
           sx={{
             mb: 1,
-            color: isSelected ? department.color : "text.primary",
+            color: isSelected ? department.color : 'text.primary',
             lineHeight: 1.3,
           }}
         >
@@ -66,12 +66,12 @@ export default function DepartmentCard({
         </Typography>
 
         <Chip
-          label={`${designationCount} ${getText("positions", "منصب")}`}
-          size="small"
+          label={`${designationCount} ${getText('positions', 'منصب')}`}
+          size='small'
           sx={{
             bgcolor: isSelected ? department.color : `${department.color}20`,
             fontWeight: 500,
-            fontSize: "0.75rem",
+            fontSize: '0.75rem',
           }}
         />
       </CardContent>

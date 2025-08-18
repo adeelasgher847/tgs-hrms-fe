@@ -1,4 +1,4 @@
-import axiosInstance from "./axiosInstance";
+import axiosInstance from './axiosInstance';
 
 // Normalized Employee shape used in UI (matches EmployeeManager expectations)
 export interface BackendEmployee {
@@ -30,7 +30,6 @@ export interface BackendEmployee {
   createdAt: string;
   updatedAt: string;
 }
-
 
 // New profile endpoint response types (EmployeeProfileService)
 export interface EmployeeProfileAttendanceSummaryItem {
@@ -131,18 +130,18 @@ function normalizeEmployee(raw: RawEmployee): BackendEmployee {
   const department = designation?.department;
   return {
     id: raw.id,
-    name: user ? `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() : "",
+    name: user ? `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() : '',
     firstName: user?.first_name,
     lastName: user?.last_name,
-    email: user?.email ?? "",
-    phone: user?.phone ?? "",
-    departmentId: designation?.department_id ?? "",
+    email: user?.email ?? '',
+    phone: user?.phone ?? '',
+    departmentId: designation?.department_id ?? '',
     designationId: raw.designation_id,
     department: department
       ? {
           id: department.id,
           name: department.name,
-          description: department.description ?? "",
+          description: department.description ?? '',
           tenantId: department.tenant_id,
           createdAt: department.created_at,
           updatedAt: department.updated_at ?? department.created_at,
@@ -152,53 +151,59 @@ function normalizeEmployee(raw: RawEmployee): BackendEmployee {
       ? {
           id: designation.id,
           title: designation.title,
-          tenantId: user?.tenant_id ?? "",
+          tenantId: user?.tenant_id ?? '',
           departmentId: designation.department_id,
           createdAt: designation.created_at,
           updatedAt: designation.updated_at ?? designation.created_at,
         }
       : null,
-    tenantId: user?.tenant_id ?? "",
+    tenantId: user?.tenant_id ?? '',
     createdAt: raw.created_at,
     updatedAt: raw.updated_at ?? raw.created_at,
   };
 }
 
 class EmployeeApiService {
-  private baseUrl = "/employees";
+  private baseUrl = '/employees';
 
   async getAllEmployees(filters?: EmployeeFilters): Promise<BackendEmployee[]> {
     try {
       const params: Record<string, string> = {};
-      if (filters?.departmentId) params["department_id"] = filters.departmentId;
-      if (filters?.designationId) params["designation_id"] = filters.designationId;
-      const response = await axiosInstance.get<RawEmployee[]>(this.baseUrl, { params });
+      if (filters?.departmentId) params['department_id'] = filters.departmentId;
+      if (filters?.designationId)
+        params['designation_id'] = filters.designationId;
+      const response = await axiosInstance.get<RawEmployee[]>(this.baseUrl, {
+        params,
+      });
       const items = Array.isArray(response.data) ? response.data : [];
       return items.map(normalizeEmployee);
     } catch (error) {
-      console.error("Error fetching employees:", error);
+      console.error('Error fetching employees:', error);
       throw error;
     }
   }
 
   async getEmployeeById(id: string): Promise<BackendEmployee> {
     try {
-      const response = await axiosInstance.get<RawEmployee>(`${this.baseUrl}/${id}`);
+      const response = await axiosInstance.get<RawEmployee>(
+        `${this.baseUrl}/${id}`
+      );
       return normalizeEmployee(response.data);
     } catch (error) {
-      console.error("Error fetching employee:", error);
+      console.error('Error fetching employee:', error);
       throw error;
     }
   }
 
-
   // Get full employee profile by user id (designation, department, attendance, leaves)
   async getEmployeeProfile(userId: string): Promise<EmployeeFullProfile> {
     try {
-      const response = await axiosInstance.get<EmployeeFullProfile>(`${this.baseUrl}/users/${userId}/profile`);
+      const response = await axiosInstance.get<EmployeeFullProfile>(
+        `${this.baseUrl}/users/${userId}/profile`
+      );
       return response.data;
     } catch (error) {
-      console.error("Error fetching employee profile:", error);
+      console.error('Error fetching employee profile:', error);
       throw error;
     }
   }
@@ -215,39 +220,54 @@ class EmployeeApiService {
         password: employeeData.password,
         designation_id: employeeData.designationId,
       };
-      const response = await axiosInstance.post<RawEmployee>(this.baseUrl, payload);
+      const response = await axiosInstance.post<RawEmployee>(
+        this.baseUrl,
+        payload
+      );
       return normalizeEmployee(response.data);
     } catch (error) {
-      console.error("Error creating employee:", error);
+      console.error('Error creating employee:', error);
       throw error;
     }
   }
 
-  async updateEmployee(id: string, updates: EmployeeUpdateDto): Promise<BackendEmployee> {
+  async updateEmployee(
+    id: string,
+    updates: EmployeeUpdateDto
+  ): Promise<BackendEmployee> {
     try {
       const payload: Record<string, any> = {};
-      if (updates.first_name !== undefined) payload.first_name = updates.first_name;
-      if (updates.last_name !== undefined) payload.last_name = updates.last_name;
+      if (updates.first_name !== undefined)
+        payload.first_name = updates.first_name;
+      if (updates.last_name !== undefined)
+        payload.last_name = updates.last_name;
       if (updates.email !== undefined) payload.email = updates.email;
       if (updates.phone !== undefined) payload.phone = updates.phone;
-      if (updates.password !== undefined && updates.password !== "") payload.password = updates.password;
-      if (updates.designationId && updates.designationId.trim() !== "") {
+      if (updates.password !== undefined && updates.password !== '')
+        payload.password = updates.password;
+      if (updates.designationId && updates.designationId.trim() !== '') {
         payload.designation_id = updates.designationId;
       }
-      const response = await axiosInstance.put<RawEmployee>(`${this.baseUrl}/${id}`, payload);
+      const response = await axiosInstance.put<RawEmployee>(
+        `${this.baseUrl}/${id}`,
+        payload
+      );
       return normalizeEmployee(response.data);
     } catch (error) {
-      console.error("Error updating employee:", error);
+      console.error('Error updating employee:', error);
       throw error;
     }
   }
 
   async deleteEmployee(id: string): Promise<{ deleted: true; id: string }> {
     try {
-      const response = await axiosInstance.delete<{ deleted: true; id: string }>(`${this.baseUrl}/${id}`);
+      const response = await axiosInstance.delete<{
+        deleted: true;
+        id: string;
+      }>(`${this.baseUrl}/${id}`);
       return response.data;
     } catch (error) {
-      console.error("Error deleting employee:", error);
+      console.error('Error deleting employee:', error);
       throw error;
     }
   }

@@ -1,11 +1,11 @@
 /// <reference types="vitest/config" />
 
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import svgr from "vite-plugin-svgr"; // ✅ SVG support
-import path from "path";
-import { fileURLToPath } from "url";
-import storybookTest from "@storybook/addon-vitest/vitest-plugin";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import svgr from 'vite-plugin-svgr'; // ✅ SVG support
+import path from 'path';
+import { fileURLToPath } from 'url';
+import storybookTest from '@storybook/addon-vitest/vitest-plugin';
 
 // ✅ Fix __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -16,7 +16,7 @@ export default defineConfig({
   plugins: [react(), svgr()], // 🟢 both react & svgr
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
+      '@': path.resolve(__dirname, 'src'),
     },
   },
   test: {
@@ -27,18 +27,18 @@ export default defineConfig({
         //   storybookTest(),
         // ],
         test: {
-          name: "storybook",
+          name: 'storybook',
           browser: {
             enabled: true,
             headless: true,
-            provider: "playwright",
+            provider: 'playwright',
             instances: [
               {
-                browser: "chromium",
+                browser: 'chromium',
               },
             ],
           },
-          setupFiles: [".storybook/vitest.setup.ts"],
+          setupFiles: ['.storybook/vitest.setup.ts'],
         },
       },
     ],

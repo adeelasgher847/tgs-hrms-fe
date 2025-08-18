@@ -1,4 +1,4 @@
-export type LeaveStatus = "pending" | "approved" | "rejected";
+export type LeaveStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Leave {
   id: string;

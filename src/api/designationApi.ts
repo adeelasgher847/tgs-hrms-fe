@@ -1,4 +1,4 @@
-import axiosInstance from "./axiosInstance";
+import axiosInstance from './axiosInstance';
 
 // Normalized types exposed to the rest of the app (camelCase)
 export interface BackendDesignation {
@@ -65,8 +65,8 @@ function normalizeDepartment(raw: any): BackendDepartment {
 }
 
 class DesignationApiService {
-  private baseUrl = "/designations";
-  private departmentUrl = "/departments";
+  private baseUrl = '/designations';
+  private departmentUrl = '/departments';
 
   // Get all departments
   async getAllDepartments(): Promise<BackendDepartment[]> {
@@ -75,19 +75,23 @@ class DesignationApiService {
       const items = Array.isArray(response.data) ? response.data : [];
       return items.map(normalizeDepartment);
     } catch (error) {
-      console.error("Error fetching departments:", error);
+      console.error('Error fetching departments:', error);
       throw error;
     }
   }
 
   // Get all designations for a department
-  async getDesignationsByDepartment(departmentId: string): Promise<BackendDesignation[]> {
+  async getDesignationsByDepartment(
+    departmentId: string
+  ): Promise<BackendDesignation[]> {
     try {
-      const response = await axiosInstance.get<any[]>(`${this.baseUrl}/department/${departmentId}`);
+      const response = await axiosInstance.get<any[]>(
+        `${this.baseUrl}/department/${departmentId}`
+      );
       const items = Array.isArray(response.data) ? response.data : [];
       return items.map(normalizeDesignation);
     } catch (error) {
-      console.error("Error fetching designations:", error);
+      console.error('Error fetching designations:', error);
       throw error;
     }
   }
@@ -99,20 +103,25 @@ class DesignationApiService {
       // we'll need to fetch all departments first and then get designations for each
       const departments = await this.getAllDepartments();
       const allDesignations: BackendDesignation[] = [];
-      
+
       for (const department of departments) {
         try {
-          const designations = await this.getDesignationsByDepartment(department.id);
+          const designations = await this.getDesignationsByDepartment(
+            department.id
+          );
           allDesignations.push(...designations);
         } catch (error) {
-          console.error(`Error fetching designations for department ${department.id}:`, error);
+          console.error(
+            `Error fetching designations for department ${department.id}:`,
+            error
+          );
           // Continue with other departments even if one fails
         }
       }
-      
+
       return allDesignations;
     } catch (error) {
-      console.error("Error fetching all designations:", error);
+      console.error('Error fetching all designations:', error);
       throw error;
     }
   }
@@ -123,33 +132,44 @@ class DesignationApiService {
       const response = await axiosInstance.get<any>(`${this.baseUrl}/${id}`);
       return normalizeDesignation(response.data);
     } catch (error) {
-      console.error("Error fetching designation:", error);
+      console.error('Error fetching designation:', error);
       throw error;
     }
   }
 
   // Create new designation
-  async createDesignation(designationData: DesignationDto): Promise<BackendDesignation> {
+  async createDesignation(
+    designationData: DesignationDto
+  ): Promise<BackendDesignation> {
     try {
       // Backend expects snake_case: { title, department_id }
-      const payload = { title: designationData.title, department_id: designationData.departmentId };
+      const payload = {
+        title: designationData.title,
+        department_id: designationData.departmentId,
+      };
       const response = await axiosInstance.post<any>(this.baseUrl, payload);
       return normalizeDesignation(response.data);
     } catch (error) {
-      console.error("Error creating designation:", error);
+      console.error('Error creating designation:', error);
       throw error;
     }
   }
 
   // Update designation
-  async updateDesignation(id: string, designationData: DesignationDto): Promise<BackendDesignation> {
+  async updateDesignation(
+    id: string,
+    designationData: DesignationDto
+  ): Promise<BackendDesignation> {
     try {
       // Backend uses department_id from existing record; only title is relevant
       const payload = { title: designationData.title };
-      const response = await axiosInstance.put<any>(`${this.baseUrl}/${id}`, payload);
+      const response = await axiosInstance.put<any>(
+        `${this.baseUrl}/${id}`,
+        payload
+      );
       return normalizeDesignation(response.data);
     } catch (error) {
-      console.error("Error updating designation:", error);
+      console.error('Error updating designation:', error);
       throw error;
     }
   }
@@ -157,26 +177,33 @@ class DesignationApiService {
   // Delete designation
   async deleteDesignation(id: string): Promise<{ deleted: true; id: string }> {
     try {
-      const response = await axiosInstance.delete<{ deleted: true; id: string }>(`${this.baseUrl}/${id}`);
+      const response = await axiosInstance.delete<{
+        deleted: true;
+        id: string;
+      }>(`${this.baseUrl}/${id}`);
       return response.data;
     } catch (error) {
-      console.error("Error deleting designation:", error);
+      console.error('Error deleting designation:', error);
       throw error;
     }
   }
 
   // Helper function to convert backend designation to frontend format
-  convertBackendToFrontend(backendDesignation: BackendDesignation): FrontendDesignation {
+  convertBackendToFrontend(
+    backendDesignation: BackendDesignation
+  ): FrontendDesignation {
     return {
       id: backendDesignation.id,
       title: backendDesignation.title,
-      titleAr: "", // Arabic title is optional, empty by default
+      titleAr: '', // Arabic title is optional, empty by default
       departmentId: backendDesignation.departmentId,
     };
   }
 
   // Helper function to convert backend department to frontend format
-  convertBackendDepartmentToFrontend(backendDepartment: BackendDepartment): FrontendDepartment {
+  convertBackendDepartmentToFrontend(
+    backendDepartment: BackendDepartment
+  ): FrontendDepartment {
     return {
       id: backendDepartment.id,
       name: backendDepartment.name,
@@ -187,7 +214,9 @@ class DesignationApiService {
   }
 
   // Helper function to convert frontend designation to backend format
-  convertFrontendToBackend(frontendDesignation: FrontendDesignation): DesignationDto {
+  convertFrontendToBackend(
+    frontendDesignation: FrontendDesignation
+  ): DesignationDto {
     return {
       title: frontendDesignation.title,
       departmentId: frontendDesignation.departmentId,
@@ -195,4 +224,4 @@ class DesignationApiService {
   }
 }
 
-export const designationApiService = new DesignationApiService(); 
+export const designationApiService = new DesignationApiService();

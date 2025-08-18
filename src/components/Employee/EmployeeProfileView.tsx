@@ -17,7 +17,11 @@ import {
 } from '@mui/material';
 import { Work, Business, Email, CalendarToday } from '@mui/icons-material';
 import employeeApi from '../../api/employeeApi';
-import type { EmployeeFullProfile, EmployeeProfileAttendanceSummaryItem, EmployeeProfileLeaveHistoryItem } from '../../api/employeeApi';
+import type {
+  EmployeeFullProfile,
+  EmployeeProfileAttendanceSummaryItem,
+  EmployeeProfileLeaveHistoryItem,
+} from '../../api/employeeApi';
 
 const EmployeeProfileView: React.FC = () => {
   const [profile, setProfile] = useState<EmployeeFullProfile | null>(null);
@@ -105,18 +109,24 @@ const EmployeeProfileView: React.FC = () => {
   const formatTime = (iso: string | null) => {
     if (!iso) return '--:--';
     const d = new Date(iso);
-    return isNaN(d.getTime()) ? String(iso) : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return isNaN(d.getTime())
+      ? String(iso)
+      : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   if (isLoading) {
     return (
-      <Box py={3} display="flex" justifyContent="center"><CircularProgress /></Box>
+      <Box py={3} display='flex' justifyContent='center'>
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <Box py={3}><Alert severity="error">{error}</Alert></Box>
+      <Box py={3}>
+        <Alert severity='error'>{error}</Alert>
+      </Box>
     );
   }
 
@@ -126,33 +136,80 @@ const EmployeeProfileView: React.FC = () => {
 
   return (
     <Box py={2}>
-      <Paper elevation={1} sx={{ borderRadius: 3, p: 3, bgcolor: 'background.paper', mb: 4 }}>
-        <Typography variant="h5" fontWeight={600} gutterBottom color="primary.main">
+      <Paper
+        elevation={1}
+        sx={{ borderRadius: 3, p: 3, bgcolor: 'background.paper', mb: 4 }}
+      >
+        <Typography
+          variant='h5'
+          fontWeight={600}
+          gutterBottom
+          color='primary.main'
+        >
           Employee Details
         </Typography>
         <Divider sx={{ mb: 3 }} />
-        <Box display="flex" alignItems="center" mb={3}>
-          <Avatar sx={{ width: 80, height: 80, mr: 2, fontSize: '2rem', bgcolor: 'primary.main' }}>
-            {profile.name ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase() : ''}
+        <Box display='flex' alignItems='center' mb={3}>
+          <Avatar
+            sx={{
+              width: 80,
+              height: 80,
+              mr: 2,
+              fontSize: '2rem',
+              bgcolor: 'primary.main',
+            }}
+          >
+            {profile.name
+              ? profile.name
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')
+                  .toUpperCase()
+              : ''}
           </Avatar>
           <Box>
-            <Typography variant="h6" fontWeight={600}>{profile.name}</Typography>
-            <Chip label={profile.designation || '—'} icon={<Work />} sx={{ mr: 1, mb: 1 }} color="secondary" />
-            <Chip label={profile.department || '—'} icon={<Business />} sx={{ mb: 1 }} color="info" />
-            <Typography variant="body2" color="text.secondary" mt={1}><Email sx={{ fontSize: 16, mr: 0.5 }} /> {profile.email}</Typography>
-            <Typography variant="body2" color="text.secondary"><CalendarToday sx={{ fontSize: 16, mr: 0.5 }} /> Joined: {new Date(profile.joinedAt).toLocaleDateString()}</Typography>
+            <Typography variant='h6' fontWeight={600}>
+              {profile.name}
+            </Typography>
+            <Chip
+              label={profile.designation || '—'}
+              icon={<Work />}
+              sx={{ mr: 1, mb: 1 }}
+              color='secondary'
+            />
+            <Chip
+              label={profile.department || '—'}
+              icon={<Business />}
+              sx={{ mb: 1 }}
+              color='info'
+            />
+            <Typography variant='body2' color='text.secondary' mt={1}>
+              <Email sx={{ fontSize: 16, mr: 0.5 }} /> {profile.email}
+            </Typography>
+            <Typography variant='body2' color='text.secondary'>
+              <CalendarToday sx={{ fontSize: 16, mr: 0.5 }} /> Joined:{' '}
+              {new Date(profile.joinedAt).toLocaleDateString()}
+            </Typography>
           </Box>
         </Box>
       </Paper>
 
       {/* Recent Attendance Table */}
-      <Paper elevation={1} sx={{ borderRadius: 3, p: 3, bgcolor: 'background.paper', mb: 4 }}>
-        <Typography variant="h6" fontWeight={600} gutterBottom color="primary.main">
+      <Paper
+        elevation={1}
+        sx={{ borderRadius: 3, p: 3, bgcolor: 'background.paper', mb: 4 }}
+      >
+        <Typography
+          variant='h6'
+          fontWeight={600}
+          gutterBottom
+          color='primary.main'
+        >
           Recent Attendance
         </Typography>
         <Divider sx={{ mb: 2 }} />
         <TableContainer>
-          <Table size="small" sx={{ minWidth: 350 }}>
+          <Table size='small' sx={{ minWidth: 350 }}>
             <TableHead>
               <TableRow sx={{ backgroundColor: 'rgba(76, 175, 80, 0.08)' }}>
                 <TableCell>Date</TableCell>
@@ -162,27 +219,48 @@ const EmployeeProfileView: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {(profile.attendanceSummary || []).slice(0, 5).map((log: EmployeeProfileAttendanceSummaryItem, index: number) => (
-                <TableRow key={index} sx={{ backgroundColor: index % 2 === 0 ? 'background.default' : 'grey.50' }}>
-                  <TableCell>{log.date}</TableCell>
-                  <TableCell>{formatTime(log.checkIn)}</TableCell>
-                  <TableCell>{formatTime(log.checkOut)}</TableCell>
-                  <TableCell>{log.workedHours ?? 0}h</TableCell>
-                </TableRow>
-              ))}
+              {(profile.attendanceSummary || [])
+                .slice(0, 5)
+                .map(
+                  (
+                    log: EmployeeProfileAttendanceSummaryItem,
+                    index: number
+                  ) => (
+                    <TableRow
+                      key={index}
+                      sx={{
+                        backgroundColor:
+                          index % 2 === 0 ? 'background.default' : 'grey.50',
+                      }}
+                    >
+                      <TableCell>{log.date}</TableCell>
+                      <TableCell>{formatTime(log.checkIn)}</TableCell>
+                      <TableCell>{formatTime(log.checkOut)}</TableCell>
+                      <TableCell>{log.workedHours ?? 0}h</TableCell>
+                    </TableRow>
+                  )
+                )}
             </TableBody>
           </Table>
         </TableContainer>
       </Paper>
 
       {/* Leave History Table */}
-      <Paper elevation={1} sx={{ borderRadius: 3, p: 3, bgcolor: 'background.paper' }}>
-        <Typography variant="h6" fontWeight={600} gutterBottom color="primary.main">
+      <Paper
+        elevation={1}
+        sx={{ borderRadius: 3, p: 3, bgcolor: 'background.paper' }}
+      >
+        <Typography
+          variant='h6'
+          fontWeight={600}
+          gutterBottom
+          color='primary.main'
+        >
           Leave History
         </Typography>
         <Divider sx={{ mb: 2 }} />
         <TableContainer>
-          <Table size="small" sx={{ minWidth: 350 }}>
+          <Table size='small' sx={{ minWidth: 350 }}>
             <TableHead>
               <TableRow sx={{ backgroundColor: 'rgba(33, 150, 243, 0.08)' }}>
                 <TableCell>Type</TableCell>
@@ -192,24 +270,37 @@ const EmployeeProfileView: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {(profile.leaveHistory || []).slice(0, 5).map((lv: EmployeeProfileLeaveHistoryItem, idx: number) => (
-                <TableRow key={idx} sx={{ backgroundColor: idx % 2 === 0 ? 'background.default' : 'grey.50' }}>
-                  <TableCell>{lv.type}</TableCell>
-                  <TableCell>{lv.fromDate}</TableCell>
-                  <TableCell>{lv.toDate}</TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={lv.status} 
-                      sx={{
-                        bgcolor: lv.status === 'approved' ? 'success.main' : lv.status === 'Pending' ? 'primary.dark' : 'error.main',
-                        color: '#fff',
-                        fontWeight: 600
-                      }} 
-                      size="small" 
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
+              {(profile.leaveHistory || [])
+                .slice(0, 5)
+                .map((lv: EmployeeProfileLeaveHistoryItem, idx: number) => (
+                  <TableRow
+                    key={idx}
+                    sx={{
+                      backgroundColor:
+                        idx % 2 === 0 ? 'background.default' : 'grey.50',
+                    }}
+                  >
+                    <TableCell>{lv.type}</TableCell>
+                    <TableCell>{lv.fromDate}</TableCell>
+                    <TableCell>{lv.toDate}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={lv.status}
+                        sx={{
+                          bgcolor:
+                            lv.status === 'approved'
+                              ? 'success.main'
+                              : lv.status === 'Pending'
+                                ? 'primary.dark'
+                                : 'error.main',
+                          color: '#fff',
+                          fontWeight: 600,
+                        }}
+                        size='small'
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </TableContainer>

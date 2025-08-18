@@ -1,5 +1,5 @@
 // // src/components/Users/UserList.tsx
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -11,32 +11,32 @@ import {
   Typography,
   MenuItem,
   TextField,
-} from "@mui/material";
-import UserForm from "./UserForm";
-import AddIcon from "@mui/icons-material/Add";
-import Edit from "@mui/icons-material/Edit";
-import Delete from "@mui/icons-material/Delete";
-import type { User } from "./UserForm";
-import { useTheme } from "@mui/material/styles";
+} from '@mui/material';
+import UserForm from './UserForm';
+import AddIcon from '@mui/icons-material/Add';
+import Edit from '@mui/icons-material/Edit';
+import Delete from '@mui/icons-material/Delete';
+import type { User } from './UserForm';
+import { useTheme } from '@mui/material/styles';
 import {
   departments,
   designations,
   users as mockUsers,
-} from "../../Data/userMock";
+} from '../../Data/userMock';
 
 const UserList: React.FC = () => {
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [open, setOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | undefined>(undefined);
-  const [filters, setFilters] = useState({ department: "", designation: "" });
+  const [filters, setFilters] = useState({ department: '', designation: '' });
 
-  const filteredUsers = users.filter((user) => {
+  const filteredUsers = users.filter(user => {
     return (
       (!filters.department || user.department === filters.department) &&
       (!filters.designation || user.designation === filters.designation)
     );
   });
-  
+
   const handleOpen = (user?: User) => {
     setEditUser(user);
     setOpen(true);
@@ -49,44 +49,50 @@ const UserList: React.FC = () => {
 
   const handleSubmit = (userData: User) => {
     if (editUser?.id) {
-      setUsers((prev) =>
-        prev.map((user) =>
+      setUsers(prev =>
+        prev.map(user =>
           user.id === editUser.id ? { ...user, ...userData } : user
         )
       );
     } else {
-      setUsers((prev) => [...prev, { ...userData, id: Date.now() }]);
+      setUsers(prev => [...prev, { ...userData, id: Date.now() }]);
     }
   };
 
   const handleDelete = (id: number) => {
-    setUsers((prev) => prev.filter((user) => user.id !== id));
+    setUsers(prev => prev.filter(user => user.id !== id));
   };
   const theme = useTheme();
 
   return (
     <Box p={0}>
-      <Typography variant="h5" gutterBottom>
+      <Typography variant='h5' gutterBottom>
         User Management UI
       </Typography>
 
-      <Box display="flex" gap={2} mb={2} alignItems="center" color={theme.palette.text.primary}>
+      <Box
+        display='flex'
+        gap={2}
+        mb={2}
+        alignItems='center'
+        color={theme.palette.text.primary}
+      >
         <TextField
           select
-          size="small"
-          label=" Department"
+          size='small'
+          label=' Department'
           value={filters.department}
-          onChange={(e) =>
+          onChange={e =>
             setFilters({
               ...filters,
               department: e.target.value,
-              designation: "",
+              designation: '',
             })
           }
           sx={{ width: 180 }}
         >
-          <MenuItem value="">All</MenuItem>
-          {departments.map((dept) => (
+          <MenuItem value=''>All</MenuItem>
+          {departments.map(dept => (
             <MenuItem key={dept} value={dept}>
               {dept}
             </MenuItem>
@@ -95,17 +101,17 @@ const UserList: React.FC = () => {
 
         <TextField
           select
-          size="small"
-          label="Designation"
+          size='small'
+          label='Designation'
           value={filters.designation}
-          onChange={(e) =>
+          onChange={e =>
             setFilters({ ...filters, designation: e.target.value })
           }
           sx={{ width: 180 }}
           disabled={!filters.department}
         >
-          <MenuItem value="">All</MenuItem>
-          {(designations[filters.department] || []).map((des) => (
+          <MenuItem value=''>All</MenuItem>
+          {(designations[filters.department] || []).map(des => (
             <MenuItem key={des} value={des}>
               {des}
             </MenuItem>
@@ -113,18 +119,18 @@ const UserList: React.FC = () => {
         </TextField>
 
         <Button
-          variant="contained"
+          variant='contained'
           onClick={() => handleOpen()}
           startIcon={<AddIcon />}
           sx={{
-            minHeight: "36px",
+            minHeight: '36px',
             paddingX: 2,
-            fontSize: "14px",
-            borderRadius: "4px",
-            backgroundColor: "#484c7f",
-            color: "#fff",
-            textTransform: "none",
-            marginLeft: "auto",
+            fontSize: '14px',
+            borderRadius: '4px',
+            backgroundColor: '#484c7f',
+            color: '#fff',
+            textTransform: 'none',
+            marginLeft: 'auto',
           }}
         >
           Create User
@@ -143,7 +149,7 @@ const UserList: React.FC = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredUsers.map((user) => (
+          {filteredUsers.map(user => (
             <TableRow key={user.id}>
               <TableCell>{user.name}</TableCell>
               <TableCell>{user.email}</TableCell>
@@ -154,7 +160,7 @@ const UserList: React.FC = () => {
                 <Button onClick={() => handleOpen(user)}>
                   <Edit />
                 </Button>
-                <Button color="error" onClick={() => handleDelete(user.id!)}>
+                <Button color='error' onClick={() => handleDelete(user.id!)}>
                   <Delete />
                 </Button>
               </TableCell>

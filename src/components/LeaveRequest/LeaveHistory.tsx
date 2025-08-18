@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -10,38 +10,38 @@ import {
   Chip,
   Typography,
   Box,
-} from "@mui/material";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import CancelIcon from "@mui/icons-material/Cancel";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import type { Leave } from "../../type/levetypes";
+} from '@mui/material';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import CancelIcon from '@mui/icons-material/Cancel';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import type { Leave } from '../../type/levetypes';
 
 const typeColor: Record<
   string,
-  "success" | "error" | "info" | "warning" | "default"
+  'success' | 'error' | 'info' | 'warning' | 'default'
 > = {
-  Vacation: "success",
-  Emergency: "error",
-  Sick: "info",
-  Casual: "warning",
-  Other: "default",
+  Vacation: 'success',
+  Emergency: 'error',
+  Sick: 'info',
+  Casual: 'warning',
+  Other: 'default',
 };
 
 const statusConfig: Record<
   string,
-  { color: "success" | "error" | "warning"; icon: React.ReactElement }
+  { color: 'success' | 'error' | 'warning'; icon: React.ReactElement }
 > = {
   pending: {
-    color: "warning",
-    icon: <AccessTimeIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    color: 'warning',
+    icon: <AccessTimeIcon fontSize='small' sx={{ mr: 0.5 }} />,
   },
   approved: {
-    color: "success",
-    icon: <CheckCircleIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    color: 'success',
+    icon: <CheckCircleIcon fontSize='small' sx={{ mr: 0.5 }} />,
   },
   rejected: {
-    color: "error",
-    icon: <CancelIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    color: 'error',
+    icon: <CancelIcon fontSize='small' sx={{ mr: 0.5 }} />,
   },
 };
 
@@ -52,15 +52,15 @@ const LeaveHistory = ({
 }: {
   leaves: Leave[];
   isAdmin: boolean;
-  onAction: (id: string, action: "approved" | "rejected") => void;
+  onAction: (id: string, action: 'approved' | 'rejected') => void;
 }) => {
   // Debug logging
-  console.log("LeaveHistory props:", { leaves, isAdmin });
-  console.log("Leaves data:", leaves);
+  console.log('LeaveHistory props:', { leaves, isAdmin });
+  console.log('Leaves data:', leaves);
 
   // Check if leaves array is valid
   if (!Array.isArray(leaves)) {
-    console.error("❌ Leaves is not an array:", leaves);
+    console.error('❌ Leaves is not an array:', leaves);
     return (
       <Box>
         <Typography>Error: Invalid leaves data</Typography>
@@ -70,9 +70,9 @@ const LeaveHistory = ({
 
   return (
     <Box>
-      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-        <AccessTimeIcon color="primary" sx={{ fontSize: 32, mr: 1 }} />
-        <Typography variant="h5" fontWeight={600}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <AccessTimeIcon color='primary' sx={{ fontSize: 32, mr: 1 }} />
+        <Typography variant='h5' fontWeight={600}>
           My Leaves
         </Typography>
       </Box>
@@ -104,7 +104,7 @@ const LeaveHistory = ({
                 console.log(`Rendering leave ${index}:`, leave);
 
                 // Validate leave data
-                if (!leave || typeof leave !== "object") {
+                if (!leave || typeof leave !== 'object') {
                   console.error(`❌ Invalid leave at index ${index}:`, leave);
                   return null;
                 }
@@ -113,62 +113,62 @@ const LeaveHistory = ({
                   <TableRow key={leave.id || index}>
                     {isAdmin && (
                       <TableCell>
-                        {typeof leave.name === "string"
+                        {typeof leave.name === 'string'
                           ? leave.name
-                          : typeof leave.name === "object"
-                          ? JSON.stringify(leave.name)
-                          : "N/A"}
+                          : typeof leave.name === 'object'
+                            ? JSON.stringify(leave.name)
+                            : 'N/A'}
                       </TableCell>
                     )}
                     <TableCell>
                       <Chip
-                        label={leave.type || "Unknown"}
-                        color={typeColor[leave.type] || "default"}
+                        label={leave.type || 'Unknown'}
+                        color={typeColor[leave.type] || 'default'}
                         sx={{ fontWeight: 600, fontSize: 16, px: 2, py: 1 }}
                       />
                     </TableCell>
-                    <TableCell>{leave.fromDate || "N/A"}</TableCell>
-                    <TableCell>{leave.toDate || "N/A"}</TableCell>
-                    <TableCell>{leave.applied || "N/A"}</TableCell>
+                    <TableCell>{leave.fromDate || 'N/A'}</TableCell>
+                    <TableCell>{leave.toDate || 'N/A'}</TableCell>
+                    <TableCell>{leave.applied || 'N/A'}</TableCell>
                     <TableCell>
                       <Chip
                         icon={statusConfig[leave.status]?.icon}
-                        label={leave.status || "Unknown"}
+                        label={leave.status || 'Unknown'}
                         color={statusConfig[leave.status]?.color}
                         sx={{ fontWeight: 600, fontSize: 16, px: 2, py: 1 }}
                       />
                     </TableCell>
                     <TableCell>
-                      <Typography>{leave.reason || "N/A"}</Typography>
-                      {leave.status === "rejected" && leave.secondaryReason && (
+                      <Typography>{leave.reason || 'N/A'}</Typography>
+                      {leave.status === 'rejected' && leave.secondaryReason && (
                         <Typography
-                          variant="body2"
-                          color="error"
+                          variant='body2'
+                          color='error'
                           sx={{ mt: 0.5 }}
                         >
                           {leave.secondaryReason}
                         </Typography>
                       )}
                     </TableCell>
-                    {isAdmin && leave.status === "pending" && (
+                    {isAdmin && leave.status === 'pending' && (
                       <TableCell>
-                        <Box sx={{ display: "flex", gap: 1 }}>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
                           <Chip
-                            label="Approve"
-                            color="success"
+                            label='Approve'
+                            color='success'
                             clickable
-                            onClick={() => onAction(leave.id, "approved")}
+                            onClick={() => onAction(leave.id, 'approved')}
                           />
                           <Chip
-                            label="Reject"
-                            color="error"
+                            label='Reject'
+                            color='error'
                             clickable
-                            onClick={() => onAction(leave.id, "rejected")}
+                            onClick={() => onAction(leave.id, 'rejected')}
                           />
                         </Box>
                       </TableCell>
                     )}
-                    {isAdmin && leave.status !== "pending" && <TableCell />}
+                    {isAdmin && leave.status !== 'pending' && <TableCell />}
                   </TableRow>
                 );
               })}

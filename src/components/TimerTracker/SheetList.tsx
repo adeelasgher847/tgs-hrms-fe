@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -7,17 +7,16 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  Stack,
   Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
-} from "@mui/material";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import TimesheetDayRow from "./TimesheetDayRow";
-import { getCurrentUser } from "../../utils/auth";
+} from '@mui/material';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import TimesheetDayRow from './TimesheetDayRow';
+import { getCurrentUser } from '../../utils/auth';
 
 type Entry = { day: string; date: string; hours: number; ranges: string[] };
 
@@ -35,18 +34,18 @@ const formatRange = (start: Date) => {
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
   const startPart = start.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
+    month: 'short',
+    day: 'numeric',
   });
   const endPart = end.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
+    month: 'short',
+    day: 'numeric',
   });
   return `${startPart}–${endPart}`;
 };
 
 const parseRange = (range: string) => {
-  const [from, to] = range.split("-").map((s) => s.trim());
+  const [from, to] = range.split('-').map(s => s.trim());
   return { from, to };
 };
 
@@ -77,26 +76,26 @@ const SheetList: React.FC<Props> = ({
   const getDialogData = (entry: Entry, index: number) => {
     const isTodayLive = index === currentDayIndex && isClockedIn && startTime;
     let totalHrs = entry.hours;
-    let startLabel = "--";
-    let endLabel = "--";
+    let startLabel = '--';
+    let endLabel = '--';
 
     if (entry.ranges.length > 0) {
       const { from, to } = parseRange(entry.ranges[0]);
-      startLabel = from.replace(/\s*-\s*$/, "");
-      endLabel = to && to !== "" ? to : "—";
+      startLabel = from.replace(/\s*-\s*$/, '');
+      endLabel = to && to !== '' ? to : '—';
     }
 
     if (isTodayLive && startTime) {
       const startDate = new Date(startTime);
       startLabel = startDate
         .toLocaleTimeString([], {
-          hour: "numeric",
-          minute: "2-digit",
+          hour: 'numeric',
+          minute: '2-digit',
           hour12: true,
         })
         .toUpperCase();
       totalHrs = elapsedMs / 3600000;
-      endLabel = "—";
+      endLabel = '—';
     }
 
     return { startLabel, endLabel, totalHrs };
@@ -105,23 +104,23 @@ const SheetList: React.FC<Props> = ({
   return (
     <Box p={3}>
       <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
+        display='flex'
+        alignItems='center'
+        justifyContent='space-between'
         mb={2}
       >
-        <Box display="flex" alignItems="center" gap={1}>
+        <Box display='flex' alignItems='center' gap={1}>
           <Box
             sx={{
               width: 28,
               height: 28,
               borderRadius: 1,
-              bgcolor: "#e8f5e9",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              bgcolor: '#e8f5e9',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               fontWeight: 700,
-              color: "success.main",
+              color: 'success.main',
             }}
           >
             📅
@@ -130,16 +129,16 @@ const SheetList: React.FC<Props> = ({
         </Box>
 
         <Box>
-          <IconButton size="small" onClick={onPrevWeek}>
-            <ChevronLeftIcon fontSize="small" />
+          <IconButton size='small' onClick={onPrevWeek}>
+            <ChevronLeftIcon fontSize='small' />
           </IconButton>
-          <IconButton size="small" onClick={onNextWeek}>
-            <ChevronRightIcon fontSize="small" />
+          <IconButton size='small' onClick={onNextWeek}>
+            <ChevronRightIcon fontSize='small' />
           </IconButton>
         </Box>
       </Box>
 
-      <Box display="flex" flexDirection="column" gap={1.5}>
+      <Box display='flex' flexDirection='column' gap={1.5}>
         {entries.map((entry, index) => (
           <React.Fragment key={index}>
             <TimesheetDayRow
@@ -160,7 +159,7 @@ const SheetList: React.FC<Props> = ({
       <Dialog
         open={openIdx !== null}
         onClose={() => setOpenIdx(null)}
-        maxWidth="sm"
+        maxWidth='sm'
         fullWidth
       >
         <DialogTitle>Day details</DialogTitle>
@@ -175,9 +174,9 @@ const SheetList: React.FC<Props> = ({
                 const totalMinutes = Math.max(0, Math.round(totalHrs * 60));
                 const h = Math.floor(totalMinutes / 60);
                 const m = totalMinutes % 60;
-                const totalStr = `${h}h ${String(m).padStart(2, "0")}m`;
+                const totalStr = `${h}h ${String(m).padStart(2, '0')}m`;
                 return (
-                  <Table size="small" sx={{ mt: 1 }}>
+                  <Table size='small' sx={{ mt: 1 }}>
                     <TableHead>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
@@ -185,19 +184,19 @@ const SheetList: React.FC<Props> = ({
                           Work start
                         </TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Work end</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }} align="right">
+                        <TableCell sx={{ fontWeight: 700 }} align='right'>
                           Total hours
                         </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       <TableRow>
-                        <TableCell>{`${user?.first_name ?? "User"} ${
-                          user?.last_name ?? ""
+                        <TableCell>{`${user?.first_name ?? 'User'} ${
+                          user?.last_name ?? ''
                         }`}</TableCell>
                         <TableCell>{startLabel}</TableCell>
                         <TableCell>{endLabel}</TableCell>
-                        <TableCell align="right">{totalStr}</TableCell>
+                        <TableCell align='right'>{totalStr}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>

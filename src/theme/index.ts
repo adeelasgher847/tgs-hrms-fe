@@ -10,4 +10,4 @@ export { useTheme, useThemeMode, useIsDarkMode } from './hooks';
 export { ThemeToggle } from './ThemeToggle';
 
 // Theme utilities
-export { themeStyles, cssVars, themeColors, responsiveTheme } from './utils'; 
+export { themeStyles, cssVars, themeColors, responsiveTheme } from './utils';

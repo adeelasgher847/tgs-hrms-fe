@@ -1,5 +1,5 @@
-import React from "react";
-import { Box, TablePagination, useTheme, useMediaQuery } from "@mui/material";
+import React from 'react';
+import { Box, TablePagination, useTheme, useMediaQuery } from '@mui/material';
 
 interface PaginationProps {
   count: number;
@@ -19,38 +19,38 @@ const Pagination: React.FC<PaginationProps> = ({
   onPageChange,
   onRowsPerPageChange,
   rowsPerPageOptions = [5, 10, 25, 50],
-  labelRowsPerPage = "Rows per page:",
+  labelRowsPerPage = 'Rows per page:',
   labelDisplayedRows = (from, to, count) =>
     `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <Box
       sx={{
-        display: "flex",
-        justifyContent: "center",
+        display: 'flex',
+        justifyContent: 'center',
         mt: 2,
-        "& .MuiTablePagination-root": {
+        '& .MuiTablePagination-root': {
           color: theme.palette.text.primary,
         },
-        "& .MuiTablePagination-select": {
+        '& .MuiTablePagination-select': {
           color: theme.palette.text.primary,
         },
-        "& .MuiTablePagination-selectIcon": {
+        '& .MuiTablePagination-selectIcon': {
           color: theme.palette.text.primary,
         },
-        "& .MuiIconButton-root": {
+        '& .MuiIconButton-root': {
           color: theme.palette.text.primary,
         },
-        "& .MuiIconButton-root.Mui-disabled": {
+        '& .MuiIconButton-root.Mui-disabled': {
           color: theme.palette.text.disabled,
         },
       }}
     >
       <TablePagination
-        component="div"
+        component='div'
         count={count}
         page={page}
         onPageChange={onPageChange}
@@ -61,7 +61,7 @@ const Pagination: React.FC<PaginationProps> = ({
         labelDisplayedRows={labelDisplayedRows}
         showFirstButton={!isMobile}
         showLastButton={!isMobile}
-        size={isMobile ? "small" : "medium"}
+        size={isMobile ? 'small' : 'medium'}
       />
     </Box>
   );

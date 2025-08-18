@@ -2,7 +2,7 @@
   background: #fff;
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   max-width: 400px;
   margin: 2rem auto;
   display: flex;
@@ -35,7 +35,7 @@
   background: #fff;
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   max-width: 800px;
   margin: 2rem auto;
 }
@@ -47,7 +47,8 @@ table {
   width: 100%;
   border-collapse: collapse;
 }
-th, td {
+th,
+td {
   padding: 0.75rem;
   border-bottom: 1px solid #eee;
   text-align: left;
@@ -77,8 +78,11 @@ th, td {
 }
 .dialog-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.2);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -88,7 +92,7 @@ th, td {
   background: #fff;
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
   min-width: 300px;
   text-align: center;
 }

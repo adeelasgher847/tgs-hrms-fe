@@ -45,9 +45,9 @@ export const leaveApi = {
       from_date: data.fromDate,
       to_date: data.toDate,
       reason: data.reason,
-      type: data.type
+      type: data.type,
     };
-    
+
     console.log('Sending leave request:', apiData);
     const response = await axiosInstance.post('/leaves', apiData);
     return response.data;
@@ -67,8 +67,11 @@ export const leaveApi = {
   },
 
   // Update Leave Status (Admin Only)
-  updateLeaveStatus: async (id: string, status: 'approved' | 'rejected'): Promise<LeaveResponse> => {
+  updateLeaveStatus: async (
+    id: string,
+    status: 'approved' | 'rejected'
+  ): Promise<LeaveResponse> => {
     const response = await axiosInstance.patch(`/leaves/${id}`, { status });
     return response.data;
-  }
-}; 
+  },
+};
