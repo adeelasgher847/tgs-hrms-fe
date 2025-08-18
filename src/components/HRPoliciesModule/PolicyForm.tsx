@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,12 +7,12 @@ import {
   TextField,
   Button,
   IconButton,
-} from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import type { Policy } from "../../type/Hrtypes";
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import type { Policy } from '../../type/Hrtypes';
 
 interface PolicyFormProps {
   open: boolean;
@@ -29,17 +29,17 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<Policy>({
     id: initialData?.id || crypto.randomUUID(),
-    name: initialData?.name || "",
-    description: initialData?.description || "",
-    type: initialData?.type || "",
-    effectiveDate: initialData?.effectiveDate || "",
+    name: initialData?.name || '',
+    description: initialData?.description || '',
+    type: initialData?.type || '',
+    effectiveDate: initialData?.effectiveDate || '',
   });
 
   const [errors, setErrors] = useState({
-    name: "",
-    description: "",
-    type: "",
-    effectiveDate: "",
+    name: '',
+    description: '',
+    type: '',
+    effectiveDate: '',
   });
 
   useEffect(() => {
@@ -48,31 +48,31 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
     } else {
       setFormData({
         id: crypto.randomUUID(),
-        name: "",
-        description: "",
-        type: "",
-        effectiveDate: "",
+        name: '',
+        description: '',
+        type: '',
+        effectiveDate: '',
       });
     }
-    setErrors({ name: "", description: "", type: "", effectiveDate: "" });
+    setErrors({ name: '', description: '', type: '', effectiveDate: '' });
   }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const validate = () => {
     const newErrors = {
-      name: formData.name ? "" : "Policy name is required",
-      description: formData.description ? "" : "Description is required",
-      type: formData.type ? "" : "Type is required",
-      effectiveDate: formData.effectiveDate ? "" : "Effective date is required",
+      name: formData.name ? '' : 'Policy name is required',
+      description: formData.description ? '' : 'Description is required',
+      type: formData.type ? '' : 'Type is required',
+      effectiveDate: formData.effectiveDate ? '' : 'Effective date is required',
     };
 
     setErrors(newErrors);
-    return !Object.values(newErrors).some((err) => err !== "");
+    return !Object.values(newErrors).some(err => err !== '');
   };
 
   const handleSubmit = () => {
@@ -86,43 +86,43 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
     <Dialog open={open} onClose={onClose} fullWidth>
       <DialogTitle
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
-        {initialData ? "Edit Policy" : "Add Policy"}
-        <IconButton onClick={onClose} size="small">
+        {initialData ? 'Edit Policy' : 'Add Policy'}
+        <IconButton onClick={onClose} size='small'>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
       <DialogContent>
         <TextField
-          name="name"
-          label="Policy Name"
+          name='name'
+          label='Policy Name'
           fullWidth
-          margin="normal"
+          margin='normal'
           value={formData.name}
           onChange={handleChange}
           error={!!errors.name}
           helperText={errors.name}
         />
         <TextField
-          name="description"
-          label="Description"
+          name='description'
+          label='Description'
           fullWidth
-          margin="normal"
+          margin='normal'
           value={formData.description}
           onChange={handleChange}
           error={!!errors.description}
           helperText={errors.description}
         />
         <TextField
-          name="type"
-          label="Type"
+          name='type'
+          label='Type'
           fullWidth
-          margin="normal"
+          margin='normal'
           value={formData.type}
           onChange={handleChange}
           error={!!errors.type}
@@ -131,34 +131,34 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
 
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <DatePicker
-            label="Effective Date"
+            label='Effective Date'
             value={
               formData.effectiveDate ? new Date(formData.effectiveDate) : null
             }
-            onChange={(newDate) => {
-              setFormData((prev) => ({
+            onChange={newDate => {
+              setFormData(prev => ({
                 ...prev,
                 effectiveDate: newDate
-                  ? newDate.toISOString().split("T")[0]
-                  : "",
+                  ? newDate.toISOString().split('T')[0]
+                  : '',
               }));
-              setErrors((prev) => ({ ...prev, effectiveDate: "" }));
+              setErrors(prev => ({ ...prev, effectiveDate: '' }));
             }}
             slotProps={{
               popper: {
-                placement: "bottom-start",
+                placement: 'bottom-start',
                 modifiers: [
                   {
-                    name: "preventOverflow",
+                    name: 'preventOverflow',
                     options: {
-                      boundary: "viewport",
+                      boundary: 'viewport',
                     },
                   },
                 ],
               },
               textField: {
                 fullWidth: true,
-                margin: "normal",
+                margin: 'normal',
                 error: !!errors.effectiveDate,
                 helperText: errors.effectiveDate,
               },
@@ -168,8 +168,8 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button variant="contained" onClick={handleSubmit}>
-          {initialData ? "Update" : "Add"}
+        <Button variant='contained' onClick={handleSubmit}>
+          {initialData ? 'Update' : 'Add'}
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -6,8 +6,8 @@ import {
   TableHead,
   TableRow,
   Box,
-} from "@mui/material";
-import type { Holiday } from "./HolidayList";
+} from '@mui/material';
+import type { Holiday } from './HolidayList';
 
 interface HolidayTableProps {
   holidays: Holiday[];
@@ -15,7 +15,7 @@ interface HolidayTableProps {
 
 const HolidayTable: React.FC<HolidayTableProps> = ({ holidays }) => {
   return (
-    <Box >
+    <Box>
       <Table>
         <TableHead>
           <TableRow>
@@ -25,7 +25,7 @@ const HolidayTable: React.FC<HolidayTableProps> = ({ holidays }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {holidays.map((holiday) => (
+          {holidays.map(holiday => (
             <TableRow key={holiday.id}>
               <TableCell>{holiday.date}</TableCell>
               <TableCell>{holiday.title}</TableCell>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -14,62 +14,62 @@ import {
   IconButton,
   Snackbar,
   Alert,
-} from "@mui/material";
-import { Add as AddIcon, Business as BusinessIcon } from "@mui/icons-material";
-import companyApi from "../api/companyApi";
-import type { BackendCompany, CompanyDto } from "../api/companyApi";
-import { useOutletContext } from "react-router-dom";
-import { useLanguage } from "../context/LanguageContext";
-import edit from "../assets/dashboardIcon/edit.svg";
-import deleteIcon from "../assets/dashboardIcon/ui-delete.svg";
+} from '@mui/material';
+import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
+import companyApi from '../api/companyApi';
+import type { BackendCompany, CompanyDto } from '../api/companyApi';
+import { useOutletContext } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
+import edit from '../assets/dashboardIcon/edit.svg';
+import deleteIcon from '../assets/dashboardIcon/ui-delete.svg';
 
 const labels = {
   en: {
-    title: "Tenants",
-    create: "Create Tenant",
-    createFirst: "Create First Tenant",
-    noTenants: "No Tenants Found",
-    description: "Get started by creating your first tenant",
-    name: "Tenant Name",
-    save: "Save",
-    cancel: "Cancel",
-    edit: "Edit",
-    delete: "Delete",
-    confirmDelete: "Are you sure you want to delete this tenant?",
+    title: 'Tenants',
+    create: 'Create Tenant',
+    createFirst: 'Create First Tenant',
+    noTenants: 'No Tenants Found',
+    description: 'Get started by creating your first tenant',
+    name: 'Tenant Name',
+    save: 'Save',
+    cancel: 'Cancel',
+    edit: 'Edit',
+    delete: 'Delete',
+    confirmDelete: 'Are you sure you want to delete this tenant?',
   },
   ar: {
-    title: "المستأجرون",
-    create: "إنشاء مستأجر",
-    createFirst: "إنشاء أول مستأجر",
-    noTenants: "لا يوجد مستأجرون",
-    description: "ابدأ بإنشاء أول مستأجر لإدارتهم",
-    name: "اسم المستأجر",
-    save: "حفظ",
-    cancel: "إلغاء",
-    edit: "تعديل",
-    delete: "حذف",
-    confirmDelete: "هل أنت متأكد أنك تريد حذف هذا المستأجر؟",
+    title: 'المستأجرون',
+    create: 'إنشاء مستأجر',
+    createFirst: 'إنشاء أول مستأجر',
+    noTenants: 'لا يوجد مستأجرون',
+    description: 'ابدأ بإنشاء أول مستأجر لإدارتهم',
+    name: 'اسم المستأجر',
+    save: 'حفظ',
+    cancel: 'إلغاء',
+    edit: 'تعديل',
+    delete: 'حذف',
+    confirmDelete: 'هل أنت متأكد أنك تريد حذف هذا المستأجر؟',
   },
 };
 
 export const TenantPage = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { darkMode } = useOutletContext<{ darkMode: boolean }>() || {
     darkMode: false,
   };
   const { language } = useLanguage();
-  const isRtl = language === "ar";
+  const isRtl = language === 'ar';
   const lang = labels[language];
 
-  const bgPaper = darkMode ? "#1b1b1b" : "#fff";
-  const textPrimary = darkMode ? "#e0e0e0" : theme.palette.text.primary;
-  const textSecond = darkMode ? "#9a9a9a" : theme.palette.text.secondary;
-  const dividerCol = darkMode ? "#333" : "#ccc";
-  const textColor = darkMode ? "#8f8f8f" : "#000";
-  const cardBg = darkMode ? "#111" : "#fff";
-  const cardText = darkMode ? "#ccc" : "#000";
-  const cardBorder = darkMode ? "#333" : "#f0f0f0";
+  const bgPaper = darkMode ? '#1b1b1b' : '#fff';
+  const textPrimary = darkMode ? '#e0e0e0' : theme.palette.text.primary;
+  const textSecond = darkMode ? '#9a9a9a' : theme.palette.text.secondary;
+  const dividerCol = darkMode ? '#333' : '#ccc';
+  const textColor = darkMode ? '#8f8f8f' : '#000';
+  const cardBg = darkMode ? '#111' : '#fff';
+  const cardText = darkMode ? '#ccc' : '#000';
+  const cardBorder = darkMode ? '#333' : '#f0f0f0';
 
   const [companies, setCompanies] = useState<BackendCompany[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,15 +78,15 @@ export const TenantPage = () => {
   const [selectedTenant, setSelectedTenant] = useState<BackendCompany | null>(
     null
   );
-  const [formName, setFormName] = useState("");
+  const [formName, setFormName] = useState('');
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
-    severity: "success" | "error";
+    severity: 'success' | 'error';
   }>({
     open: false,
-    message: "",
-    severity: "success",
+    message: '',
+    severity: 'success',
   });
 
   // Fetch companies on mount
@@ -95,7 +95,7 @@ export const TenantPage = () => {
       setIsLoading(true);
       try {
         const data = await companyApi.getAllCompanies();
-        console.log("Fetched companies:", data);
+        console.log('Fetched companies:', data);
         setCompanies(data);
       } catch {
         setCompanies([]);
@@ -112,14 +112,14 @@ export const TenantPage = () => {
     const newCompany: CompanyDto = { name: formName };
     try {
       const created = await companyApi.createCompany(newCompany);
-      setCompanies((prev) => [created, ...prev]);
-      console.log("Created company:", created);
+      setCompanies(prev => [created, ...prev]);
+      console.log('Created company:', created);
       setIsFormModalOpen(false);
-      setFormName("");
+      setFormName('');
       setSnackbar({
         open: true,
-        message: "Company created successfully!",
-        severity: "success",
+        message: 'Company created successfully!',
+        severity: 'success',
       });
     } catch (error: unknown) {
       const errorResponse = error as {
@@ -128,8 +128,8 @@ export const TenantPage = () => {
       setSnackbar({
         open: true,
         message:
-          errorResponse?.response?.data?.message || "Failed to create company.",
-        severity: "error",
+          errorResponse?.response?.data?.message || 'Failed to create company.',
+        severity: 'error',
       });
     }
   };
@@ -141,16 +141,16 @@ export const TenantPage = () => {
       const updated = await companyApi.updateCompany(selectedTenant.id, {
         name: formName,
       });
-      setCompanies((prev) =>
-        prev.map((c) => (c.id === selectedTenant.id ? updated : c))
+      setCompanies(prev =>
+        prev.map(c => (c.id === selectedTenant.id ? updated : c))
       );
       setSelectedTenant(null);
       setIsFormModalOpen(false);
-      setFormName("");
+      setFormName('');
       setSnackbar({
         open: true,
-        message: "Company updated successfully!",
-        severity: "success",
+        message: 'Company updated successfully!',
+        severity: 'success',
       });
     } catch (error: unknown) {
       const errorResponse = error as {
@@ -159,8 +159,8 @@ export const TenantPage = () => {
       setSnackbar({
         open: true,
         message:
-          errorResponse?.response?.data?.message || "Failed to update company.",
-        severity: "error",
+          errorResponse?.response?.data?.message || 'Failed to update company.',
+        severity: 'error',
       });
     }
   };
@@ -170,13 +170,13 @@ export const TenantPage = () => {
     if (!selectedTenant) return;
     try {
       await companyApi.deleteCompany(selectedTenant.id);
-      setCompanies((prev) => prev.filter((c) => c.id !== selectedTenant.id));
+      setCompanies(prev => prev.filter(c => c.id !== selectedTenant.id));
       setSelectedTenant(null);
       setIsDeleteModalOpen(false);
       setSnackbar({
         open: true,
-        message: "Company deleted successfully!",
-        severity: "success",
+        message: 'Company deleted successfully!',
+        severity: 'success',
       });
     } catch (error: unknown) {
       const errorResponse = error as {
@@ -185,15 +185,15 @@ export const TenantPage = () => {
       setSnackbar({
         open: true,
         message:
-          errorResponse?.response?.data?.message || "Failed to delete company.",
-        severity: "error",
+          errorResponse?.response?.data?.message || 'Failed to delete company.',
+        severity: 'error',
       });
     }
   };
 
   const openCreateModal = () => {
     setSelectedTenant(null);
-    setFormName("");
+    setFormName('');
     setIsFormModalOpen(true);
   };
 
@@ -207,10 +207,10 @@ export const TenantPage = () => {
     <Box
       sx={{
         flexGrow: 1,
-        minHeight: "100vh",
+        minHeight: '100vh',
         color: textPrimary,
-        boxSizing: "border-box",
-        direction: isRtl ? "rtl" : "ltr",
+        boxSizing: 'border-box',
+        direction: isRtl ? 'rtl' : 'ltr',
       }}
     >
       {/* Header */}
@@ -218,38 +218,38 @@ export const TenantPage = () => {
         elevation={0}
         sx={{
           mb: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
           gap: 2,
-          backgroundColor: "unset",
+          backgroundColor: 'unset',
           color: textColor,
-          boxShadow: "none",
+          boxShadow: 'none',
         }}
       >
         <Typography
-          variant="h4"
+          variant='h4'
           fontWeight={700}
-          sx={{ py: 1.5, textAlign: isRtl ? "right" : "left" }}
+          sx={{ py: 1.5, textAlign: isRtl ? 'right' : 'left' }}
         >
           {lang.title}
         </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {!isMobile && (
             <Button
-              variant="contained"
+              variant='contained'
               startIcon={<AddIcon />}
               onClick={openCreateModal}
               sx={{
-                borderRadius: "0.375rem",
-                textTransform: "none",
+                borderRadius: '0.375rem',
+                textTransform: 'none',
                 fontWeight: 600,
-                bgcolor: darkMode ? "#605bd4" : "#45407A",
-                boxShadow: "none",
-                "&:hover": {
-                  bgcolor: darkMode ? "#726df0" : "#5b56a0",
-                  boxShadow: "none",
+                bgcolor: darkMode ? '#605bd4' : '#45407A',
+                boxShadow: 'none',
+                '&:hover': {
+                  bgcolor: darkMode ? '#726df0' : '#5b56a0',
+                  boxShadow: 'none',
                 },
               }}
             >
@@ -264,13 +264,13 @@ export const TenantPage = () => {
         <Paper
           sx={{
             p: 4,
-            textAlign: "center",
+            textAlign: 'center',
             bgcolor: bgPaper,
             color: textPrimary,
-            boxShadow: "none",
+            boxShadow: 'none',
           }}
         >
-          <Typography variant="h6" color={textSecond} gutterBottom>
+          <Typography variant='h6' color={textSecond} gutterBottom>
             Loading companies...
           </Typography>
         </Paper>
@@ -278,24 +278,24 @@ export const TenantPage = () => {
         <Paper
           sx={{
             p: 4,
-            textAlign: "center",
+            textAlign: 'center',
             bgcolor: bgPaper,
             color: textPrimary,
-            boxShadow: "none",
+            boxShadow: 'none',
           }}
         >
           <BusinessIcon sx={{ fontSize: 64, color: textSecond, mb: 2 }} />
-          <Typography variant="h6" color={textSecond} gutterBottom>
+          <Typography variant='h6' color={textSecond} gutterBottom>
             {lang.noTenants}
           </Typography>
-          <Typography variant="body2" color={textSecond} sx={{ mb: 3 }}>
+          <Typography variant='body2' color={textSecond} sx={{ mb: 3 }}>
             {lang.description}
           </Typography>
           <Button
-            variant="contained"
+            variant='contained'
             startIcon={<AddIcon />}
             onClick={openCreateModal}
-            sx={{ boxShadow: "none", "&:hover": { boxShadow: "none" } }}
+            sx={{ boxShadow: 'none', '&:hover': { boxShadow: 'none' } }}
           >
             {lang.createFirst}
           </Button>
@@ -303,50 +303,50 @@ export const TenantPage = () => {
       ) : (
         <Box
           sx={{
-            display: "flex",
-            flexWrap: "wrap",
+            display: 'flex',
+            flexWrap: 'wrap',
             gap: 2,
-            justifyContent: "flex-start",
+            justifyContent: 'flex-start',
           }}
         >
-          {companies.map((c) => (
+          {companies.map(c => (
             <Box
               key={c.id}
               sx={{
                 width: {
-                  xs: "100%",
-                  sm: "calc(50% - 12px)",
-                  md: "calc(50% - 12px)",
+                  xs: '100%',
+                  sm: 'calc(50% - 12px)',
+                  md: 'calc(50% - 12px)',
                 },
               }}
             >
               <Card
                 sx={{
-                  height: "100%",
-                  display: "flex",
+                  height: '100%',
+                  display: 'flex',
                   px: 2,
-                  flexDirection: "column",
-                  transition: "all 0.3s ease",
+                  flexDirection: 'column',
+                  transition: 'all 0.3s ease',
                   backgroundColor: cardBg,
                   color: cardText,
                   border: `1px solid ${cardBorder}`,
-                  boxShadow: "unset",
-                  direction: isRtl ? "rtl" : "ltr",
+                  boxShadow: 'unset',
+                  direction: isRtl ? 'rtl' : 'ltr',
                 }}
               >
                 <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Typography
-                      variant="h6"
-                      component="h2"
+                      variant='h6'
+                      component='h2'
                       sx={{
                         fontWeight: 600,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        maxWidth: "100%",
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '100%',
                         color: cardText,
-                        textAlign: isRtl ? "right" : "left",
+                        textAlign: isRtl ? 'right' : 'left',
                       }}
                     >
                       {c.name}
@@ -354,33 +354,33 @@ export const TenantPage = () => {
                   </Box>
                 </CardContent>
                 <CardActions
-                  sx={{ justifyContent: "flex-start", px: 2, pb: 2 }}
+                  sx={{ justifyContent: 'flex-start', px: 2, pb: 2 }}
                 >
-                  <Box display="flex" width={100}>
+                  <Box display='flex' width={100}>
                     <IconButton
                       onClick={() => openEditModal(c)}
-                      color="success"
-                      size="small"
+                      color='success'
+                      size='small'
                       sx={{
                         border: `1px solid ${cardBorder}`,
-                        borderTopLeftRadius: isRtl ? 0 : "5px",
-                        borderBottomLeftRadius: isRtl ? 0 : "5px",
-                        borderTopRightRadius: isRtl ? "5px" : 0,
-                        borderBottomRightRadius: isRtl ? "5px" : 0,
-                        "&:hover": {
-                          backgroundColor: "orange",
-                          color: "white",
+                        borderTopLeftRadius: isRtl ? 0 : '5px',
+                        borderBottomLeftRadius: isRtl ? 0 : '5px',
+                        borderTopRightRadius: isRtl ? '5px' : 0,
+                        borderBottomRightRadius: isRtl ? '5px' : 0,
+                        '&:hover': {
+                          backgroundColor: 'orange',
+                          color: 'white',
                         },
                       }}
                     >
                       <img
                         src={edit}
-                        alt="Edit"
+                        alt='Edit'
                         style={{
                           width: 15,
                           height: 15,
                           filter:
-                            "invert(48%) sepia(59%) saturate(528%) hue-rotate(85deg) brightness(90%) contrast(91%)",
+                            'invert(48%) sepia(59%) saturate(528%) hue-rotate(85deg) brightness(90%) contrast(91%)',
                         }}
                       />
                     </IconButton>
@@ -389,28 +389,28 @@ export const TenantPage = () => {
                         setSelectedTenant(c);
                         setIsDeleteModalOpen(true);
                       }}
-                      color="error"
-                      size="small"
+                      color='error'
+                      size='small'
                       sx={{
                         border: `1px solid ${cardBorder}`,
-                        borderTopLeftRadius: isRtl ? "5px" : 0,
-                        borderBottomLeftRadius: isRtl ? "5px" : 0,
-                        borderTopRightRadius: isRtl ? 0 : "5px",
-                        borderBottomRightRadius: isRtl ? 0 : "5px",
-                        "&:hover": {
-                          backgroundColor: "orange",
-                          color: "white",
+                        borderTopLeftRadius: isRtl ? '5px' : 0,
+                        borderBottomLeftRadius: isRtl ? '5px' : 0,
+                        borderTopRightRadius: isRtl ? 0 : '5px',
+                        borderBottomRightRadius: isRtl ? 0 : '5px',
+                        '&:hover': {
+                          backgroundColor: 'orange',
+                          color: 'white',
                         },
                       }}
                     >
                       <img
                         src={deleteIcon}
-                        alt="Delete"
+                        alt='Delete'
                         style={{
                           width: 15,
                           height: 15,
                           filter:
-                            "invert(28%) sepia(97%) saturate(1404%) hue-rotate(329deg) brightness(95%) contrast(96%)",
+                            'invert(28%) sepia(97%) saturate(1404%) hue-rotate(329deg) brightness(95%) contrast(96%)',
                         }}
                       />
                     </IconButton>
@@ -424,14 +424,14 @@ export const TenantPage = () => {
       {/* FAB (mobile) */}
       {isMobile && (
         <Fab
-          color="primary"
+          color='primary'
           onClick={openCreateModal}
           sx={{
-            position: "fixed",
+            position: 'fixed',
             bottom: 24,
-            right: isRtl ? "auto" : 24,
-            left: isRtl ? 24 : "auto",
-            boxShadow: "none",
+            right: isRtl ? 'auto' : 24,
+            left: isRtl ? 24 : 'auto',
+            boxShadow: 'none',
           }}
         >
           <AddIcon />
@@ -441,71 +441,71 @@ export const TenantPage = () => {
       {isFormModalOpen && (
         <Box
           sx={{
-            position: "fixed",
+            position: 'fixed',
             top: 0,
             left: 0,
-            width: "100vw",
-            height: "100vh",
-            bgcolor: "rgba(0,0,0,0.3)",
+            width: '100vw',
+            height: '100vh',
+            bgcolor: 'rgba(0,0,0,0.3)',
             zIndex: 1300,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Paper
             sx={{ p: 4, minWidth: 320, bgcolor: bgPaper, color: textPrimary }}
           >
             <Typography
-              variant="h6"
+              variant='h6'
               mb={2}
-              sx={{ textAlign: isRtl ? "right" : "left" }}
+              sx={{ textAlign: isRtl ? 'right' : 'left' }}
             >
               {selectedTenant ? lang.edit : lang.create}
             </Typography>
             <input
-              type="text"
+              type='text'
               value={formName}
-              onChange={(e) => setFormName(e.target.value)}
+              onChange={e => setFormName(e.target.value)}
               placeholder={lang.name}
               style={{
-                width: "100%",
+                width: '100%',
                 padding: 8,
                 marginBottom: 16,
                 fontSize: 16,
                 background: bgPaper,
                 color: textPrimary,
                 border: `1px solid ${dividerCol}`,
-                direction: isRtl ? "rtl" : "ltr",
+                direction: isRtl ? 'rtl' : 'ltr',
               }}
             />
             <Box
               sx={{
-                display: "flex",
-                justifyContent: "flex-end",
+                display: 'flex',
+                justifyContent: 'flex-end',
                 gap: 2,
-                flexDirection: isRtl ? "row-reverse" : "row",
+                flexDirection: isRtl ? 'row-reverse' : 'row',
               }}
             >
               <Button
                 onClick={() => {
                   setIsFormModalOpen(false);
                   setSelectedTenant(null);
-                  setFormName("");
+                  setFormName('');
                 }}
                 sx={{ color: textPrimary }}
               >
                 {lang.cancel}
               </Button>
               <Button
-                variant="contained"
+                variant='contained'
                 onClick={
                   selectedTenant ? handleEditCompany : handleCreateCompany
                 }
                 disabled={!formName.trim()}
                 sx={{
-                  bgcolor: darkMode ? "#605bd4" : "#45407A",
-                  "&:hover": { bgcolor: darkMode ? "#726df0" : "#5b56a0" },
+                  bgcolor: darkMode ? '#605bd4' : '#45407A',
+                  '&:hover': { bgcolor: darkMode ? '#726df0' : '#5b56a0' },
                 }}
               >
                 {lang.save}
@@ -518,34 +518,34 @@ export const TenantPage = () => {
       {isDeleteModalOpen && (
         <Box
           sx={{
-            position: "fixed",
+            position: 'fixed',
             top: 0,
             left: 0,
-            width: "100vw",
-            height: "100vh",
-            bgcolor: "rgba(0,0,0,0.3)",
+            width: '100vw',
+            height: '100vh',
+            bgcolor: 'rgba(0,0,0,0.3)',
             zIndex: 1300,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Paper
             sx={{ p: 4, minWidth: 320, bgcolor: bgPaper, color: textPrimary }}
           >
             <Typography
-              variant="h6"
+              variant='h6'
               mb={2}
-              sx={{ textAlign: isRtl ? "right" : "left" }}
+              sx={{ textAlign: isRtl ? 'right' : 'left' }}
             >
               {lang.confirmDelete}
             </Typography>
             <Box
               sx={{
-                display: "flex",
-                justifyContent: "flex-end",
+                display: 'flex',
+                justifyContent: 'flex-end',
                 gap: 2,
-                flexDirection: isRtl ? "row-reverse" : "row",
+                flexDirection: isRtl ? 'row-reverse' : 'row',
               }}
             >
               <Button
@@ -558,8 +558,8 @@ export const TenantPage = () => {
                 {lang.cancel}
               </Button>
               <Button
-                variant="contained"
-                color="error"
+                variant='contained'
+                color='error'
                 onClick={handleDeleteCompany}
               >
                 {lang.delete}
@@ -572,12 +572,12 @@ export const TenantPage = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Alert
           onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
-          sx={{ width: "100%" }}
+          sx={{ width: '100%' }}
         >
           {snackbar.message}
         </Alert>

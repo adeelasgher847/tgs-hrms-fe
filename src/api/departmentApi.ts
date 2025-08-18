@@ -1,4 +1,4 @@
-import axiosInstance from "./axiosInstance";
+import axiosInstance from './axiosInstance';
 
 // Backend Department interface (matches your NestJS entity)
 export interface BackendDepartment {
@@ -34,15 +34,17 @@ export interface ApiResponse<T> {
 }
 
 class DepartmentApiService {
-  private baseUrl = "/departments";
+  private baseUrl = '/departments';
 
   // Get all departments
   async getAllDepartments(): Promise<BackendDepartment[]> {
     try {
-      const response = await axiosInstance.get<BackendDepartment[]>(this.baseUrl);
+      const response = await axiosInstance.get<BackendDepartment[]>(
+        this.baseUrl
+      );
       return response.data;
     } catch (error) {
-      console.error("Error fetching departments:", error);
+      console.error('Error fetching departments:', error);
       throw error;
     }
   }
@@ -50,32 +52,45 @@ class DepartmentApiService {
   // Get department by ID
   async getDepartmentById(id: string): Promise<BackendDepartment> {
     try {
-      const response = await axiosInstance.get<BackendDepartment>(`${this.baseUrl}/${id}`);
+      const response = await axiosInstance.get<BackendDepartment>(
+        `${this.baseUrl}/${id}`
+      );
       return response.data;
     } catch (error) {
-      console.error("Error fetching department:", error);
+      console.error('Error fetching department:', error);
       throw error;
     }
   }
 
   // Create new department
-  async createDepartment(departmentData: DepartmentDto): Promise<BackendDepartment> {
+  async createDepartment(
+    departmentData: DepartmentDto
+  ): Promise<BackendDepartment> {
     try {
-      const response = await axiosInstance.post<BackendDepartment>(this.baseUrl, departmentData);
+      const response = await axiosInstance.post<BackendDepartment>(
+        this.baseUrl,
+        departmentData
+      );
       return response.data;
     } catch (error) {
-      console.error("Error creating department:", error);
+      console.error('Error creating department:', error);
       throw error;
     }
   }
 
   // Update department
-  async updateDepartment(id: string, departmentData: DepartmentDto): Promise<BackendDepartment> {
+  async updateDepartment(
+    id: string,
+    departmentData: DepartmentDto
+  ): Promise<BackendDepartment> {
     try {
-      const response = await axiosInstance.put<BackendDepartment>(`${this.baseUrl}/${id}`, departmentData);
+      const response = await axiosInstance.put<BackendDepartment>(
+        `${this.baseUrl}/${id}`,
+        departmentData
+      );
       return response.data;
     } catch (error) {
-      console.error("Error updating department:", error);
+      console.error('Error updating department:', error);
       throw error;
     }
   }
@@ -83,10 +98,13 @@ class DepartmentApiService {
   // Delete department
   async deleteDepartment(id: string): Promise<{ deleted: true; id: string }> {
     try {
-      const response = await axiosInstance.delete<{ deleted: true; id: string }>(`${this.baseUrl}/${id}`);
+      const response = await axiosInstance.delete<{
+        deleted: true;
+        id: string;
+      }>(`${this.baseUrl}/${id}`);
       return response.data;
     } catch (error) {
-      console.error("Error deleting department:", error);
+      console.error('Error deleting department:', error);
       throw error;
     }
   }
@@ -97,9 +115,9 @@ class DepartmentApiService {
     return {
       id: backendDept.id,
       name: backendDept.name,
-      nameAr: "", // Arabic name is optional, empty by default
-      description: backendDept.description || "",
-      descriptionAr: "", // Arabic description is optional, empty by default
+      nameAr: '', // Arabic name is optional, empty by default
+      description: backendDept.description || '',
+      descriptionAr: '', // Arabic description is optional, empty by default
     };
   }
 
@@ -113,4 +131,4 @@ class DepartmentApiService {
   }
 }
 
-export const departmentApiService = new DepartmentApiService(); 
+export const departmentApiService = new DepartmentApiService();

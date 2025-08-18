@@ -1,4 +1,4 @@
-import axiosInstance from "./axiosInstance";
+import axiosInstance from './axiosInstance';
 
 // Normalized Tenant interface used by UI
 export interface BackendCompany {
@@ -35,15 +35,17 @@ function normalizeTenant(raw: any): BackendCompany {
 }
 
 class CompanyApiService {
-  private baseUrl = "/tenants";
+  private baseUrl = '/tenants';
 
   async getAllCompanies(): Promise<BackendCompany[]> {
     try {
       const response = await axiosInstance.get<Envelope<any[]>>(this.baseUrl);
-      const items = Array.isArray(response.data?.data) ? response.data.data : [];
+      const items = Array.isArray(response.data?.data)
+        ? response.data.data
+        : [];
       return items.map(normalizeTenant);
     } catch (error) {
-      console.error("Error fetching companies:", error);
+      console.error('Error fetching companies:', error);
       throw error;
     }
   }
@@ -51,10 +53,12 @@ class CompanyApiService {
   // Get company by ID
   async getCompanyById(id: string): Promise<BackendCompany> {
     try {
-      const response = await axiosInstance.get<Envelope<any>>(`${this.baseUrl}/${id}`);
+      const response = await axiosInstance.get<Envelope<any>>(
+        `${this.baseUrl}/${id}`
+      );
       return normalizeTenant(response.data.data);
     } catch (error) {
-      console.error("Error fetching company:", error);
+      console.error('Error fetching company:', error);
       throw error;
     }
   }
@@ -62,21 +66,30 @@ class CompanyApiService {
   // Create new company
   async createCompany(companyData: CompanyDto): Promise<BackendCompany> {
     try {
-      const response = await axiosInstance.post<Envelope<any>>(this.baseUrl, companyData);
+      const response = await axiosInstance.post<Envelope<any>>(
+        this.baseUrl,
+        companyData
+      );
       return normalizeTenant(response.data.data);
     } catch (error) {
-      console.error("Error creating company:", error);
+      console.error('Error creating company:', error);
       throw error;
     }
   }
 
   // Update company
-  async updateCompany(id: string, companyData: CompanyDto): Promise<BackendCompany> {
+  async updateCompany(
+    id: string,
+    companyData: CompanyDto
+  ): Promise<BackendCompany> {
     try {
-      const response = await axiosInstance.put<Envelope<any>>(`${this.baseUrl}/${id}`, companyData);
+      const response = await axiosInstance.put<Envelope<any>>(
+        `${this.baseUrl}/${id}`,
+        companyData
+      );
       return normalizeTenant(response.data.data);
     } catch (error) {
-      console.error("Error updating company:", error);
+      console.error('Error updating company:', error);
       throw error;
     }
   }
@@ -84,10 +97,12 @@ class CompanyApiService {
   // Delete company
   async deleteCompany(id: string): Promise<{ id: string; message?: string }> {
     try {
-      const response = await axiosInstance.delete<DeleteEnvelope>(`${this.baseUrl}/${id}`);
+      const response = await axiosInstance.delete<DeleteEnvelope>(
+        `${this.baseUrl}/${id}`
+      );
       return { id: response.data.id, message: response.data.message };
     } catch (error) {
-      console.error("Error deleting company:", error);
+      console.error('Error deleting company:', error);
       throw error;
     }
   }

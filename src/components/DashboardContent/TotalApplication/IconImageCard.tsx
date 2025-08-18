@@ -1,7 +1,7 @@
-import React from "react";
-import { Box, Typography, Avatar } from "@mui/material";
-import { useOutletContext } from "react-router-dom";
-import { useLanguage } from "../../../context/LanguageContext";
+import React from 'react';
+import { Box, Typography, Avatar } from '@mui/material';
+import { useOutletContext } from 'react-router-dom';
+import { useLanguage } from '../../../context/LanguageContext';
 
 type IconImageCardProps = {
   icon: React.ReactNode;
@@ -19,18 +19,18 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
 
-  const bgColor = darkMode ? "#484c7f" : "#484c7f";
-  const textColor = "#fff";
+  const bgColor = darkMode ? '#484c7f' : '#484c7f';
+  const textColor = '#fff';
 
   // Title translations with language context
   const titleTranslations: Record<string, { en: string; ar: string }> = {
-    "New Employees": { en: "New Employees", ar: "الموظفون الجدد" },
-    "Total Applicants": { en: "Total Applicants", ar: "إجمالي المتقدمين" },
-    "Interviews": { en: "Interviews", ar: "المقابلات" },
-    "Hired": { en: "Hired", ar: "تم التوظيف" },
-    "Pending": { en: "Pending", ar: "قيد الانتظار" },
-    "Rejected": { en: "Rejected", ar: "مرفوض" },
-    "Applications": { en: "Applications", ar: "التطبيقات" },
+    'New Employees': { en: 'New Employees', ar: 'الموظفون الجدد' },
+    'Total Applicants': { en: 'Total Applicants', ar: 'إجمالي المتقدمين' },
+    Interviews: { en: 'Interviews', ar: 'المقابلات' },
+    Hired: { en: 'Hired', ar: 'تم التوظيف' },
+    Pending: { en: 'Pending', ar: 'قيد الانتظار' },
+    Rejected: { en: 'Rejected', ar: 'مرفوض' },
+    Applications: { en: 'Applications', ar: 'التطبيقات' },
     // Add more titles as needed
   };
 
@@ -42,14 +42,14 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
   return (
     <Box
       sx={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         bgcolor: bgColor,
         p: 2,
-        borderRadius: "0.375rem",
+        borderRadius: '0.375rem',
         minHeight: 120,
-        direction: language === "ar" ? "rtl" : "ltr", // RTL/LTR
+        direction: language === 'ar' ? 'rtl' : 'ltr', // RTL/LTR
       }}
     >
       {/* Left Side */}
@@ -60,7 +60,7 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
           sx={{
             width: 22,
             height: 22,
-            backgroundColor: "#fff",
+            backgroundColor: '#fff',
             p: 2,
           }}
         />
@@ -81,12 +81,12 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
       {/* Right Icon */}
       <Box
         sx={{
-          borderRadius: "50%",
+          borderRadius: '50%',
           fontSize: 28,
-          color: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         {icon}

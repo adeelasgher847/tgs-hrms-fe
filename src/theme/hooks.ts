@@ -20,4 +20,4 @@ export const useThemeMode = (): 'light' | 'dark' => {
 export const useIsDarkMode = (): boolean => {
   const { mode } = useTheme();
   return mode === 'dark';
-}; 
+};

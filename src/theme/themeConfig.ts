@@ -237,9 +237,7 @@ export const createAppTheme = (mode: 'light' | 'dark') => {
     components: {
       ...commonThemeOptions.components,
 
-  
-// MuiPickersDay styleOverrides should be applied via ThemeProvider from @mui/x-date-pickers in your app entry point.
-
+      // MuiPickersDay styleOverrides should be applied via ThemeProvider from @mui/x-date-pickers in your app entry point.
 
       // CSS Variables
       MuiCssBaseline: {
@@ -247,7 +245,8 @@ export const createAppTheme = (mode: 'light' | 'dark') => {
           ':root': {
             '--mui-palette-divider': palette.divider,
             '--mui-palette-table-background': palette.table.background,
-            '--mui-palette-table-headerBackground': palette.table.headerBackground,
+            '--mui-palette-table-headerBackground':
+              palette.table.headerBackground,
             '--mui-palette-table-border': palette.table.border,
             '--mui-palette-card-background': palette.card.background,
             '--mui-palette-card-border': palette.card.border,
@@ -259,7 +258,8 @@ export const createAppTheme = (mode: 'light' | 'dark') => {
             '--mui-palette-button-primary': palette.button.primary,
             '--mui-palette-button-primaryHover': palette.button.primaryHover,
             '--mui-palette-button-secondary': palette.button.secondary,
-            '--mui-palette-button-secondaryHover': palette.button.secondaryHover,
+            '--mui-palette-button-secondaryHover':
+              palette.button.secondaryHover,
             '--mui-palette-status-success': palette.status.success,
             '--mui-palette-status-error': palette.status.error,
             '--mui-palette-status-warning': palette.status.warning,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -9,10 +9,10 @@ import {
   MenuItem,
   Box,
   IconButton,
-} from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 
-import { departments, designations } from "../../Data/userMock";
+import { departments, designations } from '../../Data/userMock';
 
 export interface User {
   id?: number;
@@ -31,16 +31,16 @@ interface Props {
   userData?: User;
 }
 
-const roles = ["Admin", "User"];
+const roles = ['Admin', 'User'];
 
 const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
   const [formData, setFormData] = useState<User>({
-    name: "",
-    email: "",
-    password: "",
-    role: "",
-    department: "",
-    designation: "",
+    name: '',
+    email: '',
+    password: '',
+    role: '',
+    department: '',
+    designation: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -57,29 +57,29 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
-      ...(name === "department" && { designation: "" }),
+      ...(name === 'department' && { designation: '' }),
     }));
 
-    if (name === "department") {
+    if (name === 'department') {
       setDesignationList(designations[value] || []);
     }
 
-    setErrors((prev) => ({ ...prev, [name]: "" }));
+    setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.name) newErrors.name = "Full Name is required";
-    if (!formData.email) newErrors.email = "Email is required";
+    if (!formData.name) newErrors.name = 'Full Name is required';
+    if (!formData.email) newErrors.email = 'Email is required';
     if (!userData && !formData.password)
-      newErrors.password = "Password is required";
-    if (!formData.role) newErrors.role = "Role is required";
-    if (!formData.department) newErrors.department = "Department is required";
+      newErrors.password = 'Password is required';
+    if (!formData.role) newErrors.role = 'Role is required';
+    if (!formData.department) newErrors.department = 'Department is required';
     if (!formData.designation)
-      newErrors.designation = "Designation is required";
+      newErrors.designation = 'Designation is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -92,12 +92,12 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
 
   const resetForm = () => {
     setFormData({
-      name: "",
-      email: "",
-      password: "",
-      role: "",
-      department: "",
-      designation: "",
+      name: '',
+      email: '',
+      password: '',
+      role: '',
+      department: '',
+      designation: '',
     });
     setDesignationList([]);
     setErrors({});
@@ -107,22 +107,22 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
     <Dialog open={open} onClose={onClose} fullWidth>
       <DialogTitle
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
-        {userData ? "Edit User" : "Create User"}
+        {userData ? 'Edit User' : 'Create User'}
         <IconButton onClick={onClose}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
       <DialogContent>
-        <Box display="flex" flexWrap="wrap" gap={2} mt={1}>
-          <Box width={{ xs: "100%", sm: "48%" }}>
+        <Box display='flex' flexWrap='wrap' gap={2} mt={1}>
+          <Box width={{ xs: '100%', sm: '48%' }}>
             <TextField
-              label="Full Name"
-              name="name"
+              label='Full Name'
+              name='name'
               fullWidth
               value={formData.name}
               onChange={handleChange}
@@ -130,10 +130,10 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
               helperText={errors.name}
             />
           </Box>
-          <Box width={{ xs: "100%", sm: "48%" }}>
+          <Box width={{ xs: '100%', sm: '48%' }}>
             <TextField
-              label="Email"
-              name="email"
+              label='Email'
+              name='email'
               fullWidth
               value={formData.email}
               onChange={handleChange}
@@ -142,11 +142,11 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
             />
           </Box>
           {!userData && (
-            <Box width={{ xs: "100%", sm: "48%" }}>
+            <Box width={{ xs: '100%', sm: '48%' }}>
               <TextField
-                label="Password"
-                name="password"
-                type="password"
+                label='Password'
+                name='password'
+                type='password'
                 fullWidth
                 value={formData.password}
                 onChange={handleChange}
@@ -155,47 +155,47 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
               />
             </Box>
           )}
-          <Box width={{ xs: "100%", sm: "48%" }}>
+          <Box width={{ xs: '100%', sm: '48%' }}>
             <TextField
               select
-              label="Role"
-              name="role"
+              label='Role'
+              name='role'
               fullWidth
               value={formData.role}
               onChange={handleChange}
               error={!!errors.role}
               helperText={errors.role}
             >
-              {roles.map((role) => (
+              {roles.map(role => (
                 <MenuItem key={role} value={role}>
                   {role}
                 </MenuItem>
               ))}
             </TextField>
           </Box>
-          <Box width={{ xs: "100%", sm: "48%" }}>
+          <Box width={{ xs: '100%', sm: '48%' }}>
             <TextField
               select
-              label="Department"
-              name="department"
+              label='Department'
+              name='department'
               fullWidth
               value={formData.department}
               onChange={handleChange}
               error={!!errors.department}
               helperText={errors.department}
             >
-              {departments.map((dept) => (
+              {departments.map(dept => (
                 <MenuItem key={dept} value={dept}>
                   {dept}
                 </MenuItem>
               ))}
             </TextField>
           </Box>
-          <Box width={{ xs: "100%", sm: "48%" }}>
+          <Box width={{ xs: '100%', sm: '48%' }}>
             <TextField
               select
-              label="Designation"
-              name="designation"
+              label='Designation'
+              name='designation'
               fullWidth
               value={formData.designation}
               onChange={handleChange}
@@ -203,7 +203,7 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
               error={!!errors.designation}
               helperText={errors.designation}
             >
-              {designationList.map((des) => (
+              {designationList.map(des => (
                 <MenuItem key={des} value={des}>
                   {des}
                 </MenuItem>
@@ -211,16 +211,16 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
             </TextField>
           </Box>
         </Box>
-        <DialogActions sx={{ justifyContent: "flex-start", px: 0, pb: 2 }}>
+        <DialogActions sx={{ justifyContent: 'flex-start', px: 0, pb: 2 }}>
           <Button
-            variant="contained"
+            variant='contained'
             onClick={handleSubmit}
             sx={{
-              backgroundColor: "#484c7f",
-              "&:hover": { backgroundColor: "#3b3f6b" },
+              backgroundColor: '#484c7f',
+              '&:hover': { backgroundColor: '#3b3f6b' },
             }}
           >
-            {userData ? "Update" : "Create"}
+            {userData ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
       </DialogContent>

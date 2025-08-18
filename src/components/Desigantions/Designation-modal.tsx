@@ -1,5 +1,5 @@
-import type React from "react";
-import { useState, useEffect } from "react";
+import type React from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -12,9 +12,9 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
-} from "@mui/material";
-import { Close as CloseIcon } from "@mui/icons-material";
-import { useLanguage } from "../../context/LanguageContext";
+} from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Designation {
   id: string;
@@ -39,22 +39,24 @@ export default function DesignationModal({
   isRTL,
 }: DesignationModalProps) {
   const { language } = useLanguage();
-  const getText = (en: string, ar: string) => (language === "ar" ? ar : en);
+  const getText = (en: string, ar: string) => (language === 'ar' ? ar : en);
 
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const [title, setTitle] = useState("");
-  const [titleAr, setTitleAr] = useState("");
-  const [errors, setErrors] = useState<{ title?: string; titleAr?: string }>({});
+  const [title, setTitle] = useState('');
+  const [titleAr, setTitleAr] = useState('');
+  const [errors, setErrors] = useState<{ title?: string; titleAr?: string }>(
+    {}
+  );
 
   useEffect(() => {
     if (designation) {
       setTitle(designation.title);
       setTitleAr(designation.titleAr);
     } else {
-      setTitle("");
-      setTitleAr("");
+      setTitle('');
+      setTitleAr('');
     }
     setErrors({});
   }, [designation, open]);
@@ -64,16 +66,16 @@ export default function DesignationModal({
 
     if (!title.trim()) {
       newErrors.title = getText(
-        "Designation title is required",
-        "عنوان المسمى الوظيفي مطلوب"
+        'Designation title is required',
+        'عنوان المسمى الوظيفي مطلوب'
       );
     }
 
     // Arabic title is optional but if provided, validate it
     if (titleAr.trim() && titleAr.trim().length < 2) {
       newErrors.titleAr = getText(
-        "Arabic title must be at least 2 characters",
-        "العنوان بالعربية يجب أن يكون على الأقل حرفين"
+        'Arabic title must be at least 2 characters',
+        'العنوان بالعربية يجب أن يكون على الأقل حرفين'
       );
     }
 
@@ -89,14 +91,14 @@ export default function DesignationModal({
   };
 
   const handleClose = () => {
-    setTitle("");
-    setTitleAr("");
+    setTitle('');
+    setTitleAr('');
     setErrors({});
     onClose();
   };
 
   const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       handleSubmit();
     }
@@ -106,7 +108,7 @@ export default function DesignationModal({
     <Dialog
       open={open}
       onClose={handleClose}
-      maxWidth="sm"
+      maxWidth='sm'
       fullWidth
       fullScreen={isMobile}
       PaperProps={{
@@ -114,36 +116,36 @@ export default function DesignationModal({
           m: isMobile ? 0 : 2,
         },
       }}
-      dir={isRTL ? "rtl" : "ltr"}
+      dir={isRTL ? 'rtl' : 'ltr'}
     >
       <DialogTitle>
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
-          <Typography variant="h6">
+          <Typography variant='h6'>
             {designation
-              ? getText("Edit Designation", "تعديل المسمى الوظيفي")
-              : getText("Create New Designation", "إنشاء مسمى وظيفي جديد")}
+              ? getText('Edit Designation', 'تعديل المسمى الوظيفي')
+              : getText('Create New Designation', 'إنشاء مسمى وظيفي جديد')}
           </Typography>
-          <IconButton onClick={handleClose} size="small">
+          <IconButton onClick={handleClose} size='small'>
             <CloseIcon />
           </IconButton>
         </Box>
       </DialogTitle>
 
       <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
           <TextField
             label={getText(
-              "Designation Title (English)",
-              "عنوان المسمى الوظيفي (بالإنجليزية)"
+              'Designation Title (English)',
+              'عنوان المسمى الوظيفي (بالإنجليزية)'
             )}
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={e => setTitle(e.target.value)}
             onKeyPress={handleKeyPress}
             error={!!errors.title}
             helperText={errors.title}
@@ -151,40 +153,42 @@ export default function DesignationModal({
             required
             autoFocus={!isMobile}
             inputProps={{
-              dir: "ltr",
+              dir: 'ltr',
             }}
           />
 
           <TextField
             label={getText(
-              "Designation Title (Arabic - Optional)",
-              "عنوان المسمى الوظيفي (بالعربية - اختياري)"
+              'Designation Title (Arabic - Optional)',
+              'عنوان المسمى الوظيفي (بالعربية - اختياري)'
             )}
             value={titleAr}
-            onChange={(e) => setTitleAr(e.target.value)}
+            onChange={e => setTitleAr(e.target.value)}
             onKeyPress={handleKeyPress}
             error={!!errors.titleAr}
             helperText={errors.titleAr}
             fullWidth
             inputProps={{
-              dir: "rtl",
+              dir: 'rtl',
             }}
           />
         </Box>
       </DialogContent>
 
       <DialogActions sx={{ p: 3, pt: 2 }}>
-        <Button onClick={handleClose} color="inherit" size="large">
-          {getText("Cancel", "إلغاء")}
+        <Button onClick={handleClose} color='inherit' size='large'>
+          {getText('Cancel', 'إلغاء')}
         </Button>
         <Button
           onClick={handleSubmit}
-          variant="contained"
+          variant='contained'
           disabled={!title.trim()}
-          size="large"
-          sx={{backgroundColor: "#464b8a"}}
+          size='large'
+          sx={{ backgroundColor: '#464b8a' }}
         >
-          {designation ? getText("Update", "تحديث") : getText("Create", "إنشاء")}
+          {designation
+            ? getText('Update', 'تحديث')
+            : getText('Create', 'إنشاء')}
         </Button>
       </DialogActions>
     </Dialog>

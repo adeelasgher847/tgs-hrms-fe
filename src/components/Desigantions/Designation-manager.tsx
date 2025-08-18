@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -22,25 +22,25 @@ import {
   Pagination,
   Snackbar,
   Alert,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 
-import DesignationModal from "../Desigantions/Designation-modal";
-import DeleteConfirmationDialog from "./Delete-confirmation-dialog";
-import { useLanguage } from "../../context/LanguageContext";
+import DesignationModal from '../Desigantions/Designation-modal';
+import DeleteConfirmationDialog from './Delete-confirmation-dialog';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   designationApiService,
   type FrontendDesignation,
   type FrontendDepartment,
-} from "../../api/designationApi";
+} from '../../api/designationApi';
 
 export default function DesignationManager() {
   const { language, setLanguage } = useLanguage();
-  const isRTL = language === "ar";
+  const isRTL = language === 'ar';
 
   const [designations, setDesignations] = useState<FrontendDesignation[]>([]);
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
@@ -53,20 +53,20 @@ export default function DesignationManager() {
   const [designationToDelete, setDesignationToDelete] =
     useState<FrontendDesignation | null>(null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<
-    string | "all"
-  >("all");
+    string | 'all'
+  >('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
-    severity: "success" | "error";
+    severity: 'success' | 'error';
   }>({
     open: false,
-    message: "",
-    severity: "success",
+    message: '',
+    severity: 'success',
   });
 
-  const getText = (en: string, ar: string) => (language === "ar" ? ar : en);
+  const getText = (en: string, ar: string) => (language === 'ar' ? ar : en);
 
   // Fetch all departments from backend
   const fetchDepartments = async () => {
@@ -74,18 +74,18 @@ export default function DesignationManager() {
       setDepartmentsLoading(true);
       const backendDepartments =
         await designationApiService.getAllDepartments();
-      const frontendDepartments = backendDepartments.map((department) =>
+      const frontendDepartments = backendDepartments.map(department =>
         designationApiService.convertBackendDepartmentToFrontend(department)
       );
       setDepartments(frontendDepartments);
     } catch (error: unknown) {
-      console.error("Error fetching departments:", error);
+      console.error('Error fetching departments:', error);
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to fetch departments";
+        error instanceof Error ? error.message : 'Failed to fetch departments';
       setSnackbar({
         open: true,
         message: errorMessage,
-        severity: "error",
+        severity: 'error',
       });
     } finally {
       setDepartmentsLoading(false);
@@ -98,18 +98,18 @@ export default function DesignationManager() {
       setLoading(true);
       const backendDesignations =
         await designationApiService.getDesignationsByDepartment(departmentId);
-      const frontendDesignations = backendDesignations.map((designation) =>
+      const frontendDesignations = backendDesignations.map(designation =>
         designationApiService.convertBackendToFrontend(designation)
       );
       setDesignations(frontendDesignations);
     } catch (error: unknown) {
-      console.error("Error fetching designations:", error);
+      console.error('Error fetching designations:', error);
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to fetch designations";
+        error instanceof Error ? error.message : 'Failed to fetch designations';
       setSnackbar({
         open: true,
         message: errorMessage,
-        severity: "error",
+        severity: 'error',
       });
     } finally {
       setLoading(false);
@@ -122,20 +122,20 @@ export default function DesignationManager() {
       setLoading(true);
       const backendDesignations =
         await designationApiService.getAllDesignations();
-      const frontendDesignations = backendDesignations.map((designation) =>
+      const frontendDesignations = backendDesignations.map(designation =>
         designationApiService.convertBackendToFrontend(designation)
       );
       setDesignations(frontendDesignations);
     } catch (error: unknown) {
-      console.error("Error fetching all designations:", error);
+      console.error('Error fetching all designations:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to fetch all designations";
+          : 'Failed to fetch all designations';
       setSnackbar({
         open: true,
         message: errorMessage,
-        severity: "error",
+        severity: 'error',
       });
     } finally {
       setLoading(false);
@@ -149,7 +149,7 @@ export default function DesignationManager() {
 
   // Load designations when department changes
   useEffect(() => {
-    if (selectedDepartmentId !== "all") {
+    if (selectedDepartmentId !== 'all') {
       fetchDesignations(selectedDepartmentId);
     } else {
       fetchAllDesignations();
@@ -181,27 +181,27 @@ export default function DesignationManager() {
         // Add Arabic title from form data
         const updatedDesignation: FrontendDesignation = {
           ...updatedFrontendDesignation,
-          titleAr: data.titleAr || "",
+          titleAr: data.titleAr || '',
         };
 
-        setDesignations((prev) =>
-          prev.map((d) =>
+        setDesignations(prev =>
+          prev.map(d =>
             d.id === editingDesignation.id ? updatedDesignation : d
           )
         );
 
         setSnackbar({
           open: true,
-          message: "Designation updated successfully",
-          severity: "success",
+          message: 'Designation updated successfully',
+          severity: 'success',
         });
       } else {
         // Create new designation
-        if (selectedDepartmentId === "all") {
+        if (selectedDepartmentId === 'all') {
           setSnackbar({
             open: true,
-            message: "Please select a department first",
-            severity: "error",
+            message: 'Please select a department first',
+            severity: 'error',
           });
           return;
         }
@@ -219,27 +219,27 @@ export default function DesignationManager() {
         // Add Arabic title from form data
         const newDesignation: FrontendDesignation = {
           ...newFrontendDesignation,
-          titleAr: data.titleAr || "",
+          titleAr: data.titleAr || '',
         };
 
-        setDesignations((prev) => [...prev, newDesignation]);
+        setDesignations(prev => [...prev, newDesignation]);
 
         setSnackbar({
           open: true,
-          message: "Designation created successfully",
-          severity: "success",
+          message: 'Designation created successfully',
+          severity: 'success',
         });
       }
       setModalOpen(false);
       setEditingDesignation(null);
     } catch (error: unknown) {
-      console.error("Error saving designation:", error);
+      console.error('Error saving designation:', error);
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to save designation";
+        error instanceof Error ? error.message : 'Failed to save designation';
       setSnackbar({
         open: true,
         message: errorMessage,
-        severity: "error",
+        severity: 'error',
       });
     }
   };
@@ -248,24 +248,24 @@ export default function DesignationManager() {
     if (designationToDelete) {
       try {
         await designationApiService.deleteDesignation(designationToDelete.id);
-        setDesignations((prev) =>
-          prev.filter((d) => d.id !== designationToDelete.id)
+        setDesignations(prev =>
+          prev.filter(d => d.id !== designationToDelete.id)
         );
         setSnackbar({
           open: true,
-          message: "Designation deleted successfully",
-          severity: "success",
+          message: 'Designation deleted successfully',
+          severity: 'success',
         });
       } catch (error: unknown) {
-        console.error("Error deleting designation:", error);
+        console.error('Error deleting designation:', error);
         const errorMessage =
           error instanceof Error
             ? error.message
-            : "Failed to delete designation";
+            : 'Failed to delete designation';
         setSnackbar({
           open: true,
           message: errorMessage,
-          severity: "error",
+          severity: 'error',
         });
       }
     }
@@ -274,9 +274,9 @@ export default function DesignationManager() {
   };
 
   const filteredDesignations =
-    selectedDepartmentId === "all"
+    selectedDepartmentId === 'all'
       ? designations
-      : designations.filter((d) => d.departmentId === selectedDepartmentId);
+      : designations.filter(d => d.departmentId === selectedDepartmentId);
 
   const itemsPerPage = 10;
   const totalPages = Math.ceil(filteredDesignations.length / itemsPerPage);
@@ -286,25 +286,25 @@ export default function DesignationManager() {
   );
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4 }} dir={isRTL ? "rtl" : "ltr"}>
+    <Container maxWidth='xl' sx={{ mt: 4 }} dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Top Bar */}
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
           mb: 3,
           gap: 2,
         }}
       >
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          {getText("Designations", "المسميات الوظيفية")}
+        <Typography variant='h4' sx={{ fontWeight: 700 }}>
+          {getText('Designations', 'المسميات الوظيفية')}
         </Typography>
 
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <ToggleButtonGroup
-            size="small"
+            size='small'
             value={language}
             exclusive
             onChange={(_, newLang) => {
@@ -318,7 +318,7 @@ export default function DesignationManager() {
           </ToggleButtonGroup>
 
           <Button
-            variant="contained"
+            variant='contained'
             startIcon={<AddIcon />}
             onClick={() => {
               setEditingDesignation(null);
@@ -328,10 +328,10 @@ export default function DesignationManager() {
               minWidth: 200,
               fontWeight: 600,
               py: 1,
-              backgroundColor: "#464b8a",
+              backgroundColor: '#464b8a',
             }}
           >
-            {getText("Create Designation", "إنشاء مسمى وظيفي")}
+            {getText('Create Designation', 'إنشاء مسمى وظيفي')}
           </Button>
         </Box>
       </Box>
@@ -340,30 +340,30 @@ export default function DesignationManager() {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <FormControl fullWidth>
-            <InputLabel id="dept-select">
-              {getText("Filter by Department", "تصفية حسب القسم")}
+            <InputLabel id='dept-select'>
+              {getText('Filter by Department', 'تصفية حسب القسم')}
             </InputLabel>
             <Select
-              labelId="dept-select"
+              labelId='dept-select'
               value={selectedDepartmentId}
-              label={getText("Filter by Department", "تصفية حسب القسم")}
-              onChange={(e) => {
+              label={getText('Filter by Department', 'تصفية حسب القسم')}
+              onChange={e => {
                 setSelectedDepartmentId(
-                  e.target.value === "all" ? "all" : e.target.value
+                  e.target.value === 'all' ? 'all' : e.target.value
                 );
                 setCurrentPage(1);
               }}
               disabled={departmentsLoading}
             >
-              <MenuItem value="all">
-                {getText("All Departments", "كل الأقسام")}
+              <MenuItem value='all'>
+                {getText('All Departments', 'كل الأقسام')}
               </MenuItem>
               {departmentsLoading ? (
                 <MenuItem disabled>
-                  {getText("Loading departments...", "جاري تحميل الأقسام...")}
+                  {getText('Loading departments...', 'جاري تحميل الأقسام...')}
                 </MenuItem>
               ) : (
-                departments.map((d) => (
+                departments.map(d => (
                   <MenuItem key={d.id} value={d.id}>
                     {getText(d.name, d.nameAr)}
                   </MenuItem>
@@ -377,45 +377,45 @@ export default function DesignationManager() {
       {/* Designation Table */}
       <Card>
         <CardContent>
-          <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
-            {filteredDesignations.length}{" "}
-            {getText("designation(s)", "مسمى وظيفي")}
+          <Typography variant='body2' sx={{ mb: 2, color: 'text.secondary' }}>
+            {filteredDesignations.length}{' '}
+            {getText('designation(s)', 'مسمى وظيفي')}
           </Typography>
 
-          <TableContainer component={Paper} variant="outlined">
+          <TableContainer component={Paper} variant='outlined'>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell
                     sx={{
-                      fontWeight: "bold",
+                      fontWeight: 'bold',
                       ...(isRTL
-                        ? { textAlign: "right" }
-                        : { textAlign: "left" }),
+                        ? { textAlign: 'right' }
+                        : { textAlign: 'left' }),
                     }}
                   >
-                    {getText("Designation Title", "المسمى الوظيفي")}
+                    {getText('Designation Title', 'المسمى الوظيفي')}
                   </TableCell>
-                  {selectedDepartmentId === "all" && (
+                  {selectedDepartmentId === 'all' && (
                     <TableCell
                       sx={{
-                        fontWeight: "bold",
+                        fontWeight: 'bold',
                         ...(isRTL
-                          ? { textAlign: "right" }
-                          : { textAlign: "left" }),
+                          ? { textAlign: 'right' }
+                          : { textAlign: 'left' }),
                       }}
                     >
-                      {getText("Department", "القسم")}
+                      {getText('Department', 'القسم')}
                     </TableCell>
                   )}
                   <TableCell
-                    align="center"
+                    align='center'
                     sx={{
-                      fontWeight: "bold",
+                      fontWeight: 'bold',
                       minWidth: 120,
                     }}
                   >
-                    {getText("Actions", "الإجراءات")}
+                    {getText('Actions', 'الإجراءات')}
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -423,95 +423,95 @@ export default function DesignationManager() {
                 {loading ? (
                   <TableRow>
                     <TableCell
-                      colSpan={selectedDepartmentId === "all" ? 3 : 2}
-                      align="center"
-                      sx={{ color: "text.secondary" }}
+                      colSpan={selectedDepartmentId === 'all' ? 3 : 2}
+                      align='center'
+                      sx={{ color: 'text.secondary' }}
                     >
                       {getText(
-                        "Loading designations...",
-                        "جاري تحميل المسميات الوظيفية..."
+                        'Loading designations...',
+                        'جاري تحميل المسميات الوظيفية...'
                       )}
                     </TableCell>
                   </TableRow>
                 ) : paginatedData.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={selectedDepartmentId === "all" ? 3 : 2}
-                      align="center"
-                      sx={{ color: "text.secondary" }}
+                      colSpan={selectedDepartmentId === 'all' ? 3 : 2}
+                      align='center'
+                      sx={{ color: 'text.secondary' }}
                     >
-                      {selectedDepartmentId === "all"
+                      {selectedDepartmentId === 'all'
                         ? getText(
-                            "No designations found",
-                            "لا توجد مسميات وظيفية"
+                            'No designations found',
+                            'لا توجد مسميات وظيفية'
                           )
                         : getText(
-                            "No designations found for this department",
-                            "لا توجد مسميات وظيفية لهذا القسم"
+                            'No designations found for this department',
+                            'لا توجد مسميات وظيفية لهذا القسم'
                           )}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedData.map((designation) => {
+                  paginatedData.map(designation => {
                     // Find department name for this designation
                     const department = departments.find(
-                      (d) => d.id === designation.departmentId
+                      d => d.id === designation.departmentId
                     );
                     const departmentName = department
                       ? getText(department.name, department.nameAr)
-                      : "Unknown Department";
+                      : 'Unknown Department';
 
                     return (
                       <TableRow key={designation.id} hover>
                         <TableCell
                           sx={{
                             ...(isRTL
-                              ? { textAlign: "right" }
-                              : { textAlign: "left" }),
+                              ? { textAlign: 'right' }
+                              : { textAlign: 'left' }),
                           }}
                         >
                           {getText(designation.title, designation.titleAr)}
                         </TableCell>
-                        {selectedDepartmentId === "all" && (
+                        {selectedDepartmentId === 'all' && (
                           <TableCell
                             sx={{
                               ...(isRTL
-                                ? { textAlign: "right" }
-                                : { textAlign: "left" }),
+                                ? { textAlign: 'right' }
+                                : { textAlign: 'left' }),
                             }}
                           >
                             {departmentName}
                           </TableCell>
                         )}
-                        <TableCell align="center">
+                        <TableCell align='center'>
                           <Box
                             sx={{
-                              display: "flex",
+                              display: 'flex',
                               gap: 1,
-                              justifyContent: "center",
+                              justifyContent: 'center',
                             }}
                           >
                             <IconButton
-                              color="primary"
-                              size="small"
+                              color='primary'
+                              size='small'
                               onClick={() => {
                                 setEditingDesignation(designation);
                                 setModalOpen(true);
                               }}
-                              title={getText("Edit", "تعديل")}
+                              title={getText('Edit', 'تعديل')}
                             >
-                              <EditIcon fontSize="small" />
+                              <EditIcon fontSize='small' />
                             </IconButton>
                             <IconButton
-                              color="error"
-                              size="small"
+                              color='error'
+                              size='small'
                               onClick={() => {
                                 setDesignationToDelete(designation);
                                 setDeleteDialogOpen(true);
                               }}
-                              title={getText("Delete", "حذف")}
+                              title={getText('Delete', 'حذف')}
                             >
-                              <DeleteIcon fontSize="small" />
+                              <DeleteIcon fontSize='small' />
                             </IconButton>
                           </Box>
                         </TableCell>
@@ -526,18 +526,18 @@ export default function DesignationManager() {
           {totalPages > 1 && (
             <Box
               sx={{
-                display: "flex",
-                justifyContent: "center",
+                display: 'flex',
+                justifyContent: 'center',
                 mt: 3,
                 p: 1,
-                borderRadius: "8px",
+                borderRadius: '8px',
               }}
             >
               <Pagination
                 count={totalPages}
                 page={currentPage}
                 onChange={(_, page) => setCurrentPage(page)}
-                color="primary"
+                color='primary'
               />
             </Box>
           )}
@@ -560,7 +560,7 @@ export default function DesignationManager() {
         designationTitle={
           designationToDelete
             ? getText(designationToDelete.title, designationToDelete.titleAr)
-            : ""
+            : ''
         }
         isRTL={isRTL}
       />
@@ -570,12 +570,12 @@ export default function DesignationManager() {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Alert
           onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
-          sx={{ width: "100%" }}
+          sx={{ width: '100%' }}
         >
           {snackbar.message}
         </Alert>

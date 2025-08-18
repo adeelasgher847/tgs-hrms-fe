@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -7,14 +7,13 @@ import {
   DialogActions,
   Button,
   IconButton,
-
-} from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import CloseIcon from "@mui/icons-material/Close";
-import { v4 as uuidv4 } from "uuid";
-import type { Holiday } from "../../type/Holiday";
+} from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import CloseIcon from '@mui/icons-material/Close';
+import { v4 as uuidv4 } from 'uuid';
+import type { Holiday } from '../../type/Holiday';
 
 interface AddHolidayDialogProps {
   open: boolean;
@@ -27,16 +26,15 @@ const AddHolidayDialog: React.FC<AddHolidayDialogProps> = ({
   onClose,
   onAdd,
 }) => {
-  
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState('');
   const [date, setDate] = useState<Date | null>(null);
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
   const [errors, setErrors] = useState<{ title?: string; date?: string }>({});
 
   const handleSubmit = () => {
     const newErrors: typeof errors = {};
-    if (!title.trim()) newErrors.title = "Title is required";
-    if (!date) newErrors.date = "Date is required";
+    if (!title.trim()) newErrors.title = 'Title is required';
+    if (!date) newErrors.date = 'Date is required';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -46,7 +44,7 @@ const AddHolidayDialog: React.FC<AddHolidayDialogProps> = ({
     const newHoliday: Holiday = {
       id: uuidv4(),
       title: title.trim(),
-      date: date?.toISOString().split("T")[0],
+      date: date?.toISOString().split('T')[0],
       description: description.trim(),
     };
 
@@ -55,20 +53,20 @@ const AddHolidayDialog: React.FC<AddHolidayDialogProps> = ({
   };
 
   const handleClose = () => {
-    setTitle("");
+    setTitle('');
     setDate(null);
-    setDescription("");
+    setDescription('');
     setErrors({});
     onClose();
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth='sm'>
       <DialogTitle>
         Add Holiday
         <IconButton
           onClick={handleClose}
-          sx={{ position: "absolute", right: 8, top: 8 }}
+          sx={{ position: 'absolute', right: 8, top: 8 }}
         >
           <CloseIcon />
         </IconButton>
@@ -76,24 +74,24 @@ const AddHolidayDialog: React.FC<AddHolidayDialogProps> = ({
 
       <DialogContent>
         <TextField
-          label="Title"
+          label='Title'
           fullWidth
-          margin="dense"
+          margin='dense'
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={e => setTitle(e.target.value)}
           error={Boolean(errors.title)}
           helperText={errors.title}
         />
 
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <DatePicker
-            label="Date"
+            label='Date'
             value={date}
-            onChange={(newDate) => setDate(newDate)}
+            onChange={newDate => setDate(newDate)}
             slotProps={{
               textField: {
                 fullWidth: true,
-                margin: "dense",
+                margin: 'dense',
                 error: Boolean(errors.date),
                 helperText: errors.date,
               },
@@ -102,18 +100,18 @@ const AddHolidayDialog: React.FC<AddHolidayDialogProps> = ({
         </LocalizationProvider>
 
         <TextField
-          label="Description"
+          label='Description'
           fullWidth
-          margin="dense"
+          margin='dense'
           multiline
           rows={3}
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={e => setDescription(e.target.value)}
         />
       </DialogContent>
 
-      <DialogActions sx={{ justifyContent: "flex-end", p: 2 }}>
-        <Button variant="contained" onClick={handleSubmit}>
+      <DialogActions sx={{ justifyContent: 'flex-end', p: 2 }}>
+        <Button variant='contained' onClick={handleSubmit}>
           Add
         </Button>
       </DialogActions>

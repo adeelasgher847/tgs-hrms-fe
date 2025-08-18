@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Box,
   Typography,
@@ -12,10 +12,10 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
-} from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import { useOutletContext } from "react-router-dom";
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import { useOutletContext } from 'react-router-dom';
 
 interface Employee {
   id: string;
@@ -56,7 +56,7 @@ interface EmployeeListProps {
 
 interface OutletContext {
   darkMode: boolean;
-  language: "en" | "ar";
+  language: 'en' | 'ar';
 }
 
 const EmployeeList: React.FC<EmployeeListProps> = ({
@@ -72,29 +72,29 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const { darkMode } = useOutletContext<OutletContext>();
 
   // Dark mode styles
-  const textColor = darkMode ? "#e0e0e0" : "#000";
-  const cardBg = darkMode ? "#2a2a2a" : "#f9f9f9";
-  const borderColor = darkMode ? "#555" : "#ccc";
+  const textColor = darkMode ? '#e0e0e0' : '#000';
+  const cardBg = darkMode ? '#2a2a2a' : '#f9f9f9';
+  const borderColor = darkMode ? '#555' : '#ccc';
   const secondaryTextColor = darkMode
-    ? "#9a9a9a"
+    ? '#9a9a9a'
     : theme.palette.text.secondary;
 
-  console.log("Employees data:", employees);
-  console.log("First employee department:", employees[0]?.department);
-  console.log("First employee designation:", employees[0]?.designation);
+  console.log('Employees data:', employees);
+  console.log('First employee department:', employees[0]?.department);
+  console.log('First employee designation:', employees[0]?.designation);
   return (
-    <Box sx={{ pt: 2 }}>
+    <Box sx={{ py: 2 }}>
       <Typography
-        variant="h5"
+        variant='h5'
         gutterBottom
-        textAlign="start"
+        textAlign='start'
         sx={{ color: textColor }}
       >
-        {direction === "rtl" ? "قائمة الموظفين" : "Employee List"}
+        {direction === 'rtl' ? 'قائمة الموظفين' : 'Employee List'}
       </Typography>
 
       {loading && (
-        <Box display="flex" justifyContent="center" py={4}>
+        <Box display='flex' justifyContent='center' py={4}>
           <CircularProgress />
         </Box>
       )}
@@ -104,45 +104,46 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
         sx={{
           backgroundColor: cardBg,
           border: `1px solid ${borderColor}`,
-          overflowX: "auto",
+          overflowX: 'auto',
+          boxShadow: 'none',
         }}
       >
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
-                {direction === "rtl" ? "الاسم" : "Name"}
+              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+                {direction === 'rtl' ? 'الاسم' : 'Name'}
               </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
-                {direction === "rtl" ? "البريد الإلكتروني" : "Email"}
+              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+                {direction === 'rtl' ? 'البريد الإلكتروني' : 'Email'}
               </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
-                {direction === "rtl" ? "رقم الهاتف" : "Phone"}
+              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+                {direction === 'rtl' ? 'رقم الهاتف' : 'Phone'}
               </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
-                {direction === "rtl" ? "القسم" : "Department"}
+              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+                {direction === 'rtl' ? 'القسم' : 'Department'}
               </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: "bold" }}>
-                {direction === "rtl" ? "الوظيفة" : "Designation"}
+              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+                {direction === 'rtl' ? 'الوظيفة' : 'Designation'}
               </TableCell>
               {(onDelete || onEdit) && (
                 <TableCell
-                  sx={{ color: textColor, fontWeight: "bold", width: "120px" }}
+                  sx={{ color: textColor, fontWeight: 'bold', width: '120px' }}
                 >
-                  {direction === "rtl" ? "إجراءات" : "Actions"}
+                  {direction === 'rtl' ? 'إجراءات' : 'Actions'}
                 </TableCell>
               )}
             </TableRow>
           </TableHead>
           <TableBody>
-            {employees.map((emp) => (
+            {employees.map(emp => (
               <TableRow
                 key={emp.id}
                 sx={{
-                  "&:hover": {
+                  '&:hover': {
                     backgroundColor: darkMode
-                      ? "rgba(255,255,255,0.08)"
-                      : "rgba(0,0,0,0.04)",
+                      ? 'rgba(255,255,255,0.08)'
+                      : 'rgba(0,0,0,0.04)',
                   },
                 }}
               >
@@ -155,20 +156,20 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                   {emp.department?.name ||
                     departments[emp.departmentId] ||
                     emp.departmentId ||
-                    "—"}
+                    '—'}
                 </TableCell>
                 <TableCell sx={{ color: textColor }}>
                   {emp.designation?.title ||
                     designations[emp.designationId] ||
                     emp.designationId ||
-                    "—"}
+                    '—'}
                 </TableCell>
                 {(onDelete || onEdit) && (
                   <TableCell>
                     {onEdit && (
                       <Tooltip
                         title={
-                          direction === "rtl" ? "تعديل الموظف" : "Edit Employee"
+                          direction === 'rtl' ? 'تعديل الموظف' : 'Edit Employee'
                         }
                       >
                         <IconButton
@@ -183,18 +184,18 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                     {onDelete && (
                       <Tooltip
                         title={
-                          direction === "rtl" ? "حذف الموظف" : "Delete Employee"
+                          direction === 'rtl' ? 'حذف الموظف' : 'Delete Employee'
                         }
                       >
                         <IconButton
                           onClick={() => onDelete(emp.id)}
                           disabled={loading}
                           sx={{
-                            color: darkMode ? "#ff6b6b" : "#d32f2f",
-                            "&:hover": {
+                            color: darkMode ? '#ff6b6b' : '#d32f2f',
+                            '&:hover': {
                               backgroundColor: darkMode
-                                ? "rgba(255,107,107,0.1)"
-                                : "rgba(211,47,47,0.1)",
+                                ? 'rgba(255,107,107,0.1)'
+                                : 'rgba(211,47,47,0.1)',
                             },
                           }}
                         >

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -13,21 +13,21 @@ import {
   useMediaQuery,
   Alert,
   Snackbar,
-} from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import { useOutletContext } from "react-router-dom";
-import AddEmployeeForm from "./AddEmployeeForm";
-import EmployeeList from "./EmployeeList";
-import employeeApi from "../../api/employeeApi";
-import type { EmployeeDto } from "../../api/employeeApi";
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import { useOutletContext } from 'react-router-dom';
+import AddEmployeeForm from './AddEmployeeForm';
+import EmployeeList from './EmployeeList';
+import employeeApi from '../../api/employeeApi';
+import type { EmployeeDto } from '../../api/employeeApi';
 import {
   departmentApiService,
   type BackendDepartment,
-} from "../../api/departmentApi";
+} from '../../api/departmentApi';
 import {
   designationApiService,
   type BackendDesignation,
-} from "../../api/designationApi";
+} from '../../api/designationApi';
 
 interface Employee {
   id: string;
@@ -59,13 +59,13 @@ interface Employee {
 
 interface OutletContext {
   darkMode: boolean;
-  language: "en" | "ar";
+  language: 'en' | 'ar';
 }
 
 const EmployeeManager: React.FC = () => {
   const theme = useTheme();
   const direction = theme.direction;
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { darkMode } = useOutletContext<OutletContext>();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<null | Employee>(null);
@@ -74,8 +74,8 @@ const EmployeeManager: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const [departmentFilter, setDepartmentFilter] = useState("");
-  const [designationFilter, setDesignationFilter] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [designationFilter, setDesignationFilter] = useState('');
   const [departments, setDepartments] = useState<Record<string, string>>({});
   const [designations, setDesignations] = useState<Record<string, string>>({});
   const [departmentList, setDepartmentList] = useState<BackendDepartment[]>([]);
@@ -85,21 +85,21 @@ const EmployeeManager: React.FC = () => {
   const [loadingFilters, setLoadingFilters] = useState(false);
 
   // Dark mode
-  const bgColor = darkMode ? "#1b1b1b" : "#fff";
-  const textColor = darkMode ? "#e0e0e0" : "#000";
-  const filterBtn = darkMode ? "#555" : "#484c7f";
+  const bgColor = darkMode ? '#1b1b1b' : '#fff';
+  const textColor = darkMode ? '#e0e0e0' : '#000';
+  const filterBtn = darkMode ? '#555' : '#484c7f';
 
   // Dark mode input styles
   const darkInputStyles = darkMode
     ? {
-        "& .MuiOutlinedInput-root": {
-          "& fieldset": { borderColor: "#555" },
-          "&:hover fieldset": { borderColor: "#888" },
-          "&.Mui-focused fieldset": { borderColor: "#90caf9" },
+        '& .MuiOutlinedInput-root': {
+          '& fieldset': { borderColor: '#555' },
+          '&:hover fieldset': { borderColor: '#888' },
+          '&.Mui-focused fieldset': { borderColor: '#90caf9' },
         },
-        "& .MuiInputLabel-root": { color: "#ccc" },
-        "& input, & .MuiSelect-select": { color: "#eee" },
-        backgroundColor: "#2e2e2e",
+        '& .MuiInputLabel-root': { color: '#ccc' },
+        '& input, & .MuiSelect-select': { color: '#eee' },
+        backgroundColor: '#2e2e2e',
       }
     : {};
 
@@ -115,24 +115,24 @@ const EmployeeManager: React.FC = () => {
       // Load all departments
       const deptData = await departmentApiService.getAllDepartments();
       const deptMap: Record<string, string> = {};
-      deptData.forEach((dept) => {
+      deptData.forEach(dept => {
         deptMap[dept.id] = dept.name;
       });
       setDepartments(deptMap);
       setDepartmentList(deptData);
-      console.log("Loaded departments:", deptData);
+      console.log('Loaded departments:', deptData);
 
       // Load all designations
       const desigData = await designationApiService.getAllDesignations();
       const desigMap: Record<string, string> = {};
-      desigData.forEach((desig) => {
+      desigData.forEach(desig => {
         desigMap[desig.id] = desig.title;
       });
       setDesignations(desigMap);
       setDesignationList(desigData);
-      console.log("Loaded designations:", desigData);
+      console.log('Loaded designations:', desigData);
     } catch (error) {
-      console.error("Error loading departments and designations:", error);
+      console.error('Error loading departments and designations:', error);
     } finally {
       setLoadingFilters(false);
     }
@@ -145,8 +145,8 @@ const EmployeeManager: React.FC = () => {
       const data = await employeeApi.getAllEmployees();
       setEmployees(data);
     } catch (err) {
-      setError("Failed to load employees");
-      console.error("Error loading employees:", err);
+      setError('Failed to load employees');
+      console.error('Error loading employees:', err);
     } finally {
       setLoading(false);
     }
@@ -157,32 +157,34 @@ const EmployeeManager: React.FC = () => {
       setLoading(true);
       setError(null);
       const newEmployee = await employeeApi.createEmployee(employeeData);
-      console.log("New employee created:", newEmployee);
+      console.log('New employee created:', newEmployee);
 
       // If the new employee doesn't have department/designation objects,
       // we need to fetch the full employee data or reload the list
       if (!newEmployee.department || !newEmployee.designation) {
         console.log(
-          "New employee missing department/designation objects, reloading list..."
+          'New employee missing department/designation objects, reloading list...'
         );
         await loadEmployees(); // Reload the full list to get complete data
       } else {
-        setEmployees((prev) => [...prev, newEmployee]);
+        setEmployees(prev => [...prev, newEmployee]);
       }
 
       // Reload department and designation mappings
       await loadDepartmentsAndDesignations();
 
-      setSuccessMessage("Employee added successfully!");
+      setSuccessMessage(
+        'Employee added successfully! A password reset link has been sent to their email.'
+      );
       setOpen(false);
 
       return { success: true };
     } catch (err: unknown) {
-      console.error("Error adding employee:", err);
+      console.error('Error adding employee:', err);
 
       // Debug: Log the actual error response structure
-      if (err && typeof err === "object" && "response" in err) {
-        console.log("Backend error response:", JSON.stringify(err, null, 2));
+      if (err && typeof err === 'object' && 'response' in err) {
+        console.log('Backend error response:', JSON.stringify(err, null, 2));
       }
 
       // Handle backend validation errors
@@ -197,7 +199,7 @@ const EmployeeManager: React.FC = () => {
         const fieldErrors: Record<string, string> = {};
 
         // Handle validation errors array format (common in NestJS)
-        if (responseData.errors && typeof responseData.errors === "object") {
+        if (responseData.errors && typeof responseData.errors === 'object') {
           Object.entries(responseData.errors).forEach(([field, messages]) => {
             if (Array.isArray(messages) && messages.length > 0) {
               fieldErrors[field] = messages[0]; // Take first error message
@@ -211,50 +213,50 @@ const EmployeeManager: React.FC = () => {
 
           // Parse common backend error patterns
           if (
-            backendError.toLowerCase().includes("email") &&
-            backendError.toLowerCase().includes("already exists")
+            backendError.toLowerCase().includes('email') &&
+            backendError.toLowerCase().includes('already exists')
           ) {
-            fieldErrors.email = "Email already exists";
+            fieldErrors.email = 'Email already exists';
           } else if (
-            backendError.toLowerCase().includes("user") &&
-            backendError.toLowerCase().includes("already exists")
+            backendError.toLowerCase().includes('user') &&
+            backendError.toLowerCase().includes('already exists')
           ) {
-            fieldErrors.email = "User already exists in this tenant";
+            fieldErrors.email = 'User already exists in this tenant';
           } else if (
-            backendError.toLowerCase().includes("phone") &&
-            backendError.toLowerCase().includes("already exists")
+            backendError.toLowerCase().includes('phone') &&
+            backendError.toLowerCase().includes('already exists')
           ) {
-            fieldErrors.phone = "Phone number already exists";
+            fieldErrors.phone = 'Phone number already exists';
           } else if (
-            backendError.toLowerCase().includes("first") &&
-            backendError.toLowerCase().includes("required")
+            backendError.toLowerCase().includes('first') &&
+            backendError.toLowerCase().includes('required')
           ) {
-            fieldErrors.first_name = "First name is required";
+            fieldErrors.first_name = 'First name is required';
           } else if (
-            backendError.toLowerCase().includes("last") &&
-            backendError.toLowerCase().includes("required")
+            backendError.toLowerCase().includes('last') &&
+            backendError.toLowerCase().includes('required')
           ) {
-            fieldErrors.last_name = "Last name is required";
+            fieldErrors.last_name = 'Last name is required';
           } else if (
-            backendError.toLowerCase().includes("email") &&
-            backendError.toLowerCase().includes("required")
+            backendError.toLowerCase().includes('email') &&
+            backendError.toLowerCase().includes('required')
           ) {
-            fieldErrors.email = "Email is required";
+            fieldErrors.email = 'Email is required';
           } else if (
-            backendError.toLowerCase().includes("phone") &&
-            backendError.toLowerCase().includes("required")
+            backendError.toLowerCase().includes('phone') &&
+            backendError.toLowerCase().includes('required')
           ) {
-            fieldErrors.phone = "Phone is required";
+            fieldErrors.phone = 'Phone is required';
           } else if (
-            backendError.toLowerCase().includes("designation") &&
-            backendError.toLowerCase().includes("required")
+            backendError.toLowerCase().includes('designation') &&
+            backendError.toLowerCase().includes('required')
           ) {
-            fieldErrors.designationId = "Designation is required";
+            fieldErrors.designationId = 'Designation is required';
           } else if (
-            backendError.toLowerCase().includes("password") &&
-            backendError.toLowerCase().includes("required")
+            backendError.toLowerCase().includes('password') &&
+            backendError.toLowerCase().includes('required')
           ) {
-            fieldErrors.password = "Password is required";
+            fieldErrors.password = 'Password is required';
           } else {
             // Generic error for other cases
             fieldErrors.general = backendError;
@@ -267,8 +269,8 @@ const EmployeeManager: React.FC = () => {
       }
 
       // Generic error
-      setError("Failed to add employee");
-      return { success: false, errors: { general: "Failed to add employee" } };
+      setError('Failed to add employee');
+      return { success: false, errors: { general: 'Failed to add employee' } };
     } finally {
       setLoading(false);
     }
@@ -281,19 +283,27 @@ const EmployeeManager: React.FC = () => {
       setEditing(fresh as unknown as Employee);
       setOpen(true);
     } catch (e) {
-      setError("Failed to load employee details");
+      setError('Failed to load employee details');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateEmployee = async (updates: Partial<EmployeeDto> & { designationId?: string; password?: string }) => {
+  const handleUpdateEmployee = async (
+    updates: Partial<EmployeeDto> & {
+      designationId?: string;
+      password?: string;
+    }
+  ) => {
     if (!editing) return { success: false } as any;
     try {
       setLoading(true);
       setError(null);
       // Ensure a valid designationId is sent if user selected a new one; otherwise keep current
-      const nextDesignationId = updates.designationId && updates.designationId !== "" ? updates.designationId : editing.designationId;
+      const nextDesignationId =
+        updates.designationId && updates.designationId !== ''
+          ? updates.designationId
+          : editing.designationId;
       const updated = await employeeApi.updateEmployee(editing.id, {
         first_name: (updates as any).first_name,
         last_name: (updates as any).last_name,
@@ -303,13 +313,13 @@ const EmployeeManager: React.FC = () => {
         designationId: nextDesignationId,
       });
       await loadEmployees();
-      setSuccessMessage("Employee updated successfully!");
+      setSuccessMessage('Employee updated successfully!');
       setOpen(false);
       setEditing(null);
       return { success: true };
     } catch (err) {
-      console.error("Error updating employee:", err);
-      setError("Failed to update employee");
+      console.error('Error updating employee:', err);
+      setError('Failed to update employee');
       return { success: false } as any;
     } finally {
       setLoading(false);
@@ -321,23 +331,23 @@ const EmployeeManager: React.FC = () => {
       setLoading(true);
       setError(null);
       await employeeApi.deleteEmployee(id);
-      setEmployees((prev) => prev.filter((emp) => emp.id !== id));
-      setSuccessMessage("Employee deleted successfully!");
+      setEmployees(prev => prev.filter(emp => emp.id !== id));
+      setSuccessMessage('Employee deleted successfully!');
     } catch (err) {
-      setError("Failed to delete employee");
-      console.error("Error deleting employee:", err);
+      setError('Failed to delete employee');
+      console.error('Error deleting employee:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleClearFilters = () => {
-    setDepartmentFilter("");
-    setDesignationFilter("");
+    setDepartmentFilter('');
+    setDesignationFilter('');
   };
 
   const filteredEmployees = useMemo(() => {
-    return employees.filter((emp) => {
+    return employees.filter(emp => {
       if (departmentFilter && emp.departmentId !== departmentFilter)
         return false;
       if (designationFilter && emp.designationId !== designationFilter)
@@ -346,66 +356,66 @@ const EmployeeManager: React.FC = () => {
     });
   }, [employees, departmentFilter, designationFilter]);
 
-  const getLabel = (en: string, ar: string) => (direction === "rtl" ? ar : en);
+  const getLabel = (en: string, ar: string) => (direction === 'rtl' ? ar : en);
 
   return (
     <Box
       sx={{
-        backgroundColor: bgColor,
+        // backgroundColor: bgColor,
         color: textColor,
-        minHeight: "100vh",
+        minHeight: '100vh',
       }}
     >
       {/* Add Employee Button */}
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        flexDirection={isMobile ? "column" : "row"}
+        display='flex'
+        justifyContent='space-between'
+        alignItems='flex-start'
+        flexDirection={isMobile ? 'column' : 'row'}
         gap={2}
         mb={2}
       >
         <Stack
-          direction={isMobile ? "column" : "row"}
+          direction={isMobile ? 'column' : 'row'}
           spacing={2}
           sx={{
             flex: 1,
-            width: isMobile ? "100%" : "auto",
+            width: isMobile ? '100%' : 'auto',
           }}
         >
           {/* Department Filter */}
           <TextField
             select
             fullWidth
-            label={getLabel("Department", "القسم")}
+            label={getLabel('Department', 'القسم')}
             value={departmentFilter}
-            onChange={(e) => {
+            onChange={e => {
               setDepartmentFilter(e.target.value);
-              setDesignationFilter(""); // Reset designation on department change
+              setDesignationFilter(''); // Reset designation on department change
             }}
-            size="small"
+            size='small'
             sx={{
-              width: isMobile ? "100%" : 190,
+              width: isMobile ? '100%' : 190,
               my: 0.5,
-              "& .MuiInputBase-input": {
+              '& .MuiInputBase-input': {
                 // textAlign: "center", center the selected text
               },
-              "& .MuiInputBase-root": {
-                padding: "0px 8px",
-                minHeight: "10px",
+              '& .MuiInputBase-root': {
+                padding: '0px 8px',
+                minHeight: '10px',
               },
-              "& .MuiInputLabel-root": {
-                fontSize: "0.85rem",
-                left: direction === "rtl" ? "unset" : undefined, // for RTL support
-                right: direction === "rtl" ? "1.75rem" : undefined,
+              '& .MuiInputLabel-root': {
+                fontSize: '0.85rem',
+                left: direction === 'rtl' ? 'unset' : undefined, // for RTL support
+                right: direction === 'rtl' ? '1.75rem' : undefined,
               },
               ...darkInputStyles,
             }}
           >
-            <MenuItem value="">
-              {getLabel("All Departments", "كل الأقسام")}
+            <MenuItem value=''>
+              {getLabel('All Departments', 'كل الأقسام')}
             </MenuItem>
-            {departmentList.map((dept) => (
+            {departmentList.map(dept => (
               <MenuItem key={dept.id} value={dept.id}>
                 {dept.name}
               </MenuItem>
@@ -416,32 +426,32 @@ const EmployeeManager: React.FC = () => {
           <TextField
             select
             fullWidth
-            label={getLabel("Designation", "المسمى الوظيفي")}
+            label={getLabel('Designation', 'المسمى الوظيفي')}
             value={designationFilter}
-            onChange={(e) => setDesignationFilter(e.target.value)}
+            onChange={e => setDesignationFilter(e.target.value)}
             disabled={!departmentFilter || loadingFilters}
-            size="small"
+            size='small'
             sx={{
-              width: isMobile ? "100%" : 190,
+              width: isMobile ? '100%' : 190,
               my: 0.5,
-              "& .MuiInputBase-root": {
-                padding: "0px 8px",
-                minHeight: "10px",
+              '& .MuiInputBase-root': {
+                padding: '0px 8px',
+                minHeight: '10px',
               },
-              "& .MuiInputLabel-root": {
-                fontSize: "0.85rem",
-                left: direction === "rtl" ? "unset" : undefined, // for RTL support
-                right: direction === "rtl" ? "1.75rem" : undefined,
+              '& .MuiInputLabel-root': {
+                fontSize: '0.85rem',
+                left: direction === 'rtl' ? 'unset' : undefined, // for RTL support
+                right: direction === 'rtl' ? '1.75rem' : undefined,
               },
               ...darkInputStyles,
             }}
           >
-            <MenuItem value="">
-              {getLabel("All Designations", "كل المسميات")}
+            <MenuItem value=''>
+              {getLabel('All Designations', 'كل المسميات')}
             </MenuItem>
             {designationList
-              .filter((des) => des.departmentId === departmentFilter)
-              .map((des) => (
+              .filter(des => des.departmentId === departmentFilter)
+              .map(des => (
                 <MenuItem key={des.id} value={des.id}>
                   {des.title}
                 </MenuItem>
@@ -449,40 +459,40 @@ const EmployeeManager: React.FC = () => {
           </TextField>
 
           <Button
-            variant="outlined"
+            variant='outlined'
             onClick={handleClearFilters}
             sx={{
               borderColor: filterBtn,
               color: textColor,
-              width: isMobile ? "100%" : "auto",
-              "&:hover": {
-                borderColor: darkMode ? "#888" : "#999",
+              width: isMobile ? '100%' : 'auto',
+              '&:hover': {
+                borderColor: darkMode ? '#888' : '#999',
                 backgroundColor: darkMode
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.04)",
+                  ? 'rgba(255,255,255,0.08)'
+                  : 'rgba(0,0,0,0.04)',
               },
             }}
           >
-            {getLabel("Clear Filters", "مسح الفلاتر")}
+            {getLabel('Clear Filters', 'مسح الفلاتر')}
           </Button>
         </Stack>
 
         {/* Add Employee Button */}
         <Button
-          variant="contained"
+          variant='contained'
           onClick={() => {
             setEditing(null);
             setOpen(true);
           }}
           sx={{
-            backgroundColor: darkMode ? "#605bd4" : "#484c7f",
-            width: isMobile ? "100%" : "auto",
-            "&:hover": {
-              backgroundColor: darkMode ? "#726df0" : "#5b56a0",
+            backgroundColor: darkMode ? '#605bd4' : '#484c7f',
+            width: isMobile ? '100%' : 'auto',
+            '&:hover': {
+              backgroundColor: darkMode ? '#726df0' : '#5b56a0',
             },
           }}
         >
-          {getLabel("Add Employee", "إضافة موظف")}
+          {getLabel('Add Employee', 'إضافة موظف')}
         </Button>
       </Box>
 
@@ -501,12 +511,12 @@ const EmployeeManager: React.FC = () => {
         open={!!error}
         autoHideDuration={6000}
         onClose={() => setError(null)}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Alert
           onClose={() => setError(null)}
-          severity="error"
-          sx={{ width: "100%" }}
+          severity='error'
+          sx={{ width: '100%' }}
         >
           {error}
         </Alert>
@@ -516,12 +526,12 @@ const EmployeeManager: React.FC = () => {
         open={!!successMessage}
         autoHideDuration={6000}
         onClose={() => setSuccessMessage(null)}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Alert
           onClose={() => setSuccessMessage(null)}
-          severity="success"
-          sx={{ width: "100%" }}
+          severity='success'
+          sx={{ width: '100%' }}
         >
           {successMessage}
         </Alert>
@@ -535,7 +545,7 @@ const EmployeeManager: React.FC = () => {
           setEditing(null);
         }}
         fullWidth
-        maxWidth="md"
+        maxWidth='md'
         PaperProps={{
           sx: {
             backgroundColor: bgColor,
@@ -545,21 +555,21 @@ const EmployeeManager: React.FC = () => {
       >
         <DialogTitle
           sx={{
-            textAlign: direction === "rtl" ? "right" : "left",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            textAlign: direction === 'rtl' ? 'right' : 'left',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             color: textColor,
           }}
         >
           {editing
-            ? getLabel("Edit Employee", "تعديل الموظف")
-            : getLabel("Add New Employee", "إضافة موظف جديد")}
+            ? getLabel('Edit Employee', 'تعديل الموظف')
+            : getLabel('Add New Employee', 'إضافة موظف جديد')}
 
           <IconButton
             onClick={() => setOpen(false)}
-            sx={{ color: darkMode ? "#ccc" : theme.palette.grey[500] }}
-            aria-label="close"
+            sx={{ color: darkMode ? '#ccc' : theme.palette.grey[500] }}
+            aria-label='close'
           >
             <CloseIcon />
           </IconButton>
@@ -567,7 +577,7 @@ const EmployeeManager: React.FC = () => {
 
         <DialogContent>
           <AddEmployeeForm
-            key={editing ? `edit-${editing.id}` : "create"}
+            key={editing ? `edit-${editing.id}` : 'create'}
             onSubmit={editing ? handleUpdateEmployee : handleAddEmployee}
             initialData={
               editing
