@@ -3,7 +3,8 @@ import { Box, Typography } from '@mui/material';
 
 import EmployeesInfoChart from './DashboardContent/EmployeesInfoChart';
 import AvailabilityCardsGrid from './DashboardContent/AvailabilityCard/AvailabilityCardsGrid';
-import TotalEmployeesDonut from './DashboardContent/TotalEmployeesDonut';
+import GenderPercentageChart from './DashboardContent/GenderPercentageChart';
+
 import UpcomingInterviews from './DashboardContent/ComingInterview/UpcomingInterviews';
 import PerformanceChart from './DashboardContent/PerformanceChart';
 import TopPerformersProps from './DashboardContent/TopPerformance/TopPerformersProps';
@@ -65,7 +66,7 @@ const Dashboard: React.FC = () => {
               <AvailabilityCardsGrid />
             </Box>
             <Box flex={1}>
-              <TotalEmployeesDonut />
+              <GenderPercentageChart />
             </Box>
           </Box>
 
