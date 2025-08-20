@@ -134,11 +134,12 @@ const AttendanceCheck = () => {
             border: '1px solid #eee',
             flex: 1,
             height: '100%',
+            boxShadow:'none'
           }}
         >
           <Typography variant='h6'>Good morning, {userName}</Typography>
           <Typography color='text.secondary'>{currentTime}</Typography>
-          <Box display='flex' gap={3} mt={3}>
+          <Box display='flex' gap={3} mt={3} mb={2}>
             <Box display='flex' alignItems='center'>
               <LoginIcon sx={{ color: '#4CAF50', mr: 1 }} />
               <Typography>

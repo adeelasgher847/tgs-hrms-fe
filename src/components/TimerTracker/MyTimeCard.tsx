@@ -12,6 +12,8 @@ import {
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import timesheetApi, { type TimesheetEntry } from '../../api/timesheetApi';
 import SheetList from './SheetList';
+import { Link as RouterLink } from "react-router-dom";
+
 
 const POLL_INTERVAL_MS = 5000; // poll backend every 5s to detect external check-outs
 
@@ -19,7 +21,6 @@ const MyTimerCard: React.FC = () => {
   const [currentSession, setCurrentSession] = useState<TimesheetEntry | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [elapsed, setElapsed] = useState<number>(0); // seconds
-  const [showTimesheet, setShowTimesheet] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Fetch latest session from backend and update local state.
@@ -149,7 +150,14 @@ const MyTimerCard: React.FC = () => {
 
   return (
     <>
-      <Card>
+      <Card sx={{
+            background: "#ffffff",
+            borderRadius: 2,
+            position: 'relative',
+            border: '1px solid #eee',
+            flex: 1,
+            height: '100%',
+            boxShadow:'none'}}>
         <CardContent>
           {/* header */}
           <Box display="flex" alignItems="center" gap={2}>
@@ -192,7 +200,7 @@ const MyTimerCard: React.FC = () => {
                   onClick={handleStart}
                   disabled={loading}
                 >
-                  Clock In
+                  Work start
                 </Button>
               ) : (
                 <Button
@@ -201,13 +209,16 @@ const MyTimerCard: React.FC = () => {
                   onClick={handleEnd}
                   disabled={loading}
                 >
-                  Clock Out
+                  Work end
                 </Button>
               )}
 
               {/* Toggle Timesheet view */}
-              <Button variant="outlined" onClick={() => setShowTimesheet((s) => !s)}>
-                {showTimesheet ? 'Hide Timesheet' : 'My Timesheet'}
+              <Button variant="outlined"
+              component={RouterLink}
+               to="TimesheetLayout"
+             >
+               My Timesheet
               </Button>
             </Box>
           )}
@@ -220,13 +231,6 @@ const MyTimerCard: React.FC = () => {
                 : 'No active session — Clock In to start a new session.'}
             </Typography>
           </Box>
-
-          {/* Timesheet Table */}
-          {showTimesheet && (
-            <Box mt={3}>
-              <SheetList />
-            </Box>
-          )}
         </CardContent>
       </Card>
 
