@@ -4,6 +4,10 @@ import {
   useMediaQuery,
   useTheme,
   CircularProgress,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import {
@@ -31,6 +35,7 @@ export default function EmployeesInfoChart() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [joiningData, setJoiningData] = useState<EmployeeJoiningReport[]>([]);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   // Fetch employee joining report data
   useEffect(() => {
@@ -41,6 +46,16 @@ export default function EmployeesInfoChart() {
         const data = await getEmployeeJoiningReport();
         console.log('EmployeesInfoChart - API Response:', data);
         setJoiningData(data);
+
+        // Set the most recent year as default selected year
+        if (data.length > 0) {
+          const years = [...new Set(data.map(item => item.year))].sort(
+            (a, b) => b - a
+          );
+          setSelectedYear(years[0]); // Set most recent year as default
+          console.log('EmployeesInfoChart - Available years:', years);
+          console.log('EmployeesInfoChart - Default selected year:', years[0]);
+        }
       } catch (err) {
         console.error('Error fetching employee joining report:', err);
         setError('Failed to load employee joining data');
@@ -60,10 +75,24 @@ export default function EmployeesInfoChart() {
   const textColor = darkMode ? '#8f8f8f' : '#000';
   const borderColor = darkMode ? '#252525' : '#f0f0f0';
 
+  // Get unique years from API data
+  const availableYears = [...new Set(joiningData.map(item => item.year))].sort(
+    (a, b) => b - a
+  );
+
+  // Filter data by selected year
+  const filteredData = selectedYear
+    ? joiningData.filter(item => item.year === selectedYear)
+    : [];
+
+  console.log('EmployeesInfoChart - Available years:', availableYears);
+  console.log('EmployeesInfoChart - Selected year:', selectedYear);
+  console.log('EmployeesInfoChart - Filtered data:', filteredData);
+
   // Translations
   const chartTitle = {
-    en: 'Employees Info',
-    ar: 'معلومات الموظفين',
+    en: `Employees Info ${selectedYear ? `(${selectedYear})` : ''}`,
+    ar: `معلومات الموظفين ${selectedYear ? `(${selectedYear})` : ''}`,
   };
 
   const months: Record<string, Record<string, string>> = {
@@ -115,8 +144,8 @@ export default function EmployeesInfoChart() {
         'Dec',
       ].indexOf(monthStr) + 1;
 
-    // Find corresponding API data for this month
-    const apiData = joiningData.find(item => item.month === monthIndex);
+    // Find corresponding API data for this month in the filtered data
+    const apiData = filteredData.find(item => item.month === monthIndex);
 
     // Debug logging
     console.log(
@@ -155,9 +184,47 @@ export default function EmployeesInfoChart() {
         direction: language === 'ar' ? 'rtl' : 'ltr',
       }}
     >
-      <Typography fontWeight='bold' mb={2} color={textColor}>
-        {chartTitle[language]}
-      </Typography>
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        mb={2}
+      >
+        <Typography fontWeight='bold' color={textColor}>
+          {chartTitle[language]}
+        </Typography>
+
+        {availableYears.length > 0 && (
+          <FormControl size='small' sx={{ minWidth: 120 }}>
+            <InputLabel sx={{ color: textColor }}>
+              {language === 'ar' ? 'السنة' : 'Year'}
+            </InputLabel>
+            <Select
+              value={selectedYear || ''}
+              onChange={e => setSelectedYear(Number(e.target.value))}
+              label={language === 'ar' ? 'السنة' : 'Year'}
+              sx={{
+                color: textColor,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#464b8a',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#464b8a',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#464b8a',
+                },
+              }}
+            >
+              {availableYears.map(year => (
+                <MenuItem key={year} value={year}>
+                  {year}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+      </Box>
 
       {loading ? (
         <Box
