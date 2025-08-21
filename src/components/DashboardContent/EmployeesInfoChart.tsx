@@ -1,4 +1,10 @@
-import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Box,
+  Typography,
+  useMediaQuery,
+  useTheme,
+  CircularProgress,
+} from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import {
   LineChart,
@@ -10,25 +16,45 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { useLanguage } from '../../context/LanguageContext';
-
-const rawData = [
-  { date: '01 Jan', value: 30 },
-  { date: '01 Feb', value: 50 },
-  { date: '22 Feb', value: 70 },
-  { date: '15 Mar', value: 55 },
-  { date: '06 Apr', value: 85 },
-  { date: '27 Apr', value: 65 },
-  { date: '18 May', value: 70 },
-  { date: '08 Jun', value: 50 },
-  { date: '29 Jun', value: 60 },
-  { date: '21 Jul', value: 65 },
-];
+import { useState, useEffect } from 'react';
+import {
+  getEmployeeJoiningReport,
+  type EmployeeJoiningReport,
+} from '../../api/employeeApi';
 
 export default function EmployeesInfoChart() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [joiningData, setJoiningData] = useState<EmployeeJoiningReport[]>([]);
+
+  // Fetch employee joining report data
+  useEffect(() => {
+    const fetchJoiningData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getEmployeeJoiningReport();
+        console.log('EmployeesInfoChart - API Response:', data);
+        setJoiningData(data);
+      } catch (err) {
+        console.error('Error fetching employee joining report:', err);
+        setError('Failed to load employee joining data');
+        // Use fallback data if API fails - only August data
+        setJoiningData([
+          { month: 8, year: 2025, total: 8 }, // Only August data as fallback
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJoiningData();
+  }, []);
 
   const bgColor = darkMode ? '#111' : '#fff';
   const textColor = darkMode ? '#8f8f8f' : '#000';
@@ -48,13 +74,73 @@ export default function EmployeesInfoChart() {
     May: { en: 'May', ar: 'مايو' },
     Jun: { en: 'Jun', ar: 'يونيو' },
     Jul: { en: 'Jul', ar: 'يوليو' },
+    Aug: { en: 'Aug', ar: 'أغسطس' },
+    Sep: { en: 'Sep', ar: 'سبتمبر' },
+    Oct: { en: 'Oct', ar: 'أكتوبر' },
+    Nov: { en: 'Nov', ar: 'نوفمبر' },
+    Dec: { en: 'Dec', ar: 'ديسمبر' },
   };
 
-  // Translate data
-  const translatedData = rawData.map(item => {
-    const [day, month] = item.date.split(' ');
+  // Process API data for chart - show only month names
+  const originalDates = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug', // Added August to show backend data
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  // Map API data to original chart format
+  const chartData = originalDates.map(monthStr => {
+    const monthIndex =
+      [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ].indexOf(monthStr) + 1;
+
+    // Find corresponding API data for this month
+    const apiData = joiningData.find(item => item.month === monthIndex);
+
+    // Debug logging
+    console.log(
+      `EmployeesInfoChart - Mapping ${monthStr} (month ${monthIndex}):`,
+      {
+        apiData,
+        hasApiData: !!apiData,
+        value: apiData ? apiData.total : 0,
+      }
+    );
+
+    // Use API data if available, otherwise use zero (no mock data)
+    const value = apiData ? apiData.total : 0;
+
     return {
-      date: `${day} ${months[month][language] || month}`,
+      date: monthStr,
+      value: value,
+    };
+  });
+
+  // Translate data - show month names in selected language
+  const translatedData = chartData.map(item => {
+    return {
+      date: months[item.date]?.[language] || item.date,
       value: item.value,
     };
   });
@@ -73,75 +159,99 @@ export default function EmployeesInfoChart() {
         {chartTitle[language]}
       </Typography>
 
-      <Box
-        sx={{
-          '& svg': {
-            outline: 'none',
-            border: 'none',
-          },
-        }}
-      >
-        <ResponsiveContainer width='100%' height={170}>
-          <LineChart
-            data={translatedData}
-            margin={{ top: 0, right: 20, bottom: 20, left: -40 }}
-          >
-            <CartesianGrid horizontal={false} vertical={false} />
-            <XAxis
-              dataKey='date'
-              tick={props => {
-                const { x, y, payload } = props;
-                return (
-                  <text
-                    x={x}
-                    y={y}
-                    dy={16}
-                    fontSize={12}
-                    transform={isMobile ? `rotate(-45, ${x}, ${y})` : undefined}
-                    textAnchor={isMobile ? 'end' : 'middle'}
-                    fill={textColor}
-                  >
-                    {payload.value}
-                  </text>
-                );
-              }}
-              height={isMobile ? 50 : 30}
-              interval={0}
-              axisLine={{ stroke: '#f0f0f0' }}
-              tickLine={{ stroke: '#f0f0f0' }}
-            />
+      {loading ? (
+        <Box
+          display='flex'
+          justifyContent='center'
+          alignItems='center'
+          height={200}
+        >
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Box
+          display='flex'
+          justifyContent='center'
+          alignItems='center'
+          height={200}
+        >
+          <Typography color='error' variant='body2'>
+            {error}
+          </Typography>
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            '& svg': {
+              outline: 'none',
+              border: 'none',
+            },
+          }}
+        >
+          <ResponsiveContainer width='100%' height={170}>
+            <LineChart
+              data={translatedData}
+              margin={{ top: 0, right: 20, bottom: 20, left: -40 }}
+            >
+              <CartesianGrid horizontal={false} vertical={false} />
+              <XAxis
+                dataKey='date'
+                tick={props => {
+                  const { x, y, payload } = props;
+                  return (
+                    <text
+                      x={x}
+                      y={y}
+                      dy={16}
+                      fontSize={12}
+                      transform={
+                        isMobile ? `rotate(-45, ${x}, ${y})` : undefined
+                      }
+                      textAnchor={isMobile ? 'end' : 'middle'}
+                      fill={textColor}
+                    >
+                      {payload.value}
+                    </text>
+                  );
+                }}
+                height={isMobile ? 50 : 30}
+                interval={0}
+                axisLine={{ stroke: '#f0f0f0' }}
+                tickLine={{ stroke: '#f0f0f0' }}
+              />
 
-            <YAxis
-              stroke='#f0f0f0'
-              axisLine={{ stroke: '#f0f0f0' }}
-              tickLine={false}
-              tick={false}
-            />
+              <YAxis
+                stroke='#f0f0f0'
+                axisLine={{ stroke: '#f0f0f0' }}
+                tickLine={false}
+                tick={false}
+              />
 
-            <Tooltip
-              contentStyle={{
-                backgroundColor: darkMode ? '#1e1e1e' : '#fff',
-                border: '1px solid #ccc',
-                borderRadius: '6px',
-                color: darkMode ? '#fff' : '#000',
-                fontSize: '14px',
-              }}
-              labelStyle={{
-                color: darkMode ? '#ccc' : '#333',
-                fontWeight: 600,
-              }}
-            />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+                  border: '1px solid #ccc',
+                  borderRadius: '6px',
+                  color: darkMode ? '#fff' : '#000',
+                  fontSize: '14px',
+                }}
+                labelStyle={{
+                  color: darkMode ? '#ccc' : '#333',
+                  fontWeight: 600,
+                }}
+              />
 
-            <Line
-              type='monotone'
-              dataKey='value'
-              stroke='#f5558d'
-              strokeWidth={3}
-              dot={{ r: 3, fill: '#ffc107' }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </Box>
+              <Line
+                type='monotone'
+                dataKey='value'
+                stroke='#f5558d'
+                strokeWidth={3}
+                dot={{ r: 3, fill: '#ffc107' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </Box>
+      )}
     </Box>
   );
 }

@@ -1,5 +1,17 @@
 import axiosInstance from './axiosInstance';
 
+export interface EmployeeJoiningReport {
+  month: number;
+  year: number;
+  total: number;
+}
+
+export interface GenderPercentage {
+  male: number;
+  female: number;
+  total: number;
+}
+
 // Normalized Employee shape used in UI (matches EmployeeManager expectations)
 export interface BackendEmployee {
   id: string;
@@ -165,6 +177,12 @@ function normalizeEmployee(raw: RawEmployee): BackendEmployee {
   };
 }
 
+export interface EmployeeJoiningReport {
+  month: number;
+  year: number;
+  total: number;
+}
+
 class EmployeeApiService {
   private baseUrl = '/employees';
 
@@ -239,7 +257,17 @@ class EmployeeApiService {
     updates: EmployeeUpdateDto
   ): Promise<BackendEmployee> {
     try {
-      const payload: Record<string, any> = {};
+      const payload: Partial<
+        Pick<
+          EmployeeUpdateDto,
+          | 'first_name'
+          | 'last_name'
+          | 'email'
+          | 'phone'
+          | 'password'
+          | 'designationId'
+        >
+      > = {};
       if (updates.first_name !== undefined)
         payload.first_name = updates.first_name;
       if (updates.last_name !== undefined)
@@ -249,7 +277,8 @@ class EmployeeApiService {
       if (updates.password !== undefined && updates.password !== '')
         payload.password = updates.password;
       if (updates.designationId && updates.designationId.trim() !== '') {
-        payload.designation_id = updates.designationId;
+        // @ts-expect-error: API expects 'designation_id', but TS type only allows 'designationId'
+        payload['designation_id'] = updates.designationId;
       }
       const response = await axiosInstance.put<RawEmployee>(
         `${this.baseUrl}/${id}`,
@@ -274,7 +303,38 @@ class EmployeeApiService {
       throw error;
     }
   }
+
+  // Get gender percentage for dashboard
+  async getGenderPercentage(): Promise<GenderPercentage> {
+    try {
+      console.log('EmployeeApiService - Fetching gender percentage...');
+      const response = await axiosInstance.get<GenderPercentage>(
+        `${this.baseUrl}/gender-percentage`
+      );
+      console.log(
+        'EmployeeApiService - Gender percentage response:',
+        response.data
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching gender percentage:', error);
+      throw error;
+    }
+  }
 }
+
+// Get employee joining report
+export const getEmployeeJoiningReport = async (): Promise<
+  EmployeeJoiningReport[]
+> => {
+  try {
+    const response = await axiosInstance.get('/employees/joining-report');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching employee joining report:', error);
+    throw error;
+  }
+};
 
 const employeeApi = new EmployeeApiService();
 export default employeeApi;
