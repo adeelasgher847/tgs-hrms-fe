@@ -333,5 +333,39 @@ export const getEmployeeJoiningReport = async (): Promise<
   }
 };
 
+// Get attendance this month
+export const getAttendanceThisMonth = async (): Promise<{
+  status?: string;
+  data?: { total_attendance: number };
+  message?: string;
+  totalAttendance?: number;
+}> => {
+  try {
+    const response = await axiosInstance.get(
+      '/employees/attendance-this-month'
+    );
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching attendance this month:', error);
+    throw error; // Re-throw the error so component can handle it
+  }
+};
+
+// Get leaves this month
+export const getLeavesThisMonth = async (): Promise<{
+  status?: string;
+  data?: { total_leaves: number };
+  message?: string;
+  totalLeaves?: number;
+}> => {
+  try {
+    const response = await axiosInstance.get('/employees/leaves-this-month');
+    return response.data;
+  } catch (error: unknown) {
+    console.error('Error fetching leaves this month:', error);
+    throw error; // Re-throw the error so component can handle it
+  }
+};
+
 const employeeApi = new EmployeeApiService();
 export default employeeApi;
