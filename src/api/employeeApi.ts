@@ -70,6 +70,7 @@ export interface EmployeeDto {
   phone: string;
   password?: string; // Made optional since backend will generate temporary password
   designationId: string; // UX carries department selection separately
+  gender: string; // <-- Add gender
 }
 
 export interface EmployeeUpdateDto {
@@ -79,6 +80,7 @@ export interface EmployeeUpdateDto {
   phone?: string;
   password?: string;
   designationId?: string;
+  gender?: string; // <-- Optionally add gender for updates
 }
 
 type EmployeeFilters = {
@@ -219,6 +221,7 @@ class EmployeeApiService {
         phone: employeeData.phone,
         password: employeeData.password,
         designation_id: employeeData.designationId,
+        gender: employeeData.gender, // <-- Add gender to payload
       };
       const response = await axiosInstance.post<RawEmployee>(
         this.baseUrl,
