@@ -4,9 +4,7 @@ import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
-
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
-
 const AttendanceCheck = () => {
   const [status, setStatus] = useState<AttendanceStatus>('Not Checked In');
   const [punchInTime, setPunchInTime] = useState<string | null>(null);
@@ -15,7 +13,6 @@ const AttendanceCheck = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
-
   const getCurrentUserId = () => {
     const userStr = localStorage.getItem('user');
     if (!userStr) return null;
@@ -27,7 +24,6 @@ const AttendanceCheck = () => {
       return null;
     }
   };
-
   const fetchToday = async () => {
     setError(null);
     const userId = getCurrentUserId();
@@ -59,7 +55,6 @@ const AttendanceCheck = () => {
       setError("Failed to fetch today's attendance summary.");
     }
   };
-
   useEffect(() => {
     fetchToday();
     const timer = setInterval(
@@ -69,7 +64,6 @@ const AttendanceCheck = () => {
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   const handleCheckIn = async () => {
     setLoading(true);
     setError(null);
@@ -85,7 +79,6 @@ const AttendanceCheck = () => {
       setLoading(false);
     }
   };
-
   const handleCheckOut = async () => {
     setLoading(true);
     setError(null);
@@ -100,7 +93,6 @@ const AttendanceCheck = () => {
       setLoading(false);
     }
   };
-
   // Disable rules:
   // - Check In disabled while loading OR when currently in an open session
   // - Check Out disabled while loading OR when not in an open session

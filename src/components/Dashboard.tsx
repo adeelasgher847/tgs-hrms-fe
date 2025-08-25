@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 
 import EmployeesInfoChart from './DashboardContent/EmployeesInfoChart';
 import AvailabilityCardsGrid from './DashboardContent/AvailabilityCard/AvailabilityCardsGrid';
@@ -30,18 +30,22 @@ const Dashboard: React.FC = () => {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage(); // 👈 use the context
   const lang = labels[language]; // 👈 get the labels
+  const theme = useTheme();
 
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        color: darkMode ? '#fff' : '#000',
+        color: theme.palette.text.primary,
       }}
     >
       <Typography
         variant='h4'
         mb={2}
-        sx={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
+        sx={{ 
+          direction: language === 'ar' ? 'rtl' : 'ltr',
+          color: darkMode ? '#8f8f8f' : '#000'
+        }}
       >
         {lang.title}
       </Typography>
@@ -70,19 +74,19 @@ const Dashboard: React.FC = () => {
             </Box>
           </Box>
 
-          <PerformanceChart />
+          {/* <PerformanceChart /> */}
         </Box>
 
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {/* <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <IconImageCardProps />
           <ApplicationStats />
           <UpcomingInterviews />
-        </Box>
+        </Box> */}
       </Box>
 
-      <Box mt={2}>
+      {/* <Box mt={2}>
         <TopPerformersProps />
-      </Box>
+      </Box> */}
     </Box>
   );
 };

@@ -263,8 +263,14 @@ const Forget = () => {
                       sx={{ mt: 1 }}
                       InputProps={{
                         sx: {
-                          backgroundColor: '#eee',
-                          borderRadius: '8px',
+                             backgroundColor: '#eee',
+                        borderRadius: '8px',
+                        '&.Mui-focused, &:active': {
+                          backgroundColor: 'white',
+                        },
+                        "& fieldset": {border: "none"},
+                         "&:hover fieldset": {border: "none"},
+                         "&.Mui-focused fieldset": {border: "none"},
                         },
                       }}
                     />

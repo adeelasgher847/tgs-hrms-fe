@@ -11,20 +11,19 @@ import {
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import timesheetApi, { type TimesheetEntry } from '../../api/timesheetApi';
-import SheetList from './SheetList';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from "react-router-dom";
 
-const POLL_INTERVAL_MS = 5000; // poll backend every 5s to detect external check-outs
+
+const POLL_INTERVAL_MS = 5000;
 
 const MyTimerCard: React.FC = () => {
   const [currentSession, setCurrentSession] = useState<TimesheetEntry | null>(
     null
   );
   const [loading, setLoading] = useState<boolean>(false);
-  const [elapsed, setElapsed] = useState<number>(0); // seconds
+  const [elapsed, setElapsed] = useState<number>(0); 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Fetch latest session from backend and update local state.
   const fetchLatestSession = async () => {
     try {
       const response = await timesheetApi.getUserTimesheet();
@@ -36,7 +35,6 @@ const MyTimerCard: React.FC = () => {
     }
   };
 
-  // On mount: initial fetch + start polling
   useEffect(() => {
     let pollId: number | null = null;
 
@@ -45,7 +43,6 @@ const MyTimerCard: React.FC = () => {
       /* already handled inside */
     });
 
-    // start polling
     pollId = window.setInterval(() => {
       fetchLatestSession().catch(() => {});
     }, POLL_INTERVAL_MS);
@@ -53,10 +50,9 @@ const MyTimerCard: React.FC = () => {
     return () => {
       if (pollId) window.clearInterval(pollId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // run only once on mount
+  }, []);
 
-  // Timer effect: updates elapsed seconds while session is active
+
   useEffect(() => {
     let tickId: number | null = null;
 
@@ -66,13 +62,13 @@ const MyTimerCard: React.FC = () => {
       !currentSession.end_time
     ) {
       const startMs = new Date(currentSession.start_time).getTime();
-      // Set initial elapsed immediately
+ 
       setElapsed(Math.floor((Date.now() - startMs) / 1000));
       tickId = window.setInterval(() => {
         setElapsed(Math.floor((Date.now() - startMs) / 1000));
       }, 1000);
     } else {
-      // No active session -> ensure timer reset
+     
       setElapsed(0);
     }
 
@@ -81,7 +77,7 @@ const MyTimerCard: React.FC = () => {
     };
   }, [currentSession]);
 
-  // Format seconds to HH:MM:SS
+
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600)
       .toString()
@@ -93,48 +89,42 @@ const MyTimerCard: React.FC = () => {
     return `${h}:${m}:${s}`;
   };
 
-  // Clock In handler
   const handleStart = async () => {
     setErrorMsg(null);
     try {
       setLoading(true);
       const session = await timesheetApi.startWork();
-      // After a successful start, update currentSession immediately so timer starts
       setCurrentSession(session as TimesheetEntry);
-      setElapsed(0); // will be set by timer effect on next tick; safe to reset now
+      setElapsed(0); 
     } catch (err: any) {
       console.error('Error starting work:', err);
-      // Show helpful message: backend may require a prior attendance check-in
       const msg =
         err?.response?.data?.message ||
         err?.message ||
         'Failed to start work. Please make sure you checked in.';
       setErrorMsg(msg);
-      // fetch latest to keep UI consistent (in case server changed)
       fetchLatestSession().catch(() => {});
     } finally {
       setLoading(false);
     }
   };
 
-  // Clock Out handler
+
   const handleEnd = async () => {
     setErrorMsg(null);
     try {
       setLoading(true);
-      // call timesheet end endpoint
+ 
       const ended = await timesheetApi.endWork();
-      // Immediately clear local active session so UI flips to "Clock In"
+    
       setCurrentSession(null);
       setElapsed(0);
-      // Re-fetch latest session list (ensures UI is in sync if backend created/updated entries)
       fetchLatestSession().catch(() => {});
     } catch (err: any) {
       console.error('Error ending work:', err);
       const msg =
         err?.response?.data?.message || err?.message || 'Failed to end work.';
       setErrorMsg(msg);
-      // Also try to refresh state from server
       fetchLatestSession().catch(() => {});
     } finally {
       setLoading(false);
@@ -160,8 +150,8 @@ const MyTimerCard: React.FC = () => {
             <AccessTimeIcon fontSize='large' />
             <Typography variant='h6'>
               {currentSession ? 'Session in progress' : 'No active session'}
-            </Typography>
-          </Box>
+          </Typography>
+        </Box>
 
           {/* elapsed timer + circular progress */}
           {currentSession && !currentSession.end_time && (
@@ -193,7 +183,7 @@ const MyTimerCard: React.FC = () => {
           {loading ? (
             <Box mt={2} display='flex' justifyContent='center'>
               <CircularProgress size={24} />
-            </Box>
+          </Box>
           ) : (
             <Box mt={2} display='flex' gap={2} justifyContent='center'>
               {/* Clock In / Clock Out */}
@@ -214,7 +204,7 @@ const MyTimerCard: React.FC = () => {
                   disabled={loading}
                 >
                   Work end
-                </Button>
+            </Button>
               )}
 
               {/* Toggle Timesheet view */}
@@ -235,9 +225,9 @@ const MyTimerCard: React.FC = () => {
                 ? `Active session started at ${currentSession.start_time ? new Date(currentSession.start_time).toLocaleTimeString() : 'N/A'}`
                 : 'No active session — Clock In to start a new session.'}
             </Typography>
-          </Box>
-        </CardContent>
-      </Card>
+        </Box>
+      </CardContent>
+    </Card>
 
       {/* Snackbar for errors */}
       <Snackbar

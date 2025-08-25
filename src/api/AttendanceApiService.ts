@@ -30,6 +30,7 @@ class AttendanceApiService {
   // Get all attendance events (admin)
   async getAllAttendance(): Promise<AttendanceEvent[]> {
     const res = await axiosInstance.get<AttendanceEvent[]>(`${BASE}/all`);
+    console.log('🔥 All Attendance Events:', res.data);
     return (res.data as any) || [];
   }
 

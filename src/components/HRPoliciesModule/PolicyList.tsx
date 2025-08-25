@@ -12,16 +12,20 @@ import {
   Divider,
 } from '@mui/material';
 import type { Policy } from '../../type/Hrtypes';
-import { mockPolicies } from '../../Data/HrmockData';
+import { mockPolicies } from '../../data/HrmockData';
 import PolicyForm from './PolicyForm';
 import edit from '../../assets/dashboardIcon/edit.svg';
 import deleteIcon from '../../assets/dashboardIcon/ui-delete.svg';
+import { useTheme } from '@mui/material/styles';
+import { useOutletContext } from 'react-router-dom';
 
 const PolicyList: React.FC = () => {
   const [policies, setPolicies] = useState<Policy[]>(mockPolicies);
   const [openForm, setOpenForm] = useState(false);
   const [selected, setSelected] = useState<Policy | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const theme = useTheme();
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
   const handleAddEdit = (policy: Policy) => {
     setPolicies(prev =>
@@ -49,7 +53,7 @@ const PolicyList: React.FC = () => {
           gap: 2,
         }}
       >
-        <Typography variant='h5'>HR Policies</Typography>
+        <Typography variant='h5' sx={{ color: darkMode ? '#8f8f8f' : '#000' }}>HR Policies</Typography>
 
         <Button
           variant='contained'
