@@ -181,7 +181,7 @@ const Layout = () => {
           component='main'
           sx={{
             flex: 1,
-            px: { xs: '7px', md: '26px' },
+            px: { xs: '7px', md: '24px' },
             py: 3,
           }}
         >

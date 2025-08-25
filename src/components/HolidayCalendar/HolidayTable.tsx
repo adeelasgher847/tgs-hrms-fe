@@ -6,6 +6,7 @@ import {
   TableHead,
   TableRow,
   Box,
+  useTheme,
 } from '@mui/material';
 import type { Holiday } from './HolidayList';
 
@@ -14,8 +15,10 @@ interface HolidayTableProps {
 }
 
 const HolidayTable: React.FC<HolidayTableProps> = ({ holidays }) => {
+  const theme = useTheme();
+  
   return (
-    <Box>
+    <Box sx={{ bgcolor: theme.palette.background.paper }}>
       <Table>
         <TableHead>
           <TableRow>

@@ -1,6 +1,5 @@
 import React from 'react';
-import { Box, Typography, Avatar } from '@mui/material';
-import { useOutletContext } from 'react-router-dom';
+import { Box, Typography, Avatar, useTheme } from '@mui/material';
 import { useLanguage } from '../../../context/LanguageContext';
 
 type IconImageCardProps = {
@@ -16,11 +15,11 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
   label,
   title,
 }) => {
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const theme = useTheme();
   const { language } = useLanguage();
 
-  const bgColor = darkMode ? '#484c7f' : '#484c7f';
-  const textColor = '#fff';
+  const bgColor = theme.palette.primary.dark;
+  const textColor = theme.palette.primary.contrastText;
 
   // Title translations with language context
   const titleTranslations: Record<string, { en: string; ar: string }> = {
@@ -60,7 +59,7 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
           sx={{
             width: 22,
             height: 22,
-            backgroundColor: '#fff',
+            backgroundColor: (theme) => theme.palette.background.paper,
             p: 2,
           }}
         />
