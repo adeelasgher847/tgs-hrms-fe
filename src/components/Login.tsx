@@ -432,10 +432,10 @@ const Login: React.FC = () => {
                         borderRadius: '8px',
                         '&.Mui-focused, &:active': {
                           backgroundColor: 'white',
-                          border: 'none',
-                          outline: 'none',
-                          boxShadow: 'none',
                         },
+                        "& fieldset": {border: "none"},
+                        "&:hover fieldset": {border: "none"},
+                        "&.Mui-focused fieldset": {border: "none"},
                       },
                     }}
                   />
@@ -503,6 +503,16 @@ const Login: React.FC = () => {
                           '&.Mui-focused': {
                             backgroundColor: 'white',
                           },
+                           "& fieldset": {
+        border: "none",
+      },
+      "&:hover fieldset": {
+        border: "none",
+      },
+      "&.Mui-focused fieldset": {
+        border: "none",
+      },
+  
                         },
                         endAdornment: (
                           <InputAdornment position='end'>

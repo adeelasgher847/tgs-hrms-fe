@@ -32,15 +32,19 @@ import {
 import DesignationModal from '../Desigantions/Designation-modal';
 import DeleteConfirmationDialog from './Delete-confirmation-dialog';
 import { useLanguage } from '../../context/LanguageContext';
+import { useOutletContext } from 'react-router-dom';
 import {
   designationApiService,
   type FrontendDesignation,
   type FrontendDepartment,
 } from '../../api/designationApi';
+import { useTheme } from '@mui/material/styles';
 
 export default function DesignationManager() {
   const { language, setLanguage } = useLanguage();
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const isRTL = language === 'ar';
+  const theme = useTheme();
 
   const [designations, setDesignations] = useState<FrontendDesignation[]>([]);
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
@@ -286,7 +290,7 @@ export default function DesignationManager() {
   );
 
   return (
-    <Container maxWidth='xl' sx={{ mt: 4 }} dir={isRTL ? 'rtl' : 'ltr'}>
+    <Container  maxWidth="xl" sx={{ mt: 4, px: 0, '&.MuiContainer-root': { paddingLeft: 0, paddingRight: 0 } }} dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Top Bar */}
       <Box
         sx={{
@@ -298,11 +302,12 @@ export default function DesignationManager() {
           gap: 2,
         }}
       >
-        <Typography variant='h4' sx={{ fontWeight: 700 }}>
+        <Typography variant='h4' sx={{ fontWeight: 700, color: darkMode ? '#8f8f8f' : '#000' }}>
           {getText('Designations', 'المسميات الوظيفية')}
         </Typography>
+        
 
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box sx={{ display:{sx:'block',sm:'flex'}, gap: 2, alignItems: 'center' }}>
           <ToggleButtonGroup
             size='small'
             value={language}

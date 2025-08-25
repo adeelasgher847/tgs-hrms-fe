@@ -12,6 +12,7 @@ import {
   MenuItem,
   TextField,
 } from '@mui/material';
+import { useOutletContext } from 'react-router-dom';
 import UserForm from './UserForm';
 import AddIcon from '@mui/icons-material/Add';
 import Edit from '@mui/icons-material/Edit';
@@ -29,6 +30,7 @@ const UserList: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | undefined>(undefined);
   const [filters, setFilters] = useState({ department: '', designation: '' });
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
   const filteredUsers = users.filter(user => {
     return (
@@ -66,12 +68,13 @@ const UserList: React.FC = () => {
 
   return (
     <Box p={0}>
-      <Typography variant='h5' gutterBottom>
+      <Typography variant='h5' gutterBottom sx={{ color: darkMode ? '#8f8f8f' : '#000' }}>
         User Management UI
       </Typography>
 
       <Box
         display='flex'
+        flexWrap={'wrap'}
         gap={2}
         mb={2}
         alignItems='center'
@@ -130,13 +133,13 @@ const UserList: React.FC = () => {
             backgroundColor: '#484c7f',
             color: '#fff',
             textTransform: 'none',
-            marginLeft: 'auto',
+            marginLeft:{ xs:'0' ,sm:'auto'},
           }}
         >
           Create User
         </Button>
       </Box>
-
+      <Box sx={{ overflowX: 'auto', bgcolor: theme.palette.background.paper }}> 
       <Table>
         <TableHead>
           <TableRow>
@@ -168,7 +171,7 @@ const UserList: React.FC = () => {
           ))}
         </TableBody>
       </Table>
-
+</Box>
       <UserForm
         open={open}
         onClose={handleClose}

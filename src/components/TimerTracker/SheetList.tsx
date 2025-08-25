@@ -16,7 +16,6 @@ import timesheetApi, { type TimesheetEntry } from '../../api/timesheetApi';
 const SheetList: React.FC = () => {
   const [timesheet, setTimesheet] = useState<TimesheetEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -42,6 +41,7 @@ const SheetList: React.FC = () => {
   }
 
   return (
+    <Box>
     <TableContainer component={Paper}>
       <Table>
         <TableHead>
@@ -74,6 +74,7 @@ const SheetList: React.FC = () => {
         </TableBody>
       </Table>
     </TableContainer>
+    </Box>
   );
 };
 

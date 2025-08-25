@@ -124,7 +124,7 @@ const LeaveHistory = ({
                       <Chip
                         label={leave.type || 'Unknown'}
                         color={typeColor[leave.type] || 'default'}
-                        sx={{ fontWeight: 600, fontSize: 16, px: 2, py: 1 }}
+                        sx={{ fontWeight: 600, fontSize: 16, px: 2, py: 1 , width:'100%'}}
                       />
                     </TableCell>
                     <TableCell>{leave.fromDate || 'N/A'}</TableCell>
@@ -135,7 +135,7 @@ const LeaveHistory = ({
                         icon={statusConfig[leave.status]?.icon}
                         label={leave.status || 'Unknown'}
                         color={statusConfig[leave.status]?.color}
-                        sx={{ fontWeight: 600, fontSize: 16, px: 2, py: 1 }}
+                        sx={{ fontWeight: 600, fontSize: 16, px: 2, py: 1,width:'100%' }}
                       />
                     </TableCell>
                     <TableCell>
@@ -158,12 +158,14 @@ const LeaveHistory = ({
                             color='success'
                             clickable
                             onClick={() => onAction(leave.id, 'approved')}
+                            sx={{ width:'100%' }}
                           />
                           <Chip
                             label='Reject'
                             color='error'
                             clickable
                             onClick={() => onAction(leave.id, 'rejected')}
+                            sx={{ width:'100%' }}
                           />
                         </Box>
                       </TableCell>

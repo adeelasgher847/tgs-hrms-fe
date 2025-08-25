@@ -72,7 +72,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const { darkMode } = useOutletContext<OutletContext>();
 
   // Dark mode styles
-  const textColor = darkMode ? '#e0e0e0' : '#000';
+  const textColor = darkMode ? '#8f8f8f' : '#000';
   const cardBg = darkMode ? '#2a2a2a' : '#f9f9f9';
   const borderColor = darkMode ? '#555' : '#ccc';
   const secondaryTextColor = darkMode
@@ -103,7 +103,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
         elevation={1}
         sx={{
           backgroundColor: cardBg,
-          border: `1px solid ${borderColor}`,
+          borderRadius: 0,
           overflowX: 'auto',
           boxShadow: 'none',
         }}

@@ -185,24 +185,35 @@ const AttendanceTable = () => {
     setEndDate('');
   };
   return (
-    <Box p={2}>
-      <Typography variant='h6' gutterBottom>
+    <Box>
+      <Typography variant='h6' gutterBottom mb={2}>
         Attendance Sessions
       </Typography>
       <Box display='flex' gap={2} mb={2} flexWrap='wrap' alignItems='center'>
-        <TextField
-          label='Start Date'
-          type='date'
-          InputLabelProps={{ shrink: true }}
-          value={startDate}
-          onChange={e => setStartDate(e.target.value)}
-        />
+   <TextField
+  label="Start Date"
+  type="date"
+  InputLabelProps={{ shrink: true }}
+  value={startDate}
+  onChange={e => setStartDate(e.target.value)}
+  sx={{
+    "& .MuiInputBase-input": {
+      padding: "6.5px 14px",
+    },
+  }}
+/>
+
         <TextField
           label='End Date'
           type='date'
           InputLabelProps={{ shrink: true }}
           value={endDate}
           onChange={e => setEndDate(e.target.value)}
+            sx={{
+    "& .MuiInputBase-input": {
+      padding: "6.5px 14px",
+    },
+  }}
         />
         <Button variant='outlined' onClick={clearFilters}>
           Clear Filter
@@ -216,7 +227,7 @@ const AttendanceTable = () => {
           Refresh
         </Button>
       </Box>
-      <Paper elevation={3}>
+      <Paper elevation={3} sx={{ boxShadow: 'none'}}>
         <TableContainer>
           <Table>
             <TableHead>

@@ -7,6 +7,7 @@ import AvatarThree from '../assets/NavbarAvatar/avatarthree.jpg';
 import AvatarFour from '../assets/NavbarAvatar/avatarfour.jpg';
 import AvatarProfile from '../assets/NavbarAvatar/ProfileAvatar.png';
 import { useLanguage } from '../context/LanguageContext';
+import { Select } from "@mui/material";
 
 import {
   AppBar,
@@ -332,7 +333,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 </Avatar>
               </IconButton>
               {/* Language Toggle */}
-              <ToggleButtonGroup
+              {/* <ToggleButtonGroup
                 value={language}
                 exclusive
                 onChange={(_, value) => value && setLanguage(value)}
@@ -367,7 +368,21 @@ const Navbar: React.FC<NavbarProps> = ({
                 >
                   عربي
                 </ToggleButton>
-              </ToggleButtonGroup>
+              </ToggleButtonGroup> */}
+              <Select
+  value={language}
+  onChange={(e) => setLanguage(e.target.value)}
+  size="small"
+  sx={{
+    minWidth: 80,
+    "& .MuiSelect-select": {
+      padding: "5px  10px",
+    },
+  }}
+>
+  <MenuItem value="en">EN</MenuItem>
+  <MenuItem value="ar">عربي</MenuItem>
+</Select>
             </Box>
             <Box>
               <IconButton

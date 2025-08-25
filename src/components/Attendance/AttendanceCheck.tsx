@@ -1,11 +1,20 @@
-import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Button, Alert } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Button,
+  Paper,
+  Typography,
+  Alert,
+  CircularProgress,
+  useTheme,
+} from '@mui/material';
+import { useOutletContext } from 'react-router-dom';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { attendanceApiService } from '../../api/AttendanceApiService';
+import attendanceApiService from '../../api/AttendanceApiService';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
-const AttendanceCheck = () => {
+const AttendanceCheck: React.FC = () => {
   const [status, setStatus] = useState<AttendanceStatus>('Not Checked In');
   const [punchInTime, setPunchInTime] = useState<string | null>(null);
   const [punchOutTime, setPunchOutTime] = useState<string | null>(null);
@@ -13,6 +22,14 @@ const AttendanceCheck = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
+  const theme = useTheme();
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  
+  // Debug: Log the darkMode value and theme mode
+  console.log('AttendanceCheck - darkMode from context:', darkMode);
+  console.log('AttendanceCheck - theme.palette.mode:', theme.palette.mode);
+  console.log('AttendanceCheck - title color:', darkMode ? '#8f8f8f' : '#000');
+
   const getCurrentUserId = () => {
     const userStr = localStorage.getItem('user');
     if (!userStr) return null;
@@ -62,7 +79,6 @@ const AttendanceCheck = () => {
       1000
     );
     return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const handleCheckIn = async () => {
     setLoading(true);
@@ -93,13 +109,11 @@ const AttendanceCheck = () => {
       setLoading(false);
     }
   };
-  // Disable rules:
-  // - Check In disabled while loading OR when currently in an open session
-  // - Check Out disabled while loading OR when not in an open session
+
   const disableCheckIn = loading || status === 'Checked In';
   const disableCheckOut = loading || status === 'Not Checked In';
   return (
-    <Box py={3}>
+    <Box>
       <Box display='flex' justifyContent='flex-end' mb={2} gap={2}>
         <Button
           variant='contained'
@@ -131,23 +145,35 @@ const AttendanceCheck = () => {
             p: 3,
             borderRadius: 2,
             position: 'relative',
-            border: '1px solid #eee',
+            border: (theme) => `1px solid ${theme.palette.divider}`,
             flex: 1,
             height: '100%',
             boxShadow:'none'
           }}
         >
-          <Typography variant='h6'>Good morning, {userName}</Typography>
+          <Typography 
+            variant='h6' 
+            sx={{ 
+              color: darkMode ? '#8f8f8f' : '#000',
+              fontWeight: 500,
+              // Force the color to be applied
+              '&.MuiTypography-root': {
+                color: darkMode ? '#8f8f8f' : '#000'
+              }
+            }}
+          >
+            Good morning, {userName}
+          </Typography>
           <Typography color='text.secondary'>{currentTime}</Typography>
           <Box display='flex' gap={3} mt={3} mb={2}>
             <Box display='flex' alignItems='center'>
-              <LoginIcon sx={{ color: '#4CAF50', mr: 1 }} />
+              <LoginIcon sx={{ color: theme.palette.success.main, mr: 1 }} />
               <Typography>
                 Check In: <strong>{punchInTime || '--:--'}</strong>
               </Typography>
             </Box>
             <Box display='flex' alignItems='center'>
-              <LogoutIcon sx={{ color: '#FF9800', mr: 1 }} />
+              <LogoutIcon sx={{ color: theme.palette.warning.main, mr: 1 }} />
               <Typography>
                 Check Out: <strong>{punchOutTime || '--:--'}</strong>
               </Typography>
