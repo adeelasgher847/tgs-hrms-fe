@@ -11,7 +11,9 @@ import {
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import timesheetApi, { type TimesheetEntry } from '../../api/timesheetApi';
-import { Link as RouterLink } from "react-router-dom";
+
+import attendanceApi from '../../api/attendanceApi';
+import { Link as RouterLink } from 'react-router-dom';
 
 
 const POLL_INTERVAL_MS = 5000;
@@ -23,27 +25,52 @@ const MyTimerCard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [elapsed, setElapsed] = useState<number>(0); 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [hasCheckedIn, setHasCheckedIn] = useState<boolean>(false);
+  const [checkingAttendance, setCheckingAttendance] = useState<boolean>(true);
+
+  // Check if user has checked in today
+  const checkAttendanceStatus = async () => {
+    try {
+      setCheckingAttendance(true);
+      const todaySummary = await attendanceApi.getTodaySummary();
+      setHasCheckedIn(!!todaySummary.checkIn);
+
+      // If user has checked out, automatically end any active timesheet session
+      if (todaySummary.checkOut && currentSession) {
+        console.log('User checked out, automatically ending timesheet session');
+        await handleEnd();
+      }
+    } catch (error) {
+      console.error('Error checking attendance status:', error);
+      setHasCheckedIn(false);
+    } finally {
+      setCheckingAttendance(false);
+    }
+  };
 
   const fetchLatestSession = async () => {
     try {
       const response = await timesheetApi.getUserTimesheet();
       const sessions = response.items.sessions;
-      const latest = sessions && sessions.length > 0 ? sessions[0] : null;
-      setCurrentSession(latest);
+      const activeSession = sessions.find(s => !s.end_time);
+      setCurrentSession(activeSession || null);
     } catch (error) {
       console.error('Error fetching latest session:', error);
+      setCurrentSession(null);
     }
   };
 
   useEffect(() => {
     let pollId: number | null = null;
 
-    // initial fetch
-    fetchLatestSession().catch(e => {
+    // Check attendance status and fetch latest session
+    checkAttendanceStatus();
+    fetchLatestSession().catch(() => {
       /* already handled inside */
     });
 
     pollId = window.setInterval(() => {
+      checkAttendanceStatus();
       fetchLatestSession().catch(() => {});
     }, POLL_INTERVAL_MS);
 
@@ -91,19 +118,31 @@ const MyTimerCard: React.FC = () => {
 
   const handleStart = async () => {
     setErrorMsg(null);
+
+    // Check if user has checked in before allowing Clock In
+    if (!hasCheckedIn) {
+      setErrorMsg('You cannot clock in until you check in.');
+      return;
+    }
+
     try {
       setLoading(true);
-      const session = await timesheetApi.startWork();
-      setCurrentSession(session as TimesheetEntry);
-      setElapsed(0); 
+
+      await timesheetApi.startWork();
+      await fetchLatestSession();
+      setErrorMsg(null);
+
     } catch (err: any) {
       console.error('Error starting work:', err);
       const msg =
         err?.response?.data?.message ||
         err?.message ||
-        'Failed to start work. Please make sure you checked in.';
+        'Failed to clock in. Please make sure you checked in.';
       setErrorMsg(msg);
-      fetchLatestSession().catch(() => {});
+
+      // fetch latest to keep UI consistent (in case server changed)
+      await fetchLatestSession();
+
     } finally {
       setLoading(false);
     }
@@ -114,18 +153,20 @@ const MyTimerCard: React.FC = () => {
     setErrorMsg(null);
     try {
       setLoading(true);
- 
-      const ended = await timesheetApi.endWork();
-    
-      setCurrentSession(null);
-      setElapsed(0);
-      fetchLatestSession().catch(() => {});
+
+      await timesheetApi.endWork();
+      await fetchLatestSession();
+      setErrorMsg(null);
+
     } catch (err: any) {
       console.error('Error ending work:', err);
       const msg =
-        err?.response?.data?.message || err?.message || 'Failed to end work.';
+        err?.response?.data?.message || err?.message || 'Failed to clock out.';
       setErrorMsg(msg);
-      fetchLatestSession().catch(() => {});
+
+      // Also try to refresh state from server
+      await fetchLatestSession();
+
     } finally {
       setLoading(false);
     }
@@ -192,9 +233,9 @@ const MyTimerCard: React.FC = () => {
                   variant='contained'
                   color='primary'
                   onClick={handleStart}
-                  disabled={loading}
+                  disabled={loading || !hasCheckedIn}
                 >
-                  Work start
+                  Clock In
                 </Button>
               ) : (
                 <Button
@@ -203,27 +244,44 @@ const MyTimerCard: React.FC = () => {
                   onClick={handleEnd}
                   disabled={loading}
                 >
-                  Work end
-            </Button>
+
+                  Clock Out
+                </Button>
               )}
 
-              {/* Toggle Timesheet view */}
-              <Button
-                variant='outlined'
-                component={RouterLink}
-                to='TimesheetLayout'
-              >
-                My Timesheet
-              </Button>
+              {/* Toggle Timesheet view - Only show when checked in or has active session */}
+              {(hasCheckedIn || currentSession) && (
+                <Button
+                  variant='outlined'
+                  component={RouterLink}
+                  to='TimesheetLayout'
+                >
+                  My Timesheet
+                </Button>
+
+              )}
+            </Box>
+          )}
+
+          {/* Check-in status and error messages */}
+          {!currentSession && !hasCheckedIn && !checkingAttendance && (
+            <Box mt={2} textAlign='center'>
+              <Typography variant='body2' color='error'>
+                You must check in before you can clock in.
+              </Typography>
             </Box>
           )}
 
           {/* Optional: short status text */}
           <Box mt={2} textAlign='center'>
             <Typography variant='body2' color='text.secondary'>
-              {currentSession
-                ? `Active session started at ${currentSession.start_time ? new Date(currentSession.start_time).toLocaleTimeString() : 'N/A'}`
-                : 'No active session — Clock In to start a new session.'}
+              {checkingAttendance
+                ? 'Checking attendance status...'
+                : currentSession
+                  ? `Active session started at ${currentSession.start_time ? new Date(currentSession.start_time).toLocaleTimeString() : 'N/A'}`
+                  : hasCheckedIn
+                    ? 'No active session — Clock In to start a new session.'
+                    : 'Please check in first before clocking in.'}
             </Typography>
         </Box>
       </CardContent>

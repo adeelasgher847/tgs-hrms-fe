@@ -93,32 +93,32 @@ const AttendanceCheck = () => {
       setLoading(false);
     }
   };
-  // Disable rules:
-  // - Check In disabled while loading OR when currently in an open session
-  // - Check Out disabled while loading OR when not in an open session
-  const disableCheckIn = loading || status === 'Checked In';
-  const disableCheckOut = loading || status === 'Not Checked In';
+
   return (
     <Box py={3}>
       <Box display='flex' justifyContent='flex-end' mb={2} gap={2}>
-        <Button
-          variant='contained'
-          color='success'
-          onClick={handleCheckIn}
-          sx={{ minWidth: 120 }}
-          disabled={disableCheckIn}
-        >
-          Check In
-        </Button>
-        <Button
-          variant='contained'
-          color='warning'
-          onClick={handleCheckOut}
-          sx={{ minWidth: 120 }}
-          disabled={disableCheckOut}
-        >
-          Check Out
-        </Button>
+        {/* Single Check In / Check Out Button */}
+        {status === 'Not Checked In' || status === 'Checked Out' ? (
+          <Button
+            variant='contained'
+            color='success'
+            onClick={handleCheckIn}
+            sx={{ minWidth: 120 }}
+            disabled={loading}
+          >
+            Check In
+          </Button>
+        ) : (
+          <Button
+            variant='contained'
+            color='warning'
+            onClick={handleCheckOut}
+            sx={{ minWidth: 120 }}
+            disabled={loading}
+          >
+            Check Out
+          </Button>
+        )}
       </Box>
       {error && (
         <Alert severity='error' sx={{ mb: 2 }}>
