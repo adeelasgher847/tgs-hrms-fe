@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Button, Alert } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { attendanceApiService } from '../../api/AttendanceApiService';
+import attendanceApi from '../../api/attendanceApi';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
+
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
+
 const AttendanceCheck = () => {
   const [status, setStatus] = useState<AttendanceStatus>('Not Checked In');
   const [punchInTime, setPunchInTime] = useState<string | null>(null);
@@ -13,6 +15,7 @@ const AttendanceCheck = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
+
   const getCurrentUserId = () => {
     const userStr = localStorage.getItem('user');
     if (!userStr) return null;
@@ -24,6 +27,7 @@ const AttendanceCheck = () => {
       return null;
     }
   };
+
   const fetchToday = async () => {
     setError(null);
     const userId = getCurrentUserId();
@@ -32,7 +36,7 @@ const AttendanceCheck = () => {
       return;
     }
     try {
-      const today = await attendanceApiService.getTodaySummary(userId);
+      const today = await attendanceApi.getTodaySummary(userId);
       if (today) {
         const checkInISO = today.checkIn ? new Date(today.checkIn) : null;
         const checkOutISO = today.checkOut ? new Date(today.checkOut) : null;
@@ -55,6 +59,7 @@ const AttendanceCheck = () => {
       setError("Failed to fetch today's attendance summary.");
     }
   };
+
   useEffect(() => {
     fetchToday();
     const timer = setInterval(
@@ -64,11 +69,12 @@ const AttendanceCheck = () => {
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   const handleCheckIn = async () => {
     setLoading(true);
     setError(null);
     try {
-      await attendanceApiService.createAttendance({ type: 'check-in' });
+      await attendanceApi.createAttendance('check-in');
       // Optimistically reflect UI: clear checkout and lock check-in
       setPunchOutTime(null);
       setStatus('Checked In');
@@ -79,11 +85,12 @@ const AttendanceCheck = () => {
       setLoading(false);
     }
   };
+
   const handleCheckOut = async () => {
     setLoading(true);
     setError(null);
     try {
-      await attendanceApiService.createAttendance({ type: 'check-out' });
+      await attendanceApi.createAttendance('check-out');
       // After checkout, both buttons become enabled again
       setStatus('Checked Out');
       await fetchToday();
@@ -93,6 +100,7 @@ const AttendanceCheck = () => {
       setLoading(false);
     }
   };
+
   // Disable rules:
   // - Check In disabled while loading OR when currently in an open session
   // - Check Out disabled while loading OR when not in an open session
@@ -134,11 +142,12 @@ const AttendanceCheck = () => {
             border: '1px solid #eee',
             flex: 1,
             height: '100%',
+            boxShadow: 'none',
           }}
         >
           <Typography variant='h6'>Good morning, {userName}</Typography>
           <Typography color='text.secondary'>{currentTime}</Typography>
-          <Box display='flex' gap={3} mt={3}>
+          <Box display='flex' gap={3} mt={3} mb={2}>
             <Box display='flex' alignItems='center'>
               <LoginIcon sx={{ color: '#4CAF50', mr: 1 }} />
               <Typography>

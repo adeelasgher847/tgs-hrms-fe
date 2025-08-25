@@ -8,10 +8,10 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Tooltip,
   CircularProgress,
+  TableContainer,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -73,8 +73,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
   // Dark mode styles
   const textColor = darkMode ? '#e0e0e0' : '#000';
-  const cardBg = darkMode ? '#2a2a2a' : '#f9f9f9';
-  const borderColor = darkMode ? '#555' : '#ccc';
   const secondaryTextColor = darkMode
     ? '#9a9a9a'
     : theme.palette.text.secondary;
@@ -99,15 +97,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
         </Box>
       )}
 
-      <Paper
-        elevation={1}
-        sx={{
-          backgroundColor: cardBg,
-          border: `1px solid ${borderColor}`,
-          overflowX: 'auto',
-          boxShadow: 'none',
-        }}
-      >
+      <TableContainer>
         <Table>
           <TableHead>
             <TableRow>
@@ -209,7 +199,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             ))}
           </TableBody>
         </Table>
-      </Paper>
+      </TableContainer>
     </Box>
   );
 };

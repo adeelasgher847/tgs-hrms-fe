@@ -13,8 +13,12 @@ import {
   useMediaQuery,
   Alert,
   Snackbar,
+  Pagination,
+  Typography,
+  Paper,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { useOutletContext } from 'react-router-dom';
 import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeList from './EmployeeList';
@@ -74,6 +78,11 @@ const EmployeeManager: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [designationFilter, setDesignationFilter] = useState('');
   const [departments, setDepartments] = useState<Record<string, string>>({});
@@ -105,9 +114,22 @@ const EmployeeManager: React.FC = () => {
 
   // Load employees on component mount
   useEffect(() => {
-    loadEmployees();
+    loadEmployees(1);
     loadDepartmentsAndDesignations();
   }, []);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    console.log('🔄 EmployeeManager - Changing to page:', page);
+    setCurrentPage(page);
+    loadEmployees(page);
+  };
+
+  // Handle refresh
+  const handleRefresh = () => {
+    console.log('🔄 EmployeeManager - Refreshing data');
+    loadEmployees(currentPage);
+  };
 
   const loadDepartmentsAndDesignations = async () => {
     try {
@@ -138,12 +160,55 @@ const EmployeeManager: React.FC = () => {
     }
   };
 
-  const loadEmployees = async () => {
+  const loadEmployees = async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await employeeApi.getAllEmployees();
-      setEmployees(data);
+      console.log('🔄 EmployeeManager - Loading employees for page:', page);
+
+      const filters = {
+        departmentId: departmentFilter || undefined,
+        designationId: designationFilter || undefined,
+      };
+
+      const response = await employeeApi.getAllEmployees(filters, page);
+      console.log('✅ EmployeeManager - API Response:', response);
+
+      // Convert BackendEmployee to Employee
+      const convertedEmployees: Employee[] = response.items.map(emp => ({
+        id: emp.id,
+        name: emp.name,
+        email: emp.email,
+        phone: emp.phone,
+        departmentId: emp.departmentId,
+        designationId: emp.designationId,
+        department: emp.department || {
+          id: '',
+          name: '',
+          description: '',
+          tenantId: '',
+          createdAt: '',
+          updatedAt: '',
+        },
+        designation: emp.designation || {
+          id: '',
+          title: '',
+          tenantId: '',
+          departmentId: '',
+          createdAt: '',
+          updatedAt: '',
+        },
+        tenantId: emp.tenantId,
+        createdAt: emp.createdAt,
+        updatedAt: emp.updatedAt,
+      }));
+
+      setEmployees(convertedEmployees);
+
+      // Update pagination state
+      setCurrentPage(response.page);
+      setTotalPages(response.totalPages);
+      setTotalItems(response.total);
     } catch (err) {
       setError('Failed to load employees');
       console.error('Error loading employees:', err);
@@ -163,11 +228,39 @@ const EmployeeManager: React.FC = () => {
       // we need to fetch the full employee data or reload the list
       if (!newEmployee.department || !newEmployee.designation) {
         console.log(
-          'New employee missing department/designation objects, reloading list...'
+          'New employee missing department/designation objects, reloading current page...'
         );
-        await loadEmployees(); // Reload the full list to get complete data
+        await loadEmployees(currentPage); // Reload the current page to get complete data
       } else {
-        setEmployees(prev => [...prev, newEmployee]);
+        // Convert BackendEmployee to Employee and add to current page
+        const convertedEmployee: Employee = {
+          id: newEmployee.id,
+          name: newEmployee.name,
+          email: newEmployee.email,
+          phone: newEmployee.phone,
+          departmentId: newEmployee.departmentId,
+          designationId: newEmployee.designationId,
+          department: newEmployee.department || {
+            id: '',
+            name: '',
+            description: '',
+            tenantId: '',
+            createdAt: '',
+            updatedAt: '',
+          },
+          designation: newEmployee.designation || {
+            id: '',
+            title: '',
+            tenantId: '',
+            departmentId: '',
+            createdAt: '',
+            updatedAt: '',
+          },
+          tenantId: newEmployee.tenantId,
+          createdAt: newEmployee.createdAt,
+          updatedAt: newEmployee.updatedAt,
+        };
+        setEmployees(prev => [...prev, convertedEmployee]);
       }
 
       // Reload department and designation mappings
@@ -359,13 +452,11 @@ const EmployeeManager: React.FC = () => {
   const getLabel = (en: string, ar: string) => (direction === 'rtl' ? ar : en);
 
   return (
-    <Box
-      sx={{
-        // backgroundColor: bgColor,
-        color: textColor,
-        minHeight: '100vh',
-      }}
-    >
+    <Box p={2}>
+      <Typography variant='h6' gutterBottom>
+        Employee Management
+      </Typography>
+
       {/* Add Employee Button */}
       <Box
         display='flex'
@@ -496,15 +587,65 @@ const EmployeeManager: React.FC = () => {
         </Button>
       </Box>
 
+      {/* Refresh Button */}
+      <Box display='flex' gap={2} mb={2} flexWrap='wrap' alignItems='center'>
+        <Button
+          variant='outlined'
+          startIcon={<RefreshIcon />}
+          onClick={handleRefresh}
+          disabled={loading}
+          sx={{
+            borderColor: filterBtn,
+            color: textColor,
+            '&:hover': {
+              borderColor: darkMode ? '#888' : '#999',
+              backgroundColor: darkMode
+                ? 'rgba(255,255,255,0.08)'
+                : 'rgba(0,0,0,0.04)',
+            },
+          }}
+        >
+          {getLabel('Refresh', 'تحديث')}
+        </Button>
+      </Box>
+
       {/* Employee List */}
-      <EmployeeList
-        employees={filteredEmployees}
-        onDelete={handleDeleteEmployee}
-        onEdit={handleEditOpen}
-        loading={loading}
-        departments={departments}
-        designations={designations}
-      />
+      <Paper elevation={3}>
+        <EmployeeList
+          employees={filteredEmployees}
+          onDelete={handleDeleteEmployee}
+          onEdit={handleEditOpen}
+          loading={loading}
+          departments={departments}
+          designations={designations}
+        />
+      </Paper>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' mt={2}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => handlePageChange(page)}
+            color='primary'
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+
+      {/* Pagination Info */}
+      {totalItems > 0 && (
+        <Box display='flex' justifyContent='center' mt={1}>
+          <Typography variant='body2' color='textSecondary'>
+            {getLabel(
+              `Showing page ${currentPage} of ${totalPages} (${totalItems} total records)`,
+              `عرض الصفحة ${currentPage} من ${totalPages} (${totalItems} سجل إجمالي)`
+            )}
+          </Typography>
+        </Box>
+      )}
 
       {/* Notifications */}
       <Snackbar
