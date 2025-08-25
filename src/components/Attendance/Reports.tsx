@@ -19,14 +19,15 @@ import {
 } from '@mui/material';
 import LeaveSummaryChart from './LeaveSummaryChart';
 
-const cardStyle = {
+const cardStyle = (theme: any) => ({
   width: { xs: '100%', sm: '250px' },
   flexShrink: 0,
   boxShadow: 'none',
-  border: '1px solid #f0f0f0',
+  border: `1px solid ${theme.palette.card?.border || theme.palette.divider}`,
   borderRadius: '0.375rem',
-  backgroundColor: '#fff',
-};
+  backgroundColor:
+    theme.palette.card?.background || theme.palette.background.paper,
+});
 const Reports: React.FC = () => {
   const [tab, setTab] = useState(0);
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -130,7 +131,7 @@ const Reports: React.FC = () => {
             </FormControl>
           </Box>
 
-          <Box mt={4} sx={{ overflowX: 'auto' }}>
+          <Box mt={4} sx={(theme) => ({ overflowX: 'auto', bgcolor: theme.palette.table?.background || theme.palette.background.paper })}>
             <Table sx={{ minWidth: 600 }}>
               <TableHead>
                 <TableRow>

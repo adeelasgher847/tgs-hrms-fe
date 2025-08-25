@@ -72,7 +72,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const { darkMode } = useOutletContext<OutletContext>();
 
   // Dark mode styles
-  const textColor = darkMode ? '#e0e0e0' : '#000';
+  const textColor = darkMode ? '#8f8f8f' : '#000';
+  const cardBg = darkMode ? '#2a2a2a' : '#f9f9f9';
+  const borderColor = darkMode ? '#555' : '#ccc';
   const secondaryTextColor = darkMode
     ? '#9a9a9a'
     : theme.palette.text.secondary;
