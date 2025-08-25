@@ -150,11 +150,12 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
   const loadDesignations = async (departmentId: string) => {
     try {
       setLoadingDesignations(true);
-      const data =
+      const response =
         await designationApiService.getDesignationsByDepartment(departmentId);
-      setDesignations(data);
+      setDesignations(response.items);
     } catch (error) {
       console.error('Error loading designations:', error);
+      setDesignations([]);
     } finally {
       setLoadingDesignations(false);
     }
