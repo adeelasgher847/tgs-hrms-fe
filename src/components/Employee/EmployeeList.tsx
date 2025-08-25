@@ -8,10 +8,10 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Tooltip,
   CircularProgress,
+  TableContainer,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -99,15 +99,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
         </Box>
       )}
 
-      <Paper
-        elevation={1}
-        sx={{
-          backgroundColor: cardBg,
-          borderRadius: 0,
-          overflowX: 'auto',
-          boxShadow: 'none',
-        }}
-      >
+      <TableContainer>
         <Table>
           <TableHead>
             <TableRow>
@@ -209,7 +201,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             ))}
           </TableBody>
         </Table>
-      </Paper>
+      </TableContainer>
     </Box>
   );
 };

@@ -1,20 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Button,
-  Paper,
-  Typography,
-  Alert,
-  CircularProgress,
-  useTheme,
-} from '@mui/material';
-import { useOutletContext } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Paper, Button, Alert } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
-import attendanceApiService from '../../api/AttendanceApiService';
+import attendanceApi from '../../api/attendanceApi';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
-const AttendanceCheck: React.FC = () => {
+const AttendanceCheck = () => {
   const [status, setStatus] = useState<AttendanceStatus>('Not Checked In');
   const [punchInTime, setPunchInTime] = useState<string | null>(null);
   const [punchOutTime, setPunchOutTime] = useState<string | null>(null);
@@ -22,14 +13,6 @@ const AttendanceCheck: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
-  const theme = useTheme();
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
-  
-  // Debug: Log the darkMode value and theme mode
-  console.log('AttendanceCheck - darkMode from context:', darkMode);
-  console.log('AttendanceCheck - theme.palette.mode:', theme.palette.mode);
-  console.log('AttendanceCheck - title color:', darkMode ? '#8f8f8f' : '#000');
-
   const getCurrentUserId = () => {
     const userStr = localStorage.getItem('user');
     if (!userStr) return null;
@@ -49,7 +32,7 @@ const AttendanceCheck: React.FC = () => {
       return;
     }
     try {
-      const today = await attendanceApiService.getTodaySummary(userId);
+      const today = await attendanceApi.getTodaySummary(userId);
       if (today) {
         const checkInISO = today.checkIn ? new Date(today.checkIn) : null;
         const checkOutISO = today.checkOut ? new Date(today.checkOut) : null;
@@ -79,12 +62,13 @@ const AttendanceCheck: React.FC = () => {
       1000
     );
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const handleCheckIn = async () => {
     setLoading(true);
     setError(null);
     try {
-      await attendanceApiService.createAttendance({ type: 'check-in' });
+      await attendanceApi.createAttendance('check-in');
       // Optimistically reflect UI: clear checkout and lock check-in
       setPunchOutTime(null);
       setStatus('Checked In');
@@ -99,7 +83,7 @@ const AttendanceCheck: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      await attendanceApiService.createAttendance({ type: 'check-out' });
+      await attendanceApi.createAttendance('check-out');
       // After checkout, both buttons become enabled again
       setStatus('Checked Out');
       await fetchToday();
@@ -109,11 +93,13 @@ const AttendanceCheck: React.FC = () => {
       setLoading(false);
     }
   };
-
+  // Disable rules:
+  // - Check In disabled while loading OR when currently in an open session
+  // - Check Out disabled while loading OR when not in an open session
   const disableCheckIn = loading || status === 'Checked In';
   const disableCheckOut = loading || status === 'Not Checked In';
   return (
-    <Box>
+    <Box py={3}>
       <Box display='flex' justifyContent='flex-end' mb={2} gap={2}>
         <Button
           variant='contained'
@@ -145,35 +131,23 @@ const AttendanceCheck: React.FC = () => {
             p: 3,
             borderRadius: 2,
             position: 'relative',
-            border: (theme) => `1px solid ${theme.palette.divider}`,
+            border: '1px solid #eee',
             flex: 1,
             height: '100%',
-            boxShadow:'none'
+            boxShadow: 'none',
           }}
         >
-          <Typography 
-            variant='h6' 
-            sx={{ 
-              color: darkMode ? '#8f8f8f' : '#000',
-              fontWeight: 500,
-              // Force the color to be applied
-              '&.MuiTypography-root': {
-                color: darkMode ? '#8f8f8f' : '#000'
-              }
-            }}
-          >
-            Good morning, {userName}
-          </Typography>
+          <Typography variant='h6'>Good morning, {userName}</Typography>
           <Typography color='text.secondary'>{currentTime}</Typography>
           <Box display='flex' gap={3} mt={3} mb={2}>
             <Box display='flex' alignItems='center'>
-              <LoginIcon sx={{ color: theme.palette.success.main, mr: 1 }} />
+              <LoginIcon sx={{ color: '#4CAF50', mr: 1 }} />
               <Typography>
                 Check In: <strong>{punchInTime || '--:--'}</strong>
               </Typography>
             </Box>
             <Box display='flex' alignItems='center'>
-              <LogoutIcon sx={{ color: theme.palette.warning.main, mr: 1 }} />
+              <LogoutIcon sx={{ color: '#FF9800', mr: 1 }} />
               <Typography>
                 Check Out: <strong>{punchOutTime || '--:--'}</strong>
               </Typography>

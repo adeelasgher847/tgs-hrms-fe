@@ -11,16 +11,16 @@ import {
   TableContainer,
   TextField,
   Button,
+  Pagination,
+  CircularProgress,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import axiosInstance from '../../api/axiosInstance';
-interface AttendanceEvent {
-  id: string;
-  user_id: string;
-  timestamp: string; // ISO
-  type: 'check-in' | 'check-out' | string;
-  user?: { first_name?: string };
-}
+import attendanceApi from '../../api/attendanceApi';
+import type {
+  AttendanceEvent,
+  AttendanceResponse,
+} from '../../api/attendanceApi';
+
 interface AttendanceRecord {
   id: string;
   userId: string;
@@ -32,12 +32,14 @@ interface AttendanceRecord {
   workedHours: number | null;
   user?: { first_name: string };
 }
+
 const formatLocalYMD = (d: Date) => {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 };
+
 const AttendanceTable = () => {
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [filteredData, setFilteredData] = useState<AttendanceRecord[]>([]);
@@ -45,8 +47,15 @@ const AttendanceTable = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   const toDisplayTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString() : null;
+
   const buildFromEvents = (
     eventsRaw: AttendanceEvent[],
     currentUserId: string
@@ -147,48 +156,75 @@ const AttendanceTable = () => {
     });
     return sessions;
   };
-  const fetchAttendance = async () => {
+
+  const fetchAttendance = async (page: number = 1) => {
     setLoading(true);
     try {
       const storedUser = localStorage.getItem('user');
       if (!storedUser) return;
+
       const currentUser = JSON.parse(storedUser);
       setUserRole(currentUser.role.name);
+
+      let response: AttendanceResponse;
+
       // Admin: raw events across tenant; User: raw events for self
-      const endpoint =
-        currentUser.role.name === 'Admin'
-          ? '/attendance/all'
-          : `/attendance/events?userId=${currentUser.id}`;
-      const res = await axiosInstance.get(endpoint);
-      const events: AttendanceEvent[] = res.data || [];
+      if (currentUser.role.name === 'Admin') {
+        response = await attendanceApi.getAllAttendance(page);
+      } else {
+        response = await attendanceApi.getAttendanceEvents(
+          currentUser.id,
+          page
+        );
+      }
+
+      console.log('✅ AttendanceTable - API Response:', response);
+
+      // Update pagination state
+      setCurrentPage(response.page);
+      setTotalPages(response.totalPages);
+      setTotalItems(response.total);
+
+      const events: AttendanceEvent[] =
+        (response.items as AttendanceEvent[]) || [];
       const rows = buildFromEvents(events, currentUser.id);
       setAttendanceData(rows);
       setFilteredData(rows);
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(':x: Error fetching attendance:', error);
+      console.error('❌ Error fetching attendance:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchAttendance(page);
+  };
+
   useEffect(() => {
-    fetchAttendance();
+    fetchAttendance(1);
   }, []);
+
   useEffect(() => {
     let data = [...attendanceData];
     if (startDate) data = data.filter(rec => rec.date >= startDate); // string compare
     if (endDate) data = data.filter(rec => rec.date <= endDate); // string compare
     setFilteredData(data);
   }, [startDate, endDate, attendanceData]);
+
   const clearFilters = () => {
     setStartDate('');
     setEndDate('');
   };
+
   return (
     <Box>
       <Typography variant='h6' gutterBottom mb={2}>
         Attendance Sessions
       </Typography>
+
       <Box display='flex' gap={2} mb={2} flexWrap='wrap' alignItems='center'>
    <TextField
   label="Start Date"
@@ -221,7 +257,7 @@ const AttendanceTable = () => {
         <Button
           variant='outlined'
           startIcon={<RefreshIcon />}
-          onClick={fetchAttendance}
+          onClick={() => fetchAttendance(currentPage)}
           disabled={loading}
         >
           Refresh
@@ -244,7 +280,16 @@ const AttendanceTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredData.length > 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={userRole === 'Admin' ? 5 : 4}
+                    align='center'
+                  >
+                    <CircularProgress />
+                  </TableCell>
+                </TableRow>
+              ) : filteredData.length > 0 ? (
                 filteredData.map(record => (
                   <TableRow key={record.id}>
                     {userRole === 'Admin' && (
@@ -270,7 +315,32 @@ const AttendanceTable = () => {
           </Table>
         </TableContainer>
       </Paper>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' mt={2}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => handlePageChange(page)}
+            color='primary'
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+
+      {/* Pagination Info */}
+      {totalItems > 0 && (
+        <Box display='flex' justifyContent='center' mt={1}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {currentPage} of {totalPages} ({totalItems} total
+            records)
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };
+
 export default AttendanceTable;

@@ -53,17 +53,69 @@ export const leaveApi = {
     return response.data;
   },
 
-  // Get Leaves for User
-  getUserLeaves: async (userId?: string): Promise<LeaveResponse[]> => {
-    const params = userId ? { userId } : {};
+  // Get Leaves for User with pagination
+  getUserLeaves: async (userId?: string, page: number = 1): Promise<{
+    items: LeaveResponse[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> => {
+    const params = userId ? { userId, page } : { page };
     const response = await axiosInstance.get('/leaves', { params });
-    return response.data;
+    
+    // Handle both paginated and non-paginated responses
+    if (response.data && response.data.items) {
+      return response.data;
+    } else if (Array.isArray(response.data)) {
+      return {
+        items: response.data,
+        total: response.data.length,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
+    } else {
+      return {
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
+    }
   },
 
-  // Get All Leaves (Admin Only)
-  getAllLeaves: async (): Promise<LeaveWithUser[]> => {
-    const response = await axiosInstance.get('/leaves/all');
-    return response.data;
+  // Get All Leaves (Admin Only) with pagination
+  getAllLeaves: async (page: number = 1): Promise<{
+    items: LeaveWithUser[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> => {
+    const response = await axiosInstance.get('/leaves/all', { params: { page } });
+    
+    // Handle both paginated and non-paginated responses
+    if (response.data && response.data.items) {
+      return response.data;
+    } else if (Array.isArray(response.data)) {
+      return {
+        items: response.data,
+        total: response.data.length,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
+    } else {
+      return {
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
+    }
   },
 
   // Update Leave Status (Admin Only)
