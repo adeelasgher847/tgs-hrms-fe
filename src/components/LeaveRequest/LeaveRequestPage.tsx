@@ -21,6 +21,7 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
+  Pagination,
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -51,6 +52,10 @@ const LeaveRequestPage = () => {
     'success'
   );
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   // Get current user role
   const currentUser = getCurrentUser();
   const userIsAdmin = isAdmin();
@@ -77,7 +82,7 @@ const LeaveRequestPage = () => {
     loadLeaves();
   }, []);
 
-  const loadLeaves = async () => {
+  const loadLeaves = async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
@@ -86,8 +91,8 @@ const LeaveRequestPage = () => {
       if (userIsAdmin) {
         // Admin gets all leaves with user info
         console.log('Loading leaves as admin...');
-        const response = await leaveApi.getAllLeaves();
-        leavesData = response.map(leave => ({
+        const response = await leaveApi.getAllLeaves(page);
+        leavesData = response.items.map(leave => ({
           id: leave.id,
           userId: leave.user_id || leave.userId,
           name: leave.user?.first_name
@@ -107,75 +112,58 @@ const LeaveRequestPage = () => {
             }),
           created_at: leave.created_at,
         }));
+
+        // Update pagination state
+        setCurrentPage(response.page);
+        setTotalPages(response.totalPages);
       } else if (userIsUser) {
         // Regular user gets their own leaves
         console.log('Loading leaves as user...');
-        const currentUserId = currentUser?.id;
-        if (!currentUserId) {
-          console.error('No user ID found for current user');
-          leavesData = [];
-        } else {
-          console.log('Fetching leaves for user ID:', currentUserId);
-          const response = await leaveApi.getUserLeaves(currentUserId);
-          leavesData = response.map(leave => ({
-            id: leave.id,
-            userId: leave.user_id || leave.userId,
-            name: 'You', // Show "You" for current user's own leaves
-            fromDate: leave.from_date,
-            toDate: leave.to_date,
-            reason: leave.reason,
-            type: leave.type,
-            status: leave.status,
-            applied:
-              leave.applied ||
-              new Date().toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              }),
-            created_at: leave.created_at,
-          }));
-        }
+        const response = await leaveApi.getUserLeaves(undefined, page);
+        leavesData = response.items.map(leave => ({
+          id: leave.id,
+          userId: leave.user_id || leave.userId,
+          name: 'You', // Show "You" for user's own leaves
+          fromDate: leave.from_date,
+          toDate: leave.to_date,
+          reason: leave.reason,
+          type: leave.type,
+          status: leave.status,
+          applied:
+            leave.applied ||
+            new Date().toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            }),
+          created_at: leave.created_at,
+        }));
+
+        // Update pagination state
+        setCurrentPage(response.page);
+        setTotalPages(response.totalPages);
       } else {
-        // No valid role, show empty
-        console.log('No valid role found, showing empty list');
         leavesData = [];
       }
 
-      // Sort leaves by creation date (newest first) for better admin experience
-      leavesData.sort((a, b) => {
-        // Sort by created_at if available, otherwise by applied date, then by ID
-        const dateA = a.created_at
-          ? new Date(a.created_at).getTime()
-          : a.applied
-            ? new Date(a.applied).getTime()
-            : new Date(a.id).getTime();
-        const dateB = b.created_at
-          ? new Date(b.created_at).getTime()
-          : b.applied
-            ? new Date(b.applied).getTime()
-            : new Date(b.id).getTime();
-        return dateB - dateA; // Newest first
-      });
-
-      console.log('Loaded leaves:', leavesData);
       setLeaves(leavesData);
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Error loading leaves:', error);
-      setError('Failed to load leave history');
-      const apiError = error as ApiError;
-      if (apiError?.response?.status === 403) {
-        setSnackbarMessage('Access denied. Please check your permissions.');
-      } else if (apiError?.response?.status === 401) {
-        setSnackbarMessage('Authentication failed. Please login again.');
-      } else {
-        setSnackbarMessage('Failed to load leave history');
-      }
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          'Failed to load leaves'
+      );
+      setLeaves([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    loadLeaves(page);
   };
 
   const handleApply = async (data: CreateLeaveRequest) => {
@@ -513,6 +501,30 @@ const LeaveRequestPage = () => {
             isAdmin={userIsAdmin}
             onAction={handleAction}
           />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box display='flex' justifyContent='center' mt={2}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={(_, page) => handlePageChange(page)}
+                color='primary'
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          )}
+
+          {/* Pagination Info */}
+          {leaves.length > 0 && (
+            <Box display='flex' justifyContent='center' mt={1}>
+              <Typography variant='body2' color='textSecondary'>
+                Showing page {currentPage} of {totalPages} ({leaves.length}{' '}
+                total records)
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
       <LeaveApprovalDialog

@@ -80,19 +80,63 @@ class DesignationApiService {
     }
   }
 
-  // Get all designations for a department
+  // Get all designations for a department with pagination
   async getDesignationsByDepartment(
-    departmentId: string
-  ): Promise<BackendDesignation[]> {
+    departmentId: string,
+    page: number = 1
+  ): Promise<{
+    items: BackendDesignation[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     try {
-      const response = await axiosInstance.get<any[]>(
-        `${this.baseUrl}/department/${departmentId}`
-      );
-      const items = Array.isArray(response.data) ? response.data : [];
-      return items.map(normalizeDesignation);
+      const response = await axiosInstance.get(`${this.baseUrl}/department/${departmentId}?page=${page}`);
+      
+      // Handle both paginated and non-paginated responses
+      let items: any[] = [];
+      let total = 0;
+      let currentPage = page;
+      let limit = 25;
+      let totalPages = 1;
+
+      if (response.data && response.data.items) {
+        // Paginated response
+        items = response.data.items;
+        total = response.data.total || items.length;
+        currentPage = response.data.page || page;
+        limit = response.data.limit || 25;
+        totalPages = response.data.totalPages || Math.ceil(total / limit);
+      } else if (Array.isArray(response.data)) {
+        // Direct array response (non-paginated)
+        items = response.data;
+        total = items.length;
+        totalPages = 1;
+      } else {
+        // Fallback
+        items = [];
+        total = 0;
+        totalPages = 1;
+      }
+      
+      return {
+        items: items.map(normalizeDesignation),
+        total,
+        page: currentPage,
+        limit,
+        totalPages,
+      };
     } catch (error) {
       console.error('Error fetching designations:', error);
-      throw error;
+      // Return empty paginated structure on error
+      return {
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
     }
   }
 
@@ -106,10 +150,8 @@ class DesignationApiService {
 
       for (const department of departments) {
         try {
-          const designations = await this.getDesignationsByDepartment(
-            department.id
-          );
-          allDesignations.push(...designations);
+          const response = await this.getDesignationsByDepartment(department.id, 1);
+          allDesignations.push(...response.items);
         } catch (error) {
           console.error(
             `Error fetching designations for department ${department.id}:`,

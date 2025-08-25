@@ -182,6 +182,8 @@ export default function EmployeesInfoChart() {
         borderRadius: '0.375rem',
         backgroundColor: bgColor,
         direction: language === 'ar' ? 'rtl' : 'ltr',
+        width: '100%',
+        overflow: 'hidden',
       }}
     >
       <Box
@@ -231,7 +233,7 @@ export default function EmployeesInfoChart() {
           display='flex'
           justifyContent='center'
           alignItems='center'
-          height={200}
+          height={220}
         >
           <CircularProgress />
         </Box>
@@ -240,7 +242,7 @@ export default function EmployeesInfoChart() {
           display='flex'
           justifyContent='center'
           alignItems='center'
-          height={200}
+          height={220}
         >
           <Typography color='error' variant='body2'>
             {error}
@@ -253,12 +255,15 @@ export default function EmployeesInfoChart() {
               outline: 'none',
               border: 'none',
             },
+            width: '100%',
+            height: '200px',
+            overflow: 'hidden',
           }}
         >
-          <ResponsiveContainer width='100%' height={170}>
+          <ResponsiveContainer width='100%' height={200}>
             <LineChart
               data={translatedData}
-              margin={{ top: 0, right: 20, bottom: 20, left: -40 }}
+              margin={{ top: 10, right: 10, bottom: 10, left: -40 }}
             >
               <CartesianGrid horizontal={false} vertical={false} />
               <XAxis
