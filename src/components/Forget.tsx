@@ -23,6 +23,7 @@ const Forget = () => {
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState(false);
+  const [emailErrorMessage, setEmailErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [openToast, setOpenToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -36,38 +37,62 @@ const Forget = () => {
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEmail(value);
-    setEmailError(value.length > 0 && !validateEmail(value));
+    if (value.length > 0 && !validateEmail(value)) {
+      setEmailError(true);
+      setEmailErrorMessage(lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email');
+    } else {
+      setEmailError(false);
+      setEmailErrorMessage('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateEmail(email)) {
       setEmailError(true);
+      setEmailErrorMessage(lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email address');
       return;
     }
     
     setLoading(true);
     setEmailError(false);
+    setEmailErrorMessage('');
 
     try {
       const response = await authApi.forgotPassword({ email });
 
-      if (response.message) {
+  
+      if (response && response.error) {
+        setEmailError(true);
+        setEmailErrorMessage(response.message || response.error || (lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email address'));
+        return;
+      }
+
+      // Check if response has success message
+      if (response && response.message && !response.error) {
         setToastMessage(response.message);
         setToastSeverity('success');
         setOpenToast(true);
-        // Clear the form after successful submission
         setEmail('');
       } else {
-        setToastMessage('Failed to send reset link. Please try again.');
+        setEmail('');
+      }
+    } catch (error: any) {
+      console.error('Error sending reset link:', error);
+      
+      if (error?.response?.status === 400 || error?.response?.status === 404 || error?.response?.status === 422) {
+        setEmailError(true);
+        if (error?.response?.status === 404) {
+          setEmailErrorMessage(lang === 'ar' ? 'البريد الإلكتروني غير موجود' : 'Email address not found');
+        } else {
+          setEmailErrorMessage(error?.response?.data?.message || (lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email address'));
+        }
+      } else {
+        // Only show toast for genuine network/connection errors
+        setToastMessage('Network error. Please check your connection and try again.');
         setToastSeverity('error');
         setOpenToast(true);
       }
-    } catch (error) {
-      console.error('Error sending reset link:', error);
-      setToastMessage('Network error. Please check your connection and try again.');
-      setToastSeverity('error');
-      setOpenToast(true);
     } finally {
       setLoading(false);
     }
@@ -225,6 +250,7 @@ const Forget = () => {
                     sx={{
                       width: '100%',
                       maxWidth: 240,
+                      height:'180px',
                       mb: 1,
                       mt: { xs: 2, md: 2 },
                     }}
@@ -281,12 +307,7 @@ const Forget = () => {
                       value={email}
                       onChange={handleEmailChange}
                       error={emailError}
-                      helperText={
-                        emailError &&
-                        (lang === 'ar'
-                          ? 'بريد إلكتروني غير صالح'
-                          : 'Invalid email')
-                      }
+                      helperText={emailErrorMessage}
                       FormHelperTextProps={{
                         sx: { fontSize: '15px' },
                       }}

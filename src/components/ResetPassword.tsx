@@ -278,7 +278,7 @@ const ResetPassword = () => {
                     sx={{
                       width: '100%',
                       maxWidth: 240,
-                      height: '140px',
+                      height: '125px',
                       mb: 1,
                       mt: { xs: 2, md: 2 },
                     }}
@@ -296,7 +296,7 @@ const ResetPassword = () => {
                         width='100%'
                         gutterBottom
                         sx={{
-                          fontSize: { xs: '22px', md: '33px' },
+                          fontSize: { xs: '22px', md: '30px' },
                           fontFamily: 'Open Sans, sans-serif',
                           mb: 1,
                           fontWeight: 500,
