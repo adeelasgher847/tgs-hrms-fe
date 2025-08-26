@@ -329,20 +329,6 @@ export default function DesignationManager() {
         
 
         <Box sx={{ display:{sx:'block',sm:'flex'}, gap: 2, alignItems: 'center' }}>
-          <ToggleButtonGroup
-            size='small'
-            value={language}
-            exclusive
-            onChange={(_, newLang) => {
-              if (newLang !== null) {
-                setLanguage(newLang);
-              }
-            }}
-            sx={{ height: 36 }}
-          >
-            <ToggleButton value='en'>EN</ToggleButton>
-            <ToggleButton value='ar'>AR</ToggleButton>
-          </ToggleButtonGroup>
 
           <Button
             variant='contained'
@@ -364,7 +350,7 @@ export default function DesignationManager() {
       </Box>
 
       {/* Filter by Department */}
-      <Paper sx={{ mb: 3, p: 2 }}>
+      <Paper sx={{ mb: 3,boxShadow:'none',}}>
         <FormControl fullWidth>
           <InputLabel id='dept-select'>
             {getText('Filter by Department', 'تصفية حسب القسم')}
@@ -400,8 +386,8 @@ export default function DesignationManager() {
       </Paper>
 
       {/* Designation Table */}
-      <Paper variant='outlined'>
-        <Box sx={{ p: 2 }}>
+      <Paper variant='outlined' sx={{bgcolor:'unset',border:'none'}}>
+        <Box>
           <Typography variant='body2' sx={{ mb: 2, color: 'text.secondary' }}>
             {filteredDesignations.length}{' '}
             {getText('designation(s)', 'مسمى وظيفي')}

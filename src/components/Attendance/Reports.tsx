@@ -79,7 +79,7 @@ const Reports: React.FC = () => {
   ];
 
   return (
-    <Box py={3}>
+    <Box>
       <Tabs
         value={tab}
         onChange={handleTabChange}

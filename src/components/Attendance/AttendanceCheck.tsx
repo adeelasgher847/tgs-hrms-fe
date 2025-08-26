@@ -95,7 +95,7 @@ const AttendanceCheck = () => {
   };
 
   return (
-    <Box py={3}>
+    <Box>
       <Box display='flex' justifyContent='flex-end' mb={2} gap={2}>
         {/* Single Check In / Check Out Button */}
         {status === 'Not Checked In' || status === 'Checked Out' ? (
@@ -131,7 +131,7 @@ const AttendanceCheck = () => {
             p: 3,
             borderRadius: 2,
             position: 'relative',
-            border: '1px solid #eee',
+            // border: '1px solid #eee',
             flex: 1,
             height: '100%',
             boxShadow: 'none',

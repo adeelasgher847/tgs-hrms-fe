@@ -125,11 +125,6 @@ const EmployeeManager: React.FC = () => {
     loadEmployees(page);
   };
 
-  // Handle refresh
-  const handleRefresh = () => {
-    console.log('🔄 EmployeeManager - Refreshing data');
-    loadEmployees(currentPage);
-  };
 
   const loadDepartmentsAndDesignations = async () => {
     try {
@@ -452,9 +447,9 @@ const EmployeeManager: React.FC = () => {
   const getLabel = (en: string, ar: string) => (direction === 'rtl' ? ar : en);
 
   return (
-    <Box p={2}>
+    <Box>
       <Typography variant='h6' gutterBottom>
-        Employee Management
+        Employee List
       </Typography>
 
       {/* Add Employee Button */}
@@ -488,8 +483,8 @@ const EmployeeManager: React.FC = () => {
             sx={{
               width: isMobile ? '100%' : 190,
               my: 0.5,
-              '& .MuiInputBase-input': {
-                // textAlign: "center", center the selected text
+              '&.MuiFormControl-root': {
+                backgroundColor: 'transparent !important',
               },
               '& .MuiInputBase-root': {
                 padding: '0px 8px',
@@ -525,6 +520,9 @@ const EmployeeManager: React.FC = () => {
             sx={{
               width: isMobile ? '100%' : 190,
               my: 0.5,
+              '&.MuiFormControl-root': {
+                backgroundColor: 'transparent !important',
+              },
               '& .MuiInputBase-root': {
                 padding: '0px 8px',
                 minHeight: '10px',
@@ -587,30 +585,8 @@ const EmployeeManager: React.FC = () => {
         </Button>
       </Box>
 
-      {/* Refresh Button */}
-      <Box display='flex' gap={2} mb={2} flexWrap='wrap' alignItems='center'>
-        <Button
-          variant='outlined'
-          startIcon={<RefreshIcon />}
-          onClick={handleRefresh}
-          disabled={loading}
-          sx={{
-            borderColor: filterBtn,
-            color: textColor,
-            '&:hover': {
-              borderColor: darkMode ? '#888' : '#999',
-              backgroundColor: darkMode
-                ? 'rgba(255,255,255,0.08)'
-                : 'rgba(0,0,0,0.04)',
-            },
-          }}
-        >
-          {getLabel('Refresh', 'تحديث')}
-        </Button>
-      </Box>
-
       {/* Employee List */}
-      <Paper elevation={3}>
+      <Paper elevation={3} sx={{boxShadow:'none'}}>
         <EmployeeList
           employees={filteredEmployees}
           onDelete={handleDeleteEmployee}
