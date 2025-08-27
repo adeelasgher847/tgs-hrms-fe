@@ -88,6 +88,11 @@ const menuItems: MenuItem[] = [
     subItems: [{ label: 'Employee List', path: 'EmployeeManager' }],
   },
   {
+    label: 'Teams',
+    icon: <Group />,
+    subItems: [{ label: 'Team Management', path: 'teams' }],
+  },
+  {
     label: 'Attendance',
     icon: <Receipt />,
     subItems: [

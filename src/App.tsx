@@ -23,6 +23,7 @@ import LeaveRequestPage from './components/LeaveRequest/LeaveRequestPage';
 import PolicyList from './components/HRPoliciesModule/PolicyList';
 import HolidayList from './components/HolidayCalendar/HolidayList';
 import TimesheetLayout from './components/TimerTracker/TimesheetLayout';
+import TeamManager from './components/Teams/TeamManager';
 
 function App() {
   return (
@@ -61,7 +62,11 @@ function App() {
             <Route path='policies' element={<PolicyList />} />
             <Route path='holidays' element={<HolidayList />} />
 
-            <Route path='AttendanceCheck/TimesheetLayout' element={<TimesheetLayout />} />
+            <Route
+              path='AttendanceCheck/TimesheetLayout'
+              element={<TimesheetLayout />}
+            />
+            <Route path='teams' element={<TeamManager />} />
           </Route>
           <Route path='*' element={<Error404 />} />
         </Routes>
