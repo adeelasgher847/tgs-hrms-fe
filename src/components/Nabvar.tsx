@@ -1,13 +1,10 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
-import AvatarOne from '../assets/NavbarAvatar/avatarone.jpg';
-import AvatarTwo from '../assets/NavbarAvatar/avatartwo.jpg';
-import AvatarThree from '../assets/NavbarAvatar/avatarthree.jpg';
-import AvatarFour from '../assets/NavbarAvatar/avatarfour.jpg';
+
 import AvatarProfile from '../assets/NavbarAvatar/ProfileAvatar.png';
 import { useLanguage } from '../context/LanguageContext';
-import { Select } from "@mui/material";
+import { Select } from '@mui/material';
 
 import {
   AppBar,
@@ -17,14 +14,11 @@ import {
   Typography,
   InputBase,
   Avatar,
-  Stack,
   Badge,
   Menu,
   MenuItem,
   Divider,
   ListItemIcon,
-  ToggleButtonGroup,
-  ToggleButton,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
@@ -37,6 +31,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 import { useState, useEffect } from 'react';
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
+import TeamMembersAvatar from './Teams/TeamMembersAvatar';
 
 const labels = {
   en: {
@@ -263,31 +258,11 @@ const Navbar: React.FC<NavbarProps> = ({
                 <InfoOutlinedIcon fontSize='small' />
               </IconButton>
 
-              <Stack
-                direction='row'
-                spacing={-1}
-                sx={{ display: { xs: 'none', sm: 'flex' } }}
-              >
-                {[AvatarOne, AvatarTwo, AvatarThree, AvatarFour].map(
-                  (src, index) => (
-                    <Avatar
-                      key={index}
-                      alt={`User ${index + 1}`}
-                      src={src}
-                      sx={{ width: 32, height: 32 }}
-                    />
-                  )
-                )}
-                <Avatar
-                  sx={{ width: 32, height: 32, backgroundColor: '#4b4f73' }}
-                >
-                  <AddIcon
-                    sx={{ cursor: 'pointer' }}
-                    onClick={onOpenInviteModal}
-                    fontSize='small'
-                  />
-                </Avatar>
-              </Stack>
+              <TeamMembersAvatar
+                maxAvatars={4}
+                onOpenInviteModal={onOpenInviteModal}
+                darkMode={darkMode}
+              />
 
               <IconButton>
                 <Badge variant='dot' color='error'>
@@ -370,19 +345,19 @@ const Navbar: React.FC<NavbarProps> = ({
                 </ToggleButton>
               </ToggleButtonGroup> */}
               <Select
-  value={language}
-  onChange={(e) => setLanguage(e.target.value)}
-  size="small"
-  sx={{
-    minWidth: 80,
-    "& .MuiSelect-select": {
-      padding: "5px  10px",
-    },
-  }}
->
-  <MenuItem value="en">EN</MenuItem>
-  <MenuItem value="ar">عربي</MenuItem>
-</Select>
+                value={language}
+                onChange={e => setLanguage(e.target.value)}
+                size='small'
+                sx={{
+                  minWidth: 80,
+                  '& .MuiSelect-select': {
+                    padding: '5px  10px',
+                  },
+                }}
+              >
+                <MenuItem value='en'>EN</MenuItem>
+                <MenuItem value='ar'>عربي</MenuItem>
+              </Select>
             </Box>
             <Box>
               <IconButton

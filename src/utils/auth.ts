@@ -66,6 +66,23 @@ export const isUser = (): boolean => {
   return result;
 };
 
+export const isManager = (): boolean => {
+  const user = getCurrentUser();
+  if (!user) return false;
+
+  // Handle both string and object role formats
+  const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
+  const result = roleName === 'manager' || roleName === 'Manager';
+
+  console.log('🔍 isManager check:', {
+    user: roleName,
+    result,
+    roleType: typeof user.role,
+    roleObject: user.role,
+  });
+  return result;
+};
+
 export const getAuthToken = (): string | null => {
   return localStorage.getItem('accessToken');
 };
