@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import {
   Box,
@@ -8,87 +8,109 @@ import {
   Button,
   TextField,
   Link,
-  Select,
-  MenuItem,
-  FormControl,
   CircularProgress,
   Snackbar,
   Alert,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import ForgetImage from '../assets/icons/forget-image.svg';
 import authApi from '../api/authApi';
 
-const Forget = () => {
+const ResetPassword = () => {
   const navigate = useNavigate();
-  const [lang, setLang] = useState<'en' | 'ar'>('en');
-  const [email, setEmail] = useState('');
-  const [emailError, setEmailError] = useState(false);
-  const [emailErrorMessage, setEmailErrorMessage] = useState('');
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  
+  const [formData, setFormData] = useState({
+    password: '',
+    confirmPassword: '',
+  });
+  const [errors, setErrors] = useState<{
+    password?: string;
+    confirmPassword?: string;
+    general?: string;
+  }>({});
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [openToast, setOpenToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>('success');
 
-  const validateEmail = (value: string) => {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(value);
+  useEffect(() => {
+    if (!token) {
+      setErrors({ general: 'Invalid reset link. Please request a new password reset.' });
+    }
+  }, [token]);
+
+  const validateForm = () => {
+    const newErrors: typeof errors = {};
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters long';
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEmail(value);
-    if (value.length > 0 && !validateEmail(value)) {
-      setEmailError(true);
-      setEmailErrorMessage(lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email');
-    } else {
-      setEmailError(false);
-      setEmailErrorMessage('');
+  const handleInputChange = (field: keyof typeof formData) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    // Clear field-specific error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!validateEmail(email)) {
-      setEmailError(true);
-      setEmailErrorMessage(lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email address');
+    
+    if (!validateForm()) {
       return;
     }
-    
+
     setLoading(true);
-    setEmailError(false);
-    setEmailErrorMessage('');
 
     try {
-      const response = await authApi.forgotPassword({ email });
+      const response = await authApi.resetPassword({
+        token: token!,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+      });
 
-  
-      if (response && response.error) {
-        setEmailError(true);
-        setEmailErrorMessage(response.message || response.error || (lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email address'));
-        return;
-      }
-
-      // Check if response has success message
-      if (response && response.message && !response.error) {
+      if (response.message) {
         setToastMessage(response.message);
         setToastSeverity('success');
         setOpenToast(true);
-        setEmail('');
+        
+        // Redirect to login page after successful reset
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
       } else {
-        setEmail('');
+        setToastMessage('Failed to reset password. Please try again.');
+        setToastSeverity('error');
+        setOpenToast(true);
       }
     } catch (error: any) {
-      console.error('Error sending reset link:', error);
+      console.error('Error resetting password:', error);
       
-      if (error?.response?.status === 400 || error?.response?.status === 404 || error?.response?.status === 422) {
-        setEmailError(true);
-        if (error?.response?.status === 404) {
-          setEmailErrorMessage(lang === 'ar' ? 'البريد الإلكتروني غير موجود' : 'Email address not found');
-        } else {
-          setEmailErrorMessage(error?.response?.data?.message || (lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email address'));
-        }
+      // Check if it's a validation error
+      if (error.message?.includes('Invalid or expired')) {
+        setErrors({ general: 'This reset link has expired or is invalid. Please request a new one.' });
       } else {
-        // Only show toast for genuine network/connection errors
         setToastMessage('Network error. Please check your connection and try again.');
         setToastSeverity('error');
         setOpenToast(true);
@@ -101,6 +123,49 @@ const Forget = () => {
   const handleBackToSignIn = () => {
     navigate('/');
   };
+
+  if (!token) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 2,
+        }}
+      >
+        <Paper
+          elevation={4}
+          sx={{
+            p: 4,
+            textAlign: 'center',
+            maxWidth: 400,
+          }}
+        >
+          <Typography variant="h5" color="error" gutterBottom>
+            Invalid Reset Link
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 3 }}>
+            This password reset link is invalid or has expired. Please request a new password reset.
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={handleBackToSignIn}
+            sx={{ mr: 2 }}
+          >
+            Back to Sign In
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/forget')}
+          >
+            Request New Reset
+          </Button>
+        </Paper>
+      </Box>
+    );
+  }
 
   return (
     <div className='loginpage'>
@@ -115,11 +180,9 @@ const Forget = () => {
         <Box
           sx={{
             height: '100%',
-            // display: "flex",
             justifyContent: 'center',
             alignItems: 'center',
             gap: { xs: 1 },
-            direction: lang === 'ar' ? 'rtl' : 'ltr',
           }}
         >
           <Box
@@ -131,6 +194,7 @@ const Forget = () => {
               margin: 'auto',
             }}
           >
+            {/* Left Side - Image */}
             <Box
               sx={{
                 display: { xs: 'none', md: 'flex' },
@@ -168,9 +232,7 @@ const Forget = () => {
                   fontSize: '32px',
                 }}
               >
-                {lang === 'ar'
-                  ? 'إدارة مهام أفضل مع ماي-تاسك'
-                  : "My-Task Let's Management Better"}
+                My-Task Let's Management Better
               </Typography>
               <Box
                 component='img'
@@ -180,7 +242,7 @@ const Forget = () => {
               />
             </Box>
 
-            {/* Right Side - Forget Form */}
+            {/* Right Side - Reset Password Form */}
             <Box
               sx={{
                 alignItems: 'center',
@@ -198,42 +260,8 @@ const Forget = () => {
                   pt: { xs: 1, md: 1 },
                   pb: { xs: 1, md: 2 },
                   borderRadius: { xs: 2, lg: 0 },
-                  direction: lang === 'ar' ? 'rtl' : 'ltr',
                 }}
               >
-                {/* Language Selector */}
-                <Box sx={{ mt: 2, maxWidth: 100 }}>
-                  <FormControl size='small' fullWidth>
-                    <Select
-                      id='language-select'
-                      value={lang}
-                      onChange={e => setLang(e.target.value)}
-                      displayEmpty
-                      sx={{
-                        bgcolor: 'white',
-                        borderRadius: 1,
-                        fontFamily: 'Open Sans, sans-serif',
-                        fontSize: 14,
-                        '& .MuiOutlinedInput-notchedOutline': {
-                          borderColor: '#ccc',
-                        },
-                        '&:hover .MuiOutlinedInput-notchedOutline': {
-                          borderColor: '#f19828',
-                        },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                          borderColor: '#f19828',
-                        },
-                      }}
-                      renderValue={selected =>
-                        selected === 'ar' ? 'عربى' : 'English'
-                      }
-                    >
-                      <MenuItem value='en'>English</MenuItem>
-                      <MenuItem value='ar'>عربى</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
-
                 {/* Form */}
                 <Box
                   sx={{
@@ -246,11 +274,11 @@ const Forget = () => {
                   <Box
                     component='img'
                     src={ForgetImage}
-                    alt='Login Illustration'
+                    alt='Reset Password Illustration'
                     sx={{
                       width: '100%',
                       maxWidth: 240,
-                      height:'180px',
+                      height: '125px',
                       mb: 1,
                       mt: { xs: 2, md: 2 },
                     }}
@@ -268,13 +296,13 @@ const Forget = () => {
                         width='100%'
                         gutterBottom
                         sx={{
-                          fontSize: { xs: '22px', md: '40px' },
+                          fontSize: { xs: '22px', md: '30px' },
                           fontFamily: 'Open Sans, sans-serif',
                           mb: 1,
                           fontWeight: 500,
                         }}
                       >
-                        {lang === 'ar' ? 'تسجيل الدخول' : 'Forgot password?'}
+                        Reset Your Password
                       </Typography>
                       <Typography
                         sx={{
@@ -283,45 +311,110 @@ const Forget = () => {
                           textAlign: 'center',
                         }}
                       >
-                        {lang === 'ar'
-                          ? 'وصول مجاني إلى لوحة التحكم الخاصة بنا.'
-                          : 'Enter the email address you used when you joined and we shall send you instructions to reset your password.'}
+                        Enter your new password below to complete the reset process.
                       </Typography>
                     </Box>
 
+                    {errors.general && (
+                      <Alert severity="error" sx={{ mb: 2 }}>
+                        {errors.general}
+                      </Alert>
+                    )}
+
                     <Typography
                       component='label'
-                      htmlFor='email'
+                      htmlFor='password'
                       sx={{ fontWeight: 400, fontSize: '14px' }}
                     >
-                      {lang === 'ar' ? 'البريد الإلكتروني' : 'Email address'}
+                      New Password
                     </Typography>
                     <TextField
                       fullWidth
                       required
-                      id='email'
-                      name='email'
-                      type='email'
+                      id='password'
+                      name='password'
+                      type={showPassword ? 'text' : 'password'}
                       margin='normal'
-                      placeholder='name@example.com'
-                      value={email}
-                      onChange={handleEmailChange}
-                      error={emailError}
-                      helperText={emailErrorMessage}
+                      placeholder='Enter new password'
+                      value={formData.password}
+                      onChange={handleInputChange('password')}
+                      error={!!errors.password}
+                      helperText={errors.password}
                       FormHelperTextProps={{
-                        sx: { fontSize: '15px' },
-                      }}
-                      sx={{ mt: 1 ,}}
-                      InputProps={{
                         sx: {
-                             backgroundColor: '#eee',
-                        borderRadius: '8px',
-                        '&.Mui-focused, &:active': {
-                          backgroundColor: 'white',
+                          fontSize: '14px',
                         },
-                        "& fieldset": {border: "none"},
-                         "&:hover fieldset": {border: "none"},
-                         "&.Mui-focused fieldset": {border: "none"},
+                      }}
+                      sx={{ mt: 1 }}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setShowPassword(!showPassword)}
+                              edge="end"
+                            >
+                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                        sx: {
+                          backgroundColor: '#eee',
+                          borderRadius: '8px',
+                          '&.Mui-focused, &:active': {
+                            backgroundColor: 'white',
+                          },
+                          "& fieldset": { border: "none" },
+                          "&:hover fieldset": { border: "none" },
+                          "&.Mui-focused fieldset": { border: "none" },
+                        },
+                      }}
+                    />
+
+                    <Typography
+                      component='label'
+                      htmlFor='confirmPassword'
+                      sx={{ fontWeight: 400, fontSize: '14px', mt: 2 }}
+                    >
+                      Confirm New Password
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      required
+                      id='confirmPassword'
+                      name='confirmPassword'
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      margin='normal'
+                      placeholder='Confirm new password'
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange('confirmPassword')}
+                      error={!!errors.confirmPassword}
+                      helperText={errors.confirmPassword}
+                      FormHelperTextProps={{
+                        sx: {
+                          fontSize: '14px',
+                        },
+                      }}
+                      sx={{ mt: 1 }}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              edge="end"
+                            >
+                              {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                        sx: {
+                          backgroundColor: '#eee',
+                          borderRadius: '8px',
+                          '&.Mui-focused, &:active': {
+                            backgroundColor: 'white',
+                          },
+                          "& fieldset": { border: "none" },
+                          "&:hover fieldset": { border: "none" },
+                          "&.Mui-focused fieldset": { border: "none" },
                         },
                       }}
                     />
@@ -330,7 +423,7 @@ const Forget = () => {
                       <Button
                         type='submit'
                         variant='contained'
-                        disabled={!email || emailError || loading}
+                        disabled={loading || !formData.password || !formData.confirmPassword}
                         sx={{
                           mt: { xs: 2, md: 2 },
                           p: 1.5,
@@ -348,10 +441,8 @@ const Forget = () => {
                       >
                         {loading ? (
                           <CircularProgress size={24} />
-                        ) : lang === 'ar' ? (
-                          'إرسال رابط إعادة التعيين'
                         ) : (
-                          'Send Reset Link'
+                          'Reset Password'
                         )}
                       </Button>
                     </Box>
@@ -384,7 +475,7 @@ const Forget = () => {
                           },
                         }}
                       >
-                        {lang === 'ar' ? 'سجل هنا' : 'Back to Sign in'}
+                        Back to Sign in
                       </Link>
                     </Typography>
                   </Box>
@@ -394,7 +485,8 @@ const Forget = () => {
           </Box>
         </Box>
       </Box>
-      {/*Snackbar Toast */}
+
+      {/* Snackbar Toast */}
       <Snackbar
         open={openToast}
         autoHideDuration={4000}
@@ -413,4 +505,4 @@ const Forget = () => {
   );
 };
 
-export default Forget;
+export default ResetPassword; 

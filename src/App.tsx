@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Login';
 import Forget from './components/Forget';
-import ResetPasswordPage from './components/ResetPasswordPage';
+import ResetPassword from './components/ResetPassword';
 import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
 import './App.css';
@@ -31,7 +31,7 @@ function App() {
         <Routes>
           <Route path='/' element={<Login />} />
           <Route path='/forget' element={<Forget />} />
-          <Route path='/reset-password' element={<ResetPasswordPage />} />
+          <Route path='/reset-password' element={<ResetPassword />} />
           <Route path='/Signup' element={<Signup />} />
           <Route
             path='/dashboard'
