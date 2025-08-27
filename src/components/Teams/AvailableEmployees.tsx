@@ -8,7 +8,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Avatar,
   Typography,
   IconButton,
   Chip,
@@ -27,6 +26,7 @@ import {
   Select,
   MenuItem,
 } from '@mui/material';
+import UserAvatar from '../common/UserAvatar';
 import {
   Add as AddIcon,
   Search as SearchIcon,
@@ -346,22 +346,16 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                     <TableRow key={employee.id} hover>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Avatar
-                            sx={{
-                              backgroundColor: generateAvatarColor(
-                                employee.user?.first_name || 'Unknown'
-                              ),
-                              mr: 2,
-                              width: 32,
-                              height: 32,
-                              fontSize: '0.75rem',
+                          <UserAvatar
+                            user={{
+                              first_name: employee.user?.first_name || '',
+                              last_name: employee.user?.last_name || '',
+                              profile_pic: employee.user?.profile_pic,
                             }}
-                          >
-                            {generateInitials(
-                              employee.user?.first_name || '',
-                              employee.user?.last_name || ''
-                            )}
-                          </Avatar>
+                            size={32}
+                            clickable={false}
+                            sx={{ mr: 2 }}
+                          />
                           <Typography
                             sx={{ color: darkMode ? '#fff' : '#000' }}
                           >

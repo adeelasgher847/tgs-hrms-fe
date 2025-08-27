@@ -3,7 +3,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Avatar,
   Box,
   Divider,
   Chip,
@@ -19,72 +18,42 @@ import {
   Business,
   CalendarToday,
 } from '@mui/icons-material';
-import axiosInstance from '../../api/axiosInstance';
+import { type UserProfile } from '../../api/profileApi';
+import { useUser } from '../../context/UserContext';
+import { getRoleName, getRoleColor, isEmployee } from '../../utils/roleUtils';
+import ProfilePictureUpload from '../common/ProfilePictureUpload';
 import EmployeeProfileView from '../Employee/EmployeeProfileView';
 
-interface UserProfileData {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  role: string;
-  tenant: string;
-  created_at: string;
-}
-
-const UserProfile = () => {
-  const [profile, setProfile] = useState<UserProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
+const UserProfileComponent = () => {
+  const { user: profile, loading, refreshUser } = useUser();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await axiosInstance.get('/profile/me');
-        setProfile(res.data);
-      } catch {
-        setError('Profile not found or failed to load.');
-        setProfile(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
-  }, []);
-
-  const getInitials = (first: string, last: string): string => {
-    return `${first?.charAt(0) || ''}${last?.charAt(0) || ''}`.toUpperCase();
-  };
-
-  const getRoleColor = (
-    role: string
-  ):
-    | 'default'
-    | 'primary'
-    | 'secondary'
-    | 'error'
-    | 'info'
-    | 'success'
-    | 'warning' => {
-    switch (role?.toLowerCase()) {
-      case 'admin':
-        return 'error';
-      case 'manager':
-        return 'warning';
-      case 'user':
-        return 'primary';
-      case 'employee':
-        return 'success';
-      default:
-        return 'default';
+    console.log('🔄 UserProfile useEffect triggered:', {
+      profile: !!profile,
+      loading,
+    });
+    // Only fetch if we don't have user data and we're not already loading
+    if (!profile && !loading) {
+      console.log('📡 Fetching user profile...');
+      const fetchProfile = async () => {
+        try {
+          await refreshUser();
+        } catch {
+          setError('Profile not found or failed to load.');
+        }
+      };
+      fetchProfile();
     }
+  }, [profile, loading, refreshUser]);
+
+  const handleProfileUpdate = (_updatedUser: UserProfile) => {
+    // The UserContext will handle the update automatically
+    // This function is kept for compatibility with ProfilePictureUpload
   };
 
   // Determine if the user is an employee based on role
-  const isEmployee = profile?.role?.toLowerCase() === 'employee';
+  const userIsEmployee = isEmployee(profile?.role);
 
   if (loading)
     return (
@@ -119,7 +88,7 @@ const UserProfile = () => {
     {
       icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
       label: 'Role',
-      value: profile.role,
+      value: getRoleName(profile.role),
     },
     {
       icon: <Business sx={{ color: 'primary.main' }} />,
@@ -156,20 +125,19 @@ const UserProfile = () => {
           sx={{ borderRadius: 3, border: 'none', bgcolor: 'transparent' }}
         >
           <CardContent sx={{ p: 0 }}>
-            {/* Header Section with Avatar */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-              <Avatar
-                sx={{
-                  width: 80,
-                  height: 80,
-                  mr: 1,
-                  fontSize: '2rem',
-                  bgcolor: 'primary.main',
-                }}
-              >
-                {getInitials(profile.first_name, profile.last_name)}
-              </Avatar>
-              <Box>
+            {/* Header Section with Profile Picture Upload */}
+            <Box
+              sx={{ display: 'flex', alignItems: 'flex-start', mb: 4, gap: 3 }}
+            >
+              <ProfilePictureUpload
+                user={profile}
+                onProfileUpdate={handleProfileUpdate}
+                size={100}
+                showUploadButton={true}
+                showRemoveButton={true}
+                clickable={true}
+              />
+              <Box sx={{ flex: 1 }}>
                 <Typography
                   variant='h5'
                   component='h2'
@@ -178,11 +146,23 @@ const UserProfile = () => {
                   {profile.first_name} {profile.last_name}
                 </Typography>
                 <Chip
-                  label={profile.role}
+                  label={getRoleName(profile.role)}
                   color={getRoleColor(profile.role)}
                   size='small'
-                  sx={{ fontWeight: 500 }}
+                  sx={{ fontWeight: 500, mb: 1 }}
                 />
+                <Typography
+                  variant='body2'
+                  color='text.secondary'
+                  sx={{ mb: 0.5 }}
+                >
+                  {profile.email}
+                </Typography>
+                {profile.phone && (
+                  <Typography variant='body2' color='text.secondary'>
+                    {profile.phone}
+                  </Typography>
+                )}
               </Box>
             </Box>
             <Divider sx={{ mb: 3 }} />
@@ -227,7 +207,7 @@ const UserProfile = () => {
           </CardContent>
         </Card>
         {/* Show EmployeeProfileView if user is an employee */}
-        {isEmployee && (
+        {userIsEmployee && (
           <Box mt={4}>
             <EmployeeProfileView />
           </Box>
@@ -237,4 +217,4 @@ const UserProfile = () => {
   );
 };
 
-export default UserProfile;
+export default UserProfileComponent;

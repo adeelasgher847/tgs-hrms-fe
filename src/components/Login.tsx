@@ -24,6 +24,7 @@ import GoogleIcon from '../assets/icons/google.svg';
 import axios from 'axios';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { type AlertProps } from '@mui/material/Alert';
+import { useUser } from '../context/UserContext';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
   function Alert(props, ref) {
@@ -33,6 +34,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { updateUser } = useUser();
 
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -139,6 +141,14 @@ const Login: React.FC = () => {
       localStorage.setItem('accessToken', res.data.accessToken);
       localStorage.setItem('refreshToken', res.data.refreshToken);
       localStorage.setItem('user', JSON.stringify(res.data.user));
+
+      // Update user context without causing re-render
+      try {
+        updateUser(res.data.user);
+      } catch (error) {
+        console.warn('Failed to update user context:', error);
+      }
+
       if (rememberMe) {
         localStorage.setItem(
           'rememberedLogin',
@@ -152,9 +162,9 @@ const Login: React.FC = () => {
         message: lang === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Login Successful!',
         severity: 'success',
       });
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1200);
+
+      // Navigate immediately without setTimeout
+      navigate('/dashboard', { replace: true });
     } catch (err: any) {
       // Backend may send { field: 'email' | 'password', message: string }
       const data = err.response?.data;
@@ -433,9 +443,9 @@ const Login: React.FC = () => {
                         '&.Mui-focused, &:active': {
                           backgroundColor: 'white',
                         },
-                        "& fieldset": {border: "none"},
-                        "&:hover fieldset": {border: "none"},
-                        "&.Mui-focused fieldset": {border: "none"},
+                        '& fieldset': { border: 'none' },
+                        '&:hover fieldset': { border: 'none' },
+                        '&.Mui-focused fieldset': { border: 'none' },
                       },
                     }}
                   />
@@ -503,16 +513,15 @@ const Login: React.FC = () => {
                           '&.Mui-focused': {
                             backgroundColor: 'white',
                           },
-                           "& fieldset": {
-        border: "none",
-      },
-      "&:hover fieldset": {
-        border: "none",
-      },
-      "&.Mui-focused fieldset": {
-        border: "none",
-      },
-  
+                          '& fieldset': {
+                            border: 'none',
+                          },
+                          '&:hover fieldset': {
+                            border: 'none',
+                          },
+                          '&.Mui-focused fieldset': {
+                            border: 'none',
+                          },
                         },
                         endAdornment: (
                           <InputAdornment position='end'>

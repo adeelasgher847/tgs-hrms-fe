@@ -2,8 +2,9 @@ import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 
-import AvatarProfile from '../assets/NavbarAvatar/ProfileAvatar.png';
 import { useLanguage } from '../context/LanguageContext';
+import { useUser } from '../context/UserContext';
+import { getRoleDisplayName } from '../utils/roleUtils';
 import { Select } from '@mui/material';
 
 import {
@@ -13,13 +14,13 @@ import {
   IconButton,
   Typography,
   InputBase,
-  Avatar,
   Badge,
   Menu,
   MenuItem,
   Divider,
   ListItemIcon,
 } from '@mui/material';
+import UserAvatar from './common/UserAvatar';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
@@ -29,7 +30,7 @@ import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
-import { useState, useEffect } from 'react';
+
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
 import TeamMembersAvatar from './Teams/TeamMembersAvatar';
 
@@ -105,33 +106,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const navigate = useNavigate();
   const { language } = useLanguage();
   const lang = labels[language];
-  const [user, setUser] = useState<{
-    name: string;
-    role: string;
-    email: string;
-    avatarUrl?: string;
-  } | null>(null);
-
-  useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      try {
-        const parsed = JSON.parse(userData);
-        console.log('Parsed user data:', parsed); // Debugging
-        setUser({
-          name: parsed.first_name || 'User',
-          email: parsed.email || '',
-          role: parsed.role.name || '',
-          avatarUrl: parsed.avatarUrl || undefined,
-        });
-      } catch {
-        console.error('Failed to parse user data from localStorage');
-        setUser(null);
-      }
-    } else {
-      console.warn('No user data found in localStorage');
-    }
-  }, []);
+  const { user, clearUser } = useUser();
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -144,7 +119,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    clearUser();
     navigate('/');
   };
 
@@ -282,30 +257,14 @@ const Navbar: React.FC<NavbarProps> = ({
                   sx={{ fontWeight: 600, fontSize: '14px' }}
                   color={textColor}
                 >
-                  {user?.name || 'User'}
+                  {user ? `${user.first_name} ${user.last_name}` : 'User'}
                 </Typography>
                 <Typography variant='caption' color={textColor}>
-                  {user?.role == 'Admin'
-                    ? 'Admin'
-                    : user?.role == 'Staff'
-                      ? 'Staff Profile'
-                      : 'User'}
+                  {getRoleDisplayName(user?.role)}
                 </Typography>
               </Box>
               <IconButton onClick={handleMenuOpen}>
-                <Avatar
-                  alt={user?.name || 'User'}
-                  src={user?.avatarUrl || AvatarProfile}
-                  sx={{
-                    width: '45px',
-                    height: '45px',
-                    border: '1px solid #dee2e6',
-                    p: '3px',
-                    '& img': { borderRadius: '50%' },
-                  }}
-                >
-                  {!user?.avatarUrl && user?.name ? user.name[0] : null}
-                </Avatar>
+                {user && <UserAvatar user={user} size={45} clickable={false} />}
               </IconButton>
               {/* Language Toggle */}
               {/* <ToggleButtonGroup
@@ -389,16 +348,10 @@ const Navbar: React.FC<NavbarProps> = ({
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-          <Avatar
-            alt={user?.name || 'User'}
-            src={user?.avatarUrl || AvatarProfile}
-            sx={{ width: 50, height: 50 }}
-          >
-            {!user?.avatarUrl && user?.name ? user.name[0] : null}
-          </Avatar>
+          {user && <UserAvatar user={user} size={50} clickable={false} />}
           <Box>
             <Typography fontWeight={600} color={textColor}>
-              {user?.name || 'User'}
+              {user ? `${user.first_name} ${user.last_name}` : 'User'}
             </Typography>
             <Typography variant='body2' color={textColor}>
               {user?.email || ''}
