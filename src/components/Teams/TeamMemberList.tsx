@@ -121,30 +121,11 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 Loading team members for team:', teamId);
         const response = await teamApiService.getTeamMembers(teamId, page + 1);
-        console.log('📊 Team members response:', response);
-        console.log('📋 Members data:', response.items);
-
-        if (response.items && response.items.length > 0) {
-          console.log('👤 First member sample:', response.items[0]);
-          console.log(
-            '🏢 Department data available:',
-            response.items[0].department
-          );
-          console.log(
-            '💼 Designation data available:',
-            response.items[0].designation
-          );
-        }
-
         setMembers(response.items || []);
-        console.log('🔍 Members:', response.items);
         setTotal(response.total || 0);
-      } catch (err) {
-        console.error('❌ Error loading team members:', err);
+      } catch {
         setError(lang.error);
-        // Don't use mock data - let the error state handle it
         setMembers([]);
         setTotal(0);
       } finally {
@@ -153,12 +134,11 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
     };
 
     loadMembers();
-  }, [teamId, page, rowsPerPage]);
+  }, [teamId, page, rowsPerPage, lang.error]);
 
   // Listen for team updates to refresh data
   useEffect(() => {
     const handleTeamUpdate = () => {
-      console.log('🔄 Team updated, refreshing members...');
       // Trigger a re-fetch of members
       const loadMembers = async () => {
         try {
@@ -469,7 +449,8 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
                   variant='body2'
                   sx={{ color: darkMode ? '#ccc' : '#666' }}
                 >
-                  <strong>Department:</strong> {memberToDelete.designation?.department?.name}
+                  <strong>Department:</strong>{' '}
+                  {memberToDelete.designation?.department?.name}
                 </Typography>
               </Box>
             </Box>

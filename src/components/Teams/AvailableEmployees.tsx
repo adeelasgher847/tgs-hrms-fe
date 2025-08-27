@@ -134,30 +134,13 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 Loading available employees...');
         const response = await teamApiService.getAvailableEmployees(
           page + 1,
           searchTerm
         );
-        console.log('📊 Available employees response:', response);
-        console.log('📋 Employees data:', response.items);
-
-        if (response.items && response.items.length > 0) {
-          console.log('👤 First employee sample:', response.items[0]);
-          console.log(
-            '🏢 Department data available:',
-            response.items[0].department
-          );
-          console.log(
-            '💼 Designation data available:',
-            response.items[0].designation
-          );
-        }
-
         setEmployees(response.items || []);
         setTotal(response.total || 0);
-      } catch (err) {
-        console.error('❌ Error loading available employees:', err);
+      } catch {
         setError(lang.error);
         setEmployees([]);
         setTotal(0);
@@ -167,7 +150,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
     };
 
     loadEmployees();
-  }, [page, rowsPerPage, searchTerm]);
+  }, [page, rowsPerPage, searchTerm, lang.error]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);

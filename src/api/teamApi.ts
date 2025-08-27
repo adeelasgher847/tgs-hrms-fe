@@ -12,8 +12,12 @@ export interface TeamMember {
   designation: {
     id: string;
     title: string;
+    department?: {
+      id: string;
+      name: string;
+    };
   };
-  department: {
+  department?: {
     id: string;
     name: string;
   };

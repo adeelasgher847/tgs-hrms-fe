@@ -161,7 +161,11 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode = false }) => {
     setTabValue(newValue);
   };
 
-  const handleCreateTeam = async (teamData: any) => {
+  const handleCreateTeam = async (teamData: {
+    name: string;
+    description?: string;
+    manager_id: string;
+  }) => {
     try {
       const newTeam = await teamApiService.createTeam(teamData);
       setTeams(prev => [newTeam, ...prev]);
