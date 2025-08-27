@@ -14,9 +14,16 @@ import timesheetApi, { type TimesheetEntry } from '../../api/timesheetApi';
 
 import attendanceApi from '../../api/attendanceApi';
 import { Link as RouterLink } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
+import { useOutletContext } from 'react-router-dom';
 
 
 const POLL_INTERVAL_MS = 5000;
+
+interface OutletContext {
+  darkMode: boolean;
+  language: 'en' | 'ar';
+}
 
 const MyTimerCard: React.FC = () => {
   const [currentSession, setCurrentSession] = useState<TimesheetEntry | null>(
@@ -27,6 +34,9 @@ const MyTimerCard: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [hasCheckedIn, setHasCheckedIn] = useState<boolean>(false);
   const [checkingAttendance, setCheckingAttendance] = useState<boolean>(true);
+
+  const theme = useTheme();
+  const { darkMode } = useOutletContext<OutletContext>();
 
   // Check if user has checked in today
   const checkAttendanceStatus = async () => {
@@ -172,17 +182,25 @@ const MyTimerCard: React.FC = () => {
     }
   };
 
+  const cardBackground = darkMode ? theme.palette.background.paper : '#ffffff';
+  const cardBorder = darkMode ? '1px solid rgba(255,255,255,0.12)' : '1px solid #eee';
+  const textPrimary = theme.palette.text.primary;
+
   return (
     <>
       <Card
         sx={{
-          background: '#ffffff',
+          background: cardBackground,
           borderRadius: 2,
           position: 'relative',
-          border: '1px solid #eee',
+          border: cardBorder,
           flex: 1,
           height: '100%',
           boxShadow: 'none',
+          color: textPrimary,
+          '&,MuiPaper-root-MuiCard-root':{
+            border: 'none',
+          }
         }}
       >
         <CardContent>
@@ -204,7 +222,7 @@ const MyTimerCard: React.FC = () => {
             >
               <CircularProgress
                 variant='determinate'
-                value={(elapsed % 60) * (100 / 60)} // animate within current minute
+                value={(elapsed % 60) * (100 / 60)}
                 size={90}
                 thickness={5}
               />
@@ -258,7 +276,6 @@ const MyTimerCard: React.FC = () => {
                 >
                   My Timesheet
                 </Button>
-
               )}
             </Box>
           )}

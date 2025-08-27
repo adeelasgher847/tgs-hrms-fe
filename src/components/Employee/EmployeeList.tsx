@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Box,
-  Typography,
   useTheme,
   Table,
   TableBody,
@@ -73,8 +72,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
   // Dark mode styles
   const textColor = darkMode ? '#8f8f8f' : '#000';
-  const cardBg = darkMode ? '#2a2a2a' : '#f9f9f9';
-  const borderColor = darkMode ? '#555' : '#ccc';
   const secondaryTextColor = darkMode
     ? '#9a9a9a'
     : theme.palette.text.secondary;
@@ -83,22 +80,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   console.log('First employee department:', employees[0]?.department);
   console.log('First employee designation:', employees[0]?.designation);
   return (
-    <Box sx={{ py: 2 }}>
-      <Typography
-        variant='h5'
-        gutterBottom
-        textAlign='start'
-        sx={{ color: textColor }}
-      >
-        {direction === 'rtl' ? 'قائمة الموظفين' : 'Employee List'}
-      </Typography>
-
-      {loading && (
-        <Box display='flex' justifyContent='center' py={4}>
-          <CircularProgress />
-        </Box>
-      )}
-
+    <Box>
       <TableContainer>
         <Table>
           <TableHead>
@@ -128,7 +110,16 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {employees.map(emp => (
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={onDelete || onEdit ? 6 : 5} align='center'>
+                  <Box display='flex' justifyContent='center' py={4}>
+                    <CircularProgress />
+                  </Box>
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading && employees.map(emp => (
               <TableRow
                 key={emp.id}
                 sx={{

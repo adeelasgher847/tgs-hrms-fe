@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Paper, Typography, IconButton, useTheme } from '@mui/material';
+import { Box, Paper, Typography, IconButton,} from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import SheetList from './SheetList';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 
 const TimesheetLayout: React.FC = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   
   return (
@@ -22,7 +21,7 @@ const TimesheetLayout: React.FC = () => {
           My Timesheet
         </Typography>
       </Box>
-      <Paper sx={{ flex: 1, width: '100%', overflow: 'auto', boxShadow: 'none',borderRadius:0 }}>
+      <Paper sx={{ flex: 1, width: '100%', overflow: 'auto', boxShadow: 'none',borderRadius:0 , bgcolor:'unset'}}>
         <SheetList />
       </Paper>
     </Box>

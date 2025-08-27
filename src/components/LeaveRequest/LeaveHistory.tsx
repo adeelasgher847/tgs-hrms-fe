@@ -83,7 +83,7 @@ const LeaveHistory = ({
         <TableContainer
           component={Paper}
           elevation={0}
-          sx={{ borderRadius: 3 }}
+          sx={{ borderRadius: 0, }}
         >
           <Table>
             <TableHead>

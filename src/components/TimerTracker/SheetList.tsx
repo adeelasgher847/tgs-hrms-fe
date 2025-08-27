@@ -11,9 +11,7 @@ import {
   CircularProgress,
   Typography,
   Pagination,
-  Button,
 } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import timesheetApi from '../../api/timesheetApi';
 import type { TimesheetEntry } from '../../api/timesheetApi';
 
@@ -42,7 +40,7 @@ const SheetList: React.FC = () => {
       setTotalPages(response.totalPages || 1);
       setTotalItems(response.total || 0);
     } catch (error) {
-      console.error('❌ SheetList - Error fetching timesheet:', error);
+      console.error('SheetList - Error fetching timesheet:', error);
     } finally {
       setLoading(false);
     }
@@ -58,31 +56,9 @@ const SheetList: React.FC = () => {
     setCurrentPage(page);
     fetchData(page);
   };
-
-  // Handle refresh
-  const handleRefresh = () => {
-    console.log('🔄 SheetList - Refreshing data');
-    fetchData(currentPage);
-  };
-
   return (
-    <Box p={2}>
-      <Typography variant='h6' gutterBottom>
-        Timesheet Sessions
-      </Typography>
-
-      <Box display='flex' gap={2} mb={2} flexWrap='wrap' alignItems='center'>
-        <Button
-          variant='outlined'
-          startIcon={<RefreshIcon />}
-          onClick={handleRefresh}
-          disabled={loading}
-        >
-          Refresh
-        </Button>
-      </Box>
-
-      <Paper elevation={3}>
+    <Box>
+      <Paper elevation={3 } sx={{boxShadow:'none'}}>
         <TableContainer>
           <Table>
             <TableHead>
