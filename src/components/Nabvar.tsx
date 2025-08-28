@@ -274,7 +274,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 </Typography>
               </Box>
               <IconButton onClick={handleMenuOpen}>
-                {user && <UserAvatar user={user} size={45} clickable={false} />}
+                {user && <UserAvatar user={user} size={50} clickable={false} />}
               </IconButton>
               {/* Language Toggle */}
               {/* <ToggleButtonGroup
@@ -358,7 +358,7 @@ const Navbar: React.FC<NavbarProps> = ({
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-          {user && <UserAvatar user={user} size={50} clickable={false} />}
+          {user && <UserAvatar user={user} size={40} clickable={false} />}
           <Box>
             <Typography fontWeight={600} color={textColor}>
               {user ? `${user.first_name} ${user.last_name}` : 'User'}
