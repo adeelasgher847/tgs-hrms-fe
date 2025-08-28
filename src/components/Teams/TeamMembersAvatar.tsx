@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Avatar,
   Stack,
   Tooltip,
   Box,
@@ -16,6 +15,8 @@ import {
   ListItemText,
   IconButton,
 } from '@mui/material';
+import UserAvatar from '../common/UserAvatar';
+import { Avatar } from '@mui/material';
 import {
   Add as AddIcon,
   Group as GroupIcon,
@@ -224,14 +225,15 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           arrow
           placement='bottom'
         >
-          <Avatar
-            alt={fullName}
+          <UserAvatar
+            user={{
+              first_name: member.user.first_name,
+              last_name: member.user.last_name,
+              profile_pic: member.user.profile_pic,
+            }}
+            size={32}
+            clickable={true}
             sx={{
-              width: 32,
-              height: 32,
-              backgroundColor: avatarColor,
-              fontSize: '0.75rem',
-              fontWeight: 600,
               border: '2px solid white',
               cursor: 'pointer',
               '&:hover': {
@@ -239,9 +241,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                 transition: 'transform 0.2s ease-in-out',
               },
             }}
-          >
-            {initials}
-          </Avatar>
+          />
         </Tooltip>
       );
     } catch (error) {
@@ -452,21 +452,15 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                       }}
                     >
                       <ListItemAvatar>
-                        <Avatar
-                          sx={{
-                            backgroundColor: generateAvatarColor(
-                              member.user?.first_name || 'Unknown'
-                            ),
-                            width: 40,
-                            height: 40,
-                            fontSize: '0.9rem',
+                        <UserAvatar
+                          user={{
+                            first_name: member.user?.first_name || '',
+                            last_name: member.user?.last_name || '',
+                            profile_pic: member.user?.profile_pic,
                           }}
-                        >
-                          {generateInitials(
-                            member.user?.first_name || '',
-                            member.user?.last_name || ''
-                          )}
-                        </Avatar>
+                          size={40}
+                          clickable={false}
+                        />
                       </ListItemAvatar>
                       <ListItemText
                         primary={
