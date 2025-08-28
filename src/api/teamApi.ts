@@ -8,6 +8,7 @@ export interface TeamMember {
     first_name: string;
     last_name: string;
     email: string;
+    profile_pic?: string | null;
   };
   designation: {
     id: string;
@@ -39,6 +40,7 @@ export interface Team {
     first_name: string;
     last_name: string;
     email: string;
+    profile_pic?: string | null;
   };
   teamMembers?: TeamMember[];
 }

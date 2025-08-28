@@ -108,27 +108,21 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
     const loadTeamMembers = async () => {
       try {
         setLoading(true);
-        console.log('🔍 Loading team members for avatar display...');
         const response = await teamApiService.getMyTeamMembers(1);
-        console.log('📊 Team members avatar response:', response);
-        console.log('📋 Avatar members data:', response.items);
+        console.log('🔍 TeamMembersAvatar - API Response:', response);
+        console.log('📋 TeamMembersAvatar - Members data:', response.items);
 
         if (response.items && response.items.length > 0) {
-          console.log('👤 First avatar member sample:', response.items[0]);
+          console.log('👤 First member sample:', response.items[0]);
           console.log(
-            '🏢 Department data available:',
-            response.items[0].department
-          );
-          console.log(
-            '💼 Designation data available:',
-            response.items[0].designation
+            '🖼️ First member profile_pic:',
+            response.items[0].user?.profile_pic
           );
         }
 
         setTeamMembers(response.items || []);
       } catch (err) {
-        console.error('❌ Error loading team members:', err);
-        console.error('Failed to load team members');
+        console.error('Error loading team members:', err);
         setTeamMembers([]);
       } finally {
         setLoading(false);
@@ -143,9 +137,14 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
     try {
       // Add null checks to prevent errors
       if (!member?.user || !member.user.first_name || !member.user.last_name) {
-        console.warn('Invalid team member data:', member);
         return null;
       }
+
+      console.log('🎨 Rendering avatar for member:', {
+        id: member.user.id,
+        name: `${member.user.first_name} ${member.user.last_name}`,
+        profile_pic: member.user.profile_pic,
+      });
 
       const initials = generateInitials(
         member.user.first_name,
@@ -227,6 +226,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
         >
           <UserAvatar
             user={{
+              id: member.user.id,
               first_name: member.user.first_name,
               last_name: member.user.last_name,
               profile_pic: member.user.profile_pic,
@@ -245,7 +245,6 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
         </Tooltip>
       );
     } catch (error) {
-      console.error('Error rendering avatar for member:', member, error);
       return null;
     }
   };
@@ -285,7 +284,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           <Stack
             direction='row'
             spacing={-1}
-            sx={{ display: { xs: 'none', sm: 'flex' } }}
+            sx={{ display: { xs: 'none', md: 'flex' } }}
           >
             <Avatar
               sx={{
@@ -324,7 +323,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
         <Stack
           direction='row'
           spacing={-1}
-          sx={{ display: { xs: 'none', sm: 'flex' } }}
+          sx={{ display: { xs: 'none', md: 'flex' } }}
         >
           {displayMembers.map(member => renderAvatar(member)).filter(Boolean)}
 
@@ -379,12 +378,13 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
             </Tooltip>
           )}
 
-          <Avatar
+          {/* <Avatar
             sx={{
               width: 32,
               height: 32,
               backgroundColor: '#4b4f73',
               cursor: 'pointer',
+              display: { xs: 'none', md: 'flex' }, // Hide on mobile, show on desktop
               '&:hover': {
                 backgroundColor: '#3a3f5f',
               },
@@ -392,7 +392,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
             onClick={onOpenInviteModal}
           >
             <AddIcon fontSize='small' />
-          </Avatar>
+          </Avatar> */}
         </Stack>
 
         {/* All Team Members Dialog */}
@@ -454,6 +454,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                       <ListItemAvatar>
                         <UserAvatar
                           user={{
+                            id: member.user?.id,
                             first_name: member.user?.first_name || '',
                             last_name: member.user?.last_name || '',
                             profile_pic: member.user?.profile_pic,
@@ -529,7 +530,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       <Stack
         direction='row'
         spacing={-1}
-        sx={{ display: { xs: 'none', sm: 'flex' } }}
+        sx={{ display: { xs: 'none', md: 'flex' } }}
       >
         <Avatar
           sx={{

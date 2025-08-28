@@ -68,6 +68,7 @@ export interface EmployeeFullProfile {
   designation: string | null;
   department: string | null;
   joinedAt: string;
+  profile_pic?: string | null;
   attendanceSummary: EmployeeProfileAttendanceSummaryItem[];
   leaveHistory: EmployeeProfileLeaveHistoryItem[];
 }

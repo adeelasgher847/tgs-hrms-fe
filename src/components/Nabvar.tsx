@@ -33,6 +33,7 @@ import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
 import TeamMembersAvatar from './Teams/TeamMembersAvatar';
+import TeamMembersModal from './Teams/TeamMembersModal';
 
 const labels = {
   en: {
@@ -102,6 +103,7 @@ const Navbar: React.FC<NavbarProps> = ({
   onOpenInviteModal,
 }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [teamMembersModalOpen, setTeamMembersModalOpen] = React.useState(false);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -121,6 +123,14 @@ const Navbar: React.FC<NavbarProps> = ({
     localStorage.removeItem('refreshToken');
     clearUser();
     navigate('/');
+  };
+
+  const handleOpenTeamMembersModal = () => {
+    setTeamMembersModalOpen(true);
+  };
+
+  const handleCloseTeamMembersModal = () => {
+    setTeamMembersModalOpen(false);
   };
 
   const textColor = darkMode ? '#8f8f8f' : '#000';
@@ -200,7 +210,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     width: '31px',
                     height: '31px',
                   }}
-                  onClick={onOpenInviteModal}
+                  onClick={handleOpenTeamMembersModal}
                 />
               </Box>
             </Box>
@@ -222,7 +232,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 gap: { xs: 0.2, md: 2 },
               }}
             >
-              <IconButton
+              {/* <IconButton
                 sx={{
                   backgroundColor: '#4b4f73',
                   color: 'white',
@@ -231,10 +241,10 @@ const Navbar: React.FC<NavbarProps> = ({
                 }}
               >
                 <InfoOutlinedIcon fontSize='small' />
-              </IconButton>
+              </IconButton> */}
 
               <TeamMembersAvatar
-                maxAvatars={4}
+                maxAvatars={5}
                 onOpenInviteModal={onOpenInviteModal}
                 darkMode={darkMode}
               />
@@ -399,6 +409,14 @@ const Navbar: React.FC<NavbarProps> = ({
           <Typography color={textColor}>{lang.addAccount}</Typography>
         </MenuItem>
       </Menu>
+
+      {/* Team Members Modal for Mobile */}
+      <TeamMembersModal
+        open={teamMembersModalOpen}
+        onClose={handleCloseTeamMembersModal}
+        onOpenInviteModal={onOpenInviteModal}
+        darkMode={darkMode}
+      />
     </Box>
   );
 };
