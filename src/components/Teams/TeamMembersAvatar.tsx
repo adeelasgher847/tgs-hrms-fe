@@ -231,14 +231,16 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               last_name: member.user.last_name,
               profile_pic: member.user.profile_pic,
             }}
-            size={32}
+            size={45}
             clickable={true}
             sx={{
               border: '2px solid white',
               cursor: 'pointer',
+              transition: 'all 0.3s ease-in-out',
               '&:hover': {
-                transform: 'scale(1.1)',
-                transition: 'transform 0.2s ease-in-out',
+                transform: 'scale(1.05)',
+                border: '2px solid #000',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
               },
             }}
           />
@@ -257,8 +259,8 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           <Skeleton
             key={index}
             variant='circular'
-            width={32}
-            height={32}
+            width={45}
+            height={45}
             sx={{
               backgroundColor: darkMode
                 ? 'rgba(255,255,255,0.1)'
@@ -288,27 +290,39 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           >
             <Avatar
               sx={{
-                width: 32,
-                height: 32,
+                width: 45,
+                height: 45,
                 backgroundColor: '#4b4f73',
                 cursor: 'pointer',
+                border: '2px solid white',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  backgroundColor: '#3a3f5f',
+                  border: '2px solid #000',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                },
               }}
             >
-              <GroupIcon fontSize='small' />
+              <GroupIcon fontSize='medium' />
             </Avatar>
             <Avatar
               sx={{
-                width: 32,
-                height: 32,
-                backgroundColor: '#4b4f73',
+                width: 50,
+                height: 50,
+                backgroundColor: '#484c7f',
                 cursor: 'pointer',
+                border: '3px solid white',
+                transition: 'all 0.3s ease-in-out',
                 '&:hover': {
                   backgroundColor: '#3a3f5f',
+                  border: '3px solid #000',
+                  transform: 'scale(1.1)',
+                  boxShadow: '0 6px 16px rgba(72, 76, 127, 0.3)',
                 },
               }}
               onClick={onOpenInviteModal}
             >
-              <AddIcon fontSize='small' />
+              <AddIcon fontSize='medium' />
             </Avatar>
           </Stack>
         </>
@@ -359,17 +373,19 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               <Avatar
                 onClick={() => setShowAllMembersDialog(true)}
                 sx={{
-                  width: 32,
-                  height: 32,
-                  backgroundColor: '#4b4f73',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  border: '2px solid white',
+                  width: 50,
+                  height: 50,
+                  backgroundColor: '#484c7f',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  border: '3px solid white',
                   cursor: 'pointer',
+                  transition: 'all 0.3s ease-in-out',
                   '&:hover': {
                     backgroundColor: '#3a3f5f',
                     transform: 'scale(1.1)',
-                    transition: 'all 0.2s ease-in-out',
+                    border: '3px solid #000',
+                    boxShadow: '0 6px 16px rgba(72, 76, 127, 0.3)',
                   },
                 }}
               >
@@ -534,27 +550,39 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       >
         <Avatar
           sx={{
-            width: 32,
-            height: 32,
+            width: 45,
+            height: 45,
             backgroundColor: '#4b4f73',
             cursor: 'pointer',
+            border: '2px solid white',
+            transition: 'all 0.3s ease-in-out',
+            '&:hover': {
+              backgroundColor: '#3a3f5f',
+              border: '2px solid #000',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            },
           }}
         >
-          <GroupIcon fontSize='small' />
+          <GroupIcon fontSize='medium' />
         </Avatar>
         <Avatar
           sx={{
-            width: 32,
-            height: 32,
-            backgroundColor: '#4b4f73',
+            width: 50,
+            height: 50,
+            backgroundColor: '#484c7f',
             cursor: 'pointer',
+            border: '3px solid white',
+            transition: 'all 0.3s ease-in-out',
             '&:hover': {
               backgroundColor: '#3a3f5f',
+              border: '3px solid #000',
+              transform: 'scale(1.1)',
+              boxShadow: '0 6px 16px rgba(72, 76, 127, 0.3)',
             },
           }}
           onClick={onOpenInviteModal}
         >
-          <AddIcon fontSize='small' />
+          <AddIcon fontSize='medium' />
         </Avatar>
       </Stack>
     </>
