@@ -8,7 +8,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Avatar,
   Typography,
   IconButton,
   Chip,
@@ -29,6 +28,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
+import UserAvatar from '../common/UserAvatar';
 
 interface TeamMemberListProps {
   teamId: string;
@@ -79,41 +79,6 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
   };
 
   const lang = labels[language];
-
-  // Generate initials for avatar
-  const generateInitials = (firstName: string, lastName: string): string => {
-    try {
-      const first = firstName?.charAt(0)?.toUpperCase() || '';
-      const last = lastName?.charAt(0)?.toUpperCase() || '';
-      return `${first}${last}` || 'U';
-    } catch (error) {
-      console.error('Error generating initials:', error);
-      return 'U';
-    }
-  };
-
-  // Generate avatar color
-  const generateAvatarColor = (name: string): string => {
-    try {
-      const colors = [
-        '#1976d2',
-        '#388e3c',
-        '#f57c00',
-        '#d32f2f',
-        '#7b1fa2',
-        '#303f9f',
-        '#ff6f00',
-        '#388e3c',
-        '#c2185b',
-        '#0097a7',
-      ];
-      const index = (name || 'Unknown').charCodeAt(0) % colors.length;
-      return colors[index];
-    } catch (error) {
-      console.error('Error generating avatar color:', error);
-      return '#1976d2';
-    }
-  };
 
   // Load team members
   useEffect(() => {
@@ -321,22 +286,16 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
                 <TableRow key={member.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Avatar
-                        sx={{
-                          backgroundColor: generateAvatarColor(
-                            member.user?.first_name || 'Unknown'
-                          ),
-                          mr: 2,
-                          width: 32,
-                          height: 32,
-                          fontSize: '0.75rem',
+                      <UserAvatar
+                        user={{
+                          id: member.user?.id,
+                          first_name: member.user?.first_name || '',
+                          last_name: member.user?.last_name || '',
+                          profile_pic: member.user?.profile_pic,
                         }}
-                      >
-                        {generateInitials(
-                          member.user?.first_name || '',
-                          member.user?.last_name || ''
-                        )}
-                      </Avatar>
+                        size={32}
+                        sx={{ mr: 2 }}
+                      />
                       <Typography sx={{ color: darkMode ? '#fff' : '#000' }}>
                         {member.user?.first_name || 'Unknown'}{' '}
                         {member.user?.last_name || 'User'}

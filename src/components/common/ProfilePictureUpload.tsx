@@ -12,16 +12,9 @@ import {
   DialogContent,
   DialogActions,
   Paper,
-  Tooltip,
   Fade,
 } from '@mui/material';
-import {
-  PhotoCamera,
-  Delete,
-  CloudUpload,
-  Close,
-  Edit,
-} from '@mui/icons-material';
+import { PhotoCamera, Delete, Close, Edit } from '@mui/icons-material';
 import { profileApiService, type UserProfile } from '../../api/profileApi';
 import { useUser } from '../../context/UserContext';
 import { snackbar } from '../../utils/snackbar';
@@ -210,11 +203,11 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
       backgroundColor: user.profile_pic
         ? 'transparent'
         : generateAvatarColor(user.first_name),
+      transition: 'all 0.3s ease-in-out',
       '&:hover': clickable
         ? {
-            opacity: 0.8,
-            transform: 'scale(1.05)',
-            transition: 'all 0.2s ease-in-out',
+            transform: 'scale(1.02)',
+            boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
           }
         : {},
     };
@@ -246,10 +239,10 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 2,
+        gap: 1,
       }}
     >
-      {/* Avatar with Overlay */}
+      {/* Avatar with Professional Hover Overlay */}
       <Box
         sx={{ position: 'relative' }}
         onMouseEnter={() => setShowOverlay(true)}
@@ -257,9 +250,94 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
       >
         {renderAvatar()}
 
-        {/* Edit Overlay */}
-        {showEditOverlay && clickable && showUploadButton && (
+        {/* Professional Hover Overlay */}
+        {clickable && showUploadButton && !uploading && (
           <Fade in={showOverlay}>
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease-in-out',
+                backdropFilter: 'blur(2px)',
+              }}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                {user.profile_pic ? (
+                  <Edit
+                    sx={{
+                      color: 'white',
+                      fontSize: size * 0.25,
+                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                    }}
+                  />
+                ) : (
+                  <PhotoCamera
+                    sx={{
+                      color: 'white',
+                      fontSize: size * 0.25,
+                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                    }}
+                  />
+                )}
+              </Box>
+            </Box>
+          </Fade>
+        )}
+
+        {/* Delete Icon - Only show when profile picture exists */}
+        {user.profile_pic && showRemoveButton && !uploading && (
+          <Fade in={showOverlay}>
+            <IconButton
+              sx={{
+                position: 'absolute',
+                top: 5,
+                right: -10,
+                backgroundColor: '#f44336',
+                color: 'white',
+                width: 28,
+                height: 28,
+                boxShadow: '0 2px 8px rgba(244, 67, 54, 0.3)',
+                '&:hover': {
+                  backgroundColor: '#d32f2f',
+                  transform: 'scale(1.1)',
+                },
+                transition: 'all 0.2s ease-in-out',
+              }}
+              onClick={e => {
+                e.stopPropagation();
+                handleRemove();
+              }}
+              disabled={removing}
+            >
+              {removing ? (
+                <CircularProgress size={16} sx={{ color: 'white' }} />
+              ) : (
+                <Delete sx={{ fontSize: 16 }} />
+              )}
+            </IconButton>
+          </Fade>
+        )}
+
+        {/* Loading Overlay */}
+        {uploading && (
+          <Fade in={uploading}>
             <Box
               sx={{
                 position: 'absolute',
@@ -272,74 +350,12 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease-in-out',
+                backdropFilter: 'blur(2px)',
               }}
-              onClick={() => fileInputRef.current?.click()}
             >
-              <Edit sx={{ color: 'white', fontSize: size * 0.3 }} />
+              <CircularProgress size={size * 0.3} sx={{ color: 'white' }} />
             </Box>
           </Fade>
-        )}
-
-        {/* Upload Icon Overlay (for non-hover state) */}
-        {clickable && showUploadButton && !showEditOverlay && (
-          <IconButton
-            sx={{
-              position: 'absolute',
-              bottom: 0,
-              right: 0,
-              backgroundColor: 'primary.main',
-              color: 'white',
-              width: Math.max(32, size * 0.4),
-              height: Math.max(32, size * 0.4),
-              '&:hover': {
-                backgroundColor: 'primary.dark',
-              },
-            }}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <PhotoCamera sx={{ fontSize: Math.max(16, size * 0.2) }} />
-          </IconButton>
-        )}
-      </Box>
-
-      {/* Action Buttons */}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 1,
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-        }}
-      >
-        {showUploadButton && (
-          <Tooltip title='Upload new profile picture'>
-            <Button
-              variant='outlined'
-              size='small'
-              startIcon={<CloudUpload />}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading || removing}
-            >
-              Upload
-            </Button>
-          </Tooltip>
-        )}
-
-        {showRemoveButton && user.profile_pic && (
-          <Tooltip title='Remove current profile picture'>
-            <Button
-              variant='outlined'
-              color='error'
-              size='small'
-              startIcon={removing ? <CircularProgress size={16} /> : <Delete />}
-              onClick={handleRemove}
-              disabled={uploading || removing}
-            >
-              Remove
-            </Button>
-          </Tooltip>
         )}
       </Box>
 

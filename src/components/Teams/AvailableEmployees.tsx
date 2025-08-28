@@ -93,41 +93,6 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
 
   const lang = labels[language];
 
-  // Generate initials for avatar
-  const generateInitials = (firstName: string, lastName: string): string => {
-    try {
-      const first = firstName?.charAt(0)?.toUpperCase() || '';
-      const last = lastName?.charAt(0)?.toUpperCase() || '';
-      return `${first}${last}` || 'U';
-    } catch (error) {
-      console.error('Error generating initials:', error);
-      return 'U';
-    }
-  };
-
-  // Generate avatar color
-  const generateAvatarColor = (name: string): string => {
-    try {
-      const colors = [
-        '#1976d2',
-        '#388e3c',
-        '#f57c00',
-        '#d32f2f',
-        '#7b1fa2',
-        '#303f9f',
-        '#ff6f00',
-        '#388e3c',
-        '#c2185b',
-        '#0097a7',
-      ];
-      const index = (name || 'Unknown').charCodeAt(0) % colors.length;
-      return colors[index];
-    } catch (error) {
-      console.error('Error generating avatar color:', error);
-      return '#1976d2';
-    }
-  };
-
   // Load available employees
   useEffect(() => {
     const loadEmployees = async () => {
@@ -348,6 +313,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <UserAvatar
                             user={{
+                              id: employee.user?.id,
                               first_name: employee.user?.first_name || '',
                               last_name: employee.user?.last_name || '',
                               profile_pic: employee.user?.profile_pic,
