@@ -14,6 +14,7 @@ export interface AttendanceEvent {
   };
 }
 
+
 export interface AttendanceRecord {
   date: string;
   checkIn: string | null;
