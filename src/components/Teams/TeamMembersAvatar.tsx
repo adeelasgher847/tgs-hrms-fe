@@ -231,7 +231,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               last_name: member.user.last_name,
               profile_pic: member.user.profile_pic,
             }}
-            size={45}
+            size={38}
             clickable={true}
             sx={{
               border: '2px solid white',
@@ -259,8 +259,8 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           <Skeleton
             key={index}
             variant='circular'
-            width={45}
-            height={45}
+            width={38}
+            height={38}
             sx={{
               backgroundColor: darkMode
                 ? 'rgba(255,255,255,0.1)'
@@ -290,8 +290,8 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           >
             <Avatar
               sx={{
-                width: 45,
-                height: 45,
+                width: 38,
+                height: 38,
                 backgroundColor: '#4b4f73',
                 cursor: 'pointer',
                 border: '2px solid white',
@@ -373,19 +373,19 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               <Avatar
                 onClick={() => setShowAllMembersDialog(true)}
                 sx={{
-                  width: 50,
-                  height: 50,
+                  width: 38,
+                  height: 38,
                   backgroundColor: '#484c7f',
-                  fontSize: '0.9rem',
+                  fontSize: '0.8rem',
                   fontWeight: 700,
-                  border: '3px solid white',
+                  border: '2px solid white',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease-in-out',
                   '&:hover': {
                     backgroundColor: '#3a3f5f',
-                    transform: 'scale(1.1)',
-                    border: '3px solid #000',
-                    boxShadow: '0 6px 16px rgba(72, 76, 127, 0.3)',
+                    transform: 'scale(1.05)',
+                    border: '2px solid #000',
+                    boxShadow: '0 4px 12px rgba(72, 76, 127, 0.3)',
                   },
                 }}
               >
@@ -550,8 +550,8 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       >
         <Avatar
           sx={{
-            width: 45,
-            height: 45,
+            width: 38,
+            height: 38,
             backgroundColor: '#4b4f73',
             cursor: 'pointer',
             border: '2px solid white',
