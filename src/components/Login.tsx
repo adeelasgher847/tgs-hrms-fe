@@ -141,7 +141,7 @@ const Login: React.FC = () => {
       localStorage.setItem('accessToken', res.data.accessToken);
       localStorage.setItem('refreshToken', res.data.refreshToken);
       localStorage.setItem('user', JSON.stringify(res.data.user));
-
+      localStorage.setItem('permissions', JSON.stringify(res.data.permissions));
       // Update user context without causing re-render
       try {
         updateUser(res.data.user);

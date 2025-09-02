@@ -26,7 +26,7 @@ import HolidayList from './components/HolidayCalendar/HolidayList';
 import TimesheetLayout from './components/TimerTracker/TimesheetLayout';
 import TeamManager from './components/Teams/TeamManager';
 import ProfilePictureDemo from './components/ProfilePictureDemo';
-
+import ConfirmPassword from './components/ConfirmPassword';
 function App() {
   return (
     <LanguageProvider>
@@ -36,6 +36,7 @@ function App() {
             <Route path='/' element={<Login />} />
             <Route path='/forget' element={<Forget />} />
             <Route path='/reset-password' element={<ResetPassword />} />
+            <Route path='/confirm-password' element={<ConfirmPassword />} />
             <Route path='/Signup' element={<Signup />} />
             <Route
               path='/dashboard'
