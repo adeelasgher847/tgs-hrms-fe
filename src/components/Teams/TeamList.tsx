@@ -22,17 +22,30 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../context/LanguageContext';
-import type { Team } from '../../api/teamApi';
+import type { Team, UpdateTeamDto } from '../../api/teamApi';
+import { teamApiService } from '../../api/teamApi';
+import { snackbar } from '../../utils/snackbar';
 import TeamMemberList from './TeamMemberList';
+import EditTeamForm from './EditTeamForm';
+import DeleteTeamDialog from './DeleteTeamDialog';
 
 interface TeamListProps {
   teams: Team[];
   darkMode?: boolean;
+  onTeamUpdated?: () => void;
 }
 
-const TeamList: React.FC<TeamListProps> = ({ teams, darkMode = false }) => {
+const TeamList: React.FC<TeamListProps> = ({
+  teams,
+  darkMode = false,
+  onTeamUpdated,
+}) => {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [showMemberDialog, setShowMemberDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const { language } = useLanguage();
 
   const labels = {
@@ -45,7 +58,7 @@ const TeamList: React.FC<TeamListProps> = ({ teams, darkMode = false }) => {
       editTeam: 'Edit Team',
       deleteTeam: 'Delete Team',
       cancel: 'Cancel',
-      confirmDelete: 'Are you sure you want to delete this team?',
+      teamUpdated: 'Team updated successfully',
       teamDeleted: 'Team deleted successfully',
       error: 'An error occurred',
     },
@@ -58,15 +71,13 @@ const TeamList: React.FC<TeamListProps> = ({ teams, darkMode = false }) => {
       editTeam: 'تعديل الفريق',
       deleteTeam: 'حذف الفريق',
       cancel: 'إلغاء',
-      confirmDelete: 'هل أنت متأكد من حذف هذا الفريق؟',
+      teamUpdated: 'تم تحديث الفريق بنجاح',
       teamDeleted: 'تم حذف الفريق بنجاح',
       error: 'حدث خطأ',
     },
   };
 
   const lang = labels[language];
-
-  // Generate initials for avatar
 
   // Generate avatar color
   const generateAvatarColor = (name: string): string => {
@@ -92,18 +103,90 @@ const TeamList: React.FC<TeamListProps> = ({ teams, darkMode = false }) => {
   };
 
   const handleEditTeam = (team: Team) => {
-    // Edit team logic here
-    console.log('Edit team:', team);
+    setSelectedTeam(team);
+    setShowEditDialog(true);
   };
 
-  const handleDeleteTeam = async (team: Team) => {
-    if (window.confirm(lang.confirmDelete)) {
-      try {
-        // Delete team logic here
-        console.log('Delete team:', team);
-      } catch (error) {
-        console.error('Error deleting team:', error);
+  const handleDeleteTeam = (team: Team) => {
+    setSelectedTeam(team);
+    setShowDeleteDialog(true);
+    setDeleteError(null);
+  };
+
+  const handleEditSubmit = async (id: string, data: UpdateTeamDto) => {
+    try {
+      console.log('🔄 TeamList: Starting team update for ID:', id);
+      console.log('🔄 TeamList: Update data:', data);
+
+      const updatedTeam = await teamApiService.updateTeam(id, data);
+      console.log('✅ TeamList: Update successful, response:', updatedTeam);
+
+      // Verify the update was successful and includes manager info
+      if (!updatedTeam || !updatedTeam.id) {
+        throw new Error('Invalid response from team update API');
       }
+
+      // Log the manager information for debugging
+      console.log(
+        '🔄 TeamList: Old manager:',
+        teams.find(t => t.id === id)?.manager
+      );
+      console.log('🔄 TeamList: New manager:', updatedTeam.manager);
+
+      // Update the local teams state for immediate UI update
+      // This ensures the UI shows the updated manager name immediately
+      const currentTeam = teams.find(t => t.id === id);
+      if (currentTeam && updatedTeam.manager) {
+        currentTeam.manager = updatedTeam.manager;
+        currentTeam.name = updatedTeam.name;
+        currentTeam.description = updatedTeam.description;
+        console.log('🔄 TeamList: Local state updated, triggering re-render');
+      }
+
+      snackbar.success(lang.teamUpdated);
+      setShowEditDialog(false);
+      setSelectedTeam(null);
+
+      // Trigger refresh to get the latest data from backend and update parent state
+      if (onTeamUpdated) {
+        onTeamUpdated();
+      }
+      window.dispatchEvent(new CustomEvent('teamUpdated'));
+    } catch (error) {
+      console.error('❌ TeamList: Error updating team:', error);
+
+      // Show error message to user
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update team';
+      snackbar.error(errorMessage);
+
+      // Don't close the dialog, let user try again
+      throw error;
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedTeam) return;
+
+    try {
+      setDeleteLoading(true);
+      setDeleteError(null);
+
+      await teamApiService.deleteTeam(selectedTeam.id);
+      snackbar.success(lang.teamDeleted);
+      setShowDeleteDialog(false);
+      setSelectedTeam(null);
+
+      // Trigger refresh
+      if (onTeamUpdated) {
+        onTeamUpdated();
+      }
+      window.dispatchEvent(new CustomEvent('teamUpdated'));
+    } catch (error) {
+      console.error('Error deleting team:', error);
+      setDeleteError(lang.error);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -142,6 +225,7 @@ const TeamList: React.FC<TeamListProps> = ({ teams, darkMode = false }) => {
       >
         {teams.map(team => (
           <Card
+            key={team.id}
             sx={{
               backgroundColor: darkMode ? '#2d2d2d' : '#fff',
               height: '100%',
@@ -220,6 +304,18 @@ const TeamList: React.FC<TeamListProps> = ({ teams, darkMode = false }) => {
                     fontSize: '0.75rem',
                   }}
                 />
+                {!team.teamMembers && (
+                  <Typography
+                    variant='caption'
+                    sx={{
+                      color: darkMode ? '#888' : '#999',
+                      ml: 1,
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    (Loading...)
+                  </Typography>
+                )}
               </Box>
 
               <Stack direction='row' spacing={1} sx={{ mt: 'auto' }}>
@@ -266,6 +362,33 @@ const TeamList: React.FC<TeamListProps> = ({ teams, darkMode = false }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Edit Team Dialog */}
+      <EditTeamForm
+        open={showEditDialog}
+        onClose={() => {
+          setShowEditDialog(false);
+          setSelectedTeam(null);
+        }}
+        onSubmit={handleEditSubmit}
+        team={selectedTeam}
+        darkMode={darkMode}
+      />
+
+      {/* Delete Team Dialog */}
+      <DeleteTeamDialog
+        open={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setSelectedTeam(null);
+          setDeleteError(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        team={selectedTeam}
+        darkMode={darkMode}
+        loading={deleteLoading}
+        error={deleteError}
+      />
     </Box>
   );
 };

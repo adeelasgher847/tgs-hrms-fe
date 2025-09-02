@@ -105,7 +105,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode = false }) => {
           setTeams(teamsData);
           setTeamMembers(membersData.items || []);
         } else if (isAdmin()) {
-          // Load all teams for admin
+          // Load all teams for admin with members included
           const teamsData = await teamApiService.getAllTeams(1);
           setTeams(teamsData.items || []);
         }
@@ -138,7 +138,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode = false }) => {
             setTeams(teamsData);
             setTeamMembers(membersData.items || []);
           } else if (isAdmin()) {
-            // Load all teams for admin
+            // Load all teams for admin with members included
             const teamsData = await teamApiService.getAllTeams(1);
             setTeams(teamsData.items || []);
           }
@@ -170,10 +170,51 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode = false }) => {
       const newTeam = await teamApiService.createTeam(teamData);
       setTeams(prev => [newTeam, ...prev]);
       setShowCreateForm(false);
+
+      // Trigger refresh for other components
+      window.dispatchEvent(new CustomEvent('teamUpdated'));
     } catch (error) {
       console.error('Error creating team:', error);
       throw error;
     }
+  };
+
+  const handleTeamUpdated = () => {
+    console.log('🔄 TeamManager: handleTeamUpdated called, refreshing data...');
+
+    // Reload data when team is updated
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (isManager()) {
+          // Load manager's teams and members
+          const [teamsData, membersData] = await Promise.all([
+            teamApiService.getMyTeams(),
+            teamApiService.getMyTeamMembers(1),
+          ]);
+          setTeams(teamsData);
+          setTeamMembers(membersData.items || []);
+          console.log('✅ TeamManager: Manager teams refreshed:', teamsData);
+        } else if (isAdmin()) {
+          // Load all teams for admin with members included
+          const teamsData = await teamApiService.getAllTeams(1);
+          setTeams(teamsData.items || []);
+          console.log(
+            '✅ TeamManager: Admin teams refreshed:',
+            teamsData.items
+          );
+        }
+      } catch (err) {
+        console.error('❌ TeamManager: Error refreshing team data:', err);
+        setError('Failed to refresh team data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   };
 
   const handleRefresh = () => {
@@ -257,7 +298,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode = false }) => {
           gridTemplateColumns: {
             xs: '1fr',
             sm: 'repeat(2, 1fr)',
-            md: 'repeat(4, 1fr)',
+            md: isAdmin() ? 'repeat(1, 1fr)' : 'repeat(2, 1fr)', // Only 1 card for admin, 2 for manager
           },
           gap: 3,
           mb: 3,
@@ -290,33 +331,37 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode = false }) => {
             </Box>
           </CardContent>
         </Card>
-        <Card sx={{ backgroundColor: darkMode ? '#2d2d2d' : '#fff' }}>
-          <CardContent>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <Box>
-                <Typography
-                  variant='h4'
-                  sx={{ color: darkMode ? '#fff' : '#000' }}
-                >
-                  {teamMembers.length}
-                </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{ color: darkMode ? '#ccc' : '#666' }}
-                >
-                  {lang.memberCount}
-                </Typography>
+
+        {/* Only show Members Count Card for Managers */}
+        {isManager() && (
+          <Card sx={{ backgroundColor: darkMode ? '#2d2d2d' : '#fff' }}>
+            <CardContent>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Box>
+                  <Typography
+                    variant='h4'
+                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                  >
+                    {teamMembers.length}
+                  </Typography>
+                  <Typography
+                    variant='body2'
+                    sx={{ color: darkMode ? '#ccc' : '#666' }}
+                  >
+                    {lang.memberCount}
+                  </Typography>
+                </Box>
+                <PersonIcon sx={{ fontSize: 40, color: '#484c7f' }} />
               </Box>
-              <PersonIcon sx={{ fontSize: 40, color: '#484c7f' }} />
-            </Box>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </Box>
 
       {/* Tabs */}
@@ -348,11 +393,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode = false }) => {
               iconPosition='start'
             />
           )}
-          <Tab
-            label={lang.availableEmployees}
-            icon={<PersonIcon />}
-            iconPosition='start'
-          />
         </Tabs>
       </Box>
 
@@ -365,13 +405,13 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode = false }) => {
 
       {isAdmin() && (
         <TabPanel value={tabValue} index={isManager() ? 1 : 0}>
-          <TeamList teams={teams} darkMode={darkMode} />
+          <TeamList
+            teams={teams}
+            darkMode={darkMode}
+            onTeamUpdated={handleTeamUpdated}
+          />
         </TabPanel>
       )}
-
-      <TabPanel value={tabValue} index={isManager() ? 1 : 0}>
-        <AvailableEmployees darkMode={darkMode} />
-      </TabPanel>
 
       {/* Create Team Form Modal */}
       {showCreateForm && (

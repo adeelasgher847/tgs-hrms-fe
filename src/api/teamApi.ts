@@ -75,8 +75,28 @@ export interface RemoveMemberDto {
   employee_id: string;
 }
 
+// Manager interface for dropdown
+export interface Manager {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: string;
+}
+
 class TeamApiService {
   private baseUrl = '/teams';
+
+  // Get available managers (users with manager role who are not assigned to any team)
+  async getAvailableManagers(): Promise<Manager[]> {
+    try {
+      const response = await axiosInstance.get<Manager[]>(`${this.baseUrl}/available-managers`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching available managers:', error);
+      return [];
+    }
+  }
 
   // Create new team (Admin only)
   async createTeam(teamData: CreateTeamDto): Promise<Team> {
@@ -93,7 +113,38 @@ class TeamApiService {
   async getAllTeams(page: number = 1): Promise<PaginatedResponse<Team>> {
     try {
       const response = await axiosInstance.get<PaginatedResponse<Team>>(`${this.baseUrl}?page=${page}`);
-      return response.data;
+      const teams = response.data;
+      
+      // For each team, fetch the member count if not already included
+      if (teams.items) {
+        const teamsWithMembers = await Promise.all(
+          teams.items.map(async (team) => {
+            if (!team.teamMembers) {
+              try {
+                const membersResponse = await this.getTeamMembers(team.id, 1);
+                return {
+                  ...team,
+                  teamMembers: membersResponse.items || []
+                };
+              } catch (error) {
+                console.error(`Error fetching members for team ${team.id}:`, error);
+                return {
+                  ...team,
+                  teamMembers: []
+                };
+              }
+            }
+            return team;
+          })
+        );
+        
+        return {
+          ...teams,
+          items: teamsWithMembers
+        };
+      }
+      
+      return teams;
     } catch (error) {
       console.error('Error fetching teams:', error);
       throw error;
@@ -114,10 +165,29 @@ class TeamApiService {
   // Update team (Admin only)
   async updateTeam(id: string, teamData: UpdateTeamDto): Promise<Team> {
     try {
+      console.log('🔄 TeamApi: Updating team', id, 'with data:', teamData);
+      
       const response = await axiosInstance.patch<Team>(`${this.baseUrl}/${id}`, teamData);
+      console.log('✅ TeamApi: Update response:', response.data);
+      
+      // Verify the response includes manager information
+      if (!response.data.manager || !response.data.manager.first_name) {
+        console.warn('⚠️ TeamApi: Response missing manager details, but update was successful');
+        console.log('⚠️ TeamApi: Response data:', response.data);
+      } else {
+        console.log('✅ TeamApi: Response includes manager:', response.data.manager);
+      }
+      
       return response.data;
     } catch (error) {
-      console.error('Error updating team:', error);
+      console.error('❌ TeamApi: Error updating team:', error);
+      
+      // Log more details about the error
+      if (error.response) {
+        console.error('❌ Response status:', error.response.status);
+        console.error('❌ Response data:', error.response.data);
+      }
+      
       throw error;
     }
   }
