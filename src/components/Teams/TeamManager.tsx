@@ -243,7 +243,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode = false }) => {
             variant='contained'
             startIcon={<AddIcon />}
             onClick={() => setShowCreateForm(true)}
-            sx={{ backgroundColor: '#484c7f' }}
           >
             {lang.createTeam}
           </Button>

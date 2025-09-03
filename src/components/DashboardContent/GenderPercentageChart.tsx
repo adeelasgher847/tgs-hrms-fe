@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Stack, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, Stack, CircularProgress } from '@mui/material';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
@@ -19,7 +19,10 @@ const labels = {
   male: { en: 'Male', ar: 'ذكر' },
   female: { en: 'Female', ar: 'أنثى' },
   loading: { en: 'Loading...', ar: 'جاري التحميل...' },
-  error: { en: 'Error loading data', ar: 'خطأ في تحميل البيانات' },
+  error: {
+    en: 'Failed to load total employee data. Please try again later.',
+    ar: 'Failed to load total employee data. Please try again later.',
+  },
 };
 
 // Custom Tooltip
@@ -152,10 +155,14 @@ export default function GenderPercentageChart() {
           direction: language === 'ar' ? 'rtl' : 'ltr',
         }}
       >
-        <Typography fontWeight='bold' fontSize={16} mb={2} color={textColor}>
+        <Typography fontWeight='bold' fontSize={16} mb={0.5} color={textColor}>
           {labels.genderDistribution[language]}
         </Typography>
-        <Alert severity='error'>{labels.error[language]}</Alert>
+        <Box display='flex' justifyContent='center' alignItems='center' height={100}>
+          <Typography variant='body2' color='error' textAlign='center'>
+            {labels.error[language]}
+          </Typography>
+        </Box>
       </Box>
     );
   }
@@ -174,6 +181,7 @@ export default function GenderPercentageChart() {
       sx={{
         p: 2,
         border: `1px solid ${borderColor}`,
+        height: '100%',
         borderRadius: '0.375rem',
         backgroundColor: bgColor,
         direction: language === 'ar' ? 'rtl' : 'ltr',

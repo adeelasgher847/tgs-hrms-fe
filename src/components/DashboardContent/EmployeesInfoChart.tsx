@@ -202,13 +202,15 @@ export default function EmployeesInfoChart() {
               {language === 'ar' ? 'السنة' : 'Year'}
             </InputLabel>
             <Select
+            className='Ramish selected'
               value={selectedYear || ''}
               onChange={e => setSelectedYear(Number(e.target.value))}
               label={language === 'ar' ? 'السنة' : 'Year'}
               sx={{
                 color: textColor,
+                borderRadius: '5px',
                 '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#464b8a',
+                  borderColor: '#e8e8e8',
                 },
                 '&:hover .MuiOutlinedInput-notchedOutline': {
                   borderColor: '#464b8a',

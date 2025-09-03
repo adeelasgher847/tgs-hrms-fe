@@ -14,7 +14,6 @@ import {
   Pagination,
   CircularProgress,
 } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import attendanceApi from '../../api/attendanceApi';
 import type {
   AttendanceEvent,
@@ -253,14 +252,6 @@ const AttendanceTable = () => {
         />
         <Button variant='outlined' onClick={clearFilters}>
           Clear Filter
-        </Button>
-        <Button
-          variant='outlined'
-          startIcon={<RefreshIcon />}
-          onClick={() => fetchAttendance(currentPage)}
-          disabled={loading}
-        >
-          Refresh
         </Button>
       </Box>
       <Paper elevation={3} sx={{ boxShadow: 'none'}}>

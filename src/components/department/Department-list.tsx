@@ -10,6 +10,7 @@ import {
   Divider,
   Snackbar,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
@@ -287,9 +288,9 @@ export const DepartmentList: React.FC = () => {
             boxShadow: 'none',
           }}
         >
-          <Typography variant='h6' color={textSecond}>
-            Loading departments...
-          </Typography>
+          <Box display='flex' justifyContent='center' alignItems='center' height={200}>
+            <CircularProgress />
+          </Box>
         </Paper>
       ) : departments.length === 0 ? (
         <Paper

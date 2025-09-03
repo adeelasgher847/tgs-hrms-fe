@@ -215,10 +215,6 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
           <Button
             variant='contained'
             onClick={handleSubmit}
-            sx={{
-              backgroundColor: '#484c7f',
-              '&:hover': { backgroundColor: '#3b3f6b' },
-            }}
           >
             {userData ? 'Update' : 'Create'}
           </Button>

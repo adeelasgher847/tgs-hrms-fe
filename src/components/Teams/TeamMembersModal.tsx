@@ -153,10 +153,9 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
             <IconButton
               onClick={handleAddMember}
               sx={{
-                backgroundColor: '#484c7f',
                 color: 'white',
                 '&:hover': {
-                  backgroundColor: '#3a3f5f',
+                  opacity: 0.8,
                 },
               }}
             >

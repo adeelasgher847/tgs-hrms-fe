@@ -411,6 +411,22 @@ const Login: React.FC = () => {
                         border: 'none',
                         boxShadow: 'none',
                       },
+                    // Autofill overrides (Chrome, Edge, Safari)
+                    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus': {
+                      WebkitTextFillColor: 'unset !important',
+                      WebkitBoxShadow: 'unset !important',
+                      caretColor: 'black',
+                      transition: 'background-color 9999s ease-in-out 0s',
+                    },
+                    '& .MuiOutlinedInput-root.Mui-focused input:-webkit-autofill': {
+                      WebkitBoxShadow: 'unset !important',
+                    },
+                    // Fallback for some browsers exposing internal autofill selector
+                    '& input:-internal-autofill-selected': {
+                      backgroundColor: 'unset !important',
+                      boxShadow: 'unset !important',
+                      color: 'black',
+                    },
                   }}
                 >
                   <Typography

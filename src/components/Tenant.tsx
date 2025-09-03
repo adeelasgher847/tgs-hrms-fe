@@ -14,6 +14,7 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import companyApi from '../api/companyApi';
@@ -270,9 +271,9 @@ export const TenantPage = () => {
             boxShadow: 'none',
           }}
         >
-          <Typography variant='h6' color={textSecond} gutterBottom>
-            Loading companies...
-          </Typography>
+          <Box display='flex' justifyContent='center' alignItems='center' height={200}>
+            <CircularProgress />
+          </Box>
         </Paper>
       ) : companies.length === 0 ? (
         <Paper
