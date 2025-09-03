@@ -540,53 +540,58 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
     );
   }
 
-  // Show default avatars for non-managers or when no team members
-  return (
-    <>
-      <Stack
-        direction='row'
-        spacing={-1}
-        sx={{ display: { xs: 'none', md: 'flex' } }}
-      >
-        <Avatar
-          sx={{
-            width: 38,
-            height: 38,
-            backgroundColor: '#4b4f73',
-            cursor: 'pointer',
-            border: '2px solid white',
-            transition: 'all 0.3s ease-in-out',
-            '&:hover': {
-              backgroundColor: '#3a3f5f',
-              border: '2px solid #000',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            },
-          }}
+  // Show default avatars only for managers when no team members
+  if (isManager()) {
+    return (
+      <>
+        <Stack
+          direction='row'
+          spacing={-1}
+          sx={{ display: { xs: 'none', md: 'flex' } }}
         >
-          <GroupIcon fontSize='medium' />
-        </Avatar>
-        <Avatar
-          sx={{
-            width: 50,
-            height: 50,
-            backgroundColor: '#484c7f',
-            cursor: 'pointer',
-            border: '3px solid white',
-            transition: 'all 0.3s ease-in-out',
-            '&:hover': {
-              backgroundColor: '#3a3f5f',
-              border: '3px solid #000',
-              transform: 'scale(1.1)',
-              boxShadow: '0 6px 16px rgba(72, 76, 127, 0.3)',
-            },
-          }}
-          onClick={onOpenInviteModal}
-        >
-          <AddIcon fontSize='medium' />
-        </Avatar>
-      </Stack>
-    </>
-  );
+          <Avatar
+            sx={{
+              width: 38,
+              height: 38,
+              backgroundColor: '#4b4f73',
+              cursor: 'pointer',
+              border: '2px solid white',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                backgroundColor: '#3a3f5f',
+                border: '2px solid #000',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              },
+            }}
+          >
+            <GroupIcon fontSize='medium' />
+          </Avatar>
+          <Avatar
+            sx={{
+              width: 50,
+              height: 50,
+              backgroundColor: '#484c7f',
+              cursor: 'pointer',
+              border: '3px solid white',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                backgroundColor: '#3a3f5f',
+                border: '3px solid #000',
+                transform: 'scale(1.1)',
+                boxShadow: '0 6px 16px rgba(72, 76, 127, 0.3)',
+              },
+            }}
+            onClick={onOpenInviteModal}
+          >
+            <AddIcon fontSize='medium' />
+          </Avatar>
+        </Stack>
+      </>
+    );
+  }
+
+  // Return null for non-managers (admin, user, etc.)
+  return null;
 };
 
 export default TeamMembersAvatar;

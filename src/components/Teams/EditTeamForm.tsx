@@ -15,23 +15,25 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useLanguage } from '../../context/LanguageContext';
-import type { CreateTeamDto, Manager } from '../../api/teamApi';
+import type { UpdateTeamDto, Manager, Team } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 
-interface CreateTeamFormProps {
+interface EditTeamFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateTeamDto) => Promise<void>;
+  onSubmit: (id: string, data: UpdateTeamDto) => Promise<void>;
+  team: Team | null;
   darkMode?: boolean;
 }
 
-const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
+const EditTeamForm: React.FC<EditTeamFormProps> = ({
   open,
   onClose,
   onSubmit,
+  team,
   darkMode = false,
 }) => {
-  const [formData, setFormData] = useState<CreateTeamDto>({
+  const [formData, setFormData] = useState<UpdateTeamDto>({
     name: '',
     description: '',
     manager_id: '',
@@ -44,31 +46,31 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
 
   const labels = {
     en: {
-      title: 'Create New Team',
+      title: 'Edit Team',
       name: 'Team Name',
       description: 'Description',
       manager: 'Manager',
       selectManager: 'Select a manager',
-      create: 'Create Team',
+      update: 'Update Team',
       cancel: 'Cancel',
-      loading: 'Creating team...',
+      loading: 'Updating team...',
       loadingManagers: 'Loading managers...',
-      error: 'Failed to create team',
+      error: 'Failed to update team',
       nameRequired: 'Team name is required',
       managerRequired: 'Manager is required',
       noManagersAvailable: 'No managers available',
     },
     ar: {
-      title: 'إنشاء فريق جديد',
+      title: 'تعديل الفريق',
       name: 'اسم الفريق',
       description: 'الوصف',
       manager: 'المدير',
       selectManager: 'اختر مدير',
-      create: 'إنشاء الفريق',
+      update: 'تحديث الفريق',
       cancel: 'إلغاء',
-      loading: 'جاري إنشاء الفريق...',
+      loading: 'جاري تحديث الفريق...',
       loadingManagers: 'جاري تحميل المديرين...',
-      error: 'فشل في إنشاء الفريق',
+      error: 'فشل في تحديث الفريق',
       nameRequired: 'اسم الفريق مطلوب',
       managerRequired: 'المدير مطلوب',
       noManagersAvailable: 'لا يوجد مديرين متاحين',
@@ -86,6 +88,24 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
           console.log('🔍 Loading managers from API...');
           const managersData = await teamApiService.getAvailableManagers();
           console.log('✅ Managers loaded:', managersData);
+
+          // If we have a team, add the current manager to the list if not already present
+          if (team && team.manager) {
+            const currentManagerExists = managersData.some(
+              m => m.id === team.manager_id
+            );
+            if (!currentManagerExists) {
+              const currentManager: Manager = {
+                id: team.manager_id,
+                first_name: team.manager.first_name,
+                last_name: team.manager.last_name,
+                email: team.manager.email,
+                role: 'Manager',
+              };
+              managersData.unshift(currentManager); // Add current manager at the top
+            }
+          }
+
           setManagers(managersData);
         } catch (error) {
           console.error('Error loading managers:', error);
@@ -97,10 +117,21 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
     };
 
     loadManagers();
-  }, [open]);
+  }, [open, team]);
+
+  // Populate form when team data changes
+  useEffect(() => {
+    if (team && open) {
+      setFormData({
+        name: team.name,
+        description: team.description || '',
+        manager_id: team.manager_id,
+      });
+    }
+  }, [team, open]);
 
   const handleChange =
-    (field: keyof CreateTeamDto) =>
+    (field: keyof UpdateTeamDto) =>
     (
       event:
         | React.ChangeEvent<HTMLInputElement>
@@ -116,8 +147,10 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    if (!team) return;
+
     // Validation
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       setError(lang.nameRequired);
       return;
     }
@@ -130,10 +163,10 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
     try {
       setLoading(true);
       setError(null);
-      await onSubmit(formData);
+      await onSubmit(team.id, formData);
       handleClose();
     } catch (err) {
-      console.error('Error creating team:', err);
+      console.error('Error updating team:', err);
       setError(lang.error);
     } finally {
       setLoading(false);
@@ -150,6 +183,8 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
     setLoading(false);
     onClose();
   };
+
+  if (!team) return null;
 
   return (
     <Dialog
@@ -249,6 +284,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
                   managers.map(manager => (
                     <MenuItem key={manager.id} value={manager.id}>
                       {manager.first_name} {manager.last_name} ({manager.email})
+                      {manager.id === team.manager_id && ' (Current)'}
                     </MenuItem>
                   ))
                 )}
@@ -264,11 +300,11 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
           <Button
             type='submit'
             variant='contained'
-            disabled={loading || !formData.name.trim() || !formData.manager_id}
+            disabled={loading || !formData.name?.trim() || !formData.manager_id}
             sx={{ backgroundColor: '#484c7f' }}
             startIcon={loading ? <CircularProgress size={16} /> : null}
           >
-            {loading ? lang.loading : lang.create}
+            {loading ? lang.loading : lang.update}
           </Button>
         </DialogActions>
       </form>
@@ -276,4 +312,4 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
   );
 };
 
-export default CreateTeamForm;
+export default EditTeamForm;
