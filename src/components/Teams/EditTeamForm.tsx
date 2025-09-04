@@ -251,13 +251,22 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
             />
 
             <FormControl fullWidth>
-              <InputLabel sx={{ color: darkMode ? '#ccc' : '#666' }}>
+              <InputLabel
+                sx={{
+                  color: darkMode ? '#ccc' : '#666',
+                  '&.Mui-focused': { color: '#484c7f' },
+                  '&.MuiInputLabel-shrink': {
+                    color: darkMode ? '#ccc' : '#666',
+                  },
+                }}
+              >
                 {lang.manager}
               </InputLabel>
               <Select
                 value={formData.manager_id}
                 onChange={handleChange('manager_id')}
                 required
+                label={lang.manager}
                 sx={{
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: darkMode ? '#555' : '#ccc',
