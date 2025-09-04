@@ -218,9 +218,18 @@ const TeamList: React.FC<TeamListProps> = ({
           gridTemplateColumns: {
             xs: '1fr',
             sm: 'repeat(2, 1fr)',
-            md: 'repeat(3, 1fr)',
+            md: 'repeat(2, 1fr)',
+            lg: 'repeat(3, 1fr)',
           },
-          gap: 3,
+          gap: { xs: 2, sm: 3 },
+          justifyItems: 'center',
+          maxWidth: '100%',
+          mx: 'auto',
+          // Center the grid on large screens
+          '& > *': {
+            width: '100%',
+            maxWidth: { lg: '400px' }, // Increased card width on large screens
+          },
         }}
       >
         {teams.map(team => (
@@ -228,54 +237,104 @@ const TeamList: React.FC<TeamListProps> = ({
             key={team.id}
             sx={{
               backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-              height: '100%',
+              height: { xs: 'auto', sm: 'auto', md: 'auto' },
+              minHeight: { xs: '200px', sm: '220px', md: '240px', lg: '260px' },
               display: 'flex',
               flexDirection: 'column',
+              width: '100%',
+              borderRadius: 2,
+              boxShadow: darkMode
+                ? '0 2px 12px rgba(0, 0, 0, 0.2)'
+                : '0 2px 12px rgba(0, 0, 0, 0.06)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': {
-                boxShadow: 4,
-                transform: 'translateY(-2px)',
-                transition: 'all 0.3s ease-in-out',
+                boxShadow: darkMode
+                  ? '0 8px 25px rgba(0, 0, 0, 0.3)'
+                  : '0 8px 25px rgba(0, 0, 0, 0.12)',
+                transform: 'translateY(-4px)',
               },
             }}
           >
-            <CardContent sx={{ flexGrow: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <CardContent
+              sx={{
+                flexGrow: 1,
+                p: { xs: 2.5, sm: 3.5 },
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                 <Avatar
                   sx={{
                     backgroundColor: generateAvatarColor(team.name),
                     mr: 2,
+                    width: { xs: 40, sm: 48 },
+                    height: { xs: 40, sm: 48 },
+                    flexShrink: 0,
                   }}
                 >
-                  <GroupIcon />
+                  <GroupIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                 </Avatar>
-                <Box sx={{ flexGrow: 1 }}>
+                <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
                   <Typography
                     variant='h6'
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                    sx={{
+                      color: darkMode ? '#fff' : '#000',
+                      fontWeight: 600,
+                      fontSize: { xs: '1rem', sm: '1.25rem' },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap', // Always keep in single line
+                      lineHeight: 1.2,
+                      minHeight: 'auto',
+                    }}
+                    title={team.name} // Show full name on hover
                   >
                     {team.name}
                   </Typography>
                   <Typography
                     variant='body2'
-                    sx={{ color: darkMode ? '#ccc' : '#666' }}
+                    sx={{
+                      color: darkMode ? '#ccc' : '#666',
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap', // Always keep in single line
+                      lineHeight: 1.2,
+                      minHeight: 'auto',
+                    }}
+                    title={`${team.manager?.first_name} ${team.manager?.last_name}`} // Show full name on hover
                   >
                     {team.manager?.first_name} {team.manager?.last_name}
                   </Typography>
                 </Box>
-                <Box>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: { xs: 0.5, sm: 1 },
+                    flexShrink: 0,
+                  }}
+                >
                   <IconButton
                     size='small'
                     onClick={() => handleEditTeam(team)}
-                    sx={{ color: '#484c7f' }}
+                    sx={{
+                      color: '#484c7f',
+                      padding: { xs: 0.5, sm: 1 },
+                    }}
                   >
-                    <EditIcon />
+                    <EditIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
                   </IconButton>
                   <IconButton
                     size='small'
                     onClick={() => handleDeleteTeam(team)}
-                    sx={{ color: '#d32f2f' }}
+                    sx={{
+                      color: '#d32f2f',
+                      padding: { xs: 0.5, sm: 1 },
+                    }}
                   >
-                    <DeleteIcon />
+                    <DeleteIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
                   </IconButton>
                 </Box>
               </Box>
@@ -285,23 +344,39 @@ const TeamList: React.FC<TeamListProps> = ({
                   variant='body2'
                   sx={{
                     color: darkMode ? '#ccc' : '#666',
-                    mb: 2,
-                    lineHeight: 1.5,
+                    mb: 3,
+                    lineHeight: 1.6,
+                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                    display: '-webkit-box',
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    minHeight: { xs: '3.6em', sm: '4.2em' },
                   }}
                 >
                   {team.description}
                 </Typography>
               )}
 
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  mb: 3,
+                  flexWrap: 'wrap',
+                  gap: 1.5,
+                }}
+              >
                 <Chip
                   label={`${team.teamMembers?.length || 0} ${lang.members}`}
                   size='small'
-                  icon={<PersonIcon />}
+                  icon={<PersonIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
                   sx={{
                     backgroundColor: '#484c7f',
                     color: 'white',
-                    fontSize: '0.75rem',
+                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                    height: { xs: 24, sm: 28 },
                   }}
                 />
                 {!team.teamMembers && (
@@ -309,8 +384,8 @@ const TeamList: React.FC<TeamListProps> = ({
                     variant='caption'
                     sx={{
                       color: darkMode ? '#888' : '#999',
-                      ml: 1,
                       fontStyle: 'italic',
+                      fontSize: { xs: '0.65rem', sm: '0.75rem' },
                     }}
                   >
                     (Loading...)
@@ -318,15 +393,28 @@ const TeamList: React.FC<TeamListProps> = ({
                 )}
               </Box>
 
-              <Stack direction='row' spacing={1} sx={{ mt: 'auto' }}>
+              <Stack
+                direction='row'
+                spacing={1}
+                sx={{
+                  mt: 'auto',
+                  pt: 2,
+                  borderTop: `1px solid ${darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
+                }}
+              >
                 <Button
                   variant='outlined'
                   size='small'
-                  startIcon={<GroupIcon />}
+                  startIcon={
+                    <GroupIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                  }
                   onClick={() => handleViewMembers(team)}
                   sx={{
                     borderColor: '#484c7f',
                     color: '#484c7f',
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    py: { xs: 0.5, sm: 0.75 },
+                    px: { xs: 1, sm: 1.5 },
                     '&:hover': {
                       borderColor: '#3a3f5f',
                       backgroundColor: 'rgba(72, 76, 127, 0.1)',
