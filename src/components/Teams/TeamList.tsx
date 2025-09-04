@@ -214,21 +214,22 @@ const TeamList: React.FC<TeamListProps> = ({
     <Box>
       <Box
         sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            sm: 'repeat(2, 1fr)',
-            md: 'repeat(2, 1fr)',
-            lg: 'repeat(3, 1fr)',
-          },
-          gap: { xs: 2, sm: 3 },
-          justifyItems: 'center',
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          flexWrap: 'wrap',
+          gap: { xs: 2, sm: 3, md: 4 },
           maxWidth: '100%',
           mx: 'auto',
-          // Center the grid on large screens
+          justifyContent: { xs: 'center', sm: 'flex-start' },
           '& > *': {
-            width: '100%',
-            maxWidth: { lg: '400px' }, // Increased card width on large screens
+            width: {
+              xs: '100%',
+              sm: 'calc(50% - 12px)',
+              md: 'calc(50% - 16px)',
+              lg: 'calc(33.333% - 21px)',
+            },
+            maxWidth: { xs: '100%', sm: '350px', md: '380px', lg: '400px' },
+            minWidth: { xs: '280px', sm: '300px' },
           },
         }}
       >
@@ -243,16 +244,6 @@ const TeamList: React.FC<TeamListProps> = ({
               flexDirection: 'column',
               width: '100%',
               borderRadius: 2,
-              boxShadow: darkMode
-                ? '0 2px 12px rgba(0, 0, 0, 0.2)'
-                : '0 2px 12px rgba(0, 0, 0, 0.06)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              '&:hover': {
-                boxShadow: darkMode
-                  ? '0 8px 25px rgba(0, 0, 0, 0.3)'
-                  : '0 8px 25px rgba(0, 0, 0, 0.12)',
-                transform: 'translateY(-4px)',
-              },
             }}
           >
             <CardContent
