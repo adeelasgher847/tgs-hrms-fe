@@ -185,14 +185,6 @@ const Layout = () => {
             py: 3,
           }}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-              mb: 1,
-            }}
-          ></Box>
           <Outlet context={{ darkMode }} />
         </Box>
       </Box>

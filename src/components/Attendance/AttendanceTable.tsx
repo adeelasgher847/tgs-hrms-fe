@@ -14,12 +14,12 @@ import {
   Pagination,
   CircularProgress,
 } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import attendanceApi from '../../api/attendanceApi';
 import type {
   AttendanceEvent,
   AttendanceResponse,
 } from '../../api/attendanceApi';
+import { isManager as checkIsManager } from '../../utils/roleUtils';
 
 interface AttendanceRecord {
   id: string;
@@ -52,6 +52,17 @@ const AttendanceTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+
+  const [tab, setTab] = useState(0); // 0: My Attendance, 1: Team Attendance
+  const [teamAttendance, setTeamAttendance] = useState<any[]>([]);
+  const [teamLoading, setTeamLoading] = useState(false);
+  const [teamError, setTeamError] = useState('');
+  const [isManager, setIsManager] = useState(false);
+  
+  // Team attendance pagination state
+  const [teamCurrentPage, setTeamCurrentPage] = useState(1);
+  const [teamTotalPages, setTeamTotalPages] = useState(1);
+  const [teamTotalItems, setTeamTotalItems] = useState(0);
 
   const toDisplayTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString() : null;
@@ -157,6 +168,32 @@ const AttendanceTable = () => {
     return sessions;
   };
 
+  const fetchTeamAttendance = async (page = 1) => {
+    setTeamLoading(true);
+    setTeamError('');
+    try {
+      const response = await attendanceApi.getTeamAttendance(page);
+      console.log('✅ Team Attendance API Response:', response);
+      
+      setTeamAttendance(response.items || []);
+      
+      // Update pagination state
+      setTeamCurrentPage(response.page || 1);
+      setTeamTotalPages(response.totalPages || 1);
+      setTeamTotalItems(response.total || 0);
+    } catch (err) {
+      console.error('❌ Error fetching team attendance:', err);
+      setTeamError('Failed to load team attendance');
+      setTeamAttendance([]);
+      setTeamCurrentPage(1);
+      setTeamTotalPages(1);
+      setTeamTotalItems(0);
+    } finally {
+      setTeamLoading(false);
+    }
+  };
+
+
   const fetchAttendance = async (page: number = 1) => {
     setLoading(true);
     try {
@@ -165,6 +202,7 @@ const AttendanceTable = () => {
 
       const currentUser = JSON.parse(storedUser);
       setUserRole(currentUser.role.name);
+      setIsManager(checkIsManager(currentUser.role));
 
       let response: AttendanceResponse;
 
@@ -203,6 +241,12 @@ const AttendanceTable = () => {
     fetchAttendance(page);
   };
 
+  // Handle team page change
+  const handleTeamPageChange = (page: number) => {
+    setTeamCurrentPage(page);
+    fetchTeamAttendance(page);
+  };
+
   useEffect(() => {
     fetchAttendance(1);
   }, []);
@@ -221,11 +265,33 @@ const AttendanceTable = () => {
 
   return (
     <Box>
-      <Typography variant='h6' gutterBottom mb={2}>
-        Attendance Sessions
-      </Typography>
+      <Box mb={2}>
+        <Button
+          variant={tab === 0 ? 'contained' : 'outlined'}
+          onClick={() => setTab(0)}
+        >
+          My Attendance
+        </Button>
+        {isManager && (
+          <Button
+            variant={tab === 1 ? 'contained' : 'outlined'}
+            onClick={() => {
+              setTab(1);
+              fetchTeamAttendance(1);
+            }}
+            sx={{ ml: 2 }}
+          >
+            Team Attendance
+          </Button>
+        )}
+      </Box>
+      {tab === 0 && (
+        <>
+          <Typography variant='h6' gutterBottom mb={2}>
+            Attendance Sessions
+          </Typography>
 
-      <Box display='flex' gap={2} mb={2} flexWrap='wrap' alignItems='center'>
+          <Box display='flex' gap={2} mb={2} flexWrap='wrap' alignItems='center'>
    <TextField
   label="Start Date"
   type="date"
@@ -253,14 +319,6 @@ const AttendanceTable = () => {
         />
         <Button variant='outlined' onClick={clearFilters}>
           Clear Filter
-        </Button>
-        <Button
-          variant='outlined'
-          startIcon={<RefreshIcon />}
-          onClick={() => fetchAttendance(currentPage)}
-          disabled={loading}
-        >
-          Refresh
         </Button>
       </Box>
       <Paper elevation={3} sx={{ boxShadow: 'none'}}>
@@ -337,6 +395,90 @@ const AttendanceTable = () => {
             Showing page {currentPage} of {totalPages} ({totalItems} total
             records)
           </Typography>
+        </Box>
+      )}
+    </>
+      )}
+      {tab === 1 && isManager && (
+        <Box>
+          <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
+            <Typography variant='h6'>
+              Team Attendance
+            </Typography>
+           
+          </Box>
+          
+          {teamLoading ? (
+            <Box display="flex" justifyContent="center" py={4}>
+              <CircularProgress />
+            </Box>
+          ) : teamError ? (
+            <Box display="flex" justifyContent="center" py={4}>
+              <Typography color="error">{teamError}</Typography>
+            </Box>
+          ) : (
+            <>
+              <Paper elevation={3} sx={{ boxShadow: 'none' }}>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Employee Name</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Designation</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Department</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Days Worked</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Hours Worked</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {teamAttendance.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} align="center">
+                            No team attendance records found.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        teamAttendance.map(member => (
+                          <TableRow key={member.user_id}>
+                            <TableCell>
+                              {member.first_name} {member.last_name}
+                            </TableCell>
+                            <TableCell>{member.designation}</TableCell>
+                            <TableCell>{member.department}</TableCell>
+                            <TableCell>{member.totalDaysWorked}</TableCell>
+                            <TableCell>{member.totalHoursWorked}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+
+              {/* Team Pagination */}
+              {teamTotalPages > 1 && (
+                <Box display='flex' justifyContent='center' mt={2}>
+                  <Pagination
+                    count={teamTotalPages}
+                    page={teamCurrentPage}
+                    onChange={(_, page) => handleTeamPageChange(page)}
+                    color='primary'
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              )}
+
+              {/* Team Pagination Info */}
+              {teamTotalItems > 0 && (
+                <Box display='flex' justifyContent='center' mt={1}>
+                  <Typography variant='body2' color='textSecondary'>
+                    Showing page {teamCurrentPage} of {teamTotalPages} ({teamTotalItems} total team members)
+                  </Typography>
+                </Box>
+              )}
+            </>
+          )}
         </Box>
       )}
     </Box>

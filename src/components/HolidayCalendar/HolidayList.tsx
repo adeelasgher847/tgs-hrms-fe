@@ -49,7 +49,7 @@ const HolidayList: React.FC = () => {
         }}
       >
         <Typography variant='h5' sx={{ color: darkMode ? '#8f8f8f' : '#000' }}>Holiday List</Typography>
-        <Button variant='contained' onClick={() => setOpen(true)}>
+        <Button variant='contained' onClick={() => setOpen(true)} sx={{ backgroundColor:"#464b8a" }}>
           Add Holiday
         </Button>
       </Box>

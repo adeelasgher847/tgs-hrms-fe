@@ -167,8 +167,8 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
         </LocalizationProvider>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button variant='contained' onClick={handleSubmit}>
+      <DialogActions sx={{ px: 3, pb: 2}}>
+        <Button variant='contained' onClick={handleSubmit} sx={{ backgroundColor:"#464b8a" }}>
           {initialData ? 'Update' : 'Add'}
         </Button>
       </DialogActions>

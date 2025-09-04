@@ -217,6 +217,23 @@ class AttendanceApiService {
       throw error;
     }
   }
+
+  // Get team attendance for manager
+  async getTeamAttendance(page: number = 1): Promise<any> {
+    try {
+      const response = await axiosInstance.get(`${this.baseUrl}/team?page=${page}`);
+      return response.data;
+    } catch (error) {
+      console.error('❌ AttendanceApiService - Error fetching team attendance:', error);
+      return {
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      };
+    }
+  }
 }
 
 const attendanceApi = new AttendanceApiService();

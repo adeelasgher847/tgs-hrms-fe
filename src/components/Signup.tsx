@@ -425,7 +425,7 @@ const Signup: React.FC = () => {
                       sx={{
                         backgroundColor: 'white',
                         color: 'black',
-                        fontWeight: 600,
+                        fontWeight: 500,
                         borderRadius: 2,
                         fontSize: '14px',
                         fontFamily: 'Open Sans, sans-serif',

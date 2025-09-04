@@ -20,6 +20,7 @@ import {
   Pagination,
   Snackbar,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -311,7 +312,7 @@ export default function DesignationManager() {
   );
 
   return (
-    <Box sx={{ mt: 4 }} dir={isRTL ? 'rtl' : 'ltr'}>
+    <Box dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Top Bar */}
       <Box
         sx={{
@@ -393,7 +394,7 @@ export default function DesignationManager() {
             {getText('designation(s)', 'مسمى وظيفي')}
           </Typography>
 
-          <TableContainer component={Paper} variant='outlined'>
+          <TableContainer component={Paper} variant='outlined' sx={{border:'none',borderRadius:'0px'}}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -438,10 +439,9 @@ export default function DesignationManager() {
                       align='center'
                       sx={{ color: 'text.secondary' }}
                     >
-                      {getText(
-                        'Loading designations...',
-                        'جاري تحميل المسميات الوظيفية...'
-                      )}
+                      <Box display='flex' justifyContent='center' alignItems='center' py={3}>
+                        <CircularProgress />
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ) : paginatedData.length === 0 ? (

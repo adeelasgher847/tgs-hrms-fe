@@ -318,9 +318,12 @@ const Navbar: React.FC<NavbarProps> = ({
                 onChange={e => setLanguage(e.target.value)}
                 size='small'
                 sx={{
-                  minWidth: 80,
+                  minWidth: 63,
+                  fontSize: '14px',
+                  borderRadius: '5px',
                   '& .MuiSelect-select': {
-                    padding: '5px  10px',
+                    padding: '5px  11px',
+                    paddingRight: '0px !important',
                   },
                 }}
               >
