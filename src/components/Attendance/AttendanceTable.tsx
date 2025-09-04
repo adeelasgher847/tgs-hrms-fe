@@ -58,6 +58,11 @@ const AttendanceTable = () => {
   const [teamLoading, setTeamLoading] = useState(false);
   const [teamError, setTeamError] = useState('');
   const [isManager, setIsManager] = useState(false);
+  
+  // Team attendance pagination state
+  const [teamCurrentPage, setTeamCurrentPage] = useState(1);
+  const [teamTotalPages, setTeamTotalPages] = useState(1);
+  const [teamTotalItems, setTeamTotalItems] = useState(0);
 
   const toDisplayTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString() : null;
@@ -168,10 +173,21 @@ const AttendanceTable = () => {
     setTeamError('');
     try {
       const response = await attendanceApi.getTeamAttendance(page);
+      console.log('✅ Team Attendance API Response:', response);
+      
       setTeamAttendance(response.items || []);
-      // handle pagination if needed
+      
+      // Update pagination state
+      setTeamCurrentPage(response.page || 1);
+      setTeamTotalPages(response.totalPages || 1);
+      setTeamTotalItems(response.total || 0);
     } catch (err) {
+      console.error('❌ Error fetching team attendance:', err);
       setTeamError('Failed to load team attendance');
+      setTeamAttendance([]);
+      setTeamCurrentPage(1);
+      setTeamTotalPages(1);
+      setTeamTotalItems(0);
     } finally {
       setTeamLoading(false);
     }
@@ -225,6 +241,12 @@ const AttendanceTable = () => {
     fetchAttendance(page);
   };
 
+  // Handle team page change
+  const handleTeamPageChange = (page: number) => {
+    setTeamCurrentPage(page);
+    fetchTeamAttendance(page);
+  };
+
   useEffect(() => {
     fetchAttendance(1);
   }, []);
@@ -255,7 +277,7 @@ const AttendanceTable = () => {
             variant={tab === 1 ? 'contained' : 'outlined'}
             onClick={() => {
               setTab(1);
-              fetchTeamAttendance();
+              fetchTeamAttendance(1);
             }}
             sx={{ ml: 2 }}
           >
@@ -379,47 +401,83 @@ const AttendanceTable = () => {
       )}
       {tab === 1 && isManager && (
         <Box>
+          <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
+            <Typography variant='h6'>
+              Team Attendance
+            </Typography>
+           
+          </Box>
+          
           {teamLoading ? (
-            <CircularProgress />
+            <Box display="flex" justifyContent="center" py={4}>
+              <CircularProgress />
+            </Box>
           ) : teamError ? (
-            <Typography color="error">{teamError}</Typography>
+            <Box display="flex" justifyContent="center" py={4}>
+              <Typography color="error">{teamError}</Typography>
+            </Box>
           ) : (
-            <Paper elevation={3} sx={{ boxShadow: 'none' }}>
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Employee Name</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Designation</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Department</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Days Worked</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Hours Worked</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {teamAttendance.length === 0 ? (
+            <>
+              <Paper elevation={3} sx={{ boxShadow: 'none' }}>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
                       <TableRow>
-                        <TableCell colSpan={5} align="center">
-                          No team attendance records found.
-                        </TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Employee Name</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Designation</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Department</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Days Worked</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Hours Worked</TableCell>
                       </TableRow>
-                    ) : (
-                      teamAttendance.map(member => (
-                        <TableRow key={member.user_id}>
-                          <TableCell>
-                            {member.first_name} {member.last_name}
+                    </TableHead>
+                    <TableBody>
+                      {teamAttendance.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} align="center">
+                            No team attendance records found.
                           </TableCell>
-                          <TableCell>{member.designation}</TableCell>
-                          <TableCell>{member.department}</TableCell>
-                          <TableCell>{member.totalDaysWorked}</TableCell>
-                          <TableCell>{member.totalHoursWorked}</TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Paper>
+                      ) : (
+                        teamAttendance.map(member => (
+                          <TableRow key={member.user_id}>
+                            <TableCell>
+                              {member.first_name} {member.last_name}
+                            </TableCell>
+                            <TableCell>{member.designation}</TableCell>
+                            <TableCell>{member.department}</TableCell>
+                            <TableCell>{member.totalDaysWorked}</TableCell>
+                            <TableCell>{member.totalHoursWorked}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+
+              {/* Team Pagination */}
+              {teamTotalPages > 1 && (
+                <Box display='flex' justifyContent='center' mt={2}>
+                  <Pagination
+                    count={teamTotalPages}
+                    page={teamCurrentPage}
+                    onChange={(_, page) => handleTeamPageChange(page)}
+                    color='primary'
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              )}
+
+              {/* Team Pagination Info */}
+              {teamTotalItems > 0 && (
+                <Box display='flex' justifyContent='center' mt={1}>
+                  <Typography variant='body2' color='textSecondary'>
+                    Showing page {teamCurrentPage} of {teamTotalPages} ({teamTotalItems} total team members)
+                  </Typography>
+                </Box>
+              )}
+            </>
           )}
         </Box>
       )}
