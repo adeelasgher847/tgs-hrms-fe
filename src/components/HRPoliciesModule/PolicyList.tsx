@@ -61,6 +61,7 @@ const PolicyList: React.FC = () => {
             setSelected(null);
             setOpenForm(true);
           }}
+          sx={{ backgroundColor:"#464b8a" }}
         >
           Add Policy
         </Button>

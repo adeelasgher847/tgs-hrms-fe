@@ -10,6 +10,7 @@ import {
   Divider,
   Snackbar,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
@@ -260,10 +261,10 @@ export const DepartmentList: React.FC = () => {
                 borderRadius: '0.375rem',
                 textTransform: 'none',
                 fontWeight: 600,
-                bgcolor: darkMode ? '#605bd4' : '#45407A',
+                bgcolor: darkMode ? '#464b8a' : '#45407A',
                 boxShadow: 'none', // Remove button shadow
                 '&:hover': {
-                  bgcolor: darkMode ? '#726df0' : '#5b56a0',
+                  bgcolor: darkMode ? '#464b8a' : '#5b56a0',
                   boxShadow: 'none',
                 },
               }}
@@ -287,9 +288,9 @@ export const DepartmentList: React.FC = () => {
             boxShadow: 'none',
           }}
         >
-          <Typography variant='h6' color={textSecond}>
-            Loading departments...
-          </Typography>
+          <Box display='flex' justifyContent='center' alignItems='center' height={200}>
+            <CircularProgress />
+          </Box>
         </Paper>
       ) : departments.length === 0 ? (
         <Paper
@@ -315,7 +316,7 @@ export const DepartmentList: React.FC = () => {
               setSelectedDepartment(null);
               setIsFormModalOpen(true);
             }}
-            sx={{ boxShadow: 'none', '&:hover': { boxShadow: 'none' } }}
+            sx={{backgroundColor:"#464b8a", boxShadow: 'none', '&:hover': { boxShadow: 'none' } }}
           >
             {lang.createFirst}
           </Button>

@@ -252,6 +252,7 @@ const MyTimerCard: React.FC = () => {
                   color='primary'
                   onClick={handleStart}
                   disabled={loading || !hasCheckedIn}
+                  sx={{ backgroundColor: '#464b8a' }}
                 >
                   Clock In
                 </Button>

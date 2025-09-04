@@ -496,7 +496,9 @@ const ResetPassword = () => {
         <Alert
           onClose={() => setOpenToast(false)}
           severity={toastSeverity}
-          sx={{ width: '100%' }}
+          sx={{ width: '100%', backgroundColor: '#2e7d32', color: 'white !important','& .MuiAlert-icon': {
+                color: 'white',
+         }, }}
         >
           {toastMessage}
         </Alert>

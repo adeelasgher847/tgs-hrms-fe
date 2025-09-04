@@ -311,7 +311,24 @@ const Forget = () => {
                       FormHelperTextProps={{
                         sx: { fontSize: '15px' },
                       }}
-                      sx={{ mt: 1 ,}}
+                      sx={{ mt: 1 ,
+                                // Autofill overrides (Chrome, Edge, Safari)
+                    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus': {
+                      WebkitTextFillColor: 'unset !important',
+                      WebkitBoxShadow: 'unset !important',
+                      caretColor: 'black',
+                      transition: 'background-color 9999s ease-in-out 0s',
+                    },
+                    '& .MuiOutlinedInput-root.Mui-focused input:-webkit-autofill': {
+                      WebkitBoxShadow: 'unset !important',
+                    },
+                    // Fallback for some browsers exposing internal autofill selector
+                    '& input:-internal-autofill-selected': {
+                      backgroundColor: 'unset !important',
+                      boxShadow: 'unset !important',
+                      color: 'black',
+                    },
+                      }}
                       InputProps={{
                         sx: {
                              backgroundColor: '#eee',
@@ -404,7 +421,9 @@ const Forget = () => {
         <Alert
           onClose={() => setOpenToast(false)}
           severity={toastSeverity}
-          sx={{ width: '100%' }}
+          sx={{ width: '100%', backgroundColor: '#2e7d32', color: 'white !important','& .MuiAlert-icon': {
+                color: 'white',
+         }, }}
         >
           {toastMessage}
         </Alert>

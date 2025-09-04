@@ -574,10 +574,10 @@ const EmployeeManager: React.FC = () => {
             setOpen(true);
           }}
           sx={{
-            backgroundColor: darkMode ? '#605bd4' : '#484c7f',
+            backgroundColor: darkMode ? '#464b8a' : '#484c7f',
             width: isMobile ? '100%' : 'auto',
             '&:hover': {
-              backgroundColor: darkMode ? '#726df0' : '#5b56a0',
+              backgroundColor: darkMode ? '#464b8a' : '#5b56a0',
             },
           }}
         >
