@@ -14,6 +14,7 @@ import {
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import UndoIcon from '@mui/icons-material/Undo';
 import type { Leave } from '../../type/levetypes';
 
 const typeColor: Record<
@@ -29,7 +30,7 @@ const typeColor: Record<
 
 const statusConfig: Record<
   string,
-  { color: 'success' | 'error' | 'warning'; icon: React.ReactElement }
+  { color: 'success' | 'error' | 'warning' | 'default'; icon: React.ReactElement }
 > = {
   pending: {
     color: 'warning',
@@ -43,16 +44,26 @@ const statusConfig: Record<
     color: 'error',
     icon: <CancelIcon fontSize='small' sx={{ mr: 0.5 }} />,
   },
+  withdrawn: {
+    color: 'default',
+    icon: <UndoIcon fontSize='small' sx={{ mr: 0.5 }} />,
+  },
 };
 
 const LeaveHistory = ({
   leaves,
   isAdmin,
   onAction,
+  onWithdraw,
+  title = "My Leaves",
+  showNames = false,
 }: {
   leaves: Leave[];
   isAdmin: boolean;
   onAction: (id: string, action: 'approved' | 'rejected') => void;
+  onWithdraw?: (id: string) => void;
+  title?: string;
+  showNames?: boolean;
 }) => {
   // Debug logging
   console.log('LeaveHistory props:', { leaves, isAdmin });
@@ -73,12 +84,22 @@ const LeaveHistory = ({
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <AccessTimeIcon color='primary' sx={{ fontSize: 32, mr: 1 }} />
         <Typography variant='h5' fontWeight={600}>
-          My Leaves
+          {title}
         </Typography>
       </Box>
 
       {leaves.length === 0 ? (
-        <Typography>No leaves found</Typography>
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Typography variant="h6" color="textSecondary" gutterBottom>
+            No Leave History Found
+          </Typography>
+          <Typography variant="body2" color="textSecondary">
+            {title === "My Leaves" ? 
+              "You haven't applied for any leaves yet." : 
+              "No leave requests found."
+            }
+          </Typography>
+        </Box>
       ) : (
         <TableContainer
           component={Paper}
@@ -88,7 +109,7 @@ const LeaveHistory = ({
           <Table>
             <TableHead>
               <TableRow>
-                {isAdmin && <TableCell>Name</TableCell>}
+                {(isAdmin || showNames) && <TableCell>Name</TableCell>}
                 <TableCell>Type</TableCell>
                 <TableCell>From</TableCell>
                 <TableCell>To</TableCell>
@@ -96,6 +117,7 @@ const LeaveHistory = ({
                 <TableCell>Status</TableCell>
                 <TableCell>Reason</TableCell>
                 {isAdmin && <TableCell>Actions</TableCell>}
+                {!isAdmin && onWithdraw && <TableCell>Actions</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -111,7 +133,7 @@ const LeaveHistory = ({
 
                 return (
                   <TableRow key={leave.id || index}>
-                    {isAdmin && (
+                    {(isAdmin || showNames) && (
                       <TableCell>
                         {typeof leave.name === 'string'
                           ? leave.name
@@ -171,6 +193,19 @@ const LeaveHistory = ({
                       </TableCell>
                     )}
                     {isAdmin && leave.status !== 'pending' && <TableCell />}
+                    {!isAdmin && onWithdraw && (
+                      <TableCell>
+                        {leave.status === 'pending' && (
+                          <Chip
+                            label='Withdraw'
+                            color='warning'
+                            clickable
+                            onClick={() => onWithdraw(leave.id)}
+                            sx={{ width:'100%' }}
+                          />
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}

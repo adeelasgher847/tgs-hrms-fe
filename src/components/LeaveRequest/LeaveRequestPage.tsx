@@ -8,6 +8,7 @@ import {
   isAdmin,
   isUser,
   getCurrentUser,
+  isManager,
   getUserName,
   getUserRole,
 } from '../../utils/auth';
@@ -22,6 +23,11 @@ import {
   Alert,
   CircularProgress,
   Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -46,6 +52,8 @@ const LeaveRequestPage = () => {
   const [actionType, setActionType] = useState<'approved' | 'rejected' | null>(
     null
   );
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+  const [withdrawId, setWithdrawId] = useState<string | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>(
@@ -56,19 +64,28 @@ const LeaveRequestPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Team leave history state
+  const [teamLeaves, setTeamLeaves] = useState<Leave[]>([]);
+  const [teamLeavesLoading, setTeamLeavesLoading] = useState(false);
+  const [teamLeavesError, setTeamLeavesError] = useState<string | null>(null);
+  const [teamCurrentPage, setTeamCurrentPage] = useState(1);
+  const [teamTotalPages, setTeamTotalPages] = useState(1);
+
   // Get current user role
   const currentUser = getCurrentUser();
   const userIsAdmin = isAdmin();
   const userIsUser = isUser();
+  const userIsManager = isManager();
 
   // Initialize tab based on user role
-  const [tab, setTab] = useState(userIsUser ? 0 : 0);
+  const [tab, setTab] = useState((userIsUser || userIsManager || userIsAdmin) ? 0 : 0);
 
   // Debug: Log current state
   console.log('🔍 Current state:', {
     currentUser,
     userIsAdmin,
     userIsUser,
+    userIsManager,
     hasUser: !!currentUser,
     userRole: currentUser?.role,
     localStorage: {
@@ -91,35 +108,50 @@ const LeaveRequestPage = () => {
       if (userIsAdmin) {
         // Admin gets all leaves with user info
         console.log('Loading leaves as admin...');
-        const response = await leaveApi.getAllLeaves(page);
-        leavesData = response.items.map(leave => ({
-          id: leave.id,
-          userId: leave.user_id || leave.userId,
-          name: leave.user?.first_name
-            ? `${leave.user.first_name} ${leave.user.last_name || ''}`.trim()
-            : leave.user?.name || 'N/A',
-          fromDate: leave.from_date,
-          toDate: leave.to_date,
-          reason: leave.reason,
-          type: leave.type,
-          status: leave.status,
-          applied:
-            leave.applied ||
-            new Date().toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            }),
-          created_at: leave.created_at,
-        }));
+        try {
+          const response = await leaveApi.getAllLeaves(page);
+          leavesData = response.items.map(leave => ({
+            id: leave.id,
+            userId: leave.user_id || leave.userId,
+            name: leave.user?.first_name
+              ? `${leave.user.first_name} ${leave.user.last_name || ''}`.trim()
+              : leave.user?.name || 'N/A',
+            fromDate: leave.from_date,
+            toDate: leave.to_date,
+            reason: leave.reason,
+            type: leave.type,
+            status: leave.status,
+            applied:
+              leave.applied ||
+              new Date().toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              }),
+            created_at: leave.created_at,
+          }));
 
-        // Update pagination state
-        setCurrentPage(response.page);
-        setTotalPages(response.totalPages);
-      } else if (userIsUser) {
-        // Regular user gets their own leaves
-        console.log('Loading leaves as user...');
-        const response = await leaveApi.getUserLeaves(undefined, page);
+          // Update pagination state
+          setCurrentPage(response.page);
+          setTotalPages(response.totalPages);
+        } catch (adminError: any) {
+          console.error('Admin leave loading error:', adminError);
+          if (adminError.response?.status === 403) {
+            setError('You do not have permission to view all leaves. Please contact your administrator.');
+          } else {
+            setError(adminError.response?.data?.message || 'Failed to load admin leaves');
+          }
+          throw adminError;
+        }
+      } else if (userIsUser || userIsManager) {
+        // Regular user or manager gets their own leaves
+        console.log('Loading leaves as user/manager...', { 
+          currentUserId: currentUser?.id,
+          userRole: currentUser?.role,
+          page 
+        });
+        const response = await leaveApi.getUserLeaves(currentUser?.id, page);
+        console.log('User leaves API response:', response);
         leavesData = response.items.map(leave => ({
           id: leave.id,
           userId: leave.user_id || leave.userId,
@@ -164,6 +196,80 @@ const LeaveRequestPage = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     loadLeaves(page);
+  };
+
+  // Load team leaves for managers
+  const loadTeamLeaves = async (page: number = 1) => {
+    if (!userIsManager) return;
+    
+    try {
+      setTeamLeavesLoading(true);
+      setTeamLeavesError(null);
+      
+      console.log('Loading team leaves as manager...', {
+        managerId: currentUser?.id,
+        tenantId: currentUser?.tenant_id,
+        page
+      });
+      
+      const response = await leaveApi.getTeamLeaves(page);
+      console.log('Team leaves API response:', response);
+      
+      const teamLeavesData = response.items.map(leave => ({
+        id: leave.id,
+        userId: leave.user_id || leave.userId,
+        name: leave.user?.first_name
+          ? `${leave.user.first_name} ${leave.user.last_name || ''}`.trim()
+          : leave.user?.name || 'N/A',
+        fromDate: leave.from_date,
+        toDate: leave.to_date,
+        reason: leave.reason,
+        type: leave.type,
+        status: leave.status,
+        applied:
+          leave.applied ||
+          new Date().toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }),
+        created_at: leave.created_at,
+      }));
+
+      console.log('Processed team leaves data:', teamLeavesData);
+      setTeamLeaves(teamLeavesData);
+      setTeamCurrentPage(response.page);
+      setTeamTotalPages(response.totalPages);
+    } catch (error: any) {
+      console.error('Error loading team leaves:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      let errorMessage = 'Failed to load team leaves';
+      if (error.response?.status === 403) {
+        errorMessage = 'You do not have permission to view team leaves.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'No team members found or team not configured.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setTeamLeavesError(errorMessage);
+      setTeamLeaves([]);
+    } finally {
+      setTeamLeavesLoading(false);
+    }
+  };
+
+  // Handle team page change
+  const handleTeamPageChange = (page: number) => {
+    setTeamCurrentPage(page);
+    loadTeamLeaves(page);
   };
 
   const handleApply = async (data: CreateLeaveRequest) => {
@@ -274,6 +380,53 @@ const LeaveRequestPage = () => {
     setDialogOpen(false);
     setSelectedId(null);
     setActionType(null);
+  };
+
+  const handleWithdraw = (id: string) => {
+    setWithdrawId(id);
+    setWithdrawDialogOpen(true);
+  };
+
+  const handleConfirmWithdraw = async () => {
+    if (!withdrawId) return;
+
+    try {
+      await leaveApi.withdrawLeave(withdrawId);
+
+      setLeaves(prev =>
+        prev.map(leave =>
+          leave.id === withdrawId
+            ? {
+                ...leave,
+                status: 'withdrawn',
+              }
+            : leave
+        )
+      );
+
+      setSnackbarMessage('Leave request withdrawn successfully!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    } catch (error: unknown) {
+      console.error('Error withdrawing leave:', error);
+      const apiError = error as ApiError;
+      if (apiError?.response?.status === 403) {
+        setSnackbarMessage(
+          "Access denied. You can only withdraw your own pending leave requests."
+        );
+      } else if (apiError?.response?.status === 400) {
+        setSnackbarMessage(
+          "Cannot withdraw this leave request. Only pending requests can be withdrawn."
+        );
+      } else {
+        setSnackbarMessage('Failed to withdraw leave request');
+      }
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setWithdrawDialogOpen(false);
+      setWithdrawId(null);
+    }
   };
 
   // Show loading state
@@ -453,8 +606,8 @@ const LeaveRequestPage = () => {
               gap: 1,
             }}
           >
-            {/* Only show Apply Leave button for regular users */}
-            {userIsUser && (
+            {/* Show Apply Leave button for regular users and managers */}
+            {(userIsUser || userIsManager) && (
               <Button
                 startIcon={<AssignmentIcon />}
                 sx={{
@@ -473,33 +626,137 @@ const LeaveRequestPage = () => {
             <Button
               startIcon={<AccessTimeIcon />}
               sx={{
-                color: tab === (userIsUser ? 1 : 0) ? '#fff' : '#e0e0e0',
+                color: tab === ((userIsUser || userIsManager) ? 1 : 0) ? '#fff' : '#e0e0e0',
                 fontWeight: 600,
                 background:
-                  tab === (userIsUser ? 1 : 0)
+                  tab === ((userIsUser || userIsManager) ? 1 : 0)
                     ? 'rgba(255,255,255,0.12)'
                     : 'none',
                 borderRadius: 2,
                 width: { xs: '100%', sm: 'auto' },
               }}
-              onClick={() => setTab(userIsUser ? 1 : 0)}
+              onClick={() => setTab((userIsUser || userIsManager) ? 1 : 0)}
             >
               LEAVE HISTORY
             </Button>
+            {/* Show Team Leave History button only for managers */}
+            {userIsManager && (
+              <Button
+                startIcon={<AccessTimeIcon />}
+                sx={{
+                  color: tab === 2 ? '#fff' : '#e0e0e0',
+                  fontWeight: 600,
+                  background: tab === 2 ? 'rgba(255,255,255,0.12)' : 'none',
+                  borderRadius: 2,
+                  width: { xs: '100%', sm: 'auto' },
+                }}
+                onClick={() => {
+                  setTab(2);
+                  loadTeamLeaves(1);
+                }}
+              >
+                MY TEAM LEAVE HISTORY
+              </Button>
+            )}
+            {/* Debug button for testing */}
+            {process.env.NODE_ENV === 'development' && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  console.log('🔍 Debug Info:', {
+                    currentUser,
+                    userIsAdmin,
+                    userIsUser,
+                    userIsManager,
+                    tab,
+                    leaves: leaves.length,
+                    teamLeaves: teamLeaves.length,
+                    teamLeavesLoading,
+                    teamLeavesError
+                  });
+                }}
+                sx={{ ml: 1, fontSize: '0.7rem' }}
+              >
+                DEBUG
+              </Button>
+            )}
           </Box>
         </Toolbar>
       </AppBar>
-      {/* Show Apply Leave form only for regular users */}
-      {userIsUser && tab === 0 ? (
+      {/* Show Apply Leave form for regular users and managers */}
+      {(userIsUser || userIsManager) && tab === 0 ? (
         <Box sx={{ pt: 4 }}>
           <LeaveForm onSubmit={handleApply} />
         </Box>
+      ) : tab === 2 && userIsManager ? (
+        // Show Team Leave History for managers
+        <Box sx={{ pt: 4 }}>
+          {teamLeavesLoading ? (
+            <Box display='flex' justifyContent='center' p={4}>
+              <CircularProgress />
+            </Box>
+          ) : teamLeavesError ? (
+            <Box display='flex' justifyContent='center' p={4}>
+              <Typography color='error'>{teamLeavesError}</Typography>
+            </Box>
+          ) : teamLeaves.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" color="textSecondary" gutterBottom>
+                No Team Leave History Found
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                {teamLeavesError ? 
+                  teamLeavesError : 
+                  "You don't have any team members or no leave requests have been submitted by your team members yet."
+                }
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <LeaveHistory
+                leaves={teamLeaves}
+                isAdmin={false}
+                onAction={() => {}} // Managers can't approve/reject team leaves in this view
+                onWithdraw={userIsManager ? handleWithdraw : undefined} // Managers can withdraw their own leaves
+                title="My Team Leave History"
+                showNames={true} // Show team member names
+              />
+
+              {/* Team Pagination */}
+              {teamTotalPages > 1 && (
+                <Box display='flex' justifyContent='center' mt={2}>
+                  <Pagination
+                    count={teamTotalPages}
+                    page={teamCurrentPage}
+                    onChange={(_, page) => handleTeamPageChange(page)}
+                    color='primary'
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              )}
+
+              {/* Team Pagination Info */}
+              {teamLeaves.length > 0 && (
+                <Box display='flex' justifyContent='center' mt={1}>
+                  <Typography variant='body2' color='textSecondary'>
+                    Showing page {teamCurrentPage} of {teamTotalPages} ({teamLeaves.length}{' '}
+                    total records)
+                  </Typography>
+                </Box>
+              )}
+            </>
+          )}
+        </Box>
       ) : (
+        // Show regular leave history
         <Box sx={{ pt: 4 }}>
           <LeaveHistory
             leaves={leaves}
             isAdmin={userIsAdmin}
             onAction={handleAction}
+            onWithdraw={!userIsAdmin ? handleWithdraw : undefined} // Users and managers can withdraw their own leaves
           />
 
           {/* Pagination */}
@@ -533,6 +790,32 @@ const LeaveRequestPage = () => {
         onConfirm={handleConfirm}
         action={actionType || 'approved'}
       />
+      
+      {/* Withdraw Confirmation Dialog */}
+      <Dialog
+        open={withdrawDialogOpen}
+        onClose={() => setWithdrawDialogOpen(false)}
+        aria-labelledby="withdraw-dialog-title"
+        aria-describedby="withdraw-dialog-description"
+      >
+        <DialogTitle id="withdraw-dialog-title">
+          Withdraw Leave Request
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="withdraw-dialog-description">
+            Are you sure you want to withdraw this leave request? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setWithdrawDialogOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmWithdraw} color="warning" variant="contained">
+            Withdraw
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
