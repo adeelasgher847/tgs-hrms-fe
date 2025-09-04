@@ -268,16 +268,14 @@ const MyTimerCard: React.FC = () => {
                 </Button>
               )}
 
-              {/* Toggle Timesheet view - Only show when checked in or has active session */}
-              {(hasCheckedIn || currentSession) && (
-                <Button
-                  variant='outlined'
-                  component={RouterLink}
-                  to='TimesheetLayout'
-                >
-                  My Timesheet
-                </Button>
-              )}
+              {/* Timesheet link - always visible */}
+              <Button
+                variant='outlined'
+                component={RouterLink}
+                to='TimesheetLayout'
+              >
+                My Timesheet
+              </Button>
             </Box>
           )}
 

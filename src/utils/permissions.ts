@@ -68,7 +68,7 @@ export const isSubMenuVisibleForRole = (parentMenuLabel: string, subLabel: strin
   // Default: visible unless explicitly hidden below
   let visible = true;
 
-  // Admin and System-Admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports
+  // Admin and System-Admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports, Attendance
   if (r === 'admin' || r === 'system-admin') {
     if (parent.includes('department')) {
       if (sub.includes('user list') || sub.includes('policies') || sub.includes('holidays')) {
@@ -76,7 +76,8 @@ export const isSubMenuVisibleForRole = (parentMenuLabel: string, subLabel: strin
       }
     }
     if (parent.includes('attendance')) {
-      if (sub.includes('reports')) {
+      // hide only the exact "Attendance" sub item (not "Attendance Table") and hide Reports
+      if (sub === 'attendance' || sub.includes('reports')) {
         visible = false;
       }
     }
@@ -117,10 +118,11 @@ export const isDashboardPathAllowedForRole = (pathAfterDashboard: string, role?:
       // To block direct access, remove the entries below from the allowlist.
       // 'policies', 'holidays',
       'leaves',
-      // Attendance (hide Reports for admin/system-admin)
-      'AttendanceCheck', 'AttendanceTable',
-      // 'Reports', // removed for admin/system-admin per requirement
-      'AttendanceCheck/TimesheetLayout',
+      // Attendance (hide Reports and AttendanceCheck for admin/system-admin)
+      'AttendanceTable',
+      // 'AttendanceCheck',
+      // 'Reports',
+      // 'AttendanceCheck/TimesheetLayout',
       // Teams
       'teams',
       // Employee profile view
@@ -130,9 +132,11 @@ export const isDashboardPathAllowedForRole = (pathAfterDashboard: string, role?:
       '', 'departments', 'Designations', 'EmployeeManager', 'UserList', 'UserProfile',
       // 'policies', 'holidays',
       'leaves',
-      'AttendanceCheck', 'AttendanceTable',
+      // Attendance (hide Reports and AttendanceCheck for admin)
+      'AttendanceTable',
+      // 'AttendanceCheck',
       // 'Reports',
-      'AttendanceCheck/TimesheetLayout',
+      // 'AttendanceCheck/TimesheetLayout',
       'teams',
       'EmployeeProfileView',
     ]),
