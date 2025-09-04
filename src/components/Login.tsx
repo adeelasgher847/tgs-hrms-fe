@@ -25,6 +25,7 @@ import axios from 'axios';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { type AlertProps } from '@mui/material/Alert';
 import { useUser } from '../context/UserContext';
+import { getDefaultDashboardRoute } from '../utils/permissions';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
   function Alert(props, ref) {
@@ -71,7 +72,16 @@ const Login: React.FC = () => {
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (token) {
-      navigate('/dashboard', { replace: true });
+      // Determine default route based on existing user in localStorage
+      try {
+        const userStr = localStorage.getItem('user');
+        const parsed = userStr ? JSON.parse(userStr) : null;
+        const role = typeof parsed?.role === 'string' ? parsed?.role : parsed?.role?.name;
+        const target = getDefaultDashboardRoute(role);
+        navigate(target, { replace: true });
+      } catch {
+        navigate('/dashboard', { replace: true });
+      }
     } else {
       setCheckingAuth(false);
     }
@@ -163,8 +173,10 @@ const Login: React.FC = () => {
         severity: 'success',
       });
 
-      // Navigate immediately without setTimeout
-      navigate('/dashboard', { replace: true });
+      // Navigate immediately to role-specific default route
+      const role = typeof res.data.user?.role === 'string' ? res.data.user?.role : res.data.user?.role?.name;
+      const target = getDefaultDashboardRoute(role);
+      navigate(target, { replace: true });
     } catch (err: any) {
       // Backend may send { field: 'email' | 'password', message: string }
       const data = err.response?.data;
