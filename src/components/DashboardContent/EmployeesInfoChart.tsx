@@ -187,9 +187,9 @@ export default function EmployeesInfoChart() {
       }}
     >
       <Box
+        className='Ramish selected'
         display='flex'
         justifyContent='space-between'
-        alignItems='center'
         mb={2}
       >
         <Typography fontWeight='bold' color={textColor}>
