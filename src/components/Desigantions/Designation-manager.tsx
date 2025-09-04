@@ -312,7 +312,7 @@ export default function DesignationManager() {
   );
 
   return (
-    <Box sx={{ mt: 4 }} dir={isRTL ? 'rtl' : 'ltr'}>
+    <Box dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Top Bar */}
       <Box
         sx={{
