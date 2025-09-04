@@ -26,6 +26,7 @@ import TeamList from './TeamList';
 import MyTeams from './MyTeams';
 
 import CreateTeamForm from './CreateTeamForm';
+import { useOutletContext } from 'react-router-dom';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -53,7 +54,14 @@ interface TeamManagerProps {
   darkMode?: boolean;
 }
 
-const TeamManager: React.FC<TeamManagerProps> = ({ darkMode = false }) => {
+interface OutletContext {
+  darkMode: boolean;
+}
+
+const TeamManager: React.FC<TeamManagerProps> = ({ darkMode: darkModeProp = false }) => {
+  const { darkMode: outletDarkMode } = useOutletContext<OutletContext>();
+  const darkMode = outletDarkMode ?? darkModeProp;
+
   const [tabValue, setTabValue] = useState(0);
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);

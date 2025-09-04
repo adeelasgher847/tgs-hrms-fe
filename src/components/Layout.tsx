@@ -1,12 +1,14 @@
 import { Box, useMediaQuery, useTheme as useMuiTheme } from '@mui/material';
 import Sidebar from './Sidebar';
 import Navbar from './Nabvar';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import '../layout.css';
 import EmployeeInviteModal from './Modal/EmployeeInviteModal';
 
 import { useTheme } from '../theme';
+import { useUser } from '../context/UserContext';
+import { getDefaultDashboardRoute, isDashboardPathAllowedForRole } from '../utils/permissions';
 const Layout = () => {
   const muiTheme = useMuiTheme();
   const { mode: themeMode, setMode } = useTheme();
@@ -16,6 +18,11 @@ const Layout = () => {
   const [rtlMode, setRtlMode] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const darkMode = themeMode === 'dark';
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useUser();
+  const role = typeof user?.role === 'string' ? user?.role : (user as any)?.role?.name;
 
   // Update sidebar state when screen size changes
   useEffect(() => {
@@ -53,6 +60,23 @@ const Layout = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [sidebarOpen, isLargeScreen]);
+
+  // Role-based guard and default redirects for /dashboard/*
+  useEffect(() => {
+    // Only guard dashboard routes
+    if (!location.pathname.startsWith('/dashboard')) return;
+
+    // Extract subpath after /dashboard
+    const subPath = location.pathname.replace('/dashboard', '').replace(/^\/+/, '');
+    const allowed = isDashboardPathAllowedForRole(subPath, role);
+
+    if (!allowed) {
+      const target = getDefaultDashboardRoute(role);
+      if (location.pathname !== target) {
+        navigate(target, { replace: true });
+      }
+    }
+  }, [location.pathname, role, navigate]);
 
   return (
     <Box

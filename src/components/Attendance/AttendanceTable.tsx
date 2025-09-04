@@ -201,13 +201,15 @@ const AttendanceTable = () => {
       if (!storedUser) return;
 
       const currentUser = JSON.parse(storedUser);
-      setUserRole(currentUser.role.name);
+      const roleName = (currentUser.role?.name || currentUser.role || '').toString();
+      const roleLc = roleName.toLowerCase();
+      setUserRole(roleName);
       setIsManager(checkIsManager(currentUser.role));
 
       let response: AttendanceResponse;
 
-      // Admin: raw events across tenant; User: raw events for self
-      if (currentUser.role.name === 'Admin') {
+      // Admin or System-Admin: raw events across tenant
+      if (roleLc === 'admin' || roleLc === 'system-admin' || roleLc === 'system admin' || roleLc === 'system_admin') {
         response = await attendanceApi.getAllAttendance(page);
       } else {
         response = await attendanceApi.getAttendanceEvents(
@@ -262,6 +264,10 @@ const AttendanceTable = () => {
     setStartDate('');
     setEndDate('');
   };
+
+  // Determine admin-like UI behavior (Admin or System-Admin)
+  const userRoleLc = (userRole || '').toLowerCase();
+  const isAdminLike = userRoleLc === 'admin' || userRoleLc === 'system-admin' || userRoleLc === 'system admin' || userRoleLc === 'system_admin';
 
   return (
     <Box>
@@ -326,7 +332,7 @@ const AttendanceTable = () => {
           <Table>
             <TableHead>
               <TableRow>
-                {userRole === 'Admin' && (
+                {isAdminLike && (
                   <TableCell sx={{ fontWeight: 'bold' }}>
                     Employee Name
                   </TableCell>
@@ -341,7 +347,7 @@ const AttendanceTable = () => {
               {loading ? (
                 <TableRow>
                   <TableCell
-                    colSpan={userRole === 'Admin' ? 5 : 4}
+                    colSpan={isAdminLike ? 5 : 4}
                     align='center'
                   >
                     <CircularProgress />
@@ -350,7 +356,7 @@ const AttendanceTable = () => {
               ) : filteredData.length > 0 ? (
                 filteredData.map(record => (
                   <TableRow key={record.id}>
-                    {userRole === 'Admin' && (
+                    {isAdminLike && (
                       <TableCell>{record.user?.first_name || 'N/A'}</TableCell>
                     )}
                     <TableCell>{record.date || '--'}</TableCell>
@@ -362,7 +368,7 @@ const AttendanceTable = () => {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={userRole === 'Admin' ? 5 : 4}
+                    colSpan={isAdminLike ? 5 : 4}
                     align='center'
                   >
                     No attendance records found.
@@ -455,7 +461,7 @@ const AttendanceTable = () => {
                 </TableContainer>
               </Paper>
 
-              {/* Team Pagination */}
+              {/* Pagination */}
               {teamTotalPages > 1 && (
                 <Box display='flex' justifyContent='center' mt={2}>
                   <Pagination
@@ -469,11 +475,12 @@ const AttendanceTable = () => {
                 </Box>
               )}
 
-              {/* Team Pagination Info */}
+              {/* Pagination Info */}
               {teamTotalItems > 0 && (
                 <Box display='flex' justifyContent='center' mt={1}>
                   <Typography variant='body2' color='textSecondary'>
-                    Showing page {teamCurrentPage} of {teamTotalPages} ({teamTotalItems} total team members)
+                    Showing page {teamCurrentPage} of {teamTotalPages} ({teamTotalItems} total
+                    records)
                   </Typography>
                 </Box>
               )}

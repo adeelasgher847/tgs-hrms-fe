@@ -24,8 +24,10 @@ import {
 import dotted from './../assets/dashboardIcon/dotted-down.svg';
 import Clipboard from '../assets/dashboardIcon/Clipboard';
 import bubbleleft from '../assets/dashboardIcon/bubble-left.svg';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
+import { isMenuVisibleForRole, isSubMenuVisibleForRole } from '../utils/permissions';
 
 //Types
 interface SubItem {
@@ -149,8 +151,26 @@ const menuItems: MenuItem[] = [
 export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   const { toggleTheme } = useTheme();
   const location = useLocation();
+  const { user } = useUser();
+  const role = user?.role;
   const [openItem, setOpenItem] = useState<string>('');
   const [activeSubItem, setActiveSubItem] = useState<string>('');
+
+  // Filter menu items based on role
+  const filteredMenuItems = useMemo(() => {
+    return menuItems
+      .filter(item => isMenuVisibleForRole(item.label, typeof role === 'string' ? role : (role as any)?.name))
+      .map(item => ({
+        ...item,
+        subItems: item.subItems.filter(sub =>
+          isSubMenuVisibleForRole(
+            item.label,
+            sub.label,
+            typeof role === 'string' ? role : (role as any)?.name
+          )
+        ),
+      }));
+  }, [role]);
 
   // Auto expand parent & highlight subitem on URL change
   useEffect(() => {
@@ -159,7 +179,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
       currentPath = ''; // handle Hr Dashboard
     }
 
-    for (const item of menuItems) {
+    for (const item of filteredMenuItems) {
       const matchedSub = item.subItems.find(sub => sub.path === currentPath);
       if (matchedSub) {
         setOpenItem(item.label);
@@ -167,7 +187,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
         break;
       }
     }
-  }, [location.pathname]);
+  }, [location.pathname, filteredMenuItems]);
 
   const handleSubItemClick = (parent: string, subLabel: string) => {
     setOpenItem(parent);
@@ -221,7 +241,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
 
         {/* Sidebar Menu */}
         <List>
-          {menuItems.map(item => {
+          {filteredMenuItems.map(item => {
             const isParentActive = openItem === item.label;
             return (
               <Box key={item.label}>

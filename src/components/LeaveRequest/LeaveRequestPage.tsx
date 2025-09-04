@@ -586,7 +586,7 @@ const LeaveRequestPage = () => {
           <Typography
             variant='h5'
             fontWeight={700}
-            sx={{ color: '#fff', mb: { xs: 2, sm: 0 } }}
+            sx={{ color: '#fff', fontSize: { xs: 18, sm: 20, md: 22 }, mb: { xs: 2, sm: 0 } }}
           >
             Leave Management System
             {currentUser && (
@@ -659,7 +659,7 @@ const LeaveRequestPage = () => {
               </Button>
             )}
             {/* Debug button for testing */}
-            {process.env.NODE_ENV === 'development' && (
+            {/* {process.env.NODE_ENV === 'development' && (
               <Button
                 variant="outlined"
                 size="small"
@@ -680,7 +680,7 @@ const LeaveRequestPage = () => {
               >
                 DEBUG
               </Button>
-            )}
+            )} */}
           </Box>
         </Toolbar>
       </AppBar>
@@ -718,7 +718,7 @@ const LeaveRequestPage = () => {
                 leaves={teamLeaves}
                 isAdmin={false}
                 onAction={() => {}} // Managers can't approve/reject team leaves in this view
-                onWithdraw={userIsManager ? handleWithdraw : undefined} // Managers can withdraw their own leaves
+                onWithdraw={undefined} // No withdraw in team view
                 title="My Team Leave History"
                 showNames={true} // Show team member names
               />

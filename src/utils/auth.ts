@@ -37,7 +37,8 @@ export const isAdmin = (): boolean => {
 
   // Handle both string and object role formats
   const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
-  const result = roleName === 'admin' || roleName === 'Admin';
+  const roleLc = (roleName || '').toLowerCase();
+  const result = roleLc === 'admin' || roleLc === 'system-admin' || roleLc === 'system admin' || roleLc === 'system_admin';
 
   console.log('🔍 isAdmin check:', {
     user: roleName,
