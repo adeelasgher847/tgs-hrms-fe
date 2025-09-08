@@ -14,7 +14,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { CreateTeamDto, Manager } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 
@@ -83,12 +83,11 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
       if (open) {
         try {
           setLoadingManagers(true);
-          console.log('🔍 Loading managers from API...');
+
           const managersData = await teamApiService.getAvailableManagers();
-          console.log('✅ Managers loaded:', managersData);
+
           setManagers(managersData);
-        } catch (error) {
-          console.error('Error loading managers:', error);
+        } catch {
           setManagers([]);
         } finally {
           setLoadingManagers(false);
@@ -132,8 +131,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
       setError(null);
       await onSubmit(formData);
       handleClose();
-    } catch (err) {
-      console.error('Error creating team:', err);
+    } catch {
       setError(lang.error);
     } finally {
       setLoading(false);

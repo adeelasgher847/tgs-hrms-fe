@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  useTheme,
   IconButton,
   TextField,
   MenuItem,
@@ -14,11 +13,11 @@ import {
   Alert,
   Snackbar,
   Pagination,
+  useTheme,
   Typography,
   Paper,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import { useOutletContext } from 'react-router-dom';
 import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeList from './EmployeeList';
@@ -124,7 +123,6 @@ const EmployeeManager: React.FC = () => {
 
   // Handle page change
   const handlePageChange = (page: number) => {
-    console.log('🔄 EmployeeManager - Changing to page:', page);
     setCurrentPage(page);
     loadEmployees(page);
   };
@@ -140,7 +138,6 @@ const EmployeeManager: React.FC = () => {
       });
       setDepartments(deptMap);
       setDepartmentList(deptData);
-      console.log('Loaded departments:', deptData);
 
       // Load all designations
       const desigData = await designationApiService.getAllDesignations();
@@ -150,9 +147,8 @@ const EmployeeManager: React.FC = () => {
       });
       setDesignations(desigMap);
       setDesignationList(desigData);
-      console.log('Loaded designations:', desigData);
-    } catch (error) {
-      console.error('Error loading departments and designations:', error);
+    } catch {
+      // Handle error silently
     } finally {
       setLoadingFilters(false);
     }
@@ -162,7 +158,6 @@ const EmployeeManager: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔄 EmployeeManager - Loading employees for page:', page);
 
       const filters = {
         departmentId: departmentFilter || undefined,
@@ -170,7 +165,6 @@ const EmployeeManager: React.FC = () => {
       };
 
       const response = await employeeApi.getAllEmployees(filters, page);
-      console.log('✅ EmployeeManager - API Response:', response);
 
       // Convert BackendEmployee to Employee
       const convertedEmployees: Employee[] = response.items.map(emp => ({
@@ -207,9 +201,8 @@ const EmployeeManager: React.FC = () => {
       setCurrentPage(response.page);
       setTotalPages(response.totalPages);
       setTotalItems(response.total);
-    } catch (err) {
+    } catch {
       setError('Failed to load employees');
-      console.error('Error loading employees:', err);
     } finally {
       setLoading(false);
     }
@@ -220,14 +213,10 @@ const EmployeeManager: React.FC = () => {
       setLoading(true);
       setError(null);
       const newEmployee = await employeeApi.createEmployee(employeeData);
-      console.log('New employee created:', newEmployee);
 
       // If the new employee doesn't have department/designation objects,
       // we need to fetch the full employee data or reload the list
       if (!newEmployee.department || !newEmployee.designation) {
-        console.log(
-          'New employee missing department/designation objects, reloading current page...'
-        );
         await loadEmployees(currentPage); // Reload the current page to get complete data
       } else {
         // Convert BackendEmployee to Employee and add to current page
@@ -271,11 +260,9 @@ const EmployeeManager: React.FC = () => {
 
       return { success: true };
     } catch (err: unknown) {
-      console.error('Error adding employee:', err);
-
-      // Debug: Log the actual error response structure
+      // Debug: Log the actual error structure
       if (err && typeof err === 'object' && 'response' in err) {
-        console.log('Backend error response:', JSON.stringify(err, null, 2));
+        // Error has response property
       }
 
       // Handle backend validation errors
@@ -285,7 +272,7 @@ const EmployeeManager: React.FC = () => {
         };
       };
 
-      if (errorResponse.response?.data) {
+      if (errorResponse?.response?.data) {
         const responseData = errorResponse.response.data;
         const fieldErrors: Record<string, string> = {};
 
@@ -373,7 +360,7 @@ const EmployeeManager: React.FC = () => {
       const fresh = await employeeApi.getEmployeeById(emp.id);
       setEditing(fresh as unknown as Employee);
       setOpen(true);
-    } catch (e) {
+    } catch {
       setError('Failed to load employee details');
     } finally {
       setLoading(false);
@@ -386,7 +373,7 @@ const EmployeeManager: React.FC = () => {
       password?: string;
     }
   ) => {
-    if (!editing) return { success: false } as any;
+    if (!editing) return { success: false } as unknown;
     try {
       setLoading(true);
       setError(null);
@@ -395,23 +382,22 @@ const EmployeeManager: React.FC = () => {
         updates.designationId && updates.designationId !== ''
           ? updates.designationId
           : editing.designationId;
-      const updated = await employeeApi.updateEmployee(editing.id, {
-        first_name: (updates as any).first_name,
-        last_name: (updates as any).last_name,
+      await employeeApi.updateEmployee(editing.id, {
+        first_name: (updates as unknown).first_name,
+        last_name: (updates as unknown).last_name,
         email: updates.email,
         phone: updates.phone,
         password: updates.password,
         designationId: nextDesignationId,
       });
       await loadEmployees();
-      setSuccessMessage('Employee updated successfully!');
+      setSuccessMessage('Employee successfully!');
       setOpen(false);
       setEditing(null);
       return { success: true };
-    } catch (err) {
-      console.error('Error updating employee:', err);
+    } catch {
       setError('Failed to update employee');
-      return { success: false } as any;
+      return { success: false } as unknown;
     } finally {
       setLoading(false);
     }
@@ -424,9 +410,8 @@ const EmployeeManager: React.FC = () => {
       await employeeApi.deleteEmployee(id);
       setEmployees(prev => prev.filter(emp => emp.id !== id));
       setSuccessMessage('Employee deleted successfully!');
-    } catch (err) {
+    } catch {
       setError('Failed to delete employee');
-      console.error('Error deleting employee:', err);
     } finally {
       setLoading(false);
     }
@@ -607,7 +592,7 @@ const EmployeeManager: React.FC = () => {
       </Box>
 
       {/* Employee List */}
-      <Paper elevation={3} sx={{boxShadow:'none'}}>
+      <Paper elevation={3} sx={{ boxShadow: 'none' }}>
         <EmployeeList
           employees={filteredEmployees}
           onDelete={requestDeleteEmployee}
@@ -758,8 +743,8 @@ const EmployeeManager: React.FC = () => {
               editing
                 ? {
                     id: editing.id,
-                    firstName: (editing as any).firstName,
-                    lastName: (editing as any).lastName,
+                    firstName: (editing as unknown).firstName,
+                    lastName: (editing as unknown).lastName,
                     email: editing.email,
                     phone: editing.phone,
                     designationId: editing.designationId,

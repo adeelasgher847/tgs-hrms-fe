@@ -45,7 +45,7 @@ export interface Team {
   teamMembers?: TeamMember[];
 }
 
-// Paginated response interface
+// Paginated interface
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;
@@ -90,10 +90,11 @@ class TeamApiService {
   // Get available managers (users with manager role who are not assigned to any team)
   async getAvailableManagers(): Promise<Manager[]> {
     try {
-      const response = await axiosInstance.get<Manager[]>(`${this.baseUrl}/available-managers`);
+      const response = await axiosInstance.get<Manager[]>(
+        `${this.baseUrl}/available-managers`
+      );
       return response.data;
-    } catch (error) {
-      console.error('Error fetching available managers:', error);
+    } catch {
       return [];
     }
   }
@@ -103,8 +104,7 @@ class TeamApiService {
     try {
       const response = await axiosInstance.post<Team>(this.baseUrl, teamData);
       return response.data;
-    } catch (error) {
-      console.error('Error creating team:', error);
+    } catch {
       throw error;
     }
   }
@@ -112,41 +112,41 @@ class TeamApiService {
   // Get all teams with pagination (Admin only)
   async getAllTeams(page: number = 1): Promise<PaginatedResponse<Team>> {
     try {
-      const response = await axiosInstance.get<PaginatedResponse<Team>>(`${this.baseUrl}?page=${page}`);
+      const response = await axiosInstance.get<PaginatedResponse<Team>>(
+        `${this.baseUrl}?page=${page}`
+      );
       const teams = response.data;
-      
+
       // For each team, fetch the member count if not already included
       if (teams.items) {
         const teamsWithMembers = await Promise.all(
-          teams.items.map(async (team) => {
+          teams.items.map(async team => {
             if (!team.teamMembers) {
               try {
                 const membersResponse = await this.getTeamMembers(team.id, 1);
                 return {
                   ...team,
-                  teamMembers: membersResponse.items || []
+                  teamMembers: membersResponse.items || [],
                 };
-              } catch (error) {
-                console.error(`Error fetching members for team ${team.id}:`, error);
+              } catch {
                 return {
                   ...team,
-                  teamMembers: []
+                  teamMembers: [],
                 };
               }
             }
             return team;
           })
         );
-        
+
         return {
           ...teams,
-          items: teamsWithMembers
+          items: teamsWithMembers,
         };
       }
-      
+
       return teams;
-    } catch (error) {
-      console.error('Error fetching teams:', error);
+    } catch {
       throw error;
     }
   }
@@ -156,8 +156,7 @@ class TeamApiService {
     try {
       const response = await axiosInstance.get<Team>(`${this.baseUrl}/${id}`);
       return response.data;
-    } catch (error) {
-      console.error('Error fetching team:', error);
+    } catch {
       throw error;
     }
   }
@@ -165,29 +164,13 @@ class TeamApiService {
   // Update team (Admin only)
   async updateTeam(id: string, teamData: UpdateTeamDto): Promise<Team> {
     try {
-      console.log('🔄 TeamApi: Updating team', id, 'with data:', teamData);
-      
-      const response = await axiosInstance.patch<Team>(`${this.baseUrl}/${id}`, teamData);
-      console.log('✅ TeamApi: Update response:', response.data);
-      
-      // Verify the response includes manager information
-      if (!response.data.manager || !response.data.manager.first_name) {
-        console.warn('⚠️ TeamApi: Response missing manager details, but update was successful');
-        console.log('⚠️ TeamApi: Response data:', response.data);
-      } else {
-        console.log('✅ TeamApi: Response includes manager:', response.data.manager);
-      }
-      
+      const response = await axiosInstance.patch<Team>(
+        `${this.baseUrl}/${id}`,
+        teamData
+      );
+
       return response.data;
-    } catch (error) {
-      console.error('❌ TeamApi: Error updating team:', error);
-      
-      // Log more details about the error
-      if (error.response) {
-        console.error('❌ Response status:', error.response.status);
-        console.error('❌ Response data:', error.response.data);
-      }
-      
+    } catch {
       throw error;
     }
   }
@@ -196,8 +179,7 @@ class TeamApiService {
   async deleteTeam(id: string): Promise<void> {
     try {
       await axiosInstance.delete(`${this.baseUrl}/${id}`);
-    } catch (error) {
-      console.error('Error deleting team:', error);
+    } catch {
       throw error;
     }
   }
@@ -205,21 +187,25 @@ class TeamApiService {
   // Get manager's teams
   async getMyTeams(): Promise<Team[]> {
     try {
-      const response = await axiosInstance.get<Team[]>(`${this.baseUrl}/my-teams`);
+      const response = await axiosInstance.get<Team[]>(
+        `${this.baseUrl}/my-teams`
+      );
       return response.data;
-    } catch (error) {
-      console.error('Error fetching my teams:', error);
+    } catch {
       return [];
     }
   }
 
   // Get manager's team members
-  async getMyTeamMembers(page: number = 1): Promise<PaginatedResponse<TeamMember>> {
+  async getMyTeamMembers(
+    page: number = 1
+  ): Promise<PaginatedResponse<TeamMember>> {
     try {
-      const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(`${this.baseUrl}/my-members?page=${page}`);
+      const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(
+        `${this.baseUrl}/my-members?page=${page}`
+      );
       return response.data;
-    } catch (error) {
-      console.error('Error fetching my team members:', error);
+    } catch {
       return {
         items: [],
         total: 0,
@@ -231,15 +217,19 @@ class TeamApiService {
   }
 
   // Get available employees for team assignment
-  async getAvailableEmployees(page: number = 1, search?: string): Promise<PaginatedResponse<TeamMember>> {
+  async getAvailableEmployees(
+    page: number = 1,
+    search?: string
+  ): Promise<PaginatedResponse<TeamMember>> {
     try {
       const params = new URLSearchParams({ page: page.toString() });
       if (search) params.append('search', search);
-      
-      const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(`${this.baseUrl}/available-employees?${params}`);
+
+      const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(
+        `${this.baseUrl}/available-employees?${params}`
+      );
       return response.data;
-    } catch (error) {
-      console.error('Error fetching available employees:', error);
+    } catch {
       return {
         items: [],
         total: 0,
@@ -251,12 +241,16 @@ class TeamApiService {
   }
 
   // Get team members for specific team
-  async getTeamMembers(teamId: string, page: number = 1): Promise<PaginatedResponse<TeamMember>> {
+  async getTeamMembers(
+    teamId: string,
+    page: number = 1
+  ): Promise<PaginatedResponse<TeamMember>> {
     try {
-      const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(`${this.baseUrl}/${teamId}/members?page=${page}`);
+      const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(
+        `${this.baseUrl}/${teamId}/members?page=${page}`
+      );
       return response.data;
-    } catch (error) {
-      console.error('Error fetching team members:', error);
+    } catch {
       return {
         items: [],
         total: 0,
@@ -273,20 +267,21 @@ class TeamApiService {
       await axiosInstance.post(`${this.baseUrl}/${teamId}/add-member`, {
         employee_id: employeeId,
       });
-    } catch (error) {
-      console.error('Error adding member to team:', error);
+    } catch {
       throw error;
     }
   }
 
   // Remove member from team
-  async removeMemberFromTeam(teamId: string, employeeId: string): Promise<void> {
+  async removeMemberFromTeam(
+    teamId: string,
+    employeeId: string
+  ): Promise<void> {
     try {
       await axiosInstance.post(`${this.baseUrl}/${teamId}/remove-member`, {
         employee_id: employeeId,
       });
-    } catch (error) {
-      console.error('Error removing member from team:', error);
+    } catch {
       throw error;
     }
   }

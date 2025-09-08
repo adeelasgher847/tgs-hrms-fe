@@ -27,10 +27,8 @@ const SheetList: React.FC = () => {
   const fetchData = async (page: number = 1) => {
     try {
       setLoading(true);
-      console.log('🔄 SheetList - Fetching timesheet data for page:', page);
 
       const response = await timesheetApi.getUserTimesheet(page);
-      console.log('✅ SheetList - API Response:', response);
 
       // Access sessions from the new nested structure
       setTimesheet(response.items.sessions);
@@ -39,8 +37,8 @@ const SheetList: React.FC = () => {
       setCurrentPage(response.page || 1);
       setTotalPages(response.totalPages || 1);
       setTotalItems(response.total || 0);
-    } catch (error) {
-      console.error('SheetList - Error fetching timesheet:', error);
+    } catch {
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -52,13 +50,12 @@ const SheetList: React.FC = () => {
 
   // Handle page change
   const handlePageChange = (page: number) => {
-    console.log('🔄 SheetList - Changing to page:', page);
     setCurrentPage(page);
     fetchData(page);
   };
   return (
     <Box>
-      <Paper elevation={3 } sx={{boxShadow:'none'}}>
+      <Paper elevation={3} sx={{ boxShadow: 'none' }}>
         <TableContainer>
           <Table>
             <TableHead>

@@ -3,24 +3,22 @@ import {
   Box,
   Typography,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  CircularProgress,
   Paper,
-  IconButton,
-  ToggleButtonGroup,
-  ToggleButton,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Pagination,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  IconButton,
   Snackbar,
   Alert,
-  CircularProgress,
+  Pagination,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -30,24 +28,22 @@ import {
 
 import DesignationModal from '../Desigantions/Designation-modal';
 import DeleteConfirmationDialog from './Delete-confirmation-dialog';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import { useOutletContext } from 'react-router-dom';
 import {
   designationApiService,
   type FrontendDesignation,
 } from '../../api/designationApi';
-import { useTheme } from '@mui/material/styles';
 import {
   departmentApiService,
   type FrontendDepartment,
 } from '../../api/departmentApi';
 
 export default function DesignationManager() {
-  const { language, setLanguage } = useLanguage();
+  const { language } = useLanguage();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const isRTL = language === 'ar';
-  const theme = useTheme();
-
+  // Theme available if needed
   const [designations, setDesignations] = useState<FrontendDesignation[]>([]);
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +81,6 @@ export default function DesignationManager() {
       );
       setDepartments(frontendDepartments);
     } catch (error: unknown) {
-      console.error('Error fetching departments:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to fetch departments';
       setSnackbar({
@@ -115,7 +110,6 @@ export default function DesignationManager() {
       setCurrentPage(response.page);
       setItemsPerPage(response.limit);
     } catch (error: unknown) {
-      console.error('Error fetching designations:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to fetch designations';
       setSnackbar({
@@ -151,7 +145,6 @@ export default function DesignationManager() {
       );
       setDesignations(frontendDesignations);
     } catch (error: unknown) {
-      console.error('Error fetching all designations:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -216,7 +209,7 @@ export default function DesignationManager() {
 
         setSnackbar({
           open: true,
-          message: 'Designation updated successfully',
+          message: 'Designation successfully',
           severity: 'success',
         });
       } else {
@@ -257,7 +250,6 @@ export default function DesignationManager() {
       setModalOpen(false);
       setEditingDesignation(null);
     } catch (error: unknown) {
-      console.error('Error saving designation:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to save designation';
       setSnackbar({
@@ -281,7 +273,6 @@ export default function DesignationManager() {
           severity: 'success',
         });
       } catch (error: unknown) {
-        console.error('Error deleting designation:', error);
         const errorMessage =
           error instanceof Error
             ? error.message
@@ -324,13 +315,20 @@ export default function DesignationManager() {
           gap: 2,
         }}
       >
-        <Typography variant='h4' sx={{ fontWeight: 700, color: darkMode ? '#8f8f8f' : '#000' }}>
+        <Typography
+          variant='h4'
+          sx={{ fontWeight: 700, color: darkMode ? '#8f8f8f' : '#000' }}
+        >
           {getText('Designations', 'المسميات الوظيفية')}
         </Typography>
-        
 
-        <Box sx={{ display:{sx:'block',sm:'flex'}, gap: 2, alignItems: 'center' }}>
-
+        <Box
+          sx={{
+            display: { sx: 'block', sm: 'flex' },
+            gap: 2,
+            alignItems: 'center',
+          }}
+        >
           <Button
             variant='contained'
             startIcon={<AddIcon />}
@@ -351,7 +349,7 @@ export default function DesignationManager() {
       </Box>
 
       {/* Filter by Department */}
-      <Paper sx={{ mb: 3,boxShadow:'none',}}>
+      <Paper sx={{ mb: 3, boxShadow: 'none' }}>
         <FormControl fullWidth>
           <InputLabel id='dept-select'>
             {getText('Filter by Department', 'تصفية حسب القسم')}
@@ -387,14 +385,18 @@ export default function DesignationManager() {
       </Paper>
 
       {/* Designation Table */}
-      <Paper variant='outlined' sx={{bgcolor:'unset',border:'none'}}>
+      <Paper variant='outlined' sx={{ bgcolor: 'unset', border: 'none' }}>
         <Box>
           <Typography variant='body2' sx={{ mb: 2, color: 'text.secondary' }}>
             {filteredDesignations.length}{' '}
             {getText('designation(s)', 'مسمى وظيفي')}
           </Typography>
 
-          <TableContainer component={Paper} variant='outlined' sx={{border:'none',borderRadius:'0px'}}>
+          <TableContainer
+            component={Paper}
+            variant='outlined'
+            sx={{ border: 'none', borderRadius: '0px' }}
+          >
             <Table>
               <TableHead>
                 <TableRow>
@@ -439,7 +441,12 @@ export default function DesignationManager() {
                       align='center'
                       sx={{ color: 'text.secondary' }}
                     >
-                      <Box display='flex' justifyContent='center' alignItems='center' py={3}>
+                      <Box
+                        display='flex'
+                        justifyContent='center'
+                        alignItems='center'
+                        py={3}
+                      >
                         <CircularProgress />
                       </Box>
                     </TableCell>

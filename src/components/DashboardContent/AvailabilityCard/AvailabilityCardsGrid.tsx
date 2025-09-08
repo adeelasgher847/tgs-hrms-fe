@@ -1,11 +1,9 @@
 import { Box, Typography, CircularProgress, Button } from '@mui/material';
 import AvailabilityCard from './AvailabilityCard';
 import CheckedIcon from '../../../assets/dashboardIcon/checked.svg';
-import stopwatchIcon from '../../../assets/dashboardIcon/stopwatch.svg';
-import banIcon from '../../../assets/dashboardIcon/ban.svg';
 import beachIcon from '../../../assets/dashboardIcon/beach-bed.svg';
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../../../context/LanguageContext';
+import { useLanguage } from '../../../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -37,71 +35,40 @@ export default function AvailabilityCardsGrid() {
       setLoading(true);
       setError(null);
 
-      console.log('🔄 Fetching availability data...');
-
       // Fetch both APIs in parallel
       const [attendanceResponse, leavesResponse] = await Promise.all([
         getAttendanceThisMonth(),
         getLeavesThisMonth(),
       ]);
 
-      console.log(
-        '✅ AvailabilityCardsGrid - Attendance API Response:',
-        attendanceResponse
-      );
-      console.log(
-        '✅ AvailabilityCardsGrid - Leaves API Response:',
-        leavesResponse
-      );
-
-      // Validate response structure before accessing properties
+      // Validate structure before accessing properties
       if (
         attendanceResponse &&
         typeof attendanceResponse.totalAttendance === 'number'
       ) {
-        console.log(
-          '✅ Setting attendance data:',
-          attendanceResponse.totalAttendance
-        );
         setAttendanceData(attendanceResponse.totalAttendance);
       } else if (
         attendanceResponse &&
         attendanceResponse.data &&
         typeof attendanceResponse.data.total_attendance === 'number'
       ) {
-        console.log(
-          '✅ Setting attendance data:',
-          attendanceResponse.data.total_attendance
-        );
         setAttendanceData(attendanceResponse.data.total_attendance);
       } else {
-        console.warn(
-          '⚠️ Invalid attendance response structure:',
-          attendanceResponse
-        );
         setAttendanceData(0);
       }
 
       if (leavesResponse && typeof leavesResponse.totalLeaves === 'number') {
-        console.log('✅ Setting leaves data:', leavesResponse.totalLeaves);
         setLeavesData(leavesResponse.totalLeaves);
       } else if (
         leavesResponse &&
         leavesResponse.data &&
         typeof leavesResponse.data.total_leaves === 'number'
       ) {
-        console.log(
-          '✅ Setting leaves data:',
-          leavesResponse.data.total_leaves
-        );
         setLeavesData(leavesResponse.data.total_leaves);
       } else {
-        console.warn('⚠️ Invalid leaves response structure:', leavesResponse);
         setLeavesData(0);
       }
     } catch (err: unknown) {
-      console.error('❌ Error fetching availability data:', err);
-
       // Check if it's an authentication error
       if (
         err &&
@@ -122,7 +89,6 @@ export default function AvailabilityCardsGrid() {
       }
     } finally {
       setLoading(false);
-      console.log('🏁 Finished loading availability data');
     }
   };
 
@@ -162,42 +128,6 @@ export default function AvailabilityCardsGrid() {
       BorderColor: borderColor,
     },
     {
-      title: cardTitles['Late Coming'][language],
-      value: 12, // Keep mock data for now since no API for this
-      icon: (
-        <img
-          src={stopwatchIcon}
-          alt='LateComing'
-          style={{
-            width: 30,
-            height: 30,
-            filter: darkMode
-              ? 'invert(1) brightness(0.4)'
-              : 'grayscale(100%) brightness(55%)',
-          }}
-        />
-      ),
-      BorderColor: borderColor,
-    },
-    {
-      title: cardTitles['Absent'][language],
-      value: 5, // Keep mock data for now since no API for this
-      icon: (
-        <img
-          src={banIcon}
-          alt='Absent'
-          style={{
-            width: 30,
-            height: 30,
-            filter: darkMode
-              ? 'invert(1) brightness(0.4)'
-              : 'grayscale(100%) brightness(55%)',
-          }}
-        />
-      ),
-      BorderColor: borderColor,
-    },
-    {
       title: cardTitles['Leave Apply'][language],
       value: leavesData,
       icon: (
@@ -224,6 +154,9 @@ export default function AvailabilityCardsGrid() {
         borderRadius: '0.375rem',
         backgroundColor: bgColor,
         direction: language === 'ar' ? 'rtl' : 'ltr', // RTL support
+        height: '100%', // Match the height of GenderPercentageChart
+        display: 'flex',
+        flexDirection: 'column',
       }}
       p={2}
     >
@@ -300,16 +233,18 @@ export default function AvailabilityCardsGrid() {
         <Box
           sx={{
             display: 'flex',
-            flexWrap: 'wrap',
+            flexDirection: 'column',
             gap: 2,
-            justifyContent: { xs: 'center', md: 'space-between' },
+            flex: 1, // Take remaining space
+            justifyContent: 'center', // Center the cards vertically
           }}
         >
           {cards.map(card => (
             <Box
               key={card.title}
               sx={{
-                flex: { xs: '100%', sm: '33%' },
+                flex: 1, // Each card takes equal space
+                minHeight: '80px', // Ensure minimum height for cards
               }}
             >
               <AvailabilityCard {...card} />

@@ -21,7 +21,7 @@ import {
   Delete as DeleteIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, UpdateTeamDto } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
@@ -58,7 +58,7 @@ const TeamList: React.FC<TeamListProps> = ({
       editTeam: 'Edit Team',
       deleteTeam: 'Delete Team',
       cancel: 'Cancel',
-      teamUpdated: 'Team updated successfully',
+      teamUpdated: 'Team successfully',
       teamDeleted: 'Team deleted successfully',
       error: 'An error occurred',
     },
@@ -115,32 +115,22 @@ const TeamList: React.FC<TeamListProps> = ({
 
   const handleEditSubmit = async (id: string, data: UpdateTeamDto) => {
     try {
-      console.log('🔄 TeamList: Starting team update for ID:', id);
-      console.log('🔄 TeamList: Update data:', data);
-
       const updatedTeam = await teamApiService.updateTeam(id, data);
-      console.log('✅ TeamList: Update successful, response:', updatedTeam);
 
       // Verify the update was successful and includes manager info
       if (!updatedTeam || !updatedTeam.id) {
-        throw new Error('Invalid response from team update API');
+        throw new Error('Invalid from team update API');
       }
 
       // Log the manager information for debugging
-      console.log(
-        '🔄 TeamList: Old manager:',
-        teams.find(t => t.id === id)?.manager
-      );
-      console.log('🔄 TeamList: New manager:', updatedTeam.manager);
 
       // Update the local teams state for immediate UI update
-      // This ensures the UI shows the updated manager name immediately
+      // This ensures the UI shows the manager name immediately
       const currentTeam = teams.find(t => t.id === id);
       if (currentTeam && updatedTeam.manager) {
         currentTeam.manager = updatedTeam.manager;
         currentTeam.name = updatedTeam.name;
         currentTeam.description = updatedTeam.description;
-        console.log('🔄 TeamList: Local state updated, triggering re-render');
       }
 
       snackbar.success(lang.teamUpdated);
@@ -153,8 +143,6 @@ const TeamList: React.FC<TeamListProps> = ({
       }
       window.dispatchEvent(new CustomEvent('teamUpdated'));
     } catch (error) {
-      console.error('❌ TeamList: Error updating team:', error);
-
       // Show error message to user
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to update team';
@@ -182,8 +170,7 @@ const TeamList: React.FC<TeamListProps> = ({
         onTeamUpdated();
       }
       window.dispatchEvent(new CustomEvent('teamUpdated'));
-    } catch (error) {
-      console.error('Error deleting team:', error);
+    } catch {
       setDeleteError(lang.error);
     } finally {
       setDeleteLoading(false);

@@ -126,7 +126,10 @@ const Signup: React.FC = () => {
                     <Select
                       value={lang}
                       onChange={e => setLang(e.target.value as 'en' | 'ar')}
-                      sx={{ bgcolor: (theme) => theme.palette.background.paper, borderRadius: 1 }}
+                      sx={{
+                        bgcolor: theme => theme.palette.background.paper,
+                        borderRadius: 1,
+                      }}
                     >
                       <MenuItem value='en'>English</MenuItem>
                       <MenuItem value='ar'>عربى</MenuItem>
@@ -185,16 +188,19 @@ const Signup: React.FC = () => {
                           '&.Mui-focused fieldset': { border: 'none' },
 
                           '&:hover': { backgroundColor: '#eee' },
-                          '&.Mui-focused': { backgroundColor: (theme) => theme.palette.background.paper },
+                          '&.Mui-focused': {
+                            backgroundColor: theme =>
+                              theme.palette.background.paper,
+                          },
                         },
                         '& input': {
                           outline: 'none',
                           boxShadow: 'none',
                         },
 
-    '& input:-webkit-autofill': {
-      height: '10px',
-    },
+                        '& input:-webkit-autofill': {
+                          height: '10px',
+                        },
                       }}
                     />
 
@@ -215,15 +221,18 @@ const Signup: React.FC = () => {
                           '&.Mui-focused fieldset': { border: 'none' },
 
                           '&:hover': { backgroundColor: '#eee' },
-                          '&.Mui-focused': { backgroundColor: (theme) => theme.palette.background.paper },
+                          '&.Mui-focused': {
+                            backgroundColor: theme =>
+                              theme.palette.background.paper,
+                          },
                         },
                         '& input': {
                           outline: 'none',
                           boxShadow: 'none',
                         },
-                            '& input:-webkit-autofill': {
-      height: '10px',
-    },
+                        '& input:-webkit-autofill': {
+                          height: '10px',
+                        },
                       }}
                     />
                   </Box>
@@ -255,15 +264,18 @@ const Signup: React.FC = () => {
                         '&.Mui-focused fieldset': { border: 'none' },
 
                         '&:hover': { backgroundColor: '#eee' },
-                        '&.Mui-focused': { backgroundColor: (theme) => theme.palette.background.paper },
+                        '&.Mui-focused': {
+                          backgroundColor: theme =>
+                            theme.palette.background.paper,
+                        },
                       },
                       '& input': {
                         outline: 'none',
                         boxShadow: 'none',
                       },
-                          '& input:-webkit-autofill': {
-      height: '10px',
-    },
+                      '& input:-webkit-autofill': {
+                        height: '10px',
+                      },
                     }}
                   />
 
@@ -295,15 +307,18 @@ const Signup: React.FC = () => {
                         '&.Mui-focused fieldset': { border: 'none' },
 
                         '&:hover': { backgroundColor: '#eee' },
-                        '&.Mui-focused': { backgroundColor: (theme) => theme.palette.background.paper },
+                        '&.Mui-focused': {
+                          backgroundColor: theme =>
+                            theme.palette.background.paper,
+                        },
                       },
                       '& input': {
                         outline: 'none',
                         boxShadow: 'none',
                       },
-                          '& input:-webkit-autofill': {
-      height: '10px',
-    },
+                      '& input:-webkit-autofill': {
+                        height: '10px',
+                      },
                     }}
                   />
 
@@ -335,15 +350,18 @@ const Signup: React.FC = () => {
                         '&.Mui-focused fieldset': { border: 'none' },
 
                         '&:hover': { backgroundColor: '#eee' },
-                        '&.Mui-focused': { backgroundColor: (theme) => theme.palette.background.paper },
+                        '&.Mui-focused': {
+                          backgroundColor: theme =>
+                            theme.palette.background.paper,
+                        },
                       },
                       '& input': {
                         outline: 'none',
                         boxShadow: 'none',
                       },
-                          '& input:-webkit-autofill': {
-      height: '10px',
-    },
+                      '& input:-webkit-autofill': {
+                        height: '10px',
+                      },
                     }}
                   />
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -382,9 +400,9 @@ const Signup: React.FC = () => {
                               outline: 'none',
                               boxShadow: 'none',
                             },
-                                '& input:-webkit-autofill': {
-      height: '10px',
-    },
+                            '& input:-webkit-autofill': {
+                              height: '10px',
+                            },
                           }}
                         />
                       }

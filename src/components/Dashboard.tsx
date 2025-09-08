@@ -5,13 +5,8 @@ import EmployeesInfoChart from './DashboardContent/EmployeesInfoChart';
 import AvailabilityCardsGrid from './DashboardContent/AvailabilityCard/AvailabilityCardsGrid';
 import GenderPercentageChart from './DashboardContent/GenderPercentageChart';
 
-import UpcomingInterviews from './DashboardContent/ComingInterview/UpcomingInterviews';
-import PerformanceChart from './DashboardContent/PerformanceChart';
-import TopPerformersProps from './DashboardContent/TopPerformance/TopPerformersProps';
-import IconImageCardProps from './DashboardContent/TotalApplication/IconImageCardProps';
-import ApplicationStats from './DashboardContent/ApplicationStats/ApplicationStats';
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../context/LanguageContext'; // 👈 import your context
+import { useLanguage } from '../hooks/useLanguage';
 
 const labels = {
   en: {
@@ -31,7 +26,6 @@ const Dashboard: React.FC = () => {
   const { language } = useLanguage(); // 👈 use the context
   const lang = labels[language]; // 👈 get the labels
   const theme = useTheme();
-
   return (
     <Box
       sx={{
@@ -42,9 +36,9 @@ const Dashboard: React.FC = () => {
       <Typography
         variant='h4'
         mb={2}
-        sx={{ 
+        sx={{
           direction: language === 'ar' ? 'rtl' : 'ltr',
-          color: darkMode ? '#8f8f8f' : '#000'
+          color: darkMode ? '#8f8f8f' : '#000',
         }}
       >
         {lang.title}

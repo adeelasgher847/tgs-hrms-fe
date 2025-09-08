@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Avatar, useTheme } from '@mui/material';
-import { useLanguage } from '../../../context/LanguageContext';
+import { useLanguage } from '../../../hooks/useLanguage';
 
 type IconImageCardProps = {
   icon: React.ReactNode;
@@ -15,8 +15,8 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
   label,
   title,
 }) => {
-  const theme = useTheme();
   const { language } = useLanguage();
+  const theme = useTheme();
 
   const bgColor = theme.palette.primary.dark;
   const textColor = theme.palette.primary.contrastText;
@@ -59,7 +59,7 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
           sx={{
             width: 22,
             height: 22,
-            backgroundColor: (theme) => theme.palette.background.paper,
+            backgroundColor: theme => theme.palette.background.paper,
             p: 2,
           }}
         />

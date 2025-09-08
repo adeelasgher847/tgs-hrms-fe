@@ -22,7 +22,7 @@ const ResetPassword = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
-  
+
   const [formData, setFormData] = useState({
     password: '',
     confirmPassword: '',
@@ -37,11 +37,15 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [openToast, setOpenToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>('success');
+  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>(
+    'success'
+  );
 
   useEffect(() => {
     if (!token) {
-      setErrors({ general: 'Invalid reset link. Please request a new password reset.' });
+      setErrors({
+        general: 'Invalid reset link. Please request a new password reset.',
+      });
     }
   }, [token]);
 
@@ -64,19 +68,19 @@ const ResetPassword = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof typeof formData) => (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setFormData(prev => ({ ...prev, [field]: e.target.value }));
-    // Clear field-specific error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
-    }
-  };
+  const handleInputChange =
+    (field: keyof typeof formData) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFormData(prev => ({ ...prev, [field]: e.target.value }));
+      // Clear field-specific error when user starts typing
+      if (errors[field]) {
+        setErrors(prev => ({ ...prev, [field]: undefined }));
+      }
+    };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -94,7 +98,7 @@ const ResetPassword = () => {
         setToastMessage(response.message);
         setToastSeverity('success');
         setOpenToast(true);
-        
+
         // Redirect to login page after successful reset
         setTimeout(() => {
           navigate('/');
@@ -104,14 +108,17 @@ const ResetPassword = () => {
         setToastSeverity('error');
         setOpenToast(true);
       }
-    } catch (error: any) {
-      console.error('Error resetting password:', error);
-      
+    } catch (error: unknown) {
       // Check if it's a validation error
       if (error.message?.includes('Invalid or expired')) {
-        setErrors({ general: 'This reset link has expired or is invalid. Please request a new one.' });
+        setErrors({
+          general:
+            'This reset link has expired or is invalid. Please request a new one.',
+        });
       } else {
-        setToastMessage('Network error. Please check your connection and try again.');
+        setToastMessage(
+          'Network error. Please check your connection and try again.'
+        );
         setToastSeverity('error');
         setOpenToast(true);
       }
@@ -143,23 +150,21 @@ const ResetPassword = () => {
             maxWidth: 400,
           }}
         >
-          <Typography variant="h5" color="error" gutterBottom>
+          <Typography variant='h5' color='error' gutterBottom>
             Invalid Reset Link
           </Typography>
-          <Typography variant="body1" sx={{ mb: 3 }}>
-            This password reset link is invalid or has expired. Please request a new password reset.
+          <Typography variant='body1' sx={{ mb: 3 }}>
+            This password reset link is invalid or has expired. Please request a
+            new password reset.
           </Typography>
           <Button
-            variant="contained"
+            variant='contained'
             onClick={handleBackToSignIn}
             sx={{ mr: 2 }}
           >
             Back to Sign In
           </Button>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/forget')}
-          >
+          <Button variant='outlined' onClick={() => navigate('/forget')}>
             Request New Reset
           </Button>
         </Paper>
@@ -311,12 +316,13 @@ const ResetPassword = () => {
                           textAlign: 'center',
                         }}
                       >
-                        Enter your new password below to complete the reset process.
+                        Enter your new password below to complete the reset
+                        process.
                       </Typography>
                     </Box>
 
                     {errors.general && (
-                      <Alert severity="error" sx={{ mb: 2 }}>
+                      <Alert severity='error' sx={{ mb: 2 }}>
                         {errors.general}
                       </Alert>
                     )}
@@ -348,12 +354,16 @@ const ResetPassword = () => {
                       sx={{ mt: 1 }}
                       InputProps={{
                         endAdornment: (
-                          <InputAdornment position="end">
+                          <InputAdornment position='end'>
                             <IconButton
                               onClick={() => setShowPassword(!showPassword)}
-                              edge="end"
+                              edge='end'
                             >
-                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                              {showPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
                             </IconButton>
                           </InputAdornment>
                         ),
@@ -363,9 +373,9 @@ const ResetPassword = () => {
                           '&.Mui-focused, &:active': {
                             backgroundColor: 'white',
                           },
-                          "& fieldset": { border: "none" },
-                          "&:hover fieldset": { border: "none" },
-                          "&.Mui-focused fieldset": { border: "none" },
+                          '& fieldset': { border: 'none' },
+                          '&:hover fieldset': { border: 'none' },
+                          '&.Mui-focused fieldset': { border: 'none' },
                         },
                       }}
                     />
@@ -397,12 +407,18 @@ const ResetPassword = () => {
                       sx={{ mt: 1 }}
                       InputProps={{
                         endAdornment: (
-                          <InputAdornment position="end">
+                          <InputAdornment position='end'>
                             <IconButton
-                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              edge="end"
+                              onClick={() =>
+                                setShowConfirmPassword(!showConfirmPassword)
+                              }
+                              edge='end'
                             >
-                              {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                              {showConfirmPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
                             </IconButton>
                           </InputAdornment>
                         ),
@@ -412,9 +428,9 @@ const ResetPassword = () => {
                           '&.Mui-focused, &:active': {
                             backgroundColor: 'white',
                           },
-                          "& fieldset": { border: "none" },
-                          "&:hover fieldset": { border: "none" },
-                          "&.Mui-focused fieldset": { border: "none" },
+                          '& fieldset': { border: 'none' },
+                          '&:hover fieldset': { border: 'none' },
+                          '&.Mui-focused fieldset': { border: 'none' },
                         },
                       }}
                     />
@@ -423,7 +439,11 @@ const ResetPassword = () => {
                       <Button
                         type='submit'
                         variant='contained'
-                        disabled={loading || !formData.password || !formData.confirmPassword}
+                        disabled={
+                          loading ||
+                          !formData.password ||
+                          !formData.confirmPassword
+                        }
                         sx={{
                           mt: { xs: 2, md: 2 },
                           p: 1.5,
@@ -458,7 +478,7 @@ const ResetPassword = () => {
                       }}
                     >
                       <Link
-                        component="button"
+                        component='button'
                         onClick={handleBackToSignIn}
                         sx={{
                           color: 'var(--yellow-color)',
@@ -496,9 +516,14 @@ const ResetPassword = () => {
         <Alert
           onClose={() => setOpenToast(false)}
           severity={toastSeverity}
-          sx={{ width: '100%', backgroundColor: '#2e7d32', color: 'white !important','& .MuiAlert-icon': {
-                color: 'white',
-         }, }}
+          sx={{
+            width: '100%',
+            backgroundColor: '#2e7d32',
+            color: 'white !important',
+            '& .MuiAlert-icon': {
+              color: 'white',
+            },
+          }}
         >
           {toastMessage}
         </Alert>
@@ -507,4 +532,4 @@ const ResetPassword = () => {
   );
 };
 
-export default ResetPassword; 
+export default ResetPassword;

@@ -42,7 +42,7 @@ export interface DesignationDto {
   departmentId: string;
 }
 
-function normalizeDesignation(raw: any): BackendDesignation {
+function normalizeDesignation(raw: unknown): BackendDesignation {
   return {
     id: raw?.id,
     title: raw?.title,
@@ -53,7 +53,7 @@ function normalizeDesignation(raw: any): BackendDesignation {
   };
 }
 
-function normalizeDepartment(raw: any): BackendDepartment {
+function normalizeDepartment(raw: unknown): BackendDepartment {
   return {
     id: raw?.id,
     name: raw?.name,
@@ -70,14 +70,9 @@ class DesignationApiService {
 
   // Get all departments
   async getAllDepartments(): Promise<BackendDepartment[]> {
-    try {
-      const response = await axiosInstance.get<any[]>(this.departmentUrl);
-      const items = Array.isArray(response.data) ? response.data : [];
-      return items.map(normalizeDepartment);
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-      throw error;
-    }
+    const response = await axiosInstance.get<BackendDepartment[]>(this.departmentUrl);
+    const items = Array.isArray(response.data) ? response.data : [];
+    return items.map(normalizeDepartment);
   }
 
   // Get all designations for a department with pagination
@@ -92,10 +87,12 @@ class DesignationApiService {
     totalPages: number;
   }> {
     try {
-      const response = await axiosInstance.get(`${this.baseUrl}/department/${departmentId}?page=${page}`);
-      
+      const response = await axiosInstance.get(
+        `${this.baseUrl}/department/${departmentId}?page=${page}`
+      );
+
       // Handle both paginated and non-paginated responses
-      let items: any[] = [];
+      let items: unknown[] = [];
       let total = 0;
       let currentPage = page;
       let limit = 25;
@@ -109,7 +106,7 @@ class DesignationApiService {
         limit = response.data.limit || 25;
         totalPages = response.data.totalPages || Math.ceil(total / limit);
       } else if (Array.isArray(response.data)) {
-        // Direct array response (non-paginated)
+        // Direct array (non-paginated)
         items = response.data;
         total = items.length;
         totalPages = 1;
@@ -119,7 +116,7 @@ class DesignationApiService {
         total = 0;
         totalPages = 1;
       }
-      
+
       return {
         items: items.map(normalizeDesignation),
         total,
@@ -127,8 +124,7 @@ class DesignationApiService {
         limit,
         totalPages,
       };
-    } catch (error) {
-      console.error('Error fetching designations:', error);
+    } catch {
       // Return empty paginated structure on error
       return {
         items: [],
@@ -150,51 +146,39 @@ class DesignationApiService {
 
       for (const department of departments) {
         try {
-          const response = await this.getDesignationsByDepartment(department.id, 1);
-          allDesignations.push(...response.items);
-        } catch (error) {
-          console.error(
-            `Error fetching designations for department ${department.id}:`,
-            error
+          const response = await this.getDesignationsByDepartment(
+            department.id,
+            1
           );
+          allDesignations.push(...response.items);
+        } catch {
           // Continue with other departments even if one fails
         }
       }
 
       return allDesignations;
-    } catch (error) {
-      console.error('Error fetching all designations:', error);
-      throw error;
+    } catch {
+      throw new Error('Failed to fetch all designations');
     }
   }
 
   // Get designation by ID
   async getDesignationById(id: string): Promise<BackendDesignation> {
-    try {
-      const response = await axiosInstance.get<any>(`${this.baseUrl}/${id}`);
-      return normalizeDesignation(response.data);
-    } catch (error) {
-      console.error('Error fetching designation:', error);
-      throw error;
-    }
+    const response = await axiosInstance.get<BackendDesignation>(`${this.baseUrl}/${id}`);
+    return normalizeDesignation(response.data);
   }
 
   // Create new designation
   async createDesignation(
     designationData: DesignationDto
   ): Promise<BackendDesignation> {
-    try {
-      // Backend expects snake_case: { title, department_id }
-      const payload = {
-        title: designationData.title,
-        department_id: designationData.departmentId,
-      };
-      const response = await axiosInstance.post<any>(this.baseUrl, payload);
-      return normalizeDesignation(response.data);
-    } catch (error) {
-      console.error('Error creating designation:', error);
-      throw error;
-    }
+    // Backend expects snake_case: { title, department_id }
+    const payload = {
+      title: designationData.title,
+      department_id: designationData.departmentId,
+    };
+    const response = await axiosInstance.post<BackendDesignation>(this.baseUrl, payload);
+    return normalizeDesignation(response.data);
   }
 
   // Update designation
@@ -202,32 +186,22 @@ class DesignationApiService {
     id: string,
     designationData: DesignationDto
   ): Promise<BackendDesignation> {
-    try {
-      // Backend uses department_id from existing record; only title is relevant
-      const payload = { title: designationData.title };
-      const response = await axiosInstance.put<any>(
-        `${this.baseUrl}/${id}`,
-        payload
-      );
-      return normalizeDesignation(response.data);
-    } catch (error) {
-      console.error('Error updating designation:', error);
-      throw error;
-    }
+    // Backend uses department_id from existing record; only title is relevant
+    const payload = { title: designationData.title };
+    const response = await axiosInstance.put<BackendDesignation>(
+      `${this.baseUrl}/${id}`,
+      payload
+    );
+    return normalizeDesignation(response.data);
   }
 
   // Delete designation
   async deleteDesignation(id: string): Promise<{ deleted: true; id: string }> {
-    try {
-      const response = await axiosInstance.delete<{
-        deleted: true;
-        id: string;
-      }>(`${this.baseUrl}/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error deleting designation:', error);
-      throw error;
-    }
+    const response = await axiosInstance.delete<{
+      deleted: true;
+      id: string;
+    }>(`${this.baseUrl}/${id}`);
+    return response.data;
   }
 
   // Helper function to convert backend designation to frontend format

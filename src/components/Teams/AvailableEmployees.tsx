@@ -32,7 +32,7 @@ import {
   Search as SearchIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember, Team } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
@@ -140,8 +140,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
       try {
         const response = await teamApiService.getAllTeams(1);
         setTeams(response.items || []);
-      } catch (error) {
-        console.error('Error loading teams:', error);
+      } catch {
         setTeams([]);
       }
     };
@@ -198,8 +197,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
 
       // Trigger auto-render for other components
       window.dispatchEvent(new CustomEvent('teamUpdated'));
-    } catch (error) {
-      console.error('Error adding employee to team:', error);
+    } catch {
       snackbar.error('Failed to add employee to team. Please try again.');
     }
   };

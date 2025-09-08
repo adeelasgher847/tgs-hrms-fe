@@ -10,7 +10,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Warning as WarningIcon } from '@mui/icons-material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { Team } from '../../api/teamApi';
 
 interface DeleteTeamDialogProps {
@@ -69,8 +69,8 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
     try {
       await onConfirm();
       onClose();
-    } catch (error) {
-      console.error('Error deleting team:', error);
+    } catch {
+      /* Error handled silently */
     }
   };
 

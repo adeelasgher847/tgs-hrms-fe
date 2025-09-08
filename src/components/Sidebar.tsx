@@ -8,7 +8,6 @@ import {
   Collapse,
   Switch,
 } from '@mui/material';
-import { useTheme } from '../theme';
 import {
   Dashboard,
   BusinessCenter,
@@ -26,8 +25,12 @@ import Clipboard from '../assets/dashboardIcon/Clipboard';
 import bubbleleft from '../assets/dashboardIcon/bubble-left.svg';
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useUser } from '../context/UserContext';
-import { isMenuVisibleForRole, isSubMenuVisibleForRole } from '../utils/permissions';
+import { useUser } from '../hooks/useUser';
+import { useTheme } from '../theme/hooks';
+import {
+  isMenuVisibleForRole,
+  isSubMenuVisibleForRole,
+} from '../utils/permissions';
 
 //Types
 interface SubItem {
@@ -159,14 +162,19 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   // Filter menu items based on role
   const filteredMenuItems = useMemo(() => {
     return menuItems
-      .filter(item => isMenuVisibleForRole(item.label, typeof role === 'string' ? role : (role as any)?.name))
+      .filter(item =>
+        isMenuVisibleForRole(
+          item.label,
+          typeof role === 'string' ? role : (role as unknown)?.name
+        )
+      )
       .map(item => ({
         ...item,
         subItems: item.subItems.filter(sub =>
           isSubMenuVisibleForRole(
             item.label,
             sub.label,
-            typeof role === 'string' ? role : (role as any)?.name
+            typeof role === 'string' ? role : (role as unknown)?.name
           )
         ),
       }));

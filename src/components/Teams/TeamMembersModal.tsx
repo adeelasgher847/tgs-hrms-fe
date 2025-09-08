@@ -23,7 +23,7 @@ import {
 import UserAvatar from '../common/UserAvatar';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface TeamMembersModalProps {
   open: boolean;
@@ -70,8 +70,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
         setError(null);
         const response = await teamApiService.getMyTeamMembers(1);
         setTeamMembers(response.items || []);
-      } catch (err) {
-        console.error('Error loading team members:', err);
+      } catch {
         setError(lang.error);
         setTeamMembers([]);
       } finally {
@@ -169,7 +168,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
                 .filter(
                   member => member?.user?.first_name && member?.user?.last_name
                 )
-                .map((member, index) => (
+                .map(member => (
                   <React.Fragment key={member.id}>
                     <ListItem
                       sx={{

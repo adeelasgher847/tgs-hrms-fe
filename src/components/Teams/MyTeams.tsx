@@ -21,7 +21,7 @@ import {
   Add as AddIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, TeamMember } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
@@ -84,7 +84,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
 
   const lang = labels[language];
 
-  // Generate initials for avatar
+  // Generate for avatar
 
   // Generate avatar color
   const generateAvatarColor = (name: string): string => {
@@ -117,8 +117,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
           setLoadingEmployees(true);
           const response = await teamApiService.getAvailableEmployees(1);
           setAvailableEmployees(response.items || []);
-        } catch (error) {
-          console.error('Error loading available employees:', error);
+        } catch {
           setAvailableEmployees([]);
         } finally {
           setLoadingEmployees(false);
@@ -149,8 +148,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
 
       // Trigger auto-render for other components
       window.dispatchEvent(new CustomEvent('teamUpdated'));
-    } catch (error) {
-      console.error('Error adding member:', error);
+    } catch {
       snackbar.error('Failed to add member to team. Please try again.');
     }
   };
@@ -190,6 +188,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
       >
         {teams.map(team => (
           <Card
+            key={team.id}
             sx={{
               backgroundColor: darkMode ? '#2d2d2d' : '#fff',
               height: '100%',

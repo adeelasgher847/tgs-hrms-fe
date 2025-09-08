@@ -9,10 +9,10 @@ import {
   Box,
   IconButton,
   useMediaQuery,
-  useTheme,
   Drawer,
   Typography,
   Alert,
+  useTheme,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
@@ -133,8 +133,8 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
       await new Promise(r => setTimeout(r, 1000)); // fake delay
       onSubmit(formData);
       onClose();
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // Handle error silently
     } finally {
       setIsSubmitting(false);
     }

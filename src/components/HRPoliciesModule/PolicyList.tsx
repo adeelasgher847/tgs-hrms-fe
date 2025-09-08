@@ -12,11 +12,10 @@ import {
   Divider,
 } from '@mui/material';
 import type { Policy } from '../../type/Hrtypes';
-import { mockPolicies } from '../../data/HrmockData';
+import { mockPolicies } from '../../Data/HrmockData';
 import PolicyForm from './PolicyForm';
 import edit from '../../assets/dashboardIcon/edit.svg';
 import deleteIcon from '../../assets/dashboardIcon/ui-delete.svg';
-import { useTheme } from '@mui/material/styles';
 import { useOutletContext } from 'react-router-dom';
 
 const PolicyList: React.FC = () => {
@@ -24,7 +23,6 @@ const PolicyList: React.FC = () => {
   const [openForm, setOpenForm] = useState(false);
   const [selected, setSelected] = useState<Policy | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const theme = useTheme();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
   const handleAddEdit = (policy: Policy) => {
@@ -53,7 +51,9 @@ const PolicyList: React.FC = () => {
           gap: 2,
         }}
       >
-        <Typography variant='h5' sx={{ color: darkMode ? '#8f8f8f' : '#000' }}>HR Policies</Typography>
+        <Typography variant='h5' sx={{ color: darkMode ? '#8f8f8f' : '#000' }}>
+          HR Policies
+        </Typography>
 
         <Button
           variant='contained'
@@ -61,7 +61,7 @@ const PolicyList: React.FC = () => {
             setSelected(null);
             setOpenForm(true);
           }}
-          sx={{ backgroundColor:"#464b8a" }}
+          sx={{ backgroundColor: '#464b8a' }}
         >
           Add Policy
         </Button>

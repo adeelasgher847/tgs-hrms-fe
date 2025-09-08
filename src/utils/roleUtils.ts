@@ -98,7 +98,16 @@ export const getRoleDisplayName = (role: UserRole): string => {
  * @param role - The role value
  * @returns A color string suitable for UI components
  */
-export const getRoleColor = (role: UserRole): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+export const getRoleColor = (
+  role: UserRole
+):
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'error'
+  | 'info'
+  | 'success'
+  | 'warning' => {
   const roleName = getRoleName(role);
   switch (roleName.toLowerCase()) {
     case 'admin':
