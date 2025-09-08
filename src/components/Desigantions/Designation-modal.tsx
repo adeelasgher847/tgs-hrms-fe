@@ -14,7 +14,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface Designation {
   id: string;

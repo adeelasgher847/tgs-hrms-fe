@@ -62,10 +62,7 @@ const PasswordReset: React.FC = () => {
         confirmPassword, // Add this field to match backend DTO
       };
 
-      const response = await axiosInstance.post(
-        '/auth/reset-password',
-        requestData
-      );
+      await axiosInstance.post('/auth/reset-password', requestData);
 
       // If we get here, the request was successful (no error thrown)
 
@@ -77,7 +74,7 @@ const PasswordReset: React.FC = () => {
       // Test navigation
       try {
         navigate('/', { replace: true });
-      } catch (_navError) {
+      } catch {
         // Fallback: try window.location
         window.location.href = '/';
       }

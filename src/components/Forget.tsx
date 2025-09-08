@@ -86,25 +86,30 @@ const Forget = () => {
         setEmail('');
       }
     } catch (error: unknown) {
-      if (
-        (error as any)?.response?.status === 400 ||
-        (error as any)?.response?.status === 404 ||
-        (error as any)?.response?.status === 422
-      ) {
-        setEmailError(true);
-        if ((error as any)?.response?.status === 404) {
-          setEmailErrorMessage(
-            lang === 'ar'
-              ? 'البريد الإلكتروني غير موجود'
-              : 'Email address not found'
-          );
-        } else {
-          setEmailErrorMessage(
-            (error as any)?.response?.data?.message ||
-              (lang === 'ar'
-                ? 'بريد إلكتروني غير صالح'
-                : 'Invalid email address')
-          );
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as {
+          response: { status: number; data?: { message?: string } };
+        };
+        if (
+          apiError.response.status === 400 ||
+          apiError.response.status === 404 ||
+          apiError.response.status === 422
+        ) {
+          setEmailError(true);
+          if (apiError.response.status === 404) {
+            setEmailErrorMessage(
+              lang === 'ar'
+                ? 'البريد الإلكتروني غير موجود'
+                : 'Email address not found'
+            );
+          } else {
+            setEmailErrorMessage(
+              apiError.response.data?.message ||
+                (lang === 'ar'
+                  ? 'بريد إلكتروني غير صالح'
+                  : 'Invalid email address')
+            );
+          }
         }
       } else {
         // Only show toast for genuine network/connection errors

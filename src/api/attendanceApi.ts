@@ -58,7 +58,7 @@ class AttendanceApiService {
           totalPages: 1,
         };
       }
-    } catch (_error) {
+    } catch {
       return {
         items: [],
         total: 0,
@@ -104,7 +104,7 @@ class AttendanceApiService {
           totalPages: 1,
         };
       }
-    } catch (_error) {
+    } catch {
       return {
         items: [],
         total: 0,
@@ -150,7 +150,7 @@ class AttendanceApiService {
           totalPages: 1,
         };
       }
-    } catch (_error) {
+    } catch {
       return {
         items: [],
         total: 0,
@@ -176,7 +176,7 @@ class AttendanceApiService {
       const response = await axiosInstance.get(url);
 
       return response.data;
-    } catch (_error) {
+    } catch {
       return {
         checkIn: null,
         checkOut: null,
@@ -188,23 +188,18 @@ class AttendanceApiService {
   async createAttendance(
     type: 'check-in' | 'check-out'
   ): Promise<AttendanceEvent> {
-    try {
-      const response = await axiosInstance.post(this.baseUrl, { type });
-
-      return response.data;
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.post(this.baseUrl, { type });
+    return response.data;
   }
 
   // Get team attendance for manager
-  async getTeamAttendance(page: number = 1): Promise<any> {
+  async getTeamAttendance(page: number = 1): Promise<{ items: AttendanceEvent[]; total: number; page: number; totalPages: number }> {
     try {
       const response = await axiosInstance.get(
         `${this.baseUrl}/team?page=${page}`
       );
       return response.data;
-    } catch (_error) {
+    } catch {
       return {
         items: [],
         total: 0,

@@ -140,7 +140,8 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       setLoadingDepartments(true);
       const data = await departmentApiService.getAllDepartments();
       setDepartments(data);
-    } catch (_error) {
+    } catch {
+      // Handle error silently
     } finally {
       setLoadingDepartments(false);
     }
@@ -152,7 +153,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       const response =
         await designationApiService.getDesignationsByDepartment(departmentId);
       setDesignations(response.items);
-    } catch (_error) {
+    } catch {
       setDesignations([]);
     } finally {
       setLoadingDesignations(false);
@@ -243,7 +244,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
         // Set backend validation errors
         setErrors(result.errors);
       }
-    } catch (_error) {
+    } catch {
       /* Error handled silently */
     }
   };

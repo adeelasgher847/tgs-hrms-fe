@@ -55,7 +55,7 @@ class TimesheetApiService {
       );
 
       return response.data;
-    } catch (_error) {
+    } catch {
       throw _error;
     }
   }
@@ -67,7 +67,7 @@ class TimesheetApiService {
       );
 
       return response.data;
-    } catch (_error) {
+    } catch {
       throw _error;
     }
   }
@@ -130,7 +130,7 @@ class TimesheetApiService {
           totalPages: 1,
         };
       }
-    } catch (_error) {
+    } catch {
       return {
         items: {
           employee: { userId: '', fullName: '' },
@@ -191,7 +191,7 @@ class TimesheetApiService {
           totalPages: 1,
         };
       }
-    } catch (_error) {
+    } catch {
       return {
         items: [],
         total: 0,

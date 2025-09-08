@@ -24,7 +24,7 @@ import {
   Delete as DeleteIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
@@ -155,7 +155,8 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
 
           setMembers(membersWithDepartment);
           setTotal(response.total || 0);
-        } catch (_err) {
+        } catch {
+          // Handle error silently
         } finally {
           setLoading(false);
         }
@@ -197,7 +198,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
 
       // Trigger auto-render for other components
       window.dispatchEvent(new CustomEvent('teamUpdated'));
-    } catch (_error) {
+    } catch {
       snackbar.error(lang.error);
     } finally {
       setShowDeleteConfirmDialog(false);

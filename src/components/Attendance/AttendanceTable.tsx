@@ -54,7 +54,7 @@ const AttendanceTable = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   const [tab, setTab] = useState(0); // 0: My Attendance, 1: Team Attendance
-  const [teamAttendance, setTeamAttendance] = useState<any[]>([]);
+  const [teamAttendance, setTeamAttendance] = useState<AttendanceEvent[]>([]);
   const [teamLoading, setTeamLoading] = useState(false);
   const [teamError, setTeamError] = useState('');
   const [isManager, setIsManager] = useState(false);
@@ -180,7 +180,7 @@ const AttendanceTable = () => {
       setTeamCurrentPage(response.page || 1);
       setTeamTotalPages(response.totalPages || 1);
       setTeamTotalItems(response.total || 0);
-    } catch (_err) {
+    } catch {
       setTeamError('Failed to load team attendance');
       setTeamAttendance([]);
       setTeamCurrentPage(1);
@@ -233,7 +233,8 @@ const AttendanceTable = () => {
       const rows = buildFromEvents(events, currentUser.id);
       setAttendanceData(rows);
       setFilteredData(rows);
-    } catch (_error) {
+    } catch {
+      // Handle error silently
     } finally {
       setLoading(false);
     }

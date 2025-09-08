@@ -18,7 +18,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import {
   getEmployeeJoiningReport,
@@ -52,7 +52,7 @@ export default function EmployeesInfoChart() {
           );
           setSelectedYear(years[0]); // Set most recent year as default
         }
-      } catch (_err) {
+      } catch {
         setError('Failed to load employee joining data');
         // Use fallback data if API fails - only August data
         setJoiningData([

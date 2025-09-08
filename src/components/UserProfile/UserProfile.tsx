@@ -18,8 +18,8 @@ import {
   Business,
   CalendarToday,
 } from '@mui/icons-material';
-import { type UserProfile } from '../../api/profileApi';
-import { useUser } from '../../context/UserContext';
+// UserProfile type available if needed
+import { useUser } from '../../hooks/useUser';
 import { getRoleName, getRoleColor, isEmployee } from '../../utils/roleUtils';
 import ProfilePictureUpload from '../common/ProfilePictureUpload';
 import EmployeeProfileView from '../Employee/EmployeeProfileView';
@@ -42,7 +42,7 @@ const UserProfileComponent = () => {
     }
   }, [profile, loading, refreshUser]);
 
-  const handleProfileUpdate = (updatedProfile: UserProfile) => {
+  const handleProfileUpdate = () => {
     // The UserContext will handle the update automatically
     // This function is kept for compatibility with ProfilePictureUpload
   };

@@ -38,41 +38,29 @@ class DepartmentApiService {
 
   // Get all departments
   async getAllDepartments(): Promise<BackendDepartment[]> {
-    try {
-      const response = await axiosInstance.get<BackendDepartment[]>(
-        this.baseUrl
-      );
-      return response.data;
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.get<BackendDepartment[]>(
+      this.baseUrl
+    );
+    return response.data;
   }
 
   // Get department by ID
   async getDepartmentById(id: string): Promise<BackendDepartment> {
-    try {
-      const response = await axiosInstance.get<BackendDepartment>(
-        `${this.baseUrl}/${id}`
-      );
-      return response.data;
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.get<BackendDepartment>(
+      `${this.baseUrl}/${id}`
+    );
+    return response.data;
   }
 
   // Create new department
   async createDepartment(
     departmentData: DepartmentDto
   ): Promise<BackendDepartment> {
-    try {
-      const response = await axiosInstance.post<BackendDepartment>(
-        this.baseUrl,
-        departmentData
-      );
-      return response.data;
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.post<BackendDepartment>(
+      this.baseUrl,
+      departmentData
+    );
+    return response.data;
   }
 
   // Update department
@@ -80,28 +68,20 @@ class DepartmentApiService {
     id: string,
     departmentData: DepartmentDto
   ): Promise<BackendDepartment> {
-    try {
-      const response = await axiosInstance.put<BackendDepartment>(
-        `${this.baseUrl}/${id}`,
-        departmentData
-      );
-      return response.data;
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.put<BackendDepartment>(
+      `${this.baseUrl}/${id}`,
+      departmentData
+    );
+    return response.data;
   }
 
   // Delete department
   async deleteDepartment(id: string): Promise<{ deleted: true; id: string }> {
-    try {
-      const response = await axiosInstance.delete<{
-        deleted: true;
-        id: string;
-      }>(`${this.baseUrl}/${id}`);
-      return response.data;
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.delete<{
+      deleted: true;
+      id: string;
+    }>(`${this.baseUrl}/${id}`);
+    return response.data;
   }
 
   // Helper function to convert backend department to frontend format

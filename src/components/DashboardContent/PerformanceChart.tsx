@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material';
 import React from 'react';
 import Chart from 'react-apexcharts';
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 
 const PerformanceChart: React.FC = () => {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();

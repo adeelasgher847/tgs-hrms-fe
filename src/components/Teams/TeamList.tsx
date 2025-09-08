@@ -21,7 +21,7 @@ import {
   Delete as DeleteIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, UpdateTeamDto } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
@@ -142,7 +142,7 @@ const TeamList: React.FC<TeamListProps> = ({
         onTeamUpdated();
       }
       window.dispatchEvent(new CustomEvent('teamUpdated'));
-    } catch (_error) {
+    } catch (error) {
       // Show error message to user
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to update team';
@@ -170,7 +170,7 @@ const TeamList: React.FC<TeamListProps> = ({
         onTeamUpdated();
       }
       window.dispatchEvent(new CustomEvent('teamUpdated'));
-    } catch (_error) {
+    } catch {
       setDeleteError(lang.error);
     } finally {
       setDeleteLoading(false);

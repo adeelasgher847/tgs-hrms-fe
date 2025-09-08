@@ -6,7 +6,7 @@ import AvailabilityCardsGrid from './DashboardContent/AvailabilityCard/Availabil
 import GenderPercentageChart from './DashboardContent/GenderPercentageChart';
 
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../context/LanguageContext'; // 👈 import your context
+import { useLanguage } from '../hooks/useLanguage';
 
 const labels = {
   en: {

@@ -59,6 +59,7 @@ axiosInstance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
+      // No token available
     }
 
     // Debug logging
@@ -73,7 +74,7 @@ axiosInstance.interceptors.response.use(
   undefined,
   async (error: unknown) => {
     const originalRequest = error.config;
-    if ((error as any)?.response?.status === 401 && !originalRequest._retry) {
+    if (error && typeof error === 'object' && 'response' in error && (error as { response: { status: number } }).response.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise(function (resolve, reject) {
           failedQueue.push({ resolve, reject });
@@ -99,7 +100,7 @@ axiosInstance.interceptors.response.use(
         processQueue(null, data.accessToken);
         originalRequest.headers.Authorization = 'Bearer ' + data.accessToken;
         return axiosInstance(originalRequest);
-      } catch (_err) {
+      } catch {
         processQueue(err, null);
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');

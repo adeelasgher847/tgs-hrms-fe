@@ -25,7 +25,7 @@ import Clipboard from '../assets/dashboardIcon/Clipboard';
 import bubbleleft from '../assets/dashboardIcon/bubble-left.svg';
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../hooks/useUser';
 import { useTheme } from '../theme/hooks';
 import {
   isMenuVisibleForRole,

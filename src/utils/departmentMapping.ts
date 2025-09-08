@@ -21,7 +21,7 @@ export const initializeDepartmentCache = async (): Promise<void> => {
     designationCache = await designationApiService.getAllDesignations();
 
     cacheInitialized = true;
-  } catch (_error) {
+  } catch {
     // Use fallback data if API fails
     departmentCache = [
       {

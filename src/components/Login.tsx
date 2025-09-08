@@ -24,7 +24,7 @@ import GoogleIcon from '../assets/icons/google.svg';
 import axios from 'axios';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { type AlertProps } from '@mui/material/Alert';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../hooks/useUser';
 import { getDefaultDashboardRoute } from '../utils/permissions';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
@@ -165,7 +165,7 @@ const Login: React.FC = () => {
       // Update user context without causing re-render
       try {
         updateUser(res.data.user);
-      } catch (_error) {
+      } catch {
         /* Error handled silently */
       }
 
@@ -192,7 +192,14 @@ const Login: React.FC = () => {
       navigate(target, { replace: true });
     } catch (err: unknown) {
       // Backend may send { field: 'email' | 'password', message: string }
-      const data = (err as any)?.response?.data;
+      const data =
+        err && typeof err === 'object' && 'response' in err
+          ? (
+              err as {
+                response: { data: { field?: string; message?: string } };
+              }
+            ).response.data
+          : null;
       if (data?.field === 'email') {
         setEmailError(data.message);
         setPasswordError('');

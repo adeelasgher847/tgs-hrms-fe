@@ -10,7 +10,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface Props {
   open: boolean;

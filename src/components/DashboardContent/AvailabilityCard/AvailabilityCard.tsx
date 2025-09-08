@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import type { AvailabilityCardProps } from '../../../types/availability';
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../../../context/LanguageContext';
+import { useLanguage } from '../../../hooks/useLanguage';
 
 export default function AvailabilityCard({
   title,

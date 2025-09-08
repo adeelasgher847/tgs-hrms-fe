@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material';
 import InterviewItem from './InterviewItem';
 import { upcomingInterviews } from '../../../Data/upcomingInterviews';
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../../../context/LanguageContext';
+import { useLanguage } from '../../../hooks/useLanguage';
 
 export default function UpcomingInterviews() {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();

@@ -37,7 +37,8 @@ const SheetList: React.FC = () => {
       setCurrentPage(response.page || 1);
       setTotalPages(response.totalPages || 1);
       setTotalItems(response.total || 0);
-    } catch (_error) {
+    } catch {
+      // Handle error silently
     } finally {
       setLoading(false);
     }

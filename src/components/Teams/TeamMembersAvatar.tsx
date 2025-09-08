@@ -25,7 +25,7 @@ import {
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
 import { getUserRole } from '../../utils/auth';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface TeamMembersAvatarProps {
   maxAvatars?: number;
@@ -111,10 +111,11 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
         const response = await teamApiService.getMyTeamMembers(1);
 
         if (response.items && response.items.length > 0) {
+          // Process team members
         }
 
         setTeamMembers(response.items || []);
-      } catch (_err) {
+      } catch {
         setTeamMembers([]);
       } finally {
         setLoading(false);
@@ -132,11 +133,9 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
         return null;
       }
 
-      const initials = generateInitials(
-        member.user.first_name,
-        member.user.last_name
-      );
-      const avatarColor = generateAvatarColor(member.user.first_name);
+      // Generate initials and avatar color for styling
+      generateInitials(member.user.first_name, member.user.last_name);
+      generateAvatarColor(member.user.first_name);
       const fullName = `${member.user.first_name} ${member.user.last_name}`;
 
       return (
@@ -232,7 +231,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           />
         </Tooltip>
       );
-    } catch (_error) {
+    } catch {
       return null;
     }
   };
@@ -337,7 +336,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                   >
                     {remainingCount} more team members:
                   </Typography>
-                  {validMembers.slice(maxAvatars).map((member, _index) => (
+                  {validMembers.slice(maxAvatars).map(member => (
                     <Typography
                       key={member.id}
                       variant='body2'
@@ -445,7 +444,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                     member =>
                       member?.user?.first_name && member?.user?.last_name
                   )
-                  .map((member, _index) => (
+                  .map(member => (
                     <ListItem
                       key={member.id}
                       sx={{

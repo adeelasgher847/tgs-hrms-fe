@@ -133,7 +133,8 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
       await new Promise(r => setTimeout(r, 1000)); // fake delay
       onSubmit(formData);
       onClose();
-    } catch (_err) {
+    } catch {
+      // Handle error silently
     } finally {
       setIsSubmitting(false);
     }

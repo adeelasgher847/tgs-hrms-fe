@@ -23,7 +23,7 @@ export const getCurrentUser = (): User | null => {
       return user;
     }
     return null;
-  } catch (_error) {
+  } catch {
     return null;
   }
 };

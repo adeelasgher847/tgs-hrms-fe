@@ -286,7 +286,7 @@ class EmployeeApiService {
           .map((item: unknown) => {
             try {
               return normalizeEmployee(item);
-            } catch (_error) {
+            } catch {
               return null;
             }
           })
@@ -308,7 +308,7 @@ class EmployeeApiService {
           .map((item: unknown) => {
             try {
               return normalizeEmployee(item);
-            } catch (_error) {
+            } catch {
               return null;
             }
           })
@@ -333,13 +333,7 @@ class EmployeeApiService {
           totalPages: 1,
         };
       }
-    } catch (_error) {
-      if (_error && typeof _error === 'object' && 'response' in _error) {
-        const errorResponse = _error as {
-          response?: { data?: unknown; status?: number };
-        };
-      }
-
+    } catch {
       return {
         items: [],
         total: 0,
@@ -351,112 +345,87 @@ class EmployeeApiService {
   }
 
   async getEmployeeById(id: string): Promise<BackendEmployee> {
-    try {
-      const response = await axiosInstance.get<RawEmployee>(
-        `${this.baseUrl}/${id}`
-      );
-      return normalizeEmployee(response.data);
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.get<RawEmployee>(
+      `${this.baseUrl}/${id}`
+    );
+    return normalizeEmployee(response.data);
   }
 
   // Get full employee profile by user id (designation, department, attendance, leaves)
   async getEmployeeProfile(userId: string): Promise<EmployeeFullProfile> {
-    try {
-      const response = await axiosInstance.get<EmployeeFullProfile>(
-        `${this.baseUrl}/users/${userId}/profile`
-      );
-      return response.data;
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.get<EmployeeFullProfile>(
+      `${this.baseUrl}/users/${userId}/profile`
+    );
+    return response.data;
   }
 
   // Create new company
 
   async createEmployee(employeeData: EmployeeDto): Promise<BackendEmployee> {
-    try {
-      const payload = {
-        first_name: employeeData.first_name,
-        last_name: employeeData.last_name,
-        email: employeeData.email,
-        phone: employeeData.phone,
-        password: employeeData.password,
-        designation_id: employeeData.designationId,
-        gender: employeeData.gender, // <-- Add gender to payload
-      };
-      const response = await axiosInstance.post<RawEmployee>(
-        this.baseUrl,
-        payload
-      );
-      return normalizeEmployee(response.data);
-    } catch (_error) {
-      throw _error;
-    }
+    const payload = {
+      first_name: employeeData.first_name,
+      last_name: employeeData.last_name,
+      email: employeeData.email,
+      phone: employeeData.phone,
+      password: employeeData.password,
+      designation_id: employeeData.designationId,
+      gender: employeeData.gender, // <-- Add gender to payload
+    };
+    const response = await axiosInstance.post<RawEmployee>(
+      this.baseUrl,
+      payload
+    );
+    return normalizeEmployee(response.data);
   }
 
   async updateEmployee(
     id: string,
     updates: EmployeeUpdateDto
   ): Promise<BackendEmployee> {
-    try {
-      const payload: Partial<
-        Pick<
-          EmployeeUpdateDto,
-          | 'first_name'
-          | 'last_name'
-          | 'email'
-          | 'phone'
-          | 'password'
-          | 'designationId'
-        >
-      > = {};
-      if (updates.first_name !== undefined)
-        payload.first_name = updates.first_name;
-      if (updates.last_name !== undefined)
-        payload.last_name = updates.last_name;
-      if (updates.email !== undefined) payload.email = updates.email;
-      if (updates.phone !== undefined) payload.phone = updates.phone;
-      if (updates.password !== undefined && updates.password !== '')
-        payload.password = updates.password;
-      if (updates.designationId && updates.designationId.trim() !== '') {
-        // @ts-expect-error: API expects 'designation_id', but TS type only allows 'designationId'
-        payload['designation_id'] = updates.designationId;
-      }
-      const response = await axiosInstance.put<RawEmployee>(
-        `${this.baseUrl}/${id}`,
-        payload
-      );
-      return normalizeEmployee(response.data);
-    } catch (_error) {
-      throw _error;
+    const payload: Partial<
+      Pick<
+        EmployeeUpdateDto,
+        | 'first_name'
+        | 'last_name'
+        | 'email'
+        | 'phone'
+        | 'password'
+        | 'designationId'
+      >
+    > = {};
+    if (updates.first_name !== undefined)
+      payload.first_name = updates.first_name;
+    if (updates.last_name !== undefined)
+      payload.last_name = updates.last_name;
+    if (updates.email !== undefined) payload.email = updates.email;
+    if (updates.phone !== undefined) payload.phone = updates.phone;
+    if (updates.password !== undefined && updates.password !== '')
+      payload.password = updates.password;
+    if (updates.designationId && updates.designationId.trim() !== '') {
+      // @ts-expect-error: API expects 'designation_id', but TS type only allows 'designationId'
+      payload['designation_id'] = updates.designationId;
     }
+    const response = await axiosInstance.put<RawEmployee>(
+      `${this.baseUrl}/${id}`,
+      payload
+    );
+    return normalizeEmployee(response.data);
   }
 
   async deleteEmployee(id: string): Promise<{ deleted: true; id: string }> {
-    try {
-      const response = await axiosInstance.delete<{
-        deleted: true;
-        id: string;
-      }>(`${this.baseUrl}/${id}`);
-      return response.data;
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.delete<{
+      deleted: true;
+      id: string;
+    }>(`${this.baseUrl}/${id}`);
+    return response.data;
   }
 
   // Get gender percentage for dashboard
   async getGenderPercentage(): Promise<GenderPercentage> {
-    try {
-      const response = await axiosInstance.get<GenderPercentage>(
-        `${this.baseUrl}/gender-percentage`
-      );
-
-      return response.data;
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.get<GenderPercentage>(
+      `${this.baseUrl}/gender-percentage`
+    );
+    return response.data;
   }
 }
 
@@ -464,12 +433,8 @@ class EmployeeApiService {
 export const getEmployeeJoiningReport = async (): Promise<
   EmployeeJoiningReport[]
 > => {
-  try {
-    const response = await axiosInstance.get('/employees/joining-report');
-    return response.data;
-  } catch (_error) {
-    throw _error;
-  }
+  const response = await axiosInstance.get('/employees/joining-report');
+  return response.data;
 };
 
 // Get attendance this month
@@ -479,14 +444,10 @@ export const getAttendanceThisMonth = async (): Promise<{
   message?: string;
   totalAttendance?: number;
 }> => {
-  try {
-    const response = await axiosInstance.get(
-      '/employees/attendance-this-month'
-    );
-    return response.data;
-  } catch (error: unknown) {
-    throw _error; // Re-throw the error so component can handle it
-  }
+  const response = await axiosInstance.get(
+    '/employees/attendance-this-month'
+  );
+  return response.data;
 };
 
 // Get leaves this month
@@ -499,8 +460,8 @@ export const getLeavesThisMonth = async (): Promise<{
   try {
     const response = await axiosInstance.get('/employees/leaves-this-month');
     return response.data;
-  } catch (error: unknown) {
-    throw _error; // Re-throw the error so component can handle it
+  } catch {
+    throw new Error('Failed to fetch leaves this month');
   }
 };
 

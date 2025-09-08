@@ -14,7 +14,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { UpdateTeamDto, Manager, Team } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 
@@ -106,7 +106,7 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
           }
 
           setManagers(managersData);
-        } catch (_error) {
+        } catch {
           setManagers([]);
         } finally {
           setLoadingManagers(false);
@@ -163,7 +163,7 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
       setError(null);
       await onSubmit(team.id, formData);
       handleClose();
-    } catch (_err) {
+    } catch {
       setError(lang.error);
     } finally {
       setLoading(false);

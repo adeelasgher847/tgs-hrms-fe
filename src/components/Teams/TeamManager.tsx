@@ -18,7 +18,7 @@ import {
   Business as BusinessIcon,
 } from '@mui/icons-material';
 
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import { isAdmin, isManager } from '../../utils/auth';
 import { teamApiService } from '../../api/teamApi';
 import type { Team, TeamMember } from '../../api/teamApi';
@@ -119,7 +119,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
           const teamsData = await teamApiService.getAllTeams(1);
           setTeams(teamsData.items || []);
         }
-      } catch (_err) {
+      } catch {
         setError('Failed to load team data');
       } finally {
         setLoading(false);
@@ -150,7 +150,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
             const teamsData = await teamApiService.getAllTeams(1);
             setTeams(teamsData.items || []);
           }
-        } catch (_err) {
+        } catch {
           setError('Failed to refresh team data');
         } finally {
           setLoading(false);
@@ -180,7 +180,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
 
       // Trigger refresh for other components
       window.dispatchEvent(new CustomEvent('teamUpdated'));
-    } catch (_error) {
+    } catch {
       throw error;
     }
   };
@@ -204,7 +204,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
           const teamsData = await teamApiService.getAllTeams(1);
           setTeams(teamsData.items || []);
         }
-      } catch (_err) {
+      } catch {
         setError('Failed to refresh team data');
       } finally {
         setLoading(false);

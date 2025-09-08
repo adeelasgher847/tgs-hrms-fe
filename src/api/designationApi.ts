@@ -70,13 +70,9 @@ class DesignationApiService {
 
   // Get all departments
   async getAllDepartments(): Promise<BackendDepartment[]> {
-    try {
-      const response = await axiosInstance.get<any[]>(this.departmentUrl);
-      const items = Array.isArray(response.data) ? response.data : [];
-      return items.map(normalizeDepartment);
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.get<BackendDepartment[]>(this.departmentUrl);
+    const items = Array.isArray(response.data) ? response.data : [];
+    return items.map(normalizeDepartment);
   }
 
   // Get all designations for a department with pagination
@@ -128,7 +124,7 @@ class DesignationApiService {
         limit,
         totalPages,
       };
-    } catch (_error) {
+    } catch {
       // Return empty paginated structure on error
       return {
         items: [],
@@ -155,42 +151,34 @@ class DesignationApiService {
             1
           );
           allDesignations.push(...response.items);
-        } catch (_error) {
+        } catch {
           // Continue with other departments even if one fails
         }
       }
 
       return allDesignations;
-    } catch (_error) {
-      throw _error;
+    } catch {
+      throw new Error('Failed to fetch all designations');
     }
   }
 
   // Get designation by ID
   async getDesignationById(id: string): Promise<BackendDesignation> {
-    try {
-      const response = await axiosInstance.get<any>(`${this.baseUrl}/${id}`);
-      return normalizeDesignation(response.data);
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.get<BackendDesignation>(`${this.baseUrl}/${id}`);
+    return normalizeDesignation(response.data);
   }
 
   // Create new designation
   async createDesignation(
     designationData: DesignationDto
   ): Promise<BackendDesignation> {
-    try {
-      // Backend expects snake_case: { title, department_id }
-      const payload = {
-        title: designationData.title,
-        department_id: designationData.departmentId,
-      };
-      const response = await axiosInstance.post<any>(this.baseUrl, payload);
-      return normalizeDesignation(response.data);
-    } catch (_error) {
-      throw _error;
-    }
+    // Backend expects snake_case: { title, department_id }
+    const payload = {
+      title: designationData.title,
+      department_id: designationData.departmentId,
+    };
+    const response = await axiosInstance.post<BackendDesignation>(this.baseUrl, payload);
+    return normalizeDesignation(response.data);
   }
 
   // Update designation
@@ -198,30 +186,22 @@ class DesignationApiService {
     id: string,
     designationData: DesignationDto
   ): Promise<BackendDesignation> {
-    try {
-      // Backend uses department_id from existing record; only title is relevant
-      const payload = { title: designationData.title };
-      const response = await axiosInstance.put<any>(
-        `${this.baseUrl}/${id}`,
-        payload
-      );
-      return normalizeDesignation(response.data);
-    } catch (_error) {
-      throw _error;
-    }
+    // Backend uses department_id from existing record; only title is relevant
+    const payload = { title: designationData.title };
+    const response = await axiosInstance.put<BackendDesignation>(
+      `${this.baseUrl}/${id}`,
+      payload
+    );
+    return normalizeDesignation(response.data);
   }
 
   // Delete designation
   async deleteDesignation(id: string): Promise<{ deleted: true; id: string }> {
-    try {
-      const response = await axiosInstance.delete<{
-        deleted: true;
-        id: string;
-      }>(`${this.baseUrl}/${id}`);
-      return response.data;
-    } catch (_error) {
-      throw _error;
-    }
+    const response = await axiosInstance.delete<{
+      deleted: true;
+      id: string;
+    }>(`${this.baseUrl}/${id}`);
+    return response.data;
   }
 
   // Helper function to convert backend designation to frontend format

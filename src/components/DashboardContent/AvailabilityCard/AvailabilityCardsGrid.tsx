@@ -3,7 +3,7 @@ import AvailabilityCard from './AvailabilityCard';
 import CheckedIcon from '../../../assets/dashboardIcon/checked.svg';
 import beachIcon from '../../../assets/dashboardIcon/beach-bed.svg';
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../../../context/LanguageContext';
+import { useLanguage } from '../../../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {

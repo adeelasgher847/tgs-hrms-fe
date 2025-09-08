@@ -2,8 +2,8 @@ import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 
-import { useLanguage } from '../context/LanguageContext';
-import { useUser } from '../context/UserContext';
+import { useLanguage } from '../hooks/useLanguage';
+import { useUser } from '../hooks/useUser';
 import { getRoleDisplayName } from '../utils/roleUtils';
 import { Select } from '@mui/material';
 
@@ -141,7 +141,7 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const textColor = darkMode ? '#8f8f8f' : '#000';
-  const { setLanguage: _setLanguage } = useLanguage();
+  // Language context available if needed
 
   return (
     <Box sx={{ flexGrow: 1 }}>

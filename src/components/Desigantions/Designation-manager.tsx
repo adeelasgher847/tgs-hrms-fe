@@ -4,7 +4,6 @@ import {
   Typography,
   Button,
   CircularProgress,
-  Fab,
   Paper,
   FormControl,
   InputLabel,
@@ -20,8 +19,6 @@ import {
   Snackbar,
   Alert,
   Pagination,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -31,7 +28,7 @@ import {
 
 import DesignationModal from '../Desigantions/Designation-modal';
 import DeleteConfirmationDialog from './Delete-confirmation-dialog';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import { useOutletContext } from 'react-router-dom';
 import {
   designationApiService,
@@ -46,8 +43,7 @@ export default function DesignationManager() {
   const { language } = useLanguage();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const isRTL = language === 'ar';
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // Theme available if needed
   const [designations, setDesignations] = useState<FrontendDesignation[]>([]);
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
   const [loading, setLoading] = useState(true);

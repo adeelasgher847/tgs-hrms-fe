@@ -18,7 +18,7 @@ import type { DepartmentFormData } from '../../types';
 import { DepartmentCard } from './DepartmentCard';
 import { DepartmentFormModal } from './Department-form-modal';
 import { DeleteConfirmationModal } from './Delete-confirmation-modal';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   departmentApiService,
   type FrontendDepartment,

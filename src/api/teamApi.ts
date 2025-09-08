@@ -94,7 +94,7 @@ class TeamApiService {
         `${this.baseUrl}/available-managers`
       );
       return response.data;
-    } catch (_error) {
+    } catch {
       return [];
     }
   }
@@ -104,7 +104,7 @@ class TeamApiService {
     try {
       const response = await axiosInstance.post<Team>(this.baseUrl, teamData);
       return response.data;
-    } catch (_error) {
+    } catch {
       throw error;
     }
   }
@@ -128,7 +128,7 @@ class TeamApiService {
                   ...team,
                   teamMembers: membersResponse.items || [],
                 };
-              } catch (_error) {
+              } catch {
                 return {
                   ...team,
                   teamMembers: [],
@@ -146,7 +146,7 @@ class TeamApiService {
       }
 
       return teams;
-    } catch (_error) {
+    } catch {
       throw error;
     }
   }
@@ -156,7 +156,7 @@ class TeamApiService {
     try {
       const response = await axiosInstance.get<Team>(`${this.baseUrl}/${id}`);
       return response.data;
-    } catch (_error) {
+    } catch {
       throw error;
     }
   }
@@ -170,7 +170,7 @@ class TeamApiService {
       );
 
       return response.data;
-    } catch (_error) {
+    } catch {
       throw error;
     }
   }
@@ -179,7 +179,7 @@ class TeamApiService {
   async deleteTeam(id: string): Promise<void> {
     try {
       await axiosInstance.delete(`${this.baseUrl}/${id}`);
-    } catch (_error) {
+    } catch {
       throw error;
     }
   }
@@ -191,7 +191,7 @@ class TeamApiService {
         `${this.baseUrl}/my-teams`
       );
       return response.data;
-    } catch (_error) {
+    } catch {
       return [];
     }
   }
@@ -205,7 +205,7 @@ class TeamApiService {
         `${this.baseUrl}/my-members?page=${page}`
       );
       return response.data;
-    } catch (_error) {
+    } catch {
       return {
         items: [],
         total: 0,
@@ -229,7 +229,7 @@ class TeamApiService {
         `${this.baseUrl}/available-employees?${params}`
       );
       return response.data;
-    } catch (_error) {
+    } catch {
       return {
         items: [],
         total: 0,
@@ -250,7 +250,7 @@ class TeamApiService {
         `${this.baseUrl}/${teamId}/members?page=${page}`
       );
       return response.data;
-    } catch (_error) {
+    } catch {
       return {
         items: [],
         total: 0,
@@ -267,7 +267,7 @@ class TeamApiService {
       await axiosInstance.post(`${this.baseUrl}/${teamId}/add-member`, {
         employee_id: employeeId,
       });
-    } catch (_error) {
+    } catch {
       throw error;
     }
   }
@@ -281,7 +281,7 @@ class TeamApiService {
       await axiosInstance.post(`${this.baseUrl}/${teamId}/remove-member`, {
         employee_id: employeeId,
       });
-    } catch (_error) {
+    } catch {
       throw error;
     }
   }

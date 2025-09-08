@@ -1,22 +1,16 @@
 import React, {
   createContext,
-  useContext,
   useState,
   useEffect,
   useCallback,
   type ReactNode,
 } from 'react';
 import { profileApiService, type UserProfile } from '../api/profileApi';
+import type { UserContextType } from '../types/context';
 
-interface UserContextType {
-  user: UserProfile | null;
-  loading: boolean;
-  updateUser: (updatedUser: UserProfile) => void;
-  refreshUser: () => Promise<void>;
-  clearUser: () => void;
-}
-
-const UserContext = createContext<UserContextType | undefined>(undefined);
+export const UserContext = createContext<UserContextType | undefined>(
+  undefined
+);
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({
   children,
@@ -42,7 +36,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
       const profileData = await profileApiService.getUserProfile();
       setUser(profileData);
       localStorage.setItem('user', JSON.stringify(profileData));
-    } catch (_error) {
+    } catch {
       // Don't clear user data on API error, keep localStorage data
     } finally {
       setLoading(false);
@@ -72,6 +66,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
           const parsedUser = JSON.parse(userData);
           setUser(parsedUser);
         } else {
+          // No user data in localStorage
         }
 
         // Always refresh from API to ensure consistency
@@ -79,8 +74,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
           const apiUser = await profileApiService.getUserProfile();
           setUser(apiUser);
           localStorage.setItem('user', JSON.stringify(apiUser));
-        } catch (_apiError) { /* Error handled silently */ }
-      } catch (_error) {
+        } catch {
+          /* Error handled silently */
+        }
+      } catch {
+        // Handle error silently
       } finally {
         setLoading(false);
       }
@@ -100,13 +98,4 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   return (
     <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
   );
-};
-
-export const useUser = (): UserContextType => {
-  const context = useContext(UserContext);
-
-  if (!context) {
-    throw new Error('useUser must be used within UserProvider');
-  }
-  return context;
 };

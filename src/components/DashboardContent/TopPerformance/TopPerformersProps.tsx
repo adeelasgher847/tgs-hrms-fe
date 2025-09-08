@@ -1,7 +1,7 @@
 import { Avatar } from '@mui/material';
 import TopPerformers from './TopPerformers';
 import { Email, Person, Code } from '@mui/icons-material';
-import { useLanguage } from '../../../context/LanguageContext';
+import { useLanguage } from '../../../hooks/useLanguage';
 
 const TopPerformersProps = () => {
   const { language } = useLanguage();

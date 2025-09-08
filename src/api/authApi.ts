@@ -31,8 +31,9 @@ export const authApi = {
       const response = await axiosInstance.post('/auth/forgot-password', data);
       return response.data;
     } catch (error: unknown) {
-      if ((error as any)?.response?.data) {
-        return (error as any).response.data;
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response: { data: AuthResponse } };
+        return apiError.response.data;
       }
       throw new Error('Failed to send password reset link');
     }
@@ -48,8 +49,9 @@ export const authApi = {
       const response = await axiosInstance.post('/auth/reset-password', data);
       return response.data;
     } catch (error: unknown) {
-      if ((error as any)?.response?.data) {
-        return (error as any).response.data;
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response: { data: AuthResponse } };
+        return apiError.response.data;
       }
       throw new Error('Failed to reset password');
     }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, Stack, CircularProgress } from '@mui/material';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import employeeApi from '../../api/employeeApi';
 import type { GenderPercentage } from '../../api/employeeApi';
 
@@ -98,7 +98,7 @@ export default function GenderPercentageChart() {
         ];
 
         setGenderData(transformedData);
-      } catch (_err) {
+      } catch {
         setError('Failed to load gender distribution data');
         // Don't set any fallback data - let the error state handle it
         setGenderData([]);

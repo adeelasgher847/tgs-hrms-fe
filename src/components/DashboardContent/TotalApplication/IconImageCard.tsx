@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Avatar, useTheme } from '@mui/material';
-import { useLanguage } from '../../../context/LanguageContext';
+import { useLanguage } from '../../../hooks/useLanguage';
 
 type IconImageCardProps = {
   icon: React.ReactNode;

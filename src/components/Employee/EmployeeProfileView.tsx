@@ -94,7 +94,12 @@ const EmployeeProfileView: React.FC = () => {
         const res = await employeeApi.getEmployeeProfile(userId);
         setProfile(res);
       } catch (e: unknown) {
-        if ((e as any)?.response?.status === 404) {
+        if (
+          e &&
+          typeof e === 'object' &&
+          'response' in e &&
+          (e as { response: { status: number } }).response.status === 404
+        ) {
           setError('Profile not found for the resolved user id.');
         } else {
           setError((e as Error)?.message || 'Failed to load profile');

@@ -18,7 +18,6 @@ import {
   Paper,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import { useOutletContext } from 'react-router-dom';
 import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeList from './EmployeeList';
@@ -144,7 +143,8 @@ const EmployeeManager: React.FC = () => {
       });
       setDesignations(desigMap);
       setDesignationList(desigData);
-    } catch (_error) {
+    } catch {
+      // Handle error silently
     } finally {
       setLoadingFilters(false);
     }
@@ -197,7 +197,7 @@ const EmployeeManager: React.FC = () => {
       setCurrentPage(response.page);
       setTotalPages(response.totalPages);
       setTotalItems(response.total);
-    } catch (_err) {
+    } catch {
       setError('Failed to load employees');
     } finally {
       setLoading(false);
@@ -356,7 +356,7 @@ const EmployeeManager: React.FC = () => {
       const fresh = await employeeApi.getEmployeeById(emp.id);
       setEditing(fresh as unknown as Employee);
       setOpen(true);
-    } catch (_e) {
+    } catch {
       setError('Failed to load employee details');
     } finally {
       setLoading(false);
@@ -378,7 +378,7 @@ const EmployeeManager: React.FC = () => {
         updates.designationId && updates.designationId !== ''
           ? updates.designationId
           : editing.designationId;
-      const response = await employeeApi.updateEmployee(editing.id, {
+      await employeeApi.updateEmployee(editing.id, {
         first_name: (updates as unknown).first_name,
         last_name: (updates as unknown).last_name,
         email: updates.email,
@@ -391,7 +391,7 @@ const EmployeeManager: React.FC = () => {
       setOpen(false);
       setEditing(null);
       return { success: true };
-    } catch (_err) {
+    } catch {
       setError('Failed to update employee');
       return { success: false } as unknown;
     } finally {
@@ -406,7 +406,7 @@ const EmployeeManager: React.FC = () => {
       await employeeApi.deleteEmployee(id);
       setEmployees(prev => prev.filter(emp => emp.id !== id));
       setSuccessMessage('Employee deleted successfully!');
-    } catch (_err) {
+    } catch {
       setError('Failed to delete employee');
     } finally {
       setLoading(false);

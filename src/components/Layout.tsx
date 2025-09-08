@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react';
 import '../layout.css';
 import EmployeeInviteModal from './Modal/EmployeeInviteModal';
 
-import { useUser } from '../context/UserContext';
+import { useUser } from '../hooks/useUser';
 import { useTheme } from '../theme/hooks';
 import {
   getDefaultDashboardRoute,

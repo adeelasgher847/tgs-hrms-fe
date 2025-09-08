@@ -14,7 +14,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { CreateTeamDto, Manager } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 
@@ -87,7 +87,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
           const managersData = await teamApiService.getAvailableManagers();
 
           setManagers(managersData);
-        } catch (_error) {
+        } catch {
           setManagers([]);
         } finally {
           setLoadingManagers(false);
@@ -131,7 +131,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
       setError(null);
       await onSubmit(formData);
       handleClose();
-    } catch (_err) {
+    } catch {
       setError(lang.error);
     } finally {
       setLoading(false);

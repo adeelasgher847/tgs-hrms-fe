@@ -20,7 +20,7 @@ import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import companyApi from '../api/companyApi';
 import type { BackendCompany, CompanyDto } from '../api/companyApi';
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../hooks/useLanguage';
 import edit from '../assets/dashboardIcon/edit.svg';
 import deleteIcon from '../assets/dashboardIcon/ui-delete.svg';
 
@@ -139,7 +139,7 @@ export const TenantPage = () => {
   const handleEditCompany = async () => {
     if (!selectedTenant || !formName.trim()) return;
     try {
-      const response = await companyApi.updateCompany(selectedTenant.id, {
+      await companyApi.updateCompany(selectedTenant.id, {
         name: formName,
       });
       setCompanies(prev =>

@@ -48,7 +48,7 @@ const MyTimerCard: React.FC = () => {
       if (todaySummary.checkOut && currentSession) {
         await handleEnd();
       }
-    } catch (_error) {
+    } catch {
       setHasCheckedIn(false);
     } finally {
       setCheckingAttendance(false);
@@ -61,7 +61,7 @@ const MyTimerCard: React.FC = () => {
       const sessions = response.items.sessions;
       const activeSession = sessions.find(s => !s.end_time);
       setCurrentSession(activeSession || null);
-    } catch (_error) {
+    } catch {
       setCurrentSession(null);
     }
   };
@@ -136,7 +136,10 @@ const MyTimerCard: React.FC = () => {
       setErrorMsg(null);
     } catch (err: unknown) {
       const msg =
-        (err as any)?.response?.data?.message ||
+        (err && typeof err === 'object' && 'response' in err
+          ? (err as { response: { data?: { message?: string } } }).response.data
+              ?.message
+          : null) ||
         (err as Error)?.message ||
         'Failed to clock in. Please make sure you checked in.';
       setErrorMsg(msg);
@@ -158,7 +161,10 @@ const MyTimerCard: React.FC = () => {
       setErrorMsg(null);
     } catch (err: unknown) {
       const msg =
-        (err as any)?.response?.data?.message ||
+        (err && typeof err === 'object' && 'response' in err
+          ? (err as { response: { data?: { message?: string } } }).response.data
+              ?.message
+          : null) ||
         (err as Error)?.message ||
         'Failed to clock out.';
       setErrorMsg(msg);

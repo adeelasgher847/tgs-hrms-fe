@@ -21,7 +21,7 @@ import {
   Add as AddIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, TeamMember } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
@@ -117,7 +117,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
           setLoadingEmployees(true);
           const response = await teamApiService.getAvailableEmployees(1);
           setAvailableEmployees(response.items || []);
-        } catch (_error) {
+        } catch {
           setAvailableEmployees([]);
         } finally {
           setLoadingEmployees(false);
@@ -148,7 +148,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
 
       // Trigger auto-render for other components
       window.dispatchEvent(new CustomEvent('teamUpdated'));
-    } catch (_error) {
+    } catch {
       snackbar.error('Failed to add member to team. Please try again.');
     }
   };
