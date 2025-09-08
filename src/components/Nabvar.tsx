@@ -265,7 +265,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 darkMode={darkMode}
               />
 
-              <IconButton sx={{padding: '0px'}}>
+              <IconButton sx={{xs:{padding: '8px'}, md: {padding: '0px'}}}>
                 <Badge variant='dot' color='error'>
                   <NotificationsNoneOutlinedIcon sx={{ color: textColor }} />
                 </Badge>
