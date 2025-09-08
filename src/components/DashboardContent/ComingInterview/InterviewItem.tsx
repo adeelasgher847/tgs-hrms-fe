@@ -1,7 +1,7 @@
 import { Avatar, Box, Typography } from '@mui/material';
 import type { Interview } from '../../../types/interview';
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../../../context/LanguageContext';
+import { useLanguage } from '../../../hooks/useLanguage';
 
 export default function InterviewItem({
   name,

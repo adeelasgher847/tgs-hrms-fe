@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Box,
-  useTheme,
   Table,
   TableBody,
   TableCell,
@@ -11,6 +10,7 @@ import {
   Tooltip,
   CircularProgress,
   TableContainer,
+  useTheme,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -76,9 +76,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
     ? '#9a9a9a'
     : theme.palette.text.secondary;
 
-  console.log('Employees data:', employees);
-  console.log('First employee department:', employees[0]?.department);
-  console.log('First employee designation:', employees[0]?.designation);
   return (
     <Box>
       <TableContainer>
@@ -119,77 +116,82 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                 </TableCell>
               </TableRow>
             )}
-            {!loading && employees.map(emp => (
-              <TableRow
-                key={emp.id}
-                sx={{
-                  '&:hover': {
-                    backgroundColor: darkMode
-                      ? 'rgba(255,255,255,0.08)'
-                      : 'rgba(0,0,0,0.04)',
-                  },
-                }}
-              >
-                <TableCell sx={{ color: textColor }}>{emp.name}</TableCell>
-                <TableCell sx={{ color: secondaryTextColor }}>
-                  {emp.email}
-                </TableCell>
-                <TableCell sx={{ color: textColor }}>{emp.phone}</TableCell>
-                <TableCell sx={{ color: textColor }}>
-                  {emp.department?.name ||
-                    departments[emp.departmentId] ||
-                    emp.departmentId ||
-                    '—'}
-                </TableCell>
-                <TableCell sx={{ color: textColor }}>
-                  {emp.designation?.title ||
-                    designations[emp.designationId] ||
-                    emp.designationId ||
-                    '—'}
-                </TableCell>
-                {(onDelete || onEdit) && (
-                  <TableCell>
-                    {onEdit && (
-                      <Tooltip
-                        title={
-                          direction === 'rtl' ? 'تعديل الموظف' : 'Edit Employee'
-                        }
-                      >
-                        <IconButton
-                          onClick={() => onEdit(emp)}
-                          disabled={loading}
-                          sx={{ mr: 1 }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                    {onDelete && (
-                      <Tooltip
-                        title={
-                          direction === 'rtl' ? 'حذف الموظف' : 'Delete Employee'
-                        }
-                      >
-                        <IconButton
-                          onClick={() => onDelete(emp.id)}
-                          disabled={loading}
-                          sx={{
-                            color: darkMode ? '#ff6b6b' : '#d32f2f',
-                            '&:hover': {
-                              backgroundColor: darkMode
-                                ? 'rgba(255,107,107,0.1)'
-                                : 'rgba(211,47,47,0.1)',
-                            },
-                          }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    )}
+            {!loading &&
+              employees.map(emp => (
+                <TableRow
+                  key={emp.id}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: darkMode
+                        ? 'rgba(255,255,255,0.08)'
+                        : 'rgba(0,0,0,0.04)',
+                    },
+                  }}
+                >
+                  <TableCell sx={{ color: textColor }}>{emp.name}</TableCell>
+                  <TableCell sx={{ color: secondaryTextColor }}>
+                    {emp.email}
                   </TableCell>
-                )}
-              </TableRow>
-            ))}
+                  <TableCell sx={{ color: textColor }}>{emp.phone}</TableCell>
+                  <TableCell sx={{ color: textColor }}>
+                    {emp.department?.name ||
+                      departments[emp.departmentId] ||
+                      emp.departmentId ||
+                      '—'}
+                  </TableCell>
+                  <TableCell sx={{ color: textColor }}>
+                    {emp.designation?.title ||
+                      designations[emp.designationId] ||
+                      emp.designationId ||
+                      '—'}
+                  </TableCell>
+                  {(onDelete || onEdit) && (
+                    <TableCell>
+                      {onEdit && (
+                        <Tooltip
+                          title={
+                            direction === 'rtl'
+                              ? 'تعديل الموظف'
+                              : 'Edit Employee'
+                          }
+                        >
+                          <IconButton
+                            onClick={() => onEdit(emp)}
+                            disabled={loading}
+                            sx={{ mr: 1 }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {onDelete && (
+                        <Tooltip
+                          title={
+                            direction === 'rtl'
+                              ? 'حذف الموظف'
+                              : 'Delete Employee'
+                          }
+                        >
+                          <IconButton
+                            onClick={() => onDelete(emp.id)}
+                            disabled={loading}
+                            sx={{
+                              color: darkMode ? '#ff6b6b' : '#d32f2f',
+                              '&:hover': {
+                                backgroundColor: darkMode
+                                  ? 'rgba(255,107,107,0.1)'
+                                  : 'rgba(211,47,47,0.1)',
+                              },
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </TableContainer>

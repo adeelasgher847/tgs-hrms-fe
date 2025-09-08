@@ -50,38 +50,38 @@ class TimesheetApiService {
 
   async startWork(): Promise<TimesheetEntry> {
     try {
-      console.log('🔄 TimesheetApiService - startWork called');
-      const response = await axiosInstance.post<TimesheetEntry>(`${this.baseUrl}/start`);
-      console.log('✅ TimesheetApiService - startWork response:', response.data);
+      const response = await axiosInstance.post<TimesheetEntry>(
+        `${this.baseUrl}/start`
+      );
+
       return response.data;
-    } catch (error) {
-      console.error('❌ TimesheetApiService - Error starting work:', error);
-      throw error;
+    } catch {
+      throw _error;
     }
   }
 
   async endWork(): Promise<TimesheetEntry> {
     try {
-      console.log('🔄 TimesheetApiService - endWork called');
-      const response = await axiosInstance.post<TimesheetEntry>(`${this.baseUrl}/end`);
-      console.log('✅ TimesheetApiService - endWork response:', response.data);
+      const response = await axiosInstance.post<TimesheetEntry>(
+        `${this.baseUrl}/end`
+      );
+
       return response.data;
-    } catch (error) {
-      console.error('❌ TimesheetApiService - Error ending work:', error);
-      throw error;
+    } catch {
+      throw _error;
     }
   }
 
   async getUserTimesheet(page: number = 1): Promise<TimesheetResponse> {
     try {
-      console.log('🔄 TimesheetApiService - getUserTimesheet called with page:', page);
-      
       const response = await axiosInstance.get(`${this.baseUrl}?page=${page}`);
-      console.log('✅ TimesheetApiService - Raw response:', response.data);
-      
-      // Handle the new backend response structure
-      if (response.data && response.data.items && response.data.items.sessions) {
-        console.log('✅ TimesheetApiService - New paginated response structure detected');
+
+      // Handle the new backend structure
+      if (
+        response.data &&
+        response.data.items &&
+        response.data.items.sessions
+      ) {
         return {
           items: response.data.items,
           total: response.data.total || 0,
@@ -89,8 +89,11 @@ class TimesheetApiService {
           limit: response.data.limit || 25,
           totalPages: response.data.totalPages || 1,
         };
-      } else if (response.data && response.data.items && Array.isArray(response.data.items)) {
-        console.log('✅ TimesheetApiService - Old array response detected, converting to new format');
+      } else if (
+        response.data &&
+        response.data.items &&
+        Array.isArray(response.data.items)
+      ) {
         return {
           items: {
             employee: { userId: '', fullName: '' },
@@ -103,7 +106,6 @@ class TimesheetApiService {
           totalPages: response.data.totalPages || 1,
         };
       } else if (Array.isArray(response.data)) {
-        console.log('✅ TimesheetApiService - Direct array response detected, converting to new format');
         return {
           items: {
             employee: { userId: '', fullName: '' },
@@ -116,7 +118,6 @@ class TimesheetApiService {
           totalPages: 1,
         };
       } else {
-        console.log('⚠️ TimesheetApiService - Unknown response format, returning empty');
         return {
           items: {
             employee: { userId: '', fullName: '' },
@@ -129,8 +130,7 @@ class TimesheetApiService {
           totalPages: 1,
         };
       }
-    } catch (error) {
-      console.error('❌ TimesheetApiService - Error fetching timesheet:', error);
+    } catch {
       return {
         items: {
           employee: { userId: '', fullName: '' },
@@ -146,24 +146,27 @@ class TimesheetApiService {
   }
 
   // Get summary for admin (tenant-wise) with pagination
-  async getSummary(from?: string, to?: string, page: number = 1): Promise<TimesheetSummaryResponse> {
+  async getSummary(
+    from?: string,
+    to?: string,
+    page: number = 1
+  ): Promise<TimesheetSummaryResponse> {
     try {
-      console.log('🔄 TimesheetApiService - getSummary called with:', { from, to, page });
-      
       const params = new URLSearchParams();
       params.append('page', page.toString());
       if (from) params.append('from', from);
       if (to) params.append('to', to);
 
       const url = `${this.baseUrl}/summary?${params.toString()}`;
-      console.log('🌐 TimesheetApiService - Making request to:', url);
 
       const response = await axiosInstance.get(url);
-      console.log('✅ TimesheetApiService - Summary response:', response.data);
-      
-      // Handle the new paginated summary response structure
-      if (response.data && response.data.items && Array.isArray(response.data.items)) {
-        console.log('✅ TimesheetApiService - Paginated summary response detected');
+
+      // Handle the new paginated summary structure
+      if (
+        response.data &&
+        response.data.items &&
+        Array.isArray(response.data.items)
+      ) {
         return {
           items: response.data.items,
           total: response.data.total || 0,
@@ -172,7 +175,6 @@ class TimesheetApiService {
           totalPages: response.data.totalPages || 1,
         };
       } else if (Array.isArray(response.data)) {
-        console.log('✅ TimesheetApiService - Direct array summary response detected');
         return {
           items: response.data,
           total: response.data.length,
@@ -181,7 +183,6 @@ class TimesheetApiService {
           totalPages: 1,
         };
       } else {
-        console.log('⚠️ TimesheetApiService - Unknown summary response format, returning empty');
         return {
           items: [],
           total: 0,
@@ -190,8 +191,7 @@ class TimesheetApiService {
           totalPages: 1,
         };
       }
-    } catch (error) {
-      console.error('❌ TimesheetApiService - Error fetching summary:', error);
+    } catch {
       return {
         items: [],
         total: 0,

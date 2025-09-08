@@ -6,9 +6,12 @@ import { useEffect, useState, useRef } from 'react';
 import '../layout.css';
 import EmployeeInviteModal from './Modal/EmployeeInviteModal';
 
-import { useTheme } from '../theme';
-import { useUser } from '../context/UserContext';
-import { getDefaultDashboardRoute, isDashboardPathAllowedForRole } from '../utils/permissions';
+import { useUser } from '../hooks/useUser';
+import { useTheme } from '../theme/hooks';
+import {
+  getDefaultDashboardRoute,
+  isDashboardPathAllowedForRole,
+} from '../utils/permissions';
 const Layout = () => {
   const muiTheme = useMuiTheme();
   const { mode: themeMode, setMode } = useTheme();
@@ -22,7 +25,10 @@ const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useUser();
-  const role = typeof user?.role === 'string' ? user?.role : (user as any)?.role?.name;
+  const role =
+    typeof user?.role === 'string'
+      ? user?.role
+      : (user as { role?: { name?: string } })?.role?.name;
 
   // Update sidebar state when screen size changes
   useEffect(() => {
@@ -66,8 +72,18 @@ const Layout = () => {
     // Only guard dashboard routes
     if (!location.pathname.startsWith('/dashboard')) return;
 
+    // Check if user is actually authenticated
+    const token = localStorage.getItem('accessToken');
+    if (!token || !user) {
+      // User is not authenticated, redirect to login
+      navigate('/', { replace: true });
+      return;
+    }
+
     // Extract subpath after /dashboard
-    const subPath = location.pathname.replace('/dashboard', '').replace(/^\/+/, '');
+    const subPath = location.pathname
+      .replace('/dashboard', '')
+      .replace(/^\/+/, '');
     const allowed = isDashboardPathAllowedForRole(subPath, role);
 
     if (!allowed) {
@@ -76,7 +92,7 @@ const Layout = () => {
         navigate(target, { replace: true });
       }
     }
-  }, [location.pathname, role, navigate]);
+  }, [location.pathname, role, navigate, user]);
 
   return (
     <Box

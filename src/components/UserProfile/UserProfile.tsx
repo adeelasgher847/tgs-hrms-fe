@@ -18,8 +18,8 @@ import {
   Business,
   CalendarToday,
 } from '@mui/icons-material';
-import { type UserProfile } from '../../api/profileApi';
-import { useUser } from '../../context/UserContext';
+// UserProfile type available if needed
+import { useUser } from '../../hooks/useUser';
 import { getRoleName, getRoleColor, isEmployee } from '../../utils/roleUtils';
 import ProfilePictureUpload from '../common/ProfilePictureUpload';
 import EmployeeProfileView from '../Employee/EmployeeProfileView';
@@ -29,13 +29,8 @@ const UserProfileComponent = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('🔄 UserProfile useEffect triggered:', {
-      profile: !!profile,
-      loading,
-    });
     // Only fetch if we don't have user data and we're not already loading
     if (!profile && !loading) {
-      console.log('📡 Fetching user profile...');
       const fetchProfile = async () => {
         try {
           await refreshUser();
@@ -47,7 +42,7 @@ const UserProfileComponent = () => {
     }
   }, [profile, loading, refreshUser]);
 
-  const handleProfileUpdate = (_updatedUser: UserProfile) => {
+  const handleProfileUpdate = () => {
     // The UserContext will handle the update automatically
     // This function is kept for compatibility with ProfilePictureUpload
   };
@@ -174,9 +169,9 @@ const UserProfileComponent = () => {
                 gap: 2,
               }}
             >
-              {profileItems.map((item, index) => (
+              {profileItems.map((item, _index) => (
                 <Box
-                  key={index}
+                  key={_index}
                   sx={{
                     flex: { xs: '1 1 100%', sm: '1 1 48%' },
                     p: 2,

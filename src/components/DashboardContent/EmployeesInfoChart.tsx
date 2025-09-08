@@ -2,7 +2,6 @@ import {
   Box,
   Typography,
   useMediaQuery,
-  useTheme,
   CircularProgress,
   Select,
   MenuItem,
@@ -19,7 +18,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import {
   getEmployeeJoiningReport,
@@ -27,8 +26,7 @@ import {
 } from '../../api/employeeApi';
 
 export default function EmployeesInfoChart() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery('(max-width:600px)');
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
 
@@ -44,7 +42,7 @@ export default function EmployeesInfoChart() {
         setLoading(true);
         setError(null);
         const data = await getEmployeeJoiningReport();
-        console.log('EmployeesInfoChart - API Response:', data);
+
         setJoiningData(data);
 
         // Set the most recent year as default selected year
@@ -53,11 +51,8 @@ export default function EmployeesInfoChart() {
             (a, b) => b - a
           );
           setSelectedYear(years[0]); // Set most recent year as default
-          console.log('EmployeesInfoChart - Available years:', years);
-          console.log('EmployeesInfoChart - Default selected year:', years[0]);
         }
-      } catch (err) {
-        console.error('Error fetching employee joining report:', err);
+      } catch {
         setError('Failed to load employee joining data');
         // Use fallback data if API fails - only August data
         setJoiningData([
@@ -84,10 +79,6 @@ export default function EmployeesInfoChart() {
   const filteredData = selectedYear
     ? joiningData.filter(item => item.year === selectedYear)
     : [];
-
-  console.log('EmployeesInfoChart - Available years:', availableYears);
-  console.log('EmployeesInfoChart - Selected year:', selectedYear);
-  console.log('EmployeesInfoChart - Filtered data:', filteredData);
 
   // Translations
   const chartTitle = {
@@ -148,14 +139,6 @@ export default function EmployeesInfoChart() {
     const apiData = filteredData.find(item => item.month === monthIndex);
 
     // Debug logging
-    console.log(
-      `EmployeesInfoChart - Mapping ${monthStr} (month ${monthIndex}):`,
-      {
-        apiData,
-        hasApiData: !!apiData,
-        value: apiData ? apiData.total : 0,
-      }
-    );
 
     // Use API data if available, otherwise use zero (no mock data)
     const value = apiData ? apiData.total : 0;
@@ -202,7 +185,7 @@ export default function EmployeesInfoChart() {
               {language === 'ar' ? 'السنة' : 'Year'}
             </InputLabel>
             <Select
-            className='Ramish selected'
+              className='Ramish selected'
               value={selectedYear || ''}
               onChange={e => setSelectedYear(Number(e.target.value))}
               label={language === 'ar' ? 'السنة' : 'Year'}

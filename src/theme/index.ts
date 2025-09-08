@@ -4,7 +4,7 @@ export type { AppTheme, AppPalette } from './themeConfig';
 
 // Theme provider and hooks
 export { ThemeProvider } from './ThemeProvider';
-export { useTheme, useThemeMode, useIsDarkMode } from './hooks';
+export { useThemeMode, useIsDarkMode } from './hooks';
 
 // Theme toggle component
 export { ThemeToggle } from './ThemeToggle';

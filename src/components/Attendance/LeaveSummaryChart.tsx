@@ -102,10 +102,10 @@ const LeaveSummaryChart: React.FC = () => {
                 dataKey='value'
                 label
               >
-                {chartData.map((entry, index) => (
+                {chartData.map((_entry, _index) => (
                   <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
+                    key={`cell-${_index}`}
+                    fill={COLORS[_index % COLORS.length]}
                   />
                 ))}
               </Pie>

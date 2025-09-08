@@ -1,27 +1,20 @@
 import React, {
   createContext,
-  useContext,
   useState,
   useEffect,
   useCallback,
   type ReactNode,
 } from 'react';
 import { profileApiService, type UserProfile } from '../api/profileApi';
+import type { UserContextType } from '../types/context';
 
-interface UserContextType {
-  user: UserProfile | null;
-  loading: boolean;
-  updateUser: (updatedUser: UserProfile) => void;
-  refreshUser: () => Promise<void>;
-  clearUser: () => void;
-}
-
-const UserContext = createContext<UserContextType | undefined>(undefined);
+export const UserContext = createContext<UserContextType | undefined>(
+  undefined
+);
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  console.log('🔧 UserProvider: Initializing...');
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -36,7 +29,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
-        console.log('🔐 No access token found, skipping API refresh');
         return;
       }
 
@@ -44,9 +36,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
       const profileData = await profileApiService.getUserProfile();
       setUser(profileData);
       localStorage.setItem('user', JSON.stringify(profileData));
-      console.log('✅ User data refreshed from API');
-    } catch (error) {
-      console.error('Error refreshing user data:', error);
+    } catch {
       // Don't clear user data on API error, keep localStorage data
     } finally {
       setLoading(false);
@@ -66,7 +56,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
         // Check if user is authenticated
         const token = localStorage.getItem('accessToken');
         if (!token) {
-          console.log('🔐 No access token found, user not authenticated');
           setLoading(false);
           return;
         }
@@ -76,9 +65,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
         if (userData) {
           const parsedUser = JSON.parse(userData);
           setUser(parsedUser);
-          console.log('✅ User data loaded from localStorage');
         } else {
-          console.log('⚠️ No user data in localStorage');
+          // No user data in localStorage
         }
 
         // Always refresh from API to ensure consistency
@@ -86,14 +74,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
           const apiUser = await profileApiService.getUserProfile();
           setUser(apiUser);
           localStorage.setItem('user', JSON.stringify(apiUser));
-          console.log('✅ User data refreshed from API');
-        } catch (apiError) {
-          console.warn(
-            '⚠️ Failed to refresh user data from API, using localStorage data'
-          );
+        } catch {
+          /* Error handled silently */
         }
-      } catch (error) {
-        console.error('Error loading user data from localStorage:', error);
+      } catch {
+        // Handle error silently
       } finally {
         setLoading(false);
       }
@@ -110,32 +95,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     clearUser,
   };
 
-  console.log('🔧 UserProvider: Rendering with context value:', {
-    user: !!user,
-    loading,
-    hasUpdateUser: !!updateUser,
-    hasRefreshUser: !!refreshUser,
-    hasClearUser: !!clearUser,
-  });
-
   return (
     <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
   );
-};
-
-export const useUser = (): UserContextType => {
-  console.log('🔍 useUser: Hook called');
-  const context = useContext(UserContext);
-  console.log(
-    '🔍 useUser: Context value:',
-    context ? '✅ Available' : '❌ Not available'
-  );
-
-  if (!context) {
-    console.error('❌ useUser: Context not available - throwing error');
-    throw new Error('useUser must be used within UserProvider');
-  }
-
-  console.log('✅ useUser: Returning context successfully');
-  return context;
 };

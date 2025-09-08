@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import type { AvailabilityCardProps } from '../../../types/availability';
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../../../context/LanguageContext';
+import { useLanguage } from '../../../hooks/useLanguage';
 
 export default function AvailabilityCard({
   title,
@@ -39,34 +39,63 @@ export default function AvailabilityCard({
         borderRadius: '0.375rem',
         padding: 2,
         display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         minHeight: 80,
         backgroundColor: bgColor,
         color: textColor,
         direction: language === 'ar' ? 'rtl' : 'ltr',
       }}
     >
-      {/* Icon container */}
+      {/* Left side: Icon and Name */}
       <Box
         sx={{
-          backgroundColor: darkMode ? 'unset' : 'rgba(255, 255, 255, 0.2)',
-          borderRadius: '50%',
-          width: 48,
-          height: 35,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
         }}
       >
-        <Box component='span' color={textColor} sx={{ fontSize: 28 }}>
-          {icon}
+        {/* Icon container */}
+        <Box
+          sx={{
+            backgroundColor: darkMode ? 'unset' : 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '50%',
+            width: 48,
+            height: 48,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Box component='span' color={textColor} sx={{ fontSize: 24 }}>
+            {icon}
+          </Box>
         </Box>
-      </Box>
 
-      {/* Text content */}
-      <Box>
-        <Typography fontSize={14} fontWeight={700}>
+        {/* Title */}
+        <Typography fontSize={14} fontWeight={600} color={textColor}>
           {translatedTitle}
         </Typography>
-        <Typography variant='h6' fontSize={16} color='#9a9b9d'>
+      </Box>
+
+      {/* Right side: Bold Number */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
+        <Typography
+          variant='h4'
+          fontSize={28}
+          fontWeight='bold'
+          color={textColor}
+          sx={{
+            fontFamily: 'monospace',
+            lineHeight: 1,
+          }}
+        >
           {value}
         </Typography>
       </Box>

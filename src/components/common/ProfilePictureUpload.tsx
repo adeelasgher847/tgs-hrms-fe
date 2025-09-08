@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { PhotoCamera, Delete, Close, Edit } from '@mui/icons-material';
 import { profileApiService, type UserProfile } from '../../api/profileApi';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 import { snackbar } from '../../utils/snackbar';
 
 interface ProfilePictureUploadProps {
@@ -36,7 +36,6 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   showUploadButton = true,
   showRemoveButton = true,
   clickable = true,
-  showEditOverlay = true,
 }) => {
   const { updateUser } = useUser();
   const [uploading, setUploading] = useState(false);
@@ -142,24 +141,29 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
       updateUser(response.user);
       onProfileUpdate(response.user);
-      snackbar.success('Profile picture updated successfully!');
+      snackbar.success('Profile picture successfully!');
       setShowUploadDialog(false);
       setSelectedFile(null);
       setPreviewUrl(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       let errorMessage = 'Failed to upload profile picture';
 
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      } else if (err.response?.status === 400) {
-        errorMessage = 'Bad request - check file format and size';
-      } else if (err.response?.status === 403) {
-        errorMessage =
-          'Permission denied - you can only update your own profile picture';
-      } else if (err.response?.status === 401) {
-        errorMessage = 'Authentication failed - please log in again';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const apiError = err as {
+          response: { data?: { message?: string }; status?: number };
+        };
+        if (apiError.response.data?.message) {
+          errorMessage = apiError.response.data.message;
+        } else if (apiError.response.status === 400) {
+          errorMessage = 'Bad request - check file format and size';
+        } else if (apiError.response.status === 403) {
+          errorMessage =
+            'Permission denied - you can only update your own profile picture';
+        } else if (apiError.response.status === 401) {
+          errorMessage = 'Authentication failed - please log in again';
+        }
+      } else if ((err as Error).message) {
+        errorMessage = (err as Error).message;
       }
 
       setError(errorMessage);
@@ -174,13 +178,16 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
     setError(null);
 
     try {
-      const response = await profileApiService.removeProfilePicture(user.id);
+      const response = await profileApiService.removeProfilePicture();
       updateUser(response.user);
       onProfileUpdate(response.user);
       snackbar.success('Profile picture removed successfully!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errorMessage =
-        err.response?.data?.message || 'Failed to remove profile picture';
+        (err && typeof err === 'object' && 'response' in err
+          ? (err as { response: { data?: { message?: string } } }).response.data
+              ?.message
+          : null) || 'Failed to remove profile picture';
       setError(errorMessage);
       snackbar.error(errorMessage);
     } finally {
@@ -457,9 +464,9 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
           <Button
             onClick={handleUpload}
             variant='contained'
-            disabled={
+            disabled={Boolean(
               uploading || (selectedFile && selectedFile.size > 5 * 1024 * 1024)
-            }
+            )}
             startIcon={uploading ? <CircularProgress size={16} /> : null}
           >
             {uploading ? 'Uploading...' : 'Upload'}

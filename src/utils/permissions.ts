@@ -1,9 +1,16 @@
-export type NormalizedRole = 'system-admin' | 'admin' | 'manager' | 'employee' | 'user' | 'unknown';
+export type NormalizedRole =
+  | 'system-admin'
+  | 'admin'
+  | 'manager'
+  | 'employee'
+  | 'user'
+  | 'unknown';
 
 export const normalizeRole = (role?: string): NormalizedRole => {
   if (!role) return 'unknown';
   const r = role.trim().toLowerCase();
-  if (r === 'system-admin' || r === 'system_admin' || r === 'system admin') return 'system-admin';
+  if (r === 'system-admin' || r === 'system_admin' || r === 'system admin')
+    return 'system-admin';
   if (r === 'admin') return 'admin';
   if (r === 'manager') return 'manager';
   if (r === 'employee') return 'employee';
@@ -17,7 +24,7 @@ export const getDefaultDashboardRoute = (role?: string): string => {
   switch (r) {
     case 'system-admin':
     case 'admin':
-      return '/dashboard'; // HR dashboard (index)
+      return '/dashboard'; // HR dashboard (_index)
     case 'manager':
       return '/dashboard/teams';
     case 'employee':
@@ -29,18 +36,28 @@ export const getDefaultDashboardRoute = (role?: string): string => {
 };
 
 // Top-level menu visibility by label
-export const isMenuVisibleForRole = (menuLabel: string, role?: string): boolean => {
+export const isMenuVisibleForRole = (
+  menuLabel: string,
+  role?: string
+): boolean => {
   const r = normalizeRole(role);
   const label = menuLabel.trim().toLowerCase();
 
   // Only keep core HRMS sections per requirements
   const allowedByRole: Record<NormalizedRole, string[]> = {
-    'system-admin': ['dashboard', 'tenant', 'department', 'employees', 'teams', 'attendance'],
-    'admin': ['dashboard', 'department', 'employees', 'teams', 'attendance'],
-    'manager': ['teams', 'attendance'],
-    'employee': ['attendance'],
-    'user': ['attendance'],
-    'unknown': [],
+    'system-admin': [
+      'dashboard',
+      'tenant',
+      'department',
+      'employees',
+      'teams',
+      'attendance',
+    ],
+    admin: ['dashboard', 'department', 'employees', 'teams', 'attendance'],
+    manager: ['teams', 'attendance'],
+    employee: ['attendance'],
+    user: ['attendance'],
+    unknown: [],
   };
 
   // map synonyms from current sidebar to requirement naming
@@ -60,7 +77,11 @@ export const isMenuVisibleForRole = (menuLabel: string, role?: string): boolean 
 };
 
 // Submenu visibility helper per parent menu and sub label
-export const isSubMenuVisibleForRole = (parentMenuLabel: string, subLabel: string, role?: string): boolean => {
+export const isSubMenuVisibleForRole = (
+  parentMenuLabel: string,
+  subLabel: string,
+  role?: string
+): boolean => {
   const r = normalizeRole(role);
   const parent = parentMenuLabel.trim().toLowerCase();
   const sub = subLabel.trim().toLowerCase();
@@ -71,7 +92,11 @@ export const isSubMenuVisibleForRole = (parentMenuLabel: string, subLabel: strin
   // Admin and System-Admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports, Attendance
   if (r === 'admin' || r === 'system-admin') {
     if (parent.includes('department')) {
-      if (sub.includes('user list') || sub.includes('policies') || sub.includes('holidays')) {
+      if (
+        sub.includes('user list') ||
+        sub.includes('policies') ||
+        sub.includes('holidays')
+      ) {
         visible = false;
       }
     }
@@ -101,7 +126,10 @@ export const isSubMenuVisibleForRole = (parentMenuLabel: string, subLabel: strin
 };
 
 // Allowed paths under /dashboard per role
-export const isDashboardPathAllowedForRole = (pathAfterDashboard: string, role?: string): boolean => {
+export const isDashboardPathAllowedForRole = (
+  pathAfterDashboard: string,
+  role?: string
+): boolean => {
   const r = normalizeRole(role);
   const p = (pathAfterDashboard || '').replace(/^\/+|\/+$/g, '');
 
@@ -113,7 +141,13 @@ export const isDashboardPathAllowedForRole = (pathAfterDashboard: string, role?:
   const allowlists: Record<NormalizedRole, Set<string>> = {
     'system-admin': new Set([
       // Core
-      '', 'tenant', 'departments', 'Designations', 'EmployeeManager', 'UserList', 'UserProfile',
+      '',
+      'tenant',
+      'departments',
+      'Designations',
+      'EmployeeManager',
+      'UserList',
+      'UserProfile',
       // Hide these submenus for admin/system-admin, but keep route available only if you want deep link access.
       // To block direct access, remove the entries below from the allowlist.
       // 'policies', 'holidays',
@@ -128,8 +162,13 @@ export const isDashboardPathAllowedForRole = (pathAfterDashboard: string, role?:
       // Employee profile view
       'EmployeeProfileView',
     ]),
-    'admin': new Set([
-      '', 'departments', 'Designations', 'EmployeeManager', 'UserList', 'UserProfile',
+    admin: new Set([
+      '',
+      'departments',
+      'Designations',
+      'EmployeeManager',
+      'UserList',
+      'UserProfile',
       // 'policies', 'holidays',
       'leaves',
       // Attendance (hide Reports and AttendanceCheck for admin)
@@ -140,30 +179,33 @@ export const isDashboardPathAllowedForRole = (pathAfterDashboard: string, role?:
       'teams',
       'EmployeeProfileView',
     ]),
-    'manager': new Set([
-      'AttendanceCheck', 'AttendanceTable',
+    manager: new Set([
+      'AttendanceCheck',
+      'AttendanceTable',
       // 'Reports',
       'AttendanceCheck/TimesheetLayout',
       'teams',
       'leaves',
       'UserProfile',
     ]),
-    'employee': new Set([
-      'AttendanceCheck', 'AttendanceTable',
+    employee: new Set([
+      'AttendanceCheck',
+      'AttendanceTable',
       // 'Reports',
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
     ]),
-    'user': new Set([
-      'AttendanceCheck', 'AttendanceTable',
+    user: new Set([
+      'AttendanceCheck',
+      'AttendanceTable',
       // 'Reports',
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
     ]),
-    'unknown': new Set<string>(),
+    unknown: new Set<string>(),
   };
 
   return allowlists[r].has(p);
-}; 
+};

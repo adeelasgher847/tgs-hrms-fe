@@ -21,24 +21,22 @@ export interface ProfilePictureResponse {
 class ProfileApiService {
   // Get user profile
   async getUserProfile(): Promise<UserProfile> {
-    try {
-      const response = await axiosInstance.get<UserProfile>('/profile/me');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      throw error;
-    }
+    const response = await axiosInstance.get<UserProfile>('/profile/me');
+    return response.data;
   }
 
   // Upload profile picture
-  async uploadProfilePicture(userId: string, file: File): Promise<ProfilePictureResponse> {
+  async uploadProfilePicture(
+    _userId: string,
+    file: File
+  ): Promise<ProfilePictureResponse> {
     try {
       // First, get the current authenticated user's profile to ensure we use the correct ID
       const currentProfile = await this.getUserProfile();
-      
+
       // Use the authenticated user's ID instead of the passed userId
       const authenticatedUserId = currentProfile.id;
-      
+
       const formData = new FormData();
       formData.append('profile_pic', file);
 
@@ -52,32 +50,25 @@ class ProfileApiService {
         }
       );
       return response.data;
-    } catch (error: any) {
-      console.error('Error uploading profile picture:', error);
-      throw error;
+    } catch {
+      throw new Error('Failed to upload profile picture');
     }
   }
 
   // Remove profile picture
-  async removeProfilePicture(userId: string): Promise<ProfilePictureResponse> {
-    try {
-      // First, get the current authenticated user's profile to ensure we use the correct ID
-      const currentProfile = await this.getUserProfile();
-      
-      // Use the authenticated user's ID instead of the passed userId
-      const authenticatedUserId = currentProfile.id;
-      
-      const response = await axiosInstance.delete<ProfilePictureResponse>(
-        `/users/${authenticatedUserId}/profile-picture`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error removing profile picture:', error);
-      throw error;
-    }
+  async removeProfilePicture(): Promise<ProfilePictureResponse> {
+    // First, get the current authenticated user's profile to ensure we use the correct ID
+    const currentProfile = await this.getUserProfile();
+
+    // Use the authenticated user's ID instead of the passed userId
+    const authenticatedUserId = currentProfile.id;
+
+    const response = await axiosInstance.delete<ProfilePictureResponse>(
+      `/users/${authenticatedUserId}/profile-picture`
+    );
+    return response.data;
   }
 }
 
 export const profileApiService = new ProfileApiService();
 export default profileApiService;
-
