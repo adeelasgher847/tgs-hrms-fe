@@ -93,6 +93,10 @@ const EmployeeManager: React.FC = () => {
   );
   const [loadingFilters, setLoadingFilters] = useState(false);
 
+  // Delete confirmation dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
   // Dark mode
   const bgColor = darkMode ? '#1b1b1b' : '#fff';
   const textColor = darkMode ? '#e0e0e0' : '#000';
@@ -124,7 +128,6 @@ const EmployeeManager: React.FC = () => {
     setCurrentPage(page);
     loadEmployees(page);
   };
-
 
   const loadDepartmentsAndDesignations = async () => {
     try {
@@ -429,6 +432,24 @@ const EmployeeManager: React.FC = () => {
     }
   };
 
+  // New: open confirmation before delete
+  const requestDeleteEmployee = (id: string) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    await handleDeleteEmployee(pendingDeleteId);
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
+  const cancelDelete = () => {
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
   const handleClearFilters = () => {
     setDepartmentFilter('');
     setDesignationFilter('');
@@ -589,7 +610,7 @@ const EmployeeManager: React.FC = () => {
       <Paper elevation={3} sx={{boxShadow:'none'}}>
         <EmployeeList
           employees={filteredEmployees}
-          onDelete={handleDeleteEmployee}
+          onDelete={requestDeleteEmployee}
           onEdit={handleEditOpen}
           loading={loading}
           departments={departments}
@@ -653,6 +674,43 @@ const EmployeeManager: React.FC = () => {
           {successMessage}
         </Alert>
       </Snackbar>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={confirmOpen}
+        onClose={cancelDelete}
+        PaperProps={{
+          sx: {
+            backgroundColor: bgColor,
+            color: textColor,
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          {getLabel('Confirm Deletion', 'تأكيد الحذف')}
+        </DialogTitle>
+        <DialogContent sx={{ pb: 2 }}>
+          <Typography>
+            {getLabel(
+              'Are you sure you want to delete this employee? This action cannot be undone.',
+              'هل أنت متأكد أنك تريد حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.'
+            )}
+          </Typography>
+          <Box display='flex' justifyContent='flex-end' gap={1} mt={2}>
+            <Button onClick={cancelDelete} variant='outlined'>
+              {getLabel('Cancel', 'إلغاء')}
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              variant='contained'
+              color='error'
+              disabled={loading}
+            >
+              {getLabel('Delete', 'حذف')}
+            </Button>
+          </Box>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal with AddEmployeeForm */}
       <Dialog

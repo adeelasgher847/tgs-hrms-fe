@@ -326,7 +326,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
       <DialogTitle sx={{ ...paperSx, position: 'relative' }}>
-        <Typography sx={{ textAlign: isRtl ? 'right' : 'left' }}>
+        <Typography sx={{ textAlign: isRtl ? 'right' : 'left', fontWeight: 600, fontSize: '1.25rem', lineHeight: 1.6, letterSpacing: '0.0075em',  }}>
           {title}
         </Typography>
         <IconButton
