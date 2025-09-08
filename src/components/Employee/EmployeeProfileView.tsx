@@ -93,11 +93,11 @@ const EmployeeProfileView: React.FC = () => {
         }
         const res = await employeeApi.getEmployeeProfile(userId);
         setProfile(res);
-      } catch (e: any) {
-        if (e?.response?.status === 404) {
+      } catch (e: unknown) {
+        if ((e as any)?.response?.status === 404) {
           setError('Profile not found for the resolved user id.');
         } else {
-          setError(e?.message || 'Failed to load profile');
+          setError((e as Error)?.message || 'Failed to load profile');
         }
       } finally {
         setIsLoading(false);
@@ -217,13 +217,13 @@ const EmployeeProfileView: React.FC = () => {
                 .map(
                   (
                     log: EmployeeProfileAttendanceSummaryItem,
-                    index: number
+                    _index: number
                   ) => (
                     <TableRow
-                      key={index}
+                      key={_index}
                       sx={{
                         backgroundColor:
-                          index % 2 === 0 ? 'background.default' : 'grey.50',
+                          _index % 2 === 0 ? 'background.default' : 'grey.50',
                       }}
                     >
                       <TableCell>{log.date}</TableCell>

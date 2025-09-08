@@ -58,7 +58,7 @@ const AttendanceTable = () => {
   const [teamLoading, setTeamLoading] = useState(false);
   const [teamError, setTeamError] = useState('');
   const [isManager, setIsManager] = useState(false);
-  
+
   // Team attendance pagination state
   const [teamCurrentPage, setTeamCurrentPage] = useState(1);
   const [teamTotalPages, setTeamTotalPages] = useState(1);
@@ -75,7 +75,7 @@ const AttendanceTable = () => {
       .filter(e => e && e.timestamp && e.type)
       .map(e => ({
         id: e.id,
-        user_id: (e as any).user_id || currentUserId,
+        user_id: (e as unknown).user_id || currentUserId,
         timestamp: e.timestamp,
         type: e.type as 'check-in' | 'check-out',
         user: e.user,
@@ -173,16 +173,14 @@ const AttendanceTable = () => {
     setTeamError('');
     try {
       const response = await attendanceApi.getTeamAttendance(page);
-      console.log('✅ Team Attendance API Response:', response);
-      
+
       setTeamAttendance(response.items || []);
-      
+
       // Update pagination state
       setTeamCurrentPage(response.page || 1);
       setTeamTotalPages(response.totalPages || 1);
       setTeamTotalItems(response.total || 0);
-    } catch (err) {
-      console.error('❌ Error fetching team attendance:', err);
+    } catch (_err) {
       setTeamError('Failed to load team attendance');
       setTeamAttendance([]);
       setTeamCurrentPage(1);
@@ -193,7 +191,6 @@ const AttendanceTable = () => {
     }
   };
 
-
   const fetchAttendance = async (page: number = 1) => {
     setLoading(true);
     try {
@@ -201,15 +198,23 @@ const AttendanceTable = () => {
       if (!storedUser) return;
 
       const currentUser = JSON.parse(storedUser);
-      const roleName = (currentUser.role?.name || currentUser.role || '').toString();
+      const roleName = (
+        currentUser.role?.name ||
+        currentUser.role ||
+        ''
+      ).toString();
       const roleLc = roleName.toLowerCase();
       setUserRole(roleName);
       setIsManager(checkIsManager(currentUser.role));
 
-      let response: AttendanceResponse;
-
       // Admin or System-Admin: raw events across tenant
-      if (roleLc === 'admin' || roleLc === 'system-admin' || roleLc === 'system admin' || roleLc === 'system_admin') {
+      let response: AttendanceResponse;
+      if (
+        roleLc === 'admin' ||
+        roleLc === 'system-admin' ||
+        roleLc === 'system admin' ||
+        roleLc === 'system_admin'
+      ) {
         response = await attendanceApi.getAllAttendance(page);
       } else {
         response = await attendanceApi.getAttendanceEvents(
@@ -217,8 +222,6 @@ const AttendanceTable = () => {
           page
         );
       }
-
-      console.log('✅ AttendanceTable - API Response:', response);
 
       // Update pagination state
       setCurrentPage(response.page);
@@ -230,8 +233,7 @@ const AttendanceTable = () => {
       const rows = buildFromEvents(events, currentUser.id);
       setAttendanceData(rows);
       setFilteredData(rows);
-    } catch (error) {
-      console.error('❌ Error fetching attendance:', error);
+    } catch (_error) {
     } finally {
       setLoading(false);
     }
@@ -267,7 +269,11 @@ const AttendanceTable = () => {
 
   // Determine admin-like UI behavior (Admin or System-Admin)
   const userRoleLc = (userRole || '').toLowerCase();
-  const isAdminLike = userRoleLc === 'admin' || userRoleLc === 'system-admin' || userRoleLc === 'system admin' || userRoleLc === 'system_admin';
+  const isAdminLike =
+    userRoleLc === 'admin' ||
+    userRoleLc === 'system-admin' ||
+    userRoleLc === 'system admin' ||
+    userRoleLc === 'system_admin';
 
   return (
     <Box>
@@ -297,130 +303,136 @@ const AttendanceTable = () => {
             Attendance Sessions
           </Typography>
 
-          <Box display='flex' gap={2} mb={2} flexWrap='wrap' alignItems='center'>
-   <TextField
-  label="Start Date"
-  type="date"
-  InputLabelProps={{ shrink: true }}
-  value={startDate}
-  onChange={e => setStartDate(e.target.value)}
-  sx={{
-    "& .MuiInputBase-input": {
-      padding: "6.5px 14px",
-    },
-  }}
-/>
+          <Box
+            display='flex'
+            gap={2}
+            mb={2}
+            flexWrap='wrap'
+            alignItems='center'
+          >
+            <TextField
+              label='Start Date'
+              type='date'
+              InputLabelProps={{ shrink: true }}
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              sx={{
+                '& .MuiInputBase-input': {
+                  padding: '6.5px 14px',
+                },
+              }}
+            />
 
-        <TextField
-          label='End Date'
-          type='date'
-          InputLabelProps={{ shrink: true }}
-          value={endDate}
-          onChange={e => setEndDate(e.target.value)}
-            sx={{
-    "& .MuiInputBase-input": {
-      padding: "6.5px 14px",
-    },
-  }}
-        />
-        <Button variant='outlined' onClick={clearFilters}>
-          Clear Filter
-        </Button>
-      </Box>
-      <Paper elevation={3} sx={{ boxShadow: 'none'}}>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                {isAdminLike && (
-                  <TableCell sx={{ fontWeight: 'bold' }}>
-                    Employee Name
-                  </TableCell>
-                )}
-                <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Worked Hours</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={isAdminLike ? 5 : 4}
-                    align='center'
-                  >
-                    <CircularProgress />
-                  </TableCell>
-                </TableRow>
-              ) : filteredData.length > 0 ? (
-                filteredData.map(record => (
-                  <TableRow key={record.id}>
+            <TextField
+              label='End Date'
+              type='date'
+              InputLabelProps={{ shrink: true }}
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+              sx={{
+                '& .MuiInputBase-input': {
+                  padding: '6.5px 14px',
+                },
+              }}
+            />
+            <Button variant='outlined' onClick={clearFilters}>
+              Clear Filter
+            </Button>
+          </Box>
+          <Paper elevation={3} sx={{ boxShadow: 'none' }}>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
                     {isAdminLike && (
-                      <TableCell>{record.user?.first_name || 'N/A'}</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>
+                        Employee Name
+                      </TableCell>
                     )}
-                    <TableCell>{record.date || '--'}</TableCell>
-                    <TableCell>{record.checkIn || '--'}</TableCell>
-                    <TableCell>{record.checkOut || '--'}</TableCell>
-                    <TableCell>{record.workedHours ?? '--'}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>
+                      Worked Hours
+                    </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={isAdminLike ? 5 : 4}
-                    align='center'
-                  >
-                    No attendance records found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+                </TableHead>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={isAdminLike ? 5 : 4} align='center'>
+                        <CircularProgress />
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredData.length > 0 ? (
+                    filteredData.map(record => (
+                      <TableRow key={record.id}>
+                        {isAdminLike && (
+                          <TableCell>
+                            {record.user?.first_name || 'N/A'}
+                          </TableCell>
+                        )}
+                        <TableCell>{record.date || '--'}</TableCell>
+                        <TableCell>{record.checkIn || '--'}</TableCell>
+                        <TableCell>{record.checkOut || '--'}</TableCell>
+                        <TableCell>{record.workedHours ?? '--'}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={isAdminLike ? 5 : 4} align='center'>
+                        No attendance records found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Box display='flex' justifyContent='center' mt={2}>
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={(_, page) => handlePageChange(page)}
-            color='primary'
-            showFirstButton
-            showLastButton
-          />
-        </Box>
-      )}
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box display='flex' justifyContent='center' mt={2}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={(_, page) => handlePageChange(page)}
+                color='primary'
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          )}
 
-      {/* Pagination Info */}
-      {totalItems > 0 && (
-        <Box display='flex' justifyContent='center' mt={1}>
-          <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {totalPages} ({totalItems} total
-            records)
-          </Typography>
-        </Box>
-      )}
-    </>
+          {/* Pagination Info */}
+          {totalItems > 0 && (
+            <Box display='flex' justifyContent='center' mt={1}>
+              <Typography variant='body2' color='textSecondary'>
+                Showing page {currentPage} of {totalPages} ({totalItems} total
+                records)
+              </Typography>
+            </Box>
+          )}
+        </>
       )}
       {tab === 1 && isManager && (
         <Box>
-          <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
-            <Typography variant='h6'>
-              Team Attendance
-            </Typography>
-           
+          <Box
+            display='flex'
+            justifyContent='space-between'
+            alignItems='center'
+            mb={2}
+          >
+            <Typography variant='h6'>Team Attendance</Typography>
           </Box>
-          
+
           {teamLoading ? (
-            <Box display="flex" justifyContent="center" py={4}>
+            <Box display='flex' justifyContent='center' py={4}>
               <CircularProgress />
             </Box>
           ) : teamError ? (
-            <Box display="flex" justifyContent="center" py={4}>
-              <Typography color="error">{teamError}</Typography>
+            <Box display='flex' justifyContent='center' py={4}>
+              <Typography color='error'>{teamError}</Typography>
             </Box>
           ) : (
             <>
@@ -429,17 +441,27 @@ const AttendanceTable = () => {
                   <Table>
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Employee Name</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Designation</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Department</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Days Worked</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Hours Worked</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>
+                          Employee Name
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>
+                          Designation
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>
+                          Department
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>
+                          Days Worked
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>
+                          Hours Worked
+                        </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {teamAttendance.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} align="center">
+                          <TableCell colSpan={5} align='center'>
                             No team attendance records found.
                           </TableCell>
                         </TableRow>
@@ -479,8 +501,8 @@ const AttendanceTable = () => {
               {teamTotalItems > 0 && (
                 <Box display='flex' justifyContent='center' mt={1}>
                   <Typography variant='body2' color='textSecondary'>
-                    Showing page {teamCurrentPage} of {teamTotalPages} ({teamTotalItems} total
-                    records)
+                    Showing page {teamCurrentPage} of {teamTotalPages} (
+                    {teamTotalItems} total records)
                   </Typography>
                 </Box>
               )}

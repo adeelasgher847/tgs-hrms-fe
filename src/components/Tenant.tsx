@@ -5,7 +5,6 @@ import {
   Button,
   Fab,
   useMediaQuery,
-  useTheme,
   Paper,
   Divider,
   Card,
@@ -15,6 +14,7 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
 import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import companyApi from '../api/companyApi';
@@ -96,7 +96,7 @@ export const TenantPage = () => {
       setIsLoading(true);
       try {
         const data = await companyApi.getAllCompanies();
-        console.log('Fetched companies:', data);
+
         setCompanies(data);
       } catch {
         setCompanies([]);
@@ -114,7 +114,7 @@ export const TenantPage = () => {
     try {
       const created = await companyApi.createCompany(newCompany);
       setCompanies(prev => [created, ...prev]);
-      console.log('Created company:', created);
+
       setIsFormModalOpen(false);
       setFormName('');
       setSnackbar({
@@ -139,18 +139,20 @@ export const TenantPage = () => {
   const handleEditCompany = async () => {
     if (!selectedTenant || !formName.trim()) return;
     try {
-      const updated = await companyApi.updateCompany(selectedTenant.id, {
+      const response = await companyApi.updateCompany(selectedTenant.id, {
         name: formName,
       });
       setCompanies(prev =>
-        prev.map(c => (c.id === selectedTenant.id ? updated : c))
+        prev.map(c =>
+          c.id === selectedTenant.id ? { ...c, name: formName } : c
+        )
       );
       setSelectedTenant(null);
       setIsFormModalOpen(false);
       setFormName('');
       setSnackbar({
         open: true,
-        message: 'Company updated successfully!',
+        message: 'Company successfully!',
         severity: 'success',
       });
     } catch (error: unknown) {
@@ -271,7 +273,12 @@ export const TenantPage = () => {
             boxShadow: 'none',
           }}
         >
-          <Box display='flex' justifyContent='center' alignItems='center' height={200}>
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            height={200}
+          >
             <CircularProgress />
           </Box>
         </Paper>

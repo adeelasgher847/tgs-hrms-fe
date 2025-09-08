@@ -14,7 +14,6 @@ export interface AttendanceEvent {
   };
 }
 
-
 export interface AttendanceRecord {
   date: string;
   checkIn: string | null;
@@ -36,16 +35,13 @@ class AttendanceApiService {
   // Get all attendance records (Admin only)
   async getAllAttendance(page: number = 1): Promise<AttendanceResponse> {
     try {
-      console.log('🔄 AttendanceApiService - getAllAttendance called with page:', page);
-      
-      const response = await axiosInstance.get(`${this.baseUrl}/all?page=${page}`);
-      console.log('✅ AttendanceApiService - Raw response:', response.data);
-      
+      const response = await axiosInstance.get(
+        `${this.baseUrl}/all?page=${page}`
+      );
+
       if (response.data && response.data.items) {
-        console.log('✅ AttendanceApiService - Paginated response detected');
         return response.data;
       } else if (Array.isArray(response.data)) {
-        console.log('✅ AttendanceApiService - Array response detected, converting to paginated format');
         return {
           items: response.data,
           total: response.data.length,
@@ -54,7 +50,6 @@ class AttendanceApiService {
           totalPages: 1,
         };
       } else {
-        console.log('⚠️ AttendanceApiService - Unknown response format, returning empty');
         return {
           items: [],
           total: 0,
@@ -63,8 +58,7 @@ class AttendanceApiService {
           totalPages: 1,
         };
       }
-    } catch (error) {
-      console.error('❌ AttendanceApiService - Error fetching all attendance:', error);
+    } catch (_error) {
       return {
         items: [],
         total: 0,
@@ -76,10 +70,11 @@ class AttendanceApiService {
   }
 
   // Get attendance events for a user
-  async getAttendanceEvents(userId?: string, page: number = 1): Promise<AttendanceResponse> {
+  async getAttendanceEvents(
+    userId?: string,
+    page: number = 1
+  ): Promise<AttendanceResponse> {
     try {
-      console.log('🔄 AttendanceApiService - getAttendanceEvents called with:', { userId, page });
-      
       const params = new URLSearchParams();
       params.append('page', page.toString());
       if (userId) {
@@ -87,16 +82,12 @@ class AttendanceApiService {
       }
 
       const url = `${this.baseUrl}/events?${params.toString()}`;
-      console.log('🌐 AttendanceApiService - Making request to:', url);
 
       const response = await axiosInstance.get(url);
-      console.log('✅ AttendanceApiService - Raw response:', response.data);
-      
+
       if (response.data && response.data.items) {
-        console.log('✅ AttendanceApiService - Paginated response detected');
         return response.data;
       } else if (Array.isArray(response.data)) {
-        console.log('✅ AttendanceApiService - Array response detected, converting to paginated format');
         return {
           items: response.data,
           total: response.data.length,
@@ -105,7 +96,6 @@ class AttendanceApiService {
           totalPages: 1,
         };
       } else {
-        console.log('⚠️ AttendanceApiService - Unknown response format, returning empty');
         return {
           items: [],
           total: 0,
@@ -114,8 +104,7 @@ class AttendanceApiService {
           totalPages: 1,
         };
       }
-    } catch (error) {
-      console.error('❌ AttendanceApiService - Error fetching attendance events:', error);
+    } catch (_error) {
       return {
         items: [],
         total: 0,
@@ -127,10 +116,11 @@ class AttendanceApiService {
   }
 
   // Get daily summaries for a user
-  async getDailySummaries(userId?: string, page: number = 1): Promise<AttendanceResponse> {
+  async getDailySummaries(
+    userId?: string,
+    page: number = 1
+  ): Promise<AttendanceResponse> {
     try {
-      console.log('🔄 AttendanceApiService - getDailySummaries called with:', { userId, page });
-      
       const params = new URLSearchParams();
       params.append('page', page.toString());
       if (userId) {
@@ -138,16 +128,12 @@ class AttendanceApiService {
       }
 
       const url = `${this.baseUrl}?${params.toString()}`;
-      console.log('🌐 AttendanceApiService - Making request to:', url);
 
       const response = await axiosInstance.get(url);
-      console.log('✅ AttendanceApiService - Raw response:', response.data);
-      
+
       if (response.data && response.data.items) {
-        console.log('✅ AttendanceApiService - Paginated response detected');
         return response.data;
       } else if (Array.isArray(response.data)) {
-        console.log('✅ AttendanceApiService - Array response detected, converting to paginated format');
         return {
           items: response.data,
           total: response.data.length,
@@ -156,7 +142,6 @@ class AttendanceApiService {
           totalPages: 1,
         };
       } else {
-        console.log('⚠️ AttendanceApiService - Unknown response format, returning empty');
         return {
           items: [],
           total: 0,
@@ -165,8 +150,7 @@ class AttendanceApiService {
           totalPages: 1,
         };
       }
-    } catch (error) {
-      console.error('❌ AttendanceApiService - Error fetching daily summaries:', error);
+    } catch (_error) {
       return {
         items: [],
         total: 0,
@@ -178,24 +162,21 @@ class AttendanceApiService {
   }
 
   // Get today's summary
-  async getTodaySummary(userId?: string): Promise<{ checkIn: string | null; checkOut: string | null }> {
+  async getTodaySummary(
+    userId?: string
+  ): Promise<{ checkIn: string | null; checkOut: string | null }> {
     try {
-      console.log('🔄 AttendanceApiService - getTodaySummary called with userId:', userId);
-      
       const params = new URLSearchParams();
       if (userId) {
         params.append('userId', userId);
       }
 
       const url = `${this.baseUrl}/today?${params.toString()}`;
-      console.log('🌐 AttendanceApiService - Making request to:', url);
 
       const response = await axiosInstance.get(url);
-      console.log('✅ AttendanceApiService - Today summary response:', response.data);
-      
+
       return response.data;
-    } catch (error) {
-      console.error('❌ AttendanceApiService - Error fetching today summary:', error);
+    } catch (_error) {
       return {
         checkIn: null,
         checkOut: null,
@@ -204,27 +185,26 @@ class AttendanceApiService {
   }
 
   // Create attendance record
-  async createAttendance(type: 'check-in' | 'check-out'): Promise<AttendanceEvent> {
+  async createAttendance(
+    type: 'check-in' | 'check-out'
+  ): Promise<AttendanceEvent> {
     try {
-      console.log('🔄 AttendanceApiService - createAttendance called with type:', type);
-      
       const response = await axiosInstance.post(this.baseUrl, { type });
-      console.log('✅ AttendanceApiService - Create response:', response.data);
-      
+
       return response.data;
-    } catch (error) {
-      console.error('❌ AttendanceApiService - Error creating attendance:', error);
-      throw error;
+    } catch (_error) {
+      throw _error;
     }
   }
 
   // Get team attendance for manager
   async getTeamAttendance(page: number = 1): Promise<any> {
     try {
-      const response = await axiosInstance.get(`${this.baseUrl}/team?page=${page}`);
+      const response = await axiosInstance.get(
+        `${this.baseUrl}/team?page=${page}`
+      );
       return response.data;
-    } catch (error) {
-      console.error('❌ AttendanceApiService - Error fetching team attendance:', error);
+    } catch (_error) {
       return {
         items: [],
         total: 0,

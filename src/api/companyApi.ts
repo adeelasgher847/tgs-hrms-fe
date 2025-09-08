@@ -12,7 +12,7 @@ export interface CompanyDto {
   name: string;
 }
 
-// Backend response envelope
+// Backend envelope
 type Envelope<T> = {
   statusCode: number;
   message?: string;
@@ -26,7 +26,7 @@ type DeleteEnvelope = {
   id: string;
 };
 
-function normalizeTenant(raw: any): BackendCompany {
+function normalizeTenant(raw: unknown): BackendCompany {
   return {
     id: raw?.id,
     name: raw?.name,
@@ -44,9 +44,8 @@ class CompanyApiService {
         ? response.data.data
         : [];
       return items.map(normalizeTenant);
-    } catch (error) {
-      console.error('Error fetching companies:', error);
-      throw error;
+    } catch (_error) {
+      throw _error;
     }
   }
 
@@ -57,9 +56,8 @@ class CompanyApiService {
         `${this.baseUrl}/${id}`
       );
       return normalizeTenant(response.data.data);
-    } catch (error) {
-      console.error('Error fetching company:', error);
-      throw error;
+    } catch (_error) {
+      throw _error;
     }
   }
 
@@ -71,9 +69,8 @@ class CompanyApiService {
         companyData
       );
       return normalizeTenant(response.data.data);
-    } catch (error) {
-      console.error('Error creating company:', error);
-      throw error;
+    } catch (_error) {
+      throw _error;
     }
   }
 
@@ -88,9 +85,8 @@ class CompanyApiService {
         companyData
       );
       return normalizeTenant(response.data.data);
-    } catch (error) {
-      console.error('Error updating company:', error);
-      throw error;
+    } catch (_error) {
+      throw _error;
     }
   }
 
@@ -101,9 +97,8 @@ class CompanyApiService {
         `${this.baseUrl}/${id}`
       );
       return { id: response.data.id, message: response.data.message };
-    } catch (error) {
-      console.error('Error deleting company:', error);
-      throw error;
+    } catch (_error) {
+      throw _error;
     }
   }
 }

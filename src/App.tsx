@@ -25,7 +25,6 @@ import PolicyList from './components/HRPoliciesModule/PolicyList';
 import HolidayList from './components/HolidayCalendar/HolidayList';
 import TimesheetLayout from './components/TimerTracker/TimesheetLayout';
 import TeamManager from './components/Teams/TeamManager';
-import ProfilePictureDemo from './components/ProfilePictureDemo';
 import ConfirmPassword from './components/ConfirmPassword';
 function App() {
   return (
@@ -71,7 +70,6 @@ function App() {
                 element={<TimesheetLayout />}
               />
               <Route path='teams' element={<TeamManager />} />
-              <Route path='profile-demo' element={<ProfilePictureDemo />} />
             </Route>
             <Route path='*' element={<Error404 />} />
           </Routes>

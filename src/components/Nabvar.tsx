@@ -24,7 +24,6 @@ import UserAvatar from './common/UserAvatar';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
@@ -119,10 +118,18 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const handleLogout = () => {
+    // Clear all authentication data first
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('permissions');
+    localStorage.removeItem('rememberedLogin');
+
+    // Clear user context
     clearUser();
-    navigate('/');
+
+    // Navigate to login page with replace to prevent back navigation
+    navigate('/', { replace: true });
   };
 
   const handleOpenTeamMembersModal = () => {
@@ -134,7 +141,7 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const textColor = darkMode ? '#8f8f8f' : '#000';
-  const { setLanguage } = useLanguage();
+  const { setLanguage: _setLanguage } = useLanguage();
 
   return (
     <Box sx={{ flexGrow: 1 }}>

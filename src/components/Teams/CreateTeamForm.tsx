@@ -83,12 +83,11 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
       if (open) {
         try {
           setLoadingManagers(true);
-          console.log('🔍 Loading managers from API...');
+
           const managersData = await teamApiService.getAvailableManagers();
-          console.log('✅ Managers loaded:', managersData);
+
           setManagers(managersData);
-        } catch (error) {
-          console.error('Error loading managers:', error);
+        } catch (_error) {
           setManagers([]);
         } finally {
           setLoadingManagers(false);
@@ -132,8 +131,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
       setError(null);
       await onSubmit(formData);
       handleClose();
-    } catch (err) {
-      console.error('Error creating team:', err);
+    } catch (_err) {
       setError(lang.error);
     } finally {
       setLoading(false);

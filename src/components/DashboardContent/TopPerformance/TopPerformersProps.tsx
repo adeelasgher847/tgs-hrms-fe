@@ -38,12 +38,12 @@ const TopPerformersProps = () => {
   };
 
   // Add icons to performers
-  const performerData = labels[language].performers.map((person, index) => {
+  const performerData = labels[language].performers.map((person, _index) => {
     let icon;
-    if (index === 0) icon = <Person />;
-    else if (index === 1) icon = <Email />;
-    else if (index === 2) icon = <Code />;
-    else if (index === 5) {
+    if (_index === 0) icon = <Person />;
+    else if (_index === 1) icon = <Email />;
+    else if (_index === 2) icon = <Code />;
+    else if (_index === 5) {
       icon = <Avatar alt={person.name} src='/static/images/avatar/2.jpg' />;
     } else {
       icon = <Code />;

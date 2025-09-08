@@ -5,12 +5,12 @@ import {
   Button,
   Fab,
   useMediaQuery,
-  useTheme,
   Paper,
   Divider,
   Snackbar,
   Alert,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
 import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
@@ -82,7 +82,6 @@ export const DepartmentList: React.FC = () => {
       );
       setDepartments(frontendDepartments);
     } catch (error: unknown) {
-      console.error('Error fetching departments:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to fetch departments';
       setSnackbar({
@@ -130,7 +129,6 @@ export const DepartmentList: React.FC = () => {
         severity: 'success',
       });
     } catch (error: unknown) {
-      console.error('Error creating department:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to create department';
       setSnackbar({
@@ -175,11 +173,10 @@ export const DepartmentList: React.FC = () => {
       setIsFormModalOpen(false);
       setSnackbar({
         open: true,
-        message: 'Department updated successfully',
+        message: 'Department successfully',
         severity: 'success',
       });
     } catch (error: unknown) {
-      console.error('Error updating department:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to update department';
       setSnackbar({
@@ -204,7 +201,6 @@ export const DepartmentList: React.FC = () => {
         severity: 'success',
       });
     } catch (error: unknown) {
-      console.error('Error deleting department:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to delete department';
       setSnackbar({
@@ -288,7 +284,12 @@ export const DepartmentList: React.FC = () => {
             boxShadow: 'none',
           }}
         >
-          <Box display='flex' justifyContent='center' alignItems='center' height={200}>
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            height={200}
+          >
             <CircularProgress />
           </Box>
         </Paper>
@@ -316,7 +317,11 @@ export const DepartmentList: React.FC = () => {
               setSelectedDepartment(null);
               setIsFormModalOpen(true);
             }}
-            sx={{backgroundColor:"#464b8a", boxShadow: 'none', '&:hover': { boxShadow: 'none' } }}
+            sx={{
+              backgroundColor: '#464b8a',
+              boxShadow: 'none',
+              '&:hover': { boxShadow: 'none' },
+            }}
           >
             {lang.createFirst}
           </Button>

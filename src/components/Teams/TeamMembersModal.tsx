@@ -70,8 +70,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
         setError(null);
         const response = await teamApiService.getMyTeamMembers(1);
         setTeamMembers(response.items || []);
-      } catch (err) {
-        console.error('Error loading team members:', err);
+      } catch (_err) {
         setError(lang.error);
         setTeamMembers([]);
       } finally {
@@ -169,7 +168,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
                 .filter(
                   member => member?.user?.first_name && member?.user?.last_name
                 )
-                .map((member, index) => (
+                .map((member, _index) => (
                   <React.Fragment key={member.id}>
                     <ListItem
                       sx={{

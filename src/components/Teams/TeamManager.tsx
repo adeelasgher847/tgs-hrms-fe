@@ -58,7 +58,9 @@ interface OutletContext {
   darkMode: boolean;
 }
 
-const TeamManager: React.FC<TeamManagerProps> = ({ darkMode: darkModeProp = false }) => {
+const TeamManager: React.FC<TeamManagerProps> = ({
+  darkMode: darkModeProp = false,
+}) => {
   const { darkMode: outletDarkMode } = useOutletContext<OutletContext>();
   const darkMode = outletDarkMode ?? darkModeProp;
 
@@ -117,8 +119,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode: darkModeProp = fals
           const teamsData = await teamApiService.getAllTeams(1);
           setTeams(teamsData.items || []);
         }
-      } catch (err) {
-        console.error('Error loading team data:', err);
+      } catch (_err) {
         setError('Failed to load team data');
       } finally {
         setLoading(false);
@@ -131,7 +132,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode: darkModeProp = fals
   // Listen for team updates to refresh data
   useEffect(() => {
     const handleTeamUpdate = () => {
-      console.log('🔄 Team updated, refreshing TeamManager data...');
       const loadData = async () => {
         try {
           setLoading(true);
@@ -150,8 +150,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode: darkModeProp = fals
             const teamsData = await teamApiService.getAllTeams(1);
             setTeams(teamsData.items || []);
           }
-        } catch (err) {
-          console.error('Error refreshing team data:', err);
+        } catch (_err) {
           setError('Failed to refresh team data');
         } finally {
           setLoading(false);
@@ -181,16 +180,12 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode: darkModeProp = fals
 
       // Trigger refresh for other components
       window.dispatchEvent(new CustomEvent('teamUpdated'));
-    } catch (error) {
-      console.error('Error creating team:', error);
+    } catch (_error) {
       throw error;
     }
   };
 
-  const handleTeamUpdated = () => {
-    console.log('🔄 TeamManager: handleTeamUpdated called, refreshing data...');
-
-    // Reload data when team is updated
+  useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
@@ -204,18 +199,12 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode: darkModeProp = fals
           ]);
           setTeams(teamsData);
           setTeamMembers(membersData.items || []);
-          console.log('✅ TeamManager: Manager teams refreshed:', teamsData);
         } else if (isAdmin()) {
           // Load all teams for admin with members included
           const teamsData = await teamApiService.getAllTeams(1);
           setTeams(teamsData.items || []);
-          console.log(
-            '✅ TeamManager: Admin teams refreshed:',
-            teamsData.items
-          );
         }
-      } catch (err) {
-        console.error('❌ TeamManager: Error refreshing team data:', err);
+      } catch (_err) {
         setError('Failed to refresh team data');
       } finally {
         setLoading(false);
@@ -223,6 +212,11 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode: darkModeProp = fals
     };
 
     loadData();
+  }, []);
+
+  const handleTeamUpdated = () => {
+    // Reload data when team is updated
+    window.location.reload();
   };
 
   const handleRefresh = () => {
@@ -247,8 +241,8 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode: darkModeProp = fals
             gap: 3,
           }}
         >
-          {[...Array(6)].map((_, index) => (
-            <Card key={index}>
+          {[...Array(6)].map((_, _index) => (
+            <Card key={_index}>
               <CardContent>
                 <Skeleton variant='text' width='60%' height={32} />
                 <Skeleton variant='text' width='40%' />
@@ -301,7 +295,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({ darkMode: darkModeProp = fals
             variant='contained'
             startIcon={<AddIcon />}
             onClick={() => setShowCreateForm(true)}
-
             sx={{
               backgroundColor: '#484c7f',
               minWidth: { xs: '100%', sm: 'auto' },

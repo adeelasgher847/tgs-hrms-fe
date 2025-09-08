@@ -67,7 +67,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
 
   const lang = labels[language];
 
-  // Generate initials from name
+  // Generate from name
   const generateInitials = (firstName: string, lastName: string): string => {
     const first = firstName?.charAt(0)?.toUpperCase() || '';
     const last = lastName?.charAt(0)?.toUpperCase() || '';
@@ -109,20 +109,12 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       try {
         setLoading(true);
         const response = await teamApiService.getMyTeamMembers(1);
-        console.log('🔍 TeamMembersAvatar - API Response:', response);
-        console.log('📋 TeamMembersAvatar - Members data:', response.items);
 
         if (response.items && response.items.length > 0) {
-          console.log('👤 First member sample:', response.items[0]);
-          console.log(
-            '🖼️ First member profile_pic:',
-            response.items[0].user?.profile_pic
-          );
         }
 
         setTeamMembers(response.items || []);
-      } catch (err) {
-        console.error('Error loading team members:', err);
+      } catch (_err) {
         setTeamMembers([]);
       } finally {
         setLoading(false);
@@ -139,12 +131,6 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       if (!member?.user || !member.user.first_name || !member.user.last_name) {
         return null;
       }
-
-      console.log('🎨 Rendering avatar for member:', {
-        id: member.user.id,
-        name: `${member.user.first_name} ${member.user.last_name}`,
-        profile_pic: member.user.profile_pic,
-      });
 
       const initials = generateInitials(
         member.user.first_name,
@@ -246,7 +232,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           />
         </Tooltip>
       );
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   };
@@ -255,9 +241,9 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
   if (loading) {
     return (
       <Stack direction='row' spacing={-1}>
-        {[...Array(3)].map((_, index) => (
+        {[...Array(3)].map((_, _index) => (
           <Skeleton
-            key={index}
+            key={_index}
             variant='circular'
             width={38}
             height={38}
@@ -351,7 +337,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                   >
                     {remainingCount} more team members:
                   </Typography>
-                  {validMembers.slice(maxAvatars).map((member, index) => (
+                  {validMembers.slice(maxAvatars).map((member, _index) => (
                     <Typography
                       key={member.id}
                       variant='body2'
@@ -459,7 +445,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                     member =>
                       member?.user?.first_name && member?.user?.last_name
                   )
-                  .map((member, index) => (
+                  .map((member, _index) => (
                     <ListItem
                       key={member.id}
                       sx={{

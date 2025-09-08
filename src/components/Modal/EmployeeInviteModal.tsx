@@ -101,7 +101,6 @@ const EmployeeInviteModal: React.FC<EmployeeInviteModalProps> = ({
 
   const handleSend = () => {
     if (email.trim()) {
-      console.log('Send invite to:', email);
       setEmail('');
     }
   };

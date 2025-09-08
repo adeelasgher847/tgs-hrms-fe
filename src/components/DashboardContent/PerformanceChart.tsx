@@ -76,7 +76,9 @@ const PerformanceChart: React.FC = () => {
   ];
 
   const translatedSeries = rawSeries.map(item => ({
-    name: seriesLabels[item.name][language],
+    name:
+      seriesLabels[item.name as keyof typeof seriesLabels]?.[language] ||
+      item.name,
     data: item.data,
   }));
 

@@ -70,21 +70,31 @@ const Login: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      // Determine default route based on existing user in localStorage
-      try {
-        const userStr = localStorage.getItem('user');
-        const parsed = userStr ? JSON.parse(userStr) : null;
-        const role = typeof parsed?.role === 'string' ? parsed?.role : parsed?.role?.name;
-        const target = getDefaultDashboardRoute(role);
-        navigate(target, { replace: true });
-      } catch {
-        navigate('/dashboard', { replace: true });
+    // Add a small delay to prevent race conditions during logout
+    const checkAuth = () => {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        // Determine default route based on existing user in localStorage
+        try {
+          const userStr = localStorage.getItem('user');
+          const parsed = userStr ? JSON.parse(userStr) : null;
+          const role =
+            typeof parsed?.role === 'string'
+              ? parsed?.role
+              : parsed?.role?.name;
+          const target = getDefaultDashboardRoute(role);
+          navigate(target, { replace: true });
+        } catch {
+          navigate('/dashboard', { replace: true });
+        }
+      } else {
+        setCheckingAuth(false);
       }
-    } else {
-      setCheckingAuth(false);
-    }
+    };
+
+    // Small delay to ensure logout cleanup is complete
+    const timeoutId = setTimeout(checkAuth, 100);
+    return () => clearTimeout(timeoutId);
   }, [navigate]);
 
   if (checkingAuth) {
@@ -155,8 +165,8 @@ const Login: React.FC = () => {
       // Update user context without causing re-render
       try {
         updateUser(res.data.user);
-      } catch (error) {
-        console.warn('Failed to update user context:', error);
+      } catch (_error) {
+        /* Error handled silently */
       }
 
       if (rememberMe) {
@@ -174,12 +184,15 @@ const Login: React.FC = () => {
       });
 
       // Navigate immediately to role-specific default route
-      const role = typeof res.data.user?.role === 'string' ? res.data.user?.role : res.data.user?.role?.name;
+      const role =
+        typeof res.data.user?.role === 'string'
+          ? res.data.user?.role
+          : res.data.user?.role?.name;
       const target = getDefaultDashboardRoute(role);
       navigate(target, { replace: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Backend may send { field: 'email' | 'password', message: string }
-      const data = err.response?.data;
+      const data = (err as any)?.response?.data;
       if (data?.field === 'email') {
         setEmailError(data.message);
         setPasswordError('');
@@ -424,15 +437,17 @@ const Login: React.FC = () => {
                         boxShadow: 'none',
                       },
                     // Autofill overrides (Chrome, Edge, Safari)
-                    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus': {
-                      WebkitTextFillColor: 'unset !important',
-                      WebkitBoxShadow: 'unset !important',
-                      caretColor: 'black',
-                      transition: 'background-color 9999s ease-in-out 0s',
-                    },
-                    '& .MuiOutlinedInput-root.Mui-focused input:-webkit-autofill': {
-                      WebkitBoxShadow: 'unset !important',
-                    },
+                    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus':
+                      {
+                        WebkitTextFillColor: 'unset !important',
+                        WebkitBoxShadow: 'unset !important',
+                        caretColor: 'black',
+                        transition: 'background-color 9999s ease-in-out 0s',
+                      },
+                    '& .MuiOutlinedInput-root.Mui-focused input:-webkit-autofill':
+                      {
+                        WebkitBoxShadow: 'unset !important',
+                      },
                     // Fallback for some browsers exposing internal autofill selector
                     '& input:-internal-autofill-selected': {
                       backgroundColor: 'unset !important',

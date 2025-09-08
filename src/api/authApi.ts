@@ -22,15 +22,17 @@ export const authApi = {
   /**
    * Send password reset link to user's email
    * @param data - Email address for password reset
-   * @returns Promise with response message
+   * @returns Promise with message
    */
-  forgotPassword: async (data: ForgotPasswordRequest): Promise<AuthResponse> => {
+  forgotPassword: async (
+    data: ForgotPasswordRequest
+  ): Promise<AuthResponse> => {
     try {
       const response = await axiosInstance.post('/auth/forgot-password', data);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
-        return error.response.data;
+    } catch (error: unknown) {
+      if ((error as any)?.response?.data) {
+        return (error as any).response.data;
       }
       throw new Error('Failed to send password reset link');
     }
@@ -39,19 +41,19 @@ export const authApi = {
   /**
    * Reset user password using reset token
    * @param data - Reset token, new password, and confirmation
-   * @returns Promise with response message
+   * @returns Promise with message
    */
   resetPassword: async (data: ResetPasswordRequest): Promise<AuthResponse> => {
     try {
       const response = await axiosInstance.post('/auth/reset-password', data);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.data) {
-        return error.response.data;
+    } catch (error: unknown) {
+      if ((error as any)?.response?.data) {
+        return (error as any).response.data;
       }
       throw new Error('Failed to reset password');
     }
   },
 };
 
-export default authApi; 
+export default authApi;

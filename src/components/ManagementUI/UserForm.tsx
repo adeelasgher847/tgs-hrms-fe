@@ -212,10 +212,7 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
           </Box>
         </Box>
         <DialogActions sx={{ justifyContent: 'flex-start', px: 0, pb: 2 }}>
-          <Button
-            variant='contained'
-            onClick={handleSubmit}
-          >
+          <Button variant='contained' onClick={handleSubmit}>
             {userData ? 'Update' : 'Create'}
           </Button>
         </DialogActions>

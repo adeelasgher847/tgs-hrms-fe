@@ -48,13 +48,15 @@ export const leaveApi = {
       type: data.type,
     };
 
-    console.log('Sending leave request:', apiData);
     const response = await axiosInstance.post('/leaves', apiData);
     return response.data;
   },
 
   // Get Leaves for User with pagination
-  getUserLeaves: async (userId?: string, page: number = 1): Promise<{
+  getUserLeaves: async (
+    userId?: string,
+    page: number = 1
+  ): Promise<{
     items: LeaveResponse[];
     total: number;
     page: number;
@@ -63,7 +65,7 @@ export const leaveApi = {
   }> => {
     const params = userId ? { userId, page } : { page };
     const response = await axiosInstance.get('/leaves', { params });
-    
+
     // Handle both paginated and non-paginated responses
     if (response.data && response.data.items) {
       return response.data;
@@ -87,15 +89,19 @@ export const leaveApi = {
   },
 
   // Get All Leaves (Admin Only) with pagination
-  getAllLeaves: async (page: number = 1): Promise<{
+  getAllLeaves: async (
+    page: number = 1
+  ): Promise<{
     items: LeaveWithUser[];
     total: number;
     page: number;
     limit: number;
     totalPages: number;
   }> => {
-    const response = await axiosInstance.get('/leaves/all', { params: { page } });
-    
+    const response = await axiosInstance.get('/leaves/all', {
+      params: { page },
+    });
+
     // Handle both paginated and non-paginated responses
     if (response.data && response.data.items) {
       return response.data;
@@ -134,15 +140,19 @@ export const leaveApi = {
   },
 
   // Get Team Leaves (Manager Only) with pagination
-  getTeamLeaves: async (page: number = 1): Promise<{
+  getTeamLeaves: async (
+    page: number = 1
+  ): Promise<{
     items: LeaveWithUser[];
     total: number;
     page: number;
     limit: number;
     totalPages: number;
   }> => {
-    const response = await axiosInstance.get('/leaves/team', { params: { page } });
-    
+    const response = await axiosInstance.get('/leaves/team', {
+      params: { page },
+    });
+
     // Handle both paginated and non-paginated responses
     if (response.data && response.data.items) {
       return response.data;

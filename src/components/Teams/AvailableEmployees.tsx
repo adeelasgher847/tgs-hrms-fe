@@ -103,8 +103,8 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
           page + 1,
           searchTerm
         );
-        setEmployees(response.items || []);
-        setTotal(response.total || 0);
+        setEmployees(.items || []);
+        setTotal(.total || 0);
       } catch {
         setError(lang.error);
         setEmployees([]);
@@ -139,9 +139,8 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
     const loadTeams = async () => {
       try {
         const response = await teamApiService.getAllTeams(1);
-        setTeams(response.items || []);
-      } catch (error) {
-        console.error('Error loading teams:', error);
+        setTeams(.items || []);
+      } catch (_error) {
         setTeams([]);
       }
     };
@@ -198,8 +197,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
 
       // Trigger auto-render for other components
       window.dispatchEvent(new CustomEvent('teamUpdated'));
-    } catch (error) {
-      console.error('Error adding employee to team:', error);
+    } catch (_error) {
       snackbar.error('Failed to add employee to team. Please try again.');
     }
   };

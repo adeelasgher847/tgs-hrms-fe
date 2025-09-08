@@ -30,7 +30,10 @@ const typeColor: Record<
 
 const statusConfig: Record<
   string,
-  { color: 'success' | 'error' | 'warning' | 'default'; icon: React.ReactElement }
+  {
+    color: 'success' | 'error' | 'warning' | 'default';
+    icon: React.ReactElement;
+  }
 > = {
   pending: {
     color: 'warning',
@@ -55,7 +58,7 @@ const LeaveHistory = ({
   isAdmin,
   onAction,
   onWithdraw,
-  title = "My Leaves",
+  title = 'My Leaves',
   showNames = false,
 }: {
   leaves: Leave[];
@@ -66,12 +69,9 @@ const LeaveHistory = ({
   showNames?: boolean;
 }) => {
   // Debug logging
-  console.log('LeaveHistory props:', { leaves, isAdmin });
-  console.log('Leaves data:', leaves);
 
   // Check if leaves array is valid
   if (!Array.isArray(leaves)) {
-    console.error('❌ Leaves is not an array:', leaves);
     return (
       <Box>
         <Typography>Error: Invalid leaves data</Typography>
@@ -90,21 +90,20 @@ const LeaveHistory = ({
 
       {leaves.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography variant="h6" color="textSecondary" gutterBottom>
+          <Typography variant='h6' color='textSecondary' gutterBottom>
             No Leave History Found
           </Typography>
-          <Typography variant="body2" color="textSecondary">
-            {title === "My Leaves" ? 
-              "You haven't applied for any leaves yet." : 
-              "No leave requests found."
-            }
+          <Typography variant='body2' color='textSecondary'>
+            {title === 'My Leaves'
+              ? "You haven't applied for any leaves yet."
+              : 'No leave requests found.'}
           </Typography>
         </Box>
       ) : (
         <TableContainer
           component={Paper}
           elevation={0}
-          sx={{ borderRadius: 0, }}
+          sx={{ borderRadius: 0 }}
         >
           <Table>
             <TableHead>
@@ -121,18 +120,16 @@ const LeaveHistory = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {leaves.map((leave, index) => {
+              {leaves.map((leave, _index) => {
                 // Debug each leave item
-                console.log(`Rendering leave ${index}:`, leave);
 
                 // Validate leave data
                 if (!leave || typeof leave !== 'object') {
-                  console.error(`❌ Invalid leave at index ${index}:`, leave);
                   return null;
                 }
 
                 return (
-                  <TableRow key={leave.id || index}>
+                  <TableRow key={leave.id || _index}>
                     {(isAdmin || showNames) && (
                       <TableCell>
                         {typeof leave.name === 'string'
@@ -146,7 +143,13 @@ const LeaveHistory = ({
                       <Chip
                         label={leave.type || 'Unknown'}
                         color={typeColor[leave.type] || 'default'}
-                        sx={{ fontWeight: 600, fontSize: 16, px: 2, py: 1 , width:'100%'}}
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: 16,
+                          px: 2,
+                          py: 1,
+                          width: '100%',
+                        }}
                       />
                     </TableCell>
                     <TableCell>{leave.fromDate || 'N/A'}</TableCell>
@@ -157,7 +160,13 @@ const LeaveHistory = ({
                         icon={statusConfig[leave.status]?.icon}
                         label={leave.status || 'Unknown'}
                         color={statusConfig[leave.status]?.color}
-                        sx={{ fontWeight: 600, fontSize: 16, px: 2, py: 1,width:'100%' }}
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: 16,
+                          px: 2,
+                          py: 1,
+                          width: '100%',
+                        }}
                       />
                     </TableCell>
                     <TableCell>
@@ -180,14 +189,14 @@ const LeaveHistory = ({
                             color='success'
                             clickable
                             onClick={() => onAction(leave.id, 'approved')}
-                            sx={{ width:'100%' }}
+                            sx={{ width: '100%' }}
                           />
                           <Chip
                             label='Reject'
                             color='error'
                             clickable
                             onClick={() => onAction(leave.id, 'rejected')}
-                            sx={{ width:'100%' }}
+                            sx={{ width: '100%' }}
                           />
                         </Box>
                       </TableCell>
@@ -201,7 +210,7 @@ const LeaveHistory = ({
                             color='warning'
                             clickable
                             onClick={() => onWithdraw(leave.id)}
-                            sx={{ width:'100%' }}
+                            sx={{ width: '100%' }}
                           />
                         )}
                       </TableCell>

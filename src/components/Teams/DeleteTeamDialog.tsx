@@ -69,9 +69,7 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
     try {
       await onConfirm();
       onClose();
-    } catch (error) {
-      console.error('Error deleting team:', error);
-    }
+    } catch (_error) { /* Error handled silently */ }
   };
 
   if (!team) return null;

@@ -155,8 +155,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
 
           setMembers(membersWithDepartment);
           setTotal(response.total || 0);
-        } catch (err) {
-          console.error('Error refreshing team members:', err);
+        } catch (_err) {
         } finally {
           setLoading(false);
         }
@@ -198,8 +197,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
 
       // Trigger auto-render for other components
       window.dispatchEvent(new CustomEvent('teamUpdated'));
-    } catch (error) {
-      console.error('Error removing member:', error);
+    } catch (_error) {
       snackbar.error(lang.error);
     } finally {
       setShowDeleteConfirmDialog(false);

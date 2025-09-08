@@ -70,7 +70,6 @@ export default function GenderPercentageChart() {
   const [error, setError] = useState<string | null>(null);
 
   // Debug: Log initial state
-  console.log('GenderPercentageChart - Initial genderData state:', genderData);
 
   const bgColor = darkMode ? '#111' : '#fff';
   const borderColor = darkMode ? '#252525' : '#f0f0f0';
@@ -82,10 +81,6 @@ export default function GenderPercentageChart() {
         setLoading(true);
         setError(null);
         const data: GenderPercentage = await employeeApi.getGenderPercentage();
-        console.log('GenderPercentageChart - API Response:', data);
-        console.log('GenderPercentageChart - Male count:', data.male);
-        console.log('GenderPercentageChart - Female count:', data.female);
-        console.log('GenderPercentageChart - Total count:', data.total);
 
         const transformedData: GenderDataItem[] = [
           {
@@ -102,14 +97,8 @@ export default function GenderPercentageChart() {
           },
         ];
 
-        console.log(
-          'GenderPercentageChart - Transformed Data:',
-          transformedData
-        );
-        console.log('GenderPercentageChart - Setting gender data...');
         setGenderData(transformedData);
-      } catch (err) {
-        console.error('Error fetching gender percentage:', err);
+      } catch (_err) {
         setError('Failed to load gender distribution data');
         // Don't set any fallback data - let the error state handle it
         setGenderData([]);
@@ -158,7 +147,12 @@ export default function GenderPercentageChart() {
         <Typography fontWeight='bold' fontSize={16} mb={0.5} color={textColor}>
           {labels.genderDistribution[language]}
         </Typography>
-        <Box display='flex' justifyContent='center' alignItems='center' height={100}>
+        <Box
+          display='flex'
+          justifyContent='center'
+          alignItems='center'
+          height={100}
+        >
           <Typography variant='body2' color='error' textAlign='center'>
             {labels.error[language]}
           </Typography>
@@ -170,11 +164,6 @@ export default function GenderPercentageChart() {
   const totalEmployees = genderData.reduce((sum, item) => sum + item.value, 0);
 
   // Debug: Log the current state being rendered
-  console.log('GenderPercentageChart - Current genderData state:', genderData);
-  console.log(
-    'GenderPercentageChart - Calculated totalEmployees:',
-    totalEmployees
-  );
 
   return (
     <Box
@@ -214,8 +203,8 @@ export default function GenderPercentageChart() {
               paddingAngle={4}
               dataKey='value'
             >
-              {genderData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
+              {genderData.map((entry, _index) => (
+                <Cell key={`cell-${_index}`} fill={entry.color} />
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip language={language} />} />

@@ -85,9 +85,8 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
       if (open) {
         try {
           setLoadingManagers(true);
-          console.log('🔍 Loading managers from API...');
+
           const managersData = await teamApiService.getAvailableManagers();
-          console.log('✅ Managers loaded:', managersData);
 
           // If we have a team, add the current manager to the list if not already present
           if (team && team.manager) {
@@ -107,8 +106,7 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
           }
 
           setManagers(managersData);
-        } catch (error) {
-          console.error('Error loading managers:', error);
+        } catch (_error) {
           setManagers([]);
         } finally {
           setLoadingManagers(false);
@@ -165,8 +163,7 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
       setError(null);
       await onSubmit(team.id, formData);
       handleClose();
-    } catch (err) {
-      console.error('Error updating team:', err);
+    } catch (_err) {
       setError(lang.error);
     } finally {
       setLoading(false);

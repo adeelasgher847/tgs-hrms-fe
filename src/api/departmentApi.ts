@@ -43,9 +43,8 @@ class DepartmentApiService {
         this.baseUrl
       );
       return response.data;
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-      throw error;
+    } catch (_error) {
+      throw _error;
     }
   }
 
@@ -56,9 +55,8 @@ class DepartmentApiService {
         `${this.baseUrl}/${id}`
       );
       return response.data;
-    } catch (error) {
-      console.error('Error fetching department:', error);
-      throw error;
+    } catch (_error) {
+      throw _error;
     }
   }
 
@@ -72,9 +70,8 @@ class DepartmentApiService {
         departmentData
       );
       return response.data;
-    } catch (error) {
-      console.error('Error creating department:', error);
-      throw error;
+    } catch (_error) {
+      throw _error;
     }
   }
 
@@ -89,9 +86,8 @@ class DepartmentApiService {
         departmentData
       );
       return response.data;
-    } catch (error) {
-      console.error('Error updating department:', error);
-      throw error;
+    } catch (_error) {
+      throw _error;
     }
   }
 
@@ -103,9 +99,8 @@ class DepartmentApiService {
         id: string;
       }>(`${this.baseUrl}/${id}`);
       return response.data;
-    } catch (error) {
-      console.error('Error deleting department:', error);
-      throw error;
+    } catch (_error) {
+      throw _error;
     }
   }
 

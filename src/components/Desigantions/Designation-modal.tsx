@@ -40,8 +40,8 @@ export default function DesignationModal({
 }: DesignationModalProps) {
   const { language } = useLanguage();
   const getText = (en: string, ar: string) => (language === 'ar' ? ar : en);
-
   const theme = useTheme();
+
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [title, setTitle] = useState('');
@@ -105,29 +105,28 @@ export default function DesignationModal({
   };
 
   return (
- <Dialog
-  className="Ramish first"
-  open={open}
-  onClose={handleClose}
-  fullScreen={false}   // ❌ force disable fullscreen
-  PaperProps={{
-    sx: {
-      width: '100%',
-      maxWidth: 600,     // set a max width for mobile
-      borderRadius: 1,
-      m: 2,              // margin around
-    },
-  }}
-  sx={{
-    '& .MuiDialog-paper': {
-      width: '100%',
-      maxWidth: 600,
-      margin: '16px',   // keeps it centered with spacing
-    },
-  }}
-  dir={isRTL ? 'rtl' : 'ltr'}
->
-
+    <Dialog
+      className='Ramish first'
+      open={open}
+      onClose={handleClose}
+      fullScreen={false} // ❌ force disable fullscreen
+      PaperProps={{
+        sx: {
+          width: '100%',
+          maxWidth: 600, // set a max width for mobile
+          borderRadius: 1,
+          m: 2, // margin around
+        },
+      }}
+      sx={{
+        '& .MuiDialog-paper': {
+          width: '100%',
+          maxWidth: 600,
+          margin: '16px', // keeps it centered with spacing
+        },
+      }}
+      dir={isRTL ? 'rtl' : 'ltr'}
+    >
       <DialogTitle>
         <Box
           sx={{

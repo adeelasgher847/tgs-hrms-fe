@@ -140,8 +140,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       setLoadingDepartments(true);
       const data = await departmentApiService.getAllDepartments();
       setDepartments(data);
-    } catch (error) {
-      console.error('Error loading departments:', error);
+    } catch (_error) {
     } finally {
       setLoadingDepartments(false);
     }
@@ -153,8 +152,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       const response =
         await designationApiService.getDesignationsByDepartment(departmentId);
       setDesignations(response.items);
-    } catch (error) {
-      console.error('Error loading designations:', error);
+    } catch (_error) {
       setDesignations([]);
     } finally {
       setLoadingDesignations(false);
@@ -237,7 +235,6 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     if (!validate()) return;
 
     try {
-      console.log('Nabeel Values : ', values);
       const result = await onSubmit?.(values);
       if (result && result.success) {
         // Reset form on successful submission
@@ -246,8 +243,8 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
         // Set backend validation errors
         setErrors(result.errors);
       }
-    } catch (error) {
-      console.error('Form submission error:', error);
+    } catch (_error) {
+      /* Error handled silently */
     }
   };
 

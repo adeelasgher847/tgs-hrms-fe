@@ -38,10 +38,10 @@ async function refreshAccessToken() {
 let isRefreshing = false;
 let failedQueue: {
   resolve: (token: string) => void;
-  reject: (err: any) => void;
+  reject: (err: unknown) => void;
 }[] = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach(prom => {
     if (error) {
       prom.reject(error);
@@ -59,20 +59,9 @@ axiosInstance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
-      console.warn('⚠️ No access token found in localStorage');
     }
 
     // Debug logging
-    console.log('🌐 API Request:', {
-      method: config.method,
-      url: config.url,
-      data: config.data,
-      hasToken: !!token,
-      headers: {
-        ...config.headers,
-        Authorization: token ? 'Bearer [HIDDEN]' : 'None',
-      },
-    });
 
     return config;
   },
@@ -81,10 +70,10 @@ axiosInstance.interceptors.request.use(
 
 // Response interceptor to handle token refresh
 axiosInstance.interceptors.response.use(
-  response => response,
-  async (error: any) => {
+  undefined,
+  async (error: unknown) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if ((error as any)?.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise(function (resolve, reject) {
           failedQueue.push({ resolve, reject });
@@ -110,7 +99,7 @@ axiosInstance.interceptors.response.use(
         processQueue(null, data.accessToken);
         originalRequest.headers.Authorization = 'Bearer ' + data.accessToken;
         return axiosInstance(originalRequest);
-      } catch (err) {
+      } catch (_err) {
         processQueue(err, null);
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
