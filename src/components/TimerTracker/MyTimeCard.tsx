@@ -153,11 +153,15 @@ const MyTimerCard: React.FC = () => {
 
   const handleEnd = async () => {
     setErrorMsg(null);
+
+    // Immediately stop the timer by clearing the current session
+    setCurrentSession(null);
+    setElapsed(0);
+
     try {
       setLoading(true);
 
       await timesheetApi.endWork();
-      await fetchLatestSession();
       setErrorMsg(null);
     } catch (err: unknown) {
       const msg =
@@ -169,7 +173,7 @@ const MyTimerCard: React.FC = () => {
         'Failed to clock out.';
       setErrorMsg(msg);
 
-      // Also try to refresh state from server
+      // If there was an error, restore the session state
       await fetchLatestSession();
     } finally {
       setLoading(false);

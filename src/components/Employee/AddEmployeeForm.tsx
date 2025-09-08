@@ -213,7 +213,8 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
         'Please select a designation',
         'يرجى اختيار المسمى الوظيفي'
       );
-    if (!values.gender) newErrors.gender = 'Gender is required';
+    // Only require gender when creating new employee, not when editing
+    if (!initialData && !values.gender) newErrors.gender = 'Gender is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -319,60 +320,62 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
           />
         </Box>
 
-        {/* Gender */}
-        <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <TextField
-            select
-            fullWidth
-            label='Gender'
-            value={values.gender ?? ''}
-            onChange={handleChange('gender')}
-            error={!!errors.gender}
-            helperText={errors.gender}
-            sx={darkInputStyles}
-          >
-            <MenuItem value=''>
-              {/* No gender selected */}
-              <span style={{ display: 'flex', alignItems: 'center' }}>
-                Select Gender
-              </span>
-            </MenuItem>
-            <MenuItem value='male'>
-              <span style={{ display: 'flex', alignItems: 'center' }}>
-                <svg
-                  width='20'
-                  height='20'
-                  viewBox='0 0 24 24'
-                  fill='none'
-                  style={{ marginRight: 8 }}
-                >
-                  <path
-                    d='M19 4h-5a1 1 0 1 0 0 2h2.586l-4.243 4.243a6 6 0 1 0 1.414 1.414L18 7.414V10a1 1 0 1 0 2 0V5a1 1 0 0 0-1-1Zm-7 14a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z'
-                    fill='#1976d2'
-                  />
-                </svg>
-                Male
-              </span>
-            </MenuItem>
-            <MenuItem value='female'>
-              <span style={{ display: 'flex', alignItems: 'center' }}>
-                <svg
-                  width='20'
-                  height='20'
-                  viewBox='0 0 24 24'
-                  fill='none'
-                  style={{ marginRight: 8 }}
-                >
-                  <path
-                    d='M12 2a6 6 0 0 0-1 11.917V16H8a1 1 0 1 0 0 2h3v2a1 1 0 1 0 2 0v-2h3a1 1 0 1 0 0-2h-3v-2.083A6 6 0 0 0 12 2Zm0 10a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z'
-                    fill='#d81b60'
-                  />
-                </svg>
-                Female
-              </span>
-            </MenuItem>
-          </TextField>
-        </Box>
+        {/* Gender - Only show when creating new employee, not when editing */}
+        {!initialData && (
+          <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
+            <TextField
+              select
+              fullWidth
+              label='Gender'
+              value={values.gender ?? ''}
+              onChange={handleChange('gender')}
+              error={!!errors.gender}
+              helperText={errors.gender}
+              sx={darkInputStyles}
+            >
+              <MenuItem value=''>
+                {/* No gender selected */}
+                <span style={{ display: 'flex', alignItems: 'center' }}>
+                  Select Gender
+                </span>
+              </MenuItem>
+              <MenuItem value='male'>
+                <span style={{ display: 'flex', alignItems: 'center' }}>
+                  <svg
+                    width='20'
+                    height='20'
+                    viewBox='0 0 24 24'
+                    fill='none'
+                    style={{ marginRight: 8 }}
+                  >
+                    <path
+                      d='M19 4h-5a1 1 0 1 0 0 2h2.586l-4.243 4.243a6 6 0 1 0 1.414 1.414L18 7.414V10a1 1 0 1 0 2 0V5a1 1 0 0 0-1-1Zm-7 14a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z'
+                      fill='#1976d2'
+                    />
+                  </svg>
+                  Male
+                </span>
+              </MenuItem>
+              <MenuItem value='female'>
+                <span style={{ display: 'flex', alignItems: 'center' }}>
+                  <svg
+                    width='20'
+                    height='20'
+                    viewBox='0 0 24 24'
+                    fill='none'
+                    style={{ marginRight: 8 }}
+                  >
+                    <path
+                      d='M12 2a6 6 0 0 0-1 11.917V16H8a1 1 0 1 0 0 2h3v2a1 1 0 1 0 2 0v-2h3a1 1 0 1 0 0-2h-3v-2.083A6 6 0 0 0 12 2Zm0 10a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z'
+                      fill='#d81b60'
+                    />
+                  </svg>
+                  Female
+                </span>
+              </MenuItem>
+            </TextField>
+          </Box>
+        )}
 
         {/* Department */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>

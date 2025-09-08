@@ -22,6 +22,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import { isAdmin, isManager } from '../../utils/auth';
 import { teamApiService } from '../../api/teamApi';
 import type { Team, TeamMember } from '../../api/teamApi';
+import { snackbar } from '../../utils/snackbar';
 import TeamList from './TeamList';
 import MyTeams from './MyTeams';
 
@@ -83,6 +84,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
       teamCount: 'Teams',
       memberCount: 'Members',
       loading: 'Loading teams...',
+      teamCreated: 'Team created successfully!',
     },
     ar: {
       title: 'إدارة الفرق',
@@ -94,6 +96,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
       teamCount: 'الفرق',
       memberCount: 'الأعضاء',
       loading: 'جاري تحميل الفرق...',
+      teamCreated: 'تم إنشاء الفريق بنجاح!',
     },
   };
 
@@ -178,6 +181,9 @@ const TeamManager: React.FC<TeamManagerProps> = ({
       setTeams(prev => [newTeam, ...prev]);
       setShowCreateForm(false);
 
+      // Show success toast
+      snackbar.success(lang.teamCreated);
+
       // Trigger refresh for other components
       window.dispatchEvent(new CustomEvent('teamUpdated'));
     } catch {
@@ -214,14 +220,35 @@ const TeamManager: React.FC<TeamManagerProps> = ({
     loadData();
   }, []);
 
-  const handleTeamUpdated = () => {
-    // Reload data when team is updated
-    window.location.reload();
+  const handleTeamUpdated = async () => {
+    // Refresh data when team is updated without page reload
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (isManager()) {
+        // Load manager's teams and members
+        const [teamsData, membersData] = await Promise.all([
+          teamApiService.getMyTeams(),
+          teamApiService.getMyTeamMembers(1),
+        ]);
+        setTeams(teamsData);
+        setTeamMembers(membersData.items || []);
+      } else if (isAdmin()) {
+        // Load all teams for admin with members included
+        const teamsData = await teamApiService.getAllTeams(1);
+        setTeams(teamsData.items || []);
+      }
+    } catch {
+      setError('Failed to refresh team data');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRefresh = () => {
-    // Reload data
-    window.location.reload();
+  const handleRefresh = async () => {
+    // Refresh data without page reload
+    await handleTeamUpdated();
   };
 
   if (loading) {
