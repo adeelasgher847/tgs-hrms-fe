@@ -73,8 +73,8 @@ const LeaveForm = ({
         sx={{
           backgroundColor: 'background.paper',
           p: 4,
-          borderRadius: 3,
-          boxShadow: 1,
+          borderRadius: 2,
+          // boxShadow: 1,
           maxWidth: 600,
           mx: 'auto',
           display: 'flex',
