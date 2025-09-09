@@ -114,7 +114,7 @@ const AttendanceCheck = () => {
           <Typography
             variant='h5'
             fontWeight='bold'
-            color='primary'
+            color='var(--dark-color)'
             sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
           >
             Attendance Management
@@ -202,7 +202,7 @@ const AttendanceCheck = () => {
           </Typography>
           <Typography
             variant='h4'
-            color='primary'
+            color='var(--dark-color)' 
             fontSize="20px"
             fontWeight='bold'
             mb={3}
