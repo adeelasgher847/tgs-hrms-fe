@@ -6,14 +6,10 @@ import {
   Button,
   Typography,
   Box,
-  useMediaQuery,
-  Drawer,
-  IconButton,
   useTheme,
 } from '@mui/material';
 import {
   Warning as WarningIcon,
-  Close as CloseIcon,
 } from '@mui/icons-material';
 import type { Department } from '../../types';
 import { useOutletContext } from 'react-router-dom';
@@ -30,7 +26,6 @@ export const DeleteConfirmationModal: React.FC<
   DeleteConfirmationModalProps
 > = ({ open, onClose, onConfirm, department, isRtl = false }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
   const bgColor = darkMode ? '#111' : '#fff';
@@ -87,51 +82,7 @@ export const DeleteConfirmationModal: React.FC<
     </>
   );
 
-  // 🔹 Mobile drawer version
-  if (isMobile) {
-    return (
-      <Drawer
-        anchor='bottom'
-        open={open}
-        onClose={onClose}
-        PaperProps={{
-          sx: {
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            direction: isRtl ? 'rtl' : 'ltr',
-            backgroundColor: bgColor,
-            color: textColor,
-            borderTop: `1px solid ${borderColor}`,
-          },
-        }}
-      >
-        <Box sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <Typography variant='h6' sx={{ flexGrow: 1, color: textColor }}>
-              {title}
-            </Typography>
-            <IconButton
-              onClick={onClose}
-              size='small'
-              sx={{ color: textColor }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-
-          {content}
-
-          <Box
-            sx={{ display: 'flex', gap: 1, mt: 3, justifyContent: 'center' }}
-          >
-            {actionButtons}
-          </Box>
-        </Box>
-      </Drawer>
-    );
-  }
-
-  // 🔹 Desktop dialog version
+  // Always use Dialog (match tenant modal behavior)
   return (
     <Dialog
       open={open}

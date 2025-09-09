@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  useTheme,
   IconButton,
   TextField,
   MenuItem,
@@ -13,11 +14,13 @@ import {
   Alert,
   Snackbar,
   Pagination,
-  useTheme,
   Typography,
   Paper,
+  DialogActions,
+  Drawer,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import WarningIcon from '@mui/icons-material/Warning';
 import { useOutletContext } from 'react-router-dom';
 import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeList from './EmployeeList';
@@ -95,10 +98,12 @@ const EmployeeManager: React.FC = () => {
   // Delete confirmation dialog state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingDeleteName, setPendingDeleteName] = useState<string>('');
 
   // Dark mode
-  const bgColor = darkMode ? '#1b1b1b' : '#fff';
-  const textColor = darkMode ? '#e0e0e0' : '#000';
+  const bgColor = darkMode ? '#111' : '#fff';
+  const textColor = darkMode ? '#ccc' : '#000';
+  const borderColor = darkMode ? '#333' : '#ddd';
   const filterBtn = darkMode ? '#555' : '#484c7f';
 
   // Dark mode input styles
@@ -383,8 +388,8 @@ const EmployeeManager: React.FC = () => {
           ? updates.designationId
           : editing.designationId;
       await employeeApi.updateEmployee(editing.id, {
-        first_name: (updates as unknown).first_name,
-        last_name: (updates as unknown).last_name,
+        first_name: (updates as any).first_name,
+        last_name: (updates as any).last_name,
         email: updates.email,
         phone: updates.phone,
         password: updates.password,
@@ -417,9 +422,12 @@ const EmployeeManager: React.FC = () => {
     }
   };
 
-  // New: open confirmation before delete
-  const requestDeleteEmployee = (id: string) => {
+  // New: open confirmation before delete (accepts Employee or id)
+  const requestDeleteEmployee = (toDelete: Employee | string) => {
+    const id = typeof toDelete === 'string' ? toDelete : toDelete.id;
+    const name = typeof toDelete === 'string' ? '' : toDelete.name;
     setPendingDeleteId(id);
+    setPendingDeleteName(name || '');
     setConfirmOpen(true);
   };
 
@@ -428,11 +436,13 @@ const EmployeeManager: React.FC = () => {
     await handleDeleteEmployee(pendingDeleteId);
     setConfirmOpen(false);
     setPendingDeleteId(null);
+    setPendingDeleteName('');
   };
 
   const cancelDelete = () => {
     setConfirmOpen(false);
     setPendingDeleteId(null);
+    setPendingDeleteName('');
   };
 
   const handleClearFilters = () => {
@@ -451,6 +461,18 @@ const EmployeeManager: React.FC = () => {
   }, [employees, departmentFilter, designationFilter]);
 
   const getLabel = (en: string, ar: string) => (direction === 'rtl' ? ar : en);
+
+  // Delete modal texts
+  const deleteTitle = getLabel('Confirm Delete', 'تأكيد الحذف');
+  const deleteMessage = pendingDeleteName
+    ? getLabel(
+        `Are you sure you want to delete employee "${pendingDeleteName}"? This action cannot be undone.`,
+        `هل أنت متأكد أنك تريد حذف الموظف "${pendingDeleteName}"؟ لا يمكن التراجع عن هذا الإجراء.`
+      )
+    : getLabel(
+        'Are you sure you want to delete this employee? This action cannot be undone.',
+        'هل أنت متأكد أنك تريد حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.'
+      );
 
   return (
     <Box>
@@ -596,7 +618,7 @@ const EmployeeManager: React.FC = () => {
         <EmployeeList
           employees={filteredEmployees}
           onDelete={requestDeleteEmployee}
-          onEdit={handleEditOpen}
+          onEdit={(employee: any) => handleEditOpen(employee as any)}
           loading={loading}
           departments={departments}
           designations={designations}
@@ -660,41 +682,40 @@ const EmployeeManager: React.FC = () => {
         </Alert>
       </Snackbar>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation - Department modal style */}
       <Dialog
         open={confirmOpen}
         onClose={cancelDelete}
+        maxWidth='sm'
+        fullWidth
         PaperProps={{
           sx: {
+            direction: direction === 'rtl' ? 'rtl' : 'ltr',
             backgroundColor: bgColor,
             color: textColor,
+            border: `1px solid ${borderColor}`,
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 700 }}>
-          {getLabel('Confirm Deletion', 'تأكيد الحذف')}
+        <DialogTitle sx={{ textAlign: 'center', pb: 1, color: textColor }}>
+          {deleteTitle}
         </DialogTitle>
-        <DialogContent sx={{ pb: 2 }}>
-          <Typography>
-            {getLabel(
-              'Are you sure you want to delete this employee? This action cannot be undone.',
-              'هل أنت متأكد أنك تريد حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.'
-            )}
-          </Typography>
-          <Box display='flex' justifyContent='flex-end' gap={1} mt={2}>
-            <Button onClick={cancelDelete} variant='outlined'>
-              {getLabel('Cancel', 'إلغاء')}
-            </Button>
-            <Button
-              onClick={confirmDelete}
-              variant='contained'
-              color='error'
-              disabled={loading}
-            >
-              {getLabel('Delete', 'حذف')}
-            </Button>
+        <DialogContent>
+          <Box sx={{ textAlign: 'center' }}>
+            <WarningIcon sx={{ fontSize: 64, color: 'warning.main', mb: 2 }} />
+            <Typography variant='body1' sx={{ mb: 2, lineHeight: 1.6, color: textColor }}>
+              {deleteMessage}
+            </Typography>
           </Box>
         </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', p: 3, pt: 1 }}>
+          <Button onClick={cancelDelete} variant='outlined' sx={{ color: textColor, borderColor }}>
+            {getLabel('Cancel', 'إلغاء')}
+          </Button>
+          <Button onClick={confirmDelete} variant='contained' color='error'>
+            {getLabel('Delete', 'حذف')}
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Modal with AddEmployeeForm */}
@@ -743,8 +764,8 @@ const EmployeeManager: React.FC = () => {
               editing
                 ? {
                     id: editing.id,
-                    firstName: (editing as unknown).firstName,
-                    lastName: (editing as unknown).lastName,
+                    firstName: (editing as any).firstName,
+                    lastName: (editing as any).lastName,
                     email: editing.email,
                     phone: editing.phone,
                     designationId: editing.designationId,
