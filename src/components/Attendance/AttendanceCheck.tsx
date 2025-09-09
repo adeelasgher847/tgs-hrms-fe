@@ -108,8 +108,6 @@ const AttendanceCheck = () => {
           backgroundColor: 'background.paper',
           p: 2,
           borderRadius: 1,
-          border: '1px solid',
-          borderColor: 'divider',
         }}
       >
         <Box>
@@ -190,11 +188,10 @@ const AttendanceCheck = () => {
             borderRadius: 1,
             flex: 1,
             height: 'fit-content',
-            border: '1px solid',
-            borderColor: 'divider',
+            boxShadow: "unset",
           }}
         >
-          <Typography variant='h6' fontWeight='bold' mb={1}>
+          <Typography variant='h6' fontWeight='bold'>
             Good{' '}
             {new Date().getHours() < 12
               ? 'morning'
@@ -206,6 +203,7 @@ const AttendanceCheck = () => {
           <Typography
             variant='h4'
             color='primary'
+            fontSize="20px"
             fontWeight='bold'
             mb={3}
             sx={{ fontFamily: 'monospace' }}
@@ -222,12 +220,9 @@ const AttendanceCheck = () => {
               display='flex'
               alignItems='center'
               sx={{
-                backgroundColor: 'action.hover',
                 p: { xs: 1.5, sm: 2 },
                 borderRadius: 1,
                 flex: 1,
-                border: '1px solid',
-                borderColor: 'divider',
               }}
             >
               <LoginIcon
@@ -249,7 +244,7 @@ const AttendanceCheck = () => {
                   variant='h6'
                   fontWeight='bold'
                   color='success.main'
-                  sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                  sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}
                 >
                   {punchInTime || '--:--'}
                 </Typography>
@@ -260,12 +255,9 @@ const AttendanceCheck = () => {
               display='flex'
               alignItems='center'
               sx={{
-                backgroundColor: 'action.hover',
                 p: { xs: 1.5, sm: 2 },
                 borderRadius: 1,
                 flex: 1,
-                border: '1px solid',
-                borderColor: 'divider',
               }}
             >
               <LogoutIcon
@@ -287,7 +279,7 @@ const AttendanceCheck = () => {
                   variant='h6'
                   fontWeight='bold'
                   color='warning.main'
-                  sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                  sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}
                 >
                   {punchOutTime || '--:--'}
                 </Typography>

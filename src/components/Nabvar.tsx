@@ -105,7 +105,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const [teamMembersModalOpen, setTeamMembersModalOpen] = React.useState(false);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const lang = labels[language];
   const { user, clearUser } = useUser();
 

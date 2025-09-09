@@ -9,7 +9,7 @@ import {
   Box,
   IconButton,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Warning as WarningIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 
 interface Props {
@@ -34,46 +34,49 @@ export default function DeleteConfirmationDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth='xs'
+      maxWidth='sm'
       fullWidth
       dir={isRTL ? 'rtl' : 'ltr'}
     >
-      <DialogTitle>
+      <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
             alignItems: 'center',
+            position: 'relative',
           }}
         >
           <Typography variant='h6'>
             {getText('Confirm Delete', 'تأكيد الحذف')}
           </Typography>
-          <IconButton onClick={onClose} size='small'>
+          <IconButton
+            onClick={onClose}
+            size='small'
+            sx={{ position: 'absolute', right: isRTL ? 'auto' : 8, left: isRTL ? 8 : 'auto' }}
+          >
             <CloseIcon />
           </IconButton>
         </Box>
       </DialogTitle>
 
       <DialogContent>
-        <Typography variant='body1' sx={{ mt: 2 }}>
-          {getText(
-            `Are you sure you want to delete "${designationTitle}"?`,
-            `هل أنت متأكد أنك تريد حذف "${designationTitle}"؟`
-          )}
-        </Typography>
+        <Box sx={{ textAlign: 'center' }}>
+          <WarningIcon sx={{ fontSize: 64, color: 'warning.main', mb: 2 }} />
+          <Typography variant='body1' sx={{ mb: 2, lineHeight: 1.6 }}>
+            {getText(
+              `Are you sure you want to delete "${designationTitle}"? This action cannot be undone.`,
+              `هل أنت متأكد أنك تريد حذف "${designationTitle}"؟ لا يمكن التراجع عن هذا الإجراء.`
+            )}
+          </Typography>
+        </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button onClick={onClose} color='inherit' size='large'>
+      <DialogActions sx={{ justifyContent: 'center', p: 3, pt: 1 }}>
+        <Button onClick={onClose} color='inherit' variant='outlined'>
           {getText('Cancel', 'إلغاء')}
         </Button>
-        <Button
-          onClick={onConfirm}
-          color='error'
-          variant='contained'
-          size='large'
-        >
+        <Button onClick={onConfirm} color='error' variant='contained'>
           {getText('Delete', 'حذف')}
         </Button>
       </DialogActions>

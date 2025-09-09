@@ -191,7 +191,7 @@ const MyTimerCard: React.FC = () => {
       <Card
         sx={{
           background: cardBackground,
-          borderRadius: 2,
+          borderRadius: 1,
           position: 'relative',
           border: cardBorder,
           flex: 1,
