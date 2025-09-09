@@ -179,15 +179,14 @@ const MyTimerCard: React.FC = () => {
           background: darkMode ? '#1e1e1e' : '#ffffff',
           borderRadius: 2,
           position: 'relative',
-          border: darkMode ? '1px solid #333333' : '1px solid #e0e0e0',
           flex: 1,
           height: '100%',
-          boxShadow: 'none',
+          boxShadow: 'unset',
           color: darkMode ? '#ffffff' : '#000000',
           overflow: 'hidden',
         }}
       >
-        <CardContent sx={{ p: 3 }}>
+        <CardContent sx={{ p: 3 , boxShadow:'none' , border:'none' }}>
           {/* Main Timer Display - Centered */}
           {/* Session Progress - Top Left */}
           <Box
@@ -292,6 +291,7 @@ const MyTimerCard: React.FC = () => {
               >
                 {/* Stopwatch Body */}
                 <Box
+                className='ramish stop'
                   sx={{
                     width: 28,
                     height: 28,
@@ -333,9 +333,9 @@ const MyTimerCard: React.FC = () => {
                 <Box
                   sx={{
                     position: 'absolute',
-                    top: -3,
-                    width: 6,
-                    height: 10,
+                    top: -1,
+                    width: 5 ,
+                    height: 4,
                     backgroundColor: '#2E7D32',
                     borderRadius: '3px 3px 0 0',
                     zIndex: 1,
@@ -346,11 +346,11 @@ const MyTimerCard: React.FC = () => {
                 <Box
                   sx={{
                     position: 'absolute',
-                    right: -2,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
+                    right: '2px',
+                    top: '10%',
+                    rotate:'-42deg',
                     width: 3,
-                    height: 8,
+                    height: 7,
                     backgroundColor: '#2E7D32',
                     borderRadius: '0 2px 2px 0',
                     zIndex: 1,
