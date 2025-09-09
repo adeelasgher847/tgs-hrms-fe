@@ -5,7 +5,6 @@ import { styled } from '@mui/material/styles';
 import { useLanguage } from '../hooks/useLanguage';
 import { useUser } from '../hooks/useUser';
 import { getRoleDisplayName } from '../utils/roleUtils';
-import { Select } from '@mui/material';
 
 import {
   AppBar,
@@ -19,6 +18,7 @@ import {
   MenuItem,
   Divider,
   ListItemIcon,
+  Button,
 } from '@mui/material';
 import UserAvatar from './common/UserAvatar';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -105,9 +105,13 @@ const Navbar: React.FC<NavbarProps> = ({
   const [teamMembersModalOpen, setTeamMembersModalOpen] = React.useState(false);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const lang = labels[language];
   const { user, clearUser } = useUser();
+
+  // Language dropdown state
+  const [langAnchorEl, setLangAnchorEl] = React.useState<null | HTMLElement>(null);
+  const langMenuOpen = Boolean(langAnchorEl);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -249,14 +253,26 @@ const Navbar: React.FC<NavbarProps> = ({
               >
                 <InfoOutlinedIcon fontSize='small' />
               </IconButton> */}
-
+ <Button
+                variant='text'
+                size='small'
+                onClick={(e) => setLangAnchorEl(e.currentTarget)}
+                sx={{
+                  minWidth: 0,
+                  px: 1,
+                  color: textColor,
+                  fontWeight: 600,
+                }}
+              >
+                {language === 'en' ? 'EN' : 'عربي'}
+              </Button>
               <TeamMembersAvatar
                 maxAvatars={5}
                 onOpenInviteModal={onOpenInviteModal}
                 darkMode={darkMode}
               />
 
-              <IconButton>
+              <IconButton sx={{xs:{padding: '8px'}, md: {padding: '0px'}}}>
                 <Badge variant='dot' color='error'>
                   <NotificationsNoneOutlinedIcon sx={{ color: textColor }} />
                 </Badge>
@@ -320,23 +336,41 @@ const Navbar: React.FC<NavbarProps> = ({
                   عربي
                 </ToggleButton>
               </ToggleButtonGroup> */}
-              <Select
-                value={language}
-                onChange={e => setLanguage(e.target.value)}
-                size='small'
-                sx={{
-                  minWidth: 63,
-                  fontSize: '14px',
-                  borderRadius: '5px',
-                  '& .MuiSelect-select': {
-                    padding: '5px  11px',
-                    paddingRight: '0px !important',
+              <Menu
+                anchorEl={langAnchorEl}
+                open={langMenuOpen}
+                onClose={() => setLangAnchorEl(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                  elevation: 4,
+                  sx: {
+                    borderRadius: '8px',
+                    minWidth: 80,
+                    p: 0,
                   },
                 }}
               >
-                <MenuItem value='en'>EN</MenuItem>
-                <MenuItem value='ar'>عربي</MenuItem>
-              </Select>
+                {language === 'en' ? (
+                  <MenuItem
+                    onClick={() => {
+                      setLanguage('ar');
+                      setLangAnchorEl(null);
+                    }}
+                  >
+                    عربي
+                  </MenuItem>
+                ) : (
+                  <MenuItem
+                    onClick={() => {
+                      setLanguage('en');
+                      setLangAnchorEl(null);
+                    }}
+                  >
+                    EN
+                  </MenuItem>
+                )}
+              </Menu>
             </Box>
             <Box>
               <IconButton
