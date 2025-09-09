@@ -24,7 +24,7 @@ const Layout = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, loading } = useUser();
   const role =
     typeof user?.role === 'string'
       ? user?.role
@@ -72,6 +72,9 @@ const Layout = () => {
     // Only guard dashboard routes
     if (!location.pathname.startsWith('/dashboard')) return;
 
+    // Wait for user loading to finish to avoid premature redirects on refresh
+    if (loading) return;
+
     // Check if user is actually authenticated
     const token = localStorage.getItem('accessToken');
     if (!token || !user) {
@@ -92,7 +95,7 @@ const Layout = () => {
         navigate(target, { replace: true });
       }
     }
-  }, [location.pathname, role, navigate, user]);
+  }, [location.pathname, role, navigate, user, loading]);
 
   return (
     <Box
