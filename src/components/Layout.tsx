@@ -1,4 +1,4 @@
-import { Box, useMediaQuery, useTheme as useMuiTheme } from '@mui/material';
+import { Box, useMediaQuery, useTheme as useMuiTheme, CircularProgress } from '@mui/material';
 import Sidebar from './Sidebar';
 import Navbar from './Nabvar';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -96,6 +96,17 @@ const Layout = () => {
       }
     }
   }, [location.pathname, role, navigate, user, loading]);
+
+  // Determine access for current dashboard route to avoid UI flash
+  const isDashboardRoute = location.pathname.startsWith('/dashboard');
+  const subPath = isDashboardRoute
+    ? location.pathname.replace('/dashboard', '').replace(/^\/+/, '')
+    : '';
+  const isAllowed = !isDashboardRoute
+    ? true
+    : user && !loading
+      ? isDashboardPathAllowedForRole(subPath, role)
+      : false;
 
   return (
     <Box
@@ -219,16 +230,21 @@ const Layout = () => {
         </Box>
 
         {/* Scrollable Content */}
-        <Box
-          // className="content"
-          component='main'
-          sx={{
-            flex: 1,
-            px: { xs: '7px', md: '24px' },
-            py: 3,
-          }}
-        >
-          <Outlet context={{ darkMode }} />
+        <Box component='main' sx={{ flex: 1, px: { xs: '7px', md: '24px' }, py: 3 }}>
+          {isDashboardRoute && (loading || !user || !isAllowed) ? (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Outlet context={{ darkMode }} />
+          )}
         </Box>
       </Box>
     </Box>

@@ -20,7 +20,7 @@ import {
 } from '@mui/icons-material';
 // UserProfile type available if needed
 import { useUser } from '../../hooks/useUser';
-import { getRoleName, getRoleColor, isEmployee } from '../../utils/roleUtils';
+import { getRoleName, getRoleColor, isEmployee, isManager } from '../../utils/roleUtils';
 import ProfilePictureUpload from '../common/ProfilePictureUpload';
 import EmployeeProfileView from '../Employee/EmployeeProfileView';
 
@@ -56,8 +56,8 @@ const UserProfileComponent = () => {
     // This function is kept for compatibility with ProfilePictureUpload
   };
 
-  // Determine if the user is an employee based on role
-  const userIsEmployee = isEmployee(profile?.role);
+  // Determine if the user should see the employee profile view (managers included)
+  const userIsEmployee = isEmployee(profile?.role) || isManager(profile?.role);
 
   if (loading)
     return (
