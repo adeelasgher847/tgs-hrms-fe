@@ -42,6 +42,15 @@ const UserProfileComponent = () => {
     }
   }, [profile, loading, refreshUser]);
 
+  // Ensure tenant is populated on first render by forcing a /profile/me refresh
+  useEffect(() => {
+    if (profile && !profile.tenant && !loading) {
+      refreshUser().catch(() => {
+        // ignore; fallback remains
+      });
+    }
+  }, [profile, loading, refreshUser]);
+
   const handleProfileUpdate = () => {
     // The UserContext will handle the update automatically
     // This function is kept for compatibility with ProfilePictureUpload
