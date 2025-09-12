@@ -635,7 +635,7 @@ const LeaveRequestPage = () => {
                 }}
                 onClick={() => setTab(0)}
               >
-                APPLY LEAVE
+                Apply Leave
               </Button>
             )}
             <Button
@@ -655,7 +655,7 @@ const LeaveRequestPage = () => {
               }}
               onClick={() => setTab(userIsUser || userIsManager ? 1 : 0)}
             >
-              LEAVE HISTORY
+              Leave History
             </Button>
             {/* Show Team Leave History button only for managers */}
             {userIsManager && (
@@ -673,7 +673,7 @@ const LeaveRequestPage = () => {
                   loadTeamLeaves(1);
                 }}
               >
-                MY TEAM LEAVE HISTORY
+                My Team Leave History
               </Button>
             )}
             {/* Debug button for testing */}
