@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Button, Alert } from '@mui/material';
+import { Box, Typography, Paper, Button, Alert, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
+import { isAdmin } from '../../utils/roleUtils';
+
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
+
 const AttendanceCheck = () => {
   const [status, setStatus] = useState<AttendanceStatus>('Not Checked In');
   const [punchInTime, setPunchInTime] = useState<string | null>(null);
@@ -13,17 +16,21 @@ const AttendanceCheck = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
+  const [isAdminUser, setIsAdminUser] = useState(false);
+
   const getCurrentUserId = () => {
     const userStr = localStorage.getItem('user');
     if (!userStr) return null;
     try {
       const user = JSON.parse(userStr);
       setUserName(user.first_name || 'User');
+      setIsAdminUser(isAdmin(user.role));
       return user.id;
     } catch {
       return null;
     }
   };
+
   const fetchToday = async () => {
     setError(null);
     const userId = getCurrentUserId();
@@ -55,6 +62,7 @@ const AttendanceCheck = () => {
       setError("Failed to fetch today's attendance summary.");
     }
   };
+
   useEffect(() => {
     fetchToday();
     const timer = setInterval(
@@ -64,6 +72,7 @@ const AttendanceCheck = () => {
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   const handleCheckIn = async () => {
     setLoading(true);
     setError(null);
@@ -79,6 +88,7 @@ const AttendanceCheck = () => {
       setLoading(false);
     }
   };
+
   const handleCheckOut = async () => {
     setLoading(true);
     setError(null);
@@ -124,7 +134,7 @@ const AttendanceCheck = () => {
             color='text.secondary'
             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
           >
-            Track your daily attendance
+            {isAdminUser ? 'Admin - Track your daily attendance' : 'Track your daily attendance'}
           </Typography>
         </Box>
 
@@ -296,4 +306,5 @@ const AttendanceCheck = () => {
     </Box>
   );
 };
+
 export default AttendanceCheck;

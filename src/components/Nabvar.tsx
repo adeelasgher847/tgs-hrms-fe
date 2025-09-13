@@ -37,20 +37,16 @@ import TeamMembersModal from './Teams/TeamMembersModal';
 const labels = {
   en: {
     search: 'Search',
-    myTask: 'My Task',
     members: 'Members',
     signout: 'Sign Out',
-    addAccount: 'Add Personal Account',
     adminProfile: 'Admin Profile',
     dylan: 'Dylan Hunter',
     email: 'Dylan.hunter@gmail.com',
   },
   ar: {
     search: 'بحث',
-    myTask: 'مهامي',
     members: 'الأعضاء',
     signout: 'تسجيل الخروج',
-    addAccount: 'إضافة حساب',
     adminProfile: 'ملف المشرف',
     dylan: 'ديلان هنتر',
     email: 'Dylan.hunter@gmail.com',
@@ -413,16 +409,13 @@ const Navbar: React.FC<NavbarProps> = ({
           </Box>
         </Box>
         <Divider sx={{ mb: 1 }} />
-        <MenuItem onClick={handleMenuClose}>
-          <ListItemIcon>
-            <AssignmentOutlinedIcon
-              fontSize='small'
-              sx={{ color: textColor }}
-            />
-          </ListItemIcon>
-          <Typography color={textColor}>{lang.myTask}</Typography>
-        </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
+
+        <MenuItem 
+          onClick={() => {
+            handleMenuClose();
+            navigate('/dashboard/EmployeeManager');
+          }}
+        >
           <ListItemIcon>
             <GroupOutlinedIcon fontSize='small' sx={{ color: textColor }} />
           </ListItemIcon>
@@ -445,13 +438,7 @@ const Navbar: React.FC<NavbarProps> = ({
           </ListItemIcon>
           <Typography color={textColor}>{lang.signout}</Typography>
         </MenuItem>
-        <Divider sx={{ my: 1 }} />
-        <MenuItem onClick={handleMenuClose}>
-          <ListItemIcon>
-            <PersonAddAltIcon fontSize='small' sx={{ color: textColor }} />
-          </ListItemIcon>
-          <Typography color={textColor}>{lang.addAccount}</Typography>
-        </MenuItem>
+        {/* <Divider sx={{ my: 1 }} /> */}
       </Menu>
 
       {/* Team Members Modal for Mobile */}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -10,6 +10,8 @@ import {
   Chip,
   Typography,
   Box,
+  TextField,
+  MenuItem,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -68,9 +70,14 @@ const LeaveHistory = ({
   title?: string;
   showNames?: boolean;
 }) => {
-  // Debug logging
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('');
 
-  // Check if leaves array is valid
+  // Filtered leaves list
+  const filteredLeaves = useMemo(() => {
+    if (!selectedEmployee) return leaves;
+    return leaves.filter(leave => leave.name === selectedEmployee);
+  }, [selectedEmployee, leaves]);
+
   if (!Array.isArray(leaves)) {
     return (
       <Box>
@@ -81,14 +88,51 @@ const LeaveHistory = ({
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <AccessTimeIcon color='primary' sx={{ fontSize: 32, mr: 1 }} />
-        <Typography variant='h5' fontWeight={600}>
-          {title}
-        </Typography>
+      {/* Title + Dropdown filter */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 2,
+          justifyContent: 'space-between',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <AccessTimeIcon color='primary' sx={{ fontSize: 32, mr: 1 }} />
+          <Typography variant='h5' fontWeight={600}>
+            {title}
+          </Typography>
+        </Box>
+
+        {/* Show dropdown only for Admin */}
+        {isAdmin && (
+          <TextField
+            select
+            size='small'
+            value={selectedEmployee}
+            onChange={e => setSelectedEmployee(e.target.value)}
+            sx={{ minWidth: 200 }}
+            SelectProps={{
+              displayEmpty: true,
+              renderValue: value => {
+                if (value === '') {
+                  return 'All Employee';
+                }
+                return value;
+              },
+            }}
+          >
+            <MenuItem value=''>All Employee</MenuItem>
+            {[...new Set(leaves.map(l => l.name))].map(name => (
+              <MenuItem key={name} value={name}>
+                {name}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
       </Box>
 
-      {leaves.length === 0 ? (
+      {filteredLeaves.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant='h6' color='textSecondary' gutterBottom>
             No Leave History Found
@@ -120,10 +164,7 @@ const LeaveHistory = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {leaves.map((leave, _index) => {
-                // Debug each leave item
-
-                // Validate leave data
+              {filteredLeaves.map((leave, _index) => {
                 if (!leave || typeof leave !== 'object') {
                   return null;
                 }
@@ -131,13 +172,7 @@ const LeaveHistory = ({
                 return (
                   <TableRow key={leave.id || _index}>
                     {(isAdmin || showNames) && (
-                      <TableCell>
-                        {typeof leave.name === 'string'
-                          ? leave.name
-                          : typeof leave.name === 'object'
-                            ? JSON.stringify(leave.name)
-                            : 'N/A'}
-                      </TableCell>
+                      <TableCell>{leave.name || 'N/A'}</TableCell>
                     )}
                     <TableCell>
                       <Chip
