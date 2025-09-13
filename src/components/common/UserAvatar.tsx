@@ -1,5 +1,7 @@
 import React from 'react';
 import { Avatar, type AvatarProps } from '@mui/material';
+import { useProfilePicture } from '../../context/ProfilePictureContext';
+import { useUser } from '../../hooks/useUser';
 
 interface UserAvatarProps extends Omit<AvatarProps, 'src' | 'alt'> {
   user: {
@@ -23,6 +25,8 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
 }) => {
   const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+  const { profilePictureUrl } = useProfilePicture();
+  const { user: currentUser } = useUser();
 
   const getInitials = (first: string, last: string): string => {
     return `${first?.charAt(0) || ''}${last?.charAt(0) || ''}`.toUpperCase();
@@ -54,14 +58,19 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     return colors[index];
   };
 
+  // ✅ Only use profilePictureUrl from context if this is the current user's avatar
+  const isCurrentUser = currentUser?.id === user.id;
+  const effectiveProfilePictureUrl = isCurrentUser ? profilePictureUrl : null;
+
   const avatarStyle = {
     width: size,
     height: size,
     fontSize: `${size * 0.4}px`,
     cursor: clickable ? 'pointer' : 'default',
-    backgroundColor: user.profile_pic
-      ? 'transparent'
-      : generateAvatarColor(user.first_name),
+    backgroundColor:
+      effectiveProfilePictureUrl || user.profile_pic
+        ? 'transparent'
+        : generateAvatarColor(user.first_name),
     '& .MuiAvatar-img': {
       objectFit: 'cover',
       objectPosition: 'top', // ✅ NEW: Centers image at top
@@ -76,11 +85,24 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     ...sx,
   };
 
-  if (user.profile_pic) {
-    // Use the GET API endpoint if we have user ID, otherwise fall back to direct file access
-    const imageUrl = user.id
-      ? `${API_BASE_URL}/users/${user.id}/profile-picture`
-      : `${API_BASE_URL}${user.profile_pic}`;
+  // ✅ Use effectiveProfilePictureUrl (only for current user) or fall back to user.profile_pic
+  const hasProfilePicture = effectiveProfilePictureUrl || user.profile_pic;
+
+  if (hasProfilePicture) {
+    let imageUrl: string;
+
+    if (effectiveProfilePictureUrl) {
+      // If this is the current user and we have a profilePictureUrl from context, use it
+      imageUrl = effectiveProfilePictureUrl;
+    } else if (user.profile_pic) {
+      // Fall back to constructing URL from user.profile_pic
+      imageUrl = user.id
+        ? `${API_BASE_URL}/users/${user.id}/profile-picture`
+        : `${API_BASE_URL}${user.profile_pic}`;
+    } else {
+      // This shouldn't happen, but just in case
+      imageUrl = '';
+    }
 
     return (
       <Avatar

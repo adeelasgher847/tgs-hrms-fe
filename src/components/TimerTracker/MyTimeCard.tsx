@@ -107,8 +107,9 @@ const MyTimerCard: React.FC = () => {
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
 
-    return `${h}h ${m.toString().padStart(2, '0')}m`;
+    return `${h}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
   };
 
   const handleStart = async () => {
@@ -186,7 +187,7 @@ const MyTimerCard: React.FC = () => {
           overflow: 'hidden',
         }}
       >
-        <CardContent sx={{ p: 3 , boxShadow:'none' , border:'none' }}>
+        <CardContent sx={{ p: 3, boxShadow: 'none', border: 'none' }}>
           {/* Main Timer Display - Centered */}
           {/* Session Progress - Top Left */}
           <Box
@@ -275,7 +276,7 @@ const MyTimerCard: React.FC = () => {
               >
                 {currentSession && !currentSession.end_time
                   ? formatTime(elapsed)
-                  : '0h 00m'}
+                  : '0h 00m 00s'}
               </Typography>
 
               {/* Stopwatch Shape */}
@@ -291,7 +292,7 @@ const MyTimerCard: React.FC = () => {
               >
                 {/* Stopwatch Body */}
                 <Box
-                className='ramish stop'
+                  className='ramish stop'
                   sx={{
                     width: 28,
                     height: 28,
@@ -334,7 +335,7 @@ const MyTimerCard: React.FC = () => {
                   sx={{
                     position: 'absolute',
                     top: -1,
-                    width: 5 ,
+                    width: 5,
                     height: 4,
                     backgroundColor: '#2E7D32',
                     borderRadius: '3px 3px 0 0',
@@ -348,7 +349,7 @@ const MyTimerCard: React.FC = () => {
                     position: 'absolute',
                     right: '2px',
                     top: '10%',
-                    rotate:'-42deg',
+                    rotate: '-42deg',
                     width: 3,
                     height: 7,
                     backgroundColor: '#2E7D32',

@@ -67,9 +67,13 @@ const UserProfileComponent = React.memo(() => {
   // Initialize profile picture state when user data loads
   useEffect(() => {
     if (profile?.profile_pic) {
-      updateProfilePicture(profile.profile_pic);
+      // ✅ Construct the full API URL for the profile picture
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const profilePicUrl = `${API_BASE_URL}/users/${profile.id}/profile-picture`;
+      updateProfilePicture(profilePicUrl);
     }
-  }, [profile?.profile_pic, updateProfilePicture]);
+  }, [profile?.profile_pic, profile?.id, updateProfilePicture]);
 
   const handleProfileUpdate = useCallback(() => {
     // The UserContext will handle the update automatically

@@ -142,15 +142,17 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
           selectedFile
         );
 
-        // Update profile picture context
-        updateProfilePicture(response.user.profile_pic || null);
+        // Update profile picture context with the full API URL
+        const API_BASE_URL =
+          import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+        const profilePicUrl = response.user.profile_pic
+          ? `${API_BASE_URL}/users/${correctUserId}/profile-picture?t=${Date.now()}`
+          : null;
 
-        // Refresh user data from API to get updated profile information
-        try {
-          await refreshUser();
-        } catch (error) {
-          console.error('Failed to refresh user data after upload:', error);
-        }
+        updateProfilePicture(profilePicUrl);
+
+        // ✅ Removed refreshUser() call - this causes full page re-render
+        // The profile picture context update is sufficient for UI updates
 
         snackbar.success('Profile picture uploaded successfully!');
         setShowUploadDialog(false);
@@ -182,7 +184,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       } finally {
         setUploading(false);
       }
-    }, [selectedFile, updateProfilePicture, refreshUser]);
+    }, [selectedFile, updateProfilePicture]); // ✅ Removed refreshUser from dependencies
 
     const handleRemove = useCallback(async () => {
       setRemoving(true);
@@ -191,15 +193,11 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       try {
         const response = await profileApiService.removeProfilePicture();
 
-        // Update profile picture context
+        // Update profile picture context - this will update the UI immediately
         clearProfilePicture();
 
-        // Refresh user data from API to get updated profile information
-        try {
-          await refreshUser();
-        } catch (error) {
-          console.error('Failed to refresh user data after removal:', error);
-        }
+        // ✅ Removed refreshUser() call - this causes full page re-render
+        // The profile picture context update is sufficient for UI updates
 
         snackbar.success('Profile picture removed successfully!');
       } catch (err: unknown) {
@@ -213,7 +211,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       } finally {
         setRemoving(false);
       }
-    }, [clearProfilePicture, refreshUser]);
+    }, [clearProfilePicture]); // ✅ Removed refreshUser from dependencies
 
     const handleAvatarClick = useCallback(() => {
       if (clickable && showUploadButton) {
@@ -247,13 +245,15 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
 
     const { profilePictureUrl } = useProfilePicture();
 
-    const imageUrl = useMemo(
-      () =>
-        profilePictureUrl || user.profile_pic
-          ? `${API_BASE_URL}/users/${user.id}/profile-picture`
-          : null,
-      [profilePictureUrl, user.profile_pic, user.id]
-    );
+    const imageUrl = useMemo(() => {
+      // ✅ Use profilePictureUrl from context if available, otherwise construct from user.profile_pic
+      if (profilePictureUrl) {
+        return profilePictureUrl;
+      } else if (user.profile_pic) {
+        return `${API_BASE_URL}/users/${user.id}/profile-picture`;
+      }
+      return null;
+    }, [profilePictureUrl, user.profile_pic, user.id, API_BASE_URL]);
 
     const renderAvatar = useCallback(() => {
       const hasProfilePicture = profilePictureUrl || user.profile_pic;
