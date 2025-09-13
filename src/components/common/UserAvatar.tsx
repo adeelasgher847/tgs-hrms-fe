@@ -62,6 +62,10 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     backgroundColor: user.profile_pic
       ? 'transparent'
       : generateAvatarColor(user.first_name),
+    '& .MuiAvatar-img': {
+      objectFit: 'cover',
+      objectPosition: 'top', // ✅ NEW: Centers image at top
+    },
     '&:hover': clickable
       ? {
           opacity: 0.8,

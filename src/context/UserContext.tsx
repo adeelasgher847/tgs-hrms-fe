@@ -3,6 +3,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
   type ReactNode,
 } from 'react';
 import { profileApiService, type UserProfile } from '../api/profileApi';
@@ -21,6 +22,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   // Update user state and localStorage
   const updateUser = useCallback((updatedUser: UserProfile) => {
     setUser(updatedUser);
+    setLoading(false); // Ensure loading state is false after update
     localStorage.setItem('user', JSON.stringify(updatedUser));
   }, []);
 
@@ -87,13 +89,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     loadUserData();
   }, []);
 
-  const contextValue: UserContextType = {
-    user,
-    loading,
-    updateUser,
-    refreshUser,
-    clearUser,
-  };
+  const contextValue: UserContextType = useMemo(
+    () => ({
+      user,
+      loading,
+      updateUser,
+      refreshUser,
+      clearUser,
+    }),
+    [user, loading, updateUser, refreshUser, clearUser]
+  );
 
   return (
     <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>

@@ -44,9 +44,12 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
 
   const [formData, setFormData] = useState<DepartmentFormData>({
     name: '',
-    nameAr: '',
     description: '',
-    descriptionAr: '',
+  });
+
+  const [originalData, setOriginalData] = useState<DepartmentFormData>({
+    name: '',
+    description: '',
   });
 
   const [errors, setErrors] = useState<DepartmentFormErrors>({});
@@ -63,29 +66,35 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
 
   useEffect(() => {
     if (department) {
-      // When editing, only populate English fields from database
-      setFormData({
+      // When editing, populate fields from database
+      const initialData = {
         name: department.name,
-        nameAr: department.nameAr || '', // Arabic fields are optional
         description: department.description || '',
-        descriptionAr: department.descriptionAr || '',
-      });
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
     } else {
-      setFormData({
+      const initialData = {
         name: '',
-        nameAr: '',
         description: '',
-        descriptionAr: '',
-      });
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
     }
     setErrors({});
   }, [department, open]);
+
+  // Check if form has changes
+  const hasChanges = isEditing
+    ? formData.name !== originalData.name ||
+      (formData.description || '') !== (originalData.description || '')
+    : formData.name.trim() !== '' || (formData.description || '').trim() !== '';
 
   /* ---------- validation helpers ---------- */
   const validateForm = (): boolean => {
     const newErrors: DepartmentFormErrors = {};
 
-    // Only English name is required
+    // Name is required
     if (!formData.name.trim()) {
       newErrors.name = isRtl
         ? 'اسم القسم مطلوب'
@@ -96,27 +105,11 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         : 'Department name must be at least 2 characters';
     }
 
-    // Arabic name is optional but if provided, validate it
-    if (
-      formData.nameAr &&
-      formData.nameAr.trim() &&
-      formData.nameAr.trim().length < 2
-    ) {
-      newErrors.nameAr = isRtl
-        ? 'الاسم العربي يجب أن يكون على الأقل حرفين'
-        : 'Arabic name must be at least 2 characters';
-    }
-
+    // Description is optional but validate length if provided
     if (formData.description && formData.description.length > 500) {
       newErrors.description = isRtl
         ? 'الوصف يجب أن يكون أقل من 500 حرف'
         : 'Description must be less than 500 characters';
-    }
-
-    if (formData.descriptionAr && formData.descriptionAr.length > 500) {
-      newErrors.descriptionAr = isRtl
-        ? 'الوصف العربي يجب أن يكون أقل من 500 حرف'
-        : 'Arabic description must be less than 500 characters';
     }
 
     setErrors(newErrors);
@@ -161,10 +154,10 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         color: darkMode ? '#e0e0e0' : undefined,
       }}
     >
-      {/* English name */}
+      {/* Department name */}
       <TextField
         fullWidth
-        label={isRtl ? 'اسم القسم (بالإنجليزية)' : 'Department Name (English)'}
+        label={isRtl ? 'اسم القسم' : 'Department Name'}
         value={formData.name}
         onChange={handleInputChange('name')}
         error={!!errors.name}
@@ -173,38 +166,15 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         InputLabelProps={{ sx: { color: darkMode ? '#ccc' : undefined } }}
         InputProps={{
           sx: {
-            color: darkMode ? '#fff' : 'inherit', // 👈 Input text color
+            color: darkMode ? '#fff' : 'inherit',
           },
         }}
       />
 
-      {/* Arabic name */}
+      {/* Description */}
       <TextField
         fullWidth
-        label={
-          isRtl
-            ? 'اسم القسم (بالعربية - اختياري)'
-            : 'Department Name (Arabic - Optional)'
-        }
-        value={formData.nameAr || ''}
-        onChange={handleInputChange('nameAr')}
-        error={!!errors.nameAr}
-        helperText={errors.nameAr}
-        InputLabelProps={{ sx: { color: darkMode ? '#ccc' : undefined } }}
-        InputProps={{
-          sx: {
-            color: darkMode ? '#fff' : 'inherit', // 👈 Input text color
-          },
-        }}
-        sx={{ '& .MuiInputBase-input': { textAlign: 'right' } }}
-      />
-
-      {/* English description */}
-      <TextField
-        fullWidth
-        label={
-          isRtl ? 'الوصف (بالإنجليزية - اختياري)' : 'Description (English)'
-        }
+        label={isRtl ? 'الوصف (اختياري)' : 'Description (Optional)'}
         value={formData.description || ''}
         onChange={handleInputChange('description')}
         error={!!errors.description}
@@ -214,32 +184,9 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         InputLabelProps={{ sx: { color: darkMode ? '#ccc' : undefined } }}
         InputProps={{
           sx: {
-            color: darkMode ? '#fff' : 'inherit', // 👈 Input text color
+            color: darkMode ? '#fff' : 'inherit',
           },
         }}
-      />
-
-      {/* Arabic description */}
-      <TextField
-        fullWidth
-        label={
-          isRtl
-            ? 'الوصف (بالعربية - اختياري)'
-            : 'Description (Arabic - Optional)'
-        }
-        value={formData.descriptionAr || ''}
-        onChange={handleInputChange('descriptionAr')}
-        error={!!errors.descriptionAr}
-        helperText={errors.descriptionAr}
-        multiline
-        rows={3}
-        InputLabelProps={{ sx: { color: darkMode ? '#ccc' : undefined } }}
-        InputProps={{
-          sx: {
-            color: darkMode ? '#fff' : 'inherit', // 👈 Input text color
-          },
-        }}
-        sx={{ '& .MuiInputBase-input': { textAlign: 'right' } }}
       />
 
       {Object.keys(errors).length > 0 && (
@@ -261,7 +208,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
       <Button
         type='submit'
         variant='contained'
-        disabled={isSubmitting}
+        disabled={isSubmitting || !hasChanges}
         onClick={handleSubmit}
         sx={{ bgcolor: '#484c7f' }}
       >
@@ -326,7 +273,15 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
       <DialogTitle sx={{ ...paperSx, position: 'relative' }}>
-        <Typography sx={{ textAlign: isRtl ? 'right' : 'left', fontWeight: 600, fontSize: '1.25rem', lineHeight: 1.6, letterSpacing: '0.0075em',  }}>
+        <Typography
+          sx={{
+            textAlign: isRtl ? 'right' : 'left',
+            fontWeight: 600,
+            fontSize: '1.25rem',
+            lineHeight: 1.6,
+            letterSpacing: '0.0075em',
+          }}
+        >
           {title}
         </Typography>
         <IconButton

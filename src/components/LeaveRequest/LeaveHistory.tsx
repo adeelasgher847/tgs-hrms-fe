@@ -53,14 +53,6 @@ const statusConfig: Record<
   },
 };
 
-// Helper function to capitalize first letter of each word
-const capitalizeWords = (str: string): string => {
-  return str
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-};
-
 const LeaveHistory = ({
   leaves,
   isAdmin,
@@ -113,18 +105,18 @@ const LeaveHistory = ({
           elevation={0}
           sx={{ borderRadius: 0 }}
         >
-          <Table sx={{ tableLayout: 'fixed' }}>
+          <Table>
             <TableHead>
               <TableRow>
-                {(isAdmin || showNames) && <TableCell sx={{ width: '15%' }}>Name</TableCell>}
-                <TableCell sx={{ width: '12%' }}>Type</TableCell>
-                <TableCell sx={{ width: '12%' }}>From</TableCell>
-                <TableCell sx={{ width: '12%' }}>To</TableCell>
-                <TableCell sx={{ width: '12%' }}>Applied</TableCell>
-                <TableCell sx={{ width: '12%' }}>Status</TableCell>
-                <TableCell sx={{ width: '25%' }}>Reason</TableCell>
-                {isAdmin && <TableCell sx={{ width: '12%' }}>Actions</TableCell>}
-                {!isAdmin && onWithdraw && <TableCell sx={{ width: '12%' }}>Actions</TableCell>}
+                {(isAdmin || showNames) && <TableCell>Name</TableCell>}
+                <TableCell>Type</TableCell>
+                <TableCell>From</TableCell>
+                <TableCell>To</TableCell>
+                <TableCell>Applied</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Reason</TableCell>
+                {isAdmin && <TableCell>Actions</TableCell>}
+                {!isAdmin && onWithdraw && <TableCell>Actions</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -149,7 +141,7 @@ const LeaveHistory = ({
                     )}
                     <TableCell>
                       <Chip
-                        label={capitalizeWords(leave.type || 'Unknown')}
+                        label={leave.type || 'Unknown'}
                         color={typeColor[leave.type] || 'default'}
                         sx={{
                           fontWeight: 600,
@@ -166,7 +158,7 @@ const LeaveHistory = ({
                     <TableCell>
                       <Chip
                         icon={statusConfig[leave.status]?.icon}
-                        label={capitalizeWords(leave.status || 'Unknown')}
+                        label={leave.status || 'Unknown'}
                         color={statusConfig[leave.status]?.color}
                         sx={{
                           fontWeight: 600,
@@ -197,14 +189,14 @@ const LeaveHistory = ({
                             color='success'
                             clickable
                             onClick={() => onAction(leave.id, 'approved')}
-                            sx={{ width: '48%' }}
+                            sx={{ width: '100%' }}
                           />
                           <Chip
                             label='Reject'
                             color='error'
                             clickable
                             onClick={() => onAction(leave.id, 'rejected')}
-                            sx={{ width: '48%' }}
+                            sx={{ width: '100%' }}
                           />
                         </Box>
                       </TableCell>

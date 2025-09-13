@@ -4,6 +4,7 @@ import { styled } from '@mui/material/styles';
 
 import { useLanguage } from '../hooks/useLanguage';
 import { useUser } from '../hooks/useUser';
+import { useProfilePicture } from '../context/ProfilePictureContext';
 import { getRoleDisplayName } from '../utils/roleUtils';
 
 import {
@@ -108,9 +109,19 @@ const Navbar: React.FC<NavbarProps> = ({
   const { language, setLanguage } = useLanguage();
   const lang = labels[language];
   const { user, clearUser } = useUser();
+  const { updateProfilePicture } = useProfilePicture();
+
+  // Initialize profile picture state when user data loads
+  React.useEffect(() => {
+    if (user?.profile_pic) {
+      updateProfilePicture(user.profile_pic);
+    }
+  }, [user?.profile_pic, updateProfilePicture]);
 
   // Language dropdown state
-  const [langAnchorEl, setLangAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [langAnchorEl, setLangAnchorEl] = React.useState<null | HTMLElement>(
+    null
+  );
   const langMenuOpen = Boolean(langAnchorEl);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -253,10 +264,10 @@ const Navbar: React.FC<NavbarProps> = ({
               >
                 <InfoOutlinedIcon fontSize='small' />
               </IconButton> */}
- <Button
+              <Button
                 variant='text'
                 size='small'
-                onClick={(e) => setLangAnchorEl(e.currentTarget)}
+                onClick={e => setLangAnchorEl(e.currentTarget)}
                 sx={{
                   minWidth: 0,
                   px: 1,
@@ -272,7 +283,9 @@ const Navbar: React.FC<NavbarProps> = ({
                 darkMode={darkMode}
               />
 
-              <IconButton sx={{xs:{padding: '8px'}, md: {padding: '0px'}}}>
+              <IconButton
+                sx={{ xs: { padding: '8px' }, md: { padding: '0px' } }}
+              >
                 <Badge variant='dot' color='error'>
                   <NotificationsNoneOutlinedIcon sx={{ color: textColor }} />
                 </Badge>

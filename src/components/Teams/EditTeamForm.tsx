@@ -38,6 +38,11 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
     description: '',
     manager_id: '',
   });
+  const [originalFormData, setOriginalFormData] = useState<UpdateTeamDto>({
+    name: '',
+    description: '',
+    manager_id: '',
+  });
   const [managers, setManagers] = useState<Manager[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingManagers, setLoadingManagers] = useState(false);
@@ -120,13 +125,22 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
   // Populate form when team data changes
   useEffect(() => {
     if (team && open) {
-      setFormData({
+      const initialData = {
         name: team.name,
         description: team.description || '',
         manager_id: team.manager_id,
-      });
+      };
+      setFormData(initialData);
+      setOriginalFormData(initialData);
     }
   }, [team, open]);
+
+  // Check if form has changes
+  const hasChanges = team
+    ? formData.name !== originalFormData.name ||
+      formData.description !== originalFormData.description ||
+      formData.manager_id !== originalFormData.manager_id
+    : false;
 
   const handleChange =
     (field: keyof UpdateTeamDto) =>
@@ -306,7 +320,12 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
           <Button
             type='submit'
             variant='contained'
-            disabled={loading || !formData.name?.trim() || !formData.manager_id}
+            disabled={
+              loading ||
+              !hasChanges ||
+              !formData.name?.trim() ||
+              !formData.manager_id
+            }
             sx={{ backgroundColor: '#484c7f' }}
             startIcon={loading ? <CircularProgress size={16} /> : null}
           >

@@ -17,7 +17,6 @@ import {
   Typography,
   Paper,
   DialogActions,
-  Drawer,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -38,6 +37,8 @@ import {
 interface Employee {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone: string;
   departmentId: string;
@@ -77,6 +78,7 @@ const EmployeeManager: React.FC = () => {
   const [editing, setEditing] = useState<null | Employee>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -175,6 +177,8 @@ const EmployeeManager: React.FC = () => {
       const convertedEmployees: Employee[] = response.items.map(emp => ({
         id: emp.id,
         name: emp.name,
+        firstName: emp.firstName,
+        lastName: emp.lastName,
         email: emp.email,
         phone: emp.phone,
         departmentId: emp.departmentId,
@@ -213,47 +217,75 @@ const EmployeeManager: React.FC = () => {
     }
   };
 
-  const handleAddEmployee = async (employeeData: EmployeeDto) => {
+  const handleAddEmployee = async (
+    employeeData: Partial<EmployeeDto> & {
+      departmentId?: string;
+      designationId?: string;
+      role?: string;
+    }
+  ) => {
     try {
-      setLoading(true);
+      setSubmitting(true);
       setError(null);
-      const newEmployee = await employeeApi.createEmployee(employeeData);
 
-      // If the new employee doesn't have department/designation objects,
-      // we need to fetch the full employee data or reload the list
-      if (!newEmployee.department || !newEmployee.designation) {
-        await loadEmployees(currentPage); // Reload the current page to get complete data
-      } else {
-        // Convert BackendEmployee to Employee and add to current page
-        const convertedEmployee: Employee = {
-          id: newEmployee.id,
-          name: newEmployee.name,
-          email: newEmployee.email,
-          phone: newEmployee.phone,
-          departmentId: newEmployee.departmentId,
-          designationId: newEmployee.designationId,
-          department: newEmployee.department || {
-            id: '',
-            name: '',
-            description: '',
-            tenantId: '',
-            createdAt: '',
-            updatedAt: '',
-          },
-          designation: newEmployee.designation || {
-            id: '',
-            title: '',
-            tenantId: '',
-            departmentId: '',
-            createdAt: '',
-            updatedAt: '',
-          },
-          tenantId: newEmployee.tenantId,
-          createdAt: newEmployee.createdAt,
-          updatedAt: newEmployee.updatedAt,
-        };
-        setEmployees(prev => [...prev, convertedEmployee]);
+      // Ensure required fields are present
+      if (
+        !employeeData.first_name ||
+        !employeeData.last_name ||
+        !employeeData.email ||
+        !employeeData.designationId
+      ) {
+        throw new Error('Required fields are missing');
       }
+
+      // Use different API endpoints based on role
+      const newEmployee =
+        employeeData.role === 'manager'
+          ? await employeeApi.createManager(employeeData as EmployeeDto)
+          : await employeeApi.createEmployee(employeeData as EmployeeDto);
+
+      // Fetch the complete employee data to get proper department and designation info
+      const completeEmployee = await employeeApi.getEmployeeById(
+        newEmployee.id
+      );
+
+      // Convert BackendEmployee to Employee using the complete data
+      const convertedEmployee: Employee = {
+        id: completeEmployee.id,
+        name: completeEmployee.name,
+        firstName: completeEmployee.firstName,
+        lastName: completeEmployee.lastName,
+        email: completeEmployee.email,
+        phone: completeEmployee.phone,
+        departmentId: completeEmployee.departmentId,
+        designationId: completeEmployee.designationId,
+        department: completeEmployee.department || {
+          id: completeEmployee.departmentId,
+          name:
+            departments[completeEmployee.departmentId] || 'Unknown Department',
+          description: '',
+          tenantId: completeEmployee.tenantId,
+          createdAt: completeEmployee.createdAt,
+          updatedAt: completeEmployee.updatedAt,
+        },
+        designation: completeEmployee.designation || {
+          id: completeEmployee.designationId,
+          title:
+            designations[completeEmployee.designationId] ||
+            'Unknown Designation',
+          tenantId: completeEmployee.tenantId,
+          departmentId: completeEmployee.departmentId,
+          createdAt: completeEmployee.createdAt,
+          updatedAt: completeEmployee.updatedAt,
+        },
+        tenantId: completeEmployee.tenantId,
+        createdAt: completeEmployee.createdAt,
+        updatedAt: completeEmployee.updatedAt,
+      };
+
+      // Add to the beginning of the list (most recent first)
+      setEmployees(prev => [convertedEmployee, ...prev]);
+      setTotalItems(prev => prev + 1);
 
       // Reload department and designation mappings
       await loadDepartmentsAndDesignations();
@@ -355,21 +387,13 @@ const EmployeeManager: React.FC = () => {
       setError('Failed to add employee');
       return { success: false, errors: { general: 'Failed to add employee' } };
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleEditOpen = async (emp: Employee) => {
-    try {
-      setLoading(true);
-      const fresh = await employeeApi.getEmployeeById(emp.id);
-      setEditing(fresh as unknown as Employee);
-      setOpen(true);
-    } catch {
-      setError('Failed to load employee details');
-    } finally {
-      setLoading(false);
-    }
+  const handleEditOpen = (emp: Employee) => {
+    setEditing(emp);
+    setOpen(true);
   };
 
   const handleUpdateEmployee = async (
@@ -378,47 +402,95 @@ const EmployeeManager: React.FC = () => {
       password?: string;
     }
   ) => {
-    if (!editing) return { success: false } as unknown;
+    if (!editing)
+      return { success: false, errors: { general: 'No employee selected' } };
     try {
-      setLoading(true);
+      setSubmitting(true);
       setError(null);
       // Ensure a valid designationId is sent if user selected a new one; otherwise keep current
       const nextDesignationId =
         updates.designationId && updates.designationId !== ''
           ? updates.designationId
           : editing.designationId;
-      await employeeApi.updateEmployee(editing.id, {
-        first_name: (updates as any).first_name,
-        last_name: (updates as any).last_name,
+      const updatedEmployee = await employeeApi.updateEmployee(editing.id, {
+        first_name: updates.first_name,
+        last_name: updates.last_name,
         email: updates.email,
         phone: updates.phone,
         password: updates.password,
         designationId: nextDesignationId,
       });
-      await loadEmployees();
-      setSuccessMessage('Employee successfully!');
+
+      // Update the employee in the list without reloading
+      const designationName =
+        designations[nextDesignationId] ||
+        designations[editing.designationId] ||
+        'Unknown Designation';
+
+      // Get the department ID for the new designation from the designation list
+      const newDesignation = designationList.find(
+        desig => desig.id === nextDesignationId
+      );
+      const newDepartmentId =
+        newDesignation?.departmentId ||
+        updatedEmployee.departmentId ||
+        editing.departmentId;
+      const departmentName =
+        departments[newDepartmentId] || 'Unknown Department';
+
+      setEmployees(prev =>
+        prev.map(emp =>
+          emp.id === editing.id
+            ? {
+                ...emp,
+                name: updatedEmployee.name,
+                firstName: updatedEmployee.firstName,
+                lastName: updatedEmployee.lastName,
+                email: updatedEmployee.email,
+                phone: updatedEmployee.phone,
+                departmentId: newDepartmentId,
+                designationId: nextDesignationId,
+                department: {
+                  ...emp.department,
+                  id: newDepartmentId,
+                  name: departmentName,
+                },
+                designation: {
+                  ...emp.designation,
+                  id: nextDesignationId,
+                  title: designationName,
+                  departmentId: newDepartmentId,
+                },
+                updatedAt: updatedEmployee.updatedAt,
+              }
+            : emp
+        )
+      );
+
+      setSuccessMessage('Employee updated successfully!');
       setOpen(false);
       setEditing(null);
       return { success: true };
     } catch {
       setError('Failed to update employee');
-      return { success: false } as unknown;
+      return {
+        success: false,
+        errors: { general: 'Failed to update employee' },
+      };
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   const handleDeleteEmployee = async (id: string) => {
     try {
-      setLoading(true);
       setError(null);
       await employeeApi.deleteEmployee(id);
       setEmployees(prev => prev.filter(emp => emp.id !== id));
+      setTotalItems(prev => prev - 1);
       setSuccessMessage('Employee deleted successfully!');
     } catch {
       setError('Failed to delete employee');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -703,13 +775,20 @@ const EmployeeManager: React.FC = () => {
         <DialogContent>
           <Box sx={{ textAlign: 'center' }}>
             <WarningIcon sx={{ fontSize: 64, color: 'warning.main', mb: 2 }} />
-            <Typography variant='body1' sx={{ mb: 2, lineHeight: 1.6, color: textColor }}>
+            <Typography
+              variant='body1'
+              sx={{ mb: 2, lineHeight: 1.6, color: textColor }}
+            >
               {deleteMessage}
             </Typography>
           </Box>
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'center', p: 3, pt: 1 }}>
-          <Button onClick={cancelDelete} variant='outlined' sx={{ color: textColor, borderColor }}>
+          <Button
+            onClick={cancelDelete}
+            variant='outlined'
+            sx={{ color: textColor, borderColor }}
+          >
             {getLabel('Cancel', 'إلغاء')}
           </Button>
           <Button onClick={confirmDelete} variant='contained' color='error'>
@@ -764,8 +843,8 @@ const EmployeeManager: React.FC = () => {
               editing
                 ? {
                     id: editing.id,
-                    firstName: (editing as any).firstName,
-                    lastName: (editing as any).lastName,
+                    firstName: editing.firstName || '',
+                    lastName: editing.lastName || '',
                     email: editing.email,
                     phone: editing.phone,
                     designationId: editing.designationId,
@@ -773,6 +852,7 @@ const EmployeeManager: React.FC = () => {
                   }
                 : null
             }
+            submitting={submitting}
           />
         </DialogContent>
       </Dialog>

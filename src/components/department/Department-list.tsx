@@ -104,7 +104,7 @@ export const DepartmentList: React.FC = () => {
       // Only send English fields to backend
       const departmentDto = {
         name: data.name,
-        description: data.description || undefined, // Only send if not empty
+        description: data.description, // Send empty string if description is cleared
       };
 
       const newBackendDepartment =
@@ -112,13 +112,9 @@ export const DepartmentList: React.FC = () => {
       const newFrontendDepartment =
         departmentApiService.convertBackendToFrontend(newBackendDepartment);
 
-      // Store Arabic fields in frontend state (not sent to backend)
+      // Create frontend department
       const newDepartment: FrontendDepartment = {
         ...newFrontendDepartment,
-        nameAr: data.nameAr || '',
-        descriptionAr: data.descriptionAr || '',
-        subtitle: data.subtitle || '',
-        subtitleAr: data.subtitleAr || '',
       };
 
       setDepartments(prev => [newDepartment, ...prev]);
@@ -146,7 +142,7 @@ export const DepartmentList: React.FC = () => {
       // Only send English fields to backend
       const departmentDto = {
         name: data.name,
-        description: data.description || undefined, // Only send if not empty
+        description: data.description, // Send empty string if description is cleared
       };
 
       const updatedBackendDepartment =
@@ -157,13 +153,9 @@ export const DepartmentList: React.FC = () => {
       const updatedFrontendDepartment =
         departmentApiService.convertBackendToFrontend(updatedBackendDepartment);
 
-      // Store Arabic fields in frontend state (not sent to backend)
+      // Create updated frontend department
       const updatedDepartment: FrontendDepartment = {
         ...updatedFrontendDepartment,
-        nameAr: data.nameAr || '',
-        descriptionAr: data.descriptionAr || '',
-        subtitle: data.subtitle || '',
-        subtitleAr: data.subtitleAr || '',
       };
 
       setDepartments(prev =>

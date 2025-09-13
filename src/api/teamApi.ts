@@ -103,7 +103,19 @@ class TeamApiService {
   async createTeam(teamData: CreateTeamDto): Promise<Team> {
     try {
       const response = await axiosInstance.post<Team>(this.baseUrl, teamData);
-      return response.data;
+      const newTeam = response.data;
+      
+      // Add the manager as a team member so they appear in team member lists
+      if (newTeam.id && teamData.manager_id) {
+        try {
+          await this.addMemberToTeam(newTeam.id, teamData.manager_id);
+        } catch (error) {
+          console.warn('Failed to add manager as team member:', error);
+          // Don't throw here as the team was created successfully
+        }
+      }
+      
+      return newTeam;
     } catch {
       throw error;
     }
@@ -164,12 +176,32 @@ class TeamApiService {
   // Update team (Admin only)
   async updateTeam(id: string, teamData: UpdateTeamDto): Promise<Team> {
     try {
+      // Get current team data to check if manager is changing
+      const currentTeam = await this.findOne(id);
+      
       const response = await axiosInstance.patch<Team>(
         `${this.baseUrl}/${id}`,
         teamData
       );
+      const updatedTeam = response.data;
 
-      return response.data;
+      // If manager is changing, update team membership
+      if (teamData.manager_id && teamData.manager_id !== currentTeam.manager_id) {
+        try {
+          // Remove old manager from team if they exist
+          if (currentTeam.manager_id) {
+            await this.removeMemberFromTeam(id, currentTeam.manager_id);
+          }
+          
+          // Add new manager to team
+          await this.addMemberToTeam(id, teamData.manager_id);
+        } catch (error) {
+          console.warn('Failed to update manager team membership:', error);
+          // Don't throw here as the team was updated successfully
+        }
+      }
+
+      return updatedTeam;
     } catch {
       throw error;
     }

@@ -46,6 +46,8 @@ export default function DesignationModal({
 
   const [title, setTitle] = useState('');
   const [titleAr, setTitleAr] = useState('');
+  const [originalTitle, setOriginalTitle] = useState('');
+  const [originalTitleAr, setOriginalTitleAr] = useState('');
   const [errors, setErrors] = useState<{ title?: string; titleAr?: string }>(
     {}
   );
@@ -53,13 +55,22 @@ export default function DesignationModal({
   useEffect(() => {
     if (designation) {
       setTitle(designation.title);
-      setTitleAr(designation.titleAr);
+      setTitleAr(designation.titleAr || '');
+      setOriginalTitle(designation.title);
+      setOriginalTitleAr(designation.titleAr || '');
     } else {
       setTitle('');
       setTitleAr('');
+      setOriginalTitle('');
+      setOriginalTitleAr('');
     }
     setErrors({});
   }, [designation, open]);
+
+  // Check if form has changes
+  const hasChanges = designation
+    ? title !== originalTitle || titleAr !== originalTitleAr
+    : title.trim() !== '' || titleAr.trim() !== '';
 
   const validateForm = () => {
     const newErrors: { title?: string; titleAr?: string } = {};
@@ -191,7 +202,7 @@ export default function DesignationModal({
         <Button
           onClick={handleSubmit}
           variant='contained'
-          disabled={!title.trim()}
+          disabled={!hasChanges}
           size='large'
           sx={{ backgroundColor: '#464b8a' }}
         >
