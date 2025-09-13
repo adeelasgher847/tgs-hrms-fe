@@ -1,4 +1,9 @@
-import { Box, useMediaQuery, useTheme as useMuiTheme, CircularProgress } from '@mui/material';
+import {
+  Box,
+  useMediaQuery,
+  useTheme as useMuiTheme,
+  CircularProgress,
+} from '@mui/material';
 import Sidebar from './Sidebar';
 import Navbar from './Nabvar';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -87,6 +92,12 @@ const Layout = () => {
     const subPath = location.pathname
       .replace('/dashboard', '')
       .replace(/^\/+/, '');
+
+    // Don't redirect if user is on UserProfile page - allow profile updates
+    if (subPath === 'UserProfile') {
+      return;
+    }
+
     const allowed = isDashboardPathAllowedForRole(subPath, role);
 
     if (!allowed) {
@@ -230,7 +241,10 @@ const Layout = () => {
         </Box>
 
         {/* Scrollable Content */}
-        <Box component='main' sx={{ flex: 1, px: { xs: '7px', md: '24px' }, py: 3 }}>
+        <Box
+          component='main'
+          sx={{ flex: 1, px: { xs: '7px', md: '24px' }, py: 3 }}
+        >
           {isDashboardRoute && (loading || !user || !isAllowed) ? (
             <Box
               sx={{

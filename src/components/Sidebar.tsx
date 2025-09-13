@@ -336,7 +336,6 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
             sx={{
               width: 40,
               height: 40,
-              cursor: 'pointer',
               filter: 'brightness(0) invert(1)',
               borderBottom: '4px solid white',
             }}

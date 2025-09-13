@@ -40,6 +40,12 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [loadingManagers, setLoadingManagers] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if form has changes (for create, check if any field has content)
+  const hasChanges =
+    formData.name.trim() !== '' ||
+    formData.description.trim() !== '' ||
+    formData.manager_id !== '';
   const { language } = useLanguage();
 
   const labels = {
@@ -272,7 +278,12 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
           <Button
             type='submit'
             variant='contained'
-            disabled={loading || !formData.name.trim() || !formData.manager_id}
+            disabled={
+              loading ||
+              !hasChanges ||
+              !formData.name.trim() ||
+              !formData.manager_id
+            }
             sx={{ backgroundColor: '#484c7f' }}
             startIcon={loading ? <CircularProgress size={16} /> : null}
           >

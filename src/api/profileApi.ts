@@ -18,6 +18,13 @@ export interface ProfilePictureResponse {
   user: UserProfile;
 }
 
+export interface UpdateProfileRequest {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string | null;
+}
+
 class ProfileApiService {
   // Get user profile
   async getUserProfile(): Promise<UserProfile> {
@@ -66,6 +73,12 @@ class ProfileApiService {
     const response = await axiosInstance.delete<ProfilePictureResponse>(
       `/users/${authenticatedUserId}/profile-picture`
     );
+    return response.data;
+  }
+
+  // Update user profile
+  async updateProfile(updateData: UpdateProfileRequest): Promise<UserProfile> {
+    const response = await axiosInstance.put<UserProfile>('/profile/me', updateData);
     return response.data;
   }
 }

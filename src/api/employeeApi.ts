@@ -378,6 +378,24 @@ class EmployeeApiService {
     return normalizeEmployee(response.data);
   }
 
+  // Create a new manager employee
+  async createManager(employeeData: EmployeeDto): Promise<BackendEmployee> {
+    const payload = {
+      first_name: employeeData.first_name,
+      last_name: employeeData.last_name,
+      email: employeeData.email,
+      phone: employeeData.phone,
+      password: employeeData.password,
+      designation_id: employeeData.designationId,
+      gender: employeeData.gender,
+    };
+    const response = await axiosInstance.post<RawEmployee>(
+      `${this.baseUrl}/manager`,
+      payload
+    );
+    return normalizeEmployee(response.data);
+  }
+
   async updateEmployee(
     id: string,
     updates: EmployeeUpdateDto

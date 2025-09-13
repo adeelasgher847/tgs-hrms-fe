@@ -20,6 +20,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, UpdateTeamDto } from '../../api/teamApi';
@@ -28,6 +29,7 @@ import { snackbar } from '../../utils/snackbar';
 import TeamMemberList from './TeamMemberList';
 import EditTeamForm from './EditTeamForm';
 import DeleteTeamDialog from './DeleteTeamDialog';
+import AvailableEmployees from './AvailableEmployees';
 
 interface TeamListProps {
   teams: Team[];
@@ -44,6 +46,7 @@ const TeamList: React.FC<TeamListProps> = ({
   const [showMemberDialog, setShowMemberDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const { language } = useLanguage();
@@ -55,6 +58,7 @@ const TeamList: React.FC<TeamListProps> = ({
       manager: 'Manager',
       members: 'Members',
       viewMembers: 'View Members',
+      addMember: 'Add Member',
       editTeam: 'Edit Team',
       deleteTeam: 'Delete Team',
       cancel: 'Cancel',
@@ -68,6 +72,7 @@ const TeamList: React.FC<TeamListProps> = ({
       manager: 'مدير',
       members: 'الأعضاء',
       viewMembers: 'عرض الأعضاء',
+      addMember: 'إضافة عضو',
       editTeam: 'تعديل الفريق',
       deleteTeam: 'حذف الفريق',
       cancel: 'إلغاء',
@@ -100,6 +105,11 @@ const TeamList: React.FC<TeamListProps> = ({
   const handleViewMembers = (team: Team) => {
     setSelectedTeam(team);
     setShowMemberDialog(true);
+  };
+
+  const handleAddMember = (team: Team) => {
+    setSelectedTeam(team);
+    setShowAddMemberDialog(true);
   };
 
   const handleEditTeam = (team: Team) => {
@@ -401,6 +411,25 @@ const TeamList: React.FC<TeamListProps> = ({
                 >
                   {lang.viewMembers}
                 </Button>
+                <Button
+                  variant='outlined'
+                  size='small'
+                  startIcon={<AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
+                  onClick={() => handleAddMember(team)}
+                  sx={{
+                    borderColor: '#484c7f',
+                    color: '#484c7f',
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    py: { xs: 0.5, sm: 0.75 },
+                    px: { xs: 1, sm: 1.5 },
+                    '&:hover': {
+                      borderColor: '#3a3f5f',
+                      backgroundColor: 'rgba(72, 76, 127, 0.1)',
+                    },
+                  }}
+                >
+                  {lang.addMember}
+                </Button>
               </Stack>
             </CardContent>
           </Card>
@@ -424,6 +453,26 @@ const TeamList: React.FC<TeamListProps> = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowMemberDialog(false)}>
+            {lang.cancel}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Member Dialog */}
+      <Dialog
+        open={showAddMemberDialog}
+        onClose={() => setShowAddMemberDialog(false)}
+        maxWidth='md'
+        fullWidth
+      >
+        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+          {lang.addMember} - {selectedTeam?.name}
+        </DialogTitle>
+        <DialogContent>
+          <AvailableEmployees darkMode={darkMode} teamId={selectedTeam?.id} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowAddMemberDialog(false)}>
             {lang.cancel}
           </Button>
         </DialogActions>

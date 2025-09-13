@@ -34,15 +34,19 @@ import {
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
+import employeeApi, { type BackendEmployee } from '../../api/employeeApi';
 import type { TeamMember, Team } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
+import { isAdmin } from '../../utils/auth';
 
 interface AvailableEmployeesProps {
   darkMode?: boolean;
+  teamId?: string; // Optional team ID - if provided, skip team selection
 }
 
 const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
   darkMode = false,
+  teamId,
 }) => {
   const [employees, setEmployees] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,12 +103,81 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
       try {
         setLoading(true);
         setError(null);
-        const response = await teamApiService.getAvailableEmployees(
-          page + 1,
-          searchTerm
-        );
-        setEmployees(response.items || []);
-        setTotal(response.total || 0);
+
+        let response;
+        if (isAdmin()) {
+          // For admins, get all employees and filter out those already in teams
+          try {
+            const allEmployeesResponse = await employeeApi.getAllEmployees(
+              searchTerm ? { search: searchTerm } : {},
+              page + 1
+            );
+
+            // Convert BackendEmployee to TeamMember format
+            const allEmployees = allEmployeesResponse.items.map(emp => ({
+              id: emp.id,
+              user: {
+                id: emp.id,
+                first_name: emp.firstName || emp.name.split(' ')[0] || '',
+                last_name:
+                  emp.lastName || emp.name.split(' ').slice(1).join(' ') || '',
+                email: emp.email,
+                profile_pic: null,
+              },
+              designation: emp.designation,
+              department: emp.department,
+            }));
+
+            // Get all teams to find team members
+            const allTeamsResponse = await teamApiService.getAllTeams(1);
+            const allTeamMembers: TeamMember[] = [];
+
+            // Get members from each team
+            for (const team of allTeamsResponse.items) {
+              try {
+                const teamMembersResponse = await teamApiService.getTeamMembers(
+                  team.id,
+                  1
+                );
+                allTeamMembers.push(...teamMembersResponse.items);
+              } catch (error) {
+                console.warn(
+                  `Failed to get members for team ${team.id}:`,
+                  error
+                );
+              }
+            }
+
+            // Create a set of employee IDs who are already in teams
+            const assignedEmployeeIds = new Set(
+              allTeamMembers.map(member => member.id)
+            );
+
+            // Filter out employees who are already assigned to teams
+            const availableEmployees = allEmployees.filter(
+              emp => !assignedEmployeeIds.has(emp.id)
+            );
+
+            setEmployees(availableEmployees);
+            setTotal(availableEmployees.length);
+          } catch (error) {
+            console.error(
+              'Error loading available employees for admin:',
+              error
+            );
+            setError(lang.error);
+            setEmployees([]);
+            setTotal(0);
+          }
+        } else {
+          // For managers, use the existing available employees endpoint
+          response = await teamApiService.getAvailableEmployees(
+            page + 1,
+            searchTerm
+          );
+          setEmployees(response.items || []);
+          setTotal(response.total || 0);
+        }
       } catch {
         setError(lang.error);
         setEmployees([]);
@@ -153,7 +226,15 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
   const handleAddToTeam = async (employee: TeamMember) => {
     setSelectedEmployee(employee);
     setSelectedEmployeeId(employee.id);
-    setShowTeamDialog(true);
+
+    if (teamId) {
+      // If team ID is provided (admin case), skip team selection and go directly to confirmation
+      setSelectedTeamId(teamId);
+      setShowConfirmDialog(true);
+    } else {
+      // If no team ID provided (manager case), show team selection dialog
+      setShowTeamDialog(true);
+    }
   };
 
   const handleConfirmAddToTeam = async () => {

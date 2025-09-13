@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -9,6 +9,7 @@ import {
   Paper,
   CircularProgress,
   Alert,
+  Button,
 } from '@mui/material';
 import {
   Person,
@@ -17,16 +18,28 @@ import {
   Phone,
   Business,
   CalendarToday,
+  Edit,
 } from '@mui/icons-material';
 // UserProfile type available if needed
 import { useUser } from '../../hooks/useUser';
-import { getRoleName, getRoleColor, isEmployee, isManager } from '../../utils/roleUtils';
+import type { UserProfile } from '../../api/profileApi';
+import { profileApiService } from '../../api/profileApi';
+import { useProfilePicture } from '../../context/ProfilePictureContext';
+import {
+  getRoleName,
+  getRoleColor,
+  isEmployee,
+  isManager,
+} from '../../utils/roleUtils';
 import ProfilePictureUpload from '../common/ProfilePictureUpload';
 import EmployeeProfileView from '../Employee/EmployeeProfileView';
+import EditProfileModal from './EditProfileModal';
 
-const UserProfileComponent = () => {
-  const { user: profile, loading, refreshUser } = useUser();
+const UserProfileComponent = React.memo(() => {
+  const { user: profile, loading, refreshUser, updateUser } = useUser();
+  const { updateProfilePicture } = useProfilePicture();
   const [error, setError] = useState<string | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   useEffect(() => {
     // Only fetch if we don't have user data and we're not already loading
@@ -49,12 +62,54 @@ const UserProfileComponent = () => {
         // ignore; fallback remains
       });
     }
-  }, [profile, loading, refreshUser]);
+  }, [profile?.tenant, loading, refreshUser]); // Only depend on tenant, not entire profile
 
-  const handleProfileUpdate = () => {
+  // Initialize profile picture state when user data loads
+  useEffect(() => {
+    if (profile?.profile_pic) {
+      // ✅ Construct the full API URL for the profile picture
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const profilePicUrl = `${API_BASE_URL}/users/${profile.id}/profile-picture`;
+      updateProfilePicture(profilePicUrl);
+    }
+  }, [profile?.profile_pic, profile?.id, updateProfilePicture]);
+
+  const handleProfileUpdate = useCallback(() => {
     // The UserContext will handle the update automatically
     // This function is kept for compatibility with ProfilePictureUpload
-  };
+  }, []);
+
+  const handleEditProfile = useCallback(() => {
+    setEditModalOpen(true);
+  }, []);
+
+  const handleCloseEditModal = useCallback(() => {
+    setEditModalOpen(false);
+  }, []);
+
+  const handleProfileUpdated = useCallback(
+    async (updatedUser: UserProfile) => {
+      // First update with the returned data for immediate UI update
+      updateUser(updatedUser);
+      setEditModalOpen(false);
+
+      // Then refresh from API to ensure we have the latest data from backend
+      try {
+        const freshUserData = await profileApiService.getUserProfile();
+        updateUser(freshUserData);
+
+        // Update profile picture context if profile picture changed
+        if (freshUserData.profile_pic) {
+          updateProfilePicture(freshUserData.profile_pic);
+        }
+      } catch (error) {
+        console.error('Failed to refresh profile data:', error);
+        // Keep the updated data even if refresh fails
+      }
+    },
+    [updateUser, updateProfilePicture]
+  );
 
   // Determine if the user should see the employee profile view (managers included)
   const userIsEmployee = isEmployee(profile?.role) || isManager(profile?.role);
@@ -68,43 +123,54 @@ const UserProfileComponent = () => {
   if (error) return <Alert severity='error'>{error}</Alert>;
   if (!profile) return null;
 
-  const profileItems = [
-    {
-      icon: <Person sx={{ color: 'primary.main' }} />,
-      label: 'First Name',
-      value: profile.first_name,
-    },
-    {
-      icon: <Person sx={{ color: 'primary.main' }} />,
-      label: 'Last Name',
-      value: profile.last_name,
-    },
-    {
-      icon: <Email sx={{ color: 'primary.main' }} />,
-      label: 'Email Address',
-      value: profile.email,
-    },
-    {
-      icon: <Phone sx={{ color: 'primary.main' }} />,
-      label: 'Phone',
-      value: profile.phone,
-    },
-    {
-      icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
-      label: 'Role',
-      value: getRoleName(profile.role),
-    },
-    {
-      icon: <Business sx={{ color: 'primary.main' }} />,
-      label: 'Tenant',
-      value: profile.tenant,
-    },
-    {
-      icon: <CalendarToday sx={{ color: 'primary.main' }} />,
-      label: 'Joined',
-      value: new Date(profile.created_at).toLocaleDateString(),
-    },
-  ];
+  const profileItems = useMemo(
+    () => [
+      {
+        icon: <Person sx={{ color: 'primary.main' }} />,
+        label: 'First Name',
+        value: profile.first_name,
+      },
+      {
+        icon: <Person sx={{ color: 'primary.main' }} />,
+        label: 'Last Name',
+        value: profile.last_name,
+      },
+      {
+        icon: <Email sx={{ color: 'primary.main' }} />,
+        label: 'Email Address',
+        value: profile.email,
+      },
+      {
+        icon: <Phone sx={{ color: 'primary.main' }} />,
+        label: 'Phone',
+        value: profile.phone,
+      },
+      {
+        icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
+        label: 'Role',
+        value: getRoleName(profile.role),
+      },
+      {
+        icon: <Business sx={{ color: 'primary.main' }} />,
+        label: 'Tenant',
+        value: profile.tenant,
+      },
+      {
+        icon: <CalendarToday sx={{ color: 'primary.main' }} />,
+        label: 'Joined',
+        value: new Date(profile.created_at).toLocaleDateString(),
+      },
+    ],
+    [
+      profile.first_name,
+      profile.last_name,
+      profile.email,
+      profile.phone,
+      profile.role,
+      profile.tenant,
+      profile.created_at,
+    ]
+  );
 
   return (
     <Box sx={{ py: 2 }}>
@@ -116,14 +182,39 @@ const UserProfileComponent = () => {
           flexDirection: 'column',
         }}
       >
-        <Typography
-          variant='h4'
-          component='h1'
-          gutterBottom
-          sx={{ mb: 4, fontWeight: 600 }}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 4,
+          }}
         >
-          User Profile
-        </Typography>
+          <Typography variant='h4' component='h1' sx={{ fontWeight: 600 }}>
+            User Profile
+          </Typography>
+          <Button
+            onClick={handleEditProfile}
+            variant='outlined'
+            startIcon={<Edit />}
+            sx={{
+              // borderRadius: 1,
+              textTransform: 'none',
+              fontWeight: 500,
+              px: 2,
+              py: 1,
+              borderColor: '#e0e0e0',
+              textColor: '#fff',
+              color: '#333',
+
+              '&:hover': {
+                borderColor: '#bdbdbd',
+              },
+            }}
+          >
+            Edit profile
+          </Button>
+        </Box>
         <Card
           elevation={1}
           sx={{ borderRadius: 3, border: 'none', bgcolor: 'transparent' }}
@@ -169,6 +260,7 @@ const UserProfileComponent = () => {
                 )}
               </Box>
             </Box>
+
             <Divider sx={{ mb: 3 }} />
             {/* Profile Info */}
             <Box
@@ -217,8 +309,18 @@ const UserProfileComponent = () => {
           </Box>
         )}
       </Paper>
+
+      {/* Edit Profile Modal */}
+      {profile && (
+        <EditProfileModal
+          open={editModalOpen}
+          onClose={handleCloseEditModal}
+          user={profile}
+          onProfileUpdated={handleProfileUpdated}
+        />
+      )}
     </Box>
   );
-};
+});
 
 export default UserProfileComponent;
