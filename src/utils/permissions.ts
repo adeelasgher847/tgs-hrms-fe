@@ -23,6 +23,7 @@ export const getDefaultDashboardRoute = (role?: string): string => {
   const r = normalizeRole(role);
   switch (r) {
     case 'system-admin':
+      return '/dashboard'; // System admin dashboard
     case 'admin':
       return '/dashboard'; // HR dashboard (_index)
     case 'manager':
@@ -89,8 +90,18 @@ export const isSubMenuVisibleForRole = (
   // Default: visible unless explicitly hidden below
   let visible = true;
 
-  // Admin and System-Admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports, Attendance
-  if (r === 'admin' || r === 'system-admin') {
+  // System-admin: hide only the "Attendance" submenu (check-in/check-out)
+  if (r === 'system-admin') {
+    if (parent.includes('attendance')) {
+      // Hide only the exact "Attendance" sub item (check-in/check-out), keep "Attendance Table" and "Reports"
+      if (sub === 'attendance') {
+        visible = false;
+      }
+    }
+  }
+
+  // Admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
+  if (r === 'admin') {
     if (parent.includes('department')) {
       if (
         sub.includes('user list') ||
@@ -101,8 +112,8 @@ export const isSubMenuVisibleForRole = (
       }
     }
     if (parent.includes('attendance')) {
-      // hide only the exact "Attendance" sub item (not "Attendance Table") and hide Reports
-      if (sub === 'attendance' || sub.includes('reports')) {
+      // hide only Reports for admin, but keep Attendance and Attendance Table visible
+      if (sub.includes('reports')) {
         visible = false;
       }
     }
@@ -152,11 +163,11 @@ export const isDashboardPathAllowedForRole = (
       // To block direct access, remove the entries below from the allowlist.
       // 'policies', 'holidays',
       'leaves',
-      // Attendance (hide Reports and AttendanceCheck for admin/system-admin)
-      'AttendanceTable',
-      // 'AttendanceCheck',
-      // 'Reports',
-      // 'AttendanceCheck/TimesheetLayout',
+      // Attendance - Allow AttendanceTable and Reports, but NOT AttendanceCheck (check-in/check-out)
+      // 'AttendanceCheck', // HIDDEN for system-admin
+      'AttendanceTable', // ALLOWED for system-admin
+      // 'AttendanceCheck/TimesheetLayout', // HIDDEN for system-admin
+      'Reports', // ALLOWED for system-admin
       // Teams
       'teams',
       // Employee profile view
@@ -171,11 +182,11 @@ export const isDashboardPathAllowedForRole = (
       'UserProfile',
       // 'policies', 'holidays',
       'leaves',
-      // Attendance (hide Reports and AttendanceCheck for admin)
+      // Attendance - Allow AttendanceCheck for admin
+      'AttendanceCheck',
       'AttendanceTable',
-      // 'AttendanceCheck',
+      'AttendanceCheck/TimesheetLayout',
       // 'Reports',
-      // 'AttendanceCheck/TimesheetLayout',
       'teams',
       'EmployeeProfileView',
     ]),

@@ -33,10 +33,27 @@ class AttendanceApiService {
   private baseUrl = '/attendance';
 
   // Get all attendance records (Admin only)
-  async getAllAttendance(page: number = 1): Promise<AttendanceResponse> {
+  async getAllAttendance(
+    page: number = 1,
+    startDate?: string,
+    endDate?: string,
+    selectedEmployee?: string
+  ): Promise<AttendanceResponse> {
     try {
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      if (startDate) {
+        params.append('startDate', startDate);
+      }
+      if (endDate) {
+        params.append('endDate', endDate);
+      }
+      if (selectedEmployee) {
+        params.append('userId', selectedEmployee);
+      }
+
       const response = await axiosInstance.get(
-        `${this.baseUrl}/all?page=${page}`
+        `${this.baseUrl}/all?${params.toString()}`
       );
 
       if (response.data && response.data.items) {
@@ -72,13 +89,21 @@ class AttendanceApiService {
   // Get attendance events for a user
   async getAttendanceEvents(
     userId?: string,
-    page: number = 1
+    page: number = 1,
+    startDate?: string,
+    endDate?: string
   ): Promise<AttendanceResponse> {
     try {
       const params = new URLSearchParams();
       params.append('page', page.toString());
       if (userId) {
         params.append('userId', userId);
+      }
+      if (startDate) {
+        params.append('startDate', startDate);
+      }
+      if (endDate) {
+        params.append('endDate', endDate);
       }
 
       const url = `${this.baseUrl}/events?${params.toString()}`;
