@@ -251,7 +251,13 @@ const AttendanceTable = () => {
     }
   };
 
-  const fetchAttendance = async (page: number = 1) => {
+  const fetchAttendance = async (
+    page: number = 1,
+    view?: 'my' | 'all',
+    selectedUserId?: string,
+    startDateOverride?: string,
+    endDateOverride?: string
+  ) => {
     setLoading(true);
     try {
       const storedUser = localStorage.getItem('user');
@@ -268,34 +274,42 @@ const AttendanceTable = () => {
       ).toString();
       const roleLc = roleName.toLowerCase();
       setUserRole(roleName);
-      setIsManager(checkIsManager(currentUser.role));
-      setIsAdminUser(isAdmin(currentUser.role));
+      const isManagerFlag = checkIsManager(currentUser.role);
+      const isAdminFlag = isAdmin(currentUser.role);
+      setIsManager(isManagerFlag);
+      setIsAdminUser(isAdminFlag);
 
       let response: AttendanceResponse;
 
-      // Admin logic: fetch based on selected view
-      if (isAdminUser) {
-        if (adminView === 'all') {
-          response = await attendanceApi.getAllAttendance(
+      const effectiveView: 'my' | 'all' = view ?? adminView;
+      const effectiveSelectedEmployee = selectedUserId ?? selectedEmployee;
+      const effectiveStartDate = startDateOverride ?? startDate;
+      const effectiveEndDate = endDateOverride ?? endDate;
+
+      // Choose API explicitly based on effectiveView and admin privilege
+      if (isAdminFlag && effectiveView === 'all') {
+        if (effectiveSelectedEmployee) {
+          // When a specific employee is selected, fetch events for that user
+          response = await attendanceApi.getAttendanceEvents(
+            effectiveSelectedEmployee,
             page,
-            startDate || undefined,
-            endDate || undefined,
-            selectedEmployee || undefined
+            effectiveStartDate || undefined,
+            effectiveEndDate || undefined
           );
         } else {
-          response = await attendanceApi.getAttendanceEvents(
-            currentUser.id,
+          // No employee selected: fetch all attendance with pagination/date filters
+          response = await attendanceApi.getAllAttendance(
             page,
-            startDate || undefined,
-            endDate || undefined
+            effectiveStartDate || undefined,
+            effectiveEndDate || undefined
           );
         }
       } else {
         response = await attendanceApi.getAttendanceEvents(
           currentUser.id,
           page,
-          startDate || undefined,
-          endDate || undefined
+          effectiveStartDate || undefined,
+          effectiveEndDate || undefined
         );
       }
 
@@ -308,7 +322,7 @@ const AttendanceTable = () => {
       const rows = buildFromEvents(
         events, 
         currentUser.id, 
-        isAdminUser && adminView === 'all'
+        isAdminFlag && effectiveView === 'all'
       );
       
       setAttendanceData(rows);
@@ -326,7 +340,7 @@ const AttendanceTable = () => {
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    fetchAttendance(page);
+    fetchAttendance(page, isAdminUser ? adminView : 'my');
   };
 
   // Handle team page change
@@ -342,7 +356,7 @@ const AttendanceTable = () => {
     setSelectedEmployee('');
     setStartDate('');
     setEndDate('');
-    fetchAttendance(1);
+    fetchAttendance(1, 'my', undefined, '', '');
   };
 
   const handleAllAttendance = async () => {
@@ -354,12 +368,12 @@ const AttendanceTable = () => {
     
     // Fetch employees from attendance data first, then attendance
     await fetchEmployeesFromAttendance();
-    fetchAttendance(1);
+    fetchAttendance(1, 'all', undefined, '', '');
   };
 
   // Initial load
   useEffect(() => {
-    fetchAttendance(1);
+    fetchAttendance(1, 'my');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -370,61 +384,46 @@ const AttendanceTable = () => {
     return new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0);
   };
 
-  // Separate effect for data filtering (without page reset)
+  // Separate effect for data filtering (only by selected employee; dates handled server-side)
   useEffect(() => {
     let data = [...attendanceData];
 
-    // Employee filter
     if (selectedEmployee) {
       data = data.filter(rec => rec.userId === selectedEmployee);
     }
 
-    // Date filters: compare using Date objects (local midnight)
-    const start = startDate ? ymdToLocalDate(startDate) : null;
-    const end = endDate ? ymdToLocalDate(endDate) : null;
-
-    if (start) {
-      data = data.filter(rec => {
-        const recDate = ymdToLocalDate(rec.date);
-        if (!recDate) return false;
-        return recDate.getTime() >= start.getTime();
-      });
-    }
-    if (end) {
-      data = data.filter(rec => {
-        const recDate = ymdToLocalDate(rec.date);
-        if (!recDate) return false;
-        return recDate.getTime() <= end.getTime();
-      });
-    }
-
     setFilteredData(data);
-  }, [attendanceData, selectedEmployee, startDate, endDate]);
+  }, [attendanceData, selectedEmployee]);
 
   // Handle filter changes - reset page to 1 and fetch new data
   const handleFilterChange = () => {
     setCurrentPage(1);
-    fetchAttendance(1);
+    fetchAttendance(1, isAdminUser ? adminView : 'my');
   };
 
   // Handle employee filter change
   const handleEmployeeChange = (value: string) => {
     setSelectedEmployee(value);
     setCurrentPage(1);
-    fetchAttendance(1);
+    // Immediately pass the selected employee to avoid stale state in fetch
+    fetchAttendance(1, 'all', value, startDate, endDate);
   };
 
   // Handle date filter changes
   const handleStartDateChange = (value: string) => {
     setStartDate(value);
     setCurrentPage(1);
-    fetchAttendance(1);
+    const view = isAdminUser ? adminView : 'my';
+    const selectedId = view === 'all' ? selectedEmployee : undefined;
+    fetchAttendance(1, view, selectedId, value, endDate);
   };
 
   const handleEndDateChange = (value: string) => {
     setEndDate(value);
     setCurrentPage(1);
-    fetchAttendance(1);
+    const view = isAdminUser ? adminView : 'my';
+    const selectedId = view === 'all' ? selectedEmployee : undefined;
+    fetchAttendance(1, view, selectedId, startDate, value);
   };
 
   const clearFilters = () => {
@@ -432,7 +431,8 @@ const AttendanceTable = () => {
     setEndDate('');
     setSelectedEmployee('');
     setCurrentPage(1);
-    fetchAttendance(1);
+    const view = isAdminUser ? adminView : 'my';
+    fetchAttendance(1, view, undefined, '', '');
   };
 
   // Determine admin-like UI behavior (Admin or System-Admin)
