@@ -10,6 +10,7 @@ import {
   CircularProgress,
   Alert,
   Button,
+  useTheme,
 } from '@mui/material';
 import {
   Person,
@@ -40,6 +41,7 @@ const UserProfileComponent = React.memo(() => {
   const { updateProfilePicture } = useProfilePicture();
   const [error, setError] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const theme = useTheme();
 
   useEffect(() => {
     // Only fetch if we don't have user data and we're not already loading
@@ -198,17 +200,15 @@ const UserProfileComponent = React.memo(() => {
             variant='outlined'
             startIcon={<Edit />}
             sx={{
-              // borderRadius: 1,
               textTransform: 'none',
               fontWeight: 500,
               px: 2,
               py: 1,
-              borderColor: '#e0e0e0',
-              textColor: '#fff',
-              color: '#333',
-
+              borderColor: theme.palette.divider,
+              color: theme.palette.text.primary,
               '&:hover': {
-                borderColor: '#bdbdbd',
+                borderColor: theme.palette.primary.main,
+                backgroundColor: theme.palette.action.hover,
               },
             }}
           >
