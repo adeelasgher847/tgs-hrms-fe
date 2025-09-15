@@ -15,7 +15,7 @@ const labels = {
     topPerformers: 'Top Performers',
   },
   ar: {
-    title: 'لوحة التحكم',
+    title: 'لوحة تحكم الموارد البشرية',
     upcoming: 'المقابلات القادمة',
     topPerformers: 'أفضل المؤدين',
   },
