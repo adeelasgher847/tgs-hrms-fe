@@ -6,11 +6,11 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import type { CreateLeaveRequest } from '../../api/leaveApi';
 
 const leaveTypes = [
-  { value: 'sick', label: 'Sick' },
-  { value: 'casual', label: 'Casual' },
-  { value: 'vacation', label: 'Vacation' },
-  { value: 'emergency', label: 'Emergency' },
-  { value: 'other', label: 'Other' },
+  { value: 'Sick', label: 'Sick' },
+  { value: 'Casual', label: 'Casual' },
+  { value: 'Vacation', label: 'Vacation' },
+  { value: 'Emergency', label: 'Emergency' },
+  { value: 'Other', label: 'Other' },
 ];
 
 const LeaveForm = ({

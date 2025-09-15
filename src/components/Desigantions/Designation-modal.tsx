@@ -177,7 +177,7 @@ export default function DesignationModal({
             }}
           />
 
-          <TextField
+          {/* <TextField
             label={getText(
               'Designation Title (Arabic - Optional)',
               'عنوان المسمى الوظيفي (بالعربية - اختياري)'
@@ -191,7 +191,7 @@ export default function DesignationModal({
             inputProps={{
               dir: 'rtl',
             }}
-          />
+          /> */}
         </Box>
       </DialogContent>
 

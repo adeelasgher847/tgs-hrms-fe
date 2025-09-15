@@ -191,18 +191,22 @@ const LeaveHistory = ({
                     <TableCell>{leave.toDate || 'N/A'}</TableCell>
                     <TableCell>{leave.applied || 'N/A'}</TableCell>
                     <TableCell>
-                      <Chip
-                        icon={statusConfig[leave.status]?.icon}
-                        label={leave.status || 'Unknown'}
-                        color={statusConfig[leave.status]?.color}
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: 16,
-                          px: 2,
-                          py: 1,
-                          width: '100%',
-                        }}
-                      />
+                    <Chip
+  icon={statusConfig[leave.status]?.icon}
+  label={
+    leave.status
+      ? leave.status.charAt(0).toUpperCase() + leave.status.slice(1)
+      : 'Unknown'
+  }
+  color={statusConfig[leave.status]?.color}
+  sx={{
+    fontWeight: 600,
+    fontSize: 16,
+    px: 2,
+    py: 1,
+    width: '100%',
+  }}
+/>
                     </TableCell>
                     <TableCell>
                       <Typography>{leave.reason || 'N/A'}</Typography>

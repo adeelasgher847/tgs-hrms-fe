@@ -15,7 +15,7 @@ type GenderDataItem = {
 
 // Translations
 const labels = {
-  genderDistribution: { en: 'Total Employees', ar: 'توزيع الجنس' },
+  genderDistribution: { en: 'Total Active Employees', ar: 'توزيع الجنس' },
   male: { en: 'Male', ar: 'ذكر' },
   female: { en: 'Female', ar: 'أنثى' },
   loading: { en: 'Loading...', ar: 'جاري التحميل...' },
@@ -96,7 +96,6 @@ export default function GenderPercentageChart() {
             percentage: data.female,
           },
         ];
-
         setGenderData(transformedData);
       } catch {
         setError('Failed to load gender distribution data');
