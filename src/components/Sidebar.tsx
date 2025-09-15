@@ -53,12 +53,9 @@ interface SidebarProps {
 //  Menu data
 const menuItems: MenuItem[] = [
   {
-    label: 'Dashboard',
+    label: 'HR Dashboard',
     icon: <Dashboard />,
-    subItems: [
-      { label: 'Hr Dashboard', path: '' },
-      // { label: "Project Dashboard", path: "project-dashboard" },
-    ],
+    subItems: [{ label: 'HR Dashboard', path: '' }],
   },
   {
     label: 'Projects',
@@ -251,58 +248,99 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
         <List>
           {filteredMenuItems.map(item => {
             const isParentActive = openItem === item.label;
+            const isDirectLink =
+              item.subItems.length === 1 && item.subItems[0].path === '';
+
             return (
               <Box key={item.label}>
-                <ListItemButton
-                  onClick={() => setOpenItem(isParentActive ? '' : item.label)}
-                  sx={{
-                    color: isParentActive ? 'orange' : 'white',
-                    pl: 1,
-                  }}
-                >
-                  <ListItemIcon
+                {isDirectLink ? (
+                  // Direct link for single sub-item with empty path (like HR Dashboard)
+                  <ListItemButton
+                    component={NavLink}
+                    to='/dashboard'
+                    onClick={() => {
+                      handleSubItemClick(item.label, item.subItems[0].label);
+                    }}
                     sx={{
-                      color: isParentActive ? 'orange' : 'white',
-                      minWidth: '36px',
+                      color:
+                        activeSubItem === item.subItems[0].label
+                          ? 'orange'
+                          : 'white',
+                      pl: 1,
                     }}
                   >
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText primary={item.label} />
-                  <img
-                    src={dotted}
-                    alt='dotted'
-                    style={{
-                      width: 23,
-                      height: 23,
-                      filter:
-                        'invert(57%) sepia(9%) saturate(388%) hue-rotate(195deg) brightness(89%) contrast(85%)',
-                    }}
-                  />
-                </ListItemButton>
-
-                <Collapse in={isParentActive} timeout='auto' unmountOnExit>
-                  <List component='div' disablePadding>
-                    {item.subItems.map(sub => (
-                      <ListItemButton
-                        key={sub.path}
-                        component={NavLink}
-                        to={`/dashboard/${sub.path}`}
-                        onClick={() =>
-                          handleSubItemClick(item.label, sub.label)
-                        }
+                    <ListItemIcon
+                      sx={{
+                        color:
+                          activeSubItem === item.subItems[0].label
+                            ? 'orange'
+                            : 'white',
+                        minWidth: '36px',
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText primary={item.label} />
+                  </ListItemButton>
+                ) : (
+                  // Collapsible menu for multiple sub-items
+                  <>
+                    <ListItemButton
+                      onClick={() =>
+                        setOpenItem(isParentActive ? '' : item.label)
+                      }
+                      sx={{
+                        color: isParentActive ? 'orange' : 'white',
+                        pl: 1,
+                      }}
+                    >
+                      <ListItemIcon
                         sx={{
-                          pl: 6,
-                          fontSize: '14px',
-                          color:
-                            activeSubItem === sub.label ? 'orange' : 'white',
+                          color: isParentActive ? 'orange' : 'white',
+                          minWidth: '36px',
                         }}
                       >
-                        <ListItemText primary={sub.label} />
-                      </ListItemButton>
-                    ))}
-                  </List>
-                </Collapse>
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText primary={item.label} />
+                      <img
+                        src={dotted}
+                        alt='dotted'
+                        style={{
+                          width: 23,
+                          height: 23,
+                          filter:
+                            'invert(57%) sepia(9%) saturate(388%) hue-rotate(195deg) brightness(89%) contrast(85%)',
+                        }}
+                      />
+                    </ListItemButton>
+
+                    <Collapse in={isParentActive} timeout='auto' unmountOnExit>
+                      <List component='div' disablePadding>
+                        {item.subItems.map(sub => (
+                          <ListItemButton
+                            key={sub.path}
+                            component={NavLink}
+                            to={`/dashboard/${sub.path}`}
+                            onClick={() =>
+                              handleSubItemClick(item.label, sub.label)
+                            }
+                            sx={{
+                              pl: 6,
+                              fontSize: '14px',
+                              color:
+                                activeSubItem === sub.label
+                                  ? 'orange'
+                                  : 'white',
+                            }}
+                          >
+                            <ListItemText primary={sub.label} />
+                          </ListItemButton>
+                        ))}
+                      </List>
+                    </Collapse>
+                  </>
+                )}
               </Box>
             );
           })}
