@@ -27,6 +27,10 @@ import HolidayList from './components/HolidayCalendar/HolidayList';
 import TimesheetLayout from './components/TimerTracker/TimesheetLayout';
 import TeamManager from './components/Teams/TeamManager';
 import ConfirmPassword from './components/ConfirmPassword';
+import CompanyDetails from './components/CompanyDetails';
+import SelectPlan from './components/SelectPlan';
+import ConfirmPayment from './components/ConfirmPayment';
+import SignupSuccess from './components/SignupSuccess';
 function App() {
   return (
     <LanguageProvider>
@@ -39,6 +43,10 @@ function App() {
               <Route path='/reset-password' element={<ResetPassword />} />
               <Route path='/confirm-password' element={<ConfirmPassword />} />
               <Route path='/Signup' element={<Signup />} />
+              <Route path='/signup/company-details' element={<CompanyDetails />} />
+              <Route path='/signup/select-plan' element={<SelectPlan />} />
+              <Route path='/signup/confirm-payment' element={<ConfirmPayment />} />
+              <Route path='/signup/success' element={<SignupSuccess />} />
               <Route
                 path='/dashboard'
                 element={
@@ -73,6 +81,7 @@ function App() {
                 />
                 <Route path='teams' element={<TeamManager />} />
               </Route>
+              <Route path='/company-details' element={<CompanyDetails />} />
               <Route path='*' element={<Error404 />} />
             </Routes>
           </Router>

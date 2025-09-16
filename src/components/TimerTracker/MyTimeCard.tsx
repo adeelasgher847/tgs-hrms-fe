@@ -396,8 +396,8 @@ const MyTimerCard: React.FC = () => {
                 sx={{
                   backgroundColor: 'primary.main',
                   width: '100%',
-                  px: 6,
-                  py: 2,
+                  px: 1,
+                  py: 1,
                   fontSize: '1.1rem',
                   fontWeight: 600,
                   textTransform: 'none',
