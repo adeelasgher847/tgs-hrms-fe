@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import {
   Box,
@@ -13,14 +13,22 @@ import {
   Select,
   FormControlLabel,
   Checkbox,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
+import signupApi, { type PersonalDetailsRequest } from '../api/signupApi';
 
 const Signup: React.FC = () => {
+  const navigate = useNavigate();
   const [lang, setLang] = useState<'en' | 'ar'>('en');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
   });
@@ -29,9 +37,89 @@ const Signup: React.FC = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+  const validateForm = () => {
+    if (!formData.first_name.trim()) {
+      setError('First name is required');
+      return false;
+    }
+    if (!formData.last_name.trim()) {
+      setError('Last name is required');
+      return false;
+    }
+    if (!formData.email.trim()) {
+      setError('Email is required');
+      return false;
+    }
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return false;
+    }
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return false;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    alert('Form submitted');
+    setError(null);
+    setSuccess(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const personalDetails: PersonalDetailsRequest = {
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        phone: formData.phone.trim() || undefined,
+      };
+
+      console.log('Sending data:', personalDetails);
+      const response = await signupApi.createPersonalDetails(personalDetails);
+      
+      setSuccess('Personal details saved successfully!');
+      
+      // Store signupSessionId in localStorage for next steps
+      localStorage.setItem('signupSessionId', response.signupSessionId);
+      
+      // Redirect to next step (company details) after a short delay
+      setTimeout(() => {
+        navigate('/signup/company-details');
+      }, 2000);
+
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      
+      // Handle different error types
+      if (err.response?.data?.message) {
+        const errorData = err.response.data.message;
+        if (typeof errorData === 'object' && errorData.field && errorData.message) {
+          setError(`${errorData.field}: ${errorData.message}`);
+        } else {
+          setError(errorData);
+        }
+      } else if (err.response?.data?.errors) {
+        const errorMessages = Object.values(err.response.data.errors).flat();
+        setError(errorMessages.join(', '));
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Failed to create account. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,7 +135,6 @@ const Signup: React.FC = () => {
         <Box
           sx={{
             height: '100%',
-            // display: "flex",
             justifyContent: 'center',
             alignItems: 'center',
             direction: lang === 'ar' ? 'rtl' : 'ltr',
@@ -59,7 +146,6 @@ const Signup: React.FC = () => {
               flexDirection: { xs: 'column', md: 'row' },
               alignItems: 'center',
               justifyContent: 'center',
-              // gap: "90px",
               height: '100%',
               margin: 'auto',
             }}
@@ -160,6 +246,19 @@ const Signup: React.FC = () => {
                       : 'Free access to our dashboard.'}
                   </Typography>
                 </Box>
+
+                {/* Error/Success Messages */}
+                {error && (
+                  <Alert severity='error' sx={{ mt: 2, mb: 2 }}>
+                    {error}
+                  </Alert>
+                )}
+                {success && (
+                  <Alert severity='success' sx={{ mt: 2, mb: 2 }}>
+                    {success}
+                  </Alert>
+                )}
+
                 <Box component='form' onSubmit={handleSubmit}>
                   {/* Full Name (First + Last) */}
                   <Typography
@@ -167,17 +266,18 @@ const Signup: React.FC = () => {
                     htmlFor='Full Name'
                     sx={{ fontWeight: 400, fontSize: '14px' }}
                   >
-                    {lang === 'ar' ? 'تأكيد كلمة المرور' : 'Full Name'}
+                    {lang === 'ar' ? 'الاسم الكامل' : 'Full Name'}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, mb: 1, mt: 1 }}>
                     <TextField
-                      name='firstName'
+                      name='first_name'
                       required
                       fullWidth
-                      value={formData.firstName}
+                      value={formData.first_name}
                       placeholder='John'
                       onChange={handleChange}
                       variant='outlined'
+                      disabled={loading}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           backgroundColor: '#eee',
@@ -186,18 +286,15 @@ const Signup: React.FC = () => {
                           '& fieldset': { border: 'none' },
                           '&:hover fieldset': { border: 'none' },
                           '&.Mui-focused fieldset': { border: 'none' },
-
                           '&:hover': { backgroundColor: '#eee' },
                           '&.Mui-focused': {
-                            backgroundColor: theme =>
-                              theme.palette.background.paper,
+                            backgroundColor: theme => theme.palette.background.paper,
                           },
                         },
                         '& input': {
                           outline: 'none',
                           boxShadow: 'none',
                         },
-
                         '& input:-webkit-autofill': {
                           height: '10px',
                         },
@@ -205,12 +302,13 @@ const Signup: React.FC = () => {
                     />
 
                     <TextField
-                      name='lastName'
+                      name='last_name'
                       required
                       fullWidth
-                      value={formData.lastName}
+                      value={formData.last_name}
                       placeholder='Parker'
                       onChange={handleChange}
+                      disabled={loading}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           backgroundColor: '#eee',
@@ -219,11 +317,9 @@ const Signup: React.FC = () => {
                           '& fieldset': { border: 'none' },
                           '&:hover fieldset': { border: 'none' },
                           '&.Mui-focused fieldset': { border: 'none' },
-
                           '&:hover': { backgroundColor: '#eee' },
                           '&.Mui-focused': {
-                            backgroundColor: theme =>
-                              theme.palette.background.paper,
+                            backgroundColor: theme => theme.palette.background.paper,
                           },
                         },
                         '& input': {
@@ -247,11 +343,13 @@ const Signup: React.FC = () => {
                   </Typography>
                   <TextField
                     name='email'
+                    type='email'
                     required
                     fullWidth
                     value={formData.email}
                     placeholder='name@example.com'
                     onChange={handleChange}
+                    disabled={loading}
                     sx={{
                       mb: 1,
                       mt: 1,
@@ -262,11 +360,50 @@ const Signup: React.FC = () => {
                         '& fieldset': { border: 'none' },
                         '&:hover fieldset': { border: 'none' },
                         '&.Mui-focused fieldset': { border: 'none' },
-
                         '&:hover': { backgroundColor: '#eee' },
                         '&.Mui-focused': {
-                          backgroundColor: theme =>
-                            theme.palette.background.paper,
+                          backgroundColor: theme => theme.palette.background.paper,
+                        },
+                      },
+                      '& input': {
+                        outline: 'none',
+                        boxShadow: 'none',
+                      },
+                      '& input:-webkit-autofill': {
+                        height: '10px',
+                      },
+                    }}
+                  />
+
+                  {/* Phone (Optional) */}
+                  <Typography
+                    component='label'
+                    htmlFor='phone'
+                    sx={{ fontWeight: 400, fontSize: '14px' }}
+                  >
+                    {lang === 'ar' ? 'رقم الهاتف (اختياري)' : 'Phone Number (Optional)'}
+                  </Typography>
+                  <TextField
+                    name='phone'
+                    type='tel'
+                    fullWidth
+                    value={formData.phone}
+                    placeholder='+923001234567'
+                    onChange={handleChange}
+                    disabled={loading}
+                    sx={{
+                      mb: 1,
+                      mt: 1,
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#eee',
+                        borderRadius: '8px',
+                        height: '46px',
+                        '& fieldset': { border: 'none' },
+                        '&:hover fieldset': { border: 'none' },
+                        '&.Mui-focused fieldset': { border: 'none' },
+                        '&:hover': { backgroundColor: '#eee' },
+                        '&.Mui-focused': {
+                          backgroundColor: theme => theme.palette.background.paper,
                         },
                       },
                       '& input': {
@@ -295,6 +432,7 @@ const Signup: React.FC = () => {
                     value={formData.password}
                     placeholder='8+ characters required'
                     onChange={handleChange}
+                    disabled={loading}
                     sx={{
                       mb: 1,
                       mt: 1,
@@ -305,11 +443,9 @@ const Signup: React.FC = () => {
                         '& fieldset': { border: 'none' },
                         '&:hover fieldset': { border: 'none' },
                         '&.Mui-focused fieldset': { border: 'none' },
-
                         '&:hover': { backgroundColor: '#eee' },
                         '&.Mui-focused': {
-                          backgroundColor: theme =>
-                            theme.palette.background.paper,
+                          backgroundColor: theme => theme.palette.background.paper,
                         },
                       },
                       '& input': {
@@ -325,7 +461,7 @@ const Signup: React.FC = () => {
                   {/* Confirm Password */}
                   <Typography
                     component='label'
-                    htmlFor='password'
+                    htmlFor='confirmPassword'
                     sx={{ fontWeight: 400, fontSize: '14px' }}
                   >
                     {lang === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
@@ -338,6 +474,7 @@ const Signup: React.FC = () => {
                     value={formData.confirmPassword}
                     placeholder='8+ characters required'
                     onChange={handleChange}
+                    disabled={loading}
                     sx={{
                       mb: 0.4,
                       mt: 1,
@@ -348,11 +485,9 @@ const Signup: React.FC = () => {
                         '& fieldset': { border: 'none' },
                         '&:hover fieldset': { border: 'none' },
                         '&.Mui-focused fieldset': { border: 'none' },
-
                         '&:hover': { backgroundColor: '#eee' },
                         '&.Mui-focused': {
-                          backgroundColor: theme =>
-                            theme.palette.background.paper,
+                          backgroundColor: theme => theme.palette.background.paper,
                         },
                       },
                       '& input': {
@@ -385,6 +520,7 @@ const Signup: React.FC = () => {
                             />
                           }
                           disableRipple
+                          disabled={loading}
                           sx={{
                             padding: 0,
                             border: 'none',
@@ -431,7 +567,6 @@ const Signup: React.FC = () => {
                           )}
                         </Typography>
                       }
-                      // sx={{ m: 0, fontFamily: 'Open Sans, sans-serif', fontSize: '14px' }}
                     />
                   </Box>
                   <Box
@@ -440,6 +575,7 @@ const Signup: React.FC = () => {
                     <Button
                       type='submit'
                       variant='contained'
+                      disabled={loading}
                       sx={{
                         backgroundColor: 'white',
                         color: 'black',
@@ -449,9 +585,17 @@ const Signup: React.FC = () => {
                         fontFamily: 'Open Sans, sans-serif',
                         textTransform: 'uppercase',
                         '&:hover': { backgroundColor: '#f0f0f0' },
+                        '&:disabled': { backgroundColor: '#ccc' },
                       }}
                     >
-                      {lang === 'ar' ? 'تسجيل' : 'Sign up'}
+                      {loading ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <CircularProgress size={16} />
+                          {lang === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
+                        </Box>
+                      ) : (
+                        lang === 'ar' ? 'تسجيل' : 'Sign up'
+                      )}
                     </Button>
                   </Box>
                   <Typography
