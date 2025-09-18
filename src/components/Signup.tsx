@@ -138,6 +138,17 @@ const Signup: React.FC = () => {
       
       // Store signupSessionId in localStorage for next steps
       localStorage.setItem('signupSessionId', response.signupSessionId);
+      // Temporarily store email & password in sessionStorage so we can auto-login after payment
+      // Use sessionStorage instead of localStorage so it is cleared when the tab/window closes
+      try {
+        sessionStorage.setItem(
+          'pendingSignupCredentials',
+          JSON.stringify({ email: personalDetails.email, password: personalDetails.password })
+        );
+      } catch (e) {
+        // Ignore storage errors
+        console.warn('Could not save pending signup credentials to sessionStorage', e);
+      }
       
       // Redirect to next step (company details) after a short delay
       setTimeout(() => {

@@ -78,13 +78,20 @@ const Layout = () => {
     if (!location.pathname.startsWith('/dashboard')) return;
 
     // Wait for user loading to finish to avoid premature redirects on refresh
-    if (loading) return;
-
-    // Check if user is actually authenticated
+    // If there's no token, redirect to login immediately. If token exists but user
+    // is not yet loaded, keep waiting (show spinner) instead of redirecting — this
+    // avoids a bounce where Layout redirects to login and Login immediately
+    // redirects back to dashboard while user data is still populating.
     const token = localStorage.getItem('accessToken');
-    if (!token || !user) {
-      // User is not authenticated, redirect to login
+    if (!token) {
+      // No token: user is not authenticated, redirect to login
       navigate('/', { replace: true });
+      return;
+    }
+
+    // If token exists but user is not yet available, do not redirect — let the
+    // loading spinner remain until user is populated by UserProvider.
+    if (!user) {
       return;
     }
 

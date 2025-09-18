@@ -10,6 +10,8 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import signupApi from '../api/signupApi';
+import axiosInstance from '../api/axiosInstance';
+import { useUser } from '../hooks/useUser';
 
 const ConfirmPayment: React.FC = () => {
   const navigate = useNavigate();
@@ -17,6 +19,7 @@ const ConfirmPayment: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const { updateUser, refreshUser } = useUser();
 
   useEffect(() => {
     handlePaymentConfirmation();
@@ -55,9 +58,77 @@ const ConfirmPayment: React.FC = () => {
         console.log('Completing signup:', completeSignupRequest);
         const signupResult = await signupApi.completeSignup(completeSignupRequest);
         console.log('Signup completion result:', signupResult);
+
+        // If backend returned tokens and user, store them and navigate
+        // Expected shape may vary; check common fields
+        if ((signupResult as any).accessToken && (signupResult as any).refreshToken) {
+          const data: any = signupResult as any;
+          localStorage.setItem('accessToken', data.accessToken);
+          localStorage.setItem('refreshToken', data.refreshToken);
+          if (data.user) {
+            localStorage.setItem('user', JSON.stringify(data.user));
+            if (data.permissions) {
+              localStorage.setItem('permissions', JSON.stringify(data.permissions));
+            }
+            // Update UserContext immediately so dashboard shows user without refresh
+            try {
+              updateUser(data.user);
+            } catch (e) {
+              // If updateUser fails for any reason, fallback to refresh
+              try {
+                await refreshUser();
+              } catch {}
+            }
+          } else {
+            // If there's no user object in response, try refreshing the user
+            try {
+              await refreshUser();
+            } catch {}
+          }
+        } else {
+          // Fallback: try to login using pending credentials saved in sessionStorage
+          try {
+            const credsStr = sessionStorage.getItem('pendingSignupCredentials');
+            if (credsStr) {
+              const creds = JSON.parse(credsStr);
+              // Call login endpoint
+              const res = await axiosInstance.post('/auth/login', {
+                email: creds.email,
+                password: creds.password,
+              });
+              if (res?.data) {
+                localStorage.setItem('accessToken', res.data.accessToken);
+                if (res.data.refreshToken) localStorage.setItem('refreshToken', res.data.refreshToken);
+                if (res.data.user) {
+                  localStorage.setItem('user', JSON.stringify(res.data.user));
+                  try {
+                    updateUser(res.data.user);
+                  } catch (e) {
+                    try {
+                      await refreshUser();
+                    } catch {}
+                  }
+                }
+                if (res.data.permissions) localStorage.setItem('permissions', JSON.stringify(res.data.permissions));
+              }
+            }
+          } catch (loginErr) {
+            console.warn('Auto-login after payment failed', loginErr);
+            // Don't block redirect; user can login manually
+          }
+        }
+        console.log('Signup completion result:', signupResult);
         
         setSuccess(true);
         
+        // Cleanup pending signup storage
+        try {
+          sessionStorage.removeItem('pendingSignupCredentials');
+        } catch {}
+        try {
+          localStorage.removeItem('signupSessionId');
+        } catch {}
+
         // 3. Redirect to dashboard
         setTimeout(() => {
           navigate('/dashboard');

@@ -15,6 +15,9 @@ const SignupSuccess: React.FC = () => {
     // Clear signup data from localStorage
     localStorage.removeItem('signupSessionId');
     localStorage.removeItem('companyDetails');
+    try {
+      sessionStorage.removeItem('pendingSignupCredentials');
+    } catch {}
     
     // Redirect to dashboard after 5 seconds
     const timer = setTimeout(() => {
