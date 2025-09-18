@@ -35,6 +35,8 @@ import {
 import ProfilePictureUpload from '../common/ProfilePictureUpload';
 import EmployeeProfileView from '../Employee/EmployeeProfileView';
 import EditProfileModal from './EditProfileModal';
+import { useIsDarkMode } from '../../theme';
+
 
 const UserProfileComponent = React.memo(() => {
   const { user: profile, loading, refreshUser, updateUser } = useUser();
@@ -42,6 +44,7 @@ const UserProfileComponent = React.memo(() => {
   const [error, setError] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const theme = useTheme();
+  const darkMode = useIsDarkMode();
 
   useEffect(() => {
     // Only fetch if we don't have user data and we're not already loading
@@ -191,8 +194,8 @@ const UserProfileComponent = React.memo(() => {
             alignItems: 'center',
             mb: 4,
           }}
-        >
-          <Typography variant='h4' component='h1' sx={{ fontWeight: 600 }}>
+                >
+          <Typography variant='h4' component='h1' sx={{ fontWeight: 600, color: darkMode ? '#8f8f8f' : theme.palette.text.primary }}>
             User Profile
           </Typography>
           <Button
@@ -248,13 +251,12 @@ const UserProfileComponent = React.memo(() => {
                 />
                 <Typography
                   variant='body2'
-                  color='text.secondary'
-                  sx={{ mb: 0.5 }}
+                  sx={{ mb: 0.5, color: darkMode ? '#8f8f8f' : theme.palette.text.secondary }}
                 >
                   {profile.email}
                 </Typography>
                 {profile.phone && (
-                  <Typography variant='body2' color='text.secondary'>
+                  <Typography variant='body2' sx={{ color: darkMode ? '#8f8f8f' : theme.palette.text.secondary }}>
                     {profile.phone}
                   </Typography>
                 )}
@@ -285,8 +287,7 @@ const UserProfileComponent = React.memo(() => {
                   <Box sx={{ flex: 1 }}>
                     <Typography
                       variant='body2'
-                      color='text.secondary'
-                      sx={{ mb: 0.5, fontWeight: 500 }}
+                      sx={{ mb: 0.5, fontWeight: 500, color: darkMode ? '#8f8f8f' : theme.palette.text.secondary }}
                     >
                       {item.label}
                     </Typography>

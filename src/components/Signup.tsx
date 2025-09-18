@@ -16,13 +16,19 @@ import {
   Alert,
   CircularProgress,
   Snackbar,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import signupApi, { type PersonalDetailsRequest } from '../api/signupApi';
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -55,6 +61,9 @@ const Signup: React.FC = () => {
     setError(null);
     setSuccess(null);
   };
+
+  const handleTogglePassword = (): void => setShowPassword(prev => !prev);
+  const handleToggleConfirmPassword = (): void => setShowConfirmPassword(prev => !prev);
 
   const validateForm = () => {
     const nextErrors = {
@@ -495,7 +504,7 @@ const Signup: React.FC = () => {
                       </Typography>
                       <TextField
                         name='password'
-                        type='password'
+                        type={showPassword ? 'text' : 'password'}
                         required
                         fullWidth
                         value={formData.password}
@@ -526,6 +535,30 @@ const Signup: React.FC = () => {
                             height: '10px',
                           },
                         }}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position='end'>
+                              <IconButton
+                                onClick={handleTogglePassword}
+                                edge='end'
+                                sx={{
+                                  outline: 'none',
+                                  boxShadow: 'none',
+                                  '&:focus': {
+                                    outline: 'none',
+                                    boxShadow: 'none',
+                                  },
+                                }}
+                              >
+                                {showPassword ? (
+                                  <VisibilityOff sx={{ width: 21, height: 21 }}/>
+                                ) : (
+                                  <Visibility sx={{ width: 21, height: 21 }}/>
+                                )}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
                       />
                     </Box>
                     <Box sx={{ flex: 1 }}>
@@ -538,7 +571,7 @@ const Signup: React.FC = () => {
                       </Typography>
                       <TextField
                         name='confirmPassword'
-                        type='password'
+                        type={showConfirmPassword ? 'text' : 'password'}
                         required
                         fullWidth
                         value={formData.confirmPassword}
@@ -568,6 +601,30 @@ const Signup: React.FC = () => {
                           '& input:-webkit-autofill': {
                             height: '10px',
                           },
+                        }}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position='end'>
+                              <IconButton
+                                onClick={handleToggleConfirmPassword}
+                                edge='end'
+                                sx={{
+                                  outline: 'none',
+                                  boxShadow: 'none',
+                                  '&:focus': {
+                                    outline: 'none',
+                                    boxShadow: 'none',
+                                  },
+                                }}
+                              >
+                                {showConfirmPassword ? (
+                                  <VisibilityOff sx={{ width: 21, height: 21 }}/>
+                                ) : (
+                                  <Visibility sx={{ width: 21, height: 21 }}/>
+                                )}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
                         }}
                       />
                     </Box>

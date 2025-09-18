@@ -53,7 +53,7 @@ interface SidebarProps {
 //  Menu data
 const menuItems: MenuItem[] = [
   {
-    label: 'HR Dashboard',
+    label: 'Dashboard',
     icon: <Dashboard />,
     subItems: [{ label: 'HR Dashboard', path: '' }],
   },

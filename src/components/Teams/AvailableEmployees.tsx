@@ -307,28 +307,6 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
 
   return (
     <Box>
-      {/* Search Bar */}
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          placeholder={lang.search}
-          value={searchTerm}
-          onChange={handleSearch}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position='start'>
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-              color: darkMode ? '#fff' : '#000',
-            },
-          }}
-        />
-      </Box>
 
       {employees.length === 0 ? (
         <Box
@@ -348,7 +326,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
         <>
           <TableContainer
             component={Paper}
-            sx={{ backgroundColor: darkMode ? '#2d2d2d' : '#fff' }}
+            sx={{ backgroundColor: darkMode ? '#2d2d2d' : '#fff',boxShadow:"none" }}
           >
             <Table>
               <TableHead>

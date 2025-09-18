@@ -244,7 +244,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
     <Box>
       <TableContainer
         component={Paper}
-        sx={{ backgroundColor: darkMode ? '#2d2d2d' : '#fff' }}
+        sx={{ backgroundColor: darkMode ? '#2d2d2d' : '#fff' , boxShadow:"none"}}
       >
         <Table>
           <TableHead>
