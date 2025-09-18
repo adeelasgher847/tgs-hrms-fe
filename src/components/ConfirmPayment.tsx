@@ -36,11 +36,11 @@ const ConfirmPayment: React.FC = () => {
         throw new Error('Missing payment session information');
       }
 
-      // 1. Confirm payment with Stripe
+      // 1. Confirm payment with backend using Stripe checkout session id
       const paymentConfirmRequest = {
         signupSessionId,
-        paymentIntentId: sessionId, // Stripe session ID
-      };
+        checkoutSessionId: sessionId,
+      } as const;
 
       console.log('Confirming payment:', paymentConfirmRequest);
       const paymentResult = await signupApi.confirmPayment(paymentConfirmRequest);
@@ -50,8 +50,7 @@ const ConfirmPayment: React.FC = () => {
         // 2. Complete signup process
         const completeSignupRequest = {
           signupSessionId,
-          transactionId: paymentResult.transactionId,
-        };
+        } as const;
 
         console.log('Completing signup:', completeSignupRequest);
         const signupResult = await signupApi.completeSignup(completeSignupRequest);
@@ -59,10 +58,10 @@ const ConfirmPayment: React.FC = () => {
         
         setSuccess(true);
         
-        // 3. Redirect to success page
+        // 3. Redirect to dashboard
         setTimeout(() => {
-          navigate('/signup/success');
-        }, 3000);
+          navigate('/dashboard');
+        }, 1500);
 
       } else {
         throw new Error('Payment was not successful');
@@ -109,17 +108,17 @@ const ConfirmPayment: React.FC = () => {
   }
 
   if (error) {
-    return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: '#f3f4f6',
-          p: 3,
-        }}
-      >
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: '#f3f4f6',
+        p: 3,
+      }}
+    >
         <Paper elevation={3} sx={{ p: 4, maxWidth: 500, textAlign: 'center' }}>
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
@@ -142,7 +141,7 @@ const ConfirmPayment: React.FC = () => {
               onClick={handleGoHome}
             >
               Go Home
-            </Button>
+              </Button>
           </Box>
         </Paper>
       </Box>
@@ -171,11 +170,11 @@ const ConfirmPayment: React.FC = () => {
           </Typography>
           <CircularProgress size={24} />
         </Paper>
-      </Box>
-    );
+    </Box>
+  );
   }
 
   return null;
 };
 
-export default ConfirmPayment;
+export default ConfirmPayment; 

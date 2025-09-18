@@ -53,9 +53,11 @@ export interface PaymentResponse {
   status?: string;
 }
 
+// Accept either checkout session id (Stripe Checkout) or payment intent id (alt flows)
 export interface PaymentConfirmRequest {
   signupSessionId: string;
-  paymentIntentId: string;
+  checkoutSessionId?: string;
+  paymentIntentId?: string;
 }
 
 export interface PaymentConfirmResponse {
@@ -65,7 +67,7 @@ export interface PaymentConfirmResponse {
 
 export interface CompleteSignupRequest {
   signupSessionId: string;
-  transactionId: string;
+
 }
 
 export interface CompleteSignupResponse {
