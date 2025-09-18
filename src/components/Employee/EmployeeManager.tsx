@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -128,6 +128,12 @@ const EmployeeManager: React.FC = () => {
     loadDepartmentsAndDesignations();
   }, []);
 
+  // Re-fetch from backend when filters change, reset to first page
+  useEffect(() => {
+    setCurrentPage(1);
+    loadEmployees(1);
+  }, [departmentFilter, designationFilter]);
+
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -172,6 +178,46 @@ const EmployeeManager: React.FC = () => {
       };
 
       const response = await employeeApi.getAllEmployees(filters, page);
+
+      // If requested page exceeds available totalPages (possible after filters), clamp and refetch
+      if (response.totalPages > 0 && page > response.totalPages) {
+        setCurrentPage(response.totalPages);
+        const retry = await employeeApi.getAllEmployees(filters, response.totalPages);
+        const convertedEmployeesRetry: Employee[] = retry.items.map(emp => ({
+          id: emp.id,
+          name: emp.name,
+          firstName: emp.firstName,
+          lastName: emp.lastName,
+          email: emp.email,
+          phone: emp.phone,
+          departmentId: emp.departmentId,
+          designationId: emp.designationId,
+          department: emp.department || {
+            id: '',
+            name: '',
+            description: '',
+            tenantId: '',
+            createdAt: '',
+            updatedAt: '',
+          },
+          designation: emp.designation || {
+            id: '',
+            title: '',
+            tenantId: '',
+            departmentId: '',
+            createdAt: '',
+            updatedAt: '',
+          },
+          tenantId: emp.tenantId,
+          createdAt: emp.createdAt,
+          updatedAt: emp.updatedAt,
+        }));
+
+        setEmployees(convertedEmployeesRetry);
+        setTotalPages(retry.totalPages);
+        setTotalItems(retry.total);
+        return;
+      }
 
       // Convert BackendEmployee to Employee
       const convertedEmployees: Employee[] = response.items.map(emp => ({
@@ -522,15 +568,7 @@ const EmployeeManager: React.FC = () => {
     setDesignationFilter('');
   };
 
-  const filteredEmployees = useMemo(() => {
-    return employees.filter(emp => {
-      if (departmentFilter && emp.departmentId !== departmentFilter)
-        return false;
-      if (designationFilter && emp.designationId !== designationFilter)
-        return false;
-      return true;
-    });
-  }, [employees, departmentFilter, designationFilter]);
+  // Server-driven filtering; render employees as-is
 
   const getLabel = (en: string, ar: string) => (direction === 'rtl' ? ar : en);
 
@@ -688,7 +726,7 @@ const EmployeeManager: React.FC = () => {
       {/* Employee List */}
       <Paper elevation={3} sx={{ boxShadow: 'none' }}>
         <EmployeeList
-          employees={filteredEmployees}
+          employees={employees}
           onDelete={requestDeleteEmployee}
           onEdit={(employee: any) => handleEditOpen(employee as any)}
           loading={loading}

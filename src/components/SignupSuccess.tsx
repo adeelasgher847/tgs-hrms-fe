@@ -1,10 +1,35 @@
-import React from 'react';
-import { Box, Typography, Button, Paper, Stack } from '@mui/material';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Paper,
+  Typography,
+  Button,
+} from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const SignupSuccess: React.FC = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Clear signup data from localStorage
+    localStorage.removeItem('signupSessionId');
+    localStorage.removeItem('companyDetails');
+    
+    // Redirect to dashboard after 5 seconds
+    const timer = setTimeout(() => {
+      navigate('/dashboard');
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [navigate]);
+
   const handleGoToDashboard = () => {
-    // Placeholder: navigate to dashboard
+    navigate('/dashboard');
+  };
+
+  const handleGoHome = () => {
+    navigate('/');
   };
 
   return (
@@ -14,57 +39,68 @@ const SignupSuccess: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 2,
+        bgcolor: '#f3f4f6',
+        p: 3,
       }}
     >
-      <Paper elevation={4} sx={{ width: '100%', maxWidth: 640, p: { xs: 3, md: 5 }, textAlign: 'center', backgroundColor: '#484c7f', color: 'common.white' }}>
-        <Stack spacing={2} alignItems='center'>
-          <CheckCircleIcon color='success' sx={{ fontSize: 64 }} />
-          <Box>
-            <Typography variant='h4' sx={{ fontWeight: 600, mb: 0.5 }} color='common.white'>
-              Signup Complete!
-            </Typography>
-            <Typography variant='body1' color='common.white'>
-              Your account has been successfully created and activated.
-            </Typography>
-          </Box>
-
-          <Box
+      <Paper elevation={3} sx={{ p: 6, maxWidth: 600, textAlign: 'center' }}>
+        <CheckCircleIcon sx={{ fontSize: 100, color: 'success.main', mb: 3 }} />
+        
+        <Typography variant="h3" sx={{ mb: 2, color: 'success.main', fontWeight: 700 }}>
+          Welcome to Your HRMS!
+        </Typography>
+        
+        <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
+          Your account has been created successfully and your subscription is now active.
+        </Typography>
+        
+        <Box sx={{ bgcolor: '#f8f9fa', p: 3, borderRadius: 2, mb: 4 }}>
+          <Typography variant="body1" sx={{ mb: 1 }}>
+            ✅ Account created successfully
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 1 }}>
+            ✅ Subscription activated
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 1 }}>
+            ✅ Payment processed
+          </Typography>
+          <Typography variant="body1">
+            ✅ Ready to start managing your team
+          </Typography>
+        </Box>
+        
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+          You will be automatically redirected to your dashboard in a few seconds.
+        </Typography>
+        
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={handleGoToDashboard}
             sx={{
-              width: '100%',
-              textAlign: 'left',
-              bgcolor: 'transparent',
-              borderRadius: 1,
-              p: 2,
-              mt: 1,
-              border: '1px solid rgba(255,255,255,0.3)'
+              px: 4,
+              py: 1.5,
+              fontWeight: 600,
             }}
           >
-            <Stack spacing={1.5}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
-                <Typography variant='subtitle2' color='common.white'>User ID</Typography>
-                <Typography variant='subtitle1' color='common.white'>USR-XXXX-PLACEHOLDER</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
-                <Typography variant='subtitle2' color='common.white'>Plan</Typography>
-                <Typography variant='subtitle1' color='common.white'>Pro Plan (Placeholder)</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
-                <Typography variant='subtitle2' color='common.white'>Status</Typography>
-                <Typography variant='subtitle1' color='success.main'>Active</Typography>
-              </Box>
-            </Stack>
-          </Box>
-
-          <Box sx={{ mt: 1, width: '100%', display: 'flex', justifyContent: 'center' }}>
-            <Button variant='contained' color='primary' onClick={handleGoToDashboard} size='large'>
-              Go to Dashboard
-            </Button>
-          </Box>
-        </Stack>
+            Go to Dashboard
+          </Button>
+          <Button
+            variant="outlined"
+            size="large"
+            onClick={handleGoHome}
+            sx={{
+              px: 4,
+              py: 1.5,
+            }}
+          >
+            Go Home
+          </Button>
+        </Box>
       </Paper>
     </Box>
   );
 };
 
-export default SignupSuccess; 
+export default SignupSuccess;
