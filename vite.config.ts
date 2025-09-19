@@ -1,45 +1,51 @@
 /// <reference types="vitest/config" />
 
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import path from "path"; // ✅ Use without "node:"
-import { fileURLToPath } from "url"; // ✅ Use without "node:"
-import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import svgr from 'vite-plugin-svgr'; // ✅ SVG support
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// ✅ Manual fix for __dirname (ESM compatible)
+// ✅ Fix __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Vite config with vitest + storybook plugin
+// ✅ Final merged config
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), svgr()], // 🟢 both react & svgr
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
+  // 🔊 Dev server on LAN IP & stable HMR
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      host: '192.168.0.141',
+      protocol: 'ws',
+      port: 5173,
     },
   },
   test: {
     projects: [
       {
         extends: true,
-        plugins: [
-          storybookTest({
-            configDir: path.join(__dirname, ".storybook"),
-          }),
-        ],
         test: {
-          name: "storybook",
+          name: 'storybook',
           browser: {
             enabled: true,
             headless: true,
-            provider: "playwright",
+            provider: 'playwright',
             instances: [
               {
-                browser: "chromium",
+                browser: 'chromium',
               },
             ],
           },
-          setupFiles: [".storybook/vitest.setup.ts"],
+          setupFiles: ['.storybook/vitest.setup.ts'],
         },
       },
     ],

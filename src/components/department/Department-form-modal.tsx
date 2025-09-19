@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -9,17 +9,19 @@ import {
   Box,
   IconButton,
   useMediaQuery,
-  useTheme,
   Drawer,
   Typography,
   Alert,
-} from "@mui/material";
-import { Close as CloseIcon } from "@mui/icons-material";
+  useTheme,
+} from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
+import { useOutletContext } from 'react-router-dom';
+import type { SxProps, Theme } from '@mui/material/styles';
 import type {
   Department,
   DepartmentFormData,
   DepartmentFormErrors,
-} from "../../types";
+} from '../../types';
 
 interface DepartmentFormModalProps {
   open: boolean;
@@ -37,13 +39,17 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   isRtl = false,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
   const [formData, setFormData] = useState<DepartmentFormData>({
-    name: "",
-    nameAr: "",
-    description: "",
-    descriptionAr: "",
+    name: '',
+    description: '',
+  });
+
+  const [originalData, setOriginalData] = useState<DepartmentFormData>({
+    name: '',
+    description: '',
   });
 
   const [errors, setErrors] = useState<DepartmentFormErrors>({});
@@ -52,85 +58,76 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   const isEditing = Boolean(department);
   const title = isEditing
     ? isRtl
-      ? "تعديل القسم"
-      : "Edit Department"
+      ? 'تعديل القسم'
+      : 'Edit Department'
     : isRtl
-    ? "إنشاء قسم جديد"
-    : "Create New Department";
+      ? 'إنشاء قسم جديد'
+      : 'Create New Department';
 
   useEffect(() => {
     if (department) {
-      setFormData({
+      // When editing, populate fields from database
+      const initialData = {
         name: department.name,
-        nameAr: department.nameAr,
-        description: department.description || "",
-        descriptionAr: department.descriptionAr || "",
-      });
+        description: department.description || '',
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
     } else {
-      setFormData({
-        name: "",
-        nameAr: "",
-        description: "",
-        descriptionAr: "",
-      });
+      const initialData = {
+        name: '',
+        description: '',
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
     }
     setErrors({});
   }, [department, open]);
 
+  // Check if form has changes
+  const hasChanges = isEditing
+    ? formData.name !== originalData.name ||
+      (formData.description || '') !== (originalData.description || '')
+    : formData.name.trim() !== '' || (formData.description || '').trim() !== '';
+
+  /* ---------- validation helpers ---------- */
   const validateForm = (): boolean => {
     const newErrors: DepartmentFormErrors = {};
 
+    // Name is required
     if (!formData.name.trim()) {
       newErrors.name = isRtl
-        ? "اسم القسم مطلوب"
-        : "Department name is required";
+        ? 'اسم القسم مطلوب'
+        : 'Department name is required';
     } else if (formData.name.trim().length < 2) {
       newErrors.name = isRtl
-        ? "اسم القسم يجب أن يكون على الأقل حرفين"
-        : "Department name must be at least 2 characters";
+        ? 'اسم القسم يجب أن يكون على الأقل حرفين'
+        : 'Department name must be at least 2 characters';
     }
 
-    if (!formData.nameAr.trim()) {
-      newErrors.nameAr = isRtl
-        ? "الاسم العربي مطلوب"
-        : "Arabic name is required";
-    } else if (formData.nameAr.trim().length < 2) {
-      newErrors.nameAr = isRtl
-        ? "الاسم العربي يجب أن يكون على الأقل حرفين"
-        : "Arabic name must be at least 2 characters";
-    }
-
+    // Description is optional but validate length if provided
     if (formData.description && formData.description.length > 500) {
       newErrors.description = isRtl
-        ? "الوصف يجب أن يكون أقل من 500 حرف"
-        : "Description must be less than 500 characters";
-    }
-
-    if (formData.descriptionAr && formData.descriptionAr.length > 500) {
-      newErrors.descriptionAr = isRtl
-        ? "الوصف العربي يجب أن يكون أقل من 500 حرف"
-        : "Arabic description must be less than 500 characters";
+        ? 'الوصف يجب أن يكون أقل من 500 حرف'
+        : 'Description must be less than 500 characters';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  /* ---------- submit ---------- */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+      await new Promise(r => setTimeout(r, 1000)); // fake delay
       onSubmit(formData);
       onClose();
-    } catch (error) {
-      console.error("Error submitting form:", error);
+    } catch {
+      // Handle error silently
     } finally {
       setIsSubmitting(false);
     }
@@ -139,185 +136,131 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   const handleInputChange =
     (field: keyof DepartmentFormData) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev: DepartmentFormData) => ({
-        ...prev,
-        [field]: e.target.value,
-      }));
-
-      // Clear error when user starts typing
-      if (errors[field]) {
-        setErrors((prev: DepartmentFormErrors) => ({
-          ...prev,
-          [field]: undefined,
-        }));
-      }
+      setFormData(prev => ({ ...prev, [field]: e.target.value }));
+      if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }));
     };
 
+  /* ---------- form JSX ---------- */
   const formContent = (
     <Box
-      component="form"
+      component='form'
       onSubmit={handleSubmit}
       sx={{
-        display: "flex",
-        flexDirection: "column",
+        display: 'flex',
+        flexDirection: 'column',
         gap: 3,
-        direction: isRtl ? "rtl" : "ltr",
+        mt: 2,
+        direction: isRtl ? 'rtl' : 'ltr',
+        color: darkMode ? '#e0e0e0' : undefined,
       }}
     >
+      {/* Department name */}
       <TextField
         fullWidth
-        label={isRtl ? "اسم القسم (بالإنجليزية)" : "Department Name (English)"}
+        label={isRtl ? 'اسم القسم' : 'Department Name'}
         value={formData.name}
-        onChange={handleInputChange("name")}
-        error={Boolean(errors.name)}
+        onChange={handleInputChange('name')}
+        error={!!errors.name}
         helperText={errors.name}
         required
-        autoFocus={!isRtl}
-        InputLabelProps={{
-          style: { textAlign: isRtl ? "right" : "left" },
-        }}
-        sx={{
-          "& .MuiInputBase-input": {
-            textAlign: "left", // Always left for English
+        InputLabelProps={{ sx: { color: darkMode ? '#ccc' : undefined } }}
+        InputProps={{
+          sx: {
+            color: darkMode ? '#fff' : 'inherit',
           },
         }}
       />
 
+      {/* Description */}
       <TextField
         fullWidth
-        label={isRtl ? "اسم القسم (بالعربية)" : "Department Name (Arabic)"}
-        value={formData.nameAr}
-        onChange={handleInputChange("nameAr")}
-        error={Boolean(errors.nameAr)}
-        helperText={errors.nameAr}
-        required
-        autoFocus={isRtl}
-        InputLabelProps={{
-          style: { textAlign: isRtl ? "right" : "left" },
-        }}
-        sx={{
-          "& .MuiInputBase-input": {
-            textAlign: "right", // Always right for Arabic
-            fontFamily: "Arial, sans-serif",
-          },
-        }}
-      />
-
-      <TextField
-        fullWidth
-        label={
-          isRtl
-            ? "الوصف (بالإنجليزية - اختياري)"
-            : "Description (English - Optional)"
-        }
-        value={formData.description}
-        onChange={handleInputChange("description")}
-        error={Boolean(errors.description)}
+        label={isRtl ? 'الوصف (اختياري)' : 'Description (Optional)'}
+        value={formData.description || ''}
+        onChange={handleInputChange('description')}
+        error={!!errors.description}
         helperText={errors.description}
         multiline
         rows={3}
-        InputLabelProps={{
-          style: { textAlign: isRtl ? "right" : "left" },
-        }}
-        sx={{
-          "& .MuiInputBase-input": {
-            textAlign: "left", // Always left for English
-          },
-        }}
-      />
-
-      <TextField
-        fullWidth
-        label={
-          isRtl
-            ? "الوصف (بالعربية - اختياري)"
-            : "Description (Arabic - Optional)"
-        }
-        value={formData.descriptionAr}
-        onChange={handleInputChange("descriptionAr")}
-        error={Boolean(errors.descriptionAr)}
-        helperText={errors.descriptionAr}
-        multiline
-        rows={3}
-        InputLabelProps={{
-          style: { textAlign: isRtl ? "right" : "left" },
-        }}
-        sx={{
-          "& .MuiInputBase-input": {
-            textAlign: "right", // Always right for Arabic
-            fontFamily: "Arial, sans-serif",
+        InputLabelProps={{ sx: { color: darkMode ? '#ccc' : undefined } }}
+        InputProps={{
+          sx: {
+            color: darkMode ? '#fff' : 'inherit',
           },
         }}
       />
 
       {Object.keys(errors).length > 0 && (
-        <Alert severity="error" sx={{ textAlign: isRtl ? "right" : "left" }}>
+        <Alert severity='error'>
           {isRtl
-            ? "يرجى تصحيح الأخطاء أعلاه"
-            : "Please correct the errors above"}
+            ? 'يرجى تصحيح الأخطاء أعلاه'
+            : 'Please correct the errors above'}
         </Alert>
       )}
     </Box>
   );
 
+  /* ---------- action buttons ---------- */
   const actionButtons = (
     <>
-      <Button
-        onClick={onClose}
-        disabled={isSubmitting}
-        sx={{ mr: isRtl ? 0 : 1, ml: isRtl ? 1 : 0 }}
-      >
-        {isRtl ? "إلغاء" : "Cancel"}
+      <Button onClick={onClose} disabled={isSubmitting}>
+        {isRtl ? 'إلغاء' : 'Cancel'}
       </Button>
       <Button
-        type="submit"
-        variant="contained"
-        disabled={isSubmitting}
+        type='submit'
+        variant='contained'
+        disabled={isSubmitting || !hasChanges}
         onClick={handleSubmit}
+        sx={{ bgcolor: '#484c7f' }}
       >
         {isSubmitting
           ? isRtl
-            ? "جاري الحفظ..."
-            : "Saving..."
+            ? 'جاري الحفظ...'
+            : 'Saving...'
           : isEditing
-          ? isRtl
-            ? "تحديث"
-            : "Update"
-          : isRtl
-          ? "إنشاء"
-          : "Create"}
+            ? isRtl
+              ? 'تحديث'
+              : 'Update'
+            : isRtl
+              ? 'إنشاء'
+              : 'Create'}
       </Button>
     </>
   );
 
+  const paperSx: SxProps<Theme> = {
+    direction: isRtl ? 'rtl' : 'ltr',
+    backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+    color: darkMode ? '#e0e0e0' : undefined,
+  };
+
+  /* ---------- MOBILE drawer ---------- */
   if (isMobile) {
     return (
       <Drawer
-        anchor={isRtl ? "right" : "left"}
+        anchor={isRtl ? 'right' : 'left'}
         open={open}
         onClose={onClose}
-        PaperProps={{
-          sx: {
-            width: "100%",
-            maxWidth: 400,
-            direction: isRtl ? "rtl" : "ltr",
-          },
-        }}
+        PaperProps={{ sx: { width: '100%', maxWidth: 400, ...paperSx } }}
       >
-        <Box sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
+        <Box
+          sx={{
+            p: 3,
+            overflowY: 'auto',
+            '&::-webkit-scrollbar': { display: 'none' },
+            scrollbarWidth: 'none',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <Typography variant='h6' sx={{ flexGrow: 1 }}>
               {title}
             </Typography>
-            <IconButton onClick={onClose} size="small">
-              <CloseIcon />
+            <IconButton onClick={onClose} size='small'>
+              <CloseIcon sx={{ color: darkMode ? '#fff' : undefined }} />
             </IconButton>
           </Box>
-
           {formContent}
-
           <Box
-            sx={{ display: "flex", gap: 1, mt: 3, justifyContent: "flex-end" }}
+            sx={{ display: 'flex', gap: 1, mt: 3, justifyContent: 'flex-end' }}
           >
             {actionButtons}
           </Box>
@@ -326,36 +269,51 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     );
   }
 
+  /* ---------- DESKTOP dialog ---------- */
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        sx: {
-          direction: isRtl ? "rtl" : "ltr",
-        },
-      }}
-    >
-      <DialogTitle sx={{ textAlign: isRtl ? "right" : "left" }}>
-        {title}
+    <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
+      <DialogTitle sx={{ ...paperSx, position: 'relative' }}>
+        <Typography
+          sx={{
+            textAlign: isRtl ? 'right' : 'left',
+            fontWeight: 600,
+            fontSize: '1.25rem',
+            lineHeight: 1.6,
+            letterSpacing: '0.0075em',
+          }}
+        >
+          {title}
+        </Typography>
         <IconButton
           onClick={onClose}
           sx={{
-            position: "absolute",
-            right: isRtl ? "auto" : 8,
-            left: isRtl ? 8 : "auto",
+            position: 'absolute',
+            right: isRtl ? 'auto' : 8,
+            left: isRtl ? 8 : 'auto',
             top: 8,
+            color: darkMode ? '#fff' : undefined,
           }}
         >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 2 }}>{formContent}</DialogContent>
+      <DialogContent
+        sx={{
+          ...paperSx,
+          pt: 2,
+          maxHeight: '70vh',
+          overflowY: 'auto',
+          '&::-webkit-scrollbar': { display: 'none' },
+          scrollbarWidth: 'none',
+        }}
+      >
+        {formContent}
+      </DialogContent>
 
-      <DialogActions sx={{ p: 3, pt: 2 }}>{actionButtons}</DialogActions>
+      <DialogActions sx={{ p: 3, pt: 2, ...paperSx }}>
+        {actionButtons}
+      </DialogActions>
     </Dialog>
   );
 };

@@ -1,221 +1,353 @@
-import { useState } from "react";
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
   Button,
   Fab,
   useMediaQuery,
-  useTheme,
   Paper,
-  ToggleButtonGroup,
-  ToggleButton,
   Divider,
-} from "@mui/material";
-import { Add as AddIcon, Business as BusinessIcon } from "@mui/icons-material";
-import type { Department, DepartmentFormData } from "../../types";
-import { mockDepartments } from "../../data/mock-departments";
-import { DepartmentCard } from "./DepartmentCard";
-import { DepartmentFormModal } from "./Department-form-modal";
-import { DeleteConfirmationModal } from "./Delete-confirmation-modal";
+  Snackbar,
+  Alert,
+  CircularProgress,
+  useTheme,
+} from '@mui/material';
+import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
+import { useOutletContext } from 'react-router-dom';
+import type { DepartmentFormData } from '../../types';
+import { DepartmentCard } from './DepartmentCard';
+import { DepartmentFormModal } from './Department-form-modal';
+import { DeleteConfirmationModal } from './Delete-confirmation-modal';
+import { useLanguage } from '../../hooks/useLanguage';
+import {
+  departmentApiService,
+  type FrontendDepartment,
+} from '../../api/departmentApi';
+
+const labels = {
+  en: {
+    title: 'Departments',
+    create: 'Create Department',
+    createFirst: 'Create First Department',
+    noDepartments: 'No Departments Found',
+    description: 'Get started by creating your first department',
+  },
+  ar: {
+    title: 'إدارة الأقسام',
+    create: 'إنشاء قسم',
+    createFirst: 'إنشاء قسم جديد',
+    noDepartments: 'لا توجد أقسام',
+    description: 'ابدأ بإنشاء قسم جديد لإدارة مؤسستك',
+  },
+};
 
 export const DepartmentList: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const { language } = useLanguage();
 
-  const [departments, setDepartments] = useState<Department[]>(mockDepartments);
+  const isRtl = language === 'ar';
+  const lang = labels[language];
+
+  const bgPaper = darkMode ? '#1b1b1b' : '#fff';
+  const textPrimary = darkMode ? '#e0e0e0' : theme.palette.text.primary;
+  const textSecond = darkMode ? '#9a9a9a' : theme.palette.text.secondary;
+  const dividerCol = darkMode ? '#333' : '#ccc';
+  const textColor = darkMode ? '#8f8f8f' : '#000';
+
+  const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] =
-    useState<Department | null>(null);
-  const [isRtl, setIsRtl] = useState(false);
+    useState<FrontendDepartment | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
-  const handleCreateDepartment = (data: DepartmentFormData) => {
-    const newDepartment: Department = {
-      id: Date.now().toString(),
-      name: data.name,
-      nameAr: data.nameAr,
-      description: data.description || undefined,
-    };
-    setDepartments((prev) => [newDepartment, ...prev]);
-    setIsFormModalOpen(false);
+  /* ---------- API handlers ---------- */
+  const fetchDepartments = async () => {
+    try {
+      setLoading(true);
+      const backendDepartments = await departmentApiService.getAllDepartments();
+      const frontendDepartments = backendDepartments.map(dept =>
+        departmentApiService.convertBackendToFrontend(dept)
+      );
+      setDepartments(frontendDepartments);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to fetch departments';
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEditDepartment = (data: DepartmentFormData) => {
+  // Load departments on component mount
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  const handleCreateDepartment = async (data: DepartmentFormData) => {
+    try {
+      // Only send English fields to backend
+      const departmentDto = {
+        name: data.name,
+        description: data.description, // Send empty string if description is cleared
+      };
+
+      const newBackendDepartment =
+        await departmentApiService.createDepartment(departmentDto);
+      const newFrontendDepartment =
+        departmentApiService.convertBackendToFrontend(newBackendDepartment);
+
+      // Create frontend department
+      const newDepartment: FrontendDepartment = {
+        ...newFrontendDepartment,
+      };
+
+      setDepartments(prev => [newDepartment, ...prev]);
+      setIsFormModalOpen(false);
+      setSnackbar({
+        open: true,
+        message: 'Department created successfully',
+        severity: 'success',
+      });
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to create department';
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleEditDepartment = async (data: DepartmentFormData) => {
     if (!selectedDepartment) return;
-    setDepartments((prev) =>
-      prev.map((dept) =>
-        dept.id === selectedDepartment.id
-          ? {
-              ...dept,
-              name: data.name,
-              description: data.description || undefined,
-              updatedAt: new Date(),
-            }
-          : dept
-      )
-    );
-    setSelectedDepartment(null);
-    setIsFormModalOpen(false);
+
+    try {
+      // Only send English fields to backend
+      const departmentDto = {
+        name: data.name,
+        description: data.description, // Send empty string if description is cleared
+      };
+
+      const updatedBackendDepartment =
+        await departmentApiService.updateDepartment(
+          selectedDepartment.id,
+          departmentDto
+        );
+      const updatedFrontendDepartment =
+        departmentApiService.convertBackendToFrontend(updatedBackendDepartment);
+
+      // Create updated frontend department
+      const updatedDepartment: FrontendDepartment = {
+        ...updatedFrontendDepartment,
+      };
+
+      setDepartments(prev =>
+        prev.map(d => (d.id === selectedDepartment.id ? updatedDepartment : d))
+      );
+      setSelectedDepartment(null);
+      setIsFormModalOpen(false);
+      setSnackbar({
+        open: true,
+        message: 'Department successfully',
+        severity: 'success',
+      });
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update department';
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    }
   };
 
-  const handleDeleteDepartment = () => {
+  const handleDeleteDepartment = async () => {
     if (!selectedDepartment) return;
-    setDepartments((prev) =>
-      prev.filter((dept) => dept.id !== selectedDepartment.id)
-    );
-    setSelectedDepartment(null);
-    setIsDeleteModalOpen(false);
-  };
 
-  const openEditModal = (department: Department) => {
-    setSelectedDepartment(department);
-    setIsFormModalOpen(true);
-  };
-
-  const openDeleteModal = (department: Department) => {
-    setSelectedDepartment(department);
-    setIsDeleteModalOpen(true);
-  };
-
-  const openCreateModal = () => {
-    setSelectedDepartment(null);
-    setIsFormModalOpen(true);
-  };
-
-  const toggleLanguage = () => {
-    setIsRtl(!isRtl);
+    try {
+      await departmentApiService.deleteDepartment(selectedDepartment.id);
+      setDepartments(prev => prev.filter(d => d.id !== selectedDepartment.id));
+      setSelectedDepartment(null);
+      setIsDeleteModalOpen(false);
+      setSnackbar({
+        open: true,
+        message: 'Department deleted successfully',
+        severity: 'success',
+      });
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete department';
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    }
   };
 
   return (
     <Box
       sx={{
         flexGrow: 1,
-        direction: isRtl ? "rtl" : "ltr",
-        minHeight: "100vh",
-        px: { xs: 2, sm: 3, md: 4 },
-        py: 3,
-        boxSizing: "border-box",
-        // backgroundColor: "#f8f8f8",
+        direction: isRtl ? 'rtl' : 'ltr',
+        minHeight: '100vh',
+        color: textPrimary,
+        boxSizing: 'border-box',
       }}
     >
       {/* Header */}
       <Paper
-        elevation={1}
+        elevation={0} // No shadow
         sx={{
-          p: 0,
-          mb: 2,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
+          mb: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
           gap: 2,
-          boxShadow: "none",
+          backgroundColor: 'unset',
+          color: textColor,
+          boxShadow: 'none', // Ensure no shadow
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-          }}
+        <Typography
+          variant='h4'
+          fontWeight={700}
+          sx={{ textAlign: isRtl ? 'right' : 'left', py: 1.5 }}
         >
-          <Box>
-            <Typography
-              variant="h4"
-              component="h1"
-              sx={{
-                fontWeight: 700,
+          {lang.title}
+        </Typography>
 
-                textAlign: isRtl ? "right" : "left",
-              }}
-            >
-              {isRtl ? "إدارة الأقسام" : "Departments"}
-            </Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <ToggleButtonGroup
-            value={isRtl ? "ar" : "en"}
-            exclusive
-            onChange={toggleLanguage}
-            size="small"
-          >
-            <ToggleButton value="en">EN</ToggleButton>
-            <ToggleButton value="ar">عربي</ToggleButton>
-          </ToggleButtonGroup>
-
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {!isMobile && (
             <Button
-              variant="contained"
+              variant='contained'
               startIcon={<AddIcon />}
-              onClick={openCreateModal}
-              size="large"
+              onClick={() => {
+                setSelectedDepartment(null);
+                setIsFormModalOpen(true);
+              }}
               sx={{
-                borderRadius: 2,
-                textTransform: "none",
+                borderRadius: '0.375rem',
+                textTransform: 'none',
                 fontWeight: 600,
-                bgcolor: "#45407A",
+                bgcolor: darkMode ? '#464b8a' : '#45407A',
+                boxShadow: 'none', // Remove button shadow
+                '&:hover': {
+                  bgcolor: darkMode ? '#464b8a' : '#5b56a0',
+                  boxShadow: 'none',
+                },
               }}
             >
-              {isRtl ? "إنشاء قسم" : "Create Department"}
+              {lang.create}
             </Button>
           )}
         </Box>
       </Paper>
-      <Divider sx={{ mb: 4, borderColor: "#ccc" }} />
+
+      <Divider sx={{ mb: 4, borderColor: dividerCol }} />
 
       {/* Content */}
-      {departments.length === 0 ? (
+      {loading ? (
         <Paper
           sx={{
             p: 4,
-
-            textAlign: "center",
-            backgroundColor: "background.paper",
+            textAlign: 'center',
+            bgcolor: bgPaper,
+            color: textPrimary,
+            boxShadow: 'none',
           }}
         >
-          <BusinessIcon sx={{ fontSize: 64, color: "grey.400", mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            {isRtl ? "لا توجد أقسام" : "No Departments Found"}
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            height={200}
+          >
+            <CircularProgress />
+          </Box>
+        </Paper>
+      ) : departments.length === 0 ? (
+        <Paper
+          sx={{
+            p: 4,
+            textAlign: 'center',
+            bgcolor: bgPaper,
+            color: textPrimary,
+            boxShadow: 'none',
+          }}
+        >
+          <BusinessIcon sx={{ fontSize: 64, color: textSecond, mb: 2 }} />
+          <Typography variant='h6' color={textSecond} gutterBottom>
+            {lang.noDepartments}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            {isRtl
-              ? "ابدأ بإنشاء قسم جديد لإدارة مؤسستك"
-              : "Get started by creating your first department"}
+          <Typography variant='body2' color={textSecond} sx={{ mb: 3 }}>
+            {lang.description}
           </Typography>
           <Button
-            variant="contained"
+            variant='contained'
             startIcon={<AddIcon />}
-            onClick={openCreateModal}
+            onClick={() => {
+              setSelectedDepartment(null);
+              setIsFormModalOpen(true);
+            }}
+            sx={{
+              backgroundColor: '#464b8a',
+              boxShadow: 'none',
+              '&:hover': { boxShadow: 'none' },
+            }}
           >
-            {isRtl ? "إنشاء قسم جديد" : "Create First Department"}
+            {lang.createFirst}
           </Button>
         </Paper>
       ) : (
         <Box
           sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 3,
-            justifyContent: "flex-start",
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+            justifyContent: 'flex-start',
           }}
         >
-          {departments.map((department) => (
+          {departments.map(d => (
             <Box
-              key={department.id}
+              key={d.id}
               sx={{
                 width: {
-                  xs: "100%",
-                  sm: "calc(50% - 12px)", // 2 cards
-                  md: "calc(50% - 12px)",
+                  xs: '100%',
+                  sm: 'calc(50% - 12px)',
+                  md: 'calc(50% - 12px)',
                 },
               }}
             >
               <DepartmentCard
-                department={department}
-                onEdit={openEditModal}
-                onDelete={openDeleteModal}
+                department={d}
+                onEdit={dept => {
+                  setSelectedDepartment(dept);
+                  setIsFormModalOpen(true);
+                }}
+                onDelete={dept => {
+                  setSelectedDepartment(dept);
+                  setIsDeleteModalOpen(true);
+                }}
                 isRtl={isRtl}
               />
             </Box>
@@ -223,16 +355,20 @@ export const DepartmentList: React.FC = () => {
         </Box>
       )}
 
-      {/* FAB for Mobile */}
+      {/* FAB (mobile) */}
       {isMobile && (
         <Fab
-          color="primary"
-          onClick={openCreateModal}
+          color='primary'
+          onClick={() => {
+            setSelectedDepartment(null);
+            setIsFormModalOpen(true);
+          }}
           sx={{
-            position: "fixed",
+            position: 'fixed',
             bottom: 24,
-            right: isRtl ? "auto" : 24,
-            left: isRtl ? 24 : "auto",
+            right: isRtl ? 'auto' : 24,
+            left: isRtl ? 24 : 'auto',
+            boxShadow: 'none', // Remove FAB shadow
           }}
         >
           <AddIcon />
@@ -263,6 +399,22 @@ export const DepartmentList: React.FC = () => {
         department={selectedDepartment}
         isRtl={isRtl}
       />
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
