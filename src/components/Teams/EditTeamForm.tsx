@@ -197,7 +197,9 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
     }
 
     // Validate that the selected manager exists in the available managers list
-    const selectedManagerExists = managers.some(m => m.id === formData.manager_id);
+    const selectedManagerExists = managers.some(
+      m => m.id === formData.manager_id
+    );
     if (!selectedManagerExists) {
       setError('Selected manager is not available');
       return;

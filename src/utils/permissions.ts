@@ -159,15 +159,9 @@ export const isDashboardPathAllowedForRole = (
       'EmployeeManager',
       'UserList',
       'UserProfile',
-      // Hide these submenus for admin/system-admin, but keep route available only if you want deep link access.
-      // To block direct access, remove the entries below from the allowlist.
-      // 'policies', 'holidays',
       'leaves',
-      // Attendance - Allow AttendanceTable and Reports, but NOT AttendanceCheck (check-in/check-out)
-      // 'AttendanceCheck', // HIDDEN for system-admin
-      'AttendanceTable', // ALLOWED for system-admin
-      // 'AttendanceCheck/TimesheetLayout', // HIDDEN for system-admin
-      'Reports', // ALLOWED for system-admin
+      'AttendanceTable',
+      'Reports',
       // Teams
       'teams',
       // Employee profile view

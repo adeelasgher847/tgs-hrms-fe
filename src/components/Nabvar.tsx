@@ -425,7 +425,7 @@ const Navbar: React.FC<NavbarProps> = ({
         </Box>
         <Divider sx={{ mb: 1 }} />
 
-        <MenuItem 
+        <MenuItem
           onClick={() => {
             handleMenuClose();
             navigate('/dashboard/EmployeeManager');

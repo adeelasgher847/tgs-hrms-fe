@@ -61,7 +61,11 @@ export default function EmployeesInfoChart() {
         const currentYear = new Date().getFullYear();
         setJoiningData(
           // 12 months with zero totals for a consistent chart appearance
-          Array.from({ length: 12 }, (_, i) => ({ month: i + 1, year: currentYear, total: 0 }))
+          Array.from({ length: 12 }, (_, i) => ({
+            month: i + 1,
+            year: currentYear,
+            total: 0,
+          }))
         );
       } finally {
         setLoading(false);

@@ -104,7 +104,7 @@ class TeamApiService {
     try {
       const response = await axiosInstance.post<Team>(this.baseUrl, teamData);
       const newTeam = response.data;
-      
+
       // Add the manager as a team member so they appear in team member lists
       if (newTeam.id && teamData.manager_id) {
         try {
@@ -114,7 +114,7 @@ class TeamApiService {
           // Don't throw here as the team was created successfully
         }
       }
-      
+
       return newTeam;
     } catch {
       throw error;
@@ -178,7 +178,7 @@ class TeamApiService {
     try {
       // Get current team data to check if manager is changing
       const currentTeam = await this.getTeamById(id);
-      
+
       const response = await axiosInstance.patch<Team>(
         `${this.baseUrl}/${id}`,
         teamData
@@ -186,13 +186,16 @@ class TeamApiService {
       const updatedTeam = response.data;
 
       // If manager is changing, update team membership
-      if (teamData.manager_id && teamData.manager_id !== currentTeam.manager_id) {
+      if (
+        teamData.manager_id &&
+        teamData.manager_id !== currentTeam.manager_id
+      ) {
         try {
           // Remove old manager from team if they exist
           if (currentTeam.manager_id) {
             await this.removeMemberFromTeam(id, currentTeam.manager_id);
           }
-          
+
           // Add new manager to team
           await this.addMemberToTeam(id, teamData.manager_id);
         } catch (error) {

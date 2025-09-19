@@ -28,13 +28,12 @@ const ConfirmPayment: React.FC = () => {
   const handlePaymentConfirmation = async () => {
     try {
       setLoading(true);
-      
+
       // Get parameters from URL
       const sessionId = searchParams.get('session_id');
       const signupSessionId = searchParams.get('signupSessionId');
-      
-      console.log('Payment confirmation params:', { sessionId, signupSessionId });
-      
+
+
       if (!sessionId || !signupSessionId) {
         throw new Error('Missing payment session information');
       }
@@ -45,35 +44,41 @@ const ConfirmPayment: React.FC = () => {
         checkoutSessionId: sessionId,
       } as const;
 
-      console.log('Confirming payment:', paymentConfirmRequest);
-      const paymentResult = await signupApi.confirmPayment(paymentConfirmRequest);
-      console.log('Payment confirmation result:', paymentResult);
-      
+      const paymentResult = await signupApi.confirmPayment(
+        paymentConfirmRequest
+      );
+
       if (paymentResult.status === 'succeeded') {
         // 2. Complete signup process
         const completeSignupRequest = {
           signupSessionId,
         } as const;
 
-        console.log('Completing signup:', completeSignupRequest);
-        const signupResult = await signupApi.completeSignup(completeSignupRequest);
-        console.log('Signup completion result:', signupResult);
+        const signupResult = await signupApi.completeSignup(
+          completeSignupRequest
+        );
 
         // First, clear all existing auth data to ensure clean state
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         localStorage.removeItem('permissions');
-        
+
         // Now set the new user's data if available
-        if ((signupResult as any).accessToken && (signupResult as any).refreshToken) {
+        if (
+          (signupResult as any).accessToken &&
+          (signupResult as any).refreshToken
+        ) {
           const data: any = signupResult as any;
           localStorage.setItem('accessToken', data.accessToken);
           localStorage.setItem('refreshToken', data.refreshToken);
           if (data.user) {
             localStorage.setItem('user', JSON.stringify(data.user));
             if (data.permissions) {
-              localStorage.setItem('permissions', JSON.stringify(data.permissions));
+              localStorage.setItem(
+                'permissions',
+                JSON.stringify(data.permissions)
+              );
             }
             // Update UserContext immediately so dashboard shows user without refresh
             try {
@@ -101,7 +106,7 @@ const ConfirmPayment: React.FC = () => {
               localStorage.removeItem('refreshToken');
               localStorage.removeItem('user');
               localStorage.removeItem('permissions');
-              
+
               // Call login endpoint
               const res = await axiosInstance.post('/auth/login', {
                 email: creds.email,
@@ -109,7 +114,8 @@ const ConfirmPayment: React.FC = () => {
               });
               if (res?.data) {
                 localStorage.setItem('accessToken', res.data.accessToken);
-                if (res.data.refreshToken) localStorage.setItem('refreshToken', res.data.refreshToken);
+                if (res.data.refreshToken)
+                  localStorage.setItem('refreshToken', res.data.refreshToken);
                 if (res.data.user) {
                   localStorage.setItem('user', JSON.stringify(res.data.user));
                   try {
@@ -120,7 +126,11 @@ const ConfirmPayment: React.FC = () => {
                     } catch {}
                   }
                 }
-                if (res.data.permissions) localStorage.setItem('permissions', JSON.stringify(res.data.permissions));
+                if (res.data.permissions)
+                  localStorage.setItem(
+                    'permissions',
+                    JSON.stringify(res.data.permissions)
+                  );
               }
             }
           } catch (loginErr) {
@@ -128,10 +138,9 @@ const ConfirmPayment: React.FC = () => {
             // Don't block redirect; user can login manually
           }
         }
-        console.log('Signup completion result:', signupResult);
-        
+
         setSuccess(true);
-        
+
         // Cleanup pending signup storage
         try {
           sessionStorage.removeItem('pendingSignupCredentials');
@@ -144,13 +153,10 @@ const ConfirmPayment: React.FC = () => {
         setTimeout(() => {
           navigate('/dashboard');
         }, 1500);
-
       } else {
         throw new Error('Payment was not successful');
       }
-
     } catch (err: any) {
-      console.error('Payment confirmation error:', err);
       setError(err.message || 'Payment confirmation failed');
     } finally {
       setLoading(false);
@@ -179,10 +185,10 @@ const ConfirmPayment: React.FC = () => {
         }}
       >
         <CircularProgress size={60} />
-        <Typography variant="h6" color="text.secondary">
+        <Typography variant='h6' color='text.secondary'>
           Confirming your payment...
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant='body2' color='text.secondary'>
           Please wait while we process your subscription
         </Typography>
       </Box>
@@ -190,40 +196,34 @@ const ConfirmPayment: React.FC = () => {
   }
 
   if (error) {
-  return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: '#f3f4f6',
-        p: 3,
-      }}
-    >
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: '#f3f4f6',
+          p: 3,
+        }}
+      >
         <Paper elevation={3} sx={{ p: 4, maxWidth: 500, textAlign: 'center' }}>
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert severity='error' sx={{ mb: 3 }}>
             {error}
           </Alert>
-          <Typography variant="h6" sx={{ mb: 3 }}>
+          <Typography variant='h6' sx={{ mb: 3 }}>
             Payment Confirmation Failed
           </Typography>
-          <Typography color="text.secondary" sx={{ mb: 3 }}>
+          <Typography color='text.secondary' sx={{ mb: 3 }}>
             There was an issue confirming your payment. Please try again.
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-            <Button
-              variant="contained"
-              onClick={handleRetry}
-            >
+            <Button variant='contained' onClick={handleRetry}>
               Try Again
             </Button>
-            <Button
-              variant="outlined"
-              onClick={handleGoHome}
-            >
+            <Button variant='outlined' onClick={handleGoHome}>
               Go Home
-              </Button>
+            </Button>
           </Box>
         </Paper>
       </Box>
@@ -243,20 +243,23 @@ const ConfirmPayment: React.FC = () => {
         }}
       >
         <Paper elevation={3} sx={{ p: 4, maxWidth: 500, textAlign: 'center' }}>
-          <CheckCircleIcon sx={{ fontSize: 80, color: 'success.main', mb: 2 }} />
-          <Typography variant="h4" sx={{ mb: 2, color: 'success.main' }}>
+          <CheckCircleIcon
+            sx={{ fontSize: 80, color: 'success.main', mb: 2 }}
+          />
+          <Typography variant='h4' sx={{ mb: 2, color: 'success.main' }}>
             Payment Successful!
           </Typography>
-          <Typography color="text.secondary" sx={{ mb: 3 }}>
-            Your account has been created successfully. Redirecting to dashboard...
+          <Typography color='text.secondary' sx={{ mb: 3 }}>
+            Your account has been created successfully. Redirecting to
+            dashboard...
           </Typography>
           <CircularProgress size={24} />
         </Paper>
-    </Box>
-  );
+      </Box>
+    );
   }
 
   return null;
 };
 
-export default ConfirmPayment; 
+export default ConfirmPayment;

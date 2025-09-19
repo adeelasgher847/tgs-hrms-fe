@@ -1,11 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-} from '@mui/material';
+import { Box, Paper, Typography, Button } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const SignupSuccess: React.FC = () => {
@@ -18,7 +13,7 @@ const SignupSuccess: React.FC = () => {
     try {
       sessionStorage.removeItem('pendingSignupCredentials');
     } catch {}
-    
+
     // Redirect to dashboard after 5 seconds
     const timer = setTimeout(() => {
       navigate('/dashboard');
@@ -48,38 +43,43 @@ const SignupSuccess: React.FC = () => {
     >
       <Paper elevation={3} sx={{ p: 6, maxWidth: 600, textAlign: 'center' }}>
         <CheckCircleIcon sx={{ fontSize: 100, color: 'success.main', mb: 3 }} />
-        
-        <Typography variant="h3" sx={{ mb: 2, color: 'success.main', fontWeight: 700 }}>
+
+        <Typography
+          variant='h3'
+          sx={{ mb: 2, color: 'success.main', fontWeight: 700 }}
+        >
           Welcome to Your HRMS!
         </Typography>
-        
-        <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
-          Your account has been created successfully and your subscription is now active.
+
+        <Typography variant='h6' color='text.secondary' sx={{ mb: 4 }}>
+          Your account has been created successfully and your subscription is
+          now active.
         </Typography>
-        
+
         <Box sx={{ bgcolor: '#f8f9fa', p: 3, borderRadius: 2, mb: 4 }}>
-          <Typography variant="body1" sx={{ mb: 1 }}>
+          <Typography variant='body1' sx={{ mb: 1 }}>
             ✅ Account created successfully
           </Typography>
-          <Typography variant="body1" sx={{ mb: 1 }}>
+          <Typography variant='body1' sx={{ mb: 1 }}>
             ✅ Subscription activated
           </Typography>
-          <Typography variant="body1" sx={{ mb: 1 }}>
+          <Typography variant='body1' sx={{ mb: 1 }}>
             ✅ Payment processed
           </Typography>
-          <Typography variant="body1">
+          <Typography variant='body1'>
             ✅ Ready to start managing your team
           </Typography>
         </Box>
-        
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-          You will be automatically redirected to your dashboard in a few seconds.
+
+        <Typography variant='body2' color='text.secondary' sx={{ mb: 4 }}>
+          You will be automatically redirected to your dashboard in a few
+          seconds.
         </Typography>
-        
+
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
           <Button
-            variant="contained"
-            size="large"
+            variant='contained'
+            size='large'
             onClick={handleGoToDashboard}
             sx={{
               px: 4,
@@ -90,8 +90,8 @@ const SignupSuccess: React.FC = () => {
             Go to Dashboard
           </Button>
           <Button
-            variant="outlined"
-            size="large"
+            variant='outlined'
+            size='large'
             onClick={handleGoHome}
             sx={{
               px: 4,

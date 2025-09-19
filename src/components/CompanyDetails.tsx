@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -27,13 +26,13 @@ const CompanyDetails: React.FC = () => {
     message: string;
     severity: 'success' | 'error';
   }>({ open: false, message: '', severity: 'success' });
-  
+
   const [formData, setFormData] = useState({
     companyName: '',
     companyType: '',
     domain: '',
   });
-  
+
   const [fieldErrors, setFieldErrors] = useState({
     companyName: '',
     companyType: '',
@@ -66,11 +65,10 @@ const CompanyDetails: React.FC = () => {
     if (!formData.companyName.trim()) {
       nextErrors.companyName = 'Company name is required';
     }
-   
+
     if (!formData.domain.trim()) {
       nextErrors.domain = 'Domain is required';
-    } 
-   
+    }
 
     setFieldErrors(nextErrors);
     const hasErrors = Object.values(nextErrors).some(Boolean);
@@ -107,35 +105,45 @@ const CompanyDetails: React.FC = () => {
         planId: '', // Will be set when user selects a plan
       };
 
-      console.log('Sending company details:', companyDetails);
-      
+
       // Store company details in localStorage for plan selection
-      localStorage.setItem('companyDetails', JSON.stringify({
-        companyName: formData.companyName.trim(),
-        companyType: formData.companyType.trim(),
-        domain: formData.domain.trim(),
-      }));
-      
+      localStorage.setItem(
+        'companyDetails',
+        JSON.stringify({
+          companyName: formData.companyName.trim(),
+          companyType: formData.companyType.trim(),
+          domain: formData.domain.trim(),
+        })
+      );
+
       setSuccess('Company details saved successfully!');
       setSnackbar({
         open: true,
-        message: lang === 'ar' ? 'تم حفظ تفاصيل الشركة بنجاح!' : 'Company details saved successfully!',
+        message:
+          lang === 'ar'
+            ? 'تم حفظ تفاصيل الشركة بنجاح!'
+            : 'Company details saved successfully!',
         severity: 'success',
       });
-      
+
       // Redirect to plan selection after a short delay
       setTimeout(() => {
         navigate('/signup/select-plan');
       }, 2000);
-
     } catch (err: any) {
-      console.error('Company details error:', err);
-      
+
       if (err.response?.data?.message) {
         const errorData = err.response.data.message;
-        if (typeof errorData === 'object' && errorData.field && errorData.message) {
+        if (
+          typeof errorData === 'object' &&
+          errorData.field &&
+          errorData.message
+        ) {
           const field = String(errorData.field) as keyof typeof fieldErrors;
-          setFieldErrors(prev => ({ ...prev, [field]: String(errorData.message) }));
+          setFieldErrors(prev => ({
+            ...prev,
+            [field]: String(errorData.message),
+          }));
           setError(null);
         } else {
           setError(errorData);
@@ -210,8 +218,12 @@ const CompanyDetails: React.FC = () => {
                     >
                       {lang === 'ar' ? 'تفاصيل الشركة' : 'Company Details'}
                     </Typography>
-                    <Typography sx={{ fontSize: '14px', color: 'common.white' }}>
-                      {lang === 'ar' ? 'أخبرنا المزيد عن شركتك' : 'Tell us more about your company'}
+                    <Typography
+                      sx={{ fontSize: '14px', color: 'common.white' }}
+                    >
+                      {lang === 'ar'
+                        ? 'أخبرنا المزيد عن شركتك'
+                        : 'Tell us more about your company'}
                     </Typography>
                   </Box>
 
@@ -230,7 +242,11 @@ const CompanyDetails: React.FC = () => {
                     }}
                   >
                     <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
-                      <Typography component='label' htmlFor='companyName' sx={{ fontWeight: 400, fontSize: '14px' }}>
+                      <Typography
+                        component='label'
+                        htmlFor='companyName'
+                        sx={{ fontWeight: 400, fontSize: '14px' }}
+                      >
                         {lang === 'ar' ? 'اسم الشركة' : 'Company Name'}
                       </Typography>
                       <TextField
@@ -240,7 +256,11 @@ const CompanyDetails: React.FC = () => {
                         fullWidth
                         value={formData.companyName}
                         onChange={handleChange}
-                        placeholder={lang === 'ar' ? 'أدخل اسم الشركة' : 'Enter company name'}
+                        placeholder={
+                          lang === 'ar'
+                            ? 'أدخل اسم الشركة'
+                            : 'Enter company name'
+                        }
                         disabled={loading}
                         error={Boolean(fieldErrors.companyName)}
                         helperText={fieldErrors.companyName}
@@ -255,7 +275,8 @@ const CompanyDetails: React.FC = () => {
                             '&.Mui-focused fieldset': { border: 'none' },
                             '&:hover': { backgroundColor: '#eee' },
                             '&.Mui-focused': {
-                              backgroundColor: theme => theme.palette.background.paper,
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
                             },
                           },
                           '& input': { outline: 'none', boxShadow: 'none' },
@@ -309,7 +330,11 @@ const CompanyDetails: React.FC = () => {
                     </Box> */}
 
                     <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
-                      <Typography component='label' htmlFor='domain' sx={{ fontWeight: 400, fontSize: '14px' }}>
+                      <Typography
+                        component='label'
+                        htmlFor='domain'
+                        sx={{ fontWeight: 400, fontSize: '14px' }}
+                      >
                         {lang === 'ar' ? 'النطاق' : 'Domain'}
                       </Typography>
                       <TextField
@@ -319,7 +344,11 @@ const CompanyDetails: React.FC = () => {
                         fullWidth
                         value={formData.domain}
                         onChange={handleChange}
-                        placeholder={lang === 'ar' ? 'أدخل النطاق (مثال: company.com)' : 'Enter domain (e.g., Development)'}
+                        placeholder={
+                          lang === 'ar'
+                            ? 'أدخل النطاق (مثال: company.com)'
+                            : 'Enter domain (e.g., Development)'
+                        }
                         disabled={loading}
                         error={Boolean(fieldErrors.domain)}
                         helperText={fieldErrors.domain}
@@ -334,7 +363,8 @@ const CompanyDetails: React.FC = () => {
                             '&.Mui-focused fieldset': { border: 'none' },
                             '&:hover': { backgroundColor: '#eee' },
                             '&.Mui-focused': {
-                              backgroundColor: theme => theme.palette.background.paper,
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
                             },
                           },
                           '& input': { outline: 'none', boxShadow: 'none' },
@@ -376,7 +406,6 @@ const CompanyDetails: React.FC = () => {
                         }}
                       />
                     </Box> */}
-
                   </Box>
 
                   <Box
@@ -388,28 +417,28 @@ const CompanyDetails: React.FC = () => {
                       gap: 2,
                     }}
                   >
-                    <Button 
-                      variant='outlined' 
-                      type='button' 
+                    <Button
+                      variant='outlined'
+                      type='button'
                       onClick={handleBack}
                       disabled={loading}
-                      sx={{ 
-                        borderColor: 'white', 
+                      sx={{
+                        borderColor: 'white',
                         color: 'white',
                         '&:hover': {
                           borderColor: 'white',
                           backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        }
+                        },
                       }}
                     >
                       {lang === 'ar' ? 'رجوع' : 'Back'}
                     </Button>
-                    <Button 
-                      variant='contained' 
-                      type='submit' 
+                    <Button
+                      variant='contained'
+                      type='submit'
                       disabled={isSubmitDisabled}
-                      sx={{ 
-                        backgroundColor: 'white', 
+                      sx={{
+                        backgroundColor: 'white',
                         color: 'black',
                         fontWeight: 500,
                         '&:hover': { backgroundColor: '#f0f0f0' },
@@ -417,12 +446,16 @@ const CompanyDetails: React.FC = () => {
                       }}
                     >
                       {loading ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
                           <CircularProgress size={16} />
                           {lang === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
                         </Box>
+                      ) : lang === 'ar' ? (
+                        'التالي'
                       ) : (
-                        lang === 'ar' ? 'التالي' : 'Next'
+                        'Next'
                       )}
                     </Button>
                   </Box>
@@ -450,4 +483,4 @@ const CompanyDetails: React.FC = () => {
   );
 };
 
-export default CompanyDetails; 
+export default CompanyDetails;

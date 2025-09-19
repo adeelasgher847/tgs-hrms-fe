@@ -69,27 +69,27 @@ export default function AvailabilityCardsGrid() {
         setLeavesData(0);
       }
     } catch (err: unknown) {
-        // If authentication is required, show message and leave zeros
-        if (
-          err &&
-          typeof err === 'object' &&
-          'response' in err &&
-          err.response &&
-          typeof err.response === 'object' &&
-          'status' in err.response &&
-          err.response.status === 401
-        ) {
-          setError('Authentication required to view real data. Please login.');
-          setAttendanceData(0);
-          setLeavesData(0);
-        } else {
-          // For other errors or empty tenants, show zero data instead of an error block.
-          console.warn('Availability fetch error:', err);
-          setError(null);
-          setAttendanceData(0);
-          setLeavesData(0);
-        }
-      } finally {
+      // If authentication is required, show message and leave zeros
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        err.response &&
+        typeof err.response === 'object' &&
+        'status' in err.response &&
+        err.response.status === 401
+      ) {
+        setError('Authentication required to view real data. Please login.');
+        setAttendanceData(0);
+        setLeavesData(0);
+      } else {
+        // For other errors or empty tenants, show zero data instead of an error block.
+        console.warn('Availability fetch error:', err);
+        setError(null);
+        setAttendanceData(0);
+        setLeavesData(0);
+      }
+    } finally {
       setLoading(false);
     }
   };

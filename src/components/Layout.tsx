@@ -211,14 +211,9 @@ const Layout = () => {
           flexDirection: 'column',
           overflow: 'auto',
           height: '100%',
-          // marginLeft: {
-          //   xs: 0,
-          //   lg: sidebarOpen ? "274px" : "0px",
-          // },
           transition: 'margin 0.3s ease',
           marginLeft: isLargeScreen && sidebarOpen && !rtlMode ? '274px' : 0,
           marginRight: isLargeScreen && sidebarOpen && rtlMode ? '274px' : 0,
-          // bgcolor: "#fff", // 🔁 Here
           width: '100%',
           direction: rtlMode ? 'rtl' : 'ltr',
         }}
