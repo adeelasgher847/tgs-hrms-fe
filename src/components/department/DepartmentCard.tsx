@@ -28,7 +28,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
 }) => {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const bgColor = darkMode ? '#111' : '#fff';
-  const textColor = darkMode ? '#ccc' : '#000';
+  const textColor = darkMode ? '#8f8f8f' : '#000';
   const borderColor = darkMode ? '#333' : '#f0f0f0';
 
   return (
@@ -73,7 +73,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
           <Typography
             variant='body2'
             sx={{
-              color: darkMode ? '#aaa' : 'text.secondary',
+              color: darkMode ? '#8f8f8f' : 'text.secondary',
               textAlign: isRtl ? 'right' : 'left',
               mb: 2,
               fontWeight: 700,
@@ -95,7 +95,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               mb: 2,
               lineHeight: 1.6,
               textAlign: isRtl ? 'right' : 'left',
-              color: darkMode ? '#aaa' : 'text.secondary',
+              color: darkMode ? '#8f8f8f' : 'text.secondary',
             }}
           >
             {isRtl ? department.descriptionAr : department.description}

@@ -260,7 +260,7 @@ export const TenantPage = () => {
                 borderRadius: '0.375rem',
                 textTransform: 'none',
                 fontWeight: 600,
-                bgcolor: darkMode ? '#605bd4' : '#45407A',
+                bgcolor: darkMode ? '#484c7f' : '#45407A',
                 boxShadow: 'none',
                 '&:hover': {
                   bgcolor: darkMode ? '#726df0' : '#5b56a0',
@@ -524,7 +524,7 @@ export const TenantPage = () => {
                 }
                 disabled={!formName.trim()}
                 sx={{
-                  bgcolor: darkMode ? '#605bd4' : '#45407A',
+                  bgcolor: darkMode ? '#484c7f' : '#45407A',
                   '&:hover': { bgcolor: darkMode ? '#726df0' : '#5b56a0' },
                 }}
               >

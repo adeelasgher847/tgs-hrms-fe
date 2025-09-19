@@ -163,11 +163,14 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+          backgroundColor: (theme) => theme.palette.background.paper,
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
         },
       }}
     >
-      <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+      <DialogTitle sx={{ color: (theme) => theme.palette.text.primary }}>
         {lang.title}
       </DialogTitle>
 
@@ -188,14 +191,14 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
               required
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: darkMode ? '#555' : '#ccc' },
+                  '& fieldset': { borderColor: (theme) => theme.palette.divider },
                   '&:hover fieldset': {
-                    borderColor: darkMode ? '#888' : '#999',
+                    borderColor: (theme) => theme.palette.text.secondary,
                   },
-                  '&.Mui-focused fieldset': { borderColor: '#484c7f' },
+                  '&.Mui-focused fieldset': { borderColor: (theme) => theme.palette.primary.main },
                 },
-                '& .MuiInputLabel-root': { color: darkMode ? '#ccc' : '#666' },
-                '& input': { color: darkMode ? '#fff' : '#000' },
+                '& .MuiInputLabel-root': { color: (theme) => theme.palette.text.secondary },
+                '& input': { color: (theme) => theme.palette.text.primary },
               }}
             />
 
@@ -208,24 +211,24 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
               rows={3}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: darkMode ? '#555' : '#ccc' },
+                  '& fieldset': { borderColor: (theme) => theme.palette.divider },
                   '&:hover fieldset': {
-                    borderColor: darkMode ? '#888' : '#999',
+                    borderColor: (theme) => theme.palette.text.secondary,
                   },
-                  '&.Mui-focused fieldset': { borderColor: '#484c7f' },
+                  '&.Mui-focused fieldset': { borderColor: (theme) => theme.palette.primary.main },
                 },
-                '& .MuiInputLabel-root': { color: darkMode ? '#ccc' : '#666' },
-                '& textarea': { color: darkMode ? '#fff' : '#000' },
+                '& .MuiInputLabel-root': { color: (theme) => theme.palette.text.secondary },
+                '& textarea': { color: (theme) => theme.palette.text.primary },
               }}
             />
 
             <FormControl fullWidth>
               <InputLabel
                 sx={{
-                  color: darkMode ? '#ccc' : '#666',
-                  '&.Mui-focused': { color: '#484c7f' },
+                  color: (theme) => theme.palette.text.secondary,
+                  '&.Mui-focused': { color: (theme) => theme.palette.primary.main },
                   '&.MuiInputLabel-shrink': {
-                    color: darkMode ? '#ccc' : '#666',
+                    color: (theme) => theme.palette.text.secondary,
                   },
                 }}
               >
@@ -238,16 +241,16 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
                 label={lang.manager}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: darkMode ? '#555' : '#ccc' },
+                    '& fieldset': { borderColor: (theme) => theme.palette.divider },
                     '&:hover fieldset': {
-                      borderColor: darkMode ? '#888' : '#999',
+                      borderColor: (theme) => theme.palette.text.secondary,
                     },
-                    '&.Mui-focused fieldset': { borderColor: '#484c7f' },
+                    '&.Mui-focused fieldset': { borderColor: (theme) => theme.palette.primary.main },
                   },
                   '& .MuiInputLabel-root': {
-                    color: darkMode ? '#ccc' : '#666',
+                    color: (theme) => theme.palette.text.secondary,
                   },
-                  '& .MuiSelect-select': { color: darkMode ? '#fff' : '#000' },
+                  '& .MuiSelect-select': { color: (theme) => theme.palette.text.primary },
                 }}
               >
                 <MenuItem value='' disabled>
@@ -268,10 +271,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
                 )}
               </Select>
             </FormControl>
-          </Box>
-        </DialogContent>
-
-        <DialogActions>
+            <DialogActions sx={{ padding: 0 }}>
           <Button onClick={handleClose} disabled={loading}>
             {lang.cancel}
           </Button>
@@ -284,12 +284,17 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
               !formData.name.trim() ||
               !formData.manager_id
             }
-            sx={{ backgroundColor: '#484c7f' }}
+            sx={{ backgroundColor: (theme) => theme.palette.primary.main }}
             startIcon={loading ? <CircularProgress size={16} /> : null}
           >
             {loading ? lang.loading : lang.create}
           </Button>
         </DialogActions>
+          </Box>
+          
+        </DialogContent>
+
+    
       </form>
     </Dialog>
   );
