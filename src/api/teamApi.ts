@@ -177,7 +177,7 @@ class TeamApiService {
   async updateTeam(id: string, teamData: UpdateTeamDto): Promise<Team> {
     try {
       // Get current team data to check if manager is changing
-      const currentTeam = await this.findOne(id);
+      const currentTeam = await this.getTeamById(id);
       
       const response = await axiosInstance.patch<Team>(
         `${this.baseUrl}/${id}`,
