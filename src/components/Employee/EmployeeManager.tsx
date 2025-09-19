@@ -104,7 +104,7 @@ const EmployeeManager: React.FC = () => {
 
   // Dark mode
   const bgColor = darkMode ? '#111' : '#fff';
-  const textColor = darkMode ? '#ccc' : '#000';
+  const textColor = darkMode ? '#8f8f8f' : '#000';
   const borderColor = darkMode ? '#333' : '#ddd';
   const filterBtn = darkMode ? '#555' : '#484c7f';
 
@@ -116,7 +116,7 @@ const EmployeeManager: React.FC = () => {
           '&:hover fieldset': { borderColor: '#888' },
           '&.Mui-focused fieldset': { borderColor: '#90caf9' },
         },
-        '& .MuiInputLabel-root': { color: '#ccc' },
+        '& .MuiInputLabel-root': { color: '#8f8f8f' },
         '& input, & .MuiSelect-select': { color: '#eee' },
         backgroundColor: '#2e2e2e',
       }

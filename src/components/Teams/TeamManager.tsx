@@ -310,7 +310,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
         <Typography
           variant='h4'
           sx={{
-            color: darkMode ? '#fff' : '#000',
+            color: (theme) => theme.palette.text.primary,
             fontSize: { xs: '1.5rem', sm: '2.125rem' },
             textAlign: { xs: 'left', sm: 'left' },
           }}
@@ -323,7 +323,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
             startIcon={<AddIcon />}
             onClick={() => setShowCreateForm(true)}
             sx={{
-              backgroundColor: '#484c7f',
+              backgroundColor: (theme) => theme.palette.primary.main,
               minWidth: { xs: '100%', sm: 'auto' },
               py: { xs: 1.5, sm: 1 },
             }}
@@ -346,7 +346,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
           mb: 3,
         }}
       >
-        <Card sx={{ backgroundColor: darkMode ? '#2d2d2d' : '#fff' }}>
+        <Card sx={{ backgroundColor: (theme) => theme.palette.background.paper }}>
           <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
             <Box
               sx={{
@@ -359,7 +359,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                 <Typography
                   variant='h4'
                   sx={{
-                    color: darkMode ? '#fff' : '#000',
+                    color: (theme) => theme.palette.text.primary,
                     fontSize: { xs: '1.75rem', sm: '2.125rem' },
                   }}
                 >
@@ -368,7 +368,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                 <Typography
                   variant='body2'
                   sx={{
-                    color: darkMode ? '#ccc' : '#666',
+                    color: (theme) => theme.palette.text.secondary,
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   }}
                 >
@@ -378,7 +378,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
               <BusinessIcon
                 sx={{
                   fontSize: { xs: 32, sm: 40 },
-                  color: '#484c7f',
+                  color: (theme) => theme.palette.primary.main,
                 }}
               />
             </Box>
@@ -387,7 +387,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
 
         {/* Only show Members Count Card for Managers */}
         {isManager() && (
-          <Card sx={{ backgroundColor: darkMode ? '#2d2d2d' : '#fff' }}>
+          <Card sx={{ backgroundColor: (theme) => theme.palette.background.paper }}>
             <CardContent>
               <Box
                 sx={{
@@ -400,7 +400,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                   <Typography
                     variant='h4'
                     sx={{
-                      color: darkMode ? '#fff' : '#000',
+                      color: (theme) => theme.palette.text.primary,
                       fontSize: { xs: '1.75rem', sm: '2.125rem' },
                     }}
                   >
@@ -409,7 +409,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                   <Typography
                     variant='body2'
                     sx={{
-                      color: darkMode ? '#ccc' : '#666',
+                      color: (theme) => theme.palette.text.secondary,
                       fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     }}
                   >
@@ -419,7 +419,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                 <PersonIcon
                   sx={{
                     fontSize: { xs: 32, sm: 40 },
-                    color: '#484c7f',
+                    color: (theme) => theme.palette.primary.main,
                   }}
                 />
               </Box>
@@ -440,12 +440,12 @@ const TeamManager: React.FC<TeamManagerProps> = ({
               justifyContent: 'flex-start', // Always align to start on all screen sizes
             },
             '& .MuiTab-root': {
-              color: darkMode ? '#ccc' : '#666',
+              color: (theme) => theme.palette.text.secondary,
               fontSize: { xs: '0.875rem', sm: '1rem' },
               minHeight: { xs: 48, sm: 56 },
               minWidth: 'auto',
               '&.Mui-selected': {
-                color: '#484c7f',
+                color: (theme) => theme.palette.primary.main,
               },
             },
           }}

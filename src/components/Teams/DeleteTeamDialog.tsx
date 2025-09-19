@@ -84,13 +84,13 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+          backgroundColor: (theme) => theme.palette.background.paper,
         },
       }}
     >
-      <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+      <DialogTitle sx={{ color: (theme) => theme.palette.text.primary }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <WarningIcon sx={{ color: '#f57c00' }} />
+          <WarningIcon sx={{ color: (theme) => theme.palette.warning.main }} />
           {lang.title}
         </Box>
       </DialogTitle>
@@ -104,7 +104,7 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
 
         <Typography
           variant='body1'
-          sx={{ color: darkMode ? '#fff' : '#000', mb: 2 }}
+          sx={{ color: (theme) => theme.palette.text.primary, mb: 2 }}
         >
           {lang.message}
         </Typography>
@@ -115,37 +115,37 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
 
         <Box
           sx={{
-            backgroundColor: darkMode ? '#1e1e1e' : '#f5f5f5',
+            backgroundColor: (theme) => theme.palette.action.hover,
             p: 2,
             borderRadius: 1,
           }}
         >
           <Typography
             variant='subtitle2'
-            sx={{ color: darkMode ? '#ccc' : '#666', mb: 1 }}
+            sx={{ color: (theme) => theme.palette.text.secondary, mb: 1 }}
           >
             {lang.teamName}:{' '}
-            <span style={{ color: darkMode ? '#fff' : '#000' }}>
+            <span style={{ color: 'inherit' }}>
               {team.name}
             </span>
           </Typography>
 
           <Typography
             variant='subtitle2'
-            sx={{ color: darkMode ? '#ccc' : '#666', mb: 1 }}
+            sx={{ color: (theme) => theme.palette.text.secondary, mb: 1 }}
           >
             {lang.manager}:{' '}
-            <span style={{ color: darkMode ? '#fff' : '#000' }}>
+            <span style={{ color: 'inherit' }}>
               {team.manager?.first_name} {team.manager?.last_name}
             </span>
           </Typography>
 
           <Typography
             variant='subtitle2'
-            sx={{ color: darkMode ? '#ccc' : '#666' }}
+            sx={{ color: (theme) => theme.palette.text.secondary }}
           >
             {lang.members}:{' '}
-            <span style={{ color: darkMode ? '#fff' : '#000' }}>
+            <span style={{ color: 'inherit' }}>
               {team.teamMembers?.length || 0}
             </span>
           </Typography>
@@ -161,7 +161,7 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
           variant='contained'
           color='error'
           disabled={loading}
-          sx={{ backgroundColor: '#d32f2f' }}
+          sx={{ backgroundColor: (theme) => theme.palette.error.main }}
         >
           {loading ? lang.loading : lang.delete}
         </Button>

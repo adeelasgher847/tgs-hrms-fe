@@ -234,7 +234,7 @@ const TeamList: React.FC<TeamListProps> = ({
           <Card
             key={team.id}
             sx={{
-              backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+              backgroundColor: (theme) => theme.palette.background.paper,
               height: { xs: 'auto', sm: 'auto', md: 'auto' },
               minHeight: { xs: '200px', sm: '220px', md: '240px', lg: '260px' },
               display: 'flex',
@@ -268,7 +268,7 @@ const TeamList: React.FC<TeamListProps> = ({
                   <Typography
                     variant='h6'
                     sx={{
-                      color: darkMode ? '#fff' : '#000',
+                      color: (theme) => theme.palette.text.primary,
                       fontWeight: 600,
                       fontSize: { xs: '1rem', sm: '1.25rem' },
                       overflow: 'hidden',
@@ -284,7 +284,7 @@ const TeamList: React.FC<TeamListProps> = ({
                   <Typography
                     variant='body2'
                     sx={{
-                      color: darkMode ? '#ccc' : '#666',
+                      color: (theme) => theme.palette.text.secondary,
                       fontSize: { xs: '0.75rem', sm: '0.875rem' },
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -308,7 +308,7 @@ const TeamList: React.FC<TeamListProps> = ({
                     size='small'
                     onClick={() => handleEditTeam(team)}
                     sx={{
-                      color: '#484c7f',
+                      color: (theme) => theme.palette.primary.main,
                       padding: { xs: 0.5, sm: 1 },
                     }}
                   >
@@ -318,7 +318,7 @@ const TeamList: React.FC<TeamListProps> = ({
                     size='small'
                     onClick={() => handleDeleteTeam(team)}
                     sx={{
-                      color: '#d32f2f',
+                      color: (theme) => theme.palette.error.main,
                       padding: { xs: 0.5, sm: 1 },
                     }}
                   >
@@ -331,7 +331,7 @@ const TeamList: React.FC<TeamListProps> = ({
                 <Typography
                   variant='body2'
                   sx={{
-                    color: darkMode ? '#ccc' : '#666',
+                    color: (theme) => theme.palette.text.secondary,
                     mb: 3,
                     lineHeight: 1.6,
                     fontSize: { xs: '0.8rem', sm: '0.9rem' },
@@ -361,8 +361,8 @@ const TeamList: React.FC<TeamListProps> = ({
                   size='small'
                   icon={<PersonIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
                   sx={{
-                    backgroundColor: '#484c7f',
-                    color: 'white',
+                    backgroundColor: (theme) => theme.palette.primary.main,
+                    color: (theme) => theme.palette.primary.contrastText,
                     fontSize: { xs: '0.7rem', sm: '0.75rem' },
                     height: { xs: 24, sm: 28 },
                   }}
@@ -371,7 +371,7 @@ const TeamList: React.FC<TeamListProps> = ({
                   <Typography
                     variant='caption'
                     sx={{
-                      color: darkMode ? '#888' : '#999',
+                      color: (theme) => theme.palette.text.disabled,
                       fontStyle: 'italic',
                       fontSize: { xs: '0.65rem', sm: '0.75rem' },
                     }}
@@ -387,7 +387,7 @@ const TeamList: React.FC<TeamListProps> = ({
                 sx={{
                   mt: 'auto',
                   pt: 2,
-                  borderTop: `1px solid ${darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
+                  borderTop: (theme) => `1px solid ${theme.palette.divider}`,
                 }}
               >
                 <Button
@@ -398,14 +398,14 @@ const TeamList: React.FC<TeamListProps> = ({
                   }
                   onClick={() => handleViewMembers(team)}
                   sx={{
-                    borderColor: '#484c7f',
-                    color: '#484c7f',
+                    borderColor: (theme) => theme.palette.primary.main,
+                    color: (theme) => theme.palette.primary.main,
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     py: { xs: 0.5, sm: 0.75 },
                     px: { xs: 1, sm: 1.5 },
                     '&:hover': {
-                      borderColor: '#3a3f5f',
-                      backgroundColor: 'rgba(72, 76, 127, 0.1)',
+                      borderColor: (theme) => theme.palette.primary.dark,
+                      backgroundColor: (theme) => theme.palette.action.hover,
                     },
                   }}
                 >
@@ -417,14 +417,14 @@ const TeamList: React.FC<TeamListProps> = ({
                   startIcon={<AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
                   onClick={() => handleAddMember(team)}
                   sx={{
-                    borderColor: '#484c7f',
-                    color: '#484c7f',
+                    borderColor: (theme) => theme.palette.primary.main,
+                    color: (theme) => theme.palette.primary.main,
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     py: { xs: 0.5, sm: 0.75 },
                     px: { xs: 1, sm: 1.5 },
                     '&:hover': {
-                      borderColor: '#3a3f5f',
-                      backgroundColor: 'rgba(72, 76, 127, 0.1)',
+                      borderColor: (theme) => theme.palette.primary.dark,
+                      backgroundColor: (theme) => theme.palette.action.hover,
                     },
                   }}
                 >
@@ -464,6 +464,7 @@ const TeamList: React.FC<TeamListProps> = ({
         onClose={() => setShowAddMemberDialog(false)}
         maxWidth='md'
         fullWidth
+        pa
       >
         <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
           {lang.addMember} - {selectedTeam?.name}

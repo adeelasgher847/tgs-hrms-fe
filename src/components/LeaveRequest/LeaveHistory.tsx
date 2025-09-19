@@ -39,7 +39,7 @@ const statusConfig: Record<
 > = {
   pending: {
     color: 'warning',
-    icon: <AccessTimeIcon fontSize='small' sx={{ mr: 0.5 }} />,
+    // icon: <AccessTimeIcon fontSize='small' sx={{ mr: 0.5 }} />,
   },
   approved: {
     color: 'success',
@@ -179,9 +179,8 @@ const LeaveHistory = ({
                         label={leave.type || 'Unknown'}
                         color={typeColor[leave.type] || 'default'}
                         sx={{
-                          fontWeight: 600,
-                          fontSize: 16,
-                          px: 2,
+                          fontSize: 15,
+                          px: 1,
                           py: 1,
                           width: '100%',
                         }}
@@ -192,30 +191,29 @@ const LeaveHistory = ({
                     <TableCell>{leave.applied || 'N/A'}</TableCell>
                     <TableCell>
                       <Chip
-                        icon={statusConfig[leave.status]?.icon}
+                      icon={statusConfig[leave.status]?.icon}
                         label={
-                          leave.status
-                            ? leave.status.charAt(0).toUpperCase() +
-                              leave.status.slice(1)
-                            : 'Unknown'
-                        }
-                        color={statusConfig[leave.status]?.color}
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: 16,
-                          px: 2,
-                          py: 1,
-                          width: '100%',
-                        }}
-                      />
+    leave.status
+      ? leave.status.charAt(0).toUpperCase() + leave.status.slice(1)
+      : 'Unknown'
+  }
+  color={statusConfig[leave.status]?.color}
+  sx={{
+    fontSize: 15,
+    px: 1,
+    py: 1,
+    width: '100%',
+  }}
+/>
+
                     </TableCell>
                     <TableCell>
-                      <Typography>{leave.reason || 'N/A'}</Typography>
+                      <Typography sx={{ fontSize: 14 }}>{leave.reason || 'N/A'}</Typography>
                       {leave.status === 'rejected' && leave.secondaryReason && (
                         <Typography
                           variant='body2'
                           color='error'
-                          sx={{ mt: 0.5 }}
+                          sx={{ mt: 0.5, fontSize: 14 }}
                         >
                           {leave.secondaryReason}
                         </Typography>
