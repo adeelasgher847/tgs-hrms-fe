@@ -215,36 +215,34 @@ const AttendanceTable = () => {
   // Fetch employees from attendance data
   const fetchEmployeesFromAttendance = async () => {
     try {
+      // Aggregate all unique employees from all attendance pages
+      let page = 1;
+      let totalPages = 1;
+      const uniqueEmployees = new Map();
 
-      // Get all attendance data to extract unique employees
-      const attendanceResponse = await attendanceApi.getAllAttendance(1);
-
-      if (attendanceResponse && attendanceResponse.items) {
-        const uniqueEmployees = new Map();
-
-        // Extract unique employees from attendance data
-        attendanceResponse.items.forEach((item: any) => {
-          if (item.user_id && item.user?.first_name) {
-            const employeeId = item.user_id;
-            const employeeName =
-              item.user.first_name +
-              (item.user.last_name ? ` ${item.user.last_name}` : '');
-
-            // Only add if not already added
-            if (!uniqueEmployees.has(employeeId)) {
-              uniqueEmployees.set(employeeId, {
-                id: employeeId,
-                name: employeeName,
-              });
+      do {
+        const attendanceResponse = await attendanceApi.getAllAttendance(page);
+        if (attendanceResponse && attendanceResponse.items) {
+          attendanceResponse.items.forEach((item: any) => {
+            if (item.user_id && item.user?.first_name) {
+              const employeeId = item.user_id;
+              const employeeName =
+                item.user.first_name +
+                (item.user.last_name ? ` ${item.user.last_name}` : '');
+              if (!uniqueEmployees.has(employeeId)) {
+                uniqueEmployees.set(employeeId, {
+                  id: employeeId,
+                  name: employeeName,
+                });
+              }
             }
-          }
-        });
+          });
+          totalPages = attendanceResponse.totalPages || 1;
+        }
+        page++;
+      } while (page <= totalPages);
 
-        const employeeList = Array.from(uniqueEmployees.values());
-        setEmployees(employeeList);
-      } else {
-        setEmployees([]);
-      }
+      setEmployees(Array.from(uniqueEmployees.values()));
     } catch (error) {
       setEmployees([]);
     }
