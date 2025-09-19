@@ -59,8 +59,13 @@ const ConfirmPayment: React.FC = () => {
         const signupResult = await signupApi.completeSignup(completeSignupRequest);
         console.log('Signup completion result:', signupResult);
 
-        // If backend returned tokens and user, store them and navigate
-        // Expected shape may vary; check common fields
+        // First, clear all existing auth data to ensure clean state
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('permissions');
+        
+        // Now set the new user's data if available
         if ((signupResult as any).accessToken && (signupResult as any).refreshToken) {
           const data: any = signupResult as any;
           localStorage.setItem('accessToken', data.accessToken);
@@ -91,6 +96,12 @@ const ConfirmPayment: React.FC = () => {
             const credsStr = sessionStorage.getItem('pendingSignupCredentials');
             if (credsStr) {
               const creds = JSON.parse(credsStr);
+              // Clear all existing auth data before attempting login
+              localStorage.removeItem('accessToken');
+              localStorage.removeItem('refreshToken');
+              localStorage.removeItem('user');
+              localStorage.removeItem('permissions');
+              
               // Call login endpoint
               const res = await axiosInstance.post('/auth/login', {
                 email: creds.email,
