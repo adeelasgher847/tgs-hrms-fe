@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -13,8 +13,13 @@ import {
   useMediaQuery,
   Alert,
   Snackbar,
+  Pagination,
+  Typography,
+  Paper,
+  DialogActions,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import WarningIcon from '@mui/icons-material/Warning';
 import { useOutletContext } from 'react-router-dom';
 import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeList from './EmployeeList';
@@ -32,6 +37,8 @@ import {
 interface Employee {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone: string;
   departmentId: string;
@@ -71,8 +78,14 @@ const EmployeeManager: React.FC = () => {
   const [editing, setEditing] = useState<null | Employee>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [designationFilter, setDesignationFilter] = useState('');
@@ -84,9 +97,15 @@ const EmployeeManager: React.FC = () => {
   );
   const [loadingFilters, setLoadingFilters] = useState(false);
 
+  // Delete confirmation dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingDeleteName, setPendingDeleteName] = useState<string>('');
+
   // Dark mode
-  const bgColor = darkMode ? '#1b1b1b' : '#fff';
-  const textColor = darkMode ? '#e0e0e0' : '#000';
+  const bgColor = darkMode ? '#111' : '#fff';
+  const textColor = darkMode ? '#8f8f8f' : '#000';
+  const borderColor = darkMode ? '#333' : '#ddd';
   const filterBtn = darkMode ? '#555' : '#484c7f';
 
   // Dark mode input styles
@@ -97,7 +116,7 @@ const EmployeeManager: React.FC = () => {
           '&:hover fieldset': { borderColor: '#888' },
           '&.Mui-focused fieldset': { borderColor: '#90caf9' },
         },
-        '& .MuiInputLabel-root': { color: '#ccc' },
+        '& .MuiInputLabel-root': { color: '#8f8f8f' },
         '& input, & .MuiSelect-select': { color: '#eee' },
         backgroundColor: '#2e2e2e',
       }
@@ -105,9 +124,21 @@ const EmployeeManager: React.FC = () => {
 
   // Load employees on component mount
   useEffect(() => {
-    loadEmployees();
+    loadEmployees(1);
     loadDepartmentsAndDesignations();
   }, []);
+
+  // Re-fetch from backend when filters change, reset to first page
+  useEffect(() => {
+    setCurrentPage(1);
+    loadEmployees(1);
+  }, [departmentFilter, designationFilter]);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    loadEmployees(page);
+  };
 
   const loadDepartmentsAndDesignations = async () => {
     try {
@@ -120,7 +151,6 @@ const EmployeeManager: React.FC = () => {
       });
       setDepartments(deptMap);
       setDepartmentList(deptData);
-      console.log('Loaded departments:', deptData);
 
       // Load all designations
       const desigData = await designationApiService.getAllDesignations();
@@ -130,45 +160,181 @@ const EmployeeManager: React.FC = () => {
       });
       setDesignations(desigMap);
       setDesignationList(desigData);
-      console.log('Loaded designations:', desigData);
-    } catch (error) {
-      console.error('Error loading departments and designations:', error);
+    } catch {
+      // Handle error silently
     } finally {
       setLoadingFilters(false);
     }
   };
 
-  const loadEmployees = async () => {
+  const loadEmployees = async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await employeeApi.getAllEmployees();
-      setEmployees(data);
-    } catch (err) {
+
+      const filters = {
+        departmentId: departmentFilter || undefined,
+        designationId: designationFilter || undefined,
+      };
+
+      const response = await employeeApi.getAllEmployees(filters, page);
+
+      // If requested page exceeds available totalPages (possible after filters), clamp and refetch
+      if (response.totalPages > 0 && page > response.totalPages) {
+        setCurrentPage(response.totalPages);
+        const retry = await employeeApi.getAllEmployees(
+          filters,
+          response.totalPages
+        );
+        const convertedEmployeesRetry: Employee[] = retry.items.map(emp => ({
+          id: emp.id,
+          name: emp.name,
+          firstName: emp.firstName,
+          lastName: emp.lastName,
+          email: emp.email,
+          phone: emp.phone,
+          departmentId: emp.departmentId,
+          designationId: emp.designationId,
+          department: emp.department || {
+            id: '',
+            name: '',
+            description: '',
+            tenantId: '',
+            createdAt: '',
+            updatedAt: '',
+          },
+          designation: emp.designation || {
+            id: '',
+            title: '',
+            tenantId: '',
+            departmentId: '',
+            createdAt: '',
+            updatedAt: '',
+          },
+          tenantId: emp.tenantId,
+          createdAt: emp.createdAt,
+          updatedAt: emp.updatedAt,
+        }));
+
+        setEmployees(convertedEmployeesRetry);
+        setTotalPages(retry.totalPages);
+        setTotalItems(retry.total);
+        return;
+      }
+
+      // Convert BackendEmployee to Employee
+      const convertedEmployees: Employee[] = response.items.map(emp => ({
+        id: emp.id,
+        name: emp.name,
+        firstName: emp.firstName,
+        lastName: emp.lastName,
+        email: emp.email,
+        phone: emp.phone,
+        departmentId: emp.departmentId,
+        designationId: emp.designationId,
+        department: emp.department || {
+          id: '',
+          name: '',
+          description: '',
+          tenantId: '',
+          createdAt: '',
+          updatedAt: '',
+        },
+        designation: emp.designation || {
+          id: '',
+          title: '',
+          tenantId: '',
+          departmentId: '',
+          createdAt: '',
+          updatedAt: '',
+        },
+        tenantId: emp.tenantId,
+        createdAt: emp.createdAt,
+        updatedAt: emp.updatedAt,
+      }));
+
+      setEmployees(convertedEmployees);
+
+      // Update pagination state
+      setCurrentPage(response.page);
+      setTotalPages(response.totalPages);
+      setTotalItems(response.total);
+    } catch {
       setError('Failed to load employees');
-      console.error('Error loading employees:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddEmployee = async (employeeData: EmployeeDto) => {
+  const handleAddEmployee = async (
+    employeeData: Partial<EmployeeDto> & {
+      departmentId?: string;
+      designationId?: string;
+      role?: string;
+    }
+  ) => {
     try {
-      setLoading(true);
+      setSubmitting(true);
       setError(null);
-      const newEmployee = await employeeApi.createEmployee(employeeData);
-      console.log('New employee created:', newEmployee);
 
-      // If the new employee doesn't have department/designation objects,
-      // we need to fetch the full employee data or reload the list
-      if (!newEmployee.department || !newEmployee.designation) {
-        console.log(
-          'New employee missing department/designation objects, reloading list...'
-        );
-        await loadEmployees(); // Reload the full list to get complete data
-      } else {
-        setEmployees(prev => [...prev, newEmployee]);
+      // Ensure required fields are present
+      if (
+        !employeeData.first_name ||
+        !employeeData.last_name ||
+        !employeeData.email ||
+        !employeeData.designationId
+      ) {
+        throw new Error('Required fields are missing');
       }
+
+      // Use different API endpoints based on role
+      const newEmployee =
+        employeeData.role === 'manager'
+          ? await employeeApi.createManager(employeeData as EmployeeDto)
+          : await employeeApi.createEmployee(employeeData as EmployeeDto);
+
+      // Fetch the complete employee data to get proper department and designation info
+      const completeEmployee = await employeeApi.getEmployeeById(
+        newEmployee.id
+      );
+
+      // Convert BackendEmployee to Employee using the complete data
+      const convertedEmployee: Employee = {
+        id: completeEmployee.id,
+        name: completeEmployee.name,
+        firstName: completeEmployee.firstName,
+        lastName: completeEmployee.lastName,
+        email: completeEmployee.email,
+        phone: completeEmployee.phone,
+        departmentId: completeEmployee.departmentId,
+        designationId: completeEmployee.designationId,
+        department: completeEmployee.department || {
+          id: completeEmployee.departmentId,
+          name:
+            departments[completeEmployee.departmentId] || 'Unknown Department',
+          description: '',
+          tenantId: completeEmployee.tenantId,
+          createdAt: completeEmployee.createdAt,
+          updatedAt: completeEmployee.updatedAt,
+        },
+        designation: completeEmployee.designation || {
+          id: completeEmployee.designationId,
+          title:
+            designations[completeEmployee.designationId] ||
+            'Unknown Designation',
+          tenantId: completeEmployee.tenantId,
+          departmentId: completeEmployee.departmentId,
+          createdAt: completeEmployee.createdAt,
+          updatedAt: completeEmployee.updatedAt,
+        },
+        tenantId: completeEmployee.tenantId,
+        createdAt: completeEmployee.createdAt,
+        updatedAt: completeEmployee.updatedAt,
+      };
+
+      // Add to the beginning of the list (most recent first)
+      setEmployees(prev => [convertedEmployee, ...prev]);
+      setTotalItems(prev => prev + 1);
 
       // Reload department and designation mappings
       await loadDepartmentsAndDesignations();
@@ -180,11 +346,9 @@ const EmployeeManager: React.FC = () => {
 
       return { success: true };
     } catch (err: unknown) {
-      console.error('Error adding employee:', err);
-
-      // Debug: Log the actual error response structure
+      // Debug: Log the actual error structure
       if (err && typeof err === 'object' && 'response' in err) {
-        console.log('Backend error response:', JSON.stringify(err, null, 2));
+        // Error has response property
       }
 
       // Handle backend validation errors
@@ -194,7 +358,7 @@ const EmployeeManager: React.FC = () => {
         };
       };
 
-      if (errorResponse.response?.data) {
+      if (errorResponse?.response?.data) {
         const responseData = errorResponse.response.data;
         const fieldErrors: Record<string, string> = {};
 
@@ -272,21 +436,13 @@ const EmployeeManager: React.FC = () => {
       setError('Failed to add employee');
       return { success: false, errors: { general: 'Failed to add employee' } };
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleEditOpen = async (emp: Employee) => {
-    try {
-      setLoading(true);
-      const fresh = await employeeApi.getEmployeeById(emp.id);
-      setEditing(fresh as unknown as Employee);
-      setOpen(true);
-    } catch (e) {
-      setError('Failed to load employee details');
-    } finally {
-      setLoading(false);
-    }
+  const handleEditOpen = (emp: Employee) => {
+    setEditing(emp);
+    setOpen(true);
   };
 
   const handleUpdateEmployee = async (
@@ -295,50 +451,119 @@ const EmployeeManager: React.FC = () => {
       password?: string;
     }
   ) => {
-    if (!editing) return { success: false } as any;
+    if (!editing)
+      return { success: false, errors: { general: 'No employee selected' } };
     try {
-      setLoading(true);
+      setSubmitting(true);
       setError(null);
       // Ensure a valid designationId is sent if user selected a new one; otherwise keep current
       const nextDesignationId =
         updates.designationId && updates.designationId !== ''
           ? updates.designationId
           : editing.designationId;
-      const updated = await employeeApi.updateEmployee(editing.id, {
-        first_name: (updates as any).first_name,
-        last_name: (updates as any).last_name,
+      const updatedEmployee = await employeeApi.updateEmployee(editing.id, {
+        first_name: updates.first_name,
+        last_name: updates.last_name,
         email: updates.email,
         phone: updates.phone,
         password: updates.password,
         designationId: nextDesignationId,
       });
-      await loadEmployees();
+
+      // Update the employee in the list without reloading
+      const designationName =
+        designations[nextDesignationId] ||
+        designations[editing.designationId] ||
+        'Unknown Designation';
+
+      // Get the department ID for the new designation from the designation list
+      const newDesignation = designationList.find(
+        desig => desig.id === nextDesignationId
+      );
+      const newDepartmentId =
+        newDesignation?.departmentId ||
+        updatedEmployee.departmentId ||
+        editing.departmentId;
+      const departmentName =
+        departments[newDepartmentId] || 'Unknown Department';
+
+      setEmployees(prev =>
+        prev.map(emp =>
+          emp.id === editing.id
+            ? {
+                ...emp,
+                name: updatedEmployee.name,
+                firstName: updatedEmployee.firstName,
+                lastName: updatedEmployee.lastName,
+                email: updatedEmployee.email,
+                phone: updatedEmployee.phone,
+                departmentId: newDepartmentId,
+                designationId: nextDesignationId,
+                department: {
+                  ...emp.department,
+                  id: newDepartmentId,
+                  name: departmentName,
+                },
+                designation: {
+                  ...emp.designation,
+                  id: nextDesignationId,
+                  title: designationName,
+                  departmentId: newDepartmentId,
+                },
+                updatedAt: updatedEmployee.updatedAt,
+              }
+            : emp
+        )
+      );
+
       setSuccessMessage('Employee updated successfully!');
       setOpen(false);
       setEditing(null);
       return { success: true };
-    } catch (err) {
-      console.error('Error updating employee:', err);
+    } catch {
       setError('Failed to update employee');
-      return { success: false } as any;
+      return {
+        success: false,
+        errors: { general: 'Failed to update employee' },
+      };
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   const handleDeleteEmployee = async (id: string) => {
     try {
-      setLoading(true);
       setError(null);
       await employeeApi.deleteEmployee(id);
       setEmployees(prev => prev.filter(emp => emp.id !== id));
+      setTotalItems(prev => prev - 1);
       setSuccessMessage('Employee deleted successfully!');
-    } catch (err) {
+    } catch {
       setError('Failed to delete employee');
-      console.error('Error deleting employee:', err);
-    } finally {
-      setLoading(false);
     }
+  };
+
+  // New: open confirmation before delete (accepts Employee or id)
+  const requestDeleteEmployee = (toDelete: Employee | string) => {
+    const id = typeof toDelete === 'string' ? toDelete : toDelete.id;
+    const name = typeof toDelete === 'string' ? '' : toDelete.name;
+    setPendingDeleteId(id);
+    setPendingDeleteName(name || '');
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    await handleDeleteEmployee(pendingDeleteId);
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+    setPendingDeleteName('');
+  };
+
+  const cancelDelete = () => {
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+    setPendingDeleteName('');
   };
 
   const handleClearFilters = () => {
@@ -346,26 +571,28 @@ const EmployeeManager: React.FC = () => {
     setDesignationFilter('');
   };
 
-  const filteredEmployees = useMemo(() => {
-    return employees.filter(emp => {
-      if (departmentFilter && emp.departmentId !== departmentFilter)
-        return false;
-      if (designationFilter && emp.designationId !== designationFilter)
-        return false;
-      return true;
-    });
-  }, [employees, departmentFilter, designationFilter]);
+  // Server-driven filtering; render employees as-is
 
   const getLabel = (en: string, ar: string) => (direction === 'rtl' ? ar : en);
 
+  // Delete modal texts
+  const deleteTitle = getLabel('Confirm Delete', 'تأكيد الحذف');
+  const deleteMessage = pendingDeleteName
+    ? getLabel(
+        `Are you sure you want to delete employee "${pendingDeleteName}"? This action cannot be undone.`,
+        `هل أنت متأكد أنك تريد حذف الموظف "${pendingDeleteName}"؟ لا يمكن التراجع عن هذا الإجراء.`
+      )
+    : getLabel(
+        'Are you sure you want to delete this employee? This action cannot be undone.',
+        'هل أنت متأكد أنك تريد حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.'
+      );
+
   return (
-    <Box
-      sx={{
-        // backgroundColor: bgColor,
-        color: textColor,
-        minHeight: '100vh',
-      }}
-    >
+    <Box>
+      <Typography variant='h6' gutterBottom>
+        Employee List
+      </Typography>
+
       {/* Add Employee Button */}
       <Box
         display='flex'
@@ -397,8 +624,8 @@ const EmployeeManager: React.FC = () => {
             sx={{
               width: isMobile ? '100%' : 190,
               my: 0.5,
-              '& .MuiInputBase-input': {
-                // textAlign: "center", center the selected text
+              '&.MuiFormControl-root': {
+                backgroundColor: 'transparent !important',
               },
               '& .MuiInputBase-root': {
                 padding: '0px 8px',
@@ -434,6 +661,9 @@ const EmployeeManager: React.FC = () => {
             sx={{
               width: isMobile ? '100%' : 190,
               my: 0.5,
+              '&.MuiFormControl-root': {
+                backgroundColor: 'transparent !important',
+              },
               '& .MuiInputBase-root': {
                 padding: '0px 8px',
                 minHeight: '10px',
@@ -485,10 +715,10 @@ const EmployeeManager: React.FC = () => {
             setOpen(true);
           }}
           sx={{
-            backgroundColor: darkMode ? '#605bd4' : '#484c7f',
+            backgroundColor: darkMode ? '#464b8a' : '#484c7f',
             width: isMobile ? '100%' : 'auto',
             '&:hover': {
-              backgroundColor: darkMode ? '#726df0' : '#5b56a0',
+              backgroundColor: darkMode ? '#464b8a' : '#5b56a0',
             },
           }}
         >
@@ -497,14 +727,42 @@ const EmployeeManager: React.FC = () => {
       </Box>
 
       {/* Employee List */}
-      <EmployeeList
-        employees={filteredEmployees}
-        onDelete={handleDeleteEmployee}
-        onEdit={handleEditOpen}
-        loading={loading}
-        departments={departments}
-        designations={designations}
-      />
+      <Paper elevation={3} sx={{ boxShadow: 'none' }}>
+        <EmployeeList
+          employees={employees}
+          onDelete={requestDeleteEmployee}
+          onEdit={(employee: any) => handleEditOpen(employee as any)}
+          loading={loading}
+          departments={departments}
+          designations={designations}
+        />
+      </Paper>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' mt={2}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => handlePageChange(page)}
+            color='primary'
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+
+      {/* Pagination Info */}
+      {totalItems > 0 && (
+        <Box display='flex' justifyContent='center' mt={1}>
+          <Typography variant='body2' color='textSecondary'>
+            {getLabel(
+              `Showing page ${currentPage} of ${totalPages} (${totalItems} total records)`,
+              `عرض الصفحة ${currentPage} من ${totalPages} (${totalItems} سجل إجمالي)`
+            )}
+          </Typography>
+        </Box>
+      )}
 
       {/* Notifications */}
       <Snackbar
@@ -536,6 +794,49 @@ const EmployeeManager: React.FC = () => {
           {successMessage}
         </Alert>
       </Snackbar>
+
+      {/* Delete Confirmation - Department modal style */}
+      <Dialog
+        open={confirmOpen}
+        onClose={cancelDelete}
+        maxWidth='sm'
+        fullWidth
+        PaperProps={{
+          sx: {
+            direction: direction === 'rtl' ? 'rtl' : 'ltr',
+            backgroundColor: bgColor,
+            color: textColor,
+            border: `1px solid ${borderColor}`,
+          },
+        }}
+      >
+        <DialogTitle sx={{ textAlign: 'center', pb: 1, color: textColor }}>
+          {deleteTitle}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ textAlign: 'center' }}>
+            <WarningIcon sx={{ fontSize: 64, color: 'warning.main', mb: 2 }} />
+            <Typography
+              variant='body1'
+              sx={{ mb: 2, lineHeight: 1.6, color: textColor }}
+            >
+              {deleteMessage}
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', p: 3, pt: 1 }}>
+          <Button
+            onClick={cancelDelete}
+            variant='outlined'
+            sx={{ color: textColor, borderColor }}
+          >
+            {getLabel('Cancel', 'إلغاء')}
+          </Button>
+          <Button onClick={confirmDelete} variant='contained' color='error'>
+            {getLabel('Delete', 'حذف')}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Modal with AddEmployeeForm */}
       <Dialog
@@ -583,8 +884,8 @@ const EmployeeManager: React.FC = () => {
               editing
                 ? {
                     id: editing.id,
-                    firstName: (editing as any).firstName,
-                    lastName: (editing as any).lastName,
+                    firstName: editing.firstName || '',
+                    lastName: editing.lastName || '',
                     email: editing.email,
                     phone: editing.phone,
                     designationId: editing.designationId,
@@ -592,6 +893,7 @@ const EmployeeManager: React.FC = () => {
                   }
                 : null
             }
+            submitting={submitting}
           />
         </DialogContent>
       </Dialog>

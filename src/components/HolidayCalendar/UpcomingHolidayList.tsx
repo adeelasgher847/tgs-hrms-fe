@@ -10,7 +10,7 @@ const UpcomingHolidayList: React.FC<UpcomingHolidayListProps> = ({
   holidays,
 }) => {
   return (
-    <Paper sx={{ mt: 3, p: 2 }}>
+    <Paper sx={{ mt: 3, p: 2, boxShadow: 'none' }}>
       <Typography variant='h6' gutterBottom>
         Upcoming Holidays
       </Typography>

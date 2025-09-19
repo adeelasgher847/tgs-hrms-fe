@@ -15,23 +15,22 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  useTheme,
 } from '@mui/material';
 import LeaveSummaryChart from './LeaveSummaryChart';
 
-const cardStyle = {
+const cardStyle = (theme: unknown) => ({
   width: { xs: '100%', sm: '250px' },
   flexShrink: 0,
   boxShadow: 'none',
-  border: '1px solid #f0f0f0',
+  border: `1px solid ${theme.palette.card?.border || theme.palette.divider}`,
   borderRadius: '0.375rem',
-  backgroundColor: '#fff',
-};
+  backgroundColor:
+    theme.palette.card?.background || theme.palette.background.paper,
+});
 const Reports: React.FC = () => {
   const [tab, setTab] = useState(0);
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedUser, setSelectedUser] = useState('');
-  const theme = useTheme();
   const direction = theme.direction;
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -78,7 +77,7 @@ const Reports: React.FC = () => {
   ];
 
   return (
-    <Box py={3}>
+    <Box>
       <Tabs
         value={tab}
         onChange={handleTabChange}
@@ -130,7 +129,13 @@ const Reports: React.FC = () => {
             </FormControl>
           </Box>
 
-          <Box mt={4} sx={{ overflowX: 'auto' }}>
+          <Box
+            mt={4}
+            sx={theme => ({
+              overflowX: 'auto',
+              bgcolor: theme.palette.background.paper,
+            })}
+          >
             <Table sx={{ minWidth: 600 }}>
               <TableHead>
                 <TableRow>
@@ -148,8 +153,8 @@ const Reports: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredData.map((row, index) => (
-                    <TableRow key={index}>
+                  filteredData.map((row, _index) => (
+                    <TableRow key={_index}>
                       <TableCell>{row.date}</TableCell>
                       <TableCell>{row.checkIn}</TableCell>
                       <TableCell>{row.status}</TableCell>
@@ -182,8 +187,8 @@ const Reports: React.FC = () => {
             gap={2}
             justifyContent={{ xs: 'start', md: 'flex-start' }}
           >
-            {departmentData.map((dept, index) => (
-              <Card key={index} sx={cardStyle}>
+            {departmentData.map((dept, _index) => (
+              <Card key={_index} sx={cardStyle}>
                 <CardContent>
                   <Typography variant='subtitle1'>{dept.title}</Typography>
                   <Typography variant='h4'>{dept.count}</Typography>

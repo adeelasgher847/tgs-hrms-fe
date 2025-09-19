@@ -1,12 +1,22 @@
-import { Box, useMediaQuery, useTheme as useMuiTheme } from '@mui/material';
+import {
+  Box,
+  useMediaQuery,
+  useTheme as useMuiTheme,
+  CircularProgress,
+} from '@mui/material';
 import Sidebar from './Sidebar';
 import Navbar from './Nabvar';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import '../layout.css';
 import EmployeeInviteModal from './Modal/EmployeeInviteModal';
 
-import { useTheme } from '../theme';
+import { useUser } from '../hooks/useUser';
+import { useTheme } from '../theme/hooks';
+import {
+  getDefaultDashboardRoute,
+  isDashboardPathAllowedForRole,
+} from '../utils/permissions';
 const Layout = () => {
   const muiTheme = useMuiTheme();
   const { mode: themeMode, setMode } = useTheme();
@@ -16,6 +26,14 @@ const Layout = () => {
   const [rtlMode, setRtlMode] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const darkMode = themeMode === 'dark';
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, loading } = useUser();
+  const role =
+    typeof user?.role === 'string'
+      ? user?.role
+      : (user as { role?: { name?: string } })?.role?.name;
 
   // Update sidebar state when screen size changes
   useEffect(() => {
@@ -53,6 +71,60 @@ const Layout = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [sidebarOpen, isLargeScreen]);
+
+  // Role-based guard and default redirects for /dashboard/*
+  useEffect(() => {
+    // Only guard dashboard routes
+    if (!location.pathname.startsWith('/dashboard')) return;
+
+    // Wait for user loading to finish to avoid premature redirects on refresh
+    // If there's no token, redirect to login immediately. If token exists but user
+    // is not yet loaded, keep waiting (show spinner) instead of redirecting — this
+    // avoids a bounce where Layout redirects to login and Login immediately
+    // redirects back to dashboard while user data is still populating.
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      // No token: user is not authenticated, redirect to login
+      navigate('/', { replace: true });
+      return;
+    }
+
+    // If token exists but user is not yet available, do not redirect — let the
+    // loading spinner remain until user is populated by UserProvider.
+    if (!user) {
+      return;
+    }
+
+    // Extract subpath after /dashboard
+    const subPath = location.pathname
+      .replace('/dashboard', '')
+      .replace(/^\/+/, '');
+
+    // Don't redirect if user is on UserProfile page - allow profile updates
+    if (subPath === 'UserProfile') {
+      return;
+    }
+
+    const allowed = isDashboardPathAllowedForRole(subPath, role);
+
+    if (!allowed) {
+      const target = getDefaultDashboardRoute(role);
+      if (location.pathname !== target) {
+        navigate(target, { replace: true });
+      }
+    }
+  }, [location.pathname, role, navigate, user, loading]);
+
+  // Determine access for current dashboard route to avoid UI flash
+  const isDashboardRoute = location.pathname.startsWith('/dashboard');
+  const subPath = isDashboardRoute
+    ? location.pathname.replace('/dashboard', '').replace(/^\/+/, '')
+    : '';
+  const isAllowed = !isDashboardRoute
+    ? true
+    : user && !loading
+      ? isDashboardPathAllowedForRole(subPath, role)
+      : false;
 
   return (
     <Box
@@ -139,14 +211,9 @@ const Layout = () => {
           flexDirection: 'column',
           overflow: 'auto',
           height: '100%',
-          // marginLeft: {
-          //   xs: 0,
-          //   lg: sidebarOpen ? "274px" : "0px",
-          // },
           transition: 'margin 0.3s ease',
           marginLeft: isLargeScreen && sidebarOpen && !rtlMode ? '274px' : 0,
           marginRight: isLargeScreen && sidebarOpen && rtlMode ? '274px' : 0,
-          // bgcolor: "#fff", // 🔁 Here
           width: '100%',
           direction: rtlMode ? 'rtl' : 'ltr',
         }}
@@ -177,23 +244,23 @@ const Layout = () => {
 
         {/* Scrollable Content */}
         <Box
-          // className="content"
           component='main'
-          sx={{
-            flex: 1,
-            px: { xs: '7px', md: '26px' },
-            py: 3,
-          }}
+          sx={{ flex: 1, px: { xs: '7px', md: '24px' }, py: 3 }}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-              mb: 1,
-            }}
-          ></Box>
-          <Outlet context={{ darkMode }} />
+          {isDashboardRoute && (loading || !user || !isAllowed) ? (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Outlet context={{ darkMode }} />
+          )}
         </Box>
       </Box>
     </Box>

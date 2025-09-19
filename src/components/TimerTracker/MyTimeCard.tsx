@@ -1,327 +1,521 @@
-import React, { useEffect, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Card,
   CardContent,
   Typography,
   Button,
-  // IconButton,
-  Divider,
-  CircularProgress,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-// import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import timesheetApi, { type TimesheetEntry } from '../../api/timesheetApi';
 
-type Props = {
-  onClockIn?: () => void;
-  onClockOut?: () => void;
-};
+import attendanceApi from '../../api/attendanceApi';
+import { Link as RouterLink } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 
-function getMonday(date: Date) {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = (day === 0 ? -6 : 1) - day; // adjust when day is Sunday
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
+const POLL_INTERVAL_MS = 5000;
+
+interface OutletContext {
+  darkMode: boolean;
+  language: 'en' | 'ar';
 }
 
-function weekKey(weekStart: Date) {
-  const iso = new Date(weekStart);
-  iso.setHours(0, 0, 0, 0);
-  return `timesheet:${iso.toISOString().slice(0, 10)}`;
-}
+const MyTimerCard: React.FC = () => {
+  const { darkMode } = useOutletContext<OutletContext>();
+  const [currentSession, setCurrentSession] = useState<TimesheetEntry | null>(
+    null
+  );
+  const [loading, setLoading] = useState<boolean>(false);
+  const [elapsed, setElapsed] = useState<number>(0);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [hasCheckedIn, setHasCheckedIn] = useState<boolean>(false);
+  const [checkingAttendance, setCheckingAttendance] = useState<boolean>(true);
 
-function loadWeek(weekStart: Date) {
-  try {
-    const raw = localStorage.getItem(weekKey(weekStart));
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return [] as any[];
-}
+  // Check if user has checked in today
+  const checkAttendanceStatus = useCallback(async () => {
+    try {
+      setCheckingAttendance(true);
+      const todaySummary = await attendanceApi.getTodaySummary();
+      setHasCheckedIn(!!todaySummary.checkIn);
 
-function formatHoursText(h: number) {
-  const totalMinutes = Math.max(0, Math.round(h * 60));
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${hours}h ${String(minutes).padStart(2, '0')}m`;
-}
+      // If user has checked out, automatically end any active timesheet session
+      if (todaySummary.checkOut && currentSession) {
+        await handleEnd();
+      }
+    } catch {
+      setHasCheckedIn(false);
+    } finally {
+      setCheckingAttendance(false);
+    }
+  }, [currentSession]); // eslint-disable-line react-hooks/exhaustive-deps
 
-function formatElapsed(ms: number) {
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(
-    2,
-    '0'
-  )}:${String(seconds).padStart(2, '0')}`;
-}
+  const fetchLatestSession = async () => {
+    try {
+      const response = await timesheetApi.getUserTimesheet();
+      const sessions = response.items.sessions;
+      const activeSession = sessions.find(s => !s.end_time);
+      setCurrentSession(activeSession || null);
+    } catch {
+      setCurrentSession(null);
+    }
+  };
 
-const MyTimeCard: React.FC<Props> = ({ onClockIn, onClockOut }) => {
-  const [isClockedIn, setIsClockedIn] = useState<boolean>(false);
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [elapsedMs, setElapsedMs] = useState<number>(0);
-  const [progress, setProgress] = useState<number>(0);
-  const [weekTotalHours, setWeekTotalHours] = useState<number>(0);
-
-  // Restore from localStorage on load
   useEffect(() => {
-    const savedStart = localStorage.getItem('clockInTime');
-    if (savedStart) {
-      const start = parseInt(savedStart, 10);
-      setStartTime(start);
-      setIsClockedIn(true);
+    let pollId: number | null = null;
+
+    // Check attendance status and fetch latest session
+    checkAttendanceStatus();
+    fetchLatestSession().catch(() => {
+      /* already handled inside */
+    });
+
+    pollId = window.setInterval(() => {
+      checkAttendanceStatus();
+      fetchLatestSession().catch(() => {});
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      if (pollId) window.clearInterval(pollId);
+    };
+  }, [checkAttendanceStatus]);
+
+  useEffect(() => {
+    let tickId: number | null = null;
+
+    if (
+      currentSession &&
+      currentSession.start_time &&
+      !currentSession.end_time
+    ) {
+      const startMs = new Date(currentSession.start_time).getTime();
+
+      setElapsed(Math.floor((Date.now() - startMs) / 1000));
+      tickId = window.setInterval(() => {
+        setElapsed(Math.floor((Date.now() - startMs) / 1000));
+      }, 1000);
+    } else {
+      setElapsed(0);
+    }
+
+    return () => {
+      if (tickId) window.clearInterval(tickId);
+    };
+  }, [currentSession]);
+
+  const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+
+    return `${h}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+  };
+
+  const handleStart = async () => {
+    setErrorMsg(null);
+
+    // Check if user has checked in before allowing Clock In
+    if (!hasCheckedIn) {
+      setErrorMsg('You cannot clock in until you check in.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await timesheetApi.startWork();
+      await fetchLatestSession();
+      setErrorMsg(null);
+    } catch (err: unknown) {
+      const msg =
+        (err && typeof err === 'object' && 'response' in err
+          ? (err as { response: { data?: { message?: string } } }).response.data
+              ?.message
+          : null) ||
+        (err as Error)?.message ||
+        'Failed to clock in. Please make sure you checked in.';
+      setErrorMsg(msg);
+
+      // fetch latest to keep UI consistent (in case server changed)
+      await fetchLatestSession();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEnd = useCallback(async () => {
+    setErrorMsg(null);
+
+    // Immediately stop the timer by clearing the current session
+    setCurrentSession(null);
+    setElapsed(0);
+
+    try {
+      setLoading(true);
+
+      await timesheetApi.endWork();
+      setErrorMsg(null);
+    } catch (err: unknown) {
+      const msg =
+        (err && typeof err === 'object' && 'response' in err
+          ? (err as { response: { data?: { message?: string } } }).response.data
+              ?.message
+          : null) ||
+        (err as Error)?.message ||
+        'Failed to clock out.';
+      setErrorMsg(msg);
+
+      // If there was an error, restore the session state
+      await fetchLatestSession();
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // Stopwatch update
-  useEffect(() => {
-    let timer: number | undefined;
-    if (isClockedIn && startTime) {
-      timer = window.setInterval(() => {
-        setElapsedMs(Date.now() - startTime);
-      }, 1000);
-    }
-    return () => {
-      if (timer) window.clearInterval(timer);
-    };
-  }, [isClockedIn, startTime]);
-
-  // Circular progress loop animation
-  useEffect(() => {
-    let anim: number | undefined;
-    if (isClockedIn) {
-      const intervalMs = 100; // 0.1s
-      const step = (100 * (intervalMs / 1000)) / 60; // complete in 60s
-      anim = window.setInterval(() => {
-        setProgress(old => {
-          const next = old + step;
-          return next >= 100 ? 0 : next;
-        });
-      }, intervalMs);
-    } else {
-      setProgress(0);
-    }
-    return () => {
-      if (anim) window.clearInterval(anim);
-    };
-  }, [isClockedIn]);
-
-  // Compute This Week total (saved entries + live session)
-  useEffect(() => {
-    const ws = getMonday(new Date());
-    const data = loadWeek(ws);
-    const base = Array.isArray(data)
-      ? data.reduce((sum: number, e: any) => sum + (e?.hours || 0), 0)
-      : 0;
-    const live =
-      isClockedIn && startTime ? (Date.now() - startTime) / 3_600_000 : 0;
-    setWeekTotalHours(base + live);
-    // Also update when localStorage week changes (e.g., after clock-out in Timesheet UI)
-    const onStorage = (e: StorageEvent) => {
-      if (e.key && e.key.startsWith('timesheet:')) {
-        const d = loadWeek(ws);
-        const b = Array.isArray(d)
-          ? d.reduce((sum: number, x: any) => sum + (x?.hours || 0), 0)
-          : 0;
-        const l =
-          isClockedIn && startTime ? (Date.now() - startTime) / 3_600_000 : 0;
-        setWeekTotalHours(b + l);
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, [isClockedIn, startTime, elapsedMs]);
-
-  const handleClockIn = () => {
-    const now = Date.now();
-    setIsClockedIn(true);
-    setStartTime(now);
-    setElapsedMs(0);
-    localStorage.setItem('clockInTime', now.toString());
-    onClockIn?.();
-  };
-
-  const handleClockOut = () => {
-    setIsClockedIn(false);
-    setStartTime(null);
-    setElapsedMs(0);
-    localStorage.removeItem('clockInTime');
-    onClockOut?.();
-  };
-
   return (
-    <Card
-      sx={{
-        borderRadius: 3,
-        boxShadow: 2,
-        overflow: 'visible',
-        mx: 'auto',
-      }}
-    >
-      <CardContent sx={{ p: 0 }}>
-        {/* Header */}
-        <Box
-          sx={{
-            bgcolor: '#f6fbf8',
-            px: 3,
-            py: 1.25,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            borderTopLeftRadius: 12,
-            borderTopRightRadius: 12,
-          }}
-        >
-          <AccessTimeIcon sx={{ color: '#45407A' }} />
-          <Typography sx={{ color: '#45407A', fontWeight: 700 }}>
-            My Time
-          </Typography>
-        </Box>
-
-        {/* Main content */}
-        <Box
-          sx={{
-            px: 4,
-            py: 3,
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          {/* Stopwatch circle */}
-          <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2 }}>
-            {/* Track */}
-            <CircularProgress
-              variant='determinate'
-              value={100}
-              size={120}
-              thickness={4}
-              sx={{ color: '#e5e5e5' }}
-            />
-            {/* Animated ring */}
-            <Box sx={{ position: 'absolute', inset: 0, display: 'flex' }}>
-              <CircularProgress
-                variant='determinate'
-                value={progress}
-                size={120}
-                thickness={4}
-                sx={{
-                  color: isClockedIn ? '#1f7a4f' : '#ccc',
-                  transition: 'color 0.3s ease',
-                }}
-              />
-            </Box>
-            <Box
-              sx={{
-                top: 0,
-                left: 0,
-                bottom: 0,
-                right: 0,
-                position: 'absolute',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'column',
-              }}
-            >
-              <Typography
-                variant='h6'
-                sx={{ fontWeight: 800, color: '#45407A' }}
-              >
-                {isClockedIn ? formatElapsed(elapsedMs) : '00:00:00'}
-              </Typography>
-              <Typography sx={{ fontSize: 12, color: '#6b6b6b' }}>
-                Today
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* Clock In / Out Buttons */}
+    <>
+      <Card
+        sx={{
+          background: darkMode ? '#1e1e1e' : '#ffffff',
+          borderRadius: 2,
+          position: 'relative',
+          flex: 1,
+          height: '100%',
+          boxShadow: 'unset',
+          color: darkMode ? '#ffffff' : '#000000',
+          overflow: 'hidden',
+        }}
+      >
+        <CardContent sx={{ p: 3, boxShadow: 'none', border: 'none' }}>
+          {/* Main Timer Display - Centered */}
+          {/* Session Progress - Top Left */}
           <Box
             sx={{
+              position: 'absolute',
+              top: 16,
+              left: 16,
+              backgroundColor:
+                currentSession && !currentSession.end_time
+                  ? darkMode
+                    ? '#2e4a2e'
+                    : '#e8f5e8'
+                  : darkMode
+                    ? '#2a2a2a'
+                    : '#f5f5f5',
+              borderRadius: 2,
+              px: 2,
+              py: 1,
+              border:
+                currentSession && !currentSession.end_time
+                  ? '1px solid #4CAF50'
+                  : darkMode
+                    ? '1px solid #333333'
+                    : '1px solid #e0e0e0',
+              zIndex: 1,
               display: 'flex',
               alignItems: 'center',
-              gap: 1,
-              mb: 2,
+              gap: 0.5,
             }}
           >
-            <Button
-              variant='contained'
-              onClick={isClockedIn ? handleClockOut : handleClockIn}
+            <AccessTimeIcon
               sx={{
-                bgcolor: '#1f7a4f',
-                textTransform: 'none',
-                borderRadius: 5,
-                px: 5,
-                py: 1.5,
-                fontWeight: 700,
-                boxShadow: 'none',
-                '&:hover': { bgcolor: '#16603a', boxShadow: 'none' },
+                fontSize: '0.75rem',
+                color:
+                  currentSession && !currentSession.end_time
+                    ? '#4CAF50'
+                    : darkMode
+                      ? '#b0b0b0'
+                      : '#666666',
               }}
+            />
+            <Typography
+              variant='caption'
+              color={
+                currentSession && !currentSession.end_time
+                  ? '#4CAF50'
+                  : darkMode
+                    ? '#b0b0b0'
+                    : '#666666'
+              }
+              sx={{ fontSize: '0.75rem', fontWeight: 500 }}
             >
-              <AccessTimeIcon sx={{ mr: 1 }} />{' '}
-              {isClockedIn ? 'Clock Out' : 'Clock In'}
-            </Button>
-
-            {/* <IconButton
-              sx={{
-                border: "1px solid rgba(0,0,0,0.08)",
-                height: 46,
-                width: 46,
-                borderRadius: 3,
-              }}
-            >
-              <ArrowDropDownIcon />
-            </IconButton> */}
-          </Box>
-        </Box>
-
-        <Divider sx={{ mx: 3 }} />
-
-        {/* Footer */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            px: 3,
-            py: 2,
-          }}
-        >
-          <Box>
-            <Typography sx={{ fontSize: 12, color: '#9a9a9a' }}>
-              This Week
-            </Typography>
-            <Typography sx={{ fontWeight: 700 }}>
-              {formatHoursText(weekTotalHours)}
+              {currentSession && !currentSession.end_time
+                ? 'Session in Progress'
+                : 'No Active Session'}
             </Typography>
           </Box>
 
-          {/* <Box sx={{ textAlign: "center" }}>
-            <Typography sx={{ fontSize: 12, color: "#9a9a9a" }}>
-              Pay Period
-            </Typography>
-            <Typography sx={{ fontWeight: 700 }}>0h 00m</Typography>
-          </Box> */}
+          <Box
+            display='flex'
+            flexDirection='column'
+            alignItems='center'
+            justifyContent='center'
+            minHeight='200px'
+            position='relative'
+          >
+            {/* Time Display with Stopwatch Icon */}
+            <Box
+              display='flex'
+              alignItems='center'
+              justifyContent='center'
+              gap={2}
+              mb={2}
+            >
+              <Typography
+                variant='h2'
+                fontWeight={700}
+                color={darkMode ? '#ffffff' : '#000000'}
+                sx={{
+                  fontSize: { xs: '2rem', sm: '2.5rem' },
+                  textAlign: 'center',
+                  lineHeight: 0.8,
+                  fontFamily: 'monospace',
+                  letterSpacing: '-0.05em',
+                }}
+              >
+                {currentSession && !currentSession.end_time
+                  ? formatTime(elapsed)
+                  : '0h 00m 00s'}
+              </Typography>
 
-          <Box sx={{ textAlign: 'right' }}>
+              {/* Stopwatch Shape */}
+              <Box
+                sx={{
+                  width: 32,
+                  height: 36,
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {/* Stopwatch Body */}
+                <Box
+                  className='ramish stop'
+                  sx={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    backgroundColor: '#4CAF50',
+                    border: '2px solid #4CAF50',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {/* Moving White Color Inside */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '50%',
+                      background: `conic-gradient(from ${(elapsed % 60) * 6}deg, #ffffff 0deg, #ffffff 180deg, transparent 180deg, transparent 360deg)`,
+                      animation:
+                        currentSession && !currentSession.end_time
+                          ? 'spin 1s linear infinite'
+                          : 'none',
+                      '@keyframes spin': {
+                        '0%': {
+                          transform: 'rotate(0deg)',
+                        },
+                        '100%': {
+                          transform: 'rotate(360deg)',
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+
+                {/* Stopwatch Crown/Top */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: -1,
+                    width: 5,
+                    height: 4,
+                    backgroundColor: '#2E7D32',
+                    borderRadius: '3px 3px 0 0',
+                    zIndex: 1,
+                  }}
+                />
+
+                {/* Stopwatch Buttons */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    right: '2px',
+                    top: '10%',
+                    rotate: '-42deg',
+                    width: 3,
+                    height: 7,
+                    backgroundColor: '#2E7D32',
+                    borderRadius: '0 2px 2px 0',
+                    zIndex: 1,
+                  }}
+                />
+              </Box>
+            </Box>
+
+            {/* Status Text */}
+            <Typography
+              variant='body1'
+              color={darkMode ? '#b0b0b0' : '#666666'}
+              textAlign='center'
+              sx={{ fontSize: '1rem' }}
+            >
+              {currentSession && !currentSession.end_time
+                ? `Clocked In: Today at ${
+                    currentSession.start_time
+                      ? new Date(currentSession.start_time).toLocaleTimeString(
+                          [],
+                          {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }
+                        )
+                      : 'N/A'
+                  }`
+                : hasCheckedIn
+                  ? 'Ready to start tracking time'
+                  : 'Please check in first'}
+            </Typography>
+          </Box>
+
+          {/* Action Button */}
+          <Box display='flex' justifyContent='center'>
+            {!currentSession ? (
+              <Button
+                variant='contained'
+                size='large'
+                onClick={handleStart}
+                disabled={loading || !hasCheckedIn}
+                sx={{
+                  backgroundColor: 'primary.main',
+                  width: '100%',
+                  px: 1,
+                  py: 1,
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  boxShadow: 'none',
+
+                  '&:disabled': {
+                    backgroundColor: '#cccccc',
+                    color: '#666666',
+                  },
+                }}
+                startIcon={
+                  loading ? (
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        border: '2px solid #ffffff',
+                        borderTop: '2px solid transparent',
+                        animation: 'spin 1s linear infinite',
+                        '@keyframes spin': {
+                          '0%': { transform: 'rotate(0deg)' },
+                          '100%': { transform: 'rotate(360deg)' },
+                        },
+                      }}
+                    />
+                  ) : null
+                }
+              >
+                Clock In
+              </Button>
+            ) : (
+              <Button
+                variant='contained'
+                size='large'
+                onClick={handleEnd}
+                disabled={loading}
+                sx={{
+                  backgroundColor: 'primary.main',
+                  width: '100%',
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  boxShadow: 'none',
+                }}
+                startIcon={
+                  loading ? (
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        border: '2px solid #ffffff',
+                        borderTop: '2px solid transparent',
+                        animation: 'spin 1s linear infinite',
+                        '@keyframes spin': {
+                          '0%': { transform: 'rotate(0deg)' },
+                          '100%': { transform: 'rotate(360deg)' },
+                        },
+                      }}
+                    />
+                  ) : null
+                }
+              >
+                Clock Out
+              </Button>
+            )}
+          </Box>
+
+          {/* Timesheet Link - Subtle */}
+          <Box display='flex' justifyContent='center' mt={2}>
             <Button
-              variant='outlined'
-              sx={{ borderRadius: 3, textTransform: 'none' }}
+              variant='text'
               component={RouterLink}
-              to='/dashboard/TimesheetLayout'
+              to='TimesheetLayout'
+              sx={{
+                fontSize: '0.9rem',
+                fontWeight: 400,
+                textTransform: 'none',
+                color: darkMode ? '#b0b0b0' : '#666666',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  color: darkMode ? '#ffffff' : '#000000',
+                },
+              }}
             >
-              My Timesheet
+              View Timesheet
             </Button>
           </Box>
-        </Box>
-      </CardContent>
-    </Card>
+
+          {/* Error messages */}
+          {!currentSession && !hasCheckedIn && !checkingAttendance && (
+            <Box mt={2} textAlign='center'>
+              <Typography variant='body2' color='error'>
+                You must check in before you can clock in.
+              </Typography>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Snackbar for errors */}
+      <Snackbar
+        open={!!errorMsg}
+        autoHideDuration={6000}
+        onClose={() => setErrorMsg(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setErrorMsg(null)}
+          severity='error'
+          sx={{ width: '100%' }}
+        >
+          {errorMsg}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 
-export default MyTimeCard;
+export default MyTimerCard;

@@ -8,7 +8,6 @@ import {
   Collapse,
   Switch,
 } from '@mui/material';
-import { useTheme } from '../theme';
 import {
   Dashboard,
   BusinessCenter,
@@ -24,8 +23,14 @@ import {
 import dotted from './../assets/dashboardIcon/dotted-down.svg';
 import Clipboard from '../assets/dashboardIcon/Clipboard';
 import bubbleleft from '../assets/dashboardIcon/bubble-left.svg';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useUser } from '../hooks/useUser';
+import { useTheme } from '../theme/hooks';
+import {
+  isMenuVisibleForRole,
+  isSubMenuVisibleForRole,
+} from '../utils/permissions';
 
 //Types
 interface SubItem {
@@ -50,10 +55,7 @@ const menuItems: MenuItem[] = [
   {
     label: 'Dashboard',
     icon: <Dashboard />,
-    subItems: [
-      { label: 'Hr Dashboard', path: '' },
-      // { label: "Project Dashboard", path: "project-dashboard" },
-    ],
+    subItems: [{ label: 'HR Dashboard', path: '' }],
   },
   {
     label: 'Projects',
@@ -68,7 +70,6 @@ const menuItems: MenuItem[] = [
     icon: <ConfirmationNumber />,
     subItems: [
       { label: 'Add Tenant', path: 'tenant' },
-      // { label: "Create Ticket", path: "create-ticket" },
     ],
   },
   {
@@ -86,6 +87,11 @@ const menuItems: MenuItem[] = [
     label: 'Employees',
     icon: <Group />,
     subItems: [{ label: 'Employee List', path: 'EmployeeManager' }],
+  },
+  {
+    label: 'Teams',
+    icon: <Group />,
+    subItems: [{ label: 'Team Management', path: 'teams' }],
   },
   {
     label: 'Attendance',
@@ -144,8 +150,31 @@ const menuItems: MenuItem[] = [
 export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   const { toggleTheme } = useTheme();
   const location = useLocation();
+  const { user } = useUser();
+  const role = user?.role;
   const [openItem, setOpenItem] = useState<string>('');
   const [activeSubItem, setActiveSubItem] = useState<string>('');
+
+  // Filter menu items based on role
+  const filteredMenuItems = useMemo(() => {
+    return menuItems
+      .filter(item =>
+        isMenuVisibleForRole(
+          item.label,
+          typeof role === 'string' ? role : (role as unknown)?.name
+        )
+      )
+      .map(item => ({
+        ...item,
+        subItems: item.subItems.filter(sub =>
+          isSubMenuVisibleForRole(
+            item.label,
+            sub.label,
+            typeof role === 'string' ? role : (role as unknown)?.name
+          )
+        ),
+      }));
+  }, [role]);
 
   // Auto expand parent & highlight subitem on URL change
   useEffect(() => {
@@ -154,7 +183,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
       currentPath = ''; // handle Hr Dashboard
     }
 
-    for (const item of menuItems) {
+    for (const item of filteredMenuItems) {
       const matchedSub = item.subItems.find(sub => sub.path === currentPath);
       if (matchedSub) {
         setOpenItem(item.label);
@@ -162,7 +191,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
         break;
       }
     }
-  }, [location.pathname]);
+  }, [location.pathname, filteredMenuItems]);
 
   const handleSubItemClick = (parent: string, subLabel: string) => {
     setOpenItem(parent);
@@ -216,60 +245,101 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
 
         {/* Sidebar Menu */}
         <List>
-          {menuItems.map(item => {
+          {filteredMenuItems.map(item => {
             const isParentActive = openItem === item.label;
+            const isDirectLink =
+              item.subItems.length === 1 && item.subItems[0].path === '';
+
             return (
               <Box key={item.label}>
-                <ListItemButton
-                  onClick={() => setOpenItem(isParentActive ? '' : item.label)}
-                  sx={{
-                    color: isParentActive ? 'orange' : 'white',
-                    pl: 1,
-                  }}
-                >
-                  <ListItemIcon
+                {isDirectLink ? (
+                  // Direct link for single sub-item with empty path (like HR Dashboard)
+                  <ListItemButton
+                    component={NavLink}
+                    to='/dashboard'
+                    onClick={() => {
+                      handleSubItemClick(item.label, item.subItems[0].label);
+                    }}
                     sx={{
-                      color: isParentActive ? 'orange' : 'white',
-                      minWidth: '36px',
+                      color:
+                        activeSubItem === item.subItems[0].label
+                          ? 'orange'
+                          : 'white',
+                      pl: 1,
                     }}
                   >
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText primary={item.label} />
-                  <img
-                    src={dotted}
-                    alt='dotted'
-                    style={{
-                      width: 23,
-                      height: 23,
-                      filter:
-                        'invert(57%) sepia(9%) saturate(388%) hue-rotate(195deg) brightness(89%) contrast(85%)',
-                    }}
-                  />
-                </ListItemButton>
-
-                <Collapse in={isParentActive} timeout='auto' unmountOnExit>
-                  <List component='div' disablePadding>
-                    {item.subItems.map(sub => (
-                      <ListItemButton
-                        key={sub.path}
-                        component={NavLink}
-                        to={`/dashboard/${sub.path}`}
-                        onClick={() =>
-                          handleSubItemClick(item.label, sub.label)
-                        }
+                    <ListItemIcon
+                      sx={{
+                        color:
+                          activeSubItem === item.subItems[0].label
+                            ? 'orange'
+                            : 'white',
+                        minWidth: '36px',
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText primary={item.label} />
+                  </ListItemButton>
+                ) : (
+                  // Collapsible menu for multiple sub-items
+                  <>
+                    <ListItemButton
+                      onClick={() =>
+                        setOpenItem(isParentActive ? '' : item.label)
+                      }
+                      sx={{
+                        color: isParentActive ? 'orange' : 'white',
+                        pl: 1,
+                      }}
+                    >
+                      <ListItemIcon
                         sx={{
-                          pl: 6,
-                          fontSize: '14px',
-                          color:
-                            activeSubItem === sub.label ? 'orange' : 'white',
+                          color: isParentActive ? 'orange' : 'white',
+                          minWidth: '36px',
                         }}
                       >
-                        <ListItemText primary={sub.label} />
-                      </ListItemButton>
-                    ))}
-                  </List>
-                </Collapse>
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText primary={item.label} />
+                      <img
+                        src={dotted}
+                        alt='dotted'
+                        style={{
+                          width: 23,
+                          height: 23,
+                          filter:
+                            'invert(57%) sepia(9%) saturate(388%) hue-rotate(195deg) brightness(89%) contrast(85%)',
+                        }}
+                      />
+                    </ListItemButton>
+
+                    <Collapse in={isParentActive} timeout='auto' unmountOnExit>
+                      <List component='div' disablePadding>
+                        {item.subItems.map(sub => (
+                          <ListItemButton
+                            key={sub.path}
+                            component={NavLink}
+                            to={`/dashboard/${sub.path}`}
+                            onClick={() =>
+                              handleSubItemClick(item.label, sub.label)
+                            }
+                            sx={{
+                              pl: 6,
+                              fontSize: '14px',
+                              color:
+                                activeSubItem === sub.label
+                                  ? 'orange'
+                                  : 'white',
+                            }}
+                          >
+                            <ListItemText primary={sub.label} />
+                          </ListItemButton>
+                        ))}
+                      </List>
+                    </Collapse>
+                  </>
+                )}
               </Box>
             );
           })}
@@ -286,13 +356,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
           <Typography variant='body2'>Enable Dark Mode!</Typography>
           <Switch checked={darkMode} onChange={toggleTheme} />
         </Box>
-        {/* <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="body2">Enable RTL Mode!</Typography>
-          <Switch
-            checked={rtlMode}
-            onChange={() => setRtlMode((prev) => !prev)}
-          />
-        </Box> */}
+       
 
         {/* Collapse Icon */}
         <Box textAlign='center' mt={2}>
@@ -303,7 +367,6 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
             sx={{
               width: 40,
               height: 40,
-              cursor: 'pointer',
               filter: 'brightness(0) invert(1)',
               borderBottom: '4px solid white',
             }}

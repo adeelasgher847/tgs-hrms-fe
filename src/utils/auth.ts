@@ -14,19 +14,16 @@ export const getCurrentUser = (): User | null => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       const user = JSON.parse(userStr);
-      console.log('🔍 Parsed user data:', user);
 
       // Validate user data
       if (!user.role) {
-        console.error('❌ User data missing role:', user);
         return null;
       }
 
       return user;
     }
     return null;
-  } catch (error) {
-    console.error('Error parsing user data:', error);
+  } catch {
     return null;
   }
 };
@@ -37,14 +34,13 @@ export const isAdmin = (): boolean => {
 
   // Handle both string and object role formats
   const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
-  const result = roleName === 'admin' || roleName === 'Admin';
+  const roleLc = (roleName || '').toLowerCase();
+  const result =
+    roleLc === 'admin' ||
+    roleLc === 'system-admin' ||
+    roleLc === 'system admin' ||
+    roleLc === 'system_admin';
 
-  console.log('🔍 isAdmin check:', {
-    user: roleName,
-    result,
-    roleType: typeof user.role,
-    roleObject: user.role,
-  });
   return result;
 };
 
@@ -57,12 +53,17 @@ export const isUser = (): boolean => {
   const result =
     roleName === 'user' || roleName === 'User' || roleName === 'Employee';
 
-  console.log('🔍 isUser check:', {
-    user: roleName,
-    result,
-    roleType: typeof user.role,
-    roleObject: user.role,
-  });
+  return result;
+};
+
+export const isManager = (): boolean => {
+  const user = getCurrentUser();
+  if (!user) return false;
+
+  // Handle both string and object role formats
+  const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
+  const result = roleName === 'manager' || roleName === 'Manager';
+
   return result;
 };
 
@@ -78,7 +79,6 @@ export const getUserName = (): string => {
   const user = getCurrentUser();
   if (user) {
     const name = `${user.first_name} ${user.last_name}`.trim();
-    console.log('🔍 getUserName:', { user, name });
     return name;
   }
   return 'Current User';

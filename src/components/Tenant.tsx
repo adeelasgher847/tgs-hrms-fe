@@ -5,7 +5,6 @@ import {
   Button,
   Fab,
   useMediaQuery,
-  useTheme,
   Paper,
   Divider,
   Card,
@@ -14,12 +13,24 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  CircularProgress,
+  useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Drawer,
 } from '@mui/material';
-import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Business as BusinessIcon,
+  Warning as WarningIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
 import companyApi from '../api/companyApi';
 import type { BackendCompany, CompanyDto } from '../api/companyApi';
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../hooks/useLanguage';
 import edit from '../assets/dashboardIcon/edit.svg';
 import deleteIcon from '../assets/dashboardIcon/ui-delete.svg';
 
@@ -35,7 +46,7 @@ const labels = {
     cancel: 'Cancel',
     edit: 'Edit',
     delete: 'Delete',
-    confirmDelete: 'Are you sure you want to delete this tenant?',
+    confirmDelete: 'Confirm Delete?',
   },
   ar: {
     title: 'المستأجرون',
@@ -95,7 +106,7 @@ export const TenantPage = () => {
       setIsLoading(true);
       try {
         const data = await companyApi.getAllCompanies();
-        console.log('Fetched companies:', data);
+
         setCompanies(data);
       } catch {
         setCompanies([]);
@@ -113,7 +124,7 @@ export const TenantPage = () => {
     try {
       const created = await companyApi.createCompany(newCompany);
       setCompanies(prev => [created, ...prev]);
-      console.log('Created company:', created);
+
       setIsFormModalOpen(false);
       setFormName('');
       setSnackbar({
@@ -138,18 +149,20 @@ export const TenantPage = () => {
   const handleEditCompany = async () => {
     if (!selectedTenant || !formName.trim()) return;
     try {
-      const updated = await companyApi.updateCompany(selectedTenant.id, {
+      await companyApi.updateCompany(selectedTenant.id, {
         name: formName,
       });
       setCompanies(prev =>
-        prev.map(c => (c.id === selectedTenant.id ? updated : c))
+        prev.map(c =>
+          c.id === selectedTenant.id ? { ...c, name: formName } : c
+        )
       );
       setSelectedTenant(null);
       setIsFormModalOpen(false);
       setFormName('');
       setSnackbar({
         open: true,
-        message: 'Company updated successfully!',
+        message: 'Company successfully!',
         severity: 'success',
       });
     } catch (error: unknown) {
@@ -203,6 +216,13 @@ export const TenantPage = () => {
     setIsFormModalOpen(true);
   };
 
+  // Localized delete message including tenant name
+  const deleteMessage = selectedTenant
+    ? language === 'ar'
+      ? `هل أنت متأكد أنك تريد حذف المستأجر "${selectedTenant.name}"؟ لا يمكن التراجع عن هذا الإجراء.`
+      : `Are you sure you want to delete the tenant "${selectedTenant.name}"? This action cannot be undone.`
+    : lang.confirmDelete;
+
   return (
     <Box
       sx={{
@@ -245,7 +265,7 @@ export const TenantPage = () => {
                 borderRadius: '0.375rem',
                 textTransform: 'none',
                 fontWeight: 600,
-                bgcolor: darkMode ? '#605bd4' : '#45407A',
+                bgcolor: darkMode ? '#484c7f' : '#45407A',
                 boxShadow: 'none',
                 '&:hover': {
                   bgcolor: darkMode ? '#726df0' : '#5b56a0',
@@ -270,9 +290,14 @@ export const TenantPage = () => {
             boxShadow: 'none',
           }}
         >
-          <Typography variant='h6' color={textSecond} gutterBottom>
-            Loading companies...
-          </Typography>
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            height={200}
+          >
+            <CircularProgress />
+          </Box>
         </Paper>
       ) : companies.length === 0 ? (
         <Paper
@@ -504,7 +529,7 @@ export const TenantPage = () => {
                 }
                 disabled={!formName.trim()}
                 sx={{
-                  bgcolor: darkMode ? '#605bd4' : '#45407A',
+                  bgcolor: darkMode ? '#484c7f' : '#45407A',
                   '&:hover': { bgcolor: darkMode ? '#726df0' : '#5b56a0' },
                 }}
               >
@@ -515,58 +540,57 @@ export const TenantPage = () => {
         </Box>
       )}
       {/* Delete Modal */}
-      {isDeleteModalOpen && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            bgcolor: 'rgba(0,0,0,0.3)',
-            zIndex: 1300,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+      {isDeleteModalOpen && selectedTenant && (
+        <Dialog
+          open={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setSelectedTenant(null);
+          }}
+          maxWidth='sm'
+          fullWidth
+          PaperProps={{
+            sx: {
+              direction: isRtl ? 'rtl' : 'ltr',
+              backgroundColor: darkMode ? '#111' : '#fff',
+              color: textPrimary,
+              border: `1px solid ${dividerCol}`,
+            },
           }}
         >
-          <Paper
-            sx={{ p: 4, minWidth: 320, bgcolor: bgPaper, color: textPrimary }}
-          >
-            <Typography
-              variant='h6'
-              mb={2}
-              sx={{ textAlign: isRtl ? 'right' : 'left' }}
-            >
-              {lang.confirmDelete}
-            </Typography>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 2,
-                flexDirection: isRtl ? 'row-reverse' : 'row',
-              }}
-            >
-              <Button
-                onClick={() => {
-                  setIsDeleteModalOpen(false);
-                  setSelectedTenant(null);
-                }}
-                sx={{ color: textPrimary }}
-              >
-                {lang.cancel}
-              </Button>
-              <Button
-                variant='contained'
-                color='error'
-                onClick={handleDeleteCompany}
-              >
-                {lang.delete}
-              </Button>
+          <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
+            {lang.confirmDelete}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ textAlign: 'center' }}>
+              <WarningIcon
+                sx={{ fontSize: 64, color: 'warning.main', mb: 2 }}
+              />
+              <Typography variant='body1' sx={{ mb: 2, lineHeight: 1.6 }}>
+                {deleteMessage}
+              </Typography>
             </Box>
-          </Paper>
-        </Box>
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: 'center', p: 3, pt: 1 }}>
+            <Button
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setSelectedTenant(null);
+              }}
+              variant='outlined'
+              sx={{ color: textPrimary, borderColor: dividerCol }}
+            >
+              {lang.cancel}
+            </Button>
+            <Button
+              variant='contained'
+              color='error'
+              onClick={handleDeleteCompany}
+            >
+              {lang.delete}
+            </Button>
+          </DialogActions>
+        </Dialog>
       )}
       <Snackbar
         open={snackbar.open}

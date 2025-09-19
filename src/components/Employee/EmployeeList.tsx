@@ -1,17 +1,16 @@
 import React from 'react';
 import {
   Box,
-  Typography,
-  useTheme,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Tooltip,
   CircularProgress,
+  TableContainer,
+  useTheme,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -20,6 +19,8 @@ import { useOutletContext } from 'react-router-dom';
 interface Employee {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone: string;
   departmentId: string;
@@ -72,42 +73,14 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const { darkMode } = useOutletContext<OutletContext>();
 
   // Dark mode styles
-  const textColor = darkMode ? '#e0e0e0' : '#000';
-  const cardBg = darkMode ? '#2a2a2a' : '#f9f9f9';
-  const borderColor = darkMode ? '#555' : '#ccc';
+  const textColor = darkMode ? '#8f8f8f' : '#000';
   const secondaryTextColor = darkMode
     ? '#9a9a9a'
     : theme.palette.text.secondary;
 
-  console.log('Employees data:', employees);
-  console.log('First employee department:', employees[0]?.department);
-  console.log('First employee designation:', employees[0]?.designation);
   return (
-    <Box sx={{ py: 2 }}>
-      <Typography
-        variant='h5'
-        gutterBottom
-        textAlign='start'
-        sx={{ color: textColor }}
-      >
-        {direction === 'rtl' ? 'قائمة الموظفين' : 'Employee List'}
-      </Typography>
-
-      {loading && (
-        <Box display='flex' justifyContent='center' py={4}>
-          <CircularProgress />
-        </Box>
-      )}
-
-      <Paper
-        elevation={1}
-        sx={{
-          backgroundColor: cardBg,
-          border: `1px solid ${borderColor}`,
-          overflowX: 'auto',
-          boxShadow: 'none',
-        }}
-      >
+    <Box>
+      <TableContainer>
         <Table>
           <TableHead>
             <TableRow>
@@ -136,80 +109,94 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {employees.map(emp => (
-              <TableRow
-                key={emp.id}
-                sx={{
-                  '&:hover': {
-                    backgroundColor: darkMode
-                      ? 'rgba(255,255,255,0.08)'
-                      : 'rgba(0,0,0,0.04)',
-                  },
-                }}
-              >
-                <TableCell sx={{ color: textColor }}>{emp.name}</TableCell>
-                <TableCell sx={{ color: secondaryTextColor }}>
-                  {emp.email}
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={onDelete || onEdit ? 6 : 5} align='center'>
+                  <Box display='flex' justifyContent='center' py={4}>
+                    <CircularProgress />
+                  </Box>
                 </TableCell>
-                <TableCell sx={{ color: textColor }}>{emp.phone}</TableCell>
-                <TableCell sx={{ color: textColor }}>
-                  {emp.department?.name ||
-                    departments[emp.departmentId] ||
-                    emp.departmentId ||
-                    '—'}
-                </TableCell>
-                <TableCell sx={{ color: textColor }}>
-                  {emp.designation?.title ||
-                    designations[emp.designationId] ||
-                    emp.designationId ||
-                    '—'}
-                </TableCell>
-                {(onDelete || onEdit) && (
-                  <TableCell>
-                    {onEdit && (
-                      <Tooltip
-                        title={
-                          direction === 'rtl' ? 'تعديل الموظف' : 'Edit Employee'
-                        }
-                      >
-                        <IconButton
-                          onClick={() => onEdit(emp)}
-                          disabled={loading}
-                          sx={{ mr: 1 }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                    {onDelete && (
-                      <Tooltip
-                        title={
-                          direction === 'rtl' ? 'حذف الموظف' : 'Delete Employee'
-                        }
-                      >
-                        <IconButton
-                          onClick={() => onDelete(emp.id)}
-                          disabled={loading}
-                          sx={{
-                            color: darkMode ? '#ff6b6b' : '#d32f2f',
-                            '&:hover': {
-                              backgroundColor: darkMode
-                                ? 'rgba(255,107,107,0.1)'
-                                : 'rgba(211,47,47,0.1)',
-                            },
-                          }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                )}
               </TableRow>
-            ))}
+            )}
+            {!loading &&
+              employees.map(emp => (
+                <TableRow
+                  key={emp.id}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: darkMode
+                        ? 'rgba(255,255,255,0.08)'
+                        : 'rgba(0,0,0,0.04)',
+                    },
+                  }}
+                >
+                  <TableCell sx={{ color: textColor }}>{emp.name}</TableCell>
+                  <TableCell sx={{ color: secondaryTextColor }}>
+                    {emp.email}
+                  </TableCell>
+                  <TableCell sx={{ color: textColor }}>{emp.phone}</TableCell>
+                  <TableCell sx={{ color: textColor }}>
+                    {emp.department?.name ||
+                      departments[emp.departmentId] ||
+                      emp.departmentId ||
+                      '—'}
+                  </TableCell>
+                  <TableCell sx={{ color: textColor }}>
+                    {emp.designation?.title ||
+                      designations[emp.designationId] ||
+                      emp.designationId ||
+                      '—'}
+                  </TableCell>
+                  {(onDelete || onEdit) && (
+                    <TableCell>
+                      {onEdit && (
+                        <Tooltip
+                          title={
+                            direction === 'rtl'
+                              ? 'تعديل الموظف'
+                              : 'Edit Employee'
+                          }
+                        >
+                          <IconButton
+                            onClick={() => onEdit(emp)}
+                            disabled={loading}
+                            sx={{ mr: 1 }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {onDelete && (
+                        <Tooltip
+                          title={
+                            direction === 'rtl'
+                              ? 'حذف الموظف'
+                              : 'Delete Employee'
+                          }
+                        >
+                          <IconButton
+                            onClick={() => onDelete(emp.id)}
+                            disabled={loading}
+                            sx={{
+                              color: darkMode ? '#ff6b6b' : '#d32f2f',
+                              '&:hover': {
+                                backgroundColor: darkMode
+                                  ? 'rgba(255,107,107,0.1)'
+                                  : 'rgba(211,47,47,0.1)',
+                              },
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
-      </Paper>
+      </TableContainer>
     </Box>
   );
 };

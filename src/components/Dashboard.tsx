@@ -1,16 +1,12 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 
 import EmployeesInfoChart from './DashboardContent/EmployeesInfoChart';
 import AvailabilityCardsGrid from './DashboardContent/AvailabilityCard/AvailabilityCardsGrid';
-import TotalEmployeesDonut from './DashboardContent/TotalEmployeesDonut';
-import UpcomingInterviews from './DashboardContent/ComingInterview/UpcomingInterviews';
-import PerformanceChart from './DashboardContent/PerformanceChart';
-import TopPerformersProps from './DashboardContent/TopPerformance/TopPerformersProps';
-import IconImageCardProps from './DashboardContent/TotalApplication/IconImageCardProps';
-import ApplicationStats from './DashboardContent/ApplicationStats/ApplicationStats';
+import GenderPercentageChart from './DashboardContent/GenderPercentageChart';
+
 import { useOutletContext } from 'react-router-dom';
-import { useLanguage } from '../context/LanguageContext'; // 👈 import your context
+import { useLanguage } from '../hooks/useLanguage';
 
 const labels = {
   en: {
@@ -19,7 +15,7 @@ const labels = {
     topPerformers: 'Top Performers',
   },
   ar: {
-    title: 'لوحة التحكم',
+    title: 'لوحة تحكم الموارد البشرية',
     upcoming: 'المقابلات القادمة',
     topPerformers: 'أفضل المؤدين',
   },
@@ -29,18 +25,21 @@ const Dashboard: React.FC = () => {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage(); // 👈 use the context
   const lang = labels[language]; // 👈 get the labels
-
+  const theme = useTheme();
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        color: darkMode ? '#fff' : '#000',
+        color: theme.palette.text.primary,
       }}
     >
       <Typography
         variant='h4'
         mb={2}
-        sx={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
+        sx={{
+          direction: language === 'ar' ? 'rtl' : 'ltr',
+          color: darkMode ? '#8f8f8f' : '#000',
+        }}
       >
         {lang.title}
       </Typography>
@@ -65,23 +64,23 @@ const Dashboard: React.FC = () => {
               <AvailabilityCardsGrid />
             </Box>
             <Box flex={1}>
-              <TotalEmployeesDonut />
+              <GenderPercentageChart />
             </Box>
           </Box>
 
-          <PerformanceChart />
+          {/* <PerformanceChart /> */}
         </Box>
 
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {/* <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <IconImageCardProps />
           <ApplicationStats />
           <UpcomingInterviews />
-        </Box>
+        </Box> */}
       </Box>
 
-      <Box mt={2}>
+      {/* <Box mt={2}>
         <TopPerformersProps />
-      </Box>
+      </Box> */}
     </Box>
   );
 };

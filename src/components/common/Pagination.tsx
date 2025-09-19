@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, TablePagination, useTheme, useMediaQuery } from '@mui/material';
+import { Box, TablePagination, useMediaQuery, useTheme } from '@mui/material';
 
 interface PaginationProps {
   count: number;
@@ -58,7 +58,13 @@ const Pagination: React.FC<PaginationProps> = ({
         onRowsPerPageChange={onRowsPerPageChange}
         rowsPerPageOptions={isMobile ? [5, 10] : rowsPerPageOptions}
         labelRowsPerPage={labelRowsPerPage}
-        labelDisplayedRows={labelDisplayedRows}
+        labelDisplayedRows={paginationInfo =>
+          labelDisplayedRows(
+            paginationInfo.from,
+            paginationInfo.to,
+            paginationInfo.count
+          )
+        }
         showFirstButton={!isMobile}
         showLastButton={!isMobile}
         size={isMobile ? 'small' : 'medium'}

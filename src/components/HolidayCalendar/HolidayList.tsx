@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
+import { useOutletContext } from 'react-router-dom';
 import HolidayTable from './HolidayTable';
 import AddHolidayDialog from './AddHolidayDialog';
 import HolidayCalendarView from './HolidayCalendarView';
@@ -29,6 +30,7 @@ const HolidayList: React.FC = () => {
   ]);
 
   const [open, setOpen] = useState(false);
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
   const handleAddHoliday = (newHoliday: Holiday) => {
     setHolidays(prev => [...prev, newHoliday]);
@@ -45,8 +47,14 @@ const HolidayList: React.FC = () => {
           mb: 2,
         }}
       >
-        <Typography variant='h5'>Holiday List</Typography>
-        <Button variant='contained' onClick={() => setOpen(true)}>
+        <Typography variant='h5' sx={{ color: darkMode ? '#8f8f8f' : '#000' }}>
+          Holiday List
+        </Typography>
+        <Button
+          variant='contained'
+          onClick={() => setOpen(true)}
+          sx={{ backgroundColor: '#464b8a' }}
+        >
           Add Holiday
         </Button>
       </Box>

@@ -11,13 +11,14 @@ import {
   Typography,
   MenuItem,
   TextField,
+  useTheme,
 } from '@mui/material';
+import { useOutletContext } from 'react-router-dom';
 import UserForm from './UserForm';
 import AddIcon from '@mui/icons-material/Add';
 import Edit from '@mui/icons-material/Edit';
 import Delete from '@mui/icons-material/Delete';
 import type { User } from './UserForm';
-import { useTheme } from '@mui/material/styles';
 import {
   departments,
   designations,
@@ -29,6 +30,8 @@ const UserList: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | undefined>(undefined);
   const [filters, setFilters] = useState({ department: '', designation: '' });
+  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const theme = useTheme();
 
   const filteredUsers = users.filter(user => {
     return (
@@ -62,16 +65,19 @@ const UserList: React.FC = () => {
   const handleDelete = (id: number) => {
     setUsers(prev => prev.filter(user => user.id !== id));
   };
-  const theme = useTheme();
-
   return (
     <Box p={0}>
-      <Typography variant='h5' gutterBottom>
+      <Typography
+        variant='h5'
+        gutterBottom
+        sx={{ color: darkMode ? '#8f8f8f' : '#000' }}
+      >
         User Management UI
       </Typography>
 
       <Box
         display='flex'
+        flexWrap={'wrap'}
         gap={2}
         mb={2}
         alignItems='center'
@@ -130,45 +136,45 @@ const UserList: React.FC = () => {
             backgroundColor: '#484c7f',
             color: '#fff',
             textTransform: 'none',
-            marginLeft: 'auto',
+            marginLeft: { xs: '0', sm: 'auto' },
           }}
         >
           Create User
         </Button>
       </Box>
-
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell>Role</TableCell>
-            <TableCell>Department</TableCell>
-            <TableCell>Designation</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filteredUsers.map(user => (
-            <TableRow key={user.id}>
-              <TableCell>{user.name}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>{user.role}</TableCell>
-              <TableCell>{user.department}</TableCell>
-              <TableCell>{user.designation}</TableCell>
-              <TableCell>
-                <Button onClick={() => handleOpen(user)}>
-                  <Edit />
-                </Button>
-                <Button color='error' onClick={() => handleDelete(user.id!)}>
-                  <Delete />
-                </Button>
-              </TableCell>
+      <Box sx={{ overflowX: 'auto', bgcolor: theme.palette.background.paper }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Role</TableCell>
+              <TableCell>Department</TableCell>
+              <TableCell>Designation</TableCell>
+              <TableCell>Actions</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-
+          </TableHead>
+          <TableBody>
+            {filteredUsers.map(user => (
+              <TableRow key={user.id}>
+                <TableCell>{user.name}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{user.role}</TableCell>
+                <TableCell>{user.department}</TableCell>
+                <TableCell>{user.designation}</TableCell>
+                <TableCell>
+                  <Button onClick={() => handleOpen(user)}>
+                    <Edit />
+                  </Button>
+                  <Button color='error' onClick={() => handleDelete(user.id!)}>
+                    <Delete />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Box>
       <UserForm
         open={open}
         onClose={handleClose}

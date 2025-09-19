@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import {
   Box,
@@ -13,25 +13,193 @@ import {
   Select,
   FormControlLabel,
   Checkbox,
+  Alert,
+  CircularProgress,
+  Snackbar,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import signupApi, { type PersonalDetailsRequest } from '../api/signupApi';
 
 const Signup: React.FC = () => {
+  const navigate = useNavigate();
   const [lang, setLang] = useState<'en' | 'ar'>('en');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({ open: false, message: '', severity: 'success' });
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
     email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [fieldErrors, setFieldErrors] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error for this field while typing
+    setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    setError(null);
+    setSuccess(null);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+  const handleTogglePassword = (): void => setShowPassword(prev => !prev);
+  const handleToggleConfirmPassword = (): void => setShowConfirmPassword(prev => !prev);
+
+  const validateForm = () => {
+    const nextErrors = {
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      password: '',
+      confirmPassword: '',
+    } as typeof fieldErrors;
+
+    if (!formData.first_name.trim()) {
+      nextErrors.first_name = 'First name is required';
+    }
+    if (!formData.last_name.trim()) {
+      nextErrors.last_name = 'Last name is required';
+    }
+    if (!formData.email.trim()) {
+      nextErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      nextErrors.email = 'Please enter a valid email address';
+    }
+    if (!formData.phone.trim()) {
+      nextErrors.phone = 'Phone number is required';
+    }
+    if (!formData.password) {
+      nextErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      nextErrors.password = 'Password must be at least 8 characters long';
+    }
+    if (!formData.confirmPassword) {
+      nextErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      nextErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setFieldErrors(nextErrors);
+    const hasErrors = Object.values(nextErrors).some(Boolean);
+    return !hasErrors;
+  };
+
+  const isSubmitDisabled =
+    loading ||
+    !formData.first_name.trim() ||
+    !formData.last_name.trim() ||
+    !formData.email.trim() ||
+    !formData.phone.trim() ||
+    !formData.password ||
+    !formData.confirmPassword ||
+    Object.values(fieldErrors).some(Boolean);
+
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
-    alert('Form submitted');
+    setError(null);
+    setSuccess(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const personalDetails: PersonalDetailsRequest = {
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        phone: formData.phone.trim(),
+      };
+
+      const response = await signupApi.createPersonalDetails(personalDetails);
+
+      setSuccess('Personal details saved successfully!');
+      setSnackbar({
+        open: true,
+        message:
+          lang === 'ar'
+            ? 'تم إنشاء الحساب بنجاح!'
+            : 'Personal details saved successfully!',
+        severity: 'success',
+      });
+
+      // Store signupSessionId in localStorage for next steps
+      localStorage.setItem('signupSessionId', response.signupSessionId);
+      // Temporarily store email & password in sessionStorage so we can auto-login after payment
+      // Use sessionStorage instead of localStorage so it is cleared when the tab/window closes
+      try {
+        sessionStorage.setItem(
+          'pendingSignupCredentials',
+          JSON.stringify({
+            email: personalDetails.email,
+            password: personalDetails.password,
+          })
+        );
+      } catch (e) {
+        // Ignore storage errors
+        // Ignore storage errors
+      }
+
+      // Redirect to next step (company details) after a short delay
+      setTimeout(() => {
+        navigate('/signup/company-details');
+      }, 2000);
+    } catch (err: any) {
+
+      // Handle different error types
+      if (err.response?.data?.message) {
+        const errorData = err.response.data.message;
+        if (
+          typeof errorData === 'object' &&
+          errorData.field &&
+          errorData.message
+        ) {
+          const field = String(errorData.field) as keyof typeof fieldErrors;
+          setFieldErrors(prev => ({
+            ...prev,
+            [field]: String(errorData.message),
+          }));
+          setError(null);
+        } else {
+          setError(errorData);
+        }
+      } else if (err.response?.data?.errors) {
+        const errorMessages = Object.values(err.response.data.errors).flat();
+        setError(errorMessages.join(', '));
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Failed to create account. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,7 +215,6 @@ const Signup: React.FC = () => {
         <Box
           sx={{
             height: '100%',
-            // display: "flex",
             justifyContent: 'center',
             alignItems: 'center',
             direction: lang === 'ar' ? 'rtl' : 'ltr',
@@ -59,7 +226,6 @@ const Signup: React.FC = () => {
               flexDirection: { xs: 'column', md: 'row' },
               alignItems: 'center',
               justifyContent: 'center',
-              // gap: "90px",
               height: '100%',
               margin: 'auto',
             }}
@@ -126,7 +292,10 @@ const Signup: React.FC = () => {
                     <Select
                       value={lang}
                       onChange={e => setLang(e.target.value as 'en' | 'ar')}
-                      sx={{ bgcolor: 'white', borderRadius: 1 }}
+                      sx={{
+                        bgcolor: theme => theme.palette.background.paper,
+                        borderRadius: 1,
+                      }}
                     >
                       <MenuItem value='en'>English</MenuItem>
                       <MenuItem value='ar'>عربى</MenuItem>
@@ -140,13 +309,13 @@ const Signup: React.FC = () => {
                       textAlign: 'center',
                       fontWeight: 500,
                       fontSize: '28px',
-                      mb: 1,
+                      my: 2,
                       fontFamily: 'Open Sans, sans-serif',
                     }}
                   >
                     {lang === 'ar' ? 'إنشاء حساب' : 'Create your account'}
                   </Typography>
-                  <Typography
+                  {/* <Typography
                     sx={{
                       fontSize: '14px',
                       fontFamily: 'Open Sans, sans-serif',
@@ -155,188 +324,349 @@ const Signup: React.FC = () => {
                     {lang === 'ar'
                       ? 'وصول مجاني إلى لوحة التحكم الخاصة بنا.'
                       : 'Free access to our dashboard.'}
-                  </Typography>
+                  </Typography> */}
                 </Box>
+
+                {/* Error Message */}
+                {error && (
+                  <Alert severity='error' sx={{ mt: 2, mb: 2 }}>
+                    {error}
+                  </Alert>
+                )}
+
                 <Box component='form' onSubmit={handleSubmit}>
-                  {/* Full Name (First + Last) */}
-                  <Typography
-                    component='label'
-                    htmlFor='Full Name'
-                    sx={{ fontWeight: 400, fontSize: '14px' }}
-                  >
-                    {lang === 'ar' ? 'تأكيد كلمة المرور' : 'Full Name'}
-                  </Typography>
+                  {/* Names Row */}
                   <Box sx={{ display: 'flex', gap: 1, mb: 1, mt: 1 }}>
-                    <TextField
-                      name='firstName'
-                      required
-                      fullWidth
-                      value={formData.firstName}
-                      placeholder='John'
-                      onChange={handleChange}
-                      variant='outlined'
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: '#eee',
-                          borderRadius: '8px',
-                          height: '46px',
-                          '& fieldset': { border: 'none' },
-                          '&:hover fieldset': { border: 'none' },
-                          '&.Mui-focused fieldset': { border: 'none' },
-
-                          '&:hover': { backgroundColor: '#eee' },
-                          '&.Mui-focused': { backgroundColor: '#fff' },
-                        },
-                        '& input': {
-                          outline: 'none',
-                          boxShadow: 'none',
-                        },
-                      }}
-                    />
-
-                    <TextField
-                      name='lastName'
-                      required
-                      fullWidth
-                      value={formData.lastName}
-                      placeholder='Parker'
-                      onChange={handleChange}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: '#eee',
-                          borderRadius: '8px',
-                          height: '46px',
-                          '& fieldset': { border: 'none' },
-                          '&:hover fieldset': { border: 'none' },
-                          '&.Mui-focused fieldset': { border: 'none' },
-
-                          '&:hover': { backgroundColor: '#eee' },
-                          '&.Mui-focused': { backgroundColor: '#fff' },
-                        },
-                        '& input': {
-                          outline: 'none',
-                          boxShadow: 'none',
-                        },
-                      }}
-                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        component='label'
+                        htmlFor='first_name'
+                        sx={{ fontWeight: 400, fontSize: '14px' }}
+                      >
+                        {lang === 'ar' ? 'الاسم الأول' : 'First Name'}
+                      </Typography>
+                      <TextField
+                        name='first_name'
+                        required
+                        fullWidth
+                        value={formData.first_name}
+                        placeholder='John'
+                        onChange={handleChange}
+                        variant='outlined'
+                        disabled={loading}
+                        error={Boolean(fieldErrors.first_name)}
+                        helperText={fieldErrors.first_name}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: '#eee',
+                            borderRadius: '8px',
+                            height: '46px',
+                            marginTop: '5px',
+                            '& fieldset': { border: 'none' },
+                            '&:hover fieldset': { border: 'none' },
+                            '&.Mui-focused fieldset': { border: 'none' },
+                            '&:hover': { backgroundColor: '#eee' },
+                            '&.Mui-focused': {
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
+                            },
+                          },
+                          '& input': {
+                            outline: 'none',
+                            boxShadow: 'none',
+                          },
+                          '& input:-webkit-autofill': {
+                            height: '10px',
+                          },
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        component='label'
+                        htmlFor='last_name'
+                        sx={{ fontWeight: 400, fontSize: '14px' }}
+                      >
+                        {lang === 'ar' ? 'اسم العائلة' : 'Last Name'}
+                      </Typography>
+                      <TextField
+                        name='last_name'
+                        required
+                        fullWidth
+                        value={formData.last_name}
+                        placeholder='Parker'
+                        onChange={handleChange}
+                        disabled={loading}
+                        error={Boolean(fieldErrors.last_name)}
+                        helperText={fieldErrors.last_name}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: '#eee',
+                            borderRadius: '8px',
+                            height: '46px',
+                            marginTop: '5px',
+                            '& fieldset': { border: 'none' },
+                            '&:hover fieldset': { border: 'none' },
+                            '&.Mui-focused fieldset': { border: 'none' },
+                            '&:hover': { backgroundColor: '#eee' },
+                            '&.Mui-focused': {
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
+                            },
+                          },
+                          '& input': {
+                            outline: 'none',
+                            boxShadow: 'none',
+                          },
+                          '& input:-webkit-autofill': {
+                            height: '10px',
+                          },
+                        }}
+                      />
+                    </Box>
                   </Box>
 
                   {/* Email */}
-                  <Typography
-                    component='label'
-                    htmlFor='email'
-                    sx={{ fontWeight: 400, fontSize: '14px' }}
-                  >
-                    {lang === 'ar' ? 'البريد الإلكتروني' : 'Email address'}
-                  </Typography>
-                  <TextField
-                    name='email'
-                    required
-                    fullWidth
-                    value={formData.email}
-                    placeholder='name@example.com'
-                    onChange={handleChange}
-                    sx={{
-                      mb: 1,
-                      mt: 1,
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#eee',
-                        borderRadius: '8px',
-                        height: '46px',
-                        '& fieldset': { border: 'none' },
-                        '&:hover fieldset': { border: 'none' },
-                        '&.Mui-focused fieldset': { border: 'none' },
+                  {/* Email and Phone Row */}
+                  <Box sx={{ display: 'flex', gap: 1, mb: 1, mt: 1 }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        component='label'
+                        htmlFor='email'
+                        sx={{ fontWeight: 400, fontSize: '14px' }}
+                      >
+                        {lang === 'ar' ? 'البريد الإلكتروني' : 'Email address'}
+                      </Typography>
+                      <TextField
+                        name='email'
+                        type='email'
+                        required
+                        fullWidth
+                        value={formData.email}
+                        placeholder='name@example.com'
+                        onChange={handleChange}
+                        disabled={loading}
+                        error={Boolean(fieldErrors.email)}
+                        helperText={fieldErrors.email}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: '#eee',
+                            borderRadius: '8px',
+                            height: '46px',
+                            marginTop: '5px',
+                            '& fieldset': { border: 'none' },
+                            '&:hover fieldset': { border: 'none' },
+                            '&.Mui-focused fieldset': { border: 'none' },
+                            '&:hover': { backgroundColor: '#eee' },
+                            '&.Mui-focused': {
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
+                            },
+                          },
+                          '& input': {
+                            outline: 'none',
+                            boxShadow: 'none',
+                          },
+                          '& input:-webkit-autofill': {
+                            height: '10px',
+                          },
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        component='label'
+                        htmlFor='phone'
+                        sx={{ fontWeight: 400, fontSize: '14px' }}
+                      >
+                        {lang === 'ar' ? 'رقم الهاتف' : 'Phone number'}
+                      </Typography>
+                      <TextField
+                        name='phone'
+                        type='tel'
+                        required
+                        fullWidth
+                        value={formData.phone}
+                        placeholder='+923001234567'
+                        onChange={handleChange}
+                        disabled={loading}
+                        error={Boolean(fieldErrors.phone)}
+                        helperText={fieldErrors.phone}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: '#eee',
+                            borderRadius: '8px',
+                            height: '46px',
+                            marginTop: '5px',
+                            '& fieldset': { border: 'none' },
+                            '&:hover fieldset': { border: 'none' },
+                            '&.Mui-focused fieldset': { border: 'none' },
+                            '&:hover': { backgroundColor: '#eee' },
+                            '&.Mui-focused': {
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
+                            },
+                          },
+                          '& input': {
+                            outline: 'none',
+                            boxShadow: 'none',
+                          },
+                          '& input:-webkit-autofill': {
+                            height: '10px',
+                          },
+                        }}
+                      />
+                    </Box>
+                  </Box>
 
-                        '&:hover': { backgroundColor: '#eee' },
-                        '&.Mui-focused': { backgroundColor: '#fff' },
-                      },
-                      '& input': {
-                        outline: 'none',
-                        boxShadow: 'none',
-                      },
-                    }}
-                  />
-
-                  {/* Password */}
-                  <Typography
-                    component='label'
-                    htmlFor='password'
-                    sx={{ fontWeight: 400, fontSize: '14px' }}
-                  >
-                    {lang === 'ar' ? 'كلمة المرور' : 'Password'}
-                  </Typography>
-                  <TextField
-                    name='password'
-                    type='password'
-                    required
-                    fullWidth
-                    value={formData.password}
-                    placeholder='8+ characters required'
-                    onChange={handleChange}
-                    sx={{
-                      mb: 1,
-                      mt: 1,
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#eee',
-                        borderRadius: '8px',
-                        height: '46px',
-                        '& fieldset': { border: 'none' },
-                        '&:hover fieldset': { border: 'none' },
-                        '&.Mui-focused fieldset': { border: 'none' },
-
-                        '&:hover': { backgroundColor: '#eee' },
-                        '&.Mui-focused': { backgroundColor: '#fff' },
-                      },
-                      '& input': {
-                        outline: 'none',
-                        boxShadow: 'none',
-                      },
-                    }}
-                  />
-
-                  {/* Confirm Password */}
-                  <Typography
-                    component='label'
-                    htmlFor='password'
-                    sx={{ fontWeight: 400, fontSize: '14px' }}
-                  >
-                    {lang === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
-                  </Typography>
-                  <TextField
-                    name='confirmPassword'
-                    type='password'
-                    required
-                    fullWidth
-                    value={formData.confirmPassword}
-                    placeholder='8+ characters required'
-                    onChange={handleChange}
-                    sx={{
-                      mb: 0.4,
-                      mt: 1,
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#eee',
-                        borderRadius: '8px',
-                        height: '46px',
-                        '& fieldset': { border: 'none' },
-                        '&:hover fieldset': { border: 'none' },
-                        '&.Mui-focused fieldset': { border: 'none' },
-
-                        '&:hover': { backgroundColor: '#eee' },
-                        '&.Mui-focused': { backgroundColor: '#fff' },
-                      },
-                      '& input': {
-                        outline: 'none',
-                        boxShadow: 'none',
-                      },
-                    }}
-                  />
+                  {/* Password and Confirm Password Row */}
+                  <Box sx={{ display: 'flex', gap: 1, mb: 0.4, mt: 1 }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        component='label'
+                        htmlFor='password'
+                        sx={{ fontWeight: 400, fontSize: '14px' }}
+                      >
+                        {lang === 'ar' ? 'كلمة المرور' : 'Password'}
+                      </Typography>
+                      <TextField
+                        name='password'
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        fullWidth
+                        value={formData.password}
+                        placeholder='8+ characters required'
+                        onChange={handleChange}
+                        disabled={loading}
+                        error={Boolean(fieldErrors.password)}
+                        helperText={fieldErrors.password}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: '#eee',
+                            borderRadius: '8px',
+                            height: '46px',
+                            marginTop: '5px',
+                            '& fieldset': { border: 'none' },
+                            '&:hover fieldset': { border: 'none' },
+                            '&.Mui-focused fieldset': { border: 'none' },
+                            '&:hover': { backgroundColor: '#eee' },
+                            '&.Mui-focused': {
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
+                            },
+                          },
+                          '& input': {
+                            outline: 'none',
+                            boxShadow: 'none',
+                          },
+                          '& input:-webkit-autofill': {
+                            height: '10px',
+                          },
+                        }}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position='end'>
+                              <IconButton
+                                onClick={handleTogglePassword}
+                                edge='end'
+                                sx={{
+                                  outline: 'none',
+                                  boxShadow: 'none',
+                                  '&:focus': {
+                                    outline: 'none',
+                                    boxShadow: 'none',
+                                  },
+                                }}
+                              >
+                                {showPassword ? (
+                                  <VisibilityOff sx={{ width: 21, height: 21 }}/>
+                                ) : (
+                                  <Visibility sx={{ width: 21, height: 21 }}/>
+                                )}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        component='label'
+                        htmlFor='confirmPassword'
+                        sx={{ fontWeight: 400, fontSize: '14px' }}
+                      >
+                        {lang === 'ar'
+                          ? 'تأكيد كلمة المرور'
+                          : 'Confirm Password'}
+                      </Typography>
+                      <TextField
+                        name='confirmPassword'
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        required
+                        fullWidth
+                        value={formData.confirmPassword}
+                        placeholder='8+ characters required'
+                        onChange={handleChange}
+                        disabled={loading}
+                        error={Boolean(fieldErrors.confirmPassword)}
+                        helperText={fieldErrors.confirmPassword}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: '#eee',
+                            borderRadius: '8px',
+                            height: '46px',
+                            marginTop: '5px',
+                            '& fieldset': { border: 'none' },
+                            '&:hover fieldset': { border: 'none' },
+                            '&.Mui-focused fieldset': { border: 'none' },
+                            '&:hover': { backgroundColor: '#eee' },
+                            '&.Mui-focused': {
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
+                            },
+                          },
+                          '& input': {
+                            outline: 'none',
+                            boxShadow: 'none',
+                          },
+                          '& input:-webkit-autofill': {
+                            height: '10px',
+                          },
+                        }}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position='end'>
+                              <IconButton
+                                onClick={handleToggleConfirmPassword}
+                                edge='end'
+                                sx={{
+                                  outline: 'none',
+                                  boxShadow: 'none',
+                                  '&:focus': {
+                                    outline: 'none',
+                                    boxShadow: 'none',
+                                  },
+                                }}
+                              >
+                                {showConfirmPassword ? (
+                                  <VisibilityOff sx={{ width: 21, height: 21 }}/>
+                                ) : (
+                                  <Visibility sx={{ width: 21, height: 21 }}/>
+                                )}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Box>
+                  </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <FormControlLabel
                       sx={{
                         border: 'none',
                         marginLeft: 0,
                         marginRight: 0,
-                        marginTop: 0,
+                        marginTop: '5px',
                       }}
                       control={
                         <Checkbox
@@ -351,6 +681,7 @@ const Signup: React.FC = () => {
                             />
                           }
                           disableRipple
+                          disabled={loading}
                           sx={{
                             padding: 0,
                             border: 'none',
@@ -358,6 +689,7 @@ const Signup: React.FC = () => {
                             height: 14,
                             minWidth: 14,
                             minHeight: 14,
+
                             boxSizing: 'border-box',
                             '&:hover': {
                               bgcolor: 'transparent',
@@ -365,6 +697,9 @@ const Signup: React.FC = () => {
                             '&.Mui-focusVisible': {
                               outline: 'none',
                               boxShadow: 'none',
+                            },
+                            '& input:-webkit-autofill': {
+                              height: '10px',
                             },
                           }}
                         />
@@ -394,27 +729,39 @@ const Signup: React.FC = () => {
                           )}
                         </Typography>
                       }
-                      // sx={{ m: 0, fontFamily: 'Open Sans, sans-serif', fontSize: '14px' }}
                     />
                   </Box>
                   <Box
-                    sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}
+                    sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}
                   >
                     <Button
                       type='submit'
                       variant='contained'
+                      disabled={isSubmitDisabled}
                       sx={{
                         backgroundColor: 'white',
                         color: 'black',
-                        fontWeight: 600,
+                        fontWeight: 500,
                         borderRadius: 2,
                         fontSize: '14px',
                         fontFamily: 'Open Sans, sans-serif',
                         textTransform: 'uppercase',
                         '&:hover': { backgroundColor: '#f0f0f0' },
+                        '&:disabled': { backgroundColor: '#ccc' },
                       }}
                     >
-                      {lang === 'ar' ? 'تسجيل' : 'Sign up'}
+                      {loading ? (
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <CircularProgress size={16} />
+                          {lang === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
+                        </Box>
+                      ) : lang === 'ar' ? (
+                        'تسجيل'
+                      ) : (
+                        'Sign up'
+                      )}
                     </Button>
                   </Box>
                   <Typography
@@ -448,6 +795,20 @@ const Signup: React.FC = () => {
           </Box>
         </Box>
       </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

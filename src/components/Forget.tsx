@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import {
   Box,
@@ -15,13 +16,20 @@ import {
   Alert,
 } from '@mui/material';
 import ForgetImage from '../assets/icons/forget-image.svg';
+import authApi from '../api/authApi';
 
 const Forget = () => {
+  const navigate = useNavigate();
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState(false);
+  const [emailErrorMessage, setEmailErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [openToast, setOpenToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>(
+    'success'
+  );
 
   const validateEmail = (value: string) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,23 +39,93 @@ const Forget = () => {
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEmail(value);
-    setEmailError(value.length > 0 && !validateEmail(value));
+    if (value.length > 0 && !validateEmail(value)) {
+      setEmailError(true);
+      setEmailErrorMessage(
+        lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email'
+      );
+    } else {
+      setEmailError(false);
+      setEmailErrorMessage('');
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateEmail(email)) {
       setEmailError(true);
+      setEmailErrorMessage(
+        lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email address'
+      );
       return;
     }
+
     setLoading(true);
     setEmailError(false);
+    setEmailErrorMessage('');
 
-    setTimeout(() => {
+    try {
+      const response = await authApi.forgotPassword({ email });
+
+      if (response && response.errors) {
+        setEmailError(true);
+        setEmailErrorMessage(
+          response.message ||
+            (lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email address')
+        );
+        return;
+      }
+
+      // Check if has success message
+      if (response && response.message && !response.errors) {
+        setToastMessage(response.message);
+        setToastSeverity('success');
+        setOpenToast(true);
+        setEmail('');
+      } else {
+        setEmail('');
+      }
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as {
+          response: { status: number; data?: { message?: string } };
+        };
+        if (
+          apiError.response.status === 400 ||
+          apiError.response.status === 404 ||
+          apiError.response.status === 422
+        ) {
+          setEmailError(true);
+          if (apiError.response.status === 404) {
+            setEmailErrorMessage(
+              lang === 'ar'
+                ? 'البريد الإلكتروني غير موجود'
+                : 'Email address not found'
+            );
+          } else {
+            setEmailErrorMessage(
+              apiError.response.data?.message ||
+                (lang === 'ar'
+                  ? 'بريد إلكتروني غير صالح'
+                  : 'Invalid email address')
+            );
+          }
+        }
+      } else {
+        // Only show toast for genuine network/connection errors
+        setToastMessage(
+          'Network error. Please check your connection and try again.'
+        );
+        setToastSeverity('error');
+        setOpenToast(true);
+      }
+    } finally {
       setLoading(false);
-      setOpenToast(true);
-      console.log('Reset link sent to email:', email);
-    }, 2000);
+    }
+  };
+
+  const handleBackToSignIn = () => {
+    navigate('/');
   };
 
   return (
@@ -198,6 +276,7 @@ const Forget = () => {
                     sx={{
                       width: '100%',
                       maxWidth: 240,
+                      height: '180px',
                       mb: 1,
                       mt: { xs: 2, md: 2 },
                     }}
@@ -254,17 +333,41 @@ const Forget = () => {
                       value={email}
                       onChange={handleEmailChange}
                       error={emailError}
-                      helperText={
-                        emailError &&
-                        (lang === 'ar'
-                          ? 'بريد إلكتروني غير صالح'
-                          : 'Invalid email')
-                      }
-                      sx={{ mt: 1 }}
+                      helperText={emailErrorMessage}
+                      FormHelperTextProps={{
+                        sx: { fontSize: '15px' },
+                      }}
+                      sx={{
+                        mt: 1,
+                        // Autofill overrides (Chrome, Edge, Safari)
+                        '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus':
+                          {
+                            WebkitTextFillColor: 'unset !important',
+                            WebkitBoxShadow: 'unset !important',
+                            caretColor: 'black',
+                            transition: 'background-color 9999s ease-in-out 0s',
+                          },
+                        '& .MuiOutlinedInput-root.Mui-focused input:-webkit-autofill':
+                          {
+                            WebkitBoxShadow: 'unset !important',
+                          },
+                        // Fallback for some browsers exposing internal autofill selector
+                        '& input:-internal-autofill-selected': {
+                          backgroundColor: 'unset !important',
+                          boxShadow: 'unset !important',
+                          color: 'black',
+                        },
+                      }}
                       InputProps={{
                         sx: {
                           backgroundColor: '#eee',
                           borderRadius: '8px',
+                          '&.Mui-focused, &:active': {
+                            backgroundColor: 'white',
+                          },
+                          '& fieldset': { border: 'none' },
+                          '&:hover fieldset': { border: 'none' },
+                          '&.Mui-focused fieldset': { border: 'none' },
                         },
                       }}
                     />
@@ -310,13 +413,17 @@ const Forget = () => {
                       }}
                     >
                       <Link
-                        href='#'
+                        component='button'
+                        onClick={handleBackToSignIn}
                         sx={{
                           color: 'var(--yellow-color)',
                           fontWeight: 400,
                           fontFamily: 'Open Sans, sans-serif',
                           fontSize: '14px',
                           textDecoration: 'none',
+                          border: 'none',
+                          background: 'none',
+                          cursor: 'pointer',
                           '&:hover': {
                             textDecoration: 'none',
                             color: 'var(--yellow-color)',
@@ -342,12 +449,17 @@ const Forget = () => {
       >
         <Alert
           onClose={() => setOpenToast(false)}
-          severity='success'
-          sx={{ width: '100%' }}
+          severity={toastSeverity}
+          sx={{
+            width: '100%',
+            backgroundColor: '#2e7d32',
+            color: 'white !important',
+            '& .MuiAlert-icon': {
+              color: 'white',
+            },
+          }}
         >
-          {lang === 'ar'
-            ? 'إذا كان البريد الإلكتروني موجودًا، سيتم إرسال رابط إعادة التعيين.'
-            : 'If the email exists, a reset link will be sent.'}
+          {toastMessage}
         </Alert>
       </Snackbar>
     </div>

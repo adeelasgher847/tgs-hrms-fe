@@ -24,6 +24,8 @@ import GoogleIcon from '../assets/icons/google.svg';
 import axios from 'axios';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { type AlertProps } from '@mui/material/Alert';
+import { useUser } from '../hooks/useUser';
+import { getDefaultDashboardRoute } from '../utils/permissions';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
   function Alert(props, ref) {
@@ -33,6 +35,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { updateUser } = useUser();
 
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -67,12 +70,31 @@ const Login: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      navigate('/dashboard', { replace: true });
-    } else {
-      setCheckingAuth(false);
-    }
+    // Add a small delay to prevent race conditions during logout
+    const checkAuth = () => {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        // Determine default route based on existing user in localStorage
+        try {
+          const userStr = localStorage.getItem('user');
+          const parsed = userStr ? JSON.parse(userStr) : null;
+          const role =
+            typeof parsed?.role === 'string'
+              ? parsed?.role
+              : parsed?.role?.name;
+          const target = getDefaultDashboardRoute(role);
+          navigate(target, { replace: true });
+        } catch {
+          navigate('/dashboard', { replace: true });
+        }
+      } else {
+        setCheckingAuth(false);
+      }
+    };
+
+    // Small delay to ensure logout cleanup is complete
+    const timeoutId = setTimeout(checkAuth, 100);
+    return () => clearTimeout(timeoutId);
   }, [navigate]);
 
   if (checkingAuth) {
@@ -139,6 +161,14 @@ const Login: React.FC = () => {
       localStorage.setItem('accessToken', res.data.accessToken);
       localStorage.setItem('refreshToken', res.data.refreshToken);
       localStorage.setItem('user', JSON.stringify(res.data.user));
+      localStorage.setItem('permissions', JSON.stringify(res.data.permissions));
+      // Update user context without causing re-render
+      try {
+        updateUser(res.data.user);
+      } catch {
+        /* Error handled silently */
+      }
+
       if (rememberMe) {
         localStorage.setItem(
           'rememberedLogin',
@@ -152,12 +182,24 @@ const Login: React.FC = () => {
         message: lang === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Login Successful!',
         severity: 'success',
       });
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1200);
-    } catch (err: any) {
+
+      // Navigate immediately to role-specific default route
+      const role =
+        typeof res.data.user?.role === 'string'
+          ? res.data.user?.role
+          : res.data.user?.role?.name;
+      const target = getDefaultDashboardRoute(role);
+      navigate(target, { replace: true });
+    } catch (err: unknown) {
       // Backend may send { field: 'email' | 'password', message: string }
-      const data = err.response?.data;
+      const data =
+        err && typeof err === 'object' && 'response' in err
+          ? (
+              err as {
+                response: { data: { field?: string; message?: string } };
+              }
+            ).response.data
+          : null;
       if (data?.field === 'email') {
         setEmailError(data.message);
         setPasswordError('');
@@ -401,6 +443,24 @@ const Login: React.FC = () => {
                         border: 'none',
                         boxShadow: 'none',
                       },
+                    // Autofill overrides (Chrome, Edge, Safari)
+                    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus':
+                      {
+                        WebkitTextFillColor: 'unset !important',
+                        WebkitBoxShadow: 'unset !important',
+                        caretColor: 'black',
+                        transition: 'background-color 9999s ease-in-out 0s',
+                      },
+                    '& .MuiOutlinedInput-root.Mui-focused input:-webkit-autofill':
+                      {
+                        WebkitBoxShadow: 'unset !important',
+                      },
+                    // Fallback for some browsers exposing internal autofill selector
+                    '& input:-internal-autofill-selected': {
+                      backgroundColor: 'unset !important',
+                      boxShadow: 'unset !important',
+                      color: 'black',
+                    },
                   }}
                 >
                   <Typography
@@ -432,10 +492,10 @@ const Login: React.FC = () => {
                         borderRadius: '8px',
                         '&.Mui-focused, &:active': {
                           backgroundColor: 'white',
-                          border: 'none',
-                          outline: 'none',
-                          boxShadow: 'none',
                         },
+                        '& fieldset': { border: 'none' },
+                        '&:hover fieldset': { border: 'none' },
+                        '&.Mui-focused fieldset': { border: 'none' },
                       },
                     }}
                   />
@@ -502,6 +562,15 @@ const Login: React.FC = () => {
                           borderRadius: '8px',
                           '&.Mui-focused': {
                             backgroundColor: 'white',
+                          },
+                          '& fieldset': {
+                            border: 'none',
+                          },
+                          '&:hover fieldset': {
+                            border: 'none',
+                          },
+                          '&.Mui-focused fieldset': {
+                            border: 'none',
                           },
                         },
                         endAdornment: (
@@ -581,7 +650,6 @@ const Login: React.FC = () => {
                           {lang === 'ar' ? 'تذكرني' : 'Remember me'}
                         </Typography>
                       }
-                      // sx={{ m: 0, fontFamily: 'Open Sans, sans-serif', fontSize: '14px' }}
                     />
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'center' }}>

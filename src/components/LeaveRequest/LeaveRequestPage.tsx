@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import LeaveForm from './LeaveForm';
 import LeaveHistory from './LeaveHistory';
 import LeaveApprovalDialog from './LeaveApprovalDialog';
@@ -8,6 +8,7 @@ import {
   isAdmin,
   isUser,
   getCurrentUser,
+  isManager,
   getUserName,
   getUserRole,
 } from '../../utils/auth';
@@ -21,6 +22,12 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
+  Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -45,82 +52,96 @@ const LeaveRequestPage = () => {
   const [actionType, setActionType] = useState<'approved' | 'rejected' | null>(
     null
   );
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+  const [withdrawId, setWithdrawId] = useState<string | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>(
     'success'
   );
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Team leave history state
+  const [teamLeaves, setTeamLeaves] = useState<Leave[]>([]);
+  const [teamLeavesLoading, setTeamLeavesLoading] = useState(false);
+  const [teamLeavesError, setTeamLeavesError] = useState<string | null>(null);
+  const [teamCurrentPage, setTeamCurrentPage] = useState(1);
+  const [teamTotalPages, setTeamTotalPages] = useState(1);
+
   // Get current user role
   const currentUser = getCurrentUser();
   const userIsAdmin = isAdmin();
   const userIsUser = isUser();
+  const userIsManager = isManager();
 
   // Initialize tab based on user role
-  const [tab, setTab] = useState(userIsUser ? 0 : 0);
+  const [tab, setTab] = useState(
+    userIsUser || userIsManager || userIsAdmin ? 0 : 0
+  );
 
-  // Debug: Log current state
-  console.log('🔍 Current state:', {
-    currentUser,
-    userIsAdmin,
-    userIsUser,
-    hasUser: !!currentUser,
-    userRole: currentUser?.role,
-    localStorage: {
-      user: localStorage.getItem('user'),
-      token: localStorage.getItem('accessToken'),
-    },
-  });
 
-  // Load leaves on component mount
-  useEffect(() => {
-    loadLeaves();
-  }, []);
+  const loadLeaves = useCallback(
+    async (page: number = 1) => {
+      try {
+        setLoading(true);
+        setError(null);
+        let leavesData: Leave[];
 
-  const loadLeaves = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      let leavesData: Leave[];
+        if (userIsAdmin) {
+          // Admin gets all leaves with user info
+          try {
+            const response = await leaveApi.getAllLeaves(page);
+            leavesData = response.items.map(leave => ({
+              id: leave.id,
+              userId: leave.user_id || leave.userId,
+              name: leave.user?.first_name
+                ? `${leave.user.first_name} ${leave.user.last_name || ''}`.trim()
+                : leave.user?.name || 'N/A',
+              fromDate: leave.from_date,
+              toDate: leave.to_date,
+              reason: leave.reason,
+              type: leave.type,
+              status: leave.status,
+              applied:
+                leave.applied ||
+                new Date().toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                }),
+              created_at: leave.created_at,
+            }));
 
-      if (userIsAdmin) {
-        // Admin gets all leaves with user info
-        console.log('Loading leaves as admin...');
-        const response = await leaveApi.getAllLeaves();
-        leavesData = response.map(leave => ({
-          id: leave.id,
-          userId: leave.user_id || leave.userId,
-          name: leave.user?.first_name
-            ? `${leave.user.first_name} ${leave.user.last_name || ''}`.trim()
-            : leave.user?.name || 'N/A',
-          fromDate: leave.from_date,
-          toDate: leave.to_date,
-          reason: leave.reason,
-          type: leave.type,
-          status: leave.status,
-          applied:
-            leave.applied ||
-            new Date().toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            }),
-          created_at: leave.created_at,
-        }));
-      } else if (userIsUser) {
-        // Regular user gets their own leaves
-        console.log('Loading leaves as user...');
-        const currentUserId = currentUser?.id;
-        if (!currentUserId) {
-          console.error('No user ID found for current user');
-          leavesData = [];
-        } else {
-          console.log('Fetching leaves for user ID:', currentUserId);
-          const response = await leaveApi.getUserLeaves(currentUserId);
-          leavesData = response.map(leave => ({
+            // Update pagination state
+            setCurrentPage(response.page);
+            setTotalPages(response.totalPages);
+          } catch (adminError: unknown) {
+            if ((adminError as ApiError)?.response?.status === 403) {
+              setError(
+                'You do not have permission to view all leaves. Please contact your administrator.'
+              );
+            } else {
+              setError(
+                (adminError as ApiError)?.response?.data?.message ||
+                  'Failed to load admin leaves'
+              );
+            }
+            throw adminError;
+          }
+        } else if (userIsUser || userIsManager) {
+          // Regular user or manager gets their own leaves
+          //   currentUserId: currentUser?.id,
+          //   userRole: currentUser?.role,
+          //   page
+          // });
+          const response = await leaveApi.getUserLeaves(currentUser?.id, page);
+          leavesData = response.items.map(leave => ({
             id: leave.id,
             userId: leave.user_id || leave.userId,
-            name: 'You', // Show "You" for current user's own leaves
+            name: 'You', // Show "You" for user's own leaves
             fromDate: leave.from_date,
             toDate: leave.to_date,
             reason: leave.reason,
@@ -135,54 +156,109 @@ const LeaveRequestPage = () => {
               }),
             created_at: leave.created_at,
           }));
+
+          // Update pagination state
+          setCurrentPage(response.page);
+          setTotalPages(response.totalPages);
+        } else {
+          leavesData = [];
         }
-      } else {
-        // No valid role, show empty
-        console.log('No valid role found, showing empty list');
-        leavesData = [];
+
+        setLeaves(leavesData);
+      } catch (error: unknown) {
+        setError(
+          (error as ApiError)?.response?.data?.message ||
+            (error as Error).message ||
+            'Failed to load leaves'
+        );
+        setLeaves([]);
+      } finally {
+        setLoading(false);
       }
+    },
+    [currentUser, userIsAdmin, userIsUser]
+  );
 
-      // Sort leaves by creation date (newest first) for better admin experience
-      leavesData.sort((a, b) => {
-        // Sort by created_at if available, otherwise by applied date, then by ID
-        const dateA = a.created_at
-          ? new Date(a.created_at).getTime()
-          : a.applied
-            ? new Date(a.applied).getTime()
-            : new Date(a.id).getTime();
-        const dateB = b.created_at
-          ? new Date(b.created_at).getTime()
-          : b.applied
-            ? new Date(b.applied).getTime()
-            : new Date(b.id).getTime();
-        return dateB - dateA; // Newest first
-      });
+  // Load leaves on component mount
+  useEffect(() => {
+    loadLeaves();
+  }, []); // Empty dependency array - only run once on mount
 
-      console.log('Loaded leaves:', leavesData);
-      setLeaves(leavesData);
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    loadLeaves(page);
+  };
+
+  // Load team leaves for managers
+  const loadTeamLeaves = async (page: number = 1) => {
+    if (!userIsManager) return;
+
+    try {
+      setTeamLeavesLoading(true);
+      setTeamLeavesError(null);
+
+      //   managerId: currentUser?.id,
+      //   tenantId: currentUser?.tenant_id,
+      //   page
+      // });
+
+      const response = await leaveApi.getTeamLeaves(page);
+
+      const teamLeavesData = response.items.map(leave => ({
+        id: leave.id,
+        userId: leave.user_id || leave.userId,
+        name: leave.user?.first_name
+          ? `${leave.user.first_name} ${leave.user.last_name || ''}`.trim()
+          : leave.user?.name || 'N/A',
+        fromDate: leave.from_date,
+        toDate: leave.to_date,
+        reason: leave.reason,
+        type: leave.type,
+        status: leave.status,
+        applied:
+          leave.applied ||
+          new Date().toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }),
+        created_at: leave.created_at,
+      }));
+
+      setTeamLeaves(teamLeavesData);
+      setTeamCurrentPage(response.page);
+      setTeamTotalPages(response.totalPages);
     } catch (error: unknown) {
-      console.error('Error loading leaves:', error);
-      setError('Failed to load leave history');
-      const apiError = error as ApiError;
-      if (apiError?.response?.status === 403) {
-        setSnackbarMessage('Access denied. Please check your permissions.');
-      } else if (apiError?.response?.status === 401) {
-        setSnackbarMessage('Authentication failed. Please login again.');
-      } else {
-        setSnackbarMessage('Failed to load leave history');
+
+      let errorMessage = 'Failed to load team leaves';
+      if ((error as ApiError)?.response?.status === 403) {
+        errorMessage = 'You do not have permission to view team leaves.';
+      } else if ((error as ApiError)?.response?.status === 404) {
+        errorMessage = 'No team members found or team not configured.';
+      } else if ((error as ApiError)?.response?.data?.message) {
+        errorMessage =
+          (error as ApiError).response!.data!.message || 'Unknown error';
+      } else if ((error as Error).message) {
+        errorMessage = (error as Error).message;
       }
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+
+      setTeamLeavesError(errorMessage);
+      setTeamLeaves([]);
     } finally {
-      setLoading(false);
+      setTeamLeavesLoading(false);
     }
+  };
+
+  // Handle team page change
+  const handleTeamPageChange = (page: number) => {
+    setTeamCurrentPage(page);
+    loadTeamLeaves(page);
   };
 
   const handleApply = async (data: CreateLeaveRequest) => {
     try {
-      console.log('Submitting leave request:', data);
       const newLeave = await leaveApi.createLeave(data);
-      console.log('API response:', newLeave);
 
       const leaveWithDisplay: Leave = {
         id: newLeave.id,
@@ -203,16 +279,13 @@ const LeaveRequestPage = () => {
         created_at: newLeave.created_at || new Date().toISOString(),
       };
 
-      console.log('Formatted leave for display:', leaveWithDisplay);
       setLeaves([leaveWithDisplay, ...leaves]);
       setSnackbarMessage('Leave applied successfully!');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
     } catch (error: unknown) {
-      console.error('Error applying leave:', error);
       const apiError = error as ApiError;
       if (apiError?.response) {
-        console.error('API Error details:', apiError.response.data);
         if (apiError.response.status === 403) {
           setSnackbarMessage(
             "Access denied. You don't have permission to apply leaves."
@@ -270,7 +343,6 @@ const LeaveRequestPage = () => {
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
       } catch (error: unknown) {
-        console.error('Error updating leave status:', error);
         const apiError = error as ApiError;
         if (apiError?.response?.status === 403) {
           setSnackbarMessage(
@@ -286,6 +358,52 @@ const LeaveRequestPage = () => {
     setDialogOpen(false);
     setSelectedId(null);
     setActionType(null);
+  };
+
+  const handleWithdraw = (id: string) => {
+    setWithdrawId(id);
+    setWithdrawDialogOpen(true);
+  };
+
+  const handleConfirmWithdraw = async () => {
+    if (!withdrawId) return;
+
+    try {
+      await leaveApi.withdrawLeave(withdrawId);
+
+      setLeaves(prev =>
+        prev.map(leave =>
+          leave.id === withdrawId
+            ? {
+                ...leave,
+                status: 'withdrawn',
+              }
+            : leave
+        )
+      );
+
+      setSnackbarMessage('Leave request withdrawn successfully!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      if (apiError?.response?.status === 403) {
+        setSnackbarMessage(
+          'Access denied. You can only withdraw your own pending leave requests.'
+        );
+      } else if (apiError?.response?.status === 400) {
+        setSnackbarMessage(
+          'Cannot withdraw this leave request. Only pending requests can be withdrawn.'
+        );
+      } else {
+        setSnackbarMessage('Failed to withdraw leave request');
+      }
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setWithdrawDialogOpen(false);
+      setWithdrawId(null);
+    }
   };
 
   // Show loading state
@@ -389,7 +507,6 @@ const LeaveRequestPage = () => {
               };
               localStorage.setItem('user', JSON.stringify(testUser));
               localStorage.setItem('accessToken', 'test-token');
-              console.log('✅ Quick test user set up:', testUser);
               window.location.reload();
             }}
           >
@@ -412,7 +529,6 @@ const LeaveRequestPage = () => {
             };
             localStorage.setItem('user', JSON.stringify(testUser));
             localStorage.setItem('accessToken', 'test-token');
-            console.log('✅ Force test user set up:', testUser);
             window.location.reload();
           }}
           sx={{ mt: 1 }}
@@ -445,7 +561,11 @@ const LeaveRequestPage = () => {
           <Typography
             variant='h5'
             fontWeight={700}
-            sx={{ color: '#fff', mb: { xs: 2, sm: 0 } }}
+            sx={{
+              color: '#fff',
+              fontSize: { xs: 18, sm: 20, md: 22 },
+              mb: { xs: 2, sm: 0 },
+            }}
           >
             Leave Management System
             {currentUser && (
@@ -465,8 +585,8 @@ const LeaveRequestPage = () => {
               gap: 1,
             }}
           >
-            {/* Only show Apply Leave button for regular users */}
-            {userIsUser && (
+            {/* Show Apply Leave button for regular users and managers */}
+            {(userIsUser || userIsManager) && (
               <Button
                 startIcon={<AssignmentIcon />}
                 sx={{
@@ -479,40 +599,147 @@ const LeaveRequestPage = () => {
                 }}
                 onClick={() => setTab(0)}
               >
-                APPLY LEAVE
+                Apply Leave
               </Button>
             )}
             <Button
               startIcon={<AccessTimeIcon />}
               sx={{
-                color: tab === (userIsUser ? 1 : 0) ? '#fff' : '#e0e0e0',
+                color:
+                  tab === (userIsUser || userIsManager ? 1 : 0)
+                    ? '#fff'
+                    : '#e0e0e0',
                 fontWeight: 600,
                 background:
-                  tab === (userIsUser ? 1 : 0)
+                  tab === (userIsUser || userIsManager ? 1 : 0)
                     ? 'rgba(255,255,255,0.12)'
                     : 'none',
                 borderRadius: 2,
                 width: { xs: '100%', sm: 'auto' },
               }}
-              onClick={() => setTab(userIsUser ? 1 : 0)}
+              onClick={() => setTab(userIsUser || userIsManager ? 1 : 0)}
             >
-              LEAVE HISTORY
+              Leave History
             </Button>
+            {/* Show Team Leave History button only for managers */}
+            {userIsManager && (
+              <Button
+                startIcon={<AccessTimeIcon />}
+                sx={{
+                  color: tab === 2 ? '#fff' : '#e0e0e0',
+                  fontWeight: 600,
+                  background: tab === 2 ? 'rgba(255,255,255,0.12)' : 'none',
+                  borderRadius: 2,
+                  width: { xs: '100%', sm: 'auto' },
+                }}
+                onClick={() => {
+                  setTab(2);
+                  loadTeamLeaves(1);
+                }}
+              >
+                My Team Leave History
+              </Button>
+            )}
           </Box>
         </Toolbar>
       </AppBar>
-      {/* Show Apply Leave form only for regular users */}
-      {userIsUser && tab === 0 ? (
+      {/* Show Apply Leave form for regular users and managers */}
+      {(userIsUser || userIsManager) && tab === 0 ? (
         <Box sx={{ pt: 4 }}>
           <LeaveForm onSubmit={handleApply} />
         </Box>
+      ) : tab === 2 && userIsManager ? (
+        // Show Team Leave History for managers
+        <Box sx={{ pt: 4 }}>
+          {teamLeavesLoading ? (
+            <Box display='flex' justifyContent='center' p={4}>
+              <CircularProgress />
+            </Box>
+          ) : teamLeavesError ? (
+            <Box display='flex' justifyContent='center' p={4}>
+              <Typography color='error'>{teamLeavesError}</Typography>
+            </Box>
+          ) : teamLeaves.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant='h6' color='textSecondary' gutterBottom>
+                No Team Leave History Found
+              </Typography>
+              <Typography variant='body2' color='textSecondary'>
+                {teamLeavesError
+                  ? teamLeavesError
+                  : "You don't have any team members or no leave requests have been submitted by your team members yet."}
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <LeaveHistory
+                leaves={teamLeaves}
+                isAdmin={false}
+                onAction={() => {}} // Managers can't approve/reject team leaves in this view
+                onWithdraw={undefined} // No withdraw in team view
+                title='My Team Leave History'
+                showNames={true} // Show team member names
+              />
+
+              {/* Team Pagination */}
+              {teamTotalPages > 1 && (
+                <Box display='flex' justifyContent='center' mt={2}>
+                  <Pagination
+                    count={teamTotalPages}
+                    page={teamCurrentPage}
+                    onChange={(_, page) => handleTeamPageChange(page)}
+                    color='primary'
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              )}
+
+              {/* Team Pagination Info */}
+              {teamLeaves.length > 0 && (
+                <Box display='flex' justifyContent='center' mt={1}>
+                  <Typography variant='body2' color='textSecondary'>
+                    Showing page {teamCurrentPage} of {teamTotalPages} (
+                    {teamLeaves.length} total records)
+                  </Typography>
+                </Box>
+              )}
+            </>
+          )}
+        </Box>
       ) : (
+        // Show regular leave history
         <Box sx={{ pt: 4 }}>
           <LeaveHistory
             leaves={leaves}
             isAdmin={userIsAdmin}
             onAction={handleAction}
+            onWithdraw={!userIsAdmin ? handleWithdraw : undefined} // Users and managers can withdraw their own leaves
           />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box display='flex' justifyContent='center' mt={2}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={(_, page) => handlePageChange(page)}
+                color='primary'
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          )}
+
+          {/* Pagination Info */}
+          {leaves.length > 0 && (
+            <Box display='flex' justifyContent='center' mt={1}>
+              <Typography variant='body2' color='textSecondary'>
+                Showing page {currentPage} of {totalPages} ({leaves.length}{' '}
+                total records)
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
       <LeaveApprovalDialog
@@ -521,6 +748,37 @@ const LeaveRequestPage = () => {
         onConfirm={handleConfirm}
         action={actionType || 'approved'}
       />
+
+      {/* Withdraw Confirmation Dialog */}
+      <Dialog
+        open={withdrawDialogOpen}
+        onClose={() => setWithdrawDialogOpen(false)}
+        aria-labelledby='withdraw-dialog-title'
+        aria-describedby='withdraw-dialog-description'
+      >
+        <DialogTitle id='withdraw-dialog-title'>
+          Withdraw Leave Request
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id='withdraw-dialog-description'>
+            Are you sure you want to withdraw this leave request? This action
+            cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setWithdrawDialogOpen(false)} color='primary'>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmWithdraw}
+            color='warning'
+            variant='contained'
+          >
+            Withdraw
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}

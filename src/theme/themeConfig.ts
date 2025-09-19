@@ -79,8 +79,8 @@ const darkPalette = {
     paper: '#1e1e1e',
   },
   text: {
-    primary: '#ffffff',
-    secondary: '#b0b0b0',
+    primary: '#8f8f8f',
+    secondary: '#8f8f8f',
   },
   divider: '#333333',
   action: {
@@ -265,6 +265,9 @@ export const createAppTheme = (mode: 'light' | 'dark') => {
             '--mui-palette-status-warning': palette.status.warning,
             '--mui-palette-status-info': palette.status.info,
             '--mui-palette-primary-main': palette.primary.main,
+          },
+          body: {
+            color: palette.text.primary,
           },
         },
       },

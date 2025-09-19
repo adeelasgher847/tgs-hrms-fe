@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   Box,
-  Avatar,
   Typography,
   Divider,
   Paper,
@@ -22,6 +21,7 @@ import type {
   EmployeeProfileAttendanceSummaryItem,
   EmployeeProfileLeaveHistoryItem,
 } from '../../api/employeeApi';
+import UserAvatar from '../common/UserAvatar';
 
 const EmployeeProfileView: React.FC = () => {
   const [profile, setProfile] = useState<EmployeeFullProfile | null>(null);
@@ -93,11 +93,16 @@ const EmployeeProfileView: React.FC = () => {
         }
         const res = await employeeApi.getEmployeeProfile(userId);
         setProfile(res);
-      } catch (e: any) {
-        if (e?.response?.status === 404) {
+      } catch (e: unknown) {
+        if (
+          e &&
+          typeof e === 'object' &&
+          'response' in e &&
+          (e as { response: { status: number } }).response.status === 404
+        ) {
           setError('Profile not found for the resolved user id.');
         } else {
-          setError(e?.message || 'Failed to load profile');
+          setError((e as Error)?.message || 'Failed to load profile');
         }
       } finally {
         setIsLoading(false);
@@ -150,23 +155,16 @@ const EmployeeProfileView: React.FC = () => {
         </Typography>
         <Divider sx={{ mb: 3 }} />
         <Box display='flex' alignItems='center' mb={3}>
-          <Avatar
-            sx={{
-              width: 80,
-              height: 80,
-              mr: 2,
-              fontSize: '2rem',
-              bgcolor: 'primary.main',
+          <UserAvatar
+            user={{
+              id: profile.id,
+              first_name: profile.name.split(' ')[0] || '',
+              last_name: profile.name.split(' ').slice(1).join(' ') || '',
+              profile_pic: profile.profile_pic,
             }}
-          >
-            {profile.name
-              ? profile.name
-                  .split(' ')
-                  .map(n => n[0])
-                  .join('')
-                  .toUpperCase()
-              : ''}
-          </Avatar>
+            size={80}
+            sx={{ mr: 2 }}
+          />
           <Box>
             <Typography variant='h6' fontWeight={600}>
               {profile.name}
@@ -224,13 +222,13 @@ const EmployeeProfileView: React.FC = () => {
                 .map(
                   (
                     log: EmployeeProfileAttendanceSummaryItem,
-                    index: number
+                    _index: number
                   ) => (
                     <TableRow
-                      key={index}
+                      key={_index}
                       sx={{
                         backgroundColor:
-                          index % 2 === 0 ? 'background.default' : 'grey.50',
+                          _index % 2 === 0 ? 'background.default' : 'grey.50',
                       }}
                     >
                       <TableCell>{log.date}</TableCell>

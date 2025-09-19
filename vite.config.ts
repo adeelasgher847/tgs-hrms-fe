@@ -5,7 +5,6 @@ import react from '@vitejs/plugin-react';
 import svgr from 'vite-plugin-svgr'; // ✅ SVG support
 import path from 'path';
 import { fileURLToPath } from 'url';
-import storybookTest from '@storybook/addon-vitest/vitest-plugin';
 
 // ✅ Fix __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -19,13 +18,21 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  // 🔊 Dev server on LAN IP & stable HMR
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      host: '192.168.0.141',
+      protocol: 'ws',
+      port: 5173,
+    },
+  },
   test: {
     projects: [
       {
         extends: true,
-        // plugins: [
-        //   storybookTest(),
-        // ],
         test: {
           name: 'storybook',
           browser: {

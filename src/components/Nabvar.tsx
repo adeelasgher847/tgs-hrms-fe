@@ -1,12 +1,11 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
-import AvatarOne from '../assets/NavbarAvatar/avatarone.jpg';
-import AvatarTwo from '../assets/NavbarAvatar/avatartwo.jpg';
-import AvatarThree from '../assets/NavbarAvatar/avatarthree.jpg';
-import AvatarFour from '../assets/NavbarAvatar/avatarfour.jpg';
-import AvatarProfile from '../assets/NavbarAvatar/ProfileAvatar.png';
-import { useLanguage } from '../context/LanguageContext';
+
+import { useLanguage } from '../hooks/useLanguage';
+import { useUser } from '../hooks/useUser';
+import { useProfilePicture } from '../context/ProfilePictureContext';
+import { getRoleDisplayName } from '../utils/roleUtils';
 
 import {
   AppBar,
@@ -15,45 +14,40 @@ import {
   IconButton,
   Typography,
   InputBase,
-  Avatar,
-  Stack,
   Badge,
   Menu,
   MenuItem,
   Divider,
   ListItemIcon,
-  ToggleButtonGroup,
-  ToggleButton,
+  Button,
 } from '@mui/material';
+import UserAvatar from './common/UserAvatar';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
-import { useState, useEffect } from 'react';
+
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
+import TeamMembersAvatar from './Teams/TeamMembersAvatar';
+import TeamMembersModal from './Teams/TeamMembersModal';
 
 const labels = {
   en: {
     search: 'Search',
-    myTask: 'My Task',
     members: 'Members',
     signout: 'Sign Out',
-    addAccount: 'Add Personal Account',
     adminProfile: 'Admin Profile',
     dylan: 'Dylan Hunter',
     email: 'Dylan.hunter@gmail.com',
   },
   ar: {
     search: 'بحث',
-    myTask: 'مهامي',
     members: 'الأعضاء',
     signout: 'تسجيل الخروج',
-    addAccount: 'إضافة حساب',
     adminProfile: 'ملف المشرف',
     dylan: 'ديلان هنتر',
     email: 'Dylan.hunter@gmail.com',
@@ -105,37 +99,26 @@ const Navbar: React.FC<NavbarProps> = ({
   onOpenInviteModal,
 }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [teamMembersModalOpen, setTeamMembersModalOpen] = React.useState(false);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const lang = labels[language];
-  const [user, setUser] = useState<{
-    name: string;
-    role: string;
-    email: string;
-    avatarUrl?: string;
-  } | null>(null);
+  const { user, clearUser } = useUser();
+  const { updateProfilePicture } = useProfilePicture();
 
-  useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      try {
-        const parsed = JSON.parse(userData);
-        console.log('Parsed user data:', parsed); // Debugging
-        setUser({
-          name: parsed.first_name || 'User',
-          email: parsed.email || '',
-          role: parsed.role.name || '',
-          avatarUrl: parsed.avatarUrl || undefined,
-        });
-      } catch {
-        console.error('Failed to parse user data from localStorage');
-        setUser(null);
-      }
-    } else {
-      console.warn('No user data found in localStorage');
+  // Initialize profile picture state when user data loads
+  React.useEffect(() => {
+    if (user?.profile_pic) {
+      updateProfilePicture(user.profile_pic);
     }
-  }, []);
+  }, [user?.profile_pic, updateProfilePicture]);
+
+  // Language dropdown state
+  const [langAnchorEl, setLangAnchorEl] = React.useState<null | HTMLElement>(
+    null
+  );
+  const langMenuOpen = Boolean(langAnchorEl);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -146,14 +129,32 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const handleLogout = () => {
+    // Clear all authentication and signup data
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
-    navigate('/');
+    localStorage.removeItem('permissions');
+    localStorage.removeItem('rememberedLogin');
+    localStorage.removeItem('companyDetails');
+    localStorage.removeItem('signupSessionId');
+
+    // Clear user context
+    clearUser();
+
+    // Navigate to login page with replace to prevent back navigation
+    navigate('/', { replace: true });
+  };
+
+  const handleOpenTeamMembersModal = () => {
+    setTeamMembersModalOpen(true);
+  };
+
+  const handleCloseTeamMembersModal = () => {
+    setTeamMembersModalOpen(false);
   };
 
   const textColor = darkMode ? '#8f8f8f' : '#000';
-  const { setLanguage } = useLanguage();
+  // Language context available if needed
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -229,7 +230,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     width: '31px',
                     height: '31px',
                   }}
-                  onClick={onOpenInviteModal}
+                  onClick={handleOpenTeamMembersModal}
                 />
               </Box>
             </Box>
@@ -251,7 +252,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 gap: { xs: 0.2, md: 2 },
               }}
             >
-              <IconButton
+              {/* <IconButton
                 sx={{
                   backgroundColor: '#4b4f73',
                   color: 'white',
@@ -260,35 +261,29 @@ const Navbar: React.FC<NavbarProps> = ({
                 }}
               >
                 <InfoOutlinedIcon fontSize='small' />
-              </IconButton>
-
-              <Stack
-                direction='row'
-                spacing={-1}
-                sx={{ display: { xs: 'none', sm: 'flex' } }}
+              </IconButton> */}
+              <Button
+                variant='text'
+                size='small'
+                onClick={e => setLangAnchorEl(e.currentTarget)}
+                sx={{
+                  minWidth: 0,
+                  px: 1,
+                  color: textColor,
+                  fontWeight: 600,
+                }}
               >
-                {[AvatarOne, AvatarTwo, AvatarThree, AvatarFour].map(
-                  (src, index) => (
-                    <Avatar
-                      key={index}
-                      alt={`User ${index + 1}`}
-                      src={src}
-                      sx={{ width: 32, height: 32 }}
-                    />
-                  )
-                )}
-                <Avatar
-                  sx={{ width: 32, height: 32, backgroundColor: '#4b4f73' }}
-                >
-                  <AddIcon
-                    sx={{ cursor: 'pointer' }}
-                    onClick={onOpenInviteModal}
-                    fontSize='small'
-                  />
-                </Avatar>
-              </Stack>
+                {language === 'en' ? 'EN' : 'عربي'}
+              </Button>
+              <TeamMembersAvatar
+                maxAvatars={5}
+                onOpenInviteModal={onOpenInviteModal}
+                darkMode={darkMode}
+              />
 
-              <IconButton>
+              <IconButton
+                sx={{ xs: { padding: '8px' }, md: { padding: '0px' } }}
+              >
                 <Badge variant='dot' color='error'>
                   <NotificationsNoneOutlinedIcon sx={{ color: textColor }} />
                 </Badge>
@@ -306,33 +301,17 @@ const Navbar: React.FC<NavbarProps> = ({
                   sx={{ fontWeight: 600, fontSize: '14px' }}
                   color={textColor}
                 >
-                  {user?.name || 'User'}
+                  {user ? `${user.first_name} ${user.last_name}` : 'User'}
                 </Typography>
                 <Typography variant='caption' color={textColor}>
-                  {user?.role == 'Admin'
-                    ? 'Admin'
-                    : user?.role == 'Staff'
-                      ? 'Staff Profile'
-                      : 'User'}
+                  {getRoleDisplayName(user?.role)}
                 </Typography>
               </Box>
               <IconButton onClick={handleMenuOpen}>
-                <Avatar
-                  alt={user?.name || 'User'}
-                  src={user?.avatarUrl || AvatarProfile}
-                  sx={{
-                    width: '45px',
-                    height: '45px',
-                    border: '1px solid #dee2e6',
-                    p: '3px',
-                    '& img': { borderRadius: '50%' },
-                  }}
-                >
-                  {!user?.avatarUrl && user?.name ? user.name[0] : null}
-                </Avatar>
+                {user && <UserAvatar user={user} size={50} clickable={false} />}
               </IconButton>
               {/* Language Toggle */}
-              <ToggleButtonGroup
+              {/* <ToggleButtonGroup
                 value={language}
                 exclusive
                 onChange={(_, value) => value && setLanguage(value)}
@@ -367,7 +346,42 @@ const Navbar: React.FC<NavbarProps> = ({
                 >
                   عربي
                 </ToggleButton>
-              </ToggleButtonGroup>
+              </ToggleButtonGroup> */}
+              <Menu
+                anchorEl={langAnchorEl}
+                open={langMenuOpen}
+                onClose={() => setLangAnchorEl(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                  elevation: 4,
+                  sx: {
+                    borderRadius: '8px',
+                    minWidth: 80,
+                    p: 0,
+                  },
+                }}
+              >
+                {language === 'en' ? (
+                  <MenuItem
+                    onClick={() => {
+                      setLanguage('ar');
+                      setLangAnchorEl(null);
+                    }}
+                  >
+                    عربي
+                  </MenuItem>
+                ) : (
+                  <MenuItem
+                    onClick={() => {
+                      setLanguage('en');
+                      setLangAnchorEl(null);
+                    }}
+                  >
+                    EN
+                  </MenuItem>
+                )}
+              </Menu>
             </Box>
             <Box>
               <IconButton
@@ -399,16 +413,10 @@ const Navbar: React.FC<NavbarProps> = ({
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-          <Avatar
-            alt={user?.name || 'User'}
-            src={user?.avatarUrl || AvatarProfile}
-            sx={{ width: 50, height: 50 }}
-          >
-            {!user?.avatarUrl && user?.name ? user.name[0] : null}
-          </Avatar>
+          {user && <UserAvatar user={user} size={40} clickable={false} />}
           <Box>
             <Typography fontWeight={600} color={textColor}>
-              {user?.name || 'User'}
+              {user ? `${user.first_name} ${user.last_name}` : 'User'}
             </Typography>
             <Typography variant='body2' color={textColor}>
               {user?.email || ''}
@@ -416,16 +424,13 @@ const Navbar: React.FC<NavbarProps> = ({
           </Box>
         </Box>
         <Divider sx={{ mb: 1 }} />
-        <MenuItem onClick={handleMenuClose}>
-          <ListItemIcon>
-            <AssignmentOutlinedIcon
-              fontSize='small'
-              sx={{ color: textColor }}
-            />
-          </ListItemIcon>
-          <Typography color={textColor}>{lang.myTask}</Typography>
-        </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
+
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            navigate('/dashboard/EmployeeManager');
+          }}
+        >
           <ListItemIcon>
             <GroupOutlinedIcon fontSize='small' sx={{ color: textColor }} />
           </ListItemIcon>
@@ -448,14 +453,16 @@ const Navbar: React.FC<NavbarProps> = ({
           </ListItemIcon>
           <Typography color={textColor}>{lang.signout}</Typography>
         </MenuItem>
-        <Divider sx={{ my: 1 }} />
-        <MenuItem onClick={handleMenuClose}>
-          <ListItemIcon>
-            <PersonAddAltIcon fontSize='small' sx={{ color: textColor }} />
-          </ListItemIcon>
-          <Typography color={textColor}>{lang.addAccount}</Typography>
-        </MenuItem>
+        {/* <Divider sx={{ my: 1 }} /> */}
       </Menu>
+
+      {/* Team Members Modal for Mobile */}
+      <TeamMembersModal
+        open={teamMembersModalOpen}
+        onClose={handleCloseTeamMembersModal}
+        onOpenInviteModal={onOpenInviteModal}
+        darkMode={darkMode}
+      />
     </Box>
   );
 };

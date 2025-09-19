@@ -44,7 +44,7 @@ const AddHolidayDialog: React.FC<AddHolidayDialogProps> = ({
     const newHoliday: Holiday = {
       id: uuidv4(),
       title: title.trim(),
-      date: date?.toISOString().split('T')[0],
+      date: date?.toISOString().split('T')[0] || '',
       description: description.trim(),
     };
 

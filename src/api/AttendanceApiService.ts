@@ -24,13 +24,14 @@ class AttendanceApiService {
   async getUserAttendance(userId?: string): Promise<AttendanceEvent[]> {
     const url = userId ? `${BASE}?userId=${userId}` : BASE;
     const res = await axiosInstance.get<AttendanceEvent[]>(url);
-    return (res.data as any) || [];
+    return (res.data as unknown) || [];
   }
 
   // Get all attendance events (admin)
   async getAllAttendance(): Promise<AttendanceEvent[]> {
     const res = await axiosInstance.get<AttendanceEvent[]>(`${BASE}/all`);
-    return (res.data as any) || [];
+
+    return (res.data as unknown) || [];
   }
 
   // Create a new check-in / check-out event.
@@ -42,11 +43,9 @@ class AttendanceApiService {
 
   // Fetch daily summaries for the current user (or for a provided userId if admin wants to view another user)
   async getUserDailySummary(userId?: string): Promise<UserDailySummary[]> {
-    console.log('🔥 Fetching User Daily Summary for userId:', userId);
     const url = userId ? `${BASE}?userId=${userId}` : BASE;
     const res = await axiosInstance.get<UserDailySummary[]>(url);
-    console.log(url);
-    console.log('🔥 User Daily Summary:', res.data);
+
     // The backend returns an array of { date, checkIn, checkOut, workedHours }
     return res.data || [];
   }
@@ -55,10 +54,7 @@ class AttendanceApiService {
   async getTodaySummary(userId?: string): Promise<UserDailySummary | null> {
     const all = await this.getUserDailySummary(userId);
     const today = new Date().toISOString().split('T')[0];
-    console.log(
-      '🔥 Today Summary:',
-      all.find(d => d.date === today)
-    );
+
     return all.find(d => d.date === today) || null;
   }
 }

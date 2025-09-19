@@ -14,7 +14,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface Designation {
   id: string;
@@ -40,12 +40,14 @@ export default function DesignationModal({
 }: DesignationModalProps) {
   const { language } = useLanguage();
   const getText = (en: string, ar: string) => (language === 'ar' ? ar : en);
-
   const theme = useTheme();
+
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [title, setTitle] = useState('');
   const [titleAr, setTitleAr] = useState('');
+  const [originalTitle, setOriginalTitle] = useState('');
+  const [originalTitleAr, setOriginalTitleAr] = useState('');
   const [errors, setErrors] = useState<{ title?: string; titleAr?: string }>(
     {}
   );
@@ -53,13 +55,22 @@ export default function DesignationModal({
   useEffect(() => {
     if (designation) {
       setTitle(designation.title);
-      setTitleAr(designation.titleAr);
+      setTitleAr(designation.titleAr || '');
+      setOriginalTitle(designation.title);
+      setOriginalTitleAr(designation.titleAr || '');
     } else {
       setTitle('');
       setTitleAr('');
+      setOriginalTitle('');
+      setOriginalTitleAr('');
     }
     setErrors({});
   }, [designation, open]);
+
+  // Check if form has changes
+  const hasChanges = designation
+    ? title !== originalTitle || titleAr !== originalTitleAr
+    : title.trim() !== '' || titleAr.trim() !== '';
 
   const validateForm = () => {
     const newErrors: { title?: string; titleAr?: string } = {};
@@ -106,14 +117,23 @@ export default function DesignationModal({
 
   return (
     <Dialog
+      className='Ramish first'
       open={open}
       onClose={handleClose}
-      maxWidth='sm'
-      fullWidth
-      fullScreen={isMobile}
+      fullScreen={false} // ❌ force disable fullscreen
       PaperProps={{
         sx: {
-          m: isMobile ? 0 : 2,
+          width: '100%',
+          maxWidth: 600, // set a max width for mobile
+          borderRadius: 1,
+          m: 2, // margin around
+        },
+      }}
+      sx={{
+        '& .MuiDialog-paper': {
+          width: '100%',
+          maxWidth: 600,
+          margin: '16px', // keeps it centered with spacing
         },
       }}
       dir={isRTL ? 'rtl' : 'ltr'}
@@ -157,7 +177,7 @@ export default function DesignationModal({
             }}
           />
 
-          <TextField
+          {/* <TextField
             label={getText(
               'Designation Title (Arabic - Optional)',
               'عنوان المسمى الوظيفي (بالعربية - اختياري)'
@@ -171,7 +191,7 @@ export default function DesignationModal({
             inputProps={{
               dir: 'rtl',
             }}
-          />
+          /> */}
         </Box>
       </DialogContent>
 
@@ -182,7 +202,7 @@ export default function DesignationModal({
         <Button
           onClick={handleSubmit}
           variant='contained'
-          disabled={!title.trim()}
+          disabled={!hasChanges}
           size='large'
           sx={{ backgroundColor: '#464b8a' }}
         >

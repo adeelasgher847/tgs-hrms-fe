@@ -1,11 +1,7 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useState } from 'react';
+import type { LanguageContextType } from '../types/context';
 
-interface LanguageContextType {
-  language: 'en' | 'ar';
-  setLanguage: (lang: 'en' | 'ar') => void;
-}
-
-const LanguageContext = createContext<LanguageContextType | undefined>(
+export const LanguageContext = createContext<LanguageContextType | undefined>(
   undefined
 );
 
@@ -19,12 +15,4 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
       {children}
     </LanguageContext.Provider>
   );
-};
-
-export const useLanguage = (): LanguageContextType => {
-  const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error('useLanguage must be used within LanguageProvider');
-  }
-  return context;
 };

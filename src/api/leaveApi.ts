@@ -16,7 +16,7 @@ export interface LeaveResponse {
   to_date: string;
   reason: string;
   type: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
   applied?: string; // Applied date
   created_at?: string;
   updated_at?: string;
@@ -48,22 +48,80 @@ export const leaveApi = {
       type: data.type,
     };
 
-    console.log('Sending leave request:', apiData);
     const response = await axiosInstance.post('/leaves', apiData);
     return response.data;
   },
 
-  // Get Leaves for User
-  getUserLeaves: async (userId?: string): Promise<LeaveResponse[]> => {
-    const params = userId ? { userId } : {};
+  // Get Leaves for User with pagination
+  getUserLeaves: async (
+    userId?: string,
+    page: number = 1
+  ): Promise<{
+    items: LeaveResponse[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> => {
+    const params = userId ? { userId, page } : { page };
     const response = await axiosInstance.get('/leaves', { params });
-    return response.data;
+
+    // Handle both paginated and non-paginated responses
+    if (response.data && response.data.items) {
+      return response.data;
+    } else if (Array.isArray(response.data)) {
+      return {
+        items: response.data,
+        total: response.data.length,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
+    } else {
+      return {
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
+    }
   },
 
-  // Get All Leaves (Admin Only)
-  getAllLeaves: async (): Promise<LeaveWithUser[]> => {
-    const response = await axiosInstance.get('/leaves/all');
-    return response.data;
+  // Get All Leaves (Admin Only) with pagination
+  getAllLeaves: async (
+    page: number = 1
+  ): Promise<{
+    items: LeaveWithUser[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> => {
+    const response = await axiosInstance.get('/leaves/all', {
+      params: { page },
+    });
+
+    // Handle both paginated and non-paginated responses
+    if (response.data && response.data.items) {
+      return response.data;
+    } else if (Array.isArray(response.data)) {
+      return {
+        items: response.data,
+        total: response.data.length,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
+    } else {
+      return {
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
+    }
   },
 
   // Update Leave Status (Admin Only)
@@ -73,5 +131,47 @@ export const leaveApi = {
   ): Promise<LeaveResponse> => {
     const response = await axiosInstance.patch(`/leaves/${id}`, { status });
     return response.data;
+  },
+
+  // Withdraw Leave Request (User can withdraw their own pending requests)
+  withdrawLeave: async (id: string): Promise<LeaveResponse> => {
+    const response = await axiosInstance.patch(`/leaves/${id}/withdraw`);
+    return response.data;
+  },
+
+  // Get Team Leaves (Manager Only) with pagination
+  getTeamLeaves: async (
+    page: number = 1
+  ): Promise<{
+    items: LeaveWithUser[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> => {
+    const response = await axiosInstance.get('/leaves/team', {
+      params: { page },
+    });
+
+    // Handle both paginated and non-paginated responses
+    if (response.data && response.data.items) {
+      return response.data;
+    } else if (Array.isArray(response.data)) {
+      return {
+        items: response.data,
+        total: response.data.length,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
+    } else {
+      return {
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
+    }
   },
 };
