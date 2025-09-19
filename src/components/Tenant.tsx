@@ -21,7 +21,12 @@ import {
   DialogActions,
   Drawer,
 } from '@mui/material';
-import { Add as AddIcon, Business as BusinessIcon, Warning as WarningIcon, Close as CloseIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Business as BusinessIcon,
+  Warning as WarningIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
 import companyApi from '../api/companyApi';
 import type { BackendCompany, CompanyDto } from '../api/companyApi';
 import { useOutletContext } from 'react-router-dom';
@@ -213,9 +218,9 @@ export const TenantPage = () => {
 
   // Localized delete message including tenant name
   const deleteMessage = selectedTenant
-    ? (language === 'ar'
-        ? `هل أنت متأكد أنك تريد حذف المستأجر "${selectedTenant.name}"؟ لا يمكن التراجع عن هذا الإجراء.`
-        : `Are you sure you want to delete the tenant "${selectedTenant.name}"? This action cannot be undone.`)
+    ? language === 'ar'
+      ? `هل أنت متأكد أنك تريد حذف المستأجر "${selectedTenant.name}"؟ لا يمكن التراجع عن هذا الإجراء.`
+      : `Are you sure you want to delete the tenant "${selectedTenant.name}"? This action cannot be undone.`
     : lang.confirmDelete;
 
   return (
@@ -558,7 +563,9 @@ export const TenantPage = () => {
           </DialogTitle>
           <DialogContent>
             <Box sx={{ textAlign: 'center' }}>
-              <WarningIcon sx={{ fontSize: 64, color: 'warning.main', mb: 2 }} />
+              <WarningIcon
+                sx={{ fontSize: 64, color: 'warning.main', mb: 2 }}
+              />
               <Typography variant='body1' sx={{ mb: 2, lineHeight: 1.6 }}>
                 {deleteMessage}
               </Typography>
@@ -575,7 +582,11 @@ export const TenantPage = () => {
             >
               {lang.cancel}
             </Button>
-            <Button variant='contained' color='error' onClick={handleDeleteCompany}>
+            <Button
+              variant='contained'
+              color='error'
+              onClick={handleDeleteCompany}
+            >
               {lang.delete}
             </Button>
           </DialogActions>

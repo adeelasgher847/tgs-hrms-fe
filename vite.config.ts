@@ -18,6 +18,17 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  // 🔊 Dev server on LAN IP & stable HMR
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      host: '192.168.0.141',
+      protocol: 'ws',
+      port: 5173,
+    },
+  },
   test: {
     projects: [
       {

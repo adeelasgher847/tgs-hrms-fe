@@ -71,7 +71,9 @@ const AttendanceTable = () => {
   const [teamTotalItems, setTeamTotalItems] = useState(0);
 
   // Employee filter
-  const [employees, setEmployees] = useState<{ id: string; name: string }[]>([]);
+  const [employees, setEmployees] = useState<{ id: string; name: string }[]>(
+    []
+  );
   const [selectedEmployee, setSelectedEmployee] = useState('');
 
   const toDisplayTime = (iso: string | null) =>
@@ -96,13 +98,13 @@ const AttendanceTable = () => {
         (a, b) =>
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
-    
+
     const sessions: AttendanceRecord[] = [];
     const openByKey = new Map<
       string,
       { checkIn: AttendanceEvent | null; user?: { first_name?: string } }
     >();
-    
+
     for (const ev of events) {
       const dt = new Date((ev as any).timestamp);
       const date = formatLocalYMD(dt); // LOCAL date (no UTC shift)
@@ -110,7 +112,7 @@ const AttendanceTable = () => {
       if (!openByKey.has(key))
         openByKey.set(key, { checkIn: null, user: (ev as any).user });
       const bucket = openByKey.get(key)!;
-      
+
       if ((ev as any).type === 'check-in') {
         // If a previous check-in wasn't closed, push it as an open session
         if (bucket.checkIn) {
@@ -157,7 +159,7 @@ const AttendanceTable = () => {
         }
       }
     }
-    
+
     // Flush any open sessions without checkout
     for (const [key, val] of openByKey.entries()) {
       if (val.checkIn) {
@@ -175,7 +177,7 @@ const AttendanceTable = () => {
         });
       }
     }
-    
+
     // Sort by date (desc) then time (desc)
     sessions.sort((a, b) => {
       if (a.date !== b.date) return a.date < b.date ? 1 : -1; // string compare
@@ -183,7 +185,7 @@ const AttendanceTable = () => {
       const bt = b.checkInISO ? new Date(b.checkInISO).getTime() : 0;
       return bt - at;
     });
-    
+
     return sessions;
   };
 
@@ -213,40 +215,35 @@ const AttendanceTable = () => {
   // Fetch employees from attendance data
   const fetchEmployeesFromAttendance = async () => {
     try {
-      console.log('Fetching employees from attendance data...');
-      
-      // Get all attendance data to extract unique employees
-      const attendanceResponse = await attendanceApi.getAllAttendance(1);
-      
-      if (attendanceResponse && attendanceResponse.items) {
-        const uniqueEmployees = new Map();
-        
-        // Extract unique employees from attendance data
-        attendanceResponse.items.forEach((item: any) => {
-          if (item.user_id && item.user?.first_name) {
-            const employeeId = item.user_id;
-            const employeeName = item.user.first_name + (item.user.last_name ? ` ${item.user.last_name}` : '');
-            
-            // Only add if not already added
-            if (!uniqueEmployees.has(employeeId)) {
-              uniqueEmployees.set(employeeId, {
-                id: employeeId,
-                name: employeeName
-              });
+      // Aggregate all unique employees from all attendance pages
+      let page = 1;
+      let totalPages = 1;
+      const uniqueEmployees = new Map();
+
+      do {
+        const attendanceResponse = await attendanceApi.getAllAttendance(page);
+        if (attendanceResponse && attendanceResponse.items) {
+          attendanceResponse.items.forEach((item: any) => {
+            if (item.user_id && item.user?.first_name) {
+              const employeeId = item.user_id;
+              const employeeName =
+                item.user.first_name +
+                (item.user.last_name ? ` ${item.user.last_name}` : '');
+              if (!uniqueEmployees.has(employeeId)) {
+                uniqueEmployees.set(employeeId, {
+                  id: employeeId,
+                  name: employeeName,
+                });
+              }
             }
-          }
-        });
-        
-        const employeeList = Array.from(uniqueEmployees.values());
-        console.log('Employees from attendance:', employeeList);
-        setEmployees(employeeList);
-      } else {
-        console.log('No attendance data found');
-        setEmployees([]);
-      }
-      
+          });
+          totalPages = attendanceResponse.totalPages || 1;
+        }
+        page++;
+      } while (page <= totalPages);
+
+      setEmployees(Array.from(uniqueEmployees.values()));
     } catch (error) {
-      console.error('Error fetching employees from attendance:', error);
       setEmployees([]);
     }
   };
@@ -317,19 +314,18 @@ const AttendanceTable = () => {
       setTotalPages(response.totalPages || 1);
       setTotalItems(response.total || 0);
 
-      const events: AttendanceEvent[] = (response.items as AttendanceEvent[]) || [];
-      
+      const events: AttendanceEvent[] =
+        (response.items as AttendanceEvent[]) || [];
+
       const rows = buildFromEvents(
-        events, 
-        currentUser.id, 
+        events,
+        currentUser.id,
         isAdminFlag && effectiveView === 'all'
       );
-      
+
       setAttendanceData(rows);
       setFilteredData(rows);
-
     } catch (error) {
-      console.error('Error fetching attendance:', error);
       setAttendanceData([]);
       setFilteredData([]);
     } finally {
@@ -365,7 +361,7 @@ const AttendanceTable = () => {
     setSelectedEmployee('');
     setStartDate('');
     setEndDate('');
-    
+
     // Fetch employees from attendance data first, then attendance
     await fetchEmployeesFromAttendance();
     fetchAttendance(1, 'all', undefined, '', '');
@@ -491,24 +487,25 @@ const AttendanceTable = () => {
       {/* My Attendance Tab Content */}
       {(tab === 0 || isAdminUser) && (
         <>
-          <Typography variant="h6" gutterBottom mb={2}>
-            {isAdminUser 
-              ? (adminView === 'all' ? 'All Employees Attendance' : 'My Attendance')
-              : 'Attendance Sessions'
-            }
+          <Typography variant='h6' gutterBottom mb={2}>
+            {isAdminUser
+              ? adminView === 'all'
+                ? 'All Employees Attendance'
+                : 'My Attendance'
+              : 'Attendance Sessions'}
           </Typography>
 
           <Box
-            display="flex"
+            display='flex'
             gap={2}
             mb={2}
-            flexWrap="wrap"
-            alignItems="center"
+            flexWrap='wrap'
+            alignItems='center'
           >
             {/* Employee Dropdown - Only show for All Attendance */}
             {isAdminUser && adminView === 'all' && (
               <TextField
-                label="Employee"
+                label='Employee'
                 select
                 value={selectedEmployee}
                 onChange={e => handleEmployeeChange(e.target.value)}
@@ -530,7 +527,7 @@ const AttendanceTable = () => {
                   },
                 }}
               >
-                <MenuItem value="">All Employees</MenuItem>
+                <MenuItem value=''>All Employees</MenuItem>
                 {employees.map(emp => (
                   <MenuItem key={emp.id} value={emp.id}>
                     {emp.name}
@@ -541,8 +538,8 @@ const AttendanceTable = () => {
 
             {/* Date Filters - Always show */}
             <TextField
-              label="Start Date"
-              type="date"
+              label='Start Date'
+              type='date'
               InputLabelProps={{ shrink: true }}
               value={startDate}
               onChange={e => handleStartDateChange(e.target.value)}
@@ -554,8 +551,8 @@ const AttendanceTable = () => {
             />
 
             <TextField
-              label="End Date"
-              type="date"
+              label='End Date'
+              type='date'
               InputLabelProps={{ shrink: true }}
               value={endDate}
               onChange={e => handleEndDateChange(e.target.value)}
@@ -565,18 +562,18 @@ const AttendanceTable = () => {
                 },
               }}
             />
-            
-            <Button variant="outlined" onClick={clearFilters}>
+
+            <Button variant='outlined' onClick={clearFilters}>
               Clear Filter
             </Button>
           </Box>
-          
+
           <Paper elevation={3} sx={{ boxShadow: 'none' }}>
             <TableContainer>
               <Table>
                 <TableHead>
                   <TableRow>
-                    {(isAdminLike && adminView === 'all') && (
+                    {isAdminLike && adminView === 'all' && (
                       <TableCell sx={{ fontWeight: 'bold' }}>
                         Employee Name
                       </TableCell>
@@ -592,14 +589,17 @@ const AttendanceTable = () => {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={(isAdminLike && adminView === 'all') ? 5 : 4} align="center">
+                      <TableCell
+                        colSpan={isAdminLike && adminView === 'all' ? 5 : 4}
+                        align='center'
+                      >
                         <CircularProgress />
                       </TableCell>
                     </TableRow>
                   ) : filteredData.length > 0 ? (
                     filteredData.map(record => (
                       <TableRow key={record.id}>
-                        {(isAdminLike && adminView === 'all') && (
+                        {isAdminLike && adminView === 'all' && (
                           <TableCell>
                             {record.user?.first_name || 'N/A'}
                           </TableCell>
@@ -612,7 +612,10 @@ const AttendanceTable = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={(isAdminLike && adminView === 'all') ? 5 : 4} align="center">
+                      <TableCell
+                        colSpan={isAdminLike && adminView === 'all' ? 5 : 4}
+                        align='center'
+                      >
                         No attendance records found.
                       </TableCell>
                     </TableRow>
@@ -624,12 +627,12 @@ const AttendanceTable = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <Box display="flex" justifyContent="center" mt={2}>
+            <Box display='flex' justifyContent='center' mt={2}>
               <Pagination
                 count={totalPages}
                 page={currentPage}
                 onChange={(_, page) => handlePageChange(page)}
-                color="primary"
+                color='primary'
                 showFirstButton
                 showLastButton
               />
@@ -638,8 +641,8 @@ const AttendanceTable = () => {
 
           {/* Pagination Info */}
           {totalItems > 0 && (
-            <Box display="flex" justifyContent="center" mt={1}>
-              <Typography variant="body2" color="textSecondary">
+            <Box display='flex' justifyContent='center' mt={1}>
+              <Typography variant='body2' color='textSecondary'>
                 Showing page {currentPage} of {totalPages} ({totalItems} total
                 records)
               </Typography>
@@ -652,21 +655,21 @@ const AttendanceTable = () => {
       {tab === 1 && isManager && !isAdminUser && (
         <Box>
           <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
+            display='flex'
+            justifyContent='space-between'
+            alignItems='center'
             mb={2}
           >
-            <Typography variant="h6">Team Attendance</Typography>
+            <Typography variant='h6'>Team Attendance</Typography>
           </Box>
 
           {teamLoading ? (
-            <Box display="flex" justifyContent="center" py={4}>
+            <Box display='flex' justifyContent='center' py={4}>
               <CircularProgress />
             </Box>
           ) : teamError ? (
-            <Box display="flex" justifyContent="center" py={4}>
-              <Typography color="error">{teamError}</Typography>
+            <Box display='flex' justifyContent='center' py={4}>
+              <Typography color='error'>{teamError}</Typography>
             </Box>
           ) : (
             <>
@@ -695,7 +698,7 @@ const AttendanceTable = () => {
                     <TableBody>
                       {teamAttendance.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} align="center">
+                          <TableCell colSpan={5} align='center'>
                             No team attendance records found.
                           </TableCell>
                         </TableRow>
@@ -724,12 +727,12 @@ const AttendanceTable = () => {
 
               {/* Pagination */}
               {teamTotalPages > 1 && (
-                <Box display="flex" justifyContent="center" mt={2}>
+                <Box display='flex' justifyContent='center' mt={2}>
                   <Pagination
                     count={teamTotalPages}
                     page={teamCurrentPage}
                     onChange={(_, page) => handleTeamPageChange(page)}
-                    color="primary"
+                    color='primary'
                     showFirstButton
                     showLastButton
                   />
@@ -738,8 +741,8 @@ const AttendanceTable = () => {
 
               {/* Pagination Info */}
               {teamTotalItems > 0 && (
-                <Box display="flex" justifyContent="center" mt={1}>
-                  <Typography variant="body2" color="textSecondary">
+                <Box display='flex' justifyContent='center' mt={1}>
+                  <Typography variant='body2' color='textSecondary'>
                     Showing page {teamCurrentPage} of {teamTotalPages} (
                     {teamTotalItems} total records)
                   </Typography>

@@ -43,9 +43,15 @@ function App() {
               <Route path='/reset-password' element={<ResetPassword />} />
               <Route path='/confirm-password' element={<ConfirmPassword />} />
               <Route path='/Signup' element={<Signup />} />
-              <Route path='/signup/company-details' element={<CompanyDetails />} />
+              <Route
+                path='/signup/company-details'
+                element={<CompanyDetails />}
+              />
               <Route path='/signup/select-plan' element={<SelectPlan />} />
-              <Route path='/signup/confirm-payment' element={<ConfirmPayment />} />
+              <Route
+                path='/signup/confirm-payment'
+                element={<ConfirmPayment />}
+              />
               <Route path='/signup/success' element={<SignupSuccess />} />
               <Route
                 path='/dashboard'

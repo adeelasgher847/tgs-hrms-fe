@@ -235,7 +235,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
                 {lang.manager}
               </InputLabel>
               <Select
-                value={formData.manager_id}
+                value={formData.manager_id || ''}
                 onChange={handleChange('manager_id')}
                 required
                 label={lang.manager}

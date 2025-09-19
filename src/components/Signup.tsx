@@ -115,7 +115,9 @@ const Signup: React.FC = () => {
     !formData.confirmPassword ||
     Object.values(fieldErrors).some(Boolean);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
@@ -135,33 +137,54 @@ const Signup: React.FC = () => {
         phone: formData.phone.trim(),
       };
 
-      console.log('Sending data:', personalDetails);
       const response = await signupApi.createPersonalDetails(personalDetails);
-      
+
       setSuccess('Personal details saved successfully!');
       setSnackbar({
         open: true,
-        message: lang === 'ar' ? 'تم إنشاء الحساب بنجاح!' : 'Personal details saved successfully!',
+        message:
+          lang === 'ar'
+            ? 'تم إنشاء الحساب بنجاح!'
+            : 'Personal details saved successfully!',
         severity: 'success',
       });
-      
+
       // Store signupSessionId in localStorage for next steps
       localStorage.setItem('signupSessionId', response.signupSessionId);
-      
+      // Temporarily store email & password in sessionStorage so we can auto-login after payment
+      // Use sessionStorage instead of localStorage so it is cleared when the tab/window closes
+      try {
+        sessionStorage.setItem(
+          'pendingSignupCredentials',
+          JSON.stringify({
+            email: personalDetails.email,
+            password: personalDetails.password,
+          })
+        );
+      } catch (e) {
+        // Ignore storage errors
+        // Ignore storage errors
+      }
+
       // Redirect to next step (company details) after a short delay
       setTimeout(() => {
         navigate('/signup/company-details');
       }, 2000);
-
     } catch (err: any) {
-      console.error('Signup error:', err);
-      
+
       // Handle different error types
       if (err.response?.data?.message) {
         const errorData = err.response.data.message;
-        if (typeof errorData === 'object' && errorData.field && errorData.message) {
+        if (
+          typeof errorData === 'object' &&
+          errorData.field &&
+          errorData.message
+        ) {
           const field = String(errorData.field) as keyof typeof fieldErrors;
-          setFieldErrors(prev => ({ ...prev, [field]: String(errorData.message) }));
+          setFieldErrors(prev => ({
+            ...prev,
+            [field]: String(errorData.message),
+          }));
           setError(null);
         } else {
           setError(errorData);
@@ -318,7 +341,7 @@ const Signup: React.FC = () => {
                       <Typography
                         component='label'
                         htmlFor='first_name'
-                        sx={{ fontWeight: 400, fontSize: '14px'}}
+                        sx={{ fontWeight: 400, fontSize: '14px' }}
                       >
                         {lang === 'ar' ? 'الاسم الأول' : 'First Name'}
                       </Typography>
@@ -344,7 +367,8 @@ const Signup: React.FC = () => {
                             '&.Mui-focused fieldset': { border: 'none' },
                             '&:hover': { backgroundColor: '#eee' },
                             '&.Mui-focused': {
-                              backgroundColor: theme => theme.palette.background.paper,
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
                             },
                           },
                           '& input': {
@@ -386,7 +410,8 @@ const Signup: React.FC = () => {
                             '&.Mui-focused fieldset': { border: 'none' },
                             '&:hover': { backgroundColor: '#eee' },
                             '&.Mui-focused': {
-                              backgroundColor: theme => theme.palette.background.paper,
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
                             },
                           },
                           '& input': {
@@ -434,7 +459,8 @@ const Signup: React.FC = () => {
                             '&.Mui-focused fieldset': { border: 'none' },
                             '&:hover': { backgroundColor: '#eee' },
                             '&.Mui-focused': {
-                              backgroundColor: theme => theme.palette.background.paper,
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
                             },
                           },
                           '& input': {
@@ -477,7 +503,8 @@ const Signup: React.FC = () => {
                             '&.Mui-focused fieldset': { border: 'none' },
                             '&:hover': { backgroundColor: '#eee' },
                             '&.Mui-focused': {
-                              backgroundColor: theme => theme.palette.background.paper,
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
                             },
                           },
                           '& input': {
@@ -524,7 +551,8 @@ const Signup: React.FC = () => {
                             '&.Mui-focused fieldset': { border: 'none' },
                             '&:hover': { backgroundColor: '#eee' },
                             '&.Mui-focused': {
-                              backgroundColor: theme => theme.palette.background.paper,
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
                             },
                           },
                           '& input': {
@@ -567,7 +595,9 @@ const Signup: React.FC = () => {
                         htmlFor='confirmPassword'
                         sx={{ fontWeight: 400, fontSize: '14px' }}
                       >
-                        {lang === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
+                        {lang === 'ar'
+                          ? 'تأكيد كلمة المرور'
+                          : 'Confirm Password'}
                       </Typography>
                       <TextField
                         name='confirmPassword'
@@ -591,7 +621,8 @@ const Signup: React.FC = () => {
                             '&.Mui-focused fieldset': { border: 'none' },
                             '&:hover': { backgroundColor: '#eee' },
                             '&.Mui-focused': {
-                              backgroundColor: theme => theme.palette.background.paper,
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
                             },
                           },
                           '& input': {
@@ -636,7 +667,7 @@ const Signup: React.FC = () => {
                         marginLeft: 0,
                         marginRight: 0,
                         marginTop: '5px',
-                          }}
+                      }}
                       control={
                         <Checkbox
                           icon={
@@ -646,7 +677,6 @@ const Signup: React.FC = () => {
                                 height: 14,
                                 bgcolor: 'white',
                                 borderRadius: '4px',
-
                               }}
                             />
                           }
@@ -659,7 +689,7 @@ const Signup: React.FC = () => {
                             height: 14,
                             minWidth: 14,
                             minHeight: 14,
-                            
+
                             boxSizing: 'border-box',
                             '&:hover': {
                               bgcolor: 'transparent',
@@ -707,7 +737,6 @@ const Signup: React.FC = () => {
                     <Button
                       type='submit'
                       variant='contained'
-                      
                       disabled={isSubmitDisabled}
                       sx={{
                         backgroundColor: 'white',
@@ -722,12 +751,16 @@ const Signup: React.FC = () => {
                       }}
                     >
                       {loading ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
                           <CircularProgress size={16} />
                           {lang === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
                         </Box>
+                      ) : lang === 'ar' ? (
+                        'تسجيل'
                       ) : (
-                        lang === 'ar' ? 'تسجيل' : 'Sign up'
+                        'Sign up'
                       )}
                     </Button>
                   </Box>

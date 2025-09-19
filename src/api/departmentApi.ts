@@ -38,9 +38,7 @@ class DepartmentApiService {
 
   // Get all departments
   async getAllDepartments(): Promise<BackendDepartment[]> {
-    const response = await axiosInstance.get<BackendDepartment[]>(
-      this.baseUrl
-    );
+    const response = await axiosInstance.get<BackendDepartment[]>(this.baseUrl);
     return response.data;
   }
 

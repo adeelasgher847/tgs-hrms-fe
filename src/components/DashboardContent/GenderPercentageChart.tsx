@@ -97,10 +97,14 @@ export default function GenderPercentageChart() {
           },
         ];
         setGenderData(transformedData);
-      } catch {
-        setError('Failed to load gender distribution data');
-        // Don't set any fallback data - let the error state handle it
-        setGenderData([]);
+      } catch (err) {
+        // If there's an error (including tenant with zero employees), render zeros
+        console.warn('GenderPercentageChart fetch error:', err);
+        setError(null);
+        setGenderData([
+          { name: 'Male', value: 0, color: '#484c7f', percentage: 0 },
+          { name: 'Female', value: 0, color: '#E91E63', percentage: 0 },
+        ]);
       } finally {
         setLoading(false);
       }

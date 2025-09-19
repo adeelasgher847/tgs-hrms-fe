@@ -182,7 +182,10 @@ const EmployeeManager: React.FC = () => {
       // If requested page exceeds available totalPages (possible after filters), clamp and refetch
       if (response.totalPages > 0 && page > response.totalPages) {
         setCurrentPage(response.totalPages);
-        const retry = await employeeApi.getAllEmployees(filters, response.totalPages);
+        const retry = await employeeApi.getAllEmployees(
+          filters,
+          response.totalPages
+        );
         const convertedEmployeesRetry: Employee[] = retry.items.map(emp => ({
           id: emp.id,
           name: emp.name,

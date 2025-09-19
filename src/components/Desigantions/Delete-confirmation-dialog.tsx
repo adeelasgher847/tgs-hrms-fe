@@ -9,7 +9,10 @@ import {
   Box,
   IconButton,
 } from '@mui/material';
-import { Close as CloseIcon, Warning as WarningIcon } from '@mui/icons-material';
+import {
+  Close as CloseIcon,
+  Warning as WarningIcon,
+} from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 
 interface Props {
@@ -53,7 +56,11 @@ export default function DeleteConfirmationDialog({
           <IconButton
             onClick={onClose}
             size='small'
-            sx={{ position: 'absolute', right: isRTL ? 'auto' : 8, left: isRTL ? 8 : 'auto' }}
+            sx={{
+              position: 'absolute',
+              right: isRTL ? 'auto' : 8,
+              left: isRTL ? 8 : 'auto',
+            }}
           >
             <CloseIcon />
           </IconButton>

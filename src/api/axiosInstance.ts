@@ -70,49 +70,52 @@ axiosInstance.interceptors.request.use(
 );
 
 // Response interceptor to handle token refresh
-axiosInstance.interceptors.response.use(
-  undefined,
-  async (error: unknown) => {
-    const originalRequest = error.config;
-    if (error && typeof error === 'object' && 'response' in error && (error as { response: { status: number } }).response.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
-          failedQueue.push({ resolve, reject });
+axiosInstance.interceptors.response.use(undefined, async (error: unknown) => {
+  const originalRequest = error.config;
+  if (
+    error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    (error as { response: { status: number } }).response.status === 401 &&
+    !originalRequest._retry
+  ) {
+    if (isRefreshing) {
+      return new Promise(function (resolve, reject) {
+        failedQueue.push({ resolve, reject });
+      })
+        .then(token => {
+          originalRequest.headers.Authorization = 'Bearer ' + token;
+          return axiosInstance(originalRequest);
         })
-          .then(token => {
-            originalRequest.headers.Authorization = 'Bearer ' + token;
-            return axiosInstance(originalRequest);
-          })
-          .catch(err => {
-            return Promise.reject(err);
-          });
-      }
-      originalRequest._retry = true;
-      isRefreshing = true;
-      try {
-        const data = await refreshAccessToken();
-        localStorage.setItem('accessToken', data.accessToken);
-        if (data.refreshToken) {
-          localStorage.setItem('refreshToken', data.refreshToken);
-        }
-        axiosInstance.defaults.headers.common['Authorization'] =
-          'Bearer ' + data.accessToken;
-        processQueue(null, data.accessToken);
-        originalRequest.headers.Authorization = 'Bearer ' + data.accessToken;
-        return axiosInstance(originalRequest);
-      } catch {
-        processQueue(err, null);
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        window.location.href = '/';
-        return Promise.reject(err);
-      } finally {
-        isRefreshing = false;
-      }
+        .catch(err => {
+          return Promise.reject(err);
+        });
     }
-    return Promise.reject(error);
+    originalRequest._retry = true;
+    isRefreshing = true;
+    try {
+      const data = await refreshAccessToken();
+      localStorage.setItem('accessToken', data.accessToken);
+      if (data.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken);
+      }
+      axiosInstance.defaults.headers.common['Authorization'] =
+        'Bearer ' + data.accessToken;
+      processQueue(null, data.accessToken);
+      originalRequest.headers.Authorization = 'Bearer ' + data.accessToken;
+      return axiosInstance(originalRequest);
+    } catch {
+      processQueue(err, null);
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+      return Promise.reject(err);
+    } finally {
+      isRefreshing = false;
+    }
   }
-);
+  return Promise.reject(error);
+});
 
 export default axiosInstance;

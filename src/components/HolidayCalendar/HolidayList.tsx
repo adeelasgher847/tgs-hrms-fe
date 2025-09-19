@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Button, Typography} from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import HolidayTable from './HolidayTable';
 import AddHolidayDialog from './AddHolidayDialog';

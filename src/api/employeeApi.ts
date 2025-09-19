@@ -413,8 +413,7 @@ class EmployeeApiService {
     > = {};
     if (updates.first_name !== undefined)
       payload.first_name = updates.first_name;
-    if (updates.last_name !== undefined)
-      payload.last_name = updates.last_name;
+    if (updates.last_name !== undefined) payload.last_name = updates.last_name;
     if (updates.email !== undefined) payload.email = updates.email;
     if (updates.phone !== undefined) payload.phone = updates.phone;
     if (updates.password !== undefined && updates.password !== '')
@@ -462,9 +461,7 @@ export const getAttendanceThisMonth = async (): Promise<{
   message?: string;
   totalAttendance?: number;
 }> => {
-  const response = await axiosInstance.get(
-    '/employees/attendance-this-month'
-  );
+  const response = await axiosInstance.get('/employees/attendance-this-month');
   return response.data;
 };
 

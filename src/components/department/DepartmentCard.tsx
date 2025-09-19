@@ -7,7 +7,6 @@ import {
   Box,
   Divider,
 } from '@mui/material';
-// import { Delete as DeleteIcon } from "@mui/icons-material";
 import type { Department } from '../../types';
 import { useOutletContext } from 'react-router-dom';
 import edit from '../../assets/dashboardIcon/edit.svg';

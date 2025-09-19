@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Button, Alert, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Paper,
+  Button,
+  Alert,
+  ToggleButton,
+  ToggleButtonGroup,
+} from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';
@@ -134,7 +142,9 @@ const AttendanceCheck = () => {
             color='text.secondary'
             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
           >
-            {isAdminUser ? 'Admin - Track your daily attendance' : 'Track your daily attendance'}
+            {isAdminUser
+              ? 'Admin - Track your daily attendance'
+              : 'Track your daily attendance'}
           </Typography>
         </Box>
 
@@ -198,7 +208,7 @@ const AttendanceCheck = () => {
             borderRadius: 1,
             flex: 1,
             height: 'fit-content',
-            boxShadow: "unset",
+            boxShadow: 'unset',
           }}
         >
           <Typography variant='h6' fontWeight='bold'>
@@ -212,8 +222,8 @@ const AttendanceCheck = () => {
           </Typography>
           <Typography
             variant='h4'
-            color='var(--dark-color)' 
-            fontSize="20px"
+            color='var(--dark-color)'
+            fontSize='20px'
             fontWeight='bold'
             mb={3}
             sx={{ fontFamily: 'monospace' }}
