@@ -9,6 +9,7 @@ import {
   Alert,
   CircularProgress,
   Snackbar,
+  Divider,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
@@ -97,7 +98,6 @@ const SelectPlan: React.FC = () => {
       const priceIds = subscriptionPlans
         .map(p => p.stripePriceId)
         .filter((id): id is string => Boolean(id));
-
 
       let priceInfoByPriceId: Record<
         string,
@@ -200,7 +200,6 @@ const SelectPlan: React.FC = () => {
         localStorage.getItem('companyDetails') || '{}'
       );
 
-
       if (!signupSessionId) {
         throw new Error('Signup session not found. Please start over.');
       }
@@ -238,7 +237,6 @@ const SelectPlan: React.FC = () => {
         throw new Error('No checkout URL received from server');
       }
     } catch (err: any) {
-
       let errorMessage = 'Failed to create payment session. Please try again.';
 
       if (err.response?.data) {
@@ -294,7 +292,7 @@ const SelectPlan: React.FC = () => {
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'column',
-        py: 6,
+        px: { xs: 2, sm: 4, md: 6 },
       }}
     >
       {/* Heading */}
@@ -348,92 +346,94 @@ const SelectPlan: React.FC = () => {
                 transform: 'scale(1.02)',
                 boxShadow: '0 12px 28px rgba(0,0,0,0.18)',
               },
+              mx: { xs: 1.5, sm: 2, md: 0 },
             }}
           >
-            {/* Top Header with wave */}
-            <Box sx={{ position: 'relative', bgcolor: 'transparent' }}>
-              <Box
-                sx={{
-                  background:
-                    'linear-gradient(180deg, #484c7f 0%, #484c7f 100%)',
-                  color: 'white',
-                  p: 3,
-                  pb: 8,
-                  position: 'relative',
-                }}
-              >
-                {/* Title left */}
-                <Typography
-                  variant='h4'
-                  sx={{ fontWeight: 800, letterSpacing: 0.2 }}
-                >
-                  {plan.name}
-                </Typography>
-                {/* Price top-right */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 16,
-                    textAlign: 'right',
-                  }}
-                >
-                  <Typography
-                    component='div'
-                    sx={{ fontSize: 28, fontWeight: 800, lineHeight: 1 }}
-                  >
-                    {plan.price}
-                  </Typography>
-                  <Typography
-                    component='div'
-                    sx={{ fontSize: 12, opacity: 0.9 }}
-                  >
-                    {plan.duration}
-                  </Typography>
-                </Box>
-              </Box>
-              {/* Wave shape overlay */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  bottom: -1,
-                  height: 64,
-                  overflow: 'hidden',
-                }}
-              >
-                <svg
-                  width='100%'
-                  height='100%'
-                  viewBox='0 0 400 64'
-                  preserveAspectRatio='none'
-                >
-                  <path
-                    d='M0,10 C80,60 200,0 400,48 L400,80 L0,80 Z'
-                    fill='#ffffff'
-                  />
-                </svg>
-              </Box>
+            {/* Card Header */}
+            <Box sx={{ pt: plan.popular ? 5 : 3, pb: 2, px: 2 }}>
+              {/* Popular badge */}
               {plan.popular && (
                 <Box
                   sx={{
                     position: 'absolute',
-                    top: 16,
-                    left: -28,
-                    bgcolor: 'white',
+                    top: 18,
+                    left: 18,
+                    bgcolor: '#facc15',
                     color: '#111827',
-                    px: 4,
-                    py: '2px',
-                    transform: 'rotate(-45deg)',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    boxShadow: 1,
+                    px: 2.5,
+                    py: '4px',
+                    borderRadius: '8px',
+                    fontSize: { xs: '13px', sm: '15px' },
+                    fontWeight: 900,
+                    boxShadow: 2,
+                    letterSpacing: 1,
+                    zIndex: 2,
+                    textTransform: 'uppercase',
                   }}
                 >
                   Popular
                 </Box>
               )}
+              {/* Heading */}
+              <Typography
+                variant='h5'
+                sx={{
+                  fontWeight: 900,
+                  letterSpacing: 0.5,
+                  mt: 1,
+                  fontSize: { xs: 22, sm: 26, md: 28 },
+
+                  textAlign: 'left',
+                  color: '#484c7f',
+                }}
+              >
+                {plan.name}
+              </Typography>
+              {/* Price section */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'left',
+                  // justifyContent: 'center',
+                  mb: 2,
+                }}
+              >
+                <Box
+                  sx={{
+                    borderRadius: '16px',
+                    
+                    mb: 0.5,
+                  }}
+                >
+                  <Typography
+                    component='span'
+                    sx={{
+                      fontSize: { xs: 32, sm: 38, md: 44 },
+                      fontWeight: 900,
+                      color: '#484c7f',
+                      lineHeight: 1,
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {typeof plan.price === 'string'
+                      ? plan.price.replace(/^US\$/i, '$')
+                      : plan.price}
+                  </Typography>
+                </Box>
+                <Typography
+                  component='span'
+                  sx={{
+                    fontSize: { xs: 16, sm: 18 },
+                    color: '#484c7f',
+                    fontWeight: 700,
+                    letterSpacing: 0.2,
+                  }}
+                >
+                  per {plan.duration}
+                </Typography>
+                <Divider sx={{ my: 1, borderColor: '#e5e7eb' }} />
+              </Box>
             </Box>
 
             {/* Features */}
