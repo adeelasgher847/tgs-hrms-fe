@@ -239,7 +239,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
             <Clipboard />
           </Box>
           <Typography sx={{ mt: 1, fontWeight: '700', fontSize: '18px' }}>
-            My-Task
+            HRMS
           </Typography>
         </Box>
 
