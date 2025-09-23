@@ -8,9 +8,7 @@ import {
   Box,
   useTheme,
 } from '@mui/material';
-import {
-  Warning as WarningIcon,
-} from '@mui/icons-material';
+import { Warning as WarningIcon } from '@mui/icons-material';
 import type { Department } from '../../types';
 import { useOutletContext } from 'react-router-dom';
 

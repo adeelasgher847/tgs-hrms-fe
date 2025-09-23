@@ -69,7 +69,7 @@ export default function AvailabilityCardsGrid() {
         setLeavesData(0);
       }
     } catch (err: unknown) {
-      // Check if it's an authentication error
+      // If authentication is required, show message and leave zeros
       if (
         err &&
         typeof err === 'object' &&
@@ -83,7 +83,9 @@ export default function AvailabilityCardsGrid() {
         setAttendanceData(0);
         setLeavesData(0);
       } else {
-        setError('Failed to load availability data. Please try again later.');
+        // For other errors or empty tenants, show zero data instead of an error block.
+        console.warn('Availability fetch error:', err);
+        setError(null);
         setAttendanceData(0);
         setLeavesData(0);
       }

@@ -38,10 +38,10 @@ class CompanyApiService {
   private baseUrl = '/tenants';
 
   async getAllCompanies(): Promise<BackendCompany[]> {
-    const response = await axiosInstance.get<Envelope<BackendCompany[]>>(this.baseUrl);
-    const items = Array.isArray(response.data?.data)
-      ? response.data.data
-      : [];
+    const response = await axiosInstance.get<Envelope<BackendCompany[]>>(
+      this.baseUrl
+    );
+    const items = Array.isArray(response.data?.data) ? response.data.data : [];
     return items.map(normalizeTenant);
   }
 

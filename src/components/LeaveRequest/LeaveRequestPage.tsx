@@ -82,19 +82,6 @@ const LeaveRequestPage = () => {
     userIsUser || userIsManager || userIsAdmin ? 0 : 0
   );
 
-  // Debug: Log current state
-  // console.log('🔍 Current state:', {
-  //   currentUser,
-  //   userIsAdmin,
-  //   userIsUser,
-  //   userIsManager,
-  //   hasUser: !!currentUser,
-  //   userRole: currentUser?.role,
-  //   localStorage: {
-  //     user: localStorage.getItem('user'),
-  //     token: localStorage.getItem('accessToken'),
-  //   },
-  // });
 
   const loadLeaves = useCallback(
     async (page: number = 1) => {
@@ -105,7 +92,6 @@ const LeaveRequestPage = () => {
 
         if (userIsAdmin) {
           // Admin gets all leaves with user info
-          // console.log('Loading leaves as admin...');
           try {
             const response = await leaveApi.getAllLeaves(page);
             leavesData = response.items.map(leave => ({
@@ -133,7 +119,6 @@ const LeaveRequestPage = () => {
             setCurrentPage(response.page);
             setTotalPages(response.totalPages);
           } catch (adminError: unknown) {
-            // console.error('Admin leave loading error:', adminError);
             if ((adminError as ApiError)?.response?.status === 403) {
               setError(
                 'You do not have permission to view all leaves. Please contact your administrator.'
@@ -148,13 +133,11 @@ const LeaveRequestPage = () => {
           }
         } else if (userIsUser || userIsManager) {
           // Regular user or manager gets their own leaves
-          // console.log('Loading leaves as user/manager...', {
           //   currentUserId: currentUser?.id,
           //   userRole: currentUser?.role,
           //   page
           // });
           const response = await leaveApi.getUserLeaves(currentUser?.id, page);
-          // console.log('User leaves API response:', response);
           leavesData = response.items.map(leave => ({
             id: leave.id,
             userId: leave.user_id || leave.userId,
@@ -183,7 +166,6 @@ const LeaveRequestPage = () => {
 
         setLeaves(leavesData);
       } catch (error: unknown) {
-        // console.error('Error loading leaves:', error);
         setError(
           (error as ApiError)?.response?.data?.message ||
             (error as Error).message ||
@@ -216,14 +198,12 @@ const LeaveRequestPage = () => {
       setTeamLeavesLoading(true);
       setTeamLeavesError(null);
 
-      // console.log('Loading team leaves as manager...', {
       //   managerId: currentUser?.id,
       //   tenantId: currentUser?.tenant_id,
       //   page
       // });
 
       const response = await leaveApi.getTeamLeaves(page);
-      // console.log('Team leaves API response:', response);
 
       const teamLeavesData = response.items.map(leave => ({
         id: leave.id,
@@ -246,17 +226,10 @@ const LeaveRequestPage = () => {
         created_at: leave.created_at,
       }));
 
-      // console.log('Processed team leaves data:', teamLeavesData);
       setTeamLeaves(teamLeavesData);
       setTeamCurrentPage(response.page);
       setTeamTotalPages(response.totalPages);
     } catch (error: unknown) {
-      // console.error('Error loading team leaves:', error);
-      // console.error('Error details:', {
-      //   status: (error as ApiError)?.response?.status,
-      //   data: (error as ApiError)?.response?.data,
-      //   message: error.message
-      // });
 
       let errorMessage = 'Failed to load team leaves';
       if ((error as ApiError)?.response?.status === 403) {
@@ -285,9 +258,7 @@ const LeaveRequestPage = () => {
 
   const handleApply = async (data: CreateLeaveRequest) => {
     try {
-      // console.log('Submitting leave request:', data);
       const newLeave = await leaveApi.createLeave(data);
-      // console.log('API :', newLeave);
 
       const leaveWithDisplay: Leave = {
         id: newLeave.id,
@@ -308,16 +279,13 @@ const LeaveRequestPage = () => {
         created_at: newLeave.created_at || new Date().toISOString(),
       };
 
-      // console.log('Formatted leave for display:', leaveWithDisplay);
       setLeaves([leaveWithDisplay, ...leaves]);
       setSnackbarMessage('Leave applied successfully!');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
     } catch (error: unknown) {
-      // console.error('Error applying leave:', error);
       const apiError = error as ApiError;
       if (apiError?.response) {
-        // console.error('API Error details:', apiError.response.data);
         if (apiError.response.status === 403) {
           setSnackbarMessage(
             "Access denied. You don't have permission to apply leaves."
@@ -375,7 +343,6 @@ const LeaveRequestPage = () => {
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
       } catch (error: unknown) {
-        // console.error('Error updating leave status:', error);
         const apiError = error as ApiError;
         if (apiError?.response?.status === 403) {
           setSnackbarMessage(
@@ -419,7 +386,6 @@ const LeaveRequestPage = () => {
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
     } catch (error: unknown) {
-      // console.error('Error withdrawing leave:', error);
       const apiError = error as ApiError;
       if (apiError?.response?.status === 403) {
         setSnackbarMessage(
@@ -541,7 +507,6 @@ const LeaveRequestPage = () => {
               };
               localStorage.setItem('user', JSON.stringify(testUser));
               localStorage.setItem('accessToken', 'test-token');
-              // console.log('✅ Quick test user set up:', testUser);
               window.location.reload();
             }}
           >
@@ -564,7 +529,6 @@ const LeaveRequestPage = () => {
             };
             localStorage.setItem('user', JSON.stringify(testUser));
             localStorage.setItem('accessToken', 'test-token');
-            // console.log('✅ Force test user set up:', testUser);
             window.location.reload();
           }}
           sx={{ mt: 1 }}
@@ -676,29 +640,6 @@ const LeaveRequestPage = () => {
                 My Team Leave History
               </Button>
             )}
-            {/* Debug button for testing */}
-            {/* {process.env.NODE_ENV === 'development' && (
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => {
-                  console.log('🔍 Debug Info:', {
-                    currentUser,
-                    userIsAdmin,
-                    userIsUser,
-                    userIsManager,
-                    tab,
-                    leaves: leaves.length,
-                    teamLeaves: teamLeaves.length,
-                    teamLeavesLoading,
-                    teamLeavesError
-                  });
-                }}
-                sx={{ ml: 1, fontSize: '0.7rem' }}
-              >
-                DEBUG
-              </Button>
-            )} */}
           </Box>
         </Toolbar>
       </AppBar>

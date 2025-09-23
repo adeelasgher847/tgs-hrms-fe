@@ -775,7 +775,6 @@ const Login: React.FC = () => {
                           {lang === 'ar' ? 'ØªØ°ÙƒØ±Ù†ÙŠ' : 'Remember me'}
                         </Typography>
                       }
-                      // sx={{ m: 0, fontFamily: 'Open Sans, sans-serif', fontSize: '14px' }}
                     />
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'center' }}>

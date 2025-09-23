@@ -70,7 +70,9 @@ class DesignationApiService {
 
   // Get all departments
   async getAllDepartments(): Promise<BackendDepartment[]> {
-    const response = await axiosInstance.get<BackendDepartment[]>(this.departmentUrl);
+    const response = await axiosInstance.get<BackendDepartment[]>(
+      this.departmentUrl
+    );
     const items = Array.isArray(response.data) ? response.data : [];
     return items.map(normalizeDepartment);
   }
@@ -164,7 +166,9 @@ class DesignationApiService {
 
   // Get designation by ID
   async getDesignationById(id: string): Promise<BackendDesignation> {
-    const response = await axiosInstance.get<BackendDesignation>(`${this.baseUrl}/${id}`);
+    const response = await axiosInstance.get<BackendDesignation>(
+      `${this.baseUrl}/${id}`
+    );
     return normalizeDesignation(response.data);
   }
 
@@ -177,7 +181,10 @@ class DesignationApiService {
       title: designationData.title,
       department_id: designationData.departmentId,
     };
-    const response = await axiosInstance.post<BackendDesignation>(this.baseUrl, payload);
+    const response = await axiosInstance.post<BackendDesignation>(
+      this.baseUrl,
+      payload
+    );
     return normalizeDesignation(response.data);
   }
 

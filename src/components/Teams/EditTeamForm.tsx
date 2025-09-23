@@ -111,8 +111,21 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
           }
 
           setManagers(managersData);
-        } catch {
-          setManagers([]);
+        } catch (error) {
+          console.error('Failed to load managers:', error);
+          // If we have a team with a manager, create a minimal manager list
+          if (team && team.manager) {
+            const currentManager: Manager = {
+              id: team.manager_id,
+              first_name: team.manager.first_name,
+              last_name: team.manager.last_name,
+              email: team.manager.email,
+              role: 'Manager',
+            };
+            setManagers([currentManager]);
+          } else {
+            setManagers([]);
+          }
         } finally {
           setLoadingManagers(false);
         }
@@ -122,18 +135,29 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
     loadManagers();
   }, [open, team]);
 
-  // Populate form when team data changes
+  // Populate form when team data changes and managers are loaded
   useEffect(() => {
-    if (team && open) {
+    if (team && open && managers.length > 0) {
+      // Only set manager_id if it exists in the managers list
+      const managerExists = managers.some(m => m.id === team.manager_id);
       const initialData = {
         name: team.name,
         description: team.description || '',
-        manager_id: team.manager_id,
+        manager_id: managerExists ? team.manager_id : '',
+      };
+      setFormData(initialData);
+      setOriginalFormData(initialData);
+    } else if (team && open && !loadingManagers && managers.length === 0) {
+      // If no managers are available, still set the form data but with empty manager_id
+      const initialData = {
+        name: team.name,
+        description: team.description || '',
+        manager_id: '',
       };
       setFormData(initialData);
       setOriginalFormData(initialData);
     }
-  }, [team, open]);
+  }, [team, open, managers, loadingManagers]);
 
   // Check if form has changes
   const hasChanges = team
@@ -169,6 +193,15 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
 
     if (!formData.manager_id) {
       setError(lang.managerRequired);
+      return;
+    }
+
+    // Validate that the selected manager exists in the available managers list
+    const selectedManagerExists = managers.some(
+      m => m.id === formData.manager_id
+    );
+    if (!selectedManagerExists) {
+      setError('Selected manager is not available');
       return;
     }
 
@@ -274,7 +307,7 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
                 {lang.manager}
               </InputLabel>
               <Select
-                value={formData.manager_id}
+                value={formData.manager_id || ''}
                 onChange={handleChange('manager_id')}
                 required
                 label={lang.manager}

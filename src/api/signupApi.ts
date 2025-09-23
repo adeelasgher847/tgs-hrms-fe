@@ -1,5 +1,5 @@
 // src/api/signupApi.ts
-import axiosInstance from "./axiosInstance";
+import axiosInstance from './axiosInstance';
 
 export interface PersonalDetailsRequest {
   first_name: string;
@@ -53,40 +53,43 @@ export interface PaymentResponse {
   status?: string;
 }
 
+// Accept either checkout session id (Stripe Checkout) or payment intent id (alt flows)
 export interface PaymentConfirmRequest {
   signupSessionId: string;
-  paymentIntentId: string;
+  checkoutSessionId?: string;
+  paymentIntentId?: string;
 }
 
 export interface PaymentConfirmResponse {
-  status: "succeeded" | "failed";
+  status: 'succeeded' | 'failed';
   transactionId: string;
 }
 
 export interface CompleteSignupRequest {
   signupSessionId: string;
-  transactionId: string;
 }
 
 export interface CompleteSignupResponse {
   message: string;
   userId: string;
   plan: string;
-  status: "active";
+  status: 'active';
 }
 
 class SignupApiService {
-  private baseUrl = "/signup";
+  private baseUrl = '/signup';
 
   // Step 1: Personal Details
-  async createPersonalDetails(data: PersonalDetailsRequest): Promise<PersonalDetailsResponse> {
+  async createPersonalDetails(
+    data: PersonalDetailsRequest
+  ): Promise<PersonalDetailsResponse> {
     try {
-      console.log("Sending personal details:", data);
-      const response = await axiosInstance.post(`${this.baseUrl}/personal-details`, data);
-      console.log("Personal details response:", response.data);
+      const response = await axiosInstance.post(
+        `${this.baseUrl}/personal-details`,
+        data
+      );
       return response.data;
     } catch (error: any) {
-      console.error("Personal details API Error:", error.response?.data || error.message);
       throw error;
     }
   }
@@ -97,7 +100,6 @@ class SignupApiService {
       const response = await axiosInstance.get('/subscription-plans');
       return response.data;
     } catch (error: any) {
-      console.error("Subscription plans API Error:", error.response?.data || error.message);
       throw error;
     }
   }
@@ -108,34 +110,46 @@ class SignupApiService {
       // Try the new endpoint first
       const params = new URLSearchParams();
       params.set('ids', priceIds.join(','));
-      const response = await axiosInstance.get(`/subscription-plans/prices?${params.toString()}`);
+      const response = await axiosInstance.get(
+        `/subscription-plans/prices?${params.toString()}`
+      );
       return response.data;
     } catch (error: any) {
-      console.error("Stripe prices API Error:", error.response?.data || error.message);
       throw error;
     }
   }
 
   // Get prices by plan IDs (backend supports this)
-  async getStripePricesByPlanIds(planIds: string[]): Promise<StripePriceInfo[]> {
+  async getStripePricesByPlanIds(
+    planIds: string[]
+  ): Promise<StripePriceInfo[]> {
     try {
       const params = new URLSearchParams();
       params.set('planIds', planIds.join(','));
-      const response = await axiosInstance.get(`/subscription-plans/prices-by-plans?${params.toString()}`);
+      const response = await axiosInstance.get(
+        `/subscription-plans/prices-by-plans?${params.toString()}`
+      );
       return response.data;
     } catch (error: any) {
-      console.error("Stripe prices by plan IDs API Error:", error.response?.data || error.message);
+      console.error(
+        'Stripe prices by plan IDs API Error:',
+        error.response?.data || error.message
+      );
       throw error;
     }
   }
 
   // Step 2: Company Details
-  async createCompanyDetails(data: CompanyDetailsRequest): Promise<CompanyDetailsResponse> {
+  async createCompanyDetails(
+    data: CompanyDetailsRequest
+  ): Promise<CompanyDetailsResponse> {
     try {
-      const response = await axiosInstance.post(`${this.baseUrl}/company-details`, data);
+      const response = await axiosInstance.post(
+        `${this.baseUrl}/company-details`,
+        data
+      );
       return response.data;
     } catch (error: any) {
-      console.error("Company details API Error:", error.response?.data || error.message);
       throw error;
     }
   }
@@ -143,46 +157,42 @@ class SignupApiService {
   // Step 3: Create Payment Intent
   async createPayment(data: PaymentRequest): Promise<PaymentResponse> {
     try {
-      console.log("=== PAYMENT API DEBUG ===");
-      console.log("Request URL:", `${this.baseUrl}/payment`);
-      console.log("Request data:", JSON.stringify(data, null, 2));
-      console.log("Request headers:", axiosInstance.defaults.headers);
-      
-      // Use the correct endpoint based on your backend
-      const response = await axiosInstance.post(`${this.baseUrl}/payment`, data);
-      console.log("Payment response status:", response.status);
-      console.log("Payment response data:", JSON.stringify(response.data, null, 2));
+      const response = await axiosInstance.post(
+        `${this.baseUrl}/payment`,
+        data
+      );
       return response.data;
     } catch (error: any) {
-      console.error("=== PAYMENT API ERROR DEBUG ===");
-      console.error("Error status:", error.response?.status);
-      console.error("Error status text:", error.response?.statusText);
-      console.error("Error headers:", error.response?.headers);
-      console.error("Error data:", JSON.stringify(error.response?.data, null, 2));
-      console.error("Error message:", error.message);
-      console.error("Error config:", error.config);
       throw error;
     }
   }
 
   // Step 4: Confirm Payment
-  async confirmPayment(data: PaymentConfirmRequest): Promise<PaymentConfirmResponse> {
+  async confirmPayment(
+    data: PaymentConfirmRequest
+  ): Promise<PaymentConfirmResponse> {
     try {
-      const response = await axiosInstance.post(`${this.baseUrl}/payment/confirm`, data);
+      const response = await axiosInstance.post(
+        `${this.baseUrl}/payment/confirm`,
+        data
+      );
       return response.data;
     } catch (error: any) {
-      console.error("Payment confirm API Error:", error.response?.data || error.message);
       throw error;
     }
   }
 
   // Step 5: Complete Signup
-  async completeSignup(data: CompleteSignupRequest): Promise<CompleteSignupResponse> {
+  async completeSignup(
+    data: CompleteSignupRequest
+  ): Promise<CompleteSignupResponse> {
     try {
-      const response = await axiosInstance.post(`${this.baseUrl}/complete`, data);
+      const response = await axiosInstance.post(
+        `${this.baseUrl}/complete`,
+        data
+      );
       return response.data;
     } catch (error: any) {
-      console.error("Complete signup API Error:", error.response?.data || error.message);
       throw error;
     }
   }

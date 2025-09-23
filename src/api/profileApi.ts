@@ -78,7 +78,10 @@ class ProfileApiService {
 
   // Update user profile
   async updateProfile(updateData: UpdateProfileRequest): Promise<UserProfile> {
-    const response = await axiosInstance.put<UserProfile>('/profile/me', updateData);
+    const response = await axiosInstance.put<UserProfile>(
+      '/profile/me',
+      updateData
+    );
     return response.data;
   }
 }

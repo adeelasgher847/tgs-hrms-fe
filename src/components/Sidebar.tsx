@@ -70,7 +70,6 @@ const menuItems: MenuItem[] = [
     icon: <ConfirmationNumber />,
     subItems: [
       { label: 'Add Tenant', path: 'tenant' },
-      // { label: "Create Ticket", path: "create-ticket" },
     ],
   },
   {
@@ -357,13 +356,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
           <Typography variant='body2'>Enable Dark Mode!</Typography>
           <Switch checked={darkMode} onChange={toggleTheme} />
         </Box>
-        {/* <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="body2">Enable RTL Mode!</Typography>
-          <Switch
-            checked={rtlMode}
-            onChange={() => setRtlMode((prev) => !prev)}
-          />
-        </Box> */}
+       
 
         {/* Collapse Icon */}
         <Box textAlign='center' mt={2}>

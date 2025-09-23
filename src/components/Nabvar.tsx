@@ -129,12 +129,14 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const handleLogout = () => {
-    // Clear all authentication data first
+    // Clear all authentication and signup data
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     localStorage.removeItem('permissions');
     localStorage.removeItem('rememberedLogin');
+    localStorage.removeItem('companyDetails');
+    localStorage.removeItem('signupSessionId');
 
     // Clear user context
     clearUser();
@@ -423,7 +425,7 @@ const Navbar: React.FC<NavbarProps> = ({
         </Box>
         <Divider sx={{ mb: 1 }} />
 
-        <MenuItem 
+        <MenuItem
           onClick={() => {
             handleMenuClose();
             navigate('/dashboard/EmployeeManager');

@@ -52,12 +52,21 @@ export default function EmployeesInfoChart() {
           );
           setSelectedYear(years[0]); // Set most recent year as default
         }
-      } catch {
-        setError('Failed to load employee joining data');
-        // Use fallback data if API fails - only August data
-        setJoiningData([
-          { month: 8, year: 2025, total: 8 }, // Only August data as fallback
-        ]);
+      } catch (err) {
+        // If API fails (including 401), we want to show zero-values instead of an error block
+        // but preserve logging for debugging.
+        console.warn('EmployeesInfoChart fetch error:', err);
+        setError(null);
+        // Provide empty dataset for the current year (or current year fallback)
+        const currentYear = new Date().getFullYear();
+        setJoiningData(
+          // 12 months with zero totals for a consistent chart appearance
+          Array.from({ length: 12 }, (_, i) => ({
+            month: i + 1,
+            year: currentYear,
+            total: 0,
+          }))
+        );
       } finally {
         setLoading(false);
       }
