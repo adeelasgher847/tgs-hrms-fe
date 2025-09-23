@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
@@ -26,6 +26,21 @@ import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { type AlertProps } from '@mui/material/Alert';
 import { useUser } from '../hooks/useUser';
 import { getDefaultDashboardRoute } from '../utils/permissions';
+import { googleLoginService } from '../api/googleLoginService';
+
+// Add global type for Google Identity Services
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+export interface GoogleLoginResponse {
+  companyDetailsCompleted: boolean;
+  accessToken: string;
+  refreshToken: string;
+  user: object;
+  permissions: string[];
+}
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
   function Alert(props, ref) {
@@ -56,6 +71,12 @@ const Login: React.FC = () => {
     severity: 'success' | 'error';
   }>({ open: false, message: '', severity: 'success' });
 
+  // --- Google Sign-In state ---
+  const [googleReady, setGoogleReady] = useState<boolean>(false);
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+  const apiBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
+  const googleLoginEndpoint = (import.meta.env.VITE_GOOGLE_LOGIN_ENDPOINT as string | undefined) || '/auth/google-init';
+
   useEffect(() => {
     const rememberedStr = localStorage.getItem('rememberedLogin');
     if (rememberedStr) {
@@ -67,6 +88,24 @@ const Login: React.FC = () => {
         // Ignore parsing errors
       }
     }
+  }, []);
+
+  // Load Google Identity Services script once
+  useEffect(() => {
+    if (window.google) {
+      setGoogleReady(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setGoogleReady(true);
+    script.onerror = () => setGoogleReady(false);
+    document.head.appendChild(script);
+    return () => {
+      // keep script in DOM; no cleanup required
+    };
   }, []);
 
   useEffect(() => {
@@ -128,14 +167,14 @@ const Login: React.FC = () => {
     if (!email) {
       setEmailError(
         lang === 'ar'
-          ? 'يرجى إدخال البريد الإلكتروني'
+          ? 'ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ'
           : 'Please enter your email'
       );
       valid = false;
     } else if (!email.includes('@')) {
       setEmailError(
         lang === 'ar'
-          ? 'يرجى إدخال بريد إلكتروني صحيح'
+          ? 'ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø¨Ø±ÙŠØ¯ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ ØµØ­ÙŠØ­'
           : 'Please enter a valid email address'
       );
       valid = false;
@@ -143,7 +182,7 @@ const Login: React.FC = () => {
 
     if (!password) {
       setPasswordError(
-        lang === 'ar' ? 'يرجى إدخال كلمة المرور' : 'Please enter your password'
+        lang === 'ar' ? 'ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±' : 'Please enter your password'
       );
       valid = false;
     }
@@ -151,7 +190,7 @@ const Login: React.FC = () => {
     if (!valid) return;
 
     try {
-      const res = await axios.post(
+      const res = await googleApi.initGoogleSignup(
         `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
         {
           email,
@@ -179,7 +218,7 @@ const Login: React.FC = () => {
       }
       setSnackbar({
         open: true,
-        message: lang === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Login Successful!',
+        message: lang === 'ar' ? 'ØªÙ… ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø¨Ù†Ø¬Ø§Ø­!' : 'Login Successful!',
         severity: 'success',
       });
 
@@ -201,16 +240,99 @@ const Login: React.FC = () => {
             ).response.data
           : null;
       if (data?.field === 'email') {
-        setEmailError(data.message);
+        setEmailError(data.message || '');
         setPasswordError('');
       } else if (data?.field === 'password') {
-        setPasswordError(data.message);
+        setPasswordError(data.message || '');
         setEmailError('');
       } else {
         setEmailError('');
         setPasswordError('');
         // No snackbar for error
       }
+    }
+  };
+
+  // Simplified Google Sign-In handler
+  const handleGoogleSignInClick = async () => {
+    if (!googleClientId) {
+      setSnackbar({
+        open: true,
+        severity: 'error',
+        message: 'Google Client ID not configured',
+      });
+      return;
+    }
+
+    if (!googleReady || !window.google?.accounts?.id) {
+      setSnackbar({
+        open: true,
+        severity: 'error',
+        message: 'Google Sign-In service not loaded',
+      });
+      return;
+    }
+
+    try {
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async (response: { credential?: string }) => {
+          if (!response.credential) {
+            setSnackbar({
+              open: true,
+              severity: 'error',
+              message: 'No Google ID token received',
+            });
+            return;
+          }
+
+          try {
+            // Send token to backend
+            const result = await googleLoginService.loginWithGoogle(response.credential);
+            console.log(result);
+
+            if (result.companyDetailsCompleted === false) {
+              // First time user, needs to complete company details
+              localStorage.setItem('signupSessionId', result.signupSessionId);
+              navigate('/signup/company-details');
+              return; // Stop further execution
+            }
+
+            if (result.user) {
+              // Existing user, normal login flow
+              localStorage.setItem('accessToken', result.accessToken!);
+              localStorage.setItem('refreshToken', result.refreshToken!);
+              localStorage.setItem('user', JSON.stringify(result.user));
+              localStorage.setItem('permissions', JSON.stringify(result.permissions));
+              setSnackbar({
+                open: true,
+                message: 'Login Successful!',
+                severity: 'success',
+              });
+              const role = typeof result.user?.role === 'string'
+                ? result.user?.role
+                : result.user?.role?.name;
+              const target = getDefaultDashboardRoute(role);
+              navigate(target, { replace: true });
+            }
+          } catch (error) {
+            setSnackbar({
+              open: true,
+              severity: 'error',
+              message: 'Google login failed',
+            });
+          }
+        },
+      });
+
+      // Show Google Sign-In popup
+      window.google.accounts.id.prompt();
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        severity: 'error',
+        message: 'Could not initialize Google Sign-In',
+      });
     }
   };
 
@@ -283,7 +405,7 @@ const Login: React.FC = () => {
                 }}
               >
                 {lang === 'ar'
-                  ? 'إدارة مهام أفضل مع ماي-تاسك'
+                  ? 'Ø¥Ø¯Ø§Ø±Ø© Ù…Ù‡Ø§Ù… Ø£ÙØ¶Ù„ Ù…Ø¹ Ù…Ø§ÙŠ-ØªØ§Ø³Ùƒ'
                   : "My-Task Let's Management Better"}
               </Typography>
               <Box
@@ -335,11 +457,11 @@ const Login: React.FC = () => {
                         },
                       }}
                       renderValue={selected => {
-                        return selected === 'ar' ? 'عربى' : 'English';
+                        return selected === 'ar' ? 'Ø¹Ø±Ø¨Ù‰' : 'English';
                       }}
                     >
                       <MenuItem value='en'>English</MenuItem>
-                      <MenuItem value='ar'>عربى</MenuItem>
+                      <MenuItem value='ar'>Ø¹Ø±Ø¨Ù‰</MenuItem>
                     </Select>
                   </FormControl>
                 </Box>
@@ -361,7 +483,7 @@ const Login: React.FC = () => {
                       fontWeight: 400,
                     }}
                   >
-                    {lang === 'ar' ? 'تسجيل الدخول' : 'Sign in'}
+                    {lang === 'ar' ? 'ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„' : 'Sign in'}
                   </Typography>
                   <Typography
                     sx={{
@@ -370,7 +492,7 @@ const Login: React.FC = () => {
                     }}
                   >
                     {lang === 'ar'
-                      ? 'وصول مجاني إلى لوحة التحكم الخاصة بنا.'
+                      ? 'ÙˆØµÙˆÙ„ Ù…Ø¬Ø§Ù†ÙŠ Ø¥Ù„Ù‰ Ù„ÙˆØ­Ø© Ø§Ù„ØªØ­ÙƒÙ… Ø§Ù„Ø®Ø§ØµØ© Ø¨Ù†Ø§.'
                       : 'Free access to our dashboard.'}
                   </Typography>
                 </Box>
@@ -393,8 +515,11 @@ const Login: React.FC = () => {
                         },
                         '&:focus': {
                           outline: 'none',
+                          boxShadow: 'none',
                         },
                       }}
+                      onClick={handleGoogleSignInClick}
+                      disabled={!googleReady}
                     >
                       <Box
                         component='img'
@@ -408,7 +533,7 @@ const Login: React.FC = () => {
                         }}
                       />
                       {lang === 'ar'
-                        ? 'تسجيل الدخول باستخدام جوجل'
+                        ? 'ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø¨Ø§Ø³ØªØ®Ø¯Ø§Ù… Ø¬ÙˆØ¬Ù„'
                         : 'Sign in with Google'}
                     </Button>
                   </Box>
@@ -418,7 +543,7 @@ const Login: React.FC = () => {
                       '&::before, &::after': { borderColor: '#f0f0f0' },
                     }}
                   >
-                    <Box px={1.5}>{lang === 'ar' ? 'أو' : 'OR'}</Box>
+                    <Box px={1.5}>{lang === 'ar' ? 'Ø£Ùˆ' : 'OR'}</Box>
                   </Divider>
                 </Box>
                 <Box
@@ -468,7 +593,7 @@ const Login: React.FC = () => {
                     htmlFor='email'
                     sx={{ fontWeight: 400, fontSize: '14px' }}
                   >
-                    {lang === 'ar' ? 'البريد الإلكتروني' : 'Email address'}
+                    {lang === 'ar' ? 'Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ' : 'Email address'}
                   </Typography>
                   <TextField
                     fullWidth
@@ -512,7 +637,7 @@ const Login: React.FC = () => {
                         htmlFor='password'
                         sx={{ fontWeight: 400, fontSize: '14px' }}
                       >
-                        {lang === 'ar' ? 'كلمة المرور' : 'Password'}
+                        {lang === 'ar' ? 'ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±' : 'Password'}
                       </Typography>
                       <Link
                         component={RouterLink}
@@ -532,7 +657,7 @@ const Login: React.FC = () => {
                         }}
                       >
                         {lang === 'ar'
-                          ? 'نسيت كلمة المرور؟'
+                          ? 'Ù†Ø³ÙŠØª ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±ØŸ'
                           : 'Forgot password?'}
                       </Link>
                     </Box>
@@ -647,7 +772,7 @@ const Login: React.FC = () => {
                             fontSize: '14px',
                           }}
                         >
-                          {lang === 'ar' ? 'تذكرني' : 'Remember me'}
+                          {lang === 'ar' ? 'ØªØ°ÙƒØ±Ù†ÙŠ' : 'Remember me'}
                         </Typography>
                       }
                       // sx={{ m: 0, fontFamily: 'Open Sans, sans-serif', fontSize: '14px' }}
@@ -680,7 +805,7 @@ const Login: React.FC = () => {
                       }}
                       disabled={!email || !password}
                     >
-                      {lang === 'ar' ? 'تسجيل الدخول' : 'SIGN IN'}
+                      {lang === 'ar' ? 'ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„' : 'SIGN IN'}
                     </Button>
                   </Box>
 
@@ -695,7 +820,7 @@ const Login: React.FC = () => {
                     }}
                   >
                     {lang === 'ar'
-                      ? 'ليس لديك حساب بعد؟ '
+                      ? 'Ù„ÙŠØ³ Ù„Ø¯ÙŠÙƒ Ø­Ø³Ø§Ø¨ Ø¨Ø¹Ø¯ØŸ '
                       : "Don't have an account yet? "}
                     <Link
                       component={RouterLink}
@@ -712,7 +837,7 @@ const Login: React.FC = () => {
                         },
                       }}
                     >
-                      {lang === 'ar' ? 'سجل هنا' : 'Sign up here'}
+                      {lang === 'ar' ? 'Ø³Ø¬Ù„ Ù‡Ù†Ø§' : 'Sign up here'}
                     </Link>
                   </Typography>
                 </Box>
