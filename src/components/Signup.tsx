@@ -28,7 +28,8 @@ const Signup: React.FC = () => {
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -52,6 +53,8 @@ const Signup: React.FC = () => {
     password: '',
     confirmPassword: '',
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsError, setTermsError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -63,7 +66,8 @@ const Signup: React.FC = () => {
   };
 
   const handleTogglePassword = (): void => setShowPassword(prev => !prev);
-  const handleToggleConfirmPassword = (): void => setShowConfirmPassword(prev => !prev);
+  const handleToggleConfirmPassword = (): void =>
+    setShowConfirmPassword(prev => !prev);
 
   const validateForm = () => {
     const nextErrors = {
@@ -101,7 +105,13 @@ const Signup: React.FC = () => {
     }
 
     setFieldErrors(nextErrors);
-    const hasErrors = Object.values(nextErrors).some(Boolean);
+    let hasErrors = Object.values(nextErrors).some(Boolean);
+    if (!acceptedTerms) {
+      setTermsError('You must accept the Terms and Conditions');
+      hasErrors = true;
+    } else {
+      setTermsError('');
+    }
     return !hasErrors;
   };
 
@@ -113,7 +123,8 @@ const Signup: React.FC = () => {
     !formData.phone.trim() ||
     !formData.password ||
     !formData.confirmPassword ||
-    Object.values(fieldErrors).some(Boolean);
+    Object.values(fieldErrors).some(Boolean) ||
+    !acceptedTerms;
 
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
@@ -121,7 +132,7 @@ const Signup: React.FC = () => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
-
+    setTermsError('');
     if (!validateForm()) {
       return;
     }
@@ -171,7 +182,6 @@ const Signup: React.FC = () => {
         navigate('/signup/company-details');
       }, 2000);
     } catch (err: any) {
-
       // Handle different error types
       if (err.response?.data?.message) {
         const errorData = err.response.data.message;
@@ -579,9 +589,11 @@ const Signup: React.FC = () => {
                                 }}
                               >
                                 {showPassword ? (
-                                  <VisibilityOff sx={{ width: 21, height: 21 }}/>
+                                  <VisibilityOff
+                                    sx={{ width: 21, height: 21 }}
+                                  />
                                 ) : (
-                                  <Visibility sx={{ width: 21, height: 21 }}/>
+                                  <Visibility sx={{ width: 21, height: 21 }} />
                                 )}
                               </IconButton>
                             </InputAdornment>
@@ -649,9 +661,11 @@ const Signup: React.FC = () => {
                                 }}
                               >
                                 {showConfirmPassword ? (
-                                  <VisibilityOff sx={{ width: 21, height: 21 }}/>
+                                  <VisibilityOff
+                                    sx={{ width: 21, height: 21 }}
+                                  />
                                 ) : (
-                                  <Visibility sx={{ width: 21, height: 21 }}/>
+                                  <Visibility sx={{ width: 21, height: 21 }} />
                                 )}
                               </IconButton>
                             </InputAdornment>
@@ -670,6 +684,8 @@ const Signup: React.FC = () => {
                       }}
                       control={
                         <Checkbox
+                          checked={acceptedTerms}
+                          onChange={e => setAcceptedTerms(e.target.checked)}
                           icon={
                             <Box
                               sx={{
@@ -689,7 +705,6 @@ const Signup: React.FC = () => {
                             height: 14,
                             minWidth: 14,
                             minHeight: 14,
-
                             boxSizing: 'border-box',
                             '&:hover': {
                               bgcolor: 'transparent',
@@ -731,6 +746,11 @@ const Signup: React.FC = () => {
                       }
                     />
                   </Box>
+                  {termsError && (
+                    <Alert severity='error' sx={{ mt: 1, mb: 1 }}>
+                      {termsError}
+                    </Alert>
+                  )}
                   <Box
                     sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}
                   >

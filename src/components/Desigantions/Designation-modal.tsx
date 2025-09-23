@@ -161,7 +161,7 @@ export default function DesignationModal({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
           <TextField
             label={getText(
-              'Designation Title (English)',
+              'Designation Title',
               'عنوان المسمى الوظيفي (بالإنجليزية)'
             )}
             value={title}
