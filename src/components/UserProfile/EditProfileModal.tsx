@@ -15,6 +15,8 @@ import {
   type UpdateProfileRequest,
 } from '../../api/profileApi';
 import type { UserProfile } from '../../api/profileApi';
+import ProfilePictureUpload from '../common/ProfilePictureUpload';
+import { useProfilePicture } from '../../context/ProfilePictureContext';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -29,6 +31,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   user,
   onProfileUpdated,
 }) => {
+  const { updateProfilePicture, clearProfilePicture } = useProfilePicture();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -41,6 +44,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     Record<string, string>
   >({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [selectedPictureFile, setSelectedPictureFile] = useState<File | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [removeRequested, setRemoveRequested] = useState(false);
 
   // Initialize form data when modal opens
   useEffect(() => {
@@ -54,6 +60,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setError(null);
       setValidationErrors({});
       setHasChanges(false);
+      setSelectedPictureFile(null);
+      setPreviewImageUrl(null);
+      setRemoveRequested(false);
       setLoading(false); // Reset loading state when modal opens
     }
   }, [open, user]);
@@ -143,6 +152,31 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }, 30000); // 30 second timeout
 
     try {
+      const token = localStorage.getItem('accessToken');
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+
+      // 1) If delete requested, remove first and clear global picture context
+      if (removeRequested) {
+        await profileApiService.removeProfilePicture();
+        clearProfilePicture();
+      }
+
+      // 2) If a new picture file was selected in this modal, upload it next
+      if (selectedPictureFile) {
+        if (!token) throw new Error('No access token found');
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        const correctUserId = tokenPayload.sub;
+        const response = await profileApiService.uploadProfilePicture(
+          correctUserId,
+          selectedPictureFile
+        );
+        const profilePicUrl = response.user.profile_pic
+          ? `${API_BASE_URL}/users/${correctUserId}/profile-picture?t=${Date.now()}`
+          : null;
+        updateProfilePicture(profilePicUrl);
+      }
+
+      // 3) Then update textual profile fields
       const updateData: UpdateProfileRequest = {
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
@@ -205,6 +239,32 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </Alert>
           )}
 
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <ProfilePictureUpload
+              user={user}
+              onProfileUpdate={onProfileUpdated}
+              size={100}
+              showUploadButton={true}
+              showRemoveButton={true}
+              clickable={true}
+              deferUpload={true}
+              onFileSelected={file => {
+                setSelectedPictureFile(file);
+                const reader = new FileReader();
+                reader.onload = e => setPreviewImageUrl(e.target?.result as string);
+                reader.readAsDataURL(file);
+              }}
+              previewImageOverride={previewImageUrl}
+              deferDelete={true}
+              onRemoveSelected={() => {
+                setSelectedPictureFile(null);
+                setPreviewImageUrl(null);
+                setRemoveRequested(true);
+              }}
+              suppressExistingImage={removeRequested}
+            />
+          </Box>
+
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label='First Name'
@@ -259,9 +319,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         <Button
           onClick={handleSubmit}
           variant='contained'
-          disabled={loading || !hasChanges}
+          disabled={loading || (!hasChanges && !selectedPictureFile && !removeRequested)}
           startIcon={loading ? <CircularProgress size={16} /> : null}
-          title={!hasChanges ? 'No changes made' : ''}
+          title={!hasChanges && !selectedPictureFile && !removeRequested ? 'No changes made' : ''}
         >
           {loading ? 'Updating...' : 'Update Profile'}
         </Button>
