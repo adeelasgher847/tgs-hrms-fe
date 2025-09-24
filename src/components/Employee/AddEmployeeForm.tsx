@@ -111,6 +111,14 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Load all designations on mount
+  useEffect(() => {
+    (async () => {
+      const allDesignations = await designationApiService.getAllDesignations();
+      setDesignations(allDesignations);
+    })();
+  }, []);
+
   // Prefill from initialData when it changes
   useEffect(() => {
     if (initialData) {
@@ -159,21 +167,8 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       values.gender !== '' ||
       values.role !== 'employee';
 
-  // Load designations when department changes
-  useEffect(() => {
-    if (values.departmentId) {
-      loadDesignations(values.departmentId);
-      // If not initializing and current designationId may not belong, clear it
-      if (!isInitializingRef.current) {
-        setValues(prev => ({ ...prev, designationId: '' }));
-      }
-    } else {
-      setDesignations([]);
-      if (!isInitializingRef.current) {
-        setValues(prev => ({ ...prev, designationId: '' }));
-      }
-    }
-  }, [values.departmentId]);
+  // Remove filtering: always show all designations in the dropdown
+  const filteredDesignations = designations;
 
   const loadDepartments = async () => {
     try {
@@ -230,23 +225,19 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       });
     };
 
-  // When a designation is selected, update departmentId to match the department of that designation
+  // When a designation is selected, set departmentId to its department
   const handleDesignationChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const selectedDesignationId = e.target.value;
-    setValues(prev => {
-      const selectedDesignation = designations.find(
-        d => d.id === selectedDesignationId
-      );
-      return selectedDesignation && selectedDesignation.departmentId
-        ? {
-            ...prev,
-            designationId: selectedDesignationId,
-            departmentId: selectedDesignation.departmentId,
-          }
-        : { ...prev, designationId: selectedDesignationId };
-    });
+    const selectedDesignation = designations.find(
+      d => d.id === selectedDesignationId
+    );
+    setValues(prev => ({
+      ...prev,
+      designationId: selectedDesignationId,
+      departmentId: selectedDesignation?.departmentId || '',
+    }));
     setErrors(prev => {
       const newErrors = { ...prev };
       delete newErrors.designationId;
