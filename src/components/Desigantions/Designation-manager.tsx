@@ -176,15 +176,15 @@ export default function DesignationManager() {
   const handleSaveDesignation = async (data: {
     title: string;
     titleAr: string;
+    departmentId: string;
   }) => {
     try {
       if (editingDesignation) {
         // Update existing designation
         const designationDto = {
           title: data.title,
-          departmentId: editingDesignation.departmentId,
+          departmentId: data.departmentId,
         };
-
         const updatedBackendDesignation =
           await designationApiService.updateDesignation(
             editingDesignation.id,
@@ -194,19 +194,15 @@ export default function DesignationManager() {
           designationApiService.convertBackendToFrontend(
             updatedBackendDesignation
           );
-
-        // Add Arabic title from form data
         const updatedDesignation: FrontendDesignation = {
           ...updatedFrontendDesignation,
           titleAr: data.titleAr || '',
         };
-
         setDesignations(prev =>
           prev.map(d =>
             d.id === editingDesignation.id ? updatedDesignation : d
           )
         );
-
         setSnackbar({
           open: true,
           message: 'Designation successfully',
@@ -214,33 +210,19 @@ export default function DesignationManager() {
         });
       } else {
         // Create new designation
-        if (selectedDepartmentId === 'all') {
-          setSnackbar({
-            open: true,
-            message: 'Please select a department first',
-            severity: 'error',
-          });
-          return;
-        }
-
         const designationDto = {
           title: data.title,
-          departmentId: selectedDepartmentId,
+          departmentId: data.departmentId, // <-- use modal value!
         };
-
         const newBackendDesignation =
           await designationApiService.createDesignation(designationDto);
         const newFrontendDesignation =
           designationApiService.convertBackendToFrontend(newBackendDesignation);
-
-        // Add Arabic title from form data
         const newDesignation: FrontendDesignation = {
           ...newFrontendDesignation,
           titleAr: data.titleAr || '',
         };
-
         setDesignations(prev => [...prev, newDesignation]);
-
         setSnackbar({
           open: true,
           message: 'Designation created successfully',
