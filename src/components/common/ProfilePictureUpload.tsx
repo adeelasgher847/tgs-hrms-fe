@@ -226,6 +226,9 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
         // Update profile picture context - this will update the UI immediately
         clearProfilePicture();
 
+        // Also update the user context so components relying on user.profile_pic react instantly
+        updateUser({ ...user, profile_pic: null });
+
         // ✅ Removed refreshUser() call - this causes full page re-render
         // The profile picture context update is sufficient for UI updates
 
@@ -242,7 +245,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       } finally {
         setRemoving(false);
       }
-    }, [clearProfilePicture, deferDelete, onRemoveSelected, onPictureChanged]); // ✅ Removed refreshUser from dependencies
+    }, [clearProfilePicture, deferDelete, onRemoveSelected, onPictureChanged, updateUser, user]); // ✅ Removed refreshUser from dependencies
 
     const handleAvatarClick = useCallback(() => {
       if (clickable && showUploadButton) {
