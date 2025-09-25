@@ -33,6 +33,7 @@ import {
   designationApiService,
   type BackendDesignation,
 } from '../../api/designationApi';
+import { extractErrorMessage } from '../../utils/errorHandler';
 
 interface Employee {
   id: string;
@@ -259,8 +260,9 @@ const EmployeeManager: React.FC = () => {
       setCurrentPage(response.page);
       setTotalPages(response.totalPages);
       setTotalItems(response.total);
-    } catch {
-      setError('Failed to load employees');
+    } catch (error: unknown) {
+      const errorResult = extractErrorMessage(error);
+      setError(errorResult.message);
     } finally {
       setLoading(false);
     }
@@ -433,8 +435,22 @@ const EmployeeManager: React.FC = () => {
       }
 
       // Generic error
-      setError('Failed to add employee');
-      return { success: false, errors: { general: 'Failed to add employee' } };
+      const errorResult = extractErrorMessage(err);
+      
+      // Check if this is a global tenant/department/designation error
+      const isGlobalError = errorResult.message.toLowerCase().includes('global') || 
+                           errorResult.message.toLowerCase().includes('does not belong to your organization') ||
+                           errorResult.message.toLowerCase().includes('invalid designation id');
+      
+      if (isGlobalError) {
+        // For global errors, only show snackbar, don't set form error
+        setError(errorResult.message); // This will show in the snackbar
+        return { success: false, errors: {} }; // Return empty errors to avoid form display
+      } else {
+        // For other errors, show both snackbar and form error
+        setError(errorResult.message);
+        return { success: false, errors: { general: errorResult.message } };
+      }
     } finally {
       setSubmitting(false);
     }
@@ -520,12 +536,26 @@ const EmployeeManager: React.FC = () => {
       setOpen(false);
       setEditing(null);
       return { success: true };
-    } catch {
-      setError('Failed to update employee');
-      return {
-        success: false,
-        errors: { general: 'Failed to update employee' },
-      };
+    } catch (error: unknown) {
+      const errorResult = extractErrorMessage(error);
+      
+      // Check if this is a global tenant/department/designation error
+      const isGlobalError = errorResult.message.toLowerCase().includes('global') || 
+                           errorResult.message.toLowerCase().includes('does not belong to your organization') ||
+                           errorResult.message.toLowerCase().includes('invalid designation id');
+      
+      if (isGlobalError) {
+        // For global errors, only show snackbar, don't set form error
+        setError(errorResult.message); // This will show in the snackbar
+        return { success: false, errors: {} }; // Return empty errors to avoid form display
+      } else {
+        // For other errors, show both snackbar and form error
+        setError(errorResult.message);
+        return {
+          success: false,
+          errors: { general: errorResult.message },
+        };
+      }
     } finally {
       setSubmitting(false);
     }
@@ -538,8 +568,9 @@ const EmployeeManager: React.FC = () => {
       setEmployees(prev => prev.filter(emp => emp.id !== id));
       setTotalItems(prev => prev - 1);
       setSuccessMessage('Employee deleted successfully!');
-    } catch {
-      setError('Failed to delete employee');
+    } catch (error: unknown) {
+      const errorResult = extractErrorMessage(error);
+      setError(errorResult.message);
     }
   };
 

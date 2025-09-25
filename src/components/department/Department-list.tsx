@@ -23,6 +23,8 @@ import {
   departmentApiService,
   type FrontendDepartment,
 } from '../../api/departmentApi';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 
 const labels = {
   en: {
@@ -62,15 +64,7 @@ export const DepartmentList: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] =
     useState<FrontendDepartment | null>(null);
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error';
-  }>({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
+  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   /* ---------- API handlers ---------- */
   const fetchDepartments = async () => {
@@ -82,13 +76,7 @@ export const DepartmentList: React.FC = () => {
       );
       setDepartments(frontendDepartments);
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to fetch departments';
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
+      showError(error, { operation: 'fetch', resource: 'department' });
     } finally {
       setLoading(false);
     }
@@ -119,19 +107,9 @@ export const DepartmentList: React.FC = () => {
 
       setDepartments(prev => [newDepartment, ...prev]);
       setIsFormModalOpen(false);
-      setSnackbar({
-        open: true,
-        message: 'Department created successfully',
-        severity: 'success',
-      });
+      showSuccess('Department created successfully');
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to create department';
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
+      showError(error, { operation: 'create', resource: 'department' });
     }
   };
 
@@ -163,19 +141,9 @@ export const DepartmentList: React.FC = () => {
       );
       setSelectedDepartment(null);
       setIsFormModalOpen(false);
-      setSnackbar({
-        open: true,
-        message: 'Department successfully',
-        severity: 'success',
-      });
+      showSuccess('Department updated successfully');
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to update department';
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
+      showError(error, { operation: 'update', resource: 'department' });
     }
   };
 
@@ -187,19 +155,9 @@ export const DepartmentList: React.FC = () => {
       setDepartments(prev => prev.filter(d => d.id !== selectedDepartment.id));
       setSelectedDepartment(null);
       setIsDeleteModalOpen(false);
-      setSnackbar({
-        open: true,
-        message: 'Department deleted successfully',
-        severity: 'success',
-      });
+      showSuccess('Department deleted successfully');
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to delete department';
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
+      showError(error, { operation: 'delete', resource: 'department' });
     }
   };
 
@@ -401,20 +359,12 @@ export const DepartmentList: React.FC = () => {
       />
 
       {/* Snackbar for notifications */}
-      <Snackbar
+      <ErrorSnackbar
         open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };
