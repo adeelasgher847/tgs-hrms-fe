@@ -550,7 +550,7 @@ const SelectPlan: React.FC = () => {
               Processing...
             </Box>
           ) : (
-            'Continue to Payment'
+            'Continue to  Checkout'
           )}
         </Button>
       </Box>

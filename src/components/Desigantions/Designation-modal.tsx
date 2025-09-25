@@ -12,9 +12,12 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
+  MenuItem,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
+import type { BackendDepartment } from '../../api/departmentApi';
+import { departmentApiService } from '../../api/departmentApi';
 
 interface Designation {
   id: string;
@@ -26,7 +29,11 @@ interface Designation {
 interface DesignationModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (data: { title: string; titleAr: string }) => void;
+  onSave: (data: {
+    title: string;
+    titleAr: string;
+    departmentId: string;
+  }) => void;
   designation: Designation | null;
   isRTL: boolean;
 }
@@ -48,32 +55,47 @@ export default function DesignationModal({
   const [titleAr, setTitleAr] = useState('');
   const [originalTitle, setOriginalTitle] = useState('');
   const [originalTitleAr, setOriginalTitleAr] = useState('');
-  const [errors, setErrors] = useState<{ title?: string; titleAr?: string }>(
-    {}
-  );
+  const [errors, setErrors] = useState<{
+    title?: string;
+    titleAr?: string;
+    departmentId?: string;
+  }>({});
+  const [departments, setDepartments] = useState<BackendDepartment[]>([]);
+  const [departmentId, setDepartmentId] = useState('');
 
   useEffect(() => {
+    if (open) {
+      departmentApiService.getAllDepartments().then(setDepartments);
+    }
     if (designation) {
       setTitle(designation.title);
       setTitleAr(designation.titleAr || '');
       setOriginalTitle(designation.title);
       setOriginalTitleAr(designation.titleAr || '');
+      setDepartmentId(designation.departmentId || '');
     } else {
       setTitle('');
       setTitleAr('');
       setOriginalTitle('');
       setOriginalTitleAr('');
+      setDepartmentId('');
     }
     setErrors({});
   }, [designation, open]);
 
   // Check if form has changes
   const hasChanges = designation
-    ? title !== originalTitle || titleAr !== originalTitleAr
-    : title.trim() !== '' || titleAr.trim() !== '';
+    ? title !== originalTitle ||
+      titleAr !== originalTitleAr ||
+      departmentId !== (designation.departmentId || '')
+    : title.trim() !== '' || titleAr.trim() !== '' || departmentId !== '';
 
   const validateForm = () => {
-    const newErrors: { title?: string; titleAr?: string } = {};
+    const newErrors: {
+      title?: string;
+      titleAr?: string;
+      departmentId?: string;
+    } = {};
 
     if (!title.trim()) {
       newErrors.title = getText(
@@ -81,7 +103,9 @@ export default function DesignationModal({
         'عنوان المسمى الوظيفي مطلوب'
       );
     }
-
+    if (!departmentId) {
+      newErrors.departmentId = getText('Department is required', 'القسم مطلوب');
+    }
     // Arabic title is optional but if provided, validate it
     if (titleAr.trim() && titleAr.trim().length < 2) {
       newErrors.titleAr = getText(
@@ -96,7 +120,7 @@ export default function DesignationModal({
 
   const handleSubmit = () => {
     if (validateForm()) {
-      onSave({ title: title.trim(), titleAr: titleAr.trim() });
+      onSave({ title: title.trim(), titleAr: titleAr.trim(), departmentId });
       handleClose();
     }
   };
@@ -160,8 +184,24 @@ export default function DesignationModal({
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
           <TextField
+            select
+            label={getText('Department', 'القسم')}
+            value={departmentId}
+            onChange={e => setDepartmentId(e.target.value)}
+            error={!!errors.departmentId}
+            helperText={errors.departmentId}
+            fullWidth
+            required
+          >
+            {departments.map(dept => (
+              <MenuItem key={dept.id} value={dept.id}>
+                {dept.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
             label={getText(
-              'Designation Title (English)',
+              'Designation Title',
               'عنوان المسمى الوظيفي (بالإنجليزية)'
             )}
             value={title}
@@ -176,7 +216,6 @@ export default function DesignationModal({
               dir: 'ltr',
             }}
           />
-
           {/* <TextField
             label={getText(
               'Designation Title (Arabic - Optional)',

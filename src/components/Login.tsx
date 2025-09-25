@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
@@ -26,6 +26,7 @@ import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { type AlertProps } from '@mui/material/Alert';
 import { useUser } from '../hooks/useUser';
 import { getDefaultDashboardRoute } from '../utils/permissions';
+import { useGoogleScript } from '../hooks/useGoogleScript';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
   function Alert(props, ref) {
@@ -36,6 +37,10 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { updateUser } = useUser();
+  const { isLoaded } = useGoogleScript();
+  const googleBtnRef = useRef<HTMLDivElement | null>(null);
+  const googleInitializedRef = useRef<boolean>(false);
+  const googleButtonRenderedRef = useRef<boolean>(false);
 
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -113,6 +118,86 @@ const Login: React.FC = () => {
       setPassword(remembered.password);
     }
     // Don't clear password if email doesn't match - let user keep their input
+  };
+
+  const initGoogleButton = () => {
+    if (!isLoaded) {
+      setSnackbar({ open: true, message: 'Google script not loaded yet', severity: 'error' });
+      return;
+    }
+    try {
+      if (!googleInitializedRef.current) {
+        (window as any).google.accounts.id.initialize({
+          client_id:
+            (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) ||
+            '723870948758-ks4h9v6svagoptgt5vqj5hfbhacvcfn7.apps.googleusercontent.com',
+          callback: async (response: { credential: string }) => {
+            try {
+              const idToken = response.credential;
+              const { data } = await axios.post(
+                `${import.meta.env.VITE_API_BASE_URL}/signup/google-init`,
+                { idToken }
+              );
+              if (data?.alreadyRegistered) {
+                localStorage.setItem('accessToken', data.accessToken);
+                localStorage.setItem('refreshToken', data.refreshToken);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                localStorage.setItem(
+                  'permissions',
+                  JSON.stringify(data.permissions || [])
+                );
+                try {
+                  updateUser(data.user);
+                } catch {}
+                const role =
+                  typeof data.user?.role === 'string'
+                    ? data.user?.role
+                    : data.user?.role?.name;
+                const target = getDefaultDashboardRoute(role);
+                navigate(target, { replace: true });
+              } else {
+                localStorage.setItem('signupSessionId', data.signupSessionId);
+                localStorage.setItem(
+                  'googleSignupPrefill',
+                  JSON.stringify({
+                    email: data.email,
+                    first_name: data.first_name,
+                    last_name: data.last_name,
+                    suggested: data.suggested,
+                  })
+                );
+                navigate('/signup/company-details', { replace: true });
+              }
+            } catch {
+              setSnackbar({
+                open: true,
+                message: 'Google Sign-In failed, please try again',
+                severity: 'error',
+              });
+            }
+          },
+        });
+        googleInitializedRef.current = true;
+      }
+
+      if (!googleButtonRenderedRef.current) {
+        if (googleBtnRef.current) {
+          googleBtnRef.current.innerHTML = '';
+        }
+        (window as any).google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'outline',
+          size: 'large',
+        });
+        googleButtonRenderedRef.current = true;
+      }
+
+      const nativeBtn = googleBtnRef.current?.querySelector('div[role="button"]') as HTMLElement | null;
+      if (nativeBtn) {
+        nativeBtn.click();
+      }
+    } catch {
+      setSnackbar({ open: true, message: 'Failed to initialize Google Sign-In', severity: 'error' });
+    }
   };
 
   const handleSubmit = async (
@@ -201,10 +286,10 @@ const Login: React.FC = () => {
             ).response.data
           : null;
       if (data?.field === 'email') {
-        setEmailError(data.message);
+        setEmailError(data.message || '');
         setPasswordError('');
       } else if (data?.field === 'password') {
-        setPasswordError(data.message);
+        setPasswordError(data.message || '');
         setEmailError('');
       } else {
         setEmailError('');
@@ -317,7 +402,7 @@ const Login: React.FC = () => {
                     <Select
                       id='language-select'
                       value={lang}
-                      onChange={e => setLang(e.target.value)}
+                      onChange={e => setLang(e.target.value as 'en' | 'ar')}
                       displayEmpty
                       sx={{
                         bgcolor: 'white',
@@ -375,9 +460,10 @@ const Login: React.FC = () => {
                   </Typography>
                 </Box>
                 <Box sx={{ textAlign: 'center', mb: 1 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center' }}>
                     <Button
                       variant='outlined'
+                      onClick={initGoogleButton}
                       sx={{
                         color: 'white',
                         borderColor: '#f0f0f0',
@@ -411,6 +497,7 @@ const Login: React.FC = () => {
                         ? 'تسجيل الدخول باستخدام جوجل'
                         : 'Sign in with Google'}
                     </Button>
+                    <Box id='googleBtn' ref={googleBtnRef} sx={{ display: 'none' }} />
                   </Box>
                   <Divider
                     sx={{
