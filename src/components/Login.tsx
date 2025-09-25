@@ -134,12 +134,10 @@ const Login: React.FC = () => {
           callback: async (response: { credential: string }) => {
             try {
               const idToken = response.credential;
-              console.log('Google idToken:', idToken);
               const { data } = await axios.post(
                 `${import.meta.env.VITE_API_BASE_URL}/signup/google-init`,
                 { idToken }
               );
-              console.log('Google data:', data);
               if (data?.alreadyRegistered) {
                 localStorage.setItem('accessToken', data.accessToken);
                 localStorage.setItem('refreshToken', data.refreshToken);
