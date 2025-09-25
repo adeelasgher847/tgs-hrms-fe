@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import { handleApiError, isGlobalDesignation } from '../utils/errorHandler';
 
 // Normalized types exposed to the rest of the app (camelCase)
 export interface BackendDesignation {
@@ -176,16 +177,25 @@ class DesignationApiService {
   async createDesignation(
     designationData: DesignationDto
   ): Promise<BackendDesignation> {
-    // Backend expects snake_case: { title, department_id }
-    const payload = {
-      title: designationData.title,
-      department_id: designationData.departmentId,
-    };
-    const response = await axiosInstance.post<BackendDesignation>(
-      this.baseUrl,
-      payload
-    );
-    return normalizeDesignation(response.data);
+    try {
+      // Backend expects snake_case: { title, department_id }
+      const payload = {
+        title: designationData.title,
+        department_id: designationData.departmentId,
+      };
+      const response = await axiosInstance.post<BackendDesignation>(
+        this.baseUrl,
+        payload
+      );
+      return normalizeDesignation(response.data);
+    } catch (error) {
+      const errorResult = handleApiError(error, {
+        operation: 'create',
+        resource: 'designation',
+        isGlobal: false, // Will be determined by the error message
+      });
+      throw new Error(errorResult.message);
+    }
   }
 
   // Update designation
@@ -193,22 +203,40 @@ class DesignationApiService {
     id: string,
     designationData: DesignationDto
   ): Promise<BackendDesignation> {
-    // Backend uses department_id from existing record; only title is relevant
-    const payload = { title: designationData.title };
-    const response = await axiosInstance.put<BackendDesignation>(
-      `${this.baseUrl}/${id}`,
-      payload
-    );
-    return normalizeDesignation(response.data);
+    try {
+      // Backend uses department_id from existing record; only title is relevant
+      const payload = { title: designationData.title };
+      const response = await axiosInstance.put<BackendDesignation>(
+        `${this.baseUrl}/${id}`,
+        payload
+      );
+      return normalizeDesignation(response.data);
+    } catch (error) {
+      const errorResult = handleApiError(error, {
+        operation: 'update',
+        resource: 'designation',
+        isGlobal: false, // Will be determined by the error message
+      });
+      throw new Error(errorResult.message);
+    }
   }
 
   // Delete designation
   async deleteDesignation(id: string): Promise<{ deleted: true; id: string }> {
-    const response = await axiosInstance.delete<{
-      deleted: true;
-      id: string;
-    }>(`${this.baseUrl}/${id}`);
-    return response.data;
+    try {
+      const response = await axiosInstance.delete<{
+        deleted: true;
+        id: string;
+      }>(`${this.baseUrl}/${id}`);
+      return response.data;
+    } catch (error) {
+      const errorResult = handleApiError(error, {
+        operation: 'delete',
+        resource: 'designation',
+        isGlobal: false, // Will be determined by the error message
+      });
+      throw new Error(errorResult.message);
+    }
   }
 
   // Helper function to convert backend designation to frontend format

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { shouldLogout, forceLogout } from '../utils/authValidation';
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
@@ -69,9 +70,18 @@ axiosInstance.interceptors.request.use(
   error => Promise.reject(error)
 );
 
-// Response interceptor to handle token refresh
-axiosInstance.interceptors.response.use(undefined, async (error: unknown) => {
+// Response interceptor to handle token refresh and error formatting
+axiosInstance.interceptors.response.use(undefined, async (error: any) => {
   const originalRequest = error.config;
+  
+  // Check if user should be logged out (deleted user, invalid token, etc.)
+  if (shouldLogout(error)) {
+    console.warn('User should be logged out due to:', error.response?.data?.message || 'Authentication error');
+    forceLogout();
+    return Promise.reject(error);
+  }
+  
+  // Handle 401 errors for token refresh
   if (
     error &&
     typeof error === 'object' &&
@@ -104,17 +114,37 @@ axiosInstance.interceptors.response.use(undefined, async (error: unknown) => {
       processQueue(null, data.accessToken);
       originalRequest.headers.Authorization = 'Bearer ' + data.accessToken;
       return axiosInstance(originalRequest);
-    } catch {
-      processQueue(err, null);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
-      window.location.href = '/';
-      return Promise.reject(err);
+    } catch (refreshError) {
+      processQueue(refreshError, null);
+      // If refresh fails, check if it's due to user deletion
+      if (shouldLogout(refreshError)) {
+        forceLogout();
+      } else {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+      }
+      return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;
     }
   }
+  
+  // For all other errors, ensure the error object has proper structure
+  if (error && typeof error === 'object' && 'response' in error) {
+    const axiosError = error as any;
+    
+    // Ensure error response has proper structure for frontend handling
+    if (axiosError.response?.data && typeof axiosError.response.data === 'object') {
+      // If backend returns structured error, preserve it
+      if (axiosError.response.data.message) {
+        // Error already has proper structure, pass it through
+        return Promise.reject(error);
+      }
+    }
+  }
+  
   return Promise.reject(error);
 });
 

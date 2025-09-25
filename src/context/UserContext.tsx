@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import { profileApiService, type UserProfile } from '../api/profileApi';
 import type { UserContextType } from '../types/context';
+import { validateToken, setupTokenValidation, clearAuthData } from '../utils/authValidation';
 
 export const UserContext = createContext<UserContextType | undefined>(
   undefined
@@ -48,7 +49,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   // Clear user data (for logout)
   const clearUser = useCallback(() => {
     setUser(null);
-    localStorage.removeItem('user');
+    clearAuthData();
   }, []);
 
   // Load user data from localStorage on mount and refresh from API
@@ -62,13 +63,21 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
           return;
         }
 
+        // First validate the token to ensure user still exists
+        const validationResult = await validateToken();
+        if (!validationResult.isValid) {
+          console.warn('Token validation failed:', validationResult.error);
+          clearAuthData();
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
         // Load from localStorage for immediate display
         const userData = localStorage.getItem('user');
         if (userData) {
           const parsedUser = JSON.parse(userData);
           setUser(parsedUser);
-        } else {
-          // No user data in localStorage
         }
 
         // Always refresh from API to ensure consistency
@@ -76,17 +85,28 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
           const apiUser = await profileApiService.getUserProfile();
           setUser(apiUser);
           localStorage.setItem('user', JSON.stringify(apiUser));
-        } catch {
-          /* Error handled silently */
+        } catch (error: any) {
+          // If API call fails, check if it's due to user deletion
+          if (error?.response?.status === 401 || error?.response?.status === 403) {
+            console.warn('User profile fetch failed - user may have been deleted');
+            clearAuthData();
+            setUser(null);
+          }
         }
-      } catch {
-        // Handle error silently
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        clearAuthData();
+        setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
     loadUserData();
+
+    // Set up periodic token validation (every 5 minutes)
+    const cleanup = setupTokenValidation(5);
+    return cleanup;
   }, []);
 
   const contextValue: UserContextType = useMemo(
