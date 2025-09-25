@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import { handleApiError, isGlobalDepartment } from '../utils/errorHandler';
 
 // Backend Department interface (matches your NestJS entity)
 export interface BackendDepartment {
@@ -44,21 +45,39 @@ class DepartmentApiService {
 
   // Get department by ID
   async getDepartmentById(id: string): Promise<BackendDepartment> {
-    const response = await axiosInstance.get<BackendDepartment>(
-      `${this.baseUrl}/${id}`
-    );
-    return response.data;
+    try {
+      const response = await axiosInstance.get<BackendDepartment>(
+        `${this.baseUrl}/${id}`
+      );
+      return response.data;
+    } catch (error) {
+      const errorResult = handleApiError(error, {
+        operation: 'fetch',
+        resource: 'department',
+        isGlobal: false, // We don't know if it's global until we fetch it
+      });
+      throw new Error(errorResult.message);
+    }
   }
 
   // Create new department
   async createDepartment(
     departmentData: DepartmentDto
   ): Promise<BackendDepartment> {
-    const response = await axiosInstance.post<BackendDepartment>(
-      this.baseUrl,
-      departmentData
-    );
-    return response.data;
+    try {
+      const response = await axiosInstance.post<BackendDepartment>(
+        this.baseUrl,
+        departmentData
+      );
+      return response.data;
+    } catch (error) {
+      const errorResult = handleApiError(error, {
+        operation: 'create',
+        resource: 'department',
+        isGlobal: false,
+      });
+      throw new Error(errorResult.message);
+    }
   }
 
   // Update department
@@ -66,20 +85,42 @@ class DepartmentApiService {
     id: string,
     departmentData: DepartmentDto
   ): Promise<BackendDepartment> {
-    const response = await axiosInstance.put<BackendDepartment>(
-      `${this.baseUrl}/${id}`,
-      departmentData
-    );
-    return response.data;
+    try {
+      // Check if this is a global department first
+      const existingDept = await this.getDepartmentById(id);
+      const isGlobal = isGlobalDepartment(existingDept);
+      
+      const response = await axiosInstance.put<BackendDepartment>(
+        `${this.baseUrl}/${id}`,
+        departmentData
+      );
+      return response.data;
+    } catch (error) {
+      const errorResult = handleApiError(error, {
+        operation: 'update',
+        resource: 'department',
+        isGlobal: false, // Will be determined by the error message
+      });
+      throw new Error(errorResult.message);
+    }
   }
 
   // Delete department
   async deleteDepartment(id: string): Promise<{ deleted: true; id: string }> {
-    const response = await axiosInstance.delete<{
-      deleted: true;
-      id: string;
-    }>(`${this.baseUrl}/${id}`);
-    return response.data;
+    try {
+      const response = await axiosInstance.delete<{
+        deleted: true;
+        id: string;
+      }>(`${this.baseUrl}/${id}`);
+      return response.data;
+    } catch (error) {
+      const errorResult = handleApiError(error, {
+        operation: 'delete',
+        resource: 'department',
+        isGlobal: false, // Will be determined by the error message
+      });
+      throw new Error(errorResult.message);
+    }
   }
 
   // Helper function to convert backend department to frontend format

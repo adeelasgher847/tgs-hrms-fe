@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import { handleApiError } from '../utils/errorHandler';
 
 export interface EmployeeJoiningReport {
   month: number;
@@ -362,20 +363,29 @@ class EmployeeApiService {
   // Create new company
 
   async createEmployee(employeeData: EmployeeDto): Promise<BackendEmployee> {
-    const payload = {
-      first_name: employeeData.first_name,
-      last_name: employeeData.last_name,
-      email: employeeData.email,
-      phone: employeeData.phone,
-      password: employeeData.password,
-      designation_id: employeeData.designationId,
-      gender: employeeData.gender, // <-- Add gender to payload
-    };
-    const response = await axiosInstance.post<RawEmployee>(
-      this.baseUrl,
-      payload
-    );
-    return normalizeEmployee(response.data);
+    try {
+      const payload = {
+        first_name: employeeData.first_name,
+        last_name: employeeData.last_name,
+        email: employeeData.email,
+        phone: employeeData.phone,
+        password: employeeData.password,
+        designation_id: employeeData.designationId,
+        gender: employeeData.gender, // <-- Add gender to payload
+      };
+      const response = await axiosInstance.post<RawEmployee>(
+        this.baseUrl,
+        payload
+      );
+      return normalizeEmployee(response.data);
+    } catch (error) {
+      const errorResult = handleApiError(error, {
+        operation: 'create',
+        resource: 'employee',
+        isGlobal: false,
+      });
+      throw new Error(errorResult.message);
+    }
   }
 
   // Create a new manager employee
@@ -400,41 +410,59 @@ class EmployeeApiService {
     id: string,
     updates: EmployeeUpdateDto
   ): Promise<BackendEmployee> {
-    const payload: Partial<
-      Pick<
-        EmployeeUpdateDto,
-        | 'first_name'
-        | 'last_name'
-        | 'email'
-        | 'phone'
-        | 'password'
-        | 'designationId'
-      >
-    > = {};
-    if (updates.first_name !== undefined)
-      payload.first_name = updates.first_name;
-    if (updates.last_name !== undefined) payload.last_name = updates.last_name;
-    if (updates.email !== undefined) payload.email = updates.email;
-    if (updates.phone !== undefined) payload.phone = updates.phone;
-    if (updates.password !== undefined && updates.password !== '')
-      payload.password = updates.password;
-    if (updates.designationId && updates.designationId.trim() !== '') {
-      // @ts-expect-error: API expects 'designation_id', but TS type only allows 'designationId'
-      payload['designation_id'] = updates.designationId;
+    try {
+      const payload: Partial<
+        Pick<
+          EmployeeUpdateDto,
+          | 'first_name'
+          | 'last_name'
+          | 'email'
+          | 'phone'
+          | 'password'
+          | 'designationId'
+        >
+      > = {};
+      if (updates.first_name !== undefined)
+        payload.first_name = updates.first_name;
+      if (updates.last_name !== undefined) payload.last_name = updates.last_name;
+      if (updates.email !== undefined) payload.email = updates.email;
+      if (updates.phone !== undefined) payload.phone = updates.phone;
+      if (updates.password !== undefined && updates.password !== '')
+        payload.password = updates.password;
+      if (updates.designationId && updates.designationId.trim() !== '') {
+        // @ts-expect-error: API expects 'designation_id', but TS type only allows 'designationId'
+        payload['designation_id'] = updates.designationId;
+      }
+      const response = await axiosInstance.put<RawEmployee>(
+        `${this.baseUrl}/${id}`,
+        payload
+      );
+      return normalizeEmployee(response.data);
+    } catch (error) {
+      const errorResult = handleApiError(error, {
+        operation: 'update',
+        resource: 'employee',
+        isGlobal: false,
+      });
+      throw new Error(errorResult.message);
     }
-    const response = await axiosInstance.put<RawEmployee>(
-      `${this.baseUrl}/${id}`,
-      payload
-    );
-    return normalizeEmployee(response.data);
   }
 
   async deleteEmployee(id: string): Promise<{ deleted: true; id: string }> {
-    const response = await axiosInstance.delete<{
-      deleted: true;
-      id: string;
-    }>(`${this.baseUrl}/${id}`);
-    return response.data;
+    try {
+      const response = await axiosInstance.delete<{
+        deleted: true;
+        id: string;
+      }>(`${this.baseUrl}/${id}`);
+      return response.data;
+    } catch (error) {
+      const errorResult = handleApiError(error, {
+        operation: 'delete',
+        resource: 'employee',
+        isGlobal: false,
+      });
+      throw new Error(errorResult.message);
+    }
   }
 
   // Get gender percentage for dashboard

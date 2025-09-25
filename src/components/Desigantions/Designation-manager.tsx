@@ -38,6 +38,9 @@ import {
   departmentApiService,
   type FrontendDepartment,
 } from '../../api/departmentApi';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import { extractErrorMessage } from '../../utils/errorHandler';
 
 export default function DesignationManager() {
   const { language } = useLanguage();
@@ -59,15 +62,7 @@ export default function DesignationManager() {
   >('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error';
-  }>({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
+  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   const getText = (en: string, ar: string) => (language === 'ar' ? ar : en);
 
@@ -81,13 +76,7 @@ export default function DesignationManager() {
       );
       setDepartments(frontendDepartments);
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to fetch departments';
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
+      showError(error, { operation: 'fetch', resource: 'department' });
     } finally {
       setDepartmentsLoading(false);
     }
@@ -110,13 +99,7 @@ export default function DesignationManager() {
       setCurrentPage(response.page);
       setItemsPerPage(response.limit);
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to fetch designations';
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
+      showError(error, { operation: 'fetch', resource: 'designation' });
     } finally {
       setLoading(false);
     }
@@ -145,15 +128,7 @@ export default function DesignationManager() {
       );
       setDesignations(frontendDesignations);
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Failed to fetch all designations';
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
+      showError(error, { operation: 'fetch', resource: 'designation' });
     } finally {
       setLoading(false);
     }
@@ -203,13 +178,17 @@ export default function DesignationManager() {
             d.id === editingDesignation.id ? updatedDesignation : d
           )
         );
-        setSnackbar({
-          open: true,
-          message: 'Designation successfully',
-          severity: 'success',
-        });
+
+
+        showSuccess('Designation updated successfully');
       } else {
         // Create new designation
+        if (selectedDepartmentId === 'all') {
+          showError(new Error('Please select a department first'));
+          return;
+        }
+
+
         const designationDto = {
           title: data.title,
           departmentId: data.departmentId, // <-- use modal value!
@@ -223,22 +202,15 @@ export default function DesignationManager() {
           titleAr: data.titleAr || '',
         };
         setDesignations(prev => [...prev, newDesignation]);
-        setSnackbar({
-          open: true,
-          message: 'Designation created successfully',
-          severity: 'success',
-        });
+
+
+        showSuccess('Designation created successfully');
+
       }
       setModalOpen(false);
       setEditingDesignation(null);
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to save designation';
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
+      showError(error, { operation: 'create', resource: 'designation' });
     }
   };
 
@@ -249,21 +221,9 @@ export default function DesignationManager() {
         setDesignations(prev =>
           prev.filter(d => d.id !== designationToDelete.id)
         );
-        setSnackbar({
-          open: true,
-          message: 'Designation deleted successfully',
-          severity: 'success',
-        });
+        showSuccess('Designation deleted successfully');
       } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : 'Failed to delete designation';
-        setSnackbar({
-          open: true,
-          message: errorMessage,
-          severity: 'error',
-        });
+        showError(error, { operation: 'delete', resource: 'designation' });
       }
     }
     setDeleteDialogOpen(false);
@@ -572,20 +532,12 @@ export default function DesignationManager() {
       />
 
       {/* Snackbar for notifications */}
-      <Snackbar
+      <ErrorSnackbar
         open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 }
