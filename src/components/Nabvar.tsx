@@ -110,9 +110,14 @@ const Navbar: React.FC<NavbarProps> = ({
   // Initialize profile picture state when user data loads
   React.useEffect(() => {
     if (user?.profile_pic) {
-      updateProfilePicture(user.profile_pic);
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const profilePicUrl = user.profile_pic.startsWith('http')
+        ? user.profile_pic
+        : `${API_BASE_URL}/users/${user.id}/profile-picture`;
+      updateProfilePicture(profilePicUrl);
     }
-  }, [user?.profile_pic, updateProfilePicture]);
+  }, [user?.profile_pic, user?.id, updateProfilePicture]);
 
   // Language dropdown state
   const [langAnchorEl, setLangAnchorEl] = React.useState<null | HTMLElement>(
