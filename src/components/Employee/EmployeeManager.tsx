@@ -687,7 +687,6 @@ const EmployeeManager: React.FC = () => {
             label={getLabel('Designation', 'المسمى الوظيفي')}
             value={designationFilter}
             onChange={e => setDesignationFilter(e.target.value)}
-            disabled={!departmentFilter || loadingFilters}
             size='small'
             sx={{
               width: isMobile ? '100%' : 190,
@@ -710,13 +709,11 @@ const EmployeeManager: React.FC = () => {
             <MenuItem value=''>
               {getLabel('All Designations', 'كل المسميات')}
             </MenuItem>
-            {designationList
-              .filter(des => des.departmentId === departmentFilter)
-              .map(des => (
-                <MenuItem key={des.id} value={des.id}>
-                  {des.title}
-                </MenuItem>
-              ))}
+            {designationList.map(des => (
+              <MenuItem key={des.id} value={des.id}>
+                {des.title}
+              </MenuItem>
+            ))}
           </TextField>
 
           <Button

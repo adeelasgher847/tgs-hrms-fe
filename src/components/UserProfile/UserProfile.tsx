@@ -94,26 +94,24 @@ const UserProfileComponent = React.memo(() => {
   }, []);
 
   const handleProfileUpdated = useCallback(
-    async (updatedUser: UserProfile) => {
-      // First update with the returned data for immediate UI update
-      updateUser(updatedUser);
+    (updatedUser: UserProfile) => {
+      // Merge with existing profile to avoid wiping fields and reduce re-renders
+      updateUser({ ...(profile || {}), ...updatedUser });
+
+      // Close modal
       setEditModalOpen(false);
 
-      // Then refresh from API to ensure we have the latest data from backend
-      try {
-        const freshUserData = await profileApiService.getUserProfile();
-        updateUser(freshUserData);
-
-        // Update profile picture context if profile picture changed
-        if (freshUserData.profile_pic) {
-          updateProfilePicture(freshUserData.profile_pic);
-        }
-      } catch (error) {
-        console.error('Failed to refresh profile data:', error);
-        // Keep the updated data even if refresh fails
+      // Normalize profile picture URL and update picture context
+      if (updatedUser.profile_pic) {
+        const API_BASE_URL =
+          import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+        const profilePicUrl = updatedUser.profile_pic.startsWith('http')
+          ? updatedUser.profile_pic
+          : `${API_BASE_URL}/users/${updatedUser.id}/profile-picture`;
+        updateProfilePicture(profilePicUrl);
       }
     },
-    [updateUser, updateProfilePicture]
+    [profile, updateUser, updateProfilePicture]
   );
 
   // Determine if the user should see the employee profile view (managers included)

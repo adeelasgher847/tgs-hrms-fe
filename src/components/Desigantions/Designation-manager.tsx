@@ -158,9 +158,8 @@ export default function DesignationManager() {
         // Update existing designation
         const designationDto = {
           title: data.title,
-          departmentId: editingDesignation.departmentId,
+          departmentId: data.departmentId,
         };
-
         const updatedBackendDesignation =
           await designationApiService.updateDesignation(
             editingDesignation.id,
@@ -170,18 +169,16 @@ export default function DesignationManager() {
           designationApiService.convertBackendToFrontend(
             updatedBackendDesignation
           );
-
-        // Add Arabic title from form data
         const updatedDesignation: FrontendDesignation = {
           ...updatedFrontendDesignation,
           titleAr: data.titleAr || '',
         };
-
         setDesignations(prev =>
           prev.map(d =>
             d.id === editingDesignation.id ? updatedDesignation : d
           )
         );
+
 
         showSuccess('Designation updated successfully');
       } else {
@@ -190,21 +187,19 @@ export default function DesignationManager() {
           title: data.title,
           departmentId: data.departmentId,
         };
-
         const newBackendDesignation =
           await designationApiService.createDesignation(designationDto);
         const newFrontendDesignation =
           designationApiService.convertBackendToFrontend(newBackendDesignation);
-
-        // Add Arabic title from form data
         const newDesignation: FrontendDesignation = {
           ...newFrontendDesignation,
           titleAr: data.titleAr || '',
         };
-
         setDesignations(prev => [...prev, newDesignation]);
 
+
         showSuccess('Designation created successfully');
+
       }
       setModalOpen(false);
       setEditingDesignation(null);

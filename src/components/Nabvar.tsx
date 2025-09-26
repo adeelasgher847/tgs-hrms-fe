@@ -110,9 +110,14 @@ const Navbar: React.FC<NavbarProps> = ({
   // Initialize profile picture state when user data loads
   React.useEffect(() => {
     if (user?.profile_pic) {
-      updateProfilePicture(user.profile_pic);
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const profilePicUrl = user.profile_pic.startsWith('http')
+        ? user.profile_pic
+        : `${API_BASE_URL}/users/${user.id}/profile-picture`;
+      updateProfilePicture(profilePicUrl);
     }
-  }, [user?.profile_pic, updateProfilePicture]);
+  }, [user?.profile_pic, user?.id, updateProfilePicture]);
 
   // Language dropdown state
   const [langAnchorEl, setLangAnchorEl] = React.useState<null | HTMLElement>(
@@ -240,7 +245,7 @@ const Navbar: React.FC<NavbarProps> = ({
           <Box
             sx={{
               display: 'flex',
-              justifyContent: 'space-between',
+              justifyContent: 'flex-end',
               alignItems: 'center',
               mt: { xs: 1, sm: 0 },
             }}
@@ -249,7 +254,7 @@ const Navbar: React.FC<NavbarProps> = ({
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: { xs: 0.2, md: 2 },
+                gap: { xs: 3, md: 2 },
               }}
             >
               {/* <IconButton
@@ -268,7 +273,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 onClick={e => setLangAnchorEl(e.currentTarget)}
                 sx={{
                   minWidth: 0,
-                  px: 1,
+                  px: 0,
                   color: textColor,
                   fontWeight: 600,
                 }}

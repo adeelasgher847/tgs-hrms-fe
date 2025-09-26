@@ -28,6 +28,13 @@ interface ProfilePictureUploadProps {
   showRemoveButton?: boolean;
   clickable?: boolean;
   showEditOverlay?: boolean;
+  onPictureChanged?: (changed: boolean) => void;
+  deferUpload?: boolean;
+  onFileSelected?: (file: File) => void;
+  previewImageOverride?: string | null;
+  deferDelete?: boolean;
+  onRemoveSelected?: () => void;
+  suppressExistingImage?: boolean;
 }
 
 const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
@@ -38,6 +45,13 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
     showUploadButton = true,
     showRemoveButton = true,
     clickable = true,
+    onPictureChanged,
+    deferUpload = false,
+    onFileSelected,
+    previewImageOverride,
+    deferDelete = false,
+    onRemoveSelected,
+    suppressExistingImage = false,
   }) => {
     const { updateUser, refreshUser } = useUser();
     const { updateProfilePicture, clearProfilePicture } = useProfilePicture();
@@ -118,7 +132,13 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       };
       reader.readAsDataURL(file);
 
-      setShowUploadDialog(true);
+      if (deferUpload) {
+        if (onFileSelected) onFileSelected(file);
+        if (onPictureChanged) onPictureChanged(true);
+      } else {
+        setShowUploadDialog(true);
+        if (onPictureChanged) onPictureChanged(true);
+      }
     };
 
     const handleUpload = useCallback(async () => {
@@ -158,6 +178,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
         setShowUploadDialog(false);
         setSelectedFile(null);
         setPreviewUrl(null);
+        if (onPictureChanged) onPictureChanged(true);
       } catch (err: unknown) {
         let errorMessage = 'Failed to upload profile picture';
 
@@ -187,6 +208,15 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
     }, [selectedFile, updateProfilePicture]); // ✅ Removed refreshUser from dependencies
 
     const handleRemove = useCallback(async () => {
+      if (deferDelete) {
+        // Preview-only removal in parent modal; do not call API here
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        if (onRemoveSelected) onRemoveSelected();
+        if (onPictureChanged) onPictureChanged(true);
+        return;
+      }
+
       setRemoving(true);
       setError(null);
 
@@ -196,10 +226,14 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
         // Update profile picture context - this will update the UI immediately
         clearProfilePicture();
 
+        // Also update the user context so components relying on user.profile_pic react instantly
+        updateUser({ ...user, profile_pic: null });
+
         // ✅ Removed refreshUser() call - this causes full page re-render
         // The profile picture context update is sufficient for UI updates
 
         snackbar.success('Profile picture removed successfully!');
+        if (onPictureChanged) onPictureChanged(true);
       } catch (err: unknown) {
         const errorMessage =
           (err && typeof err === 'object' && 'response' in err
@@ -211,7 +245,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       } finally {
         setRemoving(false);
       }
-    }, [clearProfilePicture]); // ✅ Removed refreshUser from dependencies
+    }, [clearProfilePicture, deferDelete, onRemoveSelected, onPictureChanged, updateUser, user]); // ✅ Removed refreshUser from dependencies
 
     const handleAvatarClick = useCallback(() => {
       if (clickable && showUploadButton) {
@@ -246,17 +280,27 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
     const { profilePictureUrl } = useProfilePicture();
 
     const imageUrl = useMemo(() => {
-      // ✅ Use profilePictureUrl from context if available, otherwise construct from user.profile_pic
+      // Highest priority: explicit override from parent (e.g., EditProfile preview)
+      if (previewImageOverride) {
+        return previewImageOverride;
+      }
+      // Optionally suppress existing image to show initials in preview mode
+      if (suppressExistingImage) {
+        return null;
+      }
+      // Then use context URL if available
       if (profilePictureUrl) {
         return profilePictureUrl;
       } else if (user.profile_pic) {
         return `${API_BASE_URL}/users/${user.id}/profile-picture`;
       }
       return null;
-    }, [profilePictureUrl, user.profile_pic, user.id, API_BASE_URL]);
+    }, [previewImageOverride, suppressExistingImage, profilePictureUrl, user.profile_pic, user.id, API_BASE_URL]);
 
     const renderAvatar = useCallback(() => {
-      const hasProfilePicture = profilePictureUrl || user.profile_pic;
+      const hasProfilePicture =
+        (!!previewImageOverride && !suppressExistingImage) ||
+        (!suppressExistingImage && (profilePictureUrl || user.profile_pic));
 
       if (hasProfilePicture && imageUrl) {
         return (
@@ -275,6 +319,8 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
         </Avatar>
       );
     }, [
+      previewImageOverride,
+      suppressExistingImage,
       profilePictureUrl,
       user.profile_pic,
       imageUrl,
@@ -330,7 +376,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
                     gap: 1,
                   }}
                 >
-                  {profilePictureUrl || user.profile_pic ? (
+                  {(!suppressExistingImage && (previewImageOverride || profilePictureUrl || user.profile_pic)) ? (
                     <Edit
                       sx={{
                         color: 'white',
@@ -353,7 +399,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
           )}
 
           {/* Delete Icon - Only show when profile picture exists */}
-          {(profilePictureUrl || user.profile_pic) &&
+          {(!suppressExistingImage && (profilePictureUrl || user.profile_pic)) &&
             showRemoveButton &&
             !uploading && (
               <Fade in={showOverlay}>

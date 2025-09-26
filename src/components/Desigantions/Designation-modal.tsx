@@ -69,6 +69,9 @@ export default function DesignationModal({
   }, [open]);
 
   useEffect(() => {
+    if (open) {
+      departmentApiService.getAllDepartments().then(setDepartments);
+    }
     if (designation) {
       setTitle(designation.title);
       setTitleAr(designation.titleAr || '');
@@ -203,39 +206,24 @@ export default function DesignationModal({
 
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
-          {!designation && (
-            <FormControl fullWidth error={!!errors.departmentId}>
-              <InputLabel id="department-select">
-                {getText('Department', 'القسم')}
-              </InputLabel>
-              <Select
-                labelId="department-select"
-                value={departmentId}
-                label={getText('Department', 'القسم')}
-                onChange={e => setDepartmentId(e.target.value)}
-                disabled={loadingDepartments}
-                autoFocus={!isMobile}
-              >
-                {loadingDepartments ? (
-                  <MenuItem disabled>
-                    {getText('Loading departments...', 'جاري تحميل الأقسام...')}
-                  </MenuItem>
-                ) : (
-                  departments.map(dept => (
-                    <MenuItem key={dept.id} value={dept.id}>
-                      {getText(dept.name, dept.nameAr)}
-                    </MenuItem>
-                  ))
-                )}
-              </Select>
-              {errors.departmentId && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
-                  {errors.departmentId}
-                </Typography>
-              )}
-            </FormControl>
-          )}
+         
 
+          <TextField
+            select
+            label={getText('Department', 'القسم')}
+            value={departmentId}
+            onChange={e => setDepartmentId(e.target.value)}
+            error={!!errors.departmentId}
+            helperText={errors.departmentId}
+            fullWidth
+            required
+          >
+            {departments.map(dept => (
+              <MenuItem key={dept.id} value={dept.id}>
+                {dept.name}
+              </MenuItem>
+            ))}
+          </TextField>
           <TextField
             label={getText(
               'Designation Title',
@@ -253,7 +241,6 @@ export default function DesignationModal({
               dir: 'ltr',
             }}
           />
-
           {/* <TextField
             label={getText(
               'Designation Title (Arabic - Optional)',
