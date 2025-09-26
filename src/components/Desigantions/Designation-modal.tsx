@@ -12,12 +12,14 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
+  FormControl,
+  InputLabel,
+  Select,
   MenuItem,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
-import type { BackendDepartment } from '../../api/departmentApi';
-import { departmentApiService } from '../../api/departmentApi';
+import { departmentApiService, type FrontendDepartment } from '../../api/departmentApi';
 
 interface Designation {
   id: string;
@@ -29,11 +31,7 @@ interface Designation {
 interface DesignationModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (data: {
-    title: string;
-    titleAr: string;
-    departmentId: string;
-  }) => void;
+  onSave: (data: { title: string; titleAr: string; departmentId: string }) => void;
   designation: Designation | null;
   isRTL: boolean;
 }
@@ -53,15 +51,22 @@ export default function DesignationModal({
 
   const [title, setTitle] = useState('');
   const [titleAr, setTitleAr] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
   const [originalTitle, setOriginalTitle] = useState('');
   const [originalTitleAr, setOriginalTitleAr] = useState('');
-  const [errors, setErrors] = useState<{
-    title?: string;
-    titleAr?: string;
-    departmentId?: string;
-  }>({});
-  const [departments, setDepartments] = useState<BackendDepartment[]>([]);
-  const [departmentId, setDepartmentId] = useState('');
+  const [originalDepartmentId, setOriginalDepartmentId] = useState('');
+  const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [errors, setErrors] = useState<{ title?: string; titleAr?: string; departmentId?: string }>(
+    {}
+  );
+
+  // Load departments when modal opens
+  useEffect(() => {
+    if (open) {
+      loadDepartments();
+    }
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -70,32 +75,44 @@ export default function DesignationModal({
     if (designation) {
       setTitle(designation.title);
       setTitleAr(designation.titleAr || '');
+      setDepartmentId(designation.departmentId);
       setOriginalTitle(designation.title);
       setOriginalTitleAr(designation.titleAr || '');
-      setDepartmentId(designation.departmentId || '');
+      setOriginalDepartmentId(designation.departmentId);
     } else {
       setTitle('');
       setTitleAr('');
+      setDepartmentId('');
       setOriginalTitle('');
       setOriginalTitleAr('');
-      setDepartmentId('');
+      setOriginalDepartmentId('');
     }
     setErrors({});
   }, [designation, open]);
 
+  const loadDepartments = async () => {
+    try {
+      setLoadingDepartments(true);
+      const backendDepartments = await departmentApiService.getAllDepartments();
+      const frontendDepartments = backendDepartments.map(dept =>
+        departmentApiService.convertBackendToFrontend(dept)
+      );
+      setDepartments(frontendDepartments);
+    } catch (error) {
+      console.error('Error loading departments:', error);
+      setDepartments([]);
+    } finally {
+      setLoadingDepartments(false);
+    }
+  };
+
   // Check if form has changes
   const hasChanges = designation
-    ? title !== originalTitle ||
-      titleAr !== originalTitleAr ||
-      departmentId !== (designation.departmentId || '')
+    ? title !== originalTitle || titleAr !== originalTitleAr || departmentId !== originalDepartmentId
     : title.trim() !== '' || titleAr.trim() !== '' || departmentId !== '';
 
   const validateForm = () => {
-    const newErrors: {
-      title?: string;
-      titleAr?: string;
-      departmentId?: string;
-    } = {};
+    const newErrors: { title?: string; titleAr?: string; departmentId?: string } = {};
 
     if (!title.trim()) {
       newErrors.title = getText(
@@ -103,9 +120,14 @@ export default function DesignationModal({
         'عنوان المسمى الوظيفي مطلوب'
       );
     }
-    if (!departmentId) {
-      newErrors.departmentId = getText('Department is required', 'القسم مطلوب');
+
+    if (!designation && !departmentId) {
+      newErrors.departmentId = getText(
+        'Please select a department',
+        'يرجى اختيار قسم'
+      );
     }
+
     // Arabic title is optional but if provided, validate it
     if (titleAr.trim() && titleAr.trim().length < 2) {
       newErrors.titleAr = getText(
@@ -128,6 +150,7 @@ export default function DesignationModal({
   const handleClose = () => {
     setTitle('');
     setTitleAr('');
+    setDepartmentId('');
     setErrors({});
     onClose();
   };
@@ -183,6 +206,8 @@ export default function DesignationModal({
 
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
+         
+
           <TextField
             select
             label={getText('Department', 'القسم')}
@@ -211,7 +236,7 @@ export default function DesignationModal({
             helperText={errors.title}
             fullWidth
             required
-            autoFocus={!isMobile}
+            autoFocus={designation ? !isMobile : false}
             inputProps={{
               dir: 'ltr',
             }}

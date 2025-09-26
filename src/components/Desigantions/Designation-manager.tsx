@@ -183,15 +183,9 @@ export default function DesignationManager() {
         showSuccess('Designation updated successfully');
       } else {
         // Create new designation
-        if (selectedDepartmentId === 'all') {
-          showError(new Error('Please select a department first'));
-          return;
-        }
-
-
         const designationDto = {
           title: data.title,
-          departmentId: data.departmentId, // <-- use modal value!
+          departmentId: data.departmentId,
         };
         const newBackendDesignation =
           await designationApiService.createDesignation(designationDto);
