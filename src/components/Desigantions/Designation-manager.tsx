@@ -151,6 +151,7 @@ export default function DesignationManager() {
   const handleSaveDesignation = async (data: {
     title: string;
     titleAr: string;
+    departmentId: string;
   }) => {
     try {
       if (editingDesignation) {
@@ -185,14 +186,9 @@ export default function DesignationManager() {
         showSuccess('Designation updated successfully');
       } else {
         // Create new designation
-        if (selectedDepartmentId === 'all') {
-          showError(new Error('Please select a department first'));
-          return;
-        }
-
         const designationDto = {
           title: data.title,
-          departmentId: selectedDepartmentId,
+          departmentId: data.departmentId,
         };
 
         const newBackendDesignation =
