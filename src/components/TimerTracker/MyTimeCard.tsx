@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Box,
   Card,
@@ -7,15 +7,16 @@ import {
   Button,
   Snackbar,
   Alert,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import timesheetApi, { type TimesheetEntry } from '../../api/timesheetApi';
 
 import attendanceApi from '../../api/attendanceApi';
 import { Link as RouterLink } from 'react-router-dom';
 import { useOutletContext } from 'react-router-dom';
-
-const POLL_INTERVAL_MS = 5000;
 
 interface OutletContext {
   darkMode: boolean;
@@ -28,59 +29,142 @@ const MyTimerCard: React.FC = () => {
     null
   );
   const [loading, setLoading] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [elapsed, setElapsed] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [hasCheckedIn, setHasCheckedIn] = useState<boolean>(false);
   const [checkingAttendance, setCheckingAttendance] = useState<boolean>(true);
+  
+  // Use refs to track the latest values without causing re-renders
+  const currentSessionRef = useRef<TimesheetEntry | null>(null);
+  const hasCheckedInRef = useRef<boolean>(false);
+  const isComponentMountedRef = useRef<boolean>(true);
+  const lastFetchTimeRef = useRef<number>(0);
 
-  // Check if user has checked in today
-  const checkAttendanceStatus = useCallback(async () => {
+  // Update refs when state changes
+  useEffect(() => {
+    currentSessionRef.current = currentSession;
+  }, [currentSession]);
+
+  useEffect(() => {
+    hasCheckedInRef.current = hasCheckedIn;
+  }, [hasCheckedIn]);
+
+  // Check if user has checked in today - now stable with no dependencies
+  const checkAttendanceStatus = useCallback(async (force = false) => {
+    if (!isComponentMountedRef.current) return;
+    
+    // Prevent redundant calls within 10 seconds unless forced
+    const now = Date.now();
+    if (!force && (now - lastFetchTimeRef.current) < 10000) {
+      return;
+    }
+    
     try {
       setCheckingAttendance(true);
       const todaySummary = await attendanceApi.getTodaySummary();
-      setHasCheckedIn(!!todaySummary.checkIn);
+      const checkedIn = !!todaySummary.checkIn;
+      
+      lastFetchTimeRef.current = now;
+      
+      // Only update state if value changed
+      if (hasCheckedInRef.current !== checkedIn) {
+        setHasCheckedIn(checkedIn);
+      }
 
       // If user has checked out, automatically end any active timesheet session
-      if (todaySummary.checkOut && currentSession) {
+      if (todaySummary.checkOut && currentSessionRef.current) {
         await handleEnd();
       }
     } catch {
-      setHasCheckedIn(false);
+      if (hasCheckedInRef.current !== false) {
+        setHasCheckedIn(false);
+      }
     } finally {
-      setCheckingAttendance(false);
+      if (isComponentMountedRef.current) {
+        setCheckingAttendance(false);
+      }
     }
-  }, [currentSession]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // No dependencies - stable function
 
-  const fetchLatestSession = async () => {
+  const fetchLatestSession = useCallback(async (force = false) => {
+    if (!isComponentMountedRef.current) return;
+    
+    // Prevent redundant calls within 10 seconds unless forced
+    const now = Date.now();
+    if (!force && (now - lastFetchTimeRef.current) < 10000) {
+      return;
+    }
+    
     try {
       const response = await timesheetApi.getUserTimesheet();
       const sessions = response.items.sessions;
       const activeSession = sessions.find(s => !s.end_time);
-      setCurrentSession(activeSession || null);
+      const newSession = activeSession || null;
+      
+      // Only update state if session changed
+      if (JSON.stringify(currentSessionRef.current) !== JSON.stringify(newSession)) {
+        setCurrentSession(newSession);
+      }
     } catch {
-      setCurrentSession(null);
+      if (currentSessionRef.current !== null) {
+        setCurrentSession(null);
+      }
     }
-  };
+  }, []); // No dependencies - stable function
 
+  // Manual refresh function
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        checkAttendanceStatus(true),
+        fetchLatestSession(true)
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [checkAttendanceStatus, fetchLatestSession]);
+
+  // Cleanup on unmount
   useEffect(() => {
-    let pollId: number | null = null;
+    isComponentMountedRef.current = true;
+    return () => {
+      isComponentMountedRef.current = false;
+    };
+  }, []);
 
-    // Check attendance status and fetch latest session
-    checkAttendanceStatus();
-    fetchLatestSession().catch(() => {
-      /* already handled inside */
-    });
+  // Only fetch data on mount and when tab becomes visible
+  useEffect(() => {
+    // Initial fetch on mount
+    const initialFetch = async () => {
+      await Promise.all([
+        checkAttendanceStatus(true),
+        fetchLatestSession(true)
+      ]);
+    };
 
-    pollId = window.setInterval(() => {
-      checkAttendanceStatus();
-      fetchLatestSession().catch(() => {});
-    }, POLL_INTERVAL_MS);
+    initialFetch();
+
+    // Listen for visibility changes - refresh when user comes back to tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isComponentMountedRef.current) {
+        // Only refresh if it's been more than 30 seconds since last fetch
+        const timeSinceLastFetch = Date.now() - lastFetchTimeRef.current;
+        if (timeSinceLastFetch > 30000) {
+          handleRefresh();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      if (pollId) window.clearInterval(pollId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [checkAttendanceStatus]);
+  }, [handleRefresh]); // Only depend on handleRefresh
 
+  // Timer effect - separate from data fetching
   useEffect(() => {
     let tickId: number | null = null;
 
@@ -125,7 +209,11 @@ const MyTimerCard: React.FC = () => {
       setLoading(true);
 
       await timesheetApi.startWork();
-      await fetchLatestSession();
+      // Force refresh data after starting work
+      await Promise.all([
+        checkAttendanceStatus(true),
+        fetchLatestSession(true)
+      ]);
       setErrorMsg(null);
     } catch (err: unknown) {
       const msg =
@@ -137,8 +225,8 @@ const MyTimerCard: React.FC = () => {
         'Failed to clock in. Please make sure you checked in.';
       setErrorMsg(msg);
 
-      // fetch latest to keep UI consistent (in case server changed)
-      await fetchLatestSession();
+      // Force refresh to keep UI consistent (in case server changed)
+      await fetchLatestSession(true);
     } finally {
       setLoading(false);
     }
@@ -155,6 +243,11 @@ const MyTimerCard: React.FC = () => {
       setLoading(true);
 
       await timesheetApi.endWork();
+      // Force refresh data after ending work to ensure consistency
+      await Promise.all([
+        checkAttendanceStatus(true),
+        fetchLatestSession(true)
+      ]);
       setErrorMsg(null);
     } catch (err: unknown) {
       const msg =
@@ -166,12 +259,12 @@ const MyTimerCard: React.FC = () => {
         'Failed to clock out.';
       setErrorMsg(msg);
 
-      // If there was an error, restore the session state
-      await fetchLatestSession();
+      // If there was an error, force refresh to restore the session state
+      await fetchLatestSession(true);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [checkAttendanceStatus, fetchLatestSession]);
 
   return (
     <>
@@ -244,6 +337,46 @@ const MyTimerCard: React.FC = () => {
                 ? 'Session in Progress'
                 : 'No Active Session'}
             </Typography>
+          </Box>
+
+          {/* Manual Refresh Button - Top Right */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              zIndex: 1,
+            }}
+          >
+            <Tooltip title="Refresh data">
+              <IconButton
+                onClick={handleRefresh}
+                disabled={refreshing || loading}
+                size="small"
+                sx={{
+                  backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
+                  border: darkMode ? '1px solid #333333' : '1px solid #e0e0e0',
+                  '&:hover': {
+                    backgroundColor: darkMode ? '#333333' : '#e0e0e0',
+                  },
+                  '&:disabled': {
+                    backgroundColor: darkMode ? '#1a1a1a' : '#f0f0f0',
+                  },
+                }}
+              >
+                <RefreshIcon
+                  sx={{
+                    fontSize: '1rem',
+                    color: darkMode ? '#b0b0b0' : '#666666',
+                    animation: refreshing ? 'spin 1s linear infinite' : 'none',
+                    '@keyframes spin': {
+                      '0%': { transform: 'rotate(0deg)' },
+                      '100%': { transform: 'rotate(360deg)' },
+                    },
+                  }}
+                />
+              </IconButton>
+            </Tooltip>
           </Box>
 
           <Box
