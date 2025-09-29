@@ -25,6 +25,7 @@ interface Employee {
   phone: string;
   departmentId: string;
   designationId: string;
+  status?: string;
   department: {
     id: string;
     name: string;
@@ -99,6 +100,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
                 {direction === 'rtl' ? 'الوظيفة' : 'Designation'}
               </TableCell>
+              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+                {direction === 'rtl' ? 'الحالة' : 'Status'}
+              </TableCell>
               {(onDelete || onEdit) && (
                 <TableCell
                   sx={{ color: textColor, fontWeight: 'bold', width: '120px' }}
@@ -111,7 +115,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           <TableBody>
             {loading && (
               <TableRow>
-                <TableCell colSpan={onDelete || onEdit ? 6 : 5} align='center'>
+                <TableCell colSpan={onDelete || onEdit ? 7 : 6} align='center'>
                   <Box display='flex' justifyContent='center' py={4}>
                     <CircularProgress />
                   </Box>
@@ -146,6 +150,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                       designations[emp.designationId] ||
                       emp.designationId ||
                       '—'}
+                  </TableCell>
+                  <TableCell sx={{ color: textColor }}>
+                    {emp.status || 'N/A'}
                   </TableCell>
                   {(onDelete || onEdit) && (
                     <TableCell>

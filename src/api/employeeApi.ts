@@ -23,6 +23,7 @@ export interface BackendEmployee {
   phone: string;
   departmentId: string;
   designationId: string;
+  status?: string;
   department: {
     id: string;
     name: string;
@@ -134,6 +135,7 @@ type RawEmployee = {
   id: string;
   user_id: string;
   designation_id: string;
+  invite_status?: string;
   created_at: string;
   updated_at?: string;
   user?: RawUser;
@@ -160,6 +162,7 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
       phone: '+1234567890',
       departmentId: (data.department_id as string) || '',
       designationId: (data.id as string) || '',
+      status: data.invite_status as string,
       department: null, // Will be populated by department mapping
       designation: {
         id: data.id as string,
@@ -188,6 +191,7 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
       phone: user?.phone ?? '',
       departmentId: designation?.department_id ?? '',
       designationId: data.designation_id as string,
+      status: data.invite_status as string,
       department: department
         ? {
             id: department.id,
@@ -225,6 +229,7 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
     phone: (data.phone as string) || '+1234567890',
     departmentId: (data.department_id as string) || '',
     designationId: (data.designation_id as string) || (data.id as string) || '',
+    status: data.invite_status as string,
     department: null,
     designation: null,
     tenantId: (data.tenant_id as string) || '',

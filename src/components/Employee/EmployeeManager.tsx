@@ -44,6 +44,7 @@ interface Employee {
   phone: string;
   departmentId: string;
   designationId: string;
+  status?: string;
   department: {
     id: string;
     name: string;
@@ -196,6 +197,7 @@ const EmployeeManager: React.FC = () => {
           phone: emp.phone,
           departmentId: emp.departmentId,
           designationId: emp.designationId,
+          status: emp.status,
           department: emp.department || {
             id: '',
             name: '',
@@ -233,6 +235,7 @@ const EmployeeManager: React.FC = () => {
         phone: emp.phone,
         departmentId: emp.departmentId,
         designationId: emp.designationId,
+        status: emp.status,
         department: emp.department || {
           id: '',
           name: '',
@@ -310,6 +313,7 @@ const EmployeeManager: React.FC = () => {
         phone: completeEmployee.phone,
         departmentId: completeEmployee.departmentId,
         designationId: completeEmployee.designationId,
+        status: completeEmployee.status,
         department: completeEmployee.department || {
           id: completeEmployee.departmentId,
           name:
@@ -515,6 +519,7 @@ const EmployeeManager: React.FC = () => {
                 phone: updatedEmployee.phone,
                 departmentId: newDepartmentId,
                 designationId: nextDesignationId,
+                status: updatedEmployee.status || emp.status,
                 department: {
                   ...emp.department,
                   id: newDepartmentId,
