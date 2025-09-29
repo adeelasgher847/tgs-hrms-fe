@@ -15,7 +15,10 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import ReplayIcon from '@mui/icons-material/Replay';
 import { useOutletContext } from 'react-router-dom';
+import { refreshInviteStatus } from '../../api/refreshInviteStatus';
+import Snackbar from '@mui/material/Snackbar';
 
 interface Employee {
   id: string;
@@ -73,6 +76,32 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const theme = useTheme();
   const direction = theme.direction;
   const { darkMode } = useOutletContext<OutletContext>();
+  const [snackbarOpen, setSnackbarOpen] = React.useState(false);
+  const [snackbarMsg, setSnackbarMsg] = React.useState('');
+  const [inviteLoading, setInviteLoading] = React.useState<string | null>(null);
+  const [resentIds, setResentIds] = React.useState<string[]>([]);
+
+  const isInviteExpired = (status?: string) =>
+    (status || '').toLowerCase() === 'invite expired';
+
+  const handleResendInvite = async (emp: Employee) => {
+    console.log('Resend Invite Clicked:', emp);
+    if (!isInviteExpired(emp.status)) return;
+    setInviteLoading(emp.id);
+    try {
+      const msg = await refreshInviteStatus(emp.id);
+      setSnackbarMsg(msg);
+      setSnackbarOpen(true);
+      setResentIds(prev => [...prev, emp.id]); // Mark as resent
+      console.log('Invite resent for:', emp.id);
+    } catch (error) {
+      setSnackbarMsg('Failed to resend invite');
+      setSnackbarOpen(true);
+      console.error('Resend Invite Error:', error);
+    } finally {
+      setInviteLoading(null);
+    }
+  };
 
   // Dark mode styles
   const textColor = darkMode ? '#8f8f8f' : '#000';
@@ -128,13 +157,16 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                 <TableCell colSpan={onDelete || onEdit ? 7 : 6} align='center'>
                   <Box display='flex' justifyContent='center' py={4}>
                     <Typography variant='body1' color='textSecondary'>
-                      {direction === 'rtl' ? 'لا توجد سجلات' : 'No record exists'}
+                      {direction === 'rtl'
+                        ? 'لا توجد سجلات'
+                        : 'No record exists'}
                     </Typography>
                   </Box>
                 </TableCell>
               </TableRow>
             )}
-            {!loading && employees.length > 0 &&
+            {!loading &&
+              employees.length > 0 &&
               employees.map(emp => (
                 <TableRow
                   key={emp.id}
@@ -167,48 +199,90 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                     {emp.status || 'N/A'}
                   </TableCell>
                   {(onDelete || onEdit) && (
-                    <TableCell>
-                      {onEdit && (
+                    <TableCell sx={{ textAlign: 'center' }}>
+                      <Box
+                        display='flex'
+                        justifyContent='center'
+                        alignItems='center'
+                        gap={1}
+                      >
                         <Tooltip
                           title={
                             direction === 'rtl'
-                              ? 'تعديل الموظف'
-                              : 'Edit Employee'
+                              ? 'إعادة إرسال الدعوة'
+                              : 'Resend Invite'
                           }
+                          placement='bottom'
                         >
-                          <IconButton
-                            onClick={() => onEdit(emp)}
-                            disabled={loading}
-                            sx={{ mr: 1 }}
-                          >
-                            <EditIcon />
-                          </IconButton>
+                          <span>
+                            <IconButton
+                              sx={{
+                                color: darkMode ? '#1976d2' : '#0288d1',
+                                opacity:
+                                  isInviteExpired(emp.status) &&
+                                  !resentIds.includes(emp.id)
+                                    ? 1
+                                    : 0.5,
+                              }}
+                              onClick={() => handleResendInvite(emp)}
+                              disabled={
+                                loading ||
+                                inviteLoading === emp.id ||
+                                !isInviteExpired(emp.status) ||
+                                resentIds.includes(emp.id)
+                              }
+                            >
+                              {inviteLoading === emp.id ? (
+                                <CircularProgress size={20} />
+                              ) : (
+                                <ReplayIcon />
+                              )}
+                            </IconButton>
+                          </span>
                         </Tooltip>
-                      )}
-                      {onDelete && (
-                        <Tooltip
-                          title={
-                            direction === 'rtl'
-                              ? 'حذف الموظف'
-                              : 'Delete Employee'
-                          }
-                        >
-                          <IconButton
-                            onClick={() => onDelete(emp.id)}
-                            disabled={loading}
-                            sx={{
-                              color: darkMode ? '#ff6b6b' : '#d32f2f',
-                              '&:hover': {
-                                backgroundColor: darkMode
-                                  ? 'rgba(255,107,107,0.1)'
-                                  : 'rgba(211,47,47,0.1)',
-                              },
-                            }}
+                        {onEdit && (
+                          <Tooltip
+                            title={
+                              direction === 'rtl'
+                                ? 'تعديل الموظف'
+                                : 'Edit Employee'
+                            }
+                            placement='bottom'
                           >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
+                            <IconButton
+                              onClick={() => onEdit(emp)}
+                              disabled={loading}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {onDelete && (
+                          <Tooltip
+                            title={
+                              direction === 'rtl'
+                                ? 'حذف الموظف'
+                                : 'Delete Employee'
+                            }
+                            placement='bottom'
+                          >
+                            <IconButton
+                              onClick={() => onDelete(emp.id)}
+                              disabled={loading}
+                              sx={{
+                                color: darkMode ? '#ff6b6b' : '#d32f2f',
+                                '&:hover': {
+                                  backgroundColor: darkMode
+                                    ? 'rgba(255,107,107,0.1)'
+                                    : 'rgba(211,47,47,0.1)',
+                                },
+                              }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
                     </TableCell>
                   )}
                 </TableRow>
@@ -216,6 +290,12 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           </TableBody>
         </Table>
       </TableContainer>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMsg}
+      />
     </Box>
   );
 };
