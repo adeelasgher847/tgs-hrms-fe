@@ -10,6 +10,7 @@ import {
   Tooltip,
   CircularProgress,
   TableContainer,
+  Typography,
   useTheme,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -122,7 +123,18 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                 </TableCell>
               </TableRow>
             )}
-            {!loading &&
+            {!loading && employees.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={onDelete || onEdit ? 7 : 6} align='center'>
+                  <Box display='flex' justifyContent='center' py={4}>
+                    <Typography variant='body1' color='textSecondary'>
+                      {direction === 'rtl' ? 'لا توجد سجلات' : 'No record exists'}
+                    </Typography>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading && employees.length > 0 &&
               employees.map(emp => (
                 <TableRow
                   key={emp.id}
