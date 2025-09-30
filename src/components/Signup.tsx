@@ -19,6 +19,9 @@ import {
   IconButton,
   InputAdornment,
 } from '@mui/material';
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
+import './UserProfile/PhoneInput.css';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import signupApi, { type PersonalDetailsRequest } from '../api/signupApi';
@@ -65,6 +68,15 @@ const Signup: React.FC = () => {
     setSuccess(null);
   };
 
+  const handlePhoneChange = (value: string | undefined) => {
+    const phoneValue = value || '';
+    setFormData(prev => ({ ...prev, phone: phoneValue }));
+    // Clear phone validation error when user starts typing
+    setFieldErrors(prev => ({ ...prev, phone: '' }));
+    setError(null);
+    setSuccess(null);
+  };
+
   const handleTogglePassword = (): void => setShowPassword(prev => !prev);
   const handleToggleConfirmPassword = (): void =>
     setShowConfirmPassword(prev => !prev);
@@ -92,6 +104,12 @@ const Signup: React.FC = () => {
     }
     if (!formData.phone.trim()) {
       nextErrors.phone = 'Phone number is required';
+    } else if (formData.phone && formData.phone.trim()) {
+      // Basic validation for phone number format
+      const phoneRegex = /^\+[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        nextErrors.phone = 'Please enter a valid phone number';
+      }
     }
     if (!formData.password) {
       nextErrors.password = 'Password is required';
@@ -497,13 +515,59 @@ const Signup: React.FC = () => {
                         required
                         fullWidth
                         value={formData.phone}
-                        placeholder='+923001234567'
-                        onChange={handleChange}
+                        placeholder={lang === 'ar' ? 'أدخل رقم الهاتف' : 'Enter phone number'}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
                         disabled={loading}
                         error={Boolean(fieldErrors.phone)}
                         helperText={fieldErrors.phone}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start" sx={{ margin: 0, padding: '28px 0px' }}>
+                              <PhoneInput
+                                defaultCountry="ua"
+                                value={formData.phone}
+                                onChange={handlePhoneChange}
+                                style={{
+                                  border: 'none',
+                                  outline: 'none',
+                                  background: 'transparent',
+                                  width: '100%',
+                                }}
+                                inputStyle={{
+                                  border: 'none',
+                                  outline: 'none',
+                                  padding: '0',
+                                  margin: '0',
+                                  fontSize: '1rem',
+                                  fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                                  backgroundColor: 'transparent',
+                                  width: '100%',
+                                  boxSizing: 'border-box',
+                                  flex: 1,
+                                  height: '100%',
+                                }}
+                                countrySelectorStyleProps={{
+                                  buttonStyle: {
+                                    border: 'none',
+                                    background: 'transparent',
+                                    padding: '0',
+                                    margin: '0',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                  },
+                                  dropdownStyleProps: {
+                                    zIndex: 9999,
+                                  },
+                                }}
+                                className="phone-input-textfield-adornment"
+                              />
+                            </InputAdornment>
+                          ),
+                        }}
                         sx={{
                           '& .MuiOutlinedInput-root': {
+                            padding: '0px',
                             backgroundColor: '#eee',
                             borderRadius: '8px',
                             height: '46px',
@@ -523,6 +587,16 @@ const Signup: React.FC = () => {
                           },
                           '& input:-webkit-autofill': {
                             height: '10px',
+                          },
+                          '& .MuiInputBase-input': {
+                            display: 'none', // Hide the TextField input completely
+                          },
+                          '& .MuiInputAdornment-root': {
+                            width: '100%',
+                            margin: 0,
+                          },
+                          '& .MuiInputAdornment-positionStart': {
+                            marginRight: 0,
                           },
                         }}
                       />
