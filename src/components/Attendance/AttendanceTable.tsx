@@ -502,9 +502,9 @@ const AttendanceTable = () => {
 
       {/* My Attendance Tab */}
       {tab === 0 && (
-        <Paper sx={{ p: 3 }}>
+        <Paper sx={{background:'unset' ,boxShadow:'none'}}>
           {/* Filters */}
-          <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap'}}>
             {/* Employee Filter - Only show for admin "All" view */}
             {isAdminLike && adminView === 'all' && (
               <TextField
@@ -611,6 +611,15 @@ const AttendanceTable = () => {
               />
             </Box>
           )}
+
+          {/* Pagination Info */}
+          {totalItems > 0 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Typography variant='body2' color='text.secondary'>
+                Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, totalItems)} of {totalItems} records
+              </Typography>
+            </Box>
+          )}
         </Paper>
       )}
 
@@ -687,6 +696,15 @@ const AttendanceTable = () => {
                 onChange={(_, page) => handleTeamPageChange(page)}
                 color='primary'
               />
+            </Box>
+          )}
+
+          {/* Team Pagination Info */}
+          {teamTotalItems > 0 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Typography variant='body2' color='text.secondary'>
+                Showing {((teamCurrentPage - 1) * 10) + 1} to {Math.min(teamCurrentPage * 10, teamTotalItems)} of {teamTotalItems} records
+              </Typography>
             </Box>
           )}
         </Paper>
