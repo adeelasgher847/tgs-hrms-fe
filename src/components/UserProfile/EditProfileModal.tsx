@@ -9,7 +9,14 @@ import {
   Box,
   Alert,
   CircularProgress,
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  InputAdornment,
 } from '@mui/material';
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
+import './PhoneInput.css';
 import {
   profileApiService,
   type UpdateProfileRequest,
@@ -112,6 +119,15 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       errors.email = 'Please enter a valid email address';
     }
 
+    // Phone number validation
+    if (formData.phone && formData.phone.trim()) {
+      // Basic validation for phone number format
+      const phoneRegex = /^\+[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        errors.phone = 'Please enter a valid phone number';
+      }
+    }
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -136,6 +152,27 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         }));
       }
     };
+
+  const handlePhoneChange = (value: string | undefined) => {
+    const phoneValue = value || '';
+    const newFormData = {
+      ...formData,
+      phone: phoneValue,
+    };
+
+    setFormData(newFormData);
+
+    // Check for changes
+    checkForChanges(newFormData);
+
+    // Clear validation error for phone field when user starts typing
+    if (validationErrors.phone) {
+      setValidationErrors(prev => ({
+        ...prev,
+        phone: '',
+      }));
+    }
+  };
 
   const handleSubmit = async () => {
     if (!validateForm()) {
@@ -298,16 +335,76 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               fullWidth
               disabled={loading}
             />
-
             <TextField
               label='Phone Number'
               value={formData.phone}
-              onChange={handleInputChange('phone')}
+              onChange={(e) => handlePhoneChange(e.target.value)}
               error={!!validationErrors.phone}
               helperText={validationErrors.phone}
               fullWidth
               disabled={loading}
               placeholder='Enter phone number (optional)'
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start" sx={{ margin: 0, padding: '28px 0px' }}>
+                    <PhoneInput
+                      defaultCountry="ua"
+                      value={formData.phone}
+                      onChange={handlePhoneChange}
+                      disabled={loading}
+                      style={{
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        width: '100%',
+                      }}
+                      inputStyle={{
+                        border: 'none',
+                        outline: 'none',
+                        padding: '0',
+                        margin: '0',
+                        fontSize: '1rem',
+                        fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                        backgroundColor: 'transparent',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        flex: 1,
+                        height: '100%',
+                      }}
+                      countrySelectorStyleProps={{
+                        buttonStyle: {
+                          border: 'none',
+                          background: 'transparent',
+                          padding: '0',
+                          margin: '0',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                        },
+                        dropdownStyleProps: {
+                          zIndex: 9999 !,
+                        },
+                      }}
+                      className="phone-input-textfield-adornment"
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  padding: '0px',
+                },
+                '& .MuiInputBase-input': {
+                  display: 'none', // Hide the TextField input completely
+                },
+                '& .MuiInputAdornment-root': {
+                  width: '100%',
+                  margin: 0,
+                },
+                '& .MuiInputAdornment-positionStart': {
+                  marginRight: 0,
+                },
+              }}
             />
           </Box>
         </Box>
