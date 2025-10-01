@@ -225,6 +225,19 @@ const ConfirmPayment: React.FC = () => {
               Go Home
             </Button>
           </Box>
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography variant='body2' color='text.secondary'>
+              Already have an account?{' '}
+              <Button
+                variant='text'
+                color='primary'
+                onClick={() => navigate('/login')}
+                sx={{ textTransform: 'none', p: 0, minWidth: 'auto' }}
+              >
+                Login here
+              </Button>
+            </Typography>
+          </Box>
         </Paper>
       </Box>
     );

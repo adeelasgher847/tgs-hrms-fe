@@ -524,7 +524,7 @@ const Signup: React.FC = () => {
                           startAdornment: (
                             <InputAdornment position="start" sx={{ margin: 0, padding: '28px 0px' }}>
                               <PhoneInput
-                                defaultCountry="ua"
+                                defaultCountry="pk"
                                 value={formData.phone}
                                 onChange={handlePhoneChange}
                                 style={{
