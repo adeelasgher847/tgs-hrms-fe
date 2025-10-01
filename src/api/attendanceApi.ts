@@ -140,10 +140,12 @@ class AttendanceApiService {
     }
   }
 
-  // Get daily summaries for a user
+  // UPDATED: Get daily summaries for a user with date filtering support
   async getDailySummaries(
     userId?: string,
-    page: number = 1
+    page: number = 1,
+    startDate?: string,
+    endDate?: string
   ): Promise<AttendanceResponse> {
     try {
       const params = new URLSearchParams();
@@ -151,8 +153,14 @@ class AttendanceApiService {
       if (userId) {
         params.append('userId', userId);
       }
+      if (startDate) {
+        params.append('startDate', startDate);
+      }
+      if (endDate) {
+        params.append('endDate', endDate);
+      }
 
-      const url = `${this.baseUrl}?${params.toString()}`;
+      const url = `${this.baseUrl}?${params.toString()}`; // This hits the /attendance endpoint for daily summaries
 
       const response = await axiosInstance.get(url);
 
@@ -236,7 +244,6 @@ class AttendanceApiService {
         items: [],
         total: 0,
         page: 1,
-        limit: 10,
         totalPages: 1,
       };
     }
