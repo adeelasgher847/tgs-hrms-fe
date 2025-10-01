@@ -15,6 +15,10 @@ import {
   CircularProgress,
   MenuItem,
 } from '@mui/material';
+import DatePicker from 'react-multi-date-picker';
+import 'react-multi-date-picker/styles/layouts/mobile.css';
+import 'react-multi-date-picker/styles/colors/teal.css';
+import './AttendanceTable.css';
 import attendanceApi from '../../api/attendanceApi';
 import employeeApi from '../../api/employeeApi';
 import type {
@@ -446,7 +450,10 @@ const AttendanceTable = () => {
   // Handle filter changes - reset page to 1 and fetch new data
   const handleFilterChange = () => {
     setCurrentPage(1);
-    fetchAttendance(1, isAdminUser ? adminView : 'my', selectedEmployee, startDate, endDate);
+    setStartDate('');
+    setEndDate('');
+    setSelectedEmployee('');
+    fetchAttendance(1, isAdminUser ? adminView : 'my', '', '', '');
   };
 
   // Handle employee selection change
@@ -559,26 +566,78 @@ const AttendanceTable = () => {
                 ))}
               </TextField>
             )}
-
-            {/* Date Filters - Always show */}
-            <TextField
-              label='Start Date'
-              type='date'
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              size='small'
-            />
-            <TextField
-              label='End Date'
-              type='date'
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              size='small'
-            />
+             {/* Date Range Filter - Always show */}
+             <Box >
+               <DatePicker
+                 range
+                 numberOfMonths={2}
+                 value={startDate && endDate ? [new Date(startDate), new Date(endDate)] : startDate ? [new Date(startDate)] : []}
+                 onChange={(dates) => {
+                   console.log('DatePicker onChange:', dates);
+                   if (dates && dates.length === 2) {
+                     const start = dates[0]?.format('YYYY-MM-DD') || '';
+                     const end = dates[1]?.format('YYYY-MM-DD') || '';
+                     console.log('Setting dates:', { start, end });
+                     setStartDate(start);
+                     setEndDate(end);
+                     // Trigger the filter change
+                     setCurrentPage(1);
+                     const view = isAdminUser ? adminView : 'my';
+                     const selectedId = view === 'all' ? selectedEmployee : undefined;
+                     fetchAttendance(1, view, selectedId, start, end);
+                   } else if (dates && dates.length === 1) {
+                     const start = dates[0]?.format('YYYY-MM-DD') || '';
+                     console.log('Setting start date only:', start);
+                     setStartDate(start);
+                     setEndDate('');
+                     // Trigger the filter change
+                     setCurrentPage(1);
+                     const view = isAdminUser ? adminView : 'my';
+                     const selectedId = view === 'all' ? selectedEmployee : undefined;
+                     fetchAttendance(1, view, selectedId, start, '');
+                   } else {
+                     console.log('Clearing dates');
+                     setStartDate('');
+                     setEndDate('');
+                     // Trigger the filter change
+                     setCurrentPage(1);
+                     const view = isAdminUser ? adminView : 'my';
+                     const selectedId = view === 'all' ? selectedEmployee : undefined;
+                     fetchAttendance(1, view, selectedId, '', '');
+                   }
+                 }}
+                 format="MM/DD/YYYY"
+                 placeholder="Start Date - End Date"
+                 style={{
+                   width: '100%',
+                   height: '40px',
+                   padding: '6.5px 14px',
+                   border: '1px solid rgba(0, 0, 0, 0.23)',
+                   borderRadius: '4px',
+                   fontSize: '16px',
+                   fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+                   backgroundColor: 'transparent',
+                   outline: 'none',
+                 }}
+                 containerStyle={{
+                   width: '100%',
+                 }}
+                 inputClass="custom-date-picker-input"
+                 className="custom-date-picker"
+                 editable={false}
+                 showOtherDays={true}
+                 onOpen={() => {
+                   // Prevent body scroll when calendar opens
+                   document.body.style.overflow = 'hidden';
+                 }}
+                 onClose={() => {
+                   // Restore body scroll when calendar closes
+                   document.body.style.overflow = 'auto';
+                 }}
+               />
+             </Box>
             <Button variant='contained' onClick={handleFilterChange}>
-              Apply Filters
+              Clear Filters
             </Button>
           </Box>
 

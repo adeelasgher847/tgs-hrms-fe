@@ -1,0 +1,74 @@
+/* .custom-date-picker-input {
+  border: 1px solid rgba(0, 0, 0, 0.23) !important;
+  border-radius: 4px !important;
+  padding: 6.5px 14px !important;
+  font-size: 16px !important;
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
+  height: 35px !important;
+  background-color: transparent !important;
+  outline: none !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+  cursor: pointer !important;
+  color: rgba(0, 0, 0, 0.87) !important;
+}
+
+.custom-date-picker-input:focus {
+  border-color: #1976d2 !important;
+  box-shadow: 0 0 0 1px #1976d2 !important;
+}
+
+.custom-date-picker-input:hover {
+  border-color: rgba(0, 0, 0, 0.87) !important;
+}
+
+.custom-date-picker-input::placeholder {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.rmdp-container {
+  z-index: 1300 !important;
+}
+
+.rmdp-calendar {
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  border-radius: 4px !important;
+  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12) !important;
+}
+
+.rmdp-header {
+  background-color: #f5f5f5 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+.rmdp-day {
+  border-radius: 50% !important;
+  transition: background-color 0.15s ease-in-out !important;
+}
+
+.rmdp-day:hover {
+  background-color: rgba(25, 118, 210, 0.08) !important;
+}
+
+.rmdp-day.rmdp-selected {
+  background-color: #1976d2 !important;
+  color: white !important;
+}
+
+.rmdp-day.rmdp-range {
+  background-color: rgba(25, 118, 210, 0.12) !important;
+  color: #1976d2 !important;
+}
+
+.rmdp-day.rmdp-range-start,
+.rmdp-day.rmdp-range-end {
+  background-color: #1976d2 !important;
+  color: white !important;
+}
+
+.rmdp-arrow {
+  color: #1976d2 !important;
+}
+
+.rmdp-arrow:hover {
+  background-color: rgba(25, 118, 210, 0.08) !important;
+} */
