@@ -320,6 +320,26 @@ class TeamApiService {
       throw error;
     }
   }
+
+  // Get all team members across all teams (Admin only)
+  async getAllTeamMembers(
+    page: number = 1
+  ): Promise<PaginatedResponse<TeamMember & { team?: { id: string; name: string } }>> {
+    try {
+      const response = await axiosInstance.get<PaginatedResponse<TeamMember & { team?: { id: string; name: string } }>>(
+        `${this.baseUrl}/all-members?page=${page}`
+      );
+      return response.data;
+    } catch {
+      return {
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
+    }
+  }
 }
 
 export const teamApiService = new TeamApiService();
