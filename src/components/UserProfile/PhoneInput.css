@@ -74,7 +74,9 @@
   background-color: white;
   max-height: 200px;
   overflow-y: auto;
-  z-index: 9999;
+  z-index: 1300 !important;
+  position: fixed !important;
+  transform: translateY(0) !important;
 }
 
 .phone-input-textfield-adornment .react-international-phone-country-selector-dropdown-item {
@@ -127,6 +129,45 @@
     height: 13px;
   }
 }
+/* Global dropdown positioning for modals */
+.react-international-phone-country-selector-dropdown {
+  z-index: 1300 !important;
+  position: fixed !important;
+}
+
+/* Ensure dropdown appears above Material-UI components */
+.MuiDialog-root .react-international-phone-country-selector-dropdown {
+  z-index: 1300 !important;
+  position: fixed !important;
+}
+
+/* Fix dropdown positioning in modals */
+.MuiDialog-paper .react-international-phone-country-selector-dropdown {
+  z-index: 1300 !important;
+  position: fixed !important;
+}
+
+/* Ensure proper positioning context for dropdown */
+.phone-input-textfield-adornment {
+  position: relative;
+}
+
+/* Professional dropdown positioning solution */
+.MuiDialog-root .phone-input-textfield-adornment .react-international-phone-country-selector-dropdown {
+  position: fixed !important;
+  z-index: 1300 !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+}
+
+/* Ensure dropdown doesn't interfere with modal buttons */
+.MuiDialogActions-root {
+  position: relative;
+  z-index: 1;
+}
+
 /* apni CSS file me add kardo */
 .phone-input-textfield-adornment ul {
   width: 230px !important; /* jo width chahiye */

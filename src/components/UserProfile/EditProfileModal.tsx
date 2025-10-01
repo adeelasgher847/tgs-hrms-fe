@@ -266,7 +266,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth='sm' fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth='sm' 
+      fullWidth
+    >
       <DialogTitle>Edit Profile</DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 1 }}>
@@ -324,18 +329,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               disabled={loading}
               inputProps={{ maxLength: 50 }}
             />
-
-            <TextField
-              label='Email Address'
-              type='email'
-              value={formData.email}
-              onChange={handleInputChange('email')}
-              error={!!validationErrors.email}
-              helperText={validationErrors.email}
-              fullWidth
-              disabled={loading}
-            />
-            <TextField
+                <TextField
               label='Phone Number'
               value={formData.phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
@@ -348,7 +342,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 startAdornment: (
                   <InputAdornment position="start" sx={{ margin: 0, padding: '28px 0px' }}>
                     <PhoneInput
-                      defaultCountry="ua"
+                      defaultCountry="pk"
                       value={formData.phone}
                       onChange={handlePhoneChange}
                       disabled={loading}
@@ -382,7 +376,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                           alignItems: 'center',
                         },
                         dropdownStyleProps: {
-                          zIndex: 9999 !,
+                          zIndex: 9999,
+                          maxHeight: '140px',
                         },
                       }}
                       className="phone-input-textfield-adornment"
@@ -406,6 +401,18 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 },
               }}
             />
+
+            <TextField
+              label='Email Address'
+              type='email'
+              value={formData.email}
+              onChange={handleInputChange('email')}
+              error={!!validationErrors.email}
+              helperText={validationErrors.email}
+              fullWidth
+              disabled={loading}
+            />
+        
           </Box>
         </Box>
       </DialogContent>
