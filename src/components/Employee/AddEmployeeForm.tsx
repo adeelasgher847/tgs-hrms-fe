@@ -6,7 +6,11 @@ import {
   TextField,
   useMediaQuery,
   useTheme,
+  InputAdornment,
 } from '@mui/material';
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
+import '../UserProfile/PhoneInput.css';
 import type { SxProps, Theme } from '@mui/system';
 import { useOutletContext } from 'react-router-dom';
 import type { EmployeeDto } from '../../api/employeeApi';
@@ -225,6 +229,18 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       });
     };
 
+  const handlePhoneChange = (value: string | undefined) => {
+    const phoneValue = value || '';
+    setValues({ ...values, phone: phoneValue });
+    // Clear phone validation error when user starts typing
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.phone;
+      delete newErrors.general;
+      return newErrors;
+    });
+  };
+
   // When a designation is selected, set departmentId to its department
   const handleDesignationChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -265,6 +281,13 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       );
     if (!values.phone)
       newErrors.phone = label('Phone is required', 'رقم الهاتف مطلوب');
+    else if (values.phone && values.phone.trim()) {
+      // Basic validation for phone number format
+      const phoneRegex = /^\+[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(values.phone)) {
+        newErrors.phone = label('Please enter a valid phone number', 'يرجى إدخال رقم هاتف صحيح');
+      }
+    }
     if (!values.designationId)
       newErrors.designationId = label(
         'Please select a designation',
@@ -387,10 +410,71 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
             fullWidth
             label={label('Phone', 'رقم الهاتف')}
             value={values.phone}
-            onChange={handleChange('phone')}
+            onChange={(e) => handlePhoneChange(e.target.value)}
             error={!!errors.phone}
             helperText={errors.phone}
-            sx={darkInputStyles}
+            placeholder={label('Enter phone number', 'أدخل رقم الهاتف')}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start" sx={{ margin: 0, padding: '28px 0px' }}>
+                  <PhoneInput
+                    defaultCountry="ua"
+                    value={values.phone}
+                    onChange={handlePhoneChange}
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      background: 'transparent',
+                      width: '100%',
+                    }}
+                    inputStyle={{
+                      border: 'none',
+                      outline: 'none',
+                      padding: '0',
+                      margin: '0',
+                      fontSize: '1rem',
+                      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                      backgroundColor: 'transparent',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      flex: 1,
+                      height: '100%',
+                    }}
+                    countrySelectorStyleProps={{
+                      buttonStyle: {
+                        border: 'none',
+                        background: 'transparent',
+                        padding: '0',
+                        margin: '0',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                      },
+                      dropdownStyleProps: {
+                        zIndex: 9999,
+                      },
+                    }}
+                    className="phone-input-textfield-adornment"
+                  />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              ...darkInputStyles,
+              '& .MuiOutlinedInput-root': {
+                padding: '0px',
+              },
+              '& .MuiInputBase-input': {
+                display: 'none', // Hide the TextField input completely
+              },
+              '& .MuiInputAdornment-root': {
+                width: '100%',
+                margin: 0,
+              },
+              '& .MuiInputAdornment-positionStart': {
+                marginRight: 0,
+              },
+            }}
           />
         </Box>
 
