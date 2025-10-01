@@ -57,6 +57,7 @@ const AttendanceTable = () => {
   const [isManager, setIsManager] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [adminView, setAdminView] = useState<'my' | 'all'>('my');
+  const [managerView, setManagerView] = useState<'my' | 'team'>('my');
   const [tab, setTab] = useState(0); // 0: My Attendance, 1: Team Attendance
   const [teamAttendance, setTeamAttendance] = useState<AttendanceEvent[]>([]);
   const [teamLoading, setTeamLoading] = useState(false);
@@ -405,6 +406,21 @@ const AttendanceTable = () => {
     fetchAttendance(1, 'all', undefined, '', '');
   };
 
+  // Handle manager view change - separate buttons
+  const handleManagerMyAttendance = () => {
+    setManagerView('my');
+    setCurrentPage(1);
+    setStartDate('');
+    setEndDate('');
+    fetchAttendance(1, 'my', undefined, '', '');
+  };
+
+  const handleManagerTeamAttendance = () => {
+    setManagerView('team');
+    setTeamCurrentPage(1);
+    fetchTeamAttendance(1);
+  };
+
   // Initial load
   useEffect(() => {
     fetchAttendance(1, 'my');
@@ -471,37 +487,57 @@ const AttendanceTable = () => {
         </Box>
       )}
 
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Box sx={{ display: 'flex' }}>
+      {/* Manager View Toggle */}
+      {isManager && !isAdminLike && (
+        <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
           <Button
-            onClick={() => setTab(0)}
-            sx={{
-              borderBottom: tab === 0 ? 2 : 0,
-              borderColor: 'primary.main',
-              borderRadius: 0,
-              mr: 2,
-            }}
+            variant={managerView === 'my' ? 'contained' : 'outlined'}
+            onClick={handleManagerMyAttendance}
           >
             My Attendance
           </Button>
-          {isManager && (
+          <Button
+            variant={managerView === 'team' ? 'contained' : 'outlined'}
+            onClick={handleManagerTeamAttendance}
+          >
+            Team Attendance
+          </Button>
+        </Box>
+      )}
+
+      {/* Tabs - Only show for regular users (non-Managers and non-Admins) */}
+      {!isManager && !isAdminLike && (
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Box sx={{ display: 'flex' }}>
             <Button
-              onClick={() => setTab(1)}
+              onClick={() => setTab(0)}
               sx={{
-                borderBottom: tab === 1 ? 2 : 0,
+                borderBottom: tab === 0 ? 2 : 0,
                 borderColor: 'primary.main',
                 borderRadius: 0,
+                mr: 2,
               }}
             >
-              Team Attendance
+              My Attendance
             </Button>
-          )}
+            {isManager && (
+              <Button
+                onClick={() => setTab(1)}
+                sx={{
+                  borderBottom: tab === 1 ? 2 : 0,
+                  borderColor: 'primary.main',
+                  borderRadius: 0,
+                }}
+              >
+                Team Attendance
+              </Button>
+            )}
+          </Box>
         </Box>
-      </Box>
+      )}
 
-      {/* My Attendance Tab */}
-      {tab === 0 && (
+      {/* My Attendance Tab - Show for regular users (tab 0) or when Manager/Admin is viewing My Attendance or Admin is viewing All Attendance */}
+      {((tab === 0 && !isManager && !isAdminLike) || (isManager && !isAdminLike && managerView === 'my') || (isAdminLike && (adminView === 'my' || adminView === 'all'))) && (
         <Paper sx={{background:'unset' ,boxShadow:'none'}}>
           {/* Filters */}
           <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap'}}>
@@ -623,8 +659,8 @@ const AttendanceTable = () => {
         </Paper>
       )}
 
-      {/* Team Attendance Tab */}
-      {tab === 1 && (
+      {/* Team Attendance Tab - Only show for regular users (tab system) */}
+      {tab === 1 && !isManager && !isAdminLike && (
         <Paper sx={{ p: 3 }}>
           <Box
             sx={{
@@ -635,6 +671,93 @@ const AttendanceTable = () => {
             }}
           >
             <Typography variant='h6'>Team Attendance</Typography>
+          </Box>
+
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Designation</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Department</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    Days Worked
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    Hours Worked
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {teamLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align='center'>
+                      <CircularProgress />
+                    </TableCell>
+                  </TableRow>
+                ) : teamAttendance.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align='center'>
+                      No team attendance records found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  teamAttendance.map(member => (
+                    <TableRow key={(member as any).user_id}>
+                      <TableCell>
+                        {(member as any).first_name}{' '}
+                        {(member as any).last_name}
+                      </TableCell>
+                      <TableCell>{(member as any).designation}</TableCell>
+                      <TableCell>{(member as any).department}</TableCell>
+                      <TableCell>
+                        {(member as any).totalDaysWorked}
+                      </TableCell>
+                      <TableCell>
+                        {(member as any).totalHoursWorked}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {/* Team Pagination */}
+          {teamTotalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Pagination
+                count={teamTotalPages}
+                page={teamCurrentPage}
+                onChange={(_, page) => handleTeamPageChange(page)}
+                color='primary'
+              />
+            </Box>
+          )}
+
+          {/* Team Pagination Info */}
+          {teamTotalItems > 0 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Typography variant='body2' color='text.secondary'>
+                Showing {((teamCurrentPage - 1) * 10) + 1} to {Math.min(teamCurrentPage * 10, teamTotalItems)} of {teamTotalItems} records
+              </Typography>
+            </Box>
+          )}
+        </Paper>
+      )}
+
+      {/* Manager Team Attendance - Show when Manager clicks Team Attendance button */}
+      {isManager && !isAdminLike && managerView === 'team' && (
+        <Paper sx={{ background:'unset !important', boxShadow:'none' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+            }}
+          >
+            {/* <Typography variant='h6'>Team Attendance</Typography> */}
           </Box>
 
           <TableContainer>
