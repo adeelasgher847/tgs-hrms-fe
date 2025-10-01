@@ -348,7 +348,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 startAdornment: (
                   <InputAdornment position="start" sx={{ margin: 0, padding: '28px 0px' }}>
                     <PhoneInput
-                      defaultCountry="ua"
+                      defaultCountry="pk"
                       value={formData.phone}
                       onChange={handlePhoneChange}
                       disabled={loading}
