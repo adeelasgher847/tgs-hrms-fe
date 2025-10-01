@@ -26,7 +26,7 @@ import { isManager as checkIsManager, isAdmin } from '../../utils/roleUtils';
 interface AttendanceRecord {
   id: string;
   userId: string;
-  date: string; // YYYY-MM-DD (local)
+  date: string; // YYYY-MM-DD (shift date)
   checkInISO: string | null; // ISO for calc/sort
   checkOutISO: string | null; // ISO for calc/sort
   checkIn: string | null; // display
@@ -48,37 +48,46 @@ const AttendanceTable = () => {
   const [userRole, setUserRole] = useState<string>('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
-
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-
-  // Admin view state
-  const [adminView, setAdminView] = useState<'my' | 'all'>('my');
+  const [isManager, setIsManager] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
-
+  const [adminView, setAdminView] = useState<'my' | 'all'>('my');
   const [tab, setTab] = useState(0); // 0: My Attendance, 1: Team Attendance
   const [teamAttendance, setTeamAttendance] = useState<AttendanceEvent[]>([]);
   const [teamLoading, setTeamLoading] = useState(false);
   const [teamError, setTeamError] = useState('');
-  const [isManager, setIsManager] = useState(false);
-
-  // Team attendance pagination state
   const [teamCurrentPage, setTeamCurrentPage] = useState(1);
   const [teamTotalPages, setTeamTotalPages] = useState(1);
   const [teamTotalItems, setTeamTotalItems] = useState(0);
 
-  // Employee filter
-  const [employees, setEmployees] = useState<{ id: string; name: string }[]>(
-    []
-  );
-  const [selectedEmployee, setSelectedEmployee] = useState('');
-
   const toDisplayTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString() : null;
 
+  // Function to handle daily summaries from backend (cross-day compatible)
+  const buildFromSummaries = (
+    summariesRaw: any[],
+    currentUserId: string,
+    isAllAttendance: boolean = false
+  ): AttendanceRecord[] => {
+    return summariesRaw.map((summary: any) => ({
+      id: `${summary.date}-${currentUserId}`,
+      userId: currentUserId,
+      date: summary.date,
+      checkInISO: summary.checkIn,
+      checkOutISO: summary.checkOut,
+      checkIn: summary.checkIn ? toDisplayTime(summary.checkIn) : null,
+      checkOut: summary.checkOut ? toDisplayTime(summary.checkOut) : null,
+      workedHours: summary.workedHours || null,
+      user: { first_name: 'Current User' }, // Will be updated from API response
+    }));
+  };
+
+  // UPDATED: Function to handle events-based data with proper cross-day support
   const buildFromEvents = (
     eventsRaw: AttendanceEvent[],
     currentUserId: string,
@@ -93,94 +102,109 @@ const AttendanceTable = () => {
         type: (e as any).type as 'check-in' | 'check-out',
         user: (e as any).user,
       }))
-      .filter(e => e.user_id) // Filter out events without user_id for "All Attendance"
+      .filter(e => e.user_id)
       .sort(
         (a, b) =>
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
 
     const sessions: AttendanceRecord[] = [];
-    const openByKey = new Map<
-      string,
-      { checkIn: AttendanceEvent | null; user?: { first_name?: string } }
-    >();
+    
+    // Group events by user for cross-day compatibility
+    const userEvents = new Map<string, Array<{
+      id: string;
+      timestamp: string;
+      type: 'check-in' | 'check-out';
+      user?: { first_name?: string };
+    }>>();
 
+    // Group events by user
     for (const ev of events) {
-      const dt = new Date((ev as any).timestamp);
-      const date = formatLocalYMD(dt); // LOCAL date (no UTC shift)
-      const key = `${(ev as any).user_id}_${date}`;
-      if (!openByKey.has(key))
-        openByKey.set(key, { checkIn: null, user: (ev as any).user });
-      const bucket = openByKey.get(key)!;
-
-      if ((ev as any).type === 'check-in') {
-        // If a previous check-in wasn't closed, push it as an open session
-        if (bucket.checkIn) {
-          sessions.push({
-            id: `${(bucket.checkIn as any).id}-open`,
-            userId: (ev as any).user_id,
-            date,
-            checkInISO: (bucket.checkIn as any).timestamp,
-            checkOutISO: null,
-            checkIn: toDisplayTime((bucket.checkIn as any).timestamp),
-            checkOut: null,
-            workedHours: null,
-            user: { first_name: (ev as any).user?.first_name || 'N/A' },
-          });
-        }
-        bucket.checkIn = ev as unknown as AttendanceEvent;
-        bucket.user = (ev as any).user;
-      } else if ((ev as any).type === 'check-out') {
-        if (
-          bucket.checkIn &&
-          new Date((ev as any).timestamp) >
-            new Date((bucket.checkIn as any).timestamp)
-        ) {
-          const inISO = (bucket.checkIn as any).timestamp;
-          const outISO = (ev as any).timestamp;
-          const worked = parseFloat(
-            (
-              (new Date(outISO).getTime() - new Date(inISO).getTime()) /
-              3600000
-            ).toFixed(2)
-          );
-          sessions.push({
-            id: `${(bucket.checkIn as any).id}-${(ev as any).id}`,
-            userId: (ev as any).user_id,
-            date,
-            checkInISO: inISO,
-            checkOutISO: outISO,
-            checkIn: toDisplayTime(inISO),
-            checkOut: toDisplayTime(outISO),
-            workedHours: worked,
-            user: { first_name: (ev as any).user?.first_name || 'N/A' },
-          });
-          bucket.checkIn = null;
-        }
+      const userId = (ev as any).user_id;
+      if (!userEvents.has(userId)) {
+        userEvents.set(userId, []);
       }
+      userEvents.get(userId)!.push({
+        id: (ev as any).id,
+        timestamp: (ev as any).timestamp,
+        type: (ev as any).type,
+        user: (ev as any).user,
+      });
     }
 
-    // Flush any open sessions without checkout
-    for (const [key, val] of openByKey.entries()) {
-      if (val.checkIn) {
-        const [userId, date] = key.split('_');
+    // Process each user's events chronologically
+    for (const [userId, userEventList] of userEvents.entries()) {
+      const openSessions: Array<{
+        checkIn: { id: string; timestamp: string; user?: { first_name?: string } };
+        checkOut: { id: string; timestamp: string } | null;
+      }> = [];
+
+      for (const event of userEventList) {
+        if (event.type === 'check-in') {
+          // Add new open session
+          openSessions.push({
+            checkIn: {
+              id: event.id,
+              timestamp: event.timestamp,
+              user: event.user,
+            },
+            checkOut: null,
+          });
+        } else if (event.type === 'check-out') {
+          // Find the most recent open session (last check-in without check-out)
+          const lastOpenIndex = openSessions.findIndex(session => !session.checkOut);
+          
+          if (lastOpenIndex !== -1) {
+            // Close the most recent open session
+            openSessions[lastOpenIndex].checkOut = {
+              id: event.id,
+              timestamp: event.timestamp,
+            };
+          }
+          // If no open session found, we ignore orphaned check-outs
+        }
+      }
+
+      // Convert sessions to AttendanceRecord format
+      for (const session of openSessions) {
+        const checkInDate = new Date(session.checkIn.timestamp);
+        const shiftDate = formatLocalYMD(checkInDate); // Use check-in date as the shift date
+        
+        let workedHours = null;
+        let checkOutISO = null;
+        let checkOutDisplay = null;
+        
+        if (session.checkOut) {
+          checkOutISO = session.checkOut.timestamp;
+          checkOutDisplay = toDisplayTime(checkOutISO);
+          
+          const inTime = new Date(session.checkIn.timestamp).getTime();
+          const outTime = new Date(checkOutISO).getTime();
+          
+          if (outTime > inTime) {
+            workedHours = parseFloat(
+              ((outTime - inTime) / 3600000).toFixed(2)
+            );
+          }
+        }
+        
         sessions.push({
-          id: `${(val.checkIn as any).id}-open`,
+          id: `${session.checkIn.id}-${session.checkOut ? session.checkOut.id : 'open'}`,
           userId,
-          date,
-          checkInISO: (val.checkIn as any).timestamp,
-          checkOutISO: null,
-          checkIn: toDisplayTime((val.checkIn as any).timestamp),
-          checkOut: null,
-          workedHours: null,
-          user: { first_name: (val.checkIn as any).user?.first_name || 'N/A' },
+          date: shiftDate, // This will be the check-in date
+          checkInISO: session.checkIn.timestamp,
+          checkOutISO,
+          checkIn: toDisplayTime(session.checkIn.timestamp),
+          checkOut: checkOutDisplay,
+          workedHours,
+          user: { first_name: session.checkIn.user?.first_name || 'N/A' },
         });
       }
     }
 
     // Sort by date (desc) then time (desc)
     sessions.sort((a, b) => {
-      if (a.date !== b.date) return a.date < b.date ? 1 : -1; // string compare
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
       const at = a.checkInISO ? new Date(a.checkInISO).getTime() : 0;
       const bt = b.checkInISO ? new Date(b.checkInISO).getTime() : 0;
       return bt - at;
@@ -283,7 +307,7 @@ const AttendanceTable = () => {
       const effectiveStartDate = startDateOverride ?? startDate;
       const effectiveEndDate = endDateOverride ?? endDate;
 
-      // Choose API explicitly based on effectiveView and admin privilege
+      // UPDATED: Use getAttendanceEvents for all attendance fetching
       if (isAdminFlag && effectiveView === 'all') {
         if (effectiveSelectedEmployee) {
           // When a specific employee is selected, fetch events for that user
@@ -302,6 +326,7 @@ const AttendanceTable = () => {
           );
         }
       } else {
+        // For non-admins or 'my' view, fetch events for the current user
         response = await attendanceApi.getAttendanceEvents(
           currentUser.id,
           page,
@@ -317,11 +342,24 @@ const AttendanceTable = () => {
       const events: AttendanceEvent[] =
         (response.items as AttendanceEvent[]) || [];
 
-      const rows = buildFromEvents(
-        events,
-        currentUser.id,
-        isAdminFlag && effectiveView === 'all'
-      );
+      // Check if response contains shift-based data or events
+      const isShiftBased = events.length > 0 && events[0] && 
+        (events[0] as any).date && 
+        (events[0] as any).checkIn !== undefined;
+
+      let rows: AttendanceRecord[];
+      
+      if (isShiftBased) {
+        // Handle shift-based data from backend
+        rows = buildFromSummaries(events, currentUser.id, isAdminFlag && effectiveView === 'all');
+      } else {
+        // Handle events-based data (primary method)
+        rows = buildFromEvents(
+          events,
+          currentUser.id,
+          isAdminFlag && effectiveView === 'all'
+        );
+      }
 
       setAttendanceData(rows);
       setFilteredData(rows);
@@ -383,21 +421,19 @@ const AttendanceTable = () => {
   // Separate effect for data filtering (only by selected employee; dates handled server-side)
   useEffect(() => {
     let data = [...attendanceData];
-
     if (selectedEmployee) {
-      data = data.filter(rec => rec.userId === selectedEmployee);
+      data = data.filter((record) => record.userId === selectedEmployee);
     }
-
     setFilteredData(data);
   }, [attendanceData, selectedEmployee]);
 
   // Handle filter changes - reset page to 1 and fetch new data
   const handleFilterChange = () => {
     setCurrentPage(1);
-    fetchAttendance(1, isAdminUser ? adminView : 'my');
+    fetchAttendance(1, isAdminUser ? adminView : 'my', selectedEmployee, startDate, endDate);
   };
 
-  // Handle employee filter change
+  // Handle employee selection change
   const handleEmployeeChange = (value: string) => {
     setSelectedEmployee(value);
     setCurrentPage(1);
@@ -405,49 +441,24 @@ const AttendanceTable = () => {
     fetchAttendance(1, 'all', value, startDate, endDate);
   };
 
-  // Handle date filter changes
-  const handleStartDateChange = (value: string) => {
-    setStartDate(value);
-    setCurrentPage(1);
-    const view = isAdminUser ? adminView : 'my';
-    const selectedId = view === 'all' ? selectedEmployee : undefined;
-    fetchAttendance(1, view, selectedId, value, endDate);
-  };
-
-  const handleEndDateChange = (value: string) => {
-    setEndDate(value);
-    setCurrentPage(1);
-    const view = isAdminUser ? adminView : 'my';
-    const selectedId = view === 'all' ? selectedEmployee : undefined;
-    fetchAttendance(1, view, selectedId, startDate, value);
-  };
-
-  const clearFilters = () => {
-    setStartDate('');
-    setEndDate('');
-    setSelectedEmployee('');
-    setCurrentPage(1);
-    const view = isAdminUser ? adminView : 'my';
-    fetchAttendance(1, view, undefined, '', '');
-  };
-
   // Determine admin-like UI behavior (Admin or System-Admin)
   const userRoleLc = (userRole || '').toLowerCase();
   const isAdminLike =
     userRoleLc === 'admin' ||
-    userRoleLc === 'system-admin' ||
-    userRoleLc === 'system admin' ||
     userRoleLc === 'system_admin';
 
   return (
     <Box>
-      {/* Admin View Buttons */}
-      {isAdminUser && (
-        <Box mb={3}>
+      <Typography variant='h4' gutterBottom>
+        Attendance Management
+      </Typography>
+
+      {/* Admin View Toggle */}
+      {isAdminLike && (
+        <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
           <Button
             variant={adminView === 'my' ? 'contained' : 'outlined'}
             onClick={handleMyAttendance}
-            sx={{ mr: 2 }}
           >
             My Attendance
           </Button>
@@ -460,75 +471,52 @@ const AttendanceTable = () => {
         </Box>
       )}
 
-      {/* Regular Tab Navigation for Non-Admins */}
-      {!isAdminUser && (
-        <Box mb={2}>
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Box sx={{ display: 'flex' }}>
           <Button
-            variant={tab === 0 ? 'contained' : 'outlined'}
             onClick={() => setTab(0)}
+            sx={{
+              borderBottom: tab === 0 ? 2 : 0,
+              borderColor: 'primary.main',
+              borderRadius: 0,
+              mr: 2,
+            }}
           >
             My Attendance
           </Button>
           {isManager && (
             <Button
-              variant={tab === 1 ? 'contained' : 'outlined'}
-              onClick={() => {
-                setTab(1);
-                fetchTeamAttendance(1);
+              onClick={() => setTab(1)}
+              sx={{
+                borderBottom: tab === 1 ? 2 : 0,
+                borderColor: 'primary.main',
+                borderRadius: 0,
               }}
-              sx={{ ml: 2 }}
             >
               Team Attendance
             </Button>
           )}
         </Box>
-      )}
+      </Box>
 
-      {/* My Attendance Tab Content */}
-      {(tab === 0 || isAdminUser) && (
-        <>
-          <Typography variant='h6' gutterBottom mb={2}>
-            {isAdminUser
-              ? adminView === 'all'
-                ? 'All Employees Attendance'
-                : 'My Attendance'
-              : 'Attendance Sessions'}
-          </Typography>
-
-          <Box
-            display='flex'
-            gap={2}
-            mb={2}
-            flexWrap='wrap'
-            alignItems='center'
-          >
-            {/* Employee Dropdown - Only show for All Attendance */}
-            {isAdminUser && adminView === 'all' && (
+      {/* My Attendance Tab */}
+      {tab === 0 && (
+        <Paper sx={{ p: 3 }}>
+          {/* Filters */}
+          <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            {/* Employee Filter - Only show for admin "All" view */}
+            {isAdminLike && adminView === 'all' && (
               <TextField
-                label='Employee'
                 select
+                label='Select Employee'
                 value={selectedEmployee}
-                onChange={e => handleEmployeeChange(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  '& .MuiInputBase-input': {
-                    padding: '6.5px 14px',
-                  },
-                  minWidth: 200,
-                }}
-                SelectProps={{
-                  displayEmpty: true,
-                  renderValue: value => {
-                    if (value === '') {
-                      return 'All Employees';
-                    }
-                    const emp = employees.find(e => e.id === value);
-                    return emp ? emp.name : 'All Employees';
-                  },
-                }}
+                onChange={(e) => handleEmployeeChange(e.target.value)}
+                sx={{ minWidth: 200 }}
+                size='small'
               >
                 <MenuItem value=''>All Employees</MenuItem>
-                {employees.map(emp => (
+                {employees.map((emp) => (
                   <MenuItem key={emp.id} value={emp.id}>
                     {emp.name}
                   </MenuItem>
@@ -540,217 +528,168 @@ const AttendanceTable = () => {
             <TextField
               label='Start Date'
               type='date'
-              InputLabelProps={{ shrink: true }}
               value={startDate}
-              onChange={e => handleStartDateChange(e.target.value)}
-              sx={{
-                '& .MuiInputBase-input': {
-                  padding: '6.5px 14px',
-                },
-              }}
+              onChange={(e) => setStartDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size='small'
             />
-
             <TextField
               label='End Date'
               type='date'
-              InputLabelProps={{ shrink: true }}
               value={endDate}
-              onChange={e => handleEndDateChange(e.target.value)}
-              sx={{
-                '& .MuiInputBase-input': {
-                  padding: '6.5px 14px',
-                },
-              }}
+              onChange={(e) => setEndDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size='small'
             />
-
-            <Button variant='outlined' onClick={clearFilters}>
-              Clear Filter
+            <Button variant='contained' onClick={handleFilterChange}>
+              Apply Filters
             </Button>
           </Box>
 
-          <Paper elevation={3} sx={{ boxShadow: 'none' }}>
-            <TableContainer>
-              <Table>
-                <TableHead>
+          {/* Attendance Table */}
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  {isAdminLike && adminView === 'all' && (
+                    <TableCell sx={{ fontWeight: 'bold' }}>Employee</TableCell>
+                  )}
+                  <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    Worked Hours
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loading ? (
                   <TableRow>
-                    {isAdminLike && adminView === 'all' && (
-                      <TableCell sx={{ fontWeight: 'bold' }}>
-                        Employee Name
-                      </TableCell>
-                    )}
-                    <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>
-                      Worked Hours
+                    <TableCell
+                      colSpan={isAdminLike && adminView === 'all' ? 5 : 4}
+                      align='center'
+                    >
+                      <CircularProgress />
                     </TableCell>
                   </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={isAdminLike && adminView === 'all' ? 5 : 4}
-                        align='center'
-                      >
-                        <CircularProgress />
-                      </TableCell>
+                ) : filteredData.length > 0 ? (
+                  filteredData.map((record) => (
+                    <TableRow key={record.id}>
+                      {isAdminLike && adminView === 'all' && (
+                        <TableCell>
+                          {record.user?.first_name || 'N/A'}
+                        </TableCell>
+                      )}
+                      <TableCell>{record.date || '--'}</TableCell>
+                      <TableCell>{record.checkIn || '--'}</TableCell>
+                      <TableCell>{record.checkOut || '--'}</TableCell>
+                      <TableCell>{record.workedHours ?? '--'}</TableCell>
                     </TableRow>
-                  ) : filteredData.length > 0 ? (
-                    filteredData.map(record => (
-                      <TableRow key={record.id}>
-                        {isAdminLike && adminView === 'all' && (
-                          <TableCell>
-                            {record.user?.first_name || 'N/A'}
-                          </TableCell>
-                        )}
-                        <TableCell>{record.date || '--'}</TableCell>
-                        <TableCell>{record.checkIn || '--'}</TableCell>
-                        <TableCell>{record.checkOut || '--'}</TableCell>
-                        <TableCell>{record.workedHours ?? '--'}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={isAdminLike && adminView === 'all' ? 5 : 4}
-                        align='center'
-                      >
-                        No attendance records found.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={isAdminLike && adminView === 'all' ? 5 : 4}
+                      align='center'
+                    >
+                      No attendance records found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <Box display='flex' justifyContent='center' mt={2}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <Pagination
                 count={totalPages}
                 page={currentPage}
                 onChange={(_, page) => handlePageChange(page)}
                 color='primary'
-                showFirstButton
-                showLastButton
               />
             </Box>
           )}
-
-          {/* Pagination Info */}
-          {totalItems > 0 && (
-            <Box display='flex' justifyContent='center' mt={1}>
-              <Typography variant='body2' color='textSecondary'>
-                Showing page {currentPage} of {totalPages} ({totalItems} total
-                records)
-              </Typography>
-            </Box>
-          )}
-        </>
+        </Paper>
       )}
 
-      {/* Team Attendance Tab Content (Only for Managers, not Admins) */}
-      {tab === 1 && isManager && !isAdminUser && (
-        <Box>
+      {/* Team Attendance Tab */}
+      {tab === 1 && (
+        <Paper sx={{ p: 3 }}>
           <Box
-            display='flex'
-            justifyContent='space-between'
-            alignItems='center'
-            mb={2}
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+            }}
           >
             <Typography variant='h6'>Team Attendance</Typography>
           </Box>
 
-          {teamLoading ? (
-            <Box display='flex' justifyContent='center' py={4}>
-              <CircularProgress />
-            </Box>
-          ) : teamError ? (
-            <Box display='flex' justifyContent='center' py={4}>
-              <Typography color='error'>{teamError}</Typography>
-            </Box>
-          ) : (
-            <>
-              <Paper elevation={3} sx={{ boxShadow: 'none' }}>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 'bold' }}>
-                          Employee Name
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>
-                          Designation
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>
-                          Department
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>
-                          Days Worked
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>
-                          Hours Worked
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {teamAttendance.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={5} align='center'>
-                            No team attendance records found.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        teamAttendance.map(member => (
-                          <TableRow key={(member as any).user_id}>
-                            <TableCell>
-                              {(member as any).first_name}{' '}
-                              {(member as any).last_name}
-                            </TableCell>
-                            <TableCell>{(member as any).designation}</TableCell>
-                            <TableCell>{(member as any).department}</TableCell>
-                            <TableCell>
-                              {(member as any).totalDaysWorked}
-                            </TableCell>
-                            <TableCell>
-                              {(member as any).totalHoursWorked}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Paper>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Designation</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Department</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    Days Worked
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    Hours Worked
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {teamLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align='center'>
+                      <CircularProgress />
+                    </TableCell>
+                  </TableRow>
+                ) : teamAttendance.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align='center'>
+                      No team attendance records found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  teamAttendance.map(member => (
+                    <TableRow key={(member as any).user_id}>
+                      <TableCell>
+                        {(member as any).first_name}{' '}
+                        {(member as any).last_name}
+                      </TableCell>
+                      <TableCell>{(member as any).designation}</TableCell>
+                      <TableCell>{(member as any).department}</TableCell>
+                      <TableCell>
+                        {(member as any).totalDaysWorked}
+                      </TableCell>
+                      <TableCell>
+                        {(member as any).totalHoursWorked}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-              {/* Pagination */}
-              {teamTotalPages > 1 && (
-                <Box display='flex' justifyContent='center' mt={2}>
-                  <Pagination
-                    count={teamTotalPages}
-                    page={teamCurrentPage}
-                    onChange={(_, page) => handleTeamPageChange(page)}
-                    color='primary'
-                    showFirstButton
-                    showLastButton
-                  />
-                </Box>
-              )}
-
-              {/* Pagination Info */}
-              {teamTotalItems > 0 && (
-                <Box display='flex' justifyContent='center' mt={1}>
-                  <Typography variant='body2' color='textSecondary'>
-                    Showing page {teamCurrentPage} of {teamTotalPages} (
-                    {teamTotalItems} total records)
-                  </Typography>
-                </Box>
-              )}
-            </>
+          {/* Team Pagination */}
+          {teamTotalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Pagination
+                count={teamTotalPages}
+                page={teamCurrentPage}
+                onChange={(_, page) => handleTeamPageChange(page)}
+                color='primary'
+              />
+            </Box>
           )}
-        </Box>
+        </Paper>
       )}
     </Box>
   );
