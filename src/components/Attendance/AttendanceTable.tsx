@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import attendanceApi from '../../api/attendanceApi';
 import employeeApi from '../../api/employeeApi';
+import { exportCSV } from '../../api/exportApi';
 import type {
   AttendanceEvent,
   AttendanceResponse,
@@ -439,6 +440,9 @@ const AttendanceTable = () => {
     userRoleLc === 'system admin' ||
     userRoleLc === 'system_admin';
 
+  const token = localStorage.getItem('token');
+  const filters = { page: '1' };
+
   return (
     <Box>
       {/* Admin View Buttons */}
@@ -459,7 +463,67 @@ const AttendanceTable = () => {
           </Button>
         </Box>
       )}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' ,gap:2}}>
+        {/* Export Button for Admins */}
+        {isAdminUser && (
+          <Box mb={2} display='flex' justifyContent='flex-end'>
+            <Button
+              variant='contained'
+              color='primary'
+              onClick={() =>
+                exportCSV(
+                  '/attendance/export/all',
+                  'attendance-all.csv',
+                  token,
+                  filters
+                )
+              }
+            >
+              Export All Attendance CSV
+            </Button>
+          </Box>
+        )}
 
+        {/* Export Button for Managers */}
+        {isManager && (
+          <Box mb={2} display='flex' justifyContent='flex-end'>
+            <Button
+              variant='contained'
+              color='primary'
+              onClick={() =>
+                exportCSV(
+                  '/attendance/export/team',
+                  'attendance-team.csv',
+                  token,
+                  filters
+                )
+              }
+            >
+              Export Team Attendance CSV
+            </Button>
+          </Box>
+        )}
+
+        {/* Export Button for Employees */}
+        {!isAdminUser && (
+          <Box mb={2} display='flex' justifyContent='flex-end'>
+            <Button
+              variant='contained'
+              color='primary'
+              onClick={() =>
+                exportCSV(
+                  '/attendance/export/self',
+                  'attendance-self.csv',
+                  token,
+                  filters
+                )
+              }
+            >
+              Export My Attendance CSV
+            </Button>
+          </Box>
+        )}
+      </Box>
       {/* Regular Tab Navigation for Non-Admins */}
       {!isAdminUser && (
         <Box mb={2}>
