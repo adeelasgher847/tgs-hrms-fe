@@ -795,6 +795,7 @@ const AttendanceTable = () => {
                  }}
                />
              </Box>
+
             <Button variant='contained' onClick={handleFilterChange}>
               Clear Filters
             </Button>
