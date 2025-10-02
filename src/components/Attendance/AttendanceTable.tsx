@@ -21,6 +21,7 @@ import 'react-multi-date-picker/styles/colors/teal.css';
 import './AttendanceTable.css';
 import attendanceApi from '../../api/attendanceApi';
 import employeeApi from '../../api/employeeApi';
+import { exportCSV } from '../../api/exportApi';
 import type {
   AttendanceEvent,
   AttendanceResponse,
@@ -54,7 +55,9 @@ const AttendanceTable = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
+  const [employees, setEmployees] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -78,6 +81,8 @@ const AttendanceTable = () => {
 
   const toDisplayTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString() : null;
+   const token = localStorage.getItem('token');
+   const filters = { page: '1' };
 
   // Function to handle daily summaries from backend (cross-day compatible)
   const buildFromSummaries = (
@@ -120,14 +125,17 @@ const AttendanceTable = () => {
       );
 
     const sessions: AttendanceRecord[] = [];
-    
+
     // Group events by user for cross-day compatibility
-    const userEvents = new Map<string, Array<{
-      id: string;
-      timestamp: string;
-      type: 'check-in' | 'check-out';
-      user?: { first_name?: string };
-    }>>();
+    const userEvents = new Map<
+      string,
+      Array<{
+        id: string;
+        timestamp: string;
+        type: 'check-in' | 'check-out';
+        user?: { first_name?: string };
+      }>
+    >();
 
     // Group events by user
     for (const ev of events) {
@@ -146,7 +154,11 @@ const AttendanceTable = () => {
     // Process each user's events chronologically
     for (const [userId, userEventList] of userEvents.entries()) {
       const openSessions: Array<{
-        checkIn: { id: string; timestamp: string; user?: { first_name?: string } };
+        checkIn: {
+          id: string;
+          timestamp: string;
+          user?: { first_name?: string };
+        };
         checkOut: { id: string; timestamp: string } | null;
       }> = [];
 
@@ -163,8 +175,10 @@ const AttendanceTable = () => {
           });
         } else if (event.type === 'check-out') {
           // Find the most recent open session (last check-in without check-out)
-          const lastOpenIndex = openSessions.findIndex(session => !session.checkOut);
-          
+          const lastOpenIndex = openSessions.findIndex(
+            session => !session.checkOut
+          );
+
           if (lastOpenIndex !== -1) {
             // Close the most recent open session
             openSessions[lastOpenIndex].checkOut = {
@@ -180,25 +194,23 @@ const AttendanceTable = () => {
       for (const session of openSessions) {
         const checkInDate = new Date(session.checkIn.timestamp);
         const shiftDate = formatLocalYMD(checkInDate); // Use check-in date as the shift date
-        
+
         let workedHours = null;
         let checkOutISO = null;
         let checkOutDisplay = null;
-        
+
         if (session.checkOut) {
           checkOutISO = session.checkOut.timestamp;
           checkOutDisplay = toDisplayTime(checkOutISO);
-          
+
           const inTime = new Date(session.checkIn.timestamp).getTime();
           const outTime = new Date(checkOutISO).getTime();
-          
+
           if (outTime > inTime) {
-            workedHours = parseFloat(
-              ((outTime - inTime) / 3600000).toFixed(2)
-            );
+            workedHours = parseFloat(((outTime - inTime) / 3600000).toFixed(2));
           }
         }
-        
+
         sessions.push({
           id: `${session.checkIn.id}-${session.checkOut ? session.checkOut.id : 'open'}`,
           userId,
@@ -453,15 +465,21 @@ const AttendanceTable = () => {
         (response.items as AttendanceEvent[]) || [];
 
       // Check if response contains shift-based data or events
-      const isShiftBased = events.length > 0 && events[0] && 
-        (events[0] as any).date && 
+      const isShiftBased =
+        events.length > 0 &&
+        events[0] &&
+        (events[0] as any).date &&
         (events[0] as any).checkIn !== undefined;
 
       let rows: AttendanceRecord[];
-      
+
       if (isShiftBased) {
         // Handle shift-based data from backend
-        rows = buildFromSummaries(events, currentUser.id, isAdminFlag && effectiveView === 'all');
+        rows = buildFromSummaries(
+          events,
+          currentUser.id,
+          isAdminFlag && effectiveView === 'all'
+        );
       } else {
         // Handle events-based data (primary method)
         rows = buildFromEvents(
@@ -582,7 +600,7 @@ const AttendanceTable = () => {
   useEffect(() => {
     let data = [...attendanceData];
     if (selectedEmployee) {
-      data = data.filter((record) => record.userId === selectedEmployee);
+      data = data.filter(record => record.userId === selectedEmployee);
     }
     setFilteredData(data);
   }, [attendanceData, selectedEmployee]);
@@ -606,9 +624,7 @@ const AttendanceTable = () => {
 
   // Determine admin-like UI behavior (Admin or System-Admin)
   const userRoleLc = (userRole || '').toLowerCase();
-  const isAdminLike =
-    userRoleLc === 'admin' ||
-    userRoleLc === 'system_admin';
+  const isAdminLike = userRoleLc === 'admin' || userRoleLc === 'system_admin';
 
   return (
     <Box>
@@ -649,6 +665,7 @@ const AttendanceTable = () => {
           >
             Team Attendance
           </Button>
+          
         </Box>
       )}
 
@@ -678,28 +695,34 @@ const AttendanceTable = () => {
               >
                 Team Attendance
               </Button>
+              
             )}
+            
           </Box>
+         
         </Box>
+        
       )}
-
+ 
       {/* My Attendance Tab - Show for regular users (tab 0) or when Manager/Admin is viewing My Attendance or Admin is viewing All Attendance */}
-      {((tab === 0 && !isManager && !isAdminLike) || (isManager && !isAdminLike && managerView === 'my') || (isAdminLike && (adminView === 'my' || adminView === 'all'))) && (
-        <Paper sx={{background:'unset' ,boxShadow:'none'}}>
+      {((tab === 0 && !isManager && !isAdminLike) ||
+        (isManager && !isAdminLike && managerView === 'my') ||
+        (isAdminLike && (adminView === 'my' || adminView === 'all'))) && (
+        <Paper sx={{ background: 'unset', boxShadow: 'none' }}>
           {/* Filters */}
-          <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap'}}>
+          <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             {/* Employee Filter - Only show for admin "All" view */}
             {isAdminLike && adminView === 'all' && (
               <TextField
                 select
                 label='Select Employee'
                 value={selectedEmployee}
-                onChange={(e) => handleEmployeeChange(e.target.value)}
+                onChange={e => handleEmployeeChange(e.target.value)}
                 sx={{ minWidth: 200 }}
                 size='small'
               >
                 <MenuItem value=''>All Employees</MenuItem>
-                {employees.map((emp) => (
+                {employees.map(emp => (
                   <MenuItem key={emp.id} value={emp.id}>
                     {emp.name}
                   </MenuItem>
@@ -775,8 +798,62 @@ const AttendanceTable = () => {
             <Button variant='contained' onClick={handleFilterChange}>
               Clear Filters
             </Button>
+           
           </Box>
-
+  {/* Export Buttons */}
+          <Box
+            sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mb: 2 }}
+          >
+            {isAdminUser && (
+              <Button
+                variant='contained'
+                onClick={() =>
+                  exportCSV(
+                    '/attendance/export/all',
+                    'attendance-all.csv',
+                    token,
+                    filters
+                  )
+                }
+              >
+                Export All Attendance
+              </Button>
+            )}
+            {isManager && (
+              <Button
+                variant='contained'
+                onClick={() =>
+                  exportCSV(
+                    '/attendance/export/team',
+                    'attendance-team.csv',
+                    token,
+                    filters
+                  )
+                }
+              >
+                Export Team Attendance
+              </Button>
+            )}
+             {/* Export Button for Employees */}
+        {!isAdminUser && (
+          <Box mb={0} display='flex' justifyContent='flex-end'>
+            <Button
+              variant='contained'
+              color='primary'
+              onClick={() =>
+                exportCSV(
+                  '/attendance/export/self',
+                  'attendance-self.csv',
+                  token,
+                  filters
+                )
+              }
+            >
+              Export My Attendance CSV
+            </Button>
+          </Box>
+        )}
+          </Box>
           {/* Attendance Table */}
           <TableContainer>
             <Table>
@@ -804,7 +881,7 @@ const AttendanceTable = () => {
                     </TableCell>
                   </TableRow>
                 ) : filteredData.length > 0 ? (
-                  filteredData.map((record) => (
+                  filteredData.map(record => (
                     <TableRow key={record.id}>
                       {isAdminLike && adminView === 'all' && (
                         <TableCell>
@@ -856,7 +933,8 @@ const AttendanceTable = () => {
           {!(isAdminLike && adminView === 'all') && totalItems > 0 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
               <Typography variant='body2' color='text.secondary'>
-                Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, totalItems)} of {totalItems} records
+                Showing {(currentPage - 1) * 10 + 1} to{' '}
+                {Math.min(currentPage * 10, totalItems)} of {totalItems} records
               </Typography>
             </Box>
           )}
@@ -948,7 +1026,6 @@ const AttendanceTable = () => {
               </TableBody>
             </Table>
           </TableContainer>
-
           {/* Date Navigation for Team Attendance */}
           <DateNavigation
             currentDate={teamCurrentNavigationDate}
@@ -960,7 +1037,7 @@ const AttendanceTable = () => {
 
       {/* Manager Team Attendance - Show when Manager clicks Team Attendance button */}
       {isManager && !isAdminLike && managerView === 'team' && (
-        <Paper sx={{ background:'unset !important', boxShadow:'none' }}>
+        <Paper sx={{ background: 'unset !important', boxShadow: 'none' }}>
           <Box
             sx={{
               display: 'flex',
@@ -1034,7 +1111,6 @@ const AttendanceTable = () => {
               </TableBody>
             </Table>
           </TableContainer>
-
           {/* Date Navigation for Manager Team Attendance */}
           <DateNavigation
             currentDate={teamCurrentNavigationDate}

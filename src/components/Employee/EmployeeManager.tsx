@@ -34,7 +34,7 @@ import {
   type BackendDesignation,
 } from '../../api/designationApi';
 import { extractErrorMessage } from '../../utils/errorHandler';
-
+import { exportCSV } from '../../api/exportApi';
 interface Employee {
   id: string;
   name: string;
@@ -440,12 +440,15 @@ const EmployeeManager: React.FC = () => {
 
       // Generic error
       const errorResult = extractErrorMessage(err);
-      
+
       // Check if this is a global tenant/department/designation error
-      const isGlobalError = errorResult.message.toLowerCase().includes('global') || 
-                           errorResult.message.toLowerCase().includes('does not belong to your organization') ||
-                           errorResult.message.toLowerCase().includes('invalid designation id');
-      
+      const isGlobalError =
+        errorResult.message.toLowerCase().includes('global') ||
+        errorResult.message
+          .toLowerCase()
+          .includes('does not belong to your organization') ||
+        errorResult.message.toLowerCase().includes('invalid designation id');
+
       if (isGlobalError) {
         // For global errors, only show snackbar, don't set form error
         setError(errorResult.message); // This will show in the snackbar
@@ -543,12 +546,15 @@ const EmployeeManager: React.FC = () => {
       return { success: true };
     } catch (error: unknown) {
       const errorResult = extractErrorMessage(error);
-      
+
       // Check if this is a global tenant/department/designation error
-      const isGlobalError = errorResult.message.toLowerCase().includes('global') || 
-                           errorResult.message.toLowerCase().includes('does not belong to your organization') ||
-                           errorResult.message.toLowerCase().includes('invalid designation id');
-      
+      const isGlobalError =
+        errorResult.message.toLowerCase().includes('global') ||
+        errorResult.message
+          .toLowerCase()
+          .includes('does not belong to your organization') ||
+        errorResult.message.toLowerCase().includes('invalid designation id');
+
       if (isGlobalError) {
         // For global errors, only show snackbar, don't set form error
         setError(errorResult.message); // This will show in the snackbar
@@ -623,12 +629,25 @@ const EmployeeManager: React.FC = () => {
         'هل أنت متأكد أنك تريد حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.'
       );
 
+  const token = localStorage.getItem('token');
+  const filters = { page: '1' };
+
   return (
     <Box>
+      <Box mb={2} display='flex' justifyContent='flex-end'>
+        <Button
+          variant='contained'
+          color='primary'
+          onClick={() =>
+            exportCSV('/employees/export', 'employees.csv', token, filters)
+          }
+        >
+          Export Employees CSV
+        </Button>
+      </Box>
       <Typography variant='h6' gutterBottom>
         Employee List
       </Typography>
-
       {/* Add Employee Button */}
       <Box
         display='flex'
