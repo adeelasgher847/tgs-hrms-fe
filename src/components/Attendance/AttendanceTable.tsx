@@ -27,6 +27,7 @@ import type {
   AttendanceResponse,
 } from '../../api/attendanceApi';
 import { isManager as checkIsManager, isAdmin } from '../../utils/roleUtils';
+import DateNavigation from './DateNavigation';
 
 interface AttendanceRecord {
   id: string;
@@ -67,11 +68,16 @@ const AttendanceTable = () => {
   const [managerView, setManagerView] = useState<'my' | 'team'>('my');
   const [tab, setTab] = useState(0); // 0: My Attendance, 1: Team Attendance
   const [teamAttendance, setTeamAttendance] = useState<AttendanceEvent[]>([]);
+  const [filteredTeamAttendance, setFilteredTeamAttendance] = useState<AttendanceEvent[]>([]);
   const [teamLoading, setTeamLoading] = useState(false);
   const [teamError, setTeamError] = useState('');
   const [teamCurrentPage, setTeamCurrentPage] = useState(1);
   const [teamTotalPages, setTeamTotalPages] = useState(1);
   const [teamTotalItems, setTeamTotalItems] = useState(0);
+  
+  // Date navigation state for All Attendance and Team Attendance
+  const [currentNavigationDate, setCurrentNavigationDate] = useState('all');
+  const [teamCurrentNavigationDate, setTeamCurrentNavigationDate] = useState('all');
 
   const toDisplayTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString() : null;
@@ -237,6 +243,7 @@ const AttendanceTable = () => {
       const response = await attendanceApi.getTeamAttendance(page);
 
       setTeamAttendance(response.items || []);
+      setFilteredTeamAttendance(response.items || []);
 
       // Update pagination state
       setTeamCurrentPage(response.page || 1);
@@ -245,11 +252,92 @@ const AttendanceTable = () => {
     } catch {
       setTeamError('Failed to load team attendance');
       setTeamAttendance([]);
+      setFilteredTeamAttendance([]);
       setTeamCurrentPage(1);
       setTeamTotalPages(1);
       setTeamTotalItems(0);
     } finally {
       setTeamLoading(false);
+    }
+  };
+
+  // Fetch attendance data for a specific date (for date navigation)
+  const fetchAttendanceByDate = async (date: string, view: 'all' | 'team') => {
+    if (view === 'all') {
+      setLoading(true);
+    } else {
+      setTeamLoading(true);
+    }
+    
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        if (view === 'all') {
+          setLoading(false);
+        } else {
+          setTeamLoading(false);
+        }
+        return;
+      }
+
+      const currentUser = JSON.parse(storedUser);
+      let response: AttendanceResponse;
+
+      if (view === 'all') {
+        response = await attendanceApi.getAllAttendance(
+          1, // Always page 1 for date-based fetching
+          date, // Start date
+          date  // End date (same day)
+        );
+        
+        const events: AttendanceEvent[] = (response.items as AttendanceEvent[]) || [];
+        let rows: AttendanceRecord[] = [];
+        
+        // Check if response contains shift-based data or events
+        const isShiftBased = events.length > 0 && events[0] && 
+          (events[0] as any).date && 
+          (events[0] as any).checkIn !== undefined;
+
+        if (isShiftBased) {
+          rows = buildFromSummaries(events, currentUser.id, true);
+        } else {
+          rows = buildFromEvents(events, currentUser.id, true);
+        }
+
+        setAttendanceData(rows);
+        setFilteredData(rows);
+        
+        // Set pagination state for date-filtered results
+        setCurrentPage(1);
+        setTotalPages(1);
+        setTotalItems(rows.length);
+      } else {
+        // For Team Attendance, we'll keep the existing team attendance logic
+        // but could be modified to fetch by date if the API supports it
+        const teamResponse = await attendanceApi.getTeamAttendance(1);
+        // Convert to AttendanceResponse format
+        response = {
+          items: teamResponse.items,
+          total: teamResponse.total,
+          page: teamResponse.page,
+          limit: 10, // Default limit
+          totalPages: teamResponse.totalPages,
+        };
+        setTeamAttendance((response.items as AttendanceEvent[]) || []);
+      }
+    } catch (error) {
+      if (view === 'all') {
+        setAttendanceData([]);
+        setFilteredData([]);
+      } else {
+        setTeamAttendance([]);
+      }
+    } finally {
+      if (view === 'all') {
+        setLoading(false);
+      } else {
+        setTeamLoading(false);
+      }
     }
   };
 
@@ -294,7 +382,8 @@ const AttendanceTable = () => {
     view?: 'my' | 'all',
     selectedUserId?: string,
     startDateOverride?: string,
-    endDateOverride?: string
+    endDateOverride?: string,
+    showAllRecords: boolean = false
   ) => {
     setLoading(true);
     try {
@@ -336,11 +425,20 @@ const AttendanceTable = () => {
           );
         } else {
           // No employee selected: fetch all attendance with pagination/date filters
-          response = await attendanceApi.getAllAttendance(
-            page,
-            effectiveStartDate || undefined,
-            effectiveEndDate || undefined
-          );
+          if (showAllRecords) {
+            // Fetch all records without pagination for All Attendance view
+            response = await attendanceApi.getAllAttendance(
+              1, // Always page 1 when showing all
+              undefined, // No date filters
+              undefined
+            );
+          } else {
+            response = await attendanceApi.getAllAttendance(
+              page,
+              effectiveStartDate || undefined,
+              effectiveEndDate || undefined
+            );
+          }
         }
       } else {
         // For non-admins or 'my' view, fetch events for the current user
@@ -352,9 +450,16 @@ const AttendanceTable = () => {
         );
       }
 
-      setCurrentPage(page);
-      setTotalPages(response.totalPages || 1);
-      setTotalItems(response.total || 0);
+      if (showAllRecords) {
+        // When showing all records, set pagination to show everything on one page
+        setCurrentPage(1);
+        setTotalPages(1);
+        setTotalItems(response.total || 0);
+      } else {
+        setCurrentPage(page);
+        setTotalPages(response.totalPages || 1);
+        setTotalItems(response.total || 0);
+      }
 
       const events: AttendanceEvent[] =
         (response.items as AttendanceEvent[]) || [];
@@ -406,6 +511,35 @@ const AttendanceTable = () => {
     fetchTeamAttendance(page);
   };
 
+  // Handle date navigation changes
+  const handleDateNavigationChange = (newDate: string) => {
+    setCurrentNavigationDate(newDate);
+    if (newDate === 'all') {
+      // Show all records (no pagination)
+      fetchAttendance(1, 'all', selectedEmployee, '', '', true);
+    } else {
+      fetchAttendanceByDate(newDate, 'all');
+    }
+  };
+
+  const handleTeamDateNavigationChange = (newDate: string) => {
+    setTeamCurrentNavigationDate(newDate);
+    if (newDate === 'all') {
+      // Show all team records
+      setFilteredTeamAttendance(teamAttendance);
+    } else {
+      // Filter team records for specific date
+      const filtered = teamAttendance.map(member => {
+        const filteredAttendance = (member as any).attendance?.filter((att: any) => att.date === newDate) || [];
+        return {
+          ...member,
+          attendance: filteredAttendance
+        };
+      }).filter(member => (member as any).attendance.length > 0);
+      setFilteredTeamAttendance(filtered);
+    }
+  };
+
   // Handle admin view change - separate buttons
   const handleMyAttendance = () => {
     setAdminView('my');
@@ -422,10 +556,13 @@ const AttendanceTable = () => {
     setSelectedEmployee('');
     setStartDate('');
     setEndDate('');
+    // Reset to show all records for date navigation
+    setCurrentNavigationDate('all');
 
     // Fetch employees from attendance data first, then attendance
     await fetchEmployeesFromAttendance();
-    fetchAttendance(1, 'all', undefined, '', '');
+    // Show all records initially (no date filtering)
+    fetchAttendance(1, 'all', undefined, '', '', true);
   };
 
   // Handle manager view change - separate buttons
@@ -440,6 +577,9 @@ const AttendanceTable = () => {
   const handleManagerTeamAttendance = () => {
     setManagerView('team');
     setTeamCurrentPage(1);
+    // Reset to show all records for date navigation
+    setTeamCurrentNavigationDate('all');
+    // Show all team records initially
     fetchTeamAttendance(1);
   };
 
@@ -589,85 +729,73 @@ const AttendanceTable = () => {
                 ))}
               </TextField>
             )}
-            {/* Date Range Filter - Always show */}
-            <Box>
-              <DatePicker
-                range
-                numberOfMonths={2}
-                value={
-                  startDate && endDate
-                    ? [new Date(startDate), new Date(endDate)]
-                    : startDate
-                      ? [new Date(startDate)]
-                      : []
-                }
-                onChange={dates => {
-                  console.log('DatePicker onChange:', dates);
-                  if (dates && dates.length === 2) {
-                    const start = dates[0]?.format('YYYY-MM-DD') || '';
-                    const end = dates[1]?.format('YYYY-MM-DD') || '';
-                    console.log('Setting dates:', { start, end });
-                    setStartDate(start);
-                    setEndDate(end);
-                    // Trigger the filter change
-                    setCurrentPage(1);
-                    const view = isAdminUser ? adminView : 'my';
-                    const selectedId =
-                      view === 'all' ? selectedEmployee : undefined;
-                    fetchAttendance(1, view, selectedId, start, end);
-                  } else if (dates && dates.length === 1) {
-                    const start = dates[0]?.format('YYYY-MM-DD') || '';
-                    console.log('Setting start date only:', start);
-                    setStartDate(start);
-                    setEndDate('');
-                    // Trigger the filter change
-                    setCurrentPage(1);
-                    const view = isAdminUser ? adminView : 'my';
-                    const selectedId =
-                      view === 'all' ? selectedEmployee : undefined;
-                    fetchAttendance(1, view, selectedId, start, '');
-                  } else {
-                    console.log('Clearing dates');
-                    setStartDate('');
-                    setEndDate('');
-                    // Trigger the filter change
-                    setCurrentPage(1);
-                    const view = isAdminUser ? adminView : 'my';
-                    const selectedId =
-                      view === 'all' ? selectedEmployee : undefined;
-                    fetchAttendance(1, view, selectedId, '', '');
-                  }
-                }}
-                format='MM/DD/YYYY'
-                placeholder='Start Date - End Date'
-                style={{
-                  width: '100%',
-                  height: '40px',
-                  padding: '6.5px 14px',
-                  border: '1px solid rgba(0, 0, 0, 0.23)',
-                  borderRadius: '4px',
-                  fontSize: '16px',
-                  fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
-                  backgroundColor: 'transparent',
-                  outline: 'none',
-                }}
-                containerStyle={{
-                  width: '100%',
-                }}
-                inputClass='custom-date-picker-input'
-                className='custom-date-picker'
-                editable={false}
-                showOtherDays={true}
-                onOpen={() => {
-                  // Prevent body scroll when calendar opens
-                  document.body.style.overflow = 'hidden';
-                }}
-                onClose={() => {
-                  // Restore body scroll when calendar closes
-                  document.body.style.overflow = 'auto';
-                }}
-              />
-            </Box>
+             {/* Date Range Filter - Always show */}
+             <Box >
+               <DatePicker
+                 range
+                 numberOfMonths={2}
+                 value={startDate && endDate ? [new Date(startDate), new Date(endDate)] : startDate ? [new Date(startDate)] : []}
+                 onChange={(dates) => {
+                   if (dates && dates.length === 2) {
+                     const start = dates[0]?.format('YYYY-MM-DD') || '';
+                     const end = dates[1]?.format('YYYY-MM-DD') || '';
+                     setStartDate(start);
+                     setEndDate(end);
+                     // Trigger the filter change
+                     setCurrentPage(1);
+                     const view = isAdminUser ? adminView : 'my';
+                     const selectedId = view === 'all' ? selectedEmployee : undefined;
+                     fetchAttendance(1, view, selectedId, start, end);
+                   } else if (dates && dates.length === 1) {
+                     const start = dates[0]?.format('YYYY-MM-DD') || '';
+                     setStartDate(start);
+                     setEndDate('');
+                     // Trigger the filter change
+                     setCurrentPage(1);
+                     const view = isAdminUser ? adminView : 'my';
+                     const selectedId = view === 'all' ? selectedEmployee : undefined;
+                     fetchAttendance(1, view, selectedId, start, '');
+                   } else {
+                     setStartDate('');
+                     setEndDate('');
+                     // Trigger the filter change
+                     setCurrentPage(1);
+                     const view = isAdminUser ? adminView : 'my';
+                     const selectedId = view === 'all' ? selectedEmployee : undefined;
+                     fetchAttendance(1, view, selectedId, '', '');
+                   }
+                 }}
+                 format="MM/DD/YYYY"
+                 placeholder="Start Date - End Date"
+                 style={{
+                   width: '100%',
+                   height: '40px',
+                   padding: '6.5px 14px',
+                   border: '1px solid rgba(0, 0, 0, 0.23)',
+                   borderRadius: '4px',
+                   fontSize: '16px',
+                   fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+                   backgroundColor: 'transparent',
+                   outline: 'none',
+                 }}
+                 containerStyle={{
+                   width: '100%',
+                 }}
+                 inputClass="custom-date-picker-input"
+                 className="custom-date-picker"
+                 editable={false}
+                 showOtherDays={true}
+                 onOpen={() => {
+                   // Prevent body scroll when calendar opens
+                   document.body.style.overflow = 'hidden';
+                 }}
+                 onClose={() => {
+                   // Restore body scroll when calendar closes
+                   document.body.style.overflow = 'auto';
+                 }}
+               />
+             </Box>
+
             <Button variant='contained' onClick={handleFilterChange}>
               Clear Filters
             </Button>
@@ -761,7 +889,7 @@ const AttendanceTable = () => {
                           {record.user?.first_name || 'N/A'}
                         </TableCell>
                       )}
-                      <TableCell>{record.date || '--'}</TableCell>
+                      <TableCell>{record.checkInISO ? record.checkInISO.split('T')[0] : '--'}</TableCell>
                       <TableCell>{record.checkIn || '--'}</TableCell>
                       <TableCell>{record.checkOut || '--'}</TableCell>
                       <TableCell>{record.workedHours ?? '--'}</TableCell>
@@ -781,8 +909,17 @@ const AttendanceTable = () => {
             </Table>
           </TableContainer>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
+          {/* Date Navigation for All Attendance */}
+          {isAdminLike && adminView === 'all' && (
+            <DateNavigation
+              currentDate={currentNavigationDate}
+              onDateChange={handleDateNavigationChange}
+              disabled={loading}
+            />
+          )}
+
+          {/* Pagination - Only show for My Attendance */}
+          {!(isAdminLike && adminView === 'all') && totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <Pagination
                 count={totalPages}
@@ -793,8 +930,8 @@ const AttendanceTable = () => {
             </Box>
           )}
 
-          {/* Pagination Info */}
-          {totalItems > 0 && (
+          {/* Pagination Info - Only show for My Attendance */}
+          {!(isAdminLike && adminView === 'all') && totalItems > 0 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
               <Typography variant='body2' color='text.secondary'>
                 Showing {(currentPage - 1) * 10 + 1} to{' '}
@@ -824,9 +961,12 @@ const AttendanceTable = () => {
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Designation</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Department</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Days Worked</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    Days Worked
+                  </TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>
                     Hours Worked
                   </TableCell>
@@ -835,55 +975,64 @@ const AttendanceTable = () => {
               <TableBody>
                 {teamLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} align='center'>
+                    <TableCell colSpan={6} align='center'>
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
-                ) : teamAttendance.length === 0 ? (
+                ) : filteredTeamAttendance.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align='center'>
+                    <TableCell colSpan={6} align='center'>
                       No team attendance records found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  teamAttendance.map(member => (
-                    <TableRow key={(member as any).user_id}>
-                      <TableCell>
-                        {(member as any).first_name} {(member as any).last_name}
-                      </TableCell>
-                      <TableCell>{(member as any).designation}</TableCell>
-                      <TableCell>{(member as any).department}</TableCell>
-                      <TableCell>{(member as any).totalDaysWorked}</TableCell>
-                      <TableCell>{(member as any).totalHoursWorked}</TableCell>
-                    </TableRow>
-                  ))
+                  filteredTeamAttendance.flatMap(member => 
+                    (member as any).attendance && (member as any).attendance.length > 0 
+                      ? (member as any).attendance.map((attendance: any, index: number) => (
+                          <TableRow key={`${(member as any).user_id}-${index}`}>
+                            <TableCell>
+                              {(member as any).first_name}{' '}
+                              {(member as any).last_name}
+                            </TableCell>
+                            <TableCell>{attendance.date || '--'}</TableCell>
+                            <TableCell>{attendance.checkIn ? new Date(attendance.checkIn).toLocaleTimeString() : '--'}</TableCell>
+                            <TableCell>{attendance.checkOut ? new Date(attendance.checkOut).toLocaleTimeString() : '--'}</TableCell>
+                            <TableCell>
+                              {(member as any).totalDaysWorked}
+                            </TableCell>
+                            <TableCell>
+                              {attendance.workedHours || 0}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      : [(
+                          <TableRow key={(member as any).user_id}>
+                            <TableCell>
+                              {(member as any).first_name}{' '}
+                              {(member as any).last_name}
+                            </TableCell>
+                            <TableCell>--</TableCell>
+                            <TableCell>--</TableCell>
+                            <TableCell>--</TableCell>
+                            <TableCell>
+                              {(member as any).totalDaysWorked}
+                            </TableCell>
+                            <TableCell>
+                              {(member as any).totalHoursWorked}
+                            </TableCell>
+                          </TableRow>
+                        )]
+                  )
                 )}
               </TableBody>
             </Table>
           </TableContainer>
-
-          {/* Team Pagination */}
-          {teamTotalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-              <Pagination
-                count={teamTotalPages}
-                page={teamCurrentPage}
-                onChange={(_, page) => handleTeamPageChange(page)}
-                color='primary'
-              />
-            </Box>
-          )}
-
-          {/* Team Pagination Info */}
-          {teamTotalItems > 0 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <Typography variant='body2' color='text.secondary'>
-                Showing {(teamCurrentPage - 1) * 10 + 1} to{' '}
-                {Math.min(teamCurrentPage * 10, teamTotalItems)} of{' '}
-                {teamTotalItems} records
-              </Typography>
-            </Box>
-          )}
+          {/* Date Navigation for Team Attendance */}
+          <DateNavigation
+            currentDate={teamCurrentNavigationDate}
+            onDateChange={handleTeamDateNavigationChange}
+            disabled={teamLoading}
+          />
         </Paper>
       )}
 
@@ -906,9 +1055,9 @@ const AttendanceTable = () => {
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Designation</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Department</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Days Worked</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>
                     Hours Worked
                   </TableCell>
@@ -917,55 +1066,58 @@ const AttendanceTable = () => {
               <TableBody>
                 {teamLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} align='center'>
+                    <TableCell colSpan={6} align='center'>
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
-                ) : teamAttendance.length === 0 ? (
+                ) : filteredTeamAttendance.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align='center'>
+                    <TableCell colSpan={6} align='center'>
                       No team attendance records found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  teamAttendance.map(member => (
-                    <TableRow key={(member as any).user_id}>
-                      <TableCell>
-                        {(member as any).first_name} {(member as any).last_name}
-                      </TableCell>
-                      <TableCell>{(member as any).designation}</TableCell>
-                      <TableCell>{(member as any).department}</TableCell>
-                      <TableCell>{(member as any).totalDaysWorked}</TableCell>
-                      <TableCell>{(member as any).totalHoursWorked}</TableCell>
-                    </TableRow>
-                  ))
+                  filteredTeamAttendance.flatMap(member => 
+                    (member as any).attendance && (member as any).attendance.length > 0 
+                      ? (member as any).attendance.map((attendance: any, index: number) => (
+                          <TableRow key={`${(member as any).user_id}-${index}`}>
+                            <TableCell>
+                              {(member as any).first_name}{' '}
+                              {(member as any).last_name}
+                            </TableCell>
+                            <TableCell>{attendance.date || '--'}</TableCell>
+                            <TableCell>{attendance.checkIn ? new Date(attendance.checkIn).toLocaleTimeString() : '--'}</TableCell>
+                            <TableCell>{attendance.checkOut ? new Date(attendance.checkOut).toLocaleTimeString() : '--'}</TableCell>
+                            <TableCell>
+                              {attendance.workedHours || 0}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      : [(
+                          <TableRow key={(member as any).user_id}>
+                            <TableCell>
+                              {(member as any).first_name}{' '}
+                              {(member as any).last_name}
+                            </TableCell>
+                            <TableCell>--</TableCell>
+                            <TableCell>--</TableCell>
+                            <TableCell>--</TableCell>
+                            <TableCell>
+                              {(member as any).totalHoursWorked}
+                            </TableCell>
+                          </TableRow>
+                        )]
+                  )
                 )}
               </TableBody>
             </Table>
           </TableContainer>
-
-          {/* Team Pagination */}
-          {teamTotalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-              <Pagination
-                count={teamTotalPages}
-                page={teamCurrentPage}
-                onChange={(_, page) => handleTeamPageChange(page)}
-                color='primary'
-              />
-            </Box>
-          )}
-
-          {/* Team Pagination Info */}
-          {teamTotalItems > 0 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <Typography variant='body2' color='text.secondary'>
-                Showing {(teamCurrentPage - 1) * 10 + 1} to{' '}
-                {Math.min(teamCurrentPage * 10, teamTotalItems)} of{' '}
-                {teamTotalItems} records
-              </Typography>
-            </Box>
-          )}
+          {/* Date Navigation for Manager Team Attendance */}
+          <DateNavigation
+            currentDate={teamCurrentNavigationDate}
+            onDateChange={handleTeamDateNavigationChange}
+            disabled={teamLoading}
+          />
         </Paper>
       )}
     </Box>
