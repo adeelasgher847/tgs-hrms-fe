@@ -30,6 +30,7 @@ import TeamMemberList from './TeamMemberList';
 import EditTeamForm from './EditTeamForm';
 import DeleteTeamDialog from './DeleteTeamDialog';
 import AvailableEmployees from './AvailableEmployees';
+import { exportCSV } from '../../api/exportApi';
 
 interface TeamListProps {
   teams: Team[];
@@ -50,6 +51,9 @@ const TeamList: React.FC<TeamListProps> = ({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const { language } = useLanguage();
+
+  const token = localStorage.getItem('token');
+  const filters = { page: '1' };
 
   const labels = {
     en: {
@@ -187,325 +191,351 @@ const TeamList: React.FC<TeamListProps> = ({
     }
   };
 
+  // Export button always at the top
+  const exportButton = (
+    <Box mb={2} display='flex' justifyContent='flex-end'>
+      <Button
+        variant='contained'
+        color='primary'
+        onClick={() => exportCSV('/teams/export', 'teams.csv', token, filters)}
+      >
+        Export Teams CSV
+      </Button>
+    </Box>
+  );
+
   if (teams.length === 0) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          py: 8,
-          color: darkMode ? '#ccc' : '#666',
-        }}
-      >
-        <GroupIcon sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
-        <Typography variant='h6' gutterBottom>
-          {lang.noTeams}
-        </Typography>
-      </Box>
+      <>
+        {exportButton}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 8,
+            color: darkMode ? '#ccc' : '#666',
+          }}
+        >
+          <GroupIcon sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
+          <Typography variant='h6' gutterBottom>
+            {lang.noTeams}
+          </Typography>
+        </Box>
+      </>
     );
   }
 
   return (
-    <Box>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          flexWrap: 'wrap',
-          gap: { xs: 2, sm: 3, md: 4 },
-          maxWidth: '100%',
-          mx: 'auto',
-          justifyContent: { xs: 'center', sm: 'flex-start' },
-          '& > *': {
-            width: {
-              xs: '100%',
-              sm: 'calc(50% - 12px)',
-              md: 'calc(50% - 16px)',
-              lg: 'calc(33.333% - 21px)',
+    <>
+      {exportButton}
+      <Box>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            flexWrap: 'wrap',
+            gap: { xs: 2, sm: 3, md: 4 },
+            maxWidth: '100%',
+            mx: 'auto',
+            justifyContent: { xs: 'center', sm: 'flex-start' },
+            '& > *': {
+              width: {
+                xs: '100%',
+                sm: 'calc(50% - 12px)',
+                md: 'calc(50% - 16px)',
+                lg: 'calc(33.333% - 21px)',
+              },
+              maxWidth: { xs: '100%', sm: '350px', md: '380px', lg: '400px' },
+              minWidth: { xs: '280px', sm: '300px' },
             },
-            maxWidth: { xs: '100%', sm: '350px', md: '380px', lg: '400px' },
-            minWidth: { xs: '280px', sm: '300px' },
-          },
-        }}
-      >
-        {teams.map(team => (
-          <Card
-            key={team.id}
-            sx={{
-              backgroundColor: (theme) => theme.palette.background.paper,
-              height: { xs: 'auto', sm: 'auto', md: 'auto' },
-              minHeight: { xs: '200px', sm: '220px', md: '240px', lg: '260px' },
-              display: 'flex',
-              flexDirection: 'column',
-              width: '100%',
-              borderRadius: 2,
-            }}
-          >
-            <CardContent
+          }}
+        >
+          {teams.map(team => (
+            <Card
+              key={team.id}
               sx={{
-                flexGrow: 1,
-                p: { xs: 2.5, sm: 3.5 },
+                backgroundColor: theme => theme.palette.background.paper,
+                height: { xs: 'auto', sm: 'auto', md: 'auto' },
+                minHeight: {
+                  xs: '200px',
+                  sm: '220px',
+                  md: '240px',
+                  lg: '260px',
+                },
                 display: 'flex',
                 flexDirection: 'column',
-                height: '100%',
+                width: '100%',
+                borderRadius: 2,
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <Avatar
-                  sx={{
-                    backgroundColor: generateAvatarColor(team.name),
-                    mr: 2,
-                    width: { xs: 40, sm: 48 },
-                    height: { xs: 40, sm: 48 },
-                    flexShrink: 0,
-                  }}
-                >
-                  <GroupIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                </Avatar>
-                <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
-                  <Typography
-                    variant='h6'
+              <CardContent
+                sx={{
+                  flexGrow: 1,
+                  p: { xs: 2.5, sm: 3.5 },
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <Avatar
                     sx={{
-                      color: (theme) => theme.palette.text.primary,
-                      fontWeight: 600,
-                      fontSize: { xs: '1rem', sm: '1.25rem' },
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap', // Always keep in single line
-                      lineHeight: 1.2,
-                      minHeight: 'auto',
+                      backgroundColor: generateAvatarColor(team.name),
+                      mr: 2,
+                      width: { xs: 40, sm: 48 },
+                      height: { xs: 40, sm: 48 },
+                      flexShrink: 0,
                     }}
-                    title={team.name} // Show full name on hover
                   >
-                    {team.name}
-                  </Typography>
+                    <GroupIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
+                  </Avatar>
+                  <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
+                    <Typography
+                      variant='h6'
+                      sx={{
+                        color: theme => theme.palette.text.primary,
+                        fontWeight: 600,
+                        fontSize: { xs: '1rem', sm: '1.25rem' },
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap', // Always keep in single line
+                        lineHeight: 1.2,
+                        minHeight: 'auto',
+                      }}
+                      title={team.name} // Show full name on hover
+                    >
+                      {team.name}
+                    </Typography>
+                    <Typography
+                      variant='body2'
+                      sx={{
+                        color: theme => theme.palette.text.secondary,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap', // Always keep in single line
+                        lineHeight: 1.2,
+                        minHeight: 'auto',
+                      }}
+                      title={`${team.manager?.first_name} ${team.manager?.last_name}`} // Show full name on hover
+                    >
+                      {team.manager?.first_name} {team.manager?.last_name}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      gap: { xs: 0.5, sm: 1 },
+                      flexShrink: 0,
+                    }}
+                  >
+                    <IconButton
+                      size='small'
+                      onClick={() => handleEditTeam(team)}
+                      sx={{
+                        color: theme => theme.palette.primary.main,
+                        padding: { xs: 0.5, sm: 1 },
+                      }}
+                    >
+                      <EditIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                    </IconButton>
+                    <IconButton
+                      size='small'
+                      onClick={() => handleDeleteTeam(team)}
+                      sx={{
+                        color: theme => theme.palette.error.main,
+                        padding: { xs: 0.5, sm: 1 },
+                      }}
+                    >
+                      <DeleteIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                    </IconButton>
+                  </Box>
+                </Box>
+
+                {team.description && (
                   <Typography
                     variant='body2'
                     sx={{
-                      color: (theme) => theme.palette.text.secondary,
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      color: theme => theme.palette.text.secondary,
+                      mb: 3,
+                      lineHeight: 1.6,
+                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap', // Always keep in single line
-                      lineHeight: 1.2,
-                      minHeight: 'auto',
+                      minHeight: { xs: '3.6em', sm: '4.2em' },
                     }}
-                    title={`${team.manager?.first_name} ${team.manager?.last_name}`} // Show full name on hover
                   >
-                    {team.manager?.first_name} {team.manager?.last_name}
+                    {team.description}
                   </Typography>
-                </Box>
+                )}
+
                 <Box
                   sx={{
                     display: 'flex',
-                    gap: { xs: 0.5, sm: 1 },
-                    flexShrink: 0,
-                  }}
-                >
-                  <IconButton
-                    size='small'
-                    onClick={() => handleEditTeam(team)}
-                    sx={{
-                      color: (theme) => theme.palette.primary.main,
-                      padding: { xs: 0.5, sm: 1 },
-                    }}
-                  >
-                    <EditIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
-                  </IconButton>
-                  <IconButton
-                    size='small'
-                    onClick={() => handleDeleteTeam(team)}
-                    sx={{
-                      color: (theme) => theme.palette.error.main,
-                      padding: { xs: 0.5, sm: 1 },
-                    }}
-                  >
-                    <DeleteIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
-                  </IconButton>
-                </Box>
-              </Box>
-
-              {team.description && (
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: (theme) => theme.palette.text.secondary,
+                    alignItems: 'center',
                     mb: 3,
-                    lineHeight: 1.6,
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    minHeight: { xs: '3.6em', sm: '4.2em' },
+                    flexWrap: 'wrap',
+                    gap: 1.5,
                   }}
                 >
-                  {team.description}
-                </Typography>
-              )}
-
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  mb: 3,
-                  flexWrap: 'wrap',
-                  gap: 1.5,
-                }}
-              >
-                <Chip
-                  label={`${team.teamMembers?.length || 0} ${lang.members}`}
-                  size='small'
-                  icon={<PersonIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.primary.main,
-                    color: (theme) => theme.palette.primary.contrastText,
-                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                    height: { xs: 24, sm: 28 },
-                  }}
-                />
-                {!team.teamMembers && (
-                  <Typography
-                    variant='caption'
+                  <Chip
+                    label={`${team.teamMembers?.length || 0} ${lang.members}`}
+                    size='small'
+                    icon={<PersonIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
                     sx={{
-                      color: (theme) => theme.palette.text.disabled,
-                      fontStyle: 'italic',
-                      fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                      backgroundColor: theme => theme.palette.primary.main,
+                      color: theme => theme.palette.primary.contrastText,
+                      fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                      height: { xs: 24, sm: 28 },
+                    }}
+                  />
+                  {!team.teamMembers && (
+                    <Typography
+                      variant='caption'
+                      sx={{
+                        color: theme => theme.palette.text.disabled,
+                        fontStyle: 'italic',
+                        fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                      }}
+                    >
+                      (Loading...)
+                    </Typography>
+                  )}
+                </Box>
+
+                <Stack
+                  direction='row'
+                  spacing={1}
+                  sx={{
+                    mt: 'auto',
+                    pt: 2,
+                    borderTop: theme => `1px solid ${theme.palette.divider}`,
+                  }}
+                >
+                  <Button
+                    variant='outlined'
+                    size='small'
+                    startIcon={
+                      <GroupIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                    }
+                    onClick={() => handleViewMembers(team)}
+                    sx={{
+                      borderColor: theme => theme.palette.primary.main,
+                      color: theme => theme.palette.primary.main,
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      py: { xs: 0.5, sm: 0.75 },
+                      px: { xs: 1, sm: 1.5 },
+                      '&:hover': {
+                        borderColor: theme => theme.palette.primary.dark,
+                        backgroundColor: theme => theme.palette.action.hover,
+                      },
                     }}
                   >
-                    (Loading...)
-                  </Typography>
-                )}
-              </Box>
+                    {lang.viewMembers}
+                  </Button>
+                  <Button
+                    variant='outlined'
+                    size='small'
+                    startIcon={
+                      <AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                    }
+                    onClick={() => handleAddMember(team)}
+                    sx={{
+                      borderColor: theme => theme.palette.primary.main,
+                      color: theme => theme.palette.primary.main,
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      py: { xs: 0.5, sm: 0.75 },
+                      px: { xs: 1, sm: 1.5 },
+                      '&:hover': {
+                        borderColor: theme => theme.palette.primary.dark,
+                        backgroundColor: theme => theme.palette.action.hover,
+                      },
+                    }}
+                  >
+                    {lang.addMember}
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
 
-              <Stack
-                direction='row'
-                spacing={1}
-                sx={{
-                  mt: 'auto',
-                  pt: 2,
-                  borderTop: (theme) => `1px solid ${theme.palette.divider}`,
-                }}
-              >
-                <Button
-                  variant='outlined'
-                  size='small'
-                  startIcon={
-                    <GroupIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                  }
-                  onClick={() => handleViewMembers(team)}
-                  sx={{
-                    borderColor: (theme) => theme.palette.primary.main,
-                    color: (theme) => theme.palette.primary.main,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    py: { xs: 0.5, sm: 0.75 },
-                    px: { xs: 1, sm: 1.5 },
-                    '&:hover': {
-                      borderColor: (theme) => theme.palette.primary.dark,
-                      backgroundColor: (theme) => theme.palette.action.hover,
-                    },
-                  }}
-                >
-                  {lang.viewMembers}
-                </Button>
-                <Button
-                  variant='outlined'
-                  size='small'
-                  startIcon={<AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
-                  onClick={() => handleAddMember(team)}
-                  sx={{
-                    borderColor: (theme) => theme.palette.primary.main,
-                    color: (theme) => theme.palette.primary.main,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    py: { xs: 0.5, sm: 0.75 },
-                    px: { xs: 1, sm: 1.5 },
-                    '&:hover': {
-                      borderColor: (theme) => theme.palette.primary.dark,
-                      backgroundColor: (theme) => theme.palette.action.hover,
-                    },
-                  }}
-                >
-                  {lang.addMember}
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
-        ))}
+        {/* Team Members Dialog */}
+        <Dialog
+          open={showMemberDialog}
+          onClose={() => setShowMemberDialog(false)}
+          maxWidth='md'
+          fullWidth
+        >
+          <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+            {selectedTeam?.name} - {lang.teamMembers}
+          </DialogTitle>
+          <DialogContent>
+            {selectedTeam && (
+              <TeamMemberList teamId={selectedTeam.id} darkMode={darkMode} />
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowMemberDialog(false)}>
+              {lang.cancel}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Add Member Dialog */}
+        <Dialog
+          open={showAddMemberDialog}
+          onClose={() => setShowAddMemberDialog(false)}
+          maxWidth='md'
+          fullWidth
+          pa
+        >
+          <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+            {lang.addMember} - {selectedTeam?.name}
+          </DialogTitle>
+          <DialogContent>
+            <AvailableEmployees darkMode={darkMode} teamId={selectedTeam?.id} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowAddMemberDialog(false)}>
+              {lang.cancel}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Edit Team Dialog */}
+        <EditTeamForm
+          open={showEditDialog}
+          onClose={() => {
+            setShowEditDialog(false);
+            setSelectedTeam(null);
+          }}
+          onSubmit={handleEditSubmit}
+          team={selectedTeam}
+          darkMode={darkMode}
+        />
+
+        {/* Delete Team Dialog */}
+        <DeleteTeamDialog
+          open={showDeleteDialog}
+          onClose={() => {
+            setShowDeleteDialog(false);
+            setSelectedTeam(null);
+            setDeleteError(null);
+          }}
+          onConfirm={handleDeleteConfirm}
+          team={selectedTeam}
+          darkMode={darkMode}
+          loading={deleteLoading}
+          error={deleteError}
+        />
       </Box>
-
-      {/* Team Members Dialog */}
-      <Dialog
-        open={showMemberDialog}
-        onClose={() => setShowMemberDialog(false)}
-        maxWidth='md'
-        fullWidth
-      >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
-          {selectedTeam?.name} - {lang.teamMembers}
-        </DialogTitle>
-        <DialogContent>
-          {selectedTeam && (
-            <TeamMemberList teamId={selectedTeam.id} darkMode={darkMode} />
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowMemberDialog(false)}>
-            {lang.cancel}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Add Member Dialog */}
-      <Dialog
-        open={showAddMemberDialog}
-        onClose={() => setShowAddMemberDialog(false)}
-        maxWidth='md'
-        fullWidth
-        pa
-      >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
-          {lang.addMember} - {selectedTeam?.name}
-        </DialogTitle>
-        <DialogContent>
-          <AvailableEmployees darkMode={darkMode} teamId={selectedTeam?.id} />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowAddMemberDialog(false)}>
-            {lang.cancel}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Edit Team Dialog */}
-      <EditTeamForm
-        open={showEditDialog}
-        onClose={() => {
-          setShowEditDialog(false);
-          setSelectedTeam(null);
-        }}
-        onSubmit={handleEditSubmit}
-        team={selectedTeam}
-        darkMode={darkMode}
-      />
-
-      {/* Delete Team Dialog */}
-      <DeleteTeamDialog
-        open={showDeleteDialog}
-        onClose={() => {
-          setShowDeleteDialog(false);
-          setSelectedTeam(null);
-          setDeleteError(null);
-        }}
-        onConfirm={handleDeleteConfirm}
-        team={selectedTeam}
-        darkMode={darkMode}
-        loading={deleteLoading}
-        error={deleteError}
-      />
-    </Box>
+    </>
   );
 };
 

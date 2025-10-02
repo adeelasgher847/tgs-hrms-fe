@@ -12,6 +12,7 @@ import {
   getUserName,
   getUserRole,
 } from '../../utils/auth';
+import { exportCSV } from '../../api/exportApi';
 
 import {
   Box,
@@ -82,6 +83,8 @@ const LeaveRequestPage = () => {
     userIsUser || userIsManager || userIsAdmin ? 0 : 0
   );
 
+  const token = localStorage.getItem('token');
+  const filters = { page: '1' };
 
   const loadLeaves = useCallback(
     async (page: number = 1) => {
@@ -230,7 +233,6 @@ const LeaveRequestPage = () => {
       setTeamCurrentPage(response.page);
       setTeamTotalPages(response.totalPages);
     } catch (error: unknown) {
-
       let errorMessage = 'Failed to load team leaves';
       if ((error as ApiError)?.response?.status === 403) {
         errorMessage = 'You do not have permission to view team leaves.';
@@ -643,6 +645,60 @@ const LeaveRequestPage = () => {
           </Box>
         </Toolbar>
       </AppBar>
+      {/* Export All Leaves CSV button for admin users */}
+      {userIsAdmin && (
+        <Box mt={2} display='flex' justifyContent='flex-end'>
+          <Button
+            variant='contained'
+            color='primary'
+            onClick={() =>
+              exportCSV('/leaves/export/all', 'leaves-all.csv', token, filters)
+            }
+          >
+            Export All Leaves CSV
+          </Button>
+        </Box>
+      )}
+
+      {/* Export Team Leaves CSV button for managers */}
+      {userIsManager && (
+        <Box mt={2} display='flex' justifyContent='flex-end'>
+          <Button
+            variant='contained'
+            color='primary'
+            onClick={() =>
+              exportCSV(
+                '/leaves/export/team',
+                'leaves-team.csv',
+                token,
+                filters
+              )
+            }
+          >
+            Export Team Leaves CSV
+          </Button>
+        </Box>
+      )}
+
+      {/* Export My Leaves CSV button for employees */}
+      {userIsUser && (
+        <Box mt={2} display='flex' justifyContent='flex-end'>
+          <Button
+            variant='contained'
+            color='primary'
+            onClick={() =>
+              exportCSV(
+                '/leaves/export/self',
+                'leaves-self.csv',
+                token,
+                filters
+              )
+            }
+          >
+            Export My Leaves CSV
+          </Button>
+        </Box>
+      )}
       {/* Show Apply Leave form for regular users and managers */}
       {(userIsUser || userIsManager) && tab === 0 ? (
         <Box sx={{ pt: 4 }}>
