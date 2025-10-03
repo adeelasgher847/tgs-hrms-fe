@@ -127,6 +127,7 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
                 backgroundColor: isSelected ? 'primary.50' : isToday ? 'action.hover' : 'background.paper',
                 borderRadius: '8px',
                 transition: 'all 0.2s ease',
+                boxShadow: 'none',
                 '&:hover': {
                   backgroundColor: isSelected ? 'primary.100' : 'action.hover',
                   transform: 'translateY(-1px)',

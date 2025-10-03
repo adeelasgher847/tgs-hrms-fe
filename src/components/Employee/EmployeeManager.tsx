@@ -17,9 +17,11 @@ import {
   Typography,
   Paper,
   DialogActions,
+  Tooltip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import WarningIcon from '@mui/icons-material/Warning';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useOutletContext } from 'react-router-dom';
 import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeList from './EmployeeList';
@@ -634,17 +636,6 @@ const EmployeeManager: React.FC = () => {
 
   return (
     <Box>
-      <Box mb={2} display='flex' justifyContent='flex-end'>
-        <Button
-          variant='contained'
-          color='primary'
-          onClick={() =>
-            exportCSV('/employees/export', 'employees.csv', token, filters)
-          }
-        >
-          Export Employees CSV
-        </Button>
-      </Box>
       <Typography variant='h6' gutterBottom>
         Employee List
       </Typography>
@@ -653,6 +644,7 @@ const EmployeeManager: React.FC = () => {
         display='flex'
         justifyContent='space-between'
         alignItems='flex-start'
+        flexWrap='wrap'
         flexDirection={isMobile ? 'column' : 'row'}
         gap={2}
         mb={2}
@@ -757,9 +749,8 @@ const EmployeeManager: React.FC = () => {
           >
             {getLabel('Clear Filters', 'مسح الفلاتر')}
           </Button>
-        </Stack>
 
-        {/* Add Employee Button */}
+              {/* Add Employee Button */}
         <Button
           variant='contained'
           onClick={() => {
@@ -776,6 +767,28 @@ const EmployeeManager: React.FC = () => {
         >
           {getLabel('Add Employee', 'إضافة موظف')}
         </Button>
+        </Stack>
+        <Box display='flex' justifyContent='flex-end'>
+        <Tooltip title="Export Employees CSV">
+          <IconButton
+            color="primary"
+            onClick={() =>
+              exportCSV('/employees/export', 'employees.csv', token, filters)
+            }
+            sx={{
+              backgroundColor: 'primary.main',
+              borderRadius: '6px',
+              padding: '6px',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              },
+            }}
+          >
+            <FileDownloadIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
       </Box>
 
       {/* Employee List */}
