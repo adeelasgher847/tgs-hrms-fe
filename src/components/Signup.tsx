@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import {
@@ -58,6 +58,7 @@ const Signup: React.FC = () => {
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsError, setTermsError] = useState('');
+  const isSubmitting = useRef(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -148,6 +149,12 @@ const Signup: React.FC = () => {
     e: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
     e.preventDefault();
+    
+    // Prevent duplicate submissions
+    if (isSubmitting.current) {
+      return;
+    }
+    
     setError(null);
     setSuccess(null);
     setTermsError('');
@@ -155,6 +162,7 @@ const Signup: React.FC = () => {
       return;
     }
 
+    isSubmitting.current = true;
     setLoading(true);
 
     try {
@@ -227,6 +235,7 @@ const Signup: React.FC = () => {
       }
     } finally {
       setLoading(false);
+      isSubmitting.current = false;
     }
   };
 
@@ -299,6 +308,7 @@ const Signup: React.FC = () => {
                 component='img'
                 src='https://pixelwibes.com/template/my-task/react/static/media/login-img.b36c8fbd17b96828d9ba0900b843d21c.svg'
                 alt='Login Illustration'
+                loading="lazy"
                 sx={{ width: '100%', maxWidth: '400px' }}
               />
             </Box>

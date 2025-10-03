@@ -106,12 +106,22 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
 
     return (
       <Avatar
-        src={imageUrl}
-        alt={`${user.first_name} ${user.last_name}`}
         sx={avatarStyle}
         onClick={onClick}
         {...avatarProps}
-      />
+      >
+        <img
+          src={imageUrl}
+          alt={`${user.first_name} ${user.last_name}`}
+          loading="lazy"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'top',
+          }}
+        />
+      </Avatar>
     );
   }
 

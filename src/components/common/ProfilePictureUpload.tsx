@@ -305,11 +305,21 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       if (hasProfilePicture && imageUrl) {
         return (
           <Avatar
-            src={imageUrl}
-            alt={`${user.first_name} ${user.last_name}`}
             sx={avatarStyle}
             onClick={handleAvatarClick}
-          />
+          >
+            <img
+              src={imageUrl}
+              alt={`${user.first_name} ${user.last_name}`}
+              loading="lazy"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'top',
+              }}
+            />
+          </Avatar>
         );
       }
 
@@ -518,7 +528,6 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
                   }}
                 >
                   <Avatar
-                    src={previewUrl}
                     sx={{
                       width: 120,
                       height: 120,
@@ -526,7 +535,19 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
                       mb: 2,
                       border: '3px solid #e0e0e0',
                     }}
-                  />
+                  >
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      loading="lazy"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'top',
+                      }}
+                    />
+                  </Avatar>
                 </Paper>
               )}
               <Typography variant='body1' sx={{ fontWeight: 500, mb: 1 }}>

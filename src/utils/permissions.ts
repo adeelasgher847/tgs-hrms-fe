@@ -166,6 +166,8 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       // Employee profile view
       'EmployeeProfileView',
+      // Settings
+      'settings',
     ]),
     admin: new Set([
       '',
@@ -183,6 +185,8 @@ export const isDashboardPathAllowedForRole = (
       // 'Reports',
       'teams',
       'EmployeeProfileView',
+      // Settings
+      'settings',
     ]),
     manager: new Set([
       'AttendanceCheck',
@@ -192,6 +196,8 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'leaves',
       'UserProfile',
+      // Settings
+      'settings',
     ]),
     employee: new Set([
       'AttendanceCheck',
@@ -200,6 +206,8 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
+      // Settings
+      'settings',
     ]),
     user: new Set([
       'AttendanceCheck',
@@ -208,6 +216,8 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
+      // Settings
+      'settings',
     ]),
     unknown: new Set<string>(),
   };

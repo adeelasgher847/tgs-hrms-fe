@@ -30,6 +30,7 @@ import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
 import TeamMembersAvatar from './Teams/TeamMembersAvatar';
@@ -39,6 +40,7 @@ const labels = {
   en: {
     search: 'Search',
     members: 'Members',
+    settings: 'Settings',
     signout: 'Sign Out',
     adminProfile: 'Admin Profile',
     dylan: 'Dylan Hunter',
@@ -47,6 +49,7 @@ const labels = {
   ar: {
     search: 'بحث',
     members: 'الأعضاء',
+    settings: 'الإعدادات',
     signout: 'تسجيل الخروج',
     adminProfile: 'ملف المشرف',
     dylan: 'ديلان هنتر',
@@ -451,6 +454,17 @@ const Navbar: React.FC<NavbarProps> = ({
             <AdminPanelSettings fontSize='small' sx={{ color: textColor }} />
           </ListItemIcon>
           <Typography color={textColor}>Profile</Typography>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            navigate('/dashboard/settings');
+          }}
+        >
+          <ListItemIcon>
+            <SettingsIcon fontSize='small' sx={{ color: textColor }} />
+          </ListItemIcon>
+          <Typography color={textColor}>{lang.settings}</Typography>
         </MenuItem>
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import signupApi, { type SubscriptionPlan } from '../api/signupApi';
+import signupApi, { type SubscriptionPlan, type CompanyDetailsRequest, type LogoUploadRequest } from '../api/signupApi';
 
 // Default plans as fallback
 const defaultPlans = [
@@ -74,6 +74,8 @@ const SelectPlan: React.FC = () => {
     severity: 'success' | 'error';
   }>({ open: false, message: '', severity: 'success' });
 
+  const hasFetched = useRef(false);
+
   // Check if user has signupSessionId and company details, redirect if not
   useEffect(() => {
     const signupSessionId = localStorage.getItem('signupSessionId');
@@ -84,8 +86,11 @@ const SelectPlan: React.FC = () => {
       return;
     }
 
-    // Fetch subscription plans from API
-    fetchPlans();
+    // Prevent duplicate API calls in StrictMode
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      fetchPlans();
+    }
   }, [navigate]);
 
   const fetchPlans = async () => {
@@ -204,8 +209,8 @@ const SelectPlan: React.FC = () => {
         throw new Error('Signup session not found. Please start over.');
       }
 
-      // 1. Save company details with selected plan
-      const companyDetailsRequest = {
+      // 1. Create company details with selected plan
+      const companyDetailsRequest: CompanyDetailsRequest = {
         signupSessionId,
         companyName: companyDetails.companyName,
         domain: companyDetails.domain,
@@ -216,7 +221,34 @@ const SelectPlan: React.FC = () => {
         companyDetailsRequest
       );
 
-      // 2. Create Stripe Checkout Session
+      // 2. Upload logo if available
+      if (companyDetails.logoBase64 && companyDetails.logoFileName && companyDetails.logoFileType) {
+        try {
+          // Convert base64 back to File object
+          const byteCharacters = atob(companyDetails.logoBase64.split(',')[1]);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const logoFile = new File([byteArray], companyDetails.logoFileName, {
+            type: companyDetails.logoFileType,
+          });
+
+          const logoUploadData: LogoUploadRequest = {
+            signupSessionId,
+            logo: logoFile,
+          };
+
+          await signupApi.uploadLogo(logoUploadData);
+          console.log('Logo uploaded successfully');
+        } catch (logoError: any) {
+          console.error('Logo upload failed:', logoError);
+          // Don't block the flow if logo upload fails
+        }
+      }
+
+      // 3. Create Stripe Checkout Session
       const paymentRequest = {
         signupSessionId,
         mode: 'checkout' as const, // Use Stripe Checkout
@@ -230,7 +262,7 @@ const SelectPlan: React.FC = () => {
         severity: 'success',
       });
 
-      // 3. Redirect to Stripe Checkout
+      // 4. Redirect to Stripe Checkout
       if (checkoutSession.url) {
         window.location.href = checkoutSession.url;
       } else {

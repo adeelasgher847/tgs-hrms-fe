@@ -54,15 +54,24 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
       {/* Left Side */}
       <Box>
         <Avatar
-          src={imageSrc}
-          alt={title}
           sx={{
             width: 22,
             height: 22,
             backgroundColor: theme => theme.palette.background.paper,
             p: 2,
           }}
-        />
+        >
+          <img
+            src={imageSrc}
+            alt={title}
+            loading="lazy"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        </Avatar>
         <Typography
           fontWeight={700}
           fontSize={40}
