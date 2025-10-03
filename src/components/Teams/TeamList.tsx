@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Tooltip,
 } from '@mui/material';
 
 import {
@@ -21,6 +22,7 @@ import {
   Delete as DeleteIcon,
   Person as PersonIcon,
   Add as AddIcon,
+  FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, UpdateTeamDto } from '../../api/teamApi';
@@ -194,13 +196,23 @@ const TeamList: React.FC<TeamListProps> = ({
   // Export button always at the top
   const exportButton = (
     <Box mb={2} display='flex' justifyContent='flex-end'>
-      <Button
-        variant='contained'
-        color='primary'
-        onClick={() => exportCSV('/teams/export', 'teams.csv', token, filters)}
-      >
-        Export Teams CSV
-      </Button>
+      <Tooltip title="Export Teams CSV">
+        <IconButton
+          color="primary"
+          onClick={() => exportCSV('/teams/export', 'teams.csv', token, filters)}
+          sx={{
+            backgroundColor: 'primary.main',
+            borderRadius: '6px',
+            padding: '6px',
+            color: 'white',
+            '&:hover': {
+              backgroundColor: 'primary.dark',
+            },
+          }}
+        >
+          <FileDownloadIcon />
+        </IconButton>
+      </Tooltip>
     </Box>
   );
 
