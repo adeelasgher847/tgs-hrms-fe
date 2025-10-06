@@ -202,10 +202,9 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
 
     // Only fetch if user exists (after login)
     if (user) {
-      console.log('Sidebar: User found, fetching logo for user:', user);
       fetchCompanyLogo();
     } else {
-      console.log('Sidebar: No user found, skipping logo fetch');
+      // console.log('Sidebar: No user found, skipping logo fetch');
     }
   }, [user]);
 

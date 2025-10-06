@@ -54,7 +54,7 @@ interface Employee {
     tenantId: string;
     createdAt: string;
     updatedAt: string;
-  };
+  } | null;
   designation: {
     id: string;
     title: string;
@@ -62,7 +62,7 @@ interface Employee {
     departmentId: string;
     createdAt: string;
     updatedAt: string;
-  };
+  } | null;
   tenantId: string;
   createdAt: string;
   updatedAt: string;
@@ -615,6 +615,36 @@ const EmployeeManager: React.FC = () => {
     setDesignationFilter('');
   };
 
+  const handleResendInvite = async (employee: Employee) => {
+    try {
+      setError(null);
+      
+      // Immediately update the status to "Invite Sent" in the local state
+      setEmployees(prev => 
+        prev.map(emp => 
+          emp.id === employee.id 
+            ? { ...emp, status: 'Invite Sent' }
+            : emp
+        )
+      );
+      
+      await employeeApi.resendInvite(employee.id);
+      setSuccessMessage(`Invite resent successfully to ${employee.name}!`);
+    } catch (error: unknown) {
+      // If API call fails, revert the status back to "Invite Expired"
+      setEmployees(prev => 
+        prev.map(emp => 
+          emp.id === employee.id 
+            ? { ...emp, status: 'Invite Expired' }
+            : emp
+        )
+      );
+      
+      const errorResult = extractErrorMessage(error);
+      setError(errorResult.message);
+    }
+  };
+
   // Server-driven filtering; render employees as-is
 
   const getLabel = (en: string, ar: string) => (direction === 'rtl' ? ar : en);
@@ -796,7 +826,8 @@ const EmployeeManager: React.FC = () => {
         <EmployeeList
           employees={employees}
           onDelete={requestDeleteEmployee}
-          onEdit={(employee: any) => handleEditOpen(employee as any)}
+          onEdit={handleEditOpen}
+          onResendInvite={handleResendInvite}
           loading={loading}
           departments={departments}
           designations={designations}

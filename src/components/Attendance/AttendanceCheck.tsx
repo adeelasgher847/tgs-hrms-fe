@@ -12,7 +12,7 @@ import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
-import { isAdmin } from '../../utils/roleUtils';
+import { isAdmin, isSystemAdmin, isNetworkAdmin, isHRAdmin } from '../../utils/roleUtils';
 
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
 
@@ -25,6 +25,9 @@ const AttendanceCheck = () => {
   const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const [isSystemAdminUser, setIsSystemAdminUser] = useState(false);
+  const [isNetworkAdminUser, setIsNetworkAdminUser] = useState(false);
+  const [isHRAdminUser, setIsHRAdminUser] = useState(false);
 
   const getCurrentUserId = () => {
     const userStr = localStorage.getItem('user');
@@ -33,6 +36,9 @@ const AttendanceCheck = () => {
       const user = JSON.parse(userStr);
       setUserName(user.first_name || 'User');
       setIsAdminUser(isAdmin(user.role));
+      setIsSystemAdminUser(isSystemAdmin(user.role));
+      setIsNetworkAdminUser(isNetworkAdmin(user.role));
+      setIsHRAdminUser(isHRAdmin(user.role));
       return user.id;
     } catch {
       return null;
@@ -142,7 +148,7 @@ const AttendanceCheck = () => {
             color='text.secondary'
             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
           >
-            {isAdminUser
+            {(isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser)
               ? 'Admin - Track your daily attendance'
               : 'Track your daily attendance'}
           </Typography>
