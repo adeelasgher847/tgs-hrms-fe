@@ -29,7 +29,7 @@ import type {
   AttendanceEvent,
   AttendanceResponse,
 } from '../../api/attendanceApi';
-import { isManager as checkIsManager, isAdmin } from '../../utils/roleUtils';
+import { isManager as checkIsManager, isAdmin, isSystemAdmin, isNetworkAdmin, isHRAdmin } from '../../utils/roleUtils';
 import DateNavigation from './DateNavigation';
 
 interface AttendanceRecord {
@@ -67,6 +67,9 @@ const AttendanceTable = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [isManager, setIsManager] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const [isSystemAdminUser, setIsSystemAdminUser] = useState(false);
+  const [isNetworkAdminUser, setIsNetworkAdminUser] = useState(false);
+  const [isHRAdminUser, setIsHRAdminUser] = useState(false);
   const [adminView, setAdminView] = useState<'my' | 'all'>('my');
   const [managerView, setManagerView] = useState<'my' | 'team'>('my');
   const [tab, setTab] = useState(0); // 0: My Attendance, 1: Team Attendance
@@ -406,8 +409,14 @@ const AttendanceTable = () => {
       setUserRole(roleName);
       const isManagerFlag = checkIsManager(currentUser.role);
       const isAdminFlag = isAdmin(currentUser.role);
+      const isSystemAdminFlag = isSystemAdmin(currentUser.role);
+      const isNetworkAdminFlag = isNetworkAdmin(currentUser.role);
+      const isHRAdminFlag = isHRAdmin(currentUser.role);
       setIsManager(isManagerFlag);
       setIsAdminUser(isAdminFlag);
+      setIsSystemAdminUser(isSystemAdminFlag);
+      setIsNetworkAdminUser(isNetworkAdminFlag);
+      setIsHRAdminUser(isHRAdminFlag);
 
       let response: AttendanceResponse;
 
@@ -417,7 +426,7 @@ const AttendanceTable = () => {
       const effectiveEndDate = endDateOverride ?? endDate;
 
       // UPDATED: Use getAttendanceEvents for all attendance fetching
-      if (isAdminFlag && effectiveView === 'all') {
+      if (canViewAllAttendance && effectiveView === 'all') {
         if (effectiveSelectedEmployee) {
           // When a specific employee is selected, fetch events for that user
           response = await attendanceApi.getAttendanceEvents(
@@ -481,14 +490,14 @@ const AttendanceTable = () => {
         rows = buildFromSummaries(
           events,
           currentUser.id,
-          isAdminFlag && effectiveView === 'all'
+          canViewAllAttendance && effectiveView === 'all'
         );
       } else {
         // Handle events-based data (primary method)
         rows = buildFromEvents(
           events,
           currentUser.id,
-          isAdminFlag && effectiveView === 'all'
+          canViewAllAttendance && effectiveView === 'all'
         );
       }
 
@@ -505,7 +514,7 @@ const AttendanceTable = () => {
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    fetchAttendance(page, isAdminUser ? adminView : 'my');
+    fetchAttendance(page, canViewAllAttendance ? adminView : 'my');
   };
 
   // Handle team page change
@@ -614,7 +623,7 @@ const AttendanceTable = () => {
     setStartDate('');
     setEndDate('');
     setSelectedEmployee('');
-    fetchAttendance(1, isAdminUser ? adminView : 'my', '', '', '');
+    fetchAttendance(1, canViewAllAttendance ? adminView : 'my', '', '', '');
   };
 
   // Handle employee selection change
@@ -625,9 +634,15 @@ const AttendanceTable = () => {
     fetchAttendance(1, 'all', value, startDate, endDate);
   };
 
-  // Determine admin-like UI behavior (Admin or System-Admin)
+  // Determine admin-like UI behavior (Admin, System-Admin, Network-Admin, or HR-Admin)
   const userRoleLc = (userRole || '').toLowerCase();
-  const isAdminLike = userRoleLc === 'admin' || userRoleLc === 'system_admin';
+  const isAdminLike = userRoleLc === 'admin' || userRoleLc === 'system_admin' || userRoleLc === 'network_admin' || userRoleLc === 'hr_admin';
+  
+  // Check if user is strictly an admin (not system-admin, network-admin, or hr-admin)
+  const isStrictAdmin = isAdminUser && !isSystemAdminUser && !isNetworkAdminUser && !isHRAdminUser;
+  
+  // Check if user can view all attendance (Admin, System-Admin, Network-Admin, or HR-Admin)
+  const canViewAllAttendance = isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser;
 
   return (
     <Box>
@@ -637,9 +652,9 @@ const AttendanceTable = () => {
 
       {/* Tabs - Only show for regular users (non-Managers and non-Admins) */}
       {!isManager && !isAdminLike && (
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex' }}>
-            <Button
+            {/* <Button
               onClick={() => setTab(0)}
               sx={{
                 borderBottom: tab === 0 ? 2 : 0,
@@ -649,7 +664,7 @@ const AttendanceTable = () => {
               }}
             >
               My Attendance
-            </Button>
+            </Button> */}
             {isManager && (
               <Button
                 onClick={() => setTab(1)}
@@ -674,12 +689,12 @@ const AttendanceTable = () => {
       {((tab === 0 && !isManager && !isAdminLike) ||
         (isManager && !isAdminLike && managerView === 'my') ||
         (isAdminLike && (adminView === 'my' || adminView === 'all'))) && (
-        <Paper sx={{ background: 'unset', boxShadow: 'none' }}>
+        <Paper sx={{ background: 'unset', boxShadow: 'none'}}>
           {/* All Controls in Same Line */}
-          <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-              {/* Admin View Toggle */}
-              {isAdminLike && (
+          <Box sx={{ mb: 3, mt: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between', }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap',}}>
+              {/* Admin View Toggle - Show for Admin, System-Admin, Network-Admin, and HR-Admin users */}
+              {canViewAllAttendance && (
                 <>
                   <Button
                     variant={adminView === 'my' ? 'contained' : 'outlined'}
@@ -714,8 +729,8 @@ const AttendanceTable = () => {
                 </>
               )}
 
-              {/* Employee Filter - Only show for admin "All" view */}
-              {isAdminLike && adminView === 'all' && (
+              {/* Employee Filter - Show for admin "All" view (including HR-Admin) */}
+              {canViewAllAttendance && adminView === 'all' && (
                 <TextField
                   select
                   label='Select Employee'
@@ -746,7 +761,7 @@ const AttendanceTable = () => {
                        setEndDate(end);
                        // Trigger the filter change
                        setCurrentPage(1);
-                       const view = isAdminUser ? adminView : 'my';
+                       const view = canViewAllAttendance ? adminView : 'my';
                        const selectedId = view === 'all' ? selectedEmployee : undefined;
                        fetchAttendance(1, view, selectedId, start, end);
                      } else if (dates && dates.length === 1) {
@@ -755,7 +770,7 @@ const AttendanceTable = () => {
                        setEndDate('');
                        // Trigger the filter change
                        setCurrentPage(1);
-                       const view = isAdminUser ? adminView : 'my';
+                       const view = canViewAllAttendance ? adminView : 'my';
                        const selectedId = view === 'all' ? selectedEmployee : undefined;
                        fetchAttendance(1, view, selectedId, start, '');
                      } else {
@@ -763,7 +778,7 @@ const AttendanceTable = () => {
                        setEndDate('');
                        // Trigger the filter change
                        setCurrentPage(1);
-                       const view = isAdminUser ? adminView : 'my';
+                       const view = canViewAllAttendance ? adminView : 'my';
                        const selectedId = view === 'all' ? selectedEmployee : undefined;
                        fetchAttendance(1, view, selectedId, '', '');
                      }
@@ -806,7 +821,8 @@ const AttendanceTable = () => {
 
             {/* Export Buttons - Right Side */}
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              {isAdminUser && (
+              {/* Export All Attendance - For Admin, System-Admin, Network-Admin, and HR-Admin users */}
+              {canViewAllAttendance && (
                 <Tooltip title="Export All Attendance">
                   <IconButton
                     color="primary"
@@ -832,7 +848,8 @@ const AttendanceTable = () => {
                   </IconButton>
                 </Tooltip>
               )}
-              {isManager && (
+              {/* Export Team Attendance - Only for Managers */}
+              {isManager && !isAdminLike && (
                 <Tooltip title="Export Team Attendance">
                   <IconButton
                     color="primary"
@@ -858,8 +875,8 @@ const AttendanceTable = () => {
                   </IconButton>
                 </Tooltip>
               )}
-              {/* Export Button for Employees */}
-              {!isAdminUser && !isManager && (
+              {/* Export Button for Regular Employees */}
+              {!isAdminUser && !isSystemAdminUser && !isNetworkAdminUser && !isHRAdminUser && !isManager && (
                 <Tooltip title="Export My Attendance">
                   <IconButton
                     color="primary"
@@ -892,7 +909,7 @@ const AttendanceTable = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  {isAdminLike && adminView === 'all' && (
+                  {canViewAllAttendance && adminView === 'all' && (
                     <TableCell sx={{ fontWeight: 'bold' }}>Employee</TableCell>
                   )}
                   <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
@@ -907,7 +924,7 @@ const AttendanceTable = () => {
                 {loading ? (
                   <TableRow>
                     <TableCell
-                      colSpan={isAdminLike && adminView === 'all' ? 5 : 4}
+                      colSpan={canViewAllAttendance && adminView === 'all' ? 5 : 4}
                       align='center'
                     >
                       <CircularProgress />
@@ -916,7 +933,7 @@ const AttendanceTable = () => {
                 ) : filteredData.length > 0 ? (
                   filteredData.map(record => (
                     <TableRow key={record.id}>
-                      {isAdminLike && adminView === 'all' && (
+                      {canViewAllAttendance && adminView === 'all' && (
                         <TableCell>
                           {record.user?.first_name || 'N/A'}
                         </TableCell>
@@ -930,7 +947,7 @@ const AttendanceTable = () => {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={isAdminLike && adminView === 'all' ? 5 : 4}
+                      colSpan={canViewAllAttendance && adminView === 'all' ? 5 : 4}
                       align='center'
                     >
                       No attendance records found.
@@ -942,7 +959,7 @@ const AttendanceTable = () => {
           </TableContainer>
 
           {/* Date Navigation for All Attendance */}
-          {isAdminLike && adminView === 'all' && (
+          {canViewAllAttendance && adminView === 'all' && (
             <DateNavigation
               currentDate={currentNavigationDate}
               onDateChange={handleDateNavigationChange}
@@ -951,7 +968,7 @@ const AttendanceTable = () => {
           )}
 
           {/* Pagination - Only show for My Attendance */}
-          {!(isAdminLike && adminView === 'all') && totalPages > 1 && (
+          {!(canViewAllAttendance && adminView === 'all') && totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <Pagination
                 count={totalPages}
@@ -963,7 +980,7 @@ const AttendanceTable = () => {
           )}
 
           {/* Pagination Info - Only show for My Attendance */}
-          {!(isAdminLike && adminView === 'all') && totalItems > 0 && (
+          {!(canViewAllAttendance && adminView === 'all') && totalItems > 0 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
               <Typography variant='body2' color='text.secondary'>
                 Showing {(currentPage - 1) * 10 + 1} to{' '}

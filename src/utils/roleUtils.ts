@@ -44,6 +44,33 @@ export const isAdmin = (role: UserRole): boolean => {
 };
 
 /**
+ * Checks if a user is a system admin
+ * @param role - The role value to check
+ * @returns True if the user is a system admin
+ */
+export const isSystemAdmin = (role: UserRole): boolean => {
+  return hasRole(role, 'system-admin') || hasRole(role, 'system_admin');
+};
+
+/**
+ * Checks if a user is a network admin
+ * @param role - The role value to check
+ * @returns True if the user is a network admin
+ */
+export const isNetworkAdmin = (role: UserRole): boolean => {
+  return hasRole(role, 'network-admin') || hasRole(role, 'network_admin');
+};
+
+/**
+ * Checks if a user is an HR admin
+ * @param role - The role value to check
+ * @returns True if the user is an HR admin
+ */
+export const isHRAdmin = (role: UserRole): boolean => {
+  return hasRole(role, 'hr-admin') || hasRole(role, 'hr_admin') || hasRole(role, 'HR-Admin');
+};
+
+/**
  * Checks if a user is a manager
  * @param role - The role value to check
  * @returns True if the user is a manager
@@ -78,6 +105,16 @@ export const isStaff = (role: UserRole): boolean => {
 export const getRoleDisplayName = (role: UserRole): string => {
   const roleName = getRoleName(role);
   switch (roleName.toLowerCase()) {
+    case 'system-admin':
+    case 'system_admin':
+      return 'System Admin';
+    case 'network-admin':
+    case 'network_admin':
+      return 'Network Admin';
+    case 'hr-admin':
+    case 'hr_admin':
+    case 'HR-Admin':
+      return 'HR Admin';
     case 'admin':
       return 'Admin';
     case 'manager':
@@ -110,6 +147,15 @@ export const getRoleColor = (
   | 'warning' => {
   const roleName = getRoleName(role);
   switch (roleName.toLowerCase()) {
+    case 'system-admin':
+    case 'system_admin':
+      return 'error';
+    case 'network-admin':
+    case 'network_admin':
+      return 'error';
+    case 'hr-admin':
+    case 'hr_admin':
+      return 'info';
     case 'admin':
       return 'error';
     case 'manager':

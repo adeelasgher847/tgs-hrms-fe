@@ -158,7 +158,6 @@ const UserProfileComponent = React.memo(() => {
       // Fetch company logo using tenant ID from company details
       try {
         const logoUrl = await companyApi.getCompanyLogo(details.tenant_id);
-        console.log('Logo URL from API:', logoUrl);
         setCompanyLogo(logoUrl);
       } catch (logoErr) {
         console.error('Failed to fetch company logo:', logoErr);
@@ -275,7 +274,6 @@ const UserProfileComponent = React.memo(() => {
         }
         
         const logoUrl = await companyApi.getCompanyLogo(companyDetails.tenant_id);
-        console.log('Logo URL after upload:', logoUrl);
         setCompanyLogo(logoUrl);
       }
       

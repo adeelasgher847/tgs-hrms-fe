@@ -53,6 +53,7 @@ interface EmployeeListProps {
   employees: Employee[];
   onDelete?: (id: string) => void;
   onEdit?: (employee: Employee) => void;
+  onResendInvite?: (employee: Employee) => void;
   loading?: boolean;
   departments?: Record<string, string>;
   designations?: Record<string, string>;
@@ -67,6 +68,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   employees,
   onDelete,
   onEdit,
+  onResendInvite,
   loading,
   departments = {},
   designations = {},
@@ -80,6 +82,13 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const secondaryTextColor = darkMode
     ? '#9a9a9a'
     : theme.palette.text.secondary;
+
+  // Handle resend invite
+  const handleResendInvite = (employee: Employee) => {
+    if (onResendInvite) {
+      onResendInvite(employee);
+    }
+  };
 
   return (
     <Box>
@@ -105,7 +114,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
                 {direction === 'rtl' ? 'الحالة' : 'Status'}
               </TableCell>
-              {(onDelete || onEdit) && (
+              {(onDelete || onEdit || onResendInvite) && (
                 <TableCell
                   sx={{ color: textColor, fontWeight: 'bold', width: '120px' }}
                 >
@@ -117,7 +126,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           <TableBody>
             {loading && (
               <TableRow>
-                <TableCell colSpan={onDelete || onEdit ? 7 : 6} align='center'>
+                <TableCell colSpan={onDelete || onEdit || onResendInvite ? 7 : 6} align='center'>
                   <Box display='flex' justifyContent='center' py={4}>
                     <CircularProgress />
                   </Box>
@@ -126,7 +135,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             )}
             {!loading && employees.length === 0 && (
               <TableRow>
-                <TableCell colSpan={onDelete || onEdit ? 7 : 6} align='center'>
+                <TableCell colSpan={onDelete || onEdit || onResendInvite ? 7 : 6} align='center'>
                   <Box display='flex' justifyContent='center' py={4}>
                     <Typography variant='body1' color='textSecondary'>
                       {direction === 'rtl'
@@ -170,7 +179,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                   <TableCell sx={{ color: textColor }}>
                     {emp.status || 'N/A'}
                   </TableCell>
-                  {(onDelete || onEdit) && (
+                  {(onDelete || onEdit || onResendInvite) && (
                     <TableCell sx={{ textAlign: 'center' }}>
                       <Box
                         display='flex'
@@ -178,30 +187,32 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                         alignItems='center'
                         gap={1}
                       >
-                        <Tooltip
-                          title={
-                            direction === 'rtl'
-                              ? 'إعادة إرسال الدعوة'
-                              : 'Resend Invite'
-                          }
-                          placement='bottom'
-                        >
-                          <span>
-                            <IconButton
-                              sx={{
-                                color: darkMode ? '#1976d2' : '#0288d1',
-                                opacity: emp.status === 'expired' ? 1 : 0.5,
-                              }}
-                              onClick={() =>
-                                emp.status === 'expired' &&
-                                handleResendInvite(emp)
-                              }
-                              disabled={loading || emp.status !== 'expired'}
-                            >
-                              <ReplayIcon />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
+                        {onResendInvite && (
+                          <Tooltip
+                            title={
+                              direction === 'rtl'
+                                ? 'إعادة إرسال الدعوة'
+                                : 'Resend Invite'
+                            }
+                            placement='bottom'
+                          >
+                            <span>
+                              <IconButton
+                                sx={{
+                                  color: darkMode ? '#1976d2' : '#0288d1',
+                                  opacity: emp.status === 'Invite Expired' ? 1 : 0.5,
+                                }}
+                                onClick={() =>
+                                  emp.status === 'Invite Expired' &&
+                                  handleResendInvite(emp)
+                                }
+                                disabled={loading || emp.status !== 'Invite Expired'}
+                              >
+                                <ReplayIcon />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        )}
                         {onEdit && (
                           <Tooltip
                             title={

@@ -54,7 +54,7 @@ function normalizeTenant(raw: unknown): BackendCompany {
 }
 
 class CompanyApiService {
-  private baseUrl = '/company';
+  private baseUrl = '/tenants';
 
   async getAllCompanies(): Promise<BackendCompany[]> {
     const response = await axiosInstance.get<Envelope<BackendCompany[]>>(
@@ -119,7 +119,6 @@ class CompanyApiService {
     const response = await axiosInstance.get(`/company/logo/${tenantId}`, {
       responseType: 'blob'
     });
-    console.log(response);
     
     // Create blob URL from binary response
     const blob = new Blob([response.data], { type: response.data.type || 'image/jpeg' });
