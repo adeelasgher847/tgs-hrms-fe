@@ -29,9 +29,12 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 // Error interface for API errors
 interface ApiError {
@@ -648,55 +651,85 @@ const LeaveRequestPage = () => {
       {/* Export All Leaves CSV button for admin users */}
       {userIsAdmin && (
         <Box mt={2} display='flex' justifyContent='flex-end'>
-          <Button
-            variant='contained'
-            color='primary'
-            onClick={() =>
-              exportCSV('/leaves/export/all', 'leaves-all.csv', token, filters)
-            }
-          >
-            Export All Leaves CSV
-          </Button>
+          <Tooltip title="Export All Leaves">
+            <IconButton
+              color="primary"
+              onClick={() =>
+                exportCSV('/leaves/export/all', 'leaves-all.csv', token, filters)
+              }
+              sx={{
+                backgroundColor: 'primary.main',
+                borderRadius: '6px',
+                padding: '6px',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: 'primary.dark',
+                },
+              }}
+            >
+              <FileDownloadIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
       )}
 
       {/* Export Team Leaves CSV button for managers */}
       {userIsManager && (
         <Box mt={2} display='flex' justifyContent='flex-end'>
-          <Button
-            variant='contained'
-            color='primary'
-            onClick={() =>
-              exportCSV(
-                '/leaves/export/team',
-                'leaves-team.csv',
-                token,
-                filters
-              )
-            }
-          >
-            Export Team Leaves CSV
-          </Button>
+          <Tooltip title="Export Team Leaves">
+            <IconButton
+              color="primary"
+              onClick={() =>
+                exportCSV(
+                  '/leaves/export/team',
+                  'leaves-team.csv',
+                  token,
+                  filters
+                )
+              }
+              sx={{
+                backgroundColor: 'primary.main',
+                borderRadius: '6px',
+                padding: '6px',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: 'primary.dark',
+                },
+              }}
+            >
+              <FileDownloadIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
       )}
 
       {/* Export My Leaves CSV button for employees */}
       {userIsUser && (
         <Box mt={2} display='flex' justifyContent='flex-end'>
-          <Button
-            variant='contained'
-            color='primary'
-            onClick={() =>
-              exportCSV(
-                '/leaves/export/self',
-                'leaves-self.csv',
-                token,
-                filters
-              )
-            }
-          >
-            Export My Leaves CSV
-          </Button>
+          <Tooltip title="Export My Leaves">
+            <IconButton
+              color="primary"
+              onClick={() =>
+                exportCSV(
+                  '/leaves/export/self',
+                  'leaves-self.csv',
+                  token,
+                  filters
+                )
+              }
+              sx={{
+                backgroundColor: 'primary.main',
+                borderRadius: '6px',
+                padding: '6px',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: 'primary.dark',
+                },
+              }}
+            >
+              <FileDownloadIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
       )}
       {/* Show Apply Leave form for regular users and managers */}

@@ -13,7 +13,7 @@ import {
   MenuItem,
   Select,
 } from '@mui/material';
-import signupApi, { type CompanyDetailsRequest } from '../api/signupApi';
+import signupApi, { type CompanyDetailsRequest, type LogoUploadRequest } from '../api/signupApi';
 
 const CompanyDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -32,6 +32,9 @@ const CompanyDetails: React.FC = () => {
     companyType: '',
     domain: '',
   });
+
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [fieldErrors, setFieldErrors] = useState({
     companyName: '',
@@ -53,6 +56,23 @@ const CompanyDetails: React.FC = () => {
     setFieldErrors(prev => ({ ...prev, [name]: '' }));
     setError(null);
     setSuccess(null);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
   };
 
   const validateForm = () => {
@@ -98,23 +118,22 @@ const CompanyDetails: React.FC = () => {
         throw new Error('Signup session not found. Please start over.');
       }
 
-      const companyDetails: CompanyDetailsRequest = {
-        signupSessionId,
+      // Store company details in localStorage for plan selection
+      // Company details and logo will be handled together when user selects a plan
+      const companyData = {
         companyName: formData.companyName.trim(),
+        companyType: formData.companyType.trim(),
         domain: formData.domain.trim(),
-        planId: '', // Will be set when user selects a plan
       };
 
+      // Store logo as base64 if selected
+      if (selectedImage && imagePreview) {
+        companyData.logoBase64 = imagePreview;
+        companyData.logoFileName = selectedImage.name;
+        companyData.logoFileType = selectedImage.type;
+      }
 
-      // Store company details in localStorage for plan selection
-      localStorage.setItem(
-        'companyDetails',
-        JSON.stringify({
-          companyName: formData.companyName.trim(),
-          companyType: formData.companyType.trim(),
-          domain: formData.domain.trim(),
-        })
-      );
+      localStorage.setItem('companyDetails', JSON.stringify(companyData));
 
       setSuccess('Company details saved successfully!');
       setSnackbar({
@@ -406,6 +425,89 @@ const CompanyDetails: React.FC = () => {
                         }}
                       />
                     </Box> */}
+
+                    {/* Company Logo Upload */}
+                    <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
+                      <Typography
+                        component='label'
+                        sx={{ fontWeight: 400, fontSize: '14px', display: 'block', mb: 1 }}
+                      >
+                        {lang === 'ar' ? 'شعار الشركة' : 'Company Logo'}
+                      </Typography>
+                      
+                      {!imagePreview ? (
+                        <Box
+                          sx={{
+                            border: '2px dashed #ccc',
+                            borderRadius: '8px',
+                            p: 3,
+                            textAlign: 'center',
+                            backgroundColor: '#f9f9f9',
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: '#f0f0f0',
+                            },
+                          }}
+                          onClick={() => document.getElementById('logo-upload')?.click()}
+                        >
+                          <input
+                            id='logo-upload'
+                            type='file'
+                            accept='image/*'
+                            onChange={handleImageChange}
+                            style={{ display: 'none' }}
+                          />
+                          <Typography sx={{ color: '#666', fontSize: '14px' }}>
+                            {lang === 'ar' 
+                              ? 'اضغط لرفع شعار الشركة' 
+                              : 'Click to upload company logo'
+                            }
+                          </Typography>
+                          <Typography sx={{ color: '#999', fontSize: '12px', mt: 1 }}>
+                            {lang === 'ar' 
+                              ? 'PNG, JPG, GIF حتى 10MB' 
+                              : 'PNG, JPG, GIF up to 10MB'
+                            }
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                          <Box
+                            component='img'
+                            src={imagePreview}
+                            alt='Company Logo Preview'
+                            loading="lazy"
+                            sx={{
+                              width: '120px',
+                              height: '120px',
+                              objectFit: 'cover',
+                              borderRadius: '8px',
+                              border: '2px solid #eee',
+                            }}
+                          />
+                          <Button
+                            size='small'
+                            onClick={handleRemoveImage}
+                            sx={{
+                              position: 'absolute',
+                              top: -8,
+                              right: -8,
+                              minWidth: 'auto',
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              backgroundColor: 'error.main',
+                              color: 'white',
+                              '&:hover': {
+                                backgroundColor: 'error.dark',
+                              },
+                            }}
+                          >
+                            ×
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
                   </Box>
 
                   <Box

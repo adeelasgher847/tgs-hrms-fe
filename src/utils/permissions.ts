@@ -1,5 +1,7 @@
 export type NormalizedRole =
   | 'system-admin'
+  | 'network-admin'
+  | 'hr-admin'
   | 'admin'
   | 'manager'
   | 'employee'
@@ -11,6 +13,10 @@ export const normalizeRole = (role?: string): NormalizedRole => {
   const r = role.trim().toLowerCase();
   if (r === 'system-admin' || r === 'system_admin' || r === 'system admin')
     return 'system-admin';
+  if (r === 'network-admin' || r === 'network_admin' || r === 'network admin')
+    return 'network-admin';
+  if (r === 'hr-admin' || r === 'hr_admin' || r === 'hr admin')
+    return 'hr-admin';
   if (r === 'admin') return 'admin';
   if (r === 'manager') return 'manager';
   if (r === 'employee') return 'employee';
@@ -24,6 +30,10 @@ export const getDefaultDashboardRoute = (role?: string): string => {
   switch (r) {
     case 'system-admin':
       return '/dashboard'; // System admin dashboard
+    case 'network-admin':
+      return '/dashboard'; // Network admin dashboard
+    case 'hr-admin':
+      return '/dashboard/AttendanceCheck'; // HR admin dashboard
     case 'admin':
       return '/dashboard'; // HR dashboard (_index)
     case 'manager':
@@ -52,6 +62,16 @@ export const isMenuVisibleForRole = (
       'department',
       'employees',
       'teams',
+      'attendance',
+    ],
+    'network-admin': [
+      'dashboard',
+      'department',
+      'employees',
+      'teams',
+      'attendance',
+    ],
+    'hr-admin': [
       'attendance',
     ],
     admin: ['dashboard', 'department', 'employees', 'teams', 'attendance'],
@@ -90,11 +110,48 @@ export const isSubMenuVisibleForRole = (
   // Default: visible unless explicitly hidden below
   let visible = true;
 
-  // System-admin: hide only the "Attendance" submenu (check-in/check-out)
+  // System-admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports
   if (r === 'system-admin') {
+    if (parent.includes('department')) {
+      if (
+        sub.includes('user list') ||
+        sub.includes('policies') ||
+        sub.includes('holidays')
+      ) {
+        visible = false;
+      }
+    }
     if (parent.includes('attendance')) {
-      // Hide only the exact "Attendance" sub item (check-in/check-out), keep "Attendance Table" and "Reports"
-      if (sub === 'attendance') {
+      // hide Reports for system-admin
+      if (sub.includes('reports')) {
+        visible = false;
+      }
+    }
+  }
+
+  // Network-admin: same as admin - hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
+  if (r === 'network-admin') {
+    if (parent.includes('department')) {
+      if (
+        sub.includes('user list') ||
+        sub.includes('policies') ||
+        sub.includes('holidays')
+      ) {
+        visible = false;
+      }
+    }
+    if (parent.includes('attendance')) {
+      // hide only Reports for network-admin, but keep Attendance and Attendance Table visible
+      if (sub.includes('reports')) {
+        visible = false;
+      }
+    }
+  }
+
+  // HR-admin: hide Attendance -> Reports and Leave Request
+  if (r === 'hr-admin') {
+    if (parent.includes('attendance')) {
+      if (sub.includes('reports') || sub.includes('leave request')) {
         visible = false;
       }
     }
@@ -112,14 +169,11 @@ export const isSubMenuVisibleForRole = (
       }
     }
     if (parent.includes('attendance')) {
-      // hide only Reports for admin, but keep Attendance and Attendance Table visible
       if (sub.includes('reports')) {
         visible = false;
       }
     }
   }
-
-  // Manager: hide Attendance -> Reports
   if (r === 'manager') {
     if (parent.includes('attendance') && sub.includes('reports')) {
       visible = false;
@@ -146,7 +200,7 @@ export const isDashboardPathAllowedForRole = (
 
   // Index /dashboard
   if (p === '') {
-    return r === 'admin' || r === 'system-admin';
+    return r === 'admin' || r === 'system-admin' || r === 'network-admin' || r === 'hr-admin';
   }
 
   const allowlists: Record<NormalizedRole, Set<string>> = {
@@ -157,15 +211,44 @@ export const isDashboardPathAllowedForRole = (
       'departments',
       'Designations',
       'EmployeeManager',
-      'UserList',
       'UserProfile',
       'leaves',
+      'AttendanceCheck',
       'AttendanceTable',
-      'Reports',
+      'AttendanceCheck/TimesheetLayout',
       // Teams
       'teams',
       // Employee profile view
       'EmployeeProfileView',
+      // Settings
+      'settings',
+    ]),
+    'network-admin': new Set([
+      '',
+      'departments',
+      'Designations',
+      'EmployeeManager',
+      'UserList',
+      'UserProfile',
+      // 'policies', 'holidays',
+      'leaves',
+      // Attendance - Allow AttendanceCheck for network-admin
+      'AttendanceCheck',
+      'AttendanceTable',
+      'AttendanceCheck/TimesheetLayout',
+      // 'Reports',
+      'teams',
+      'EmployeeProfileView',
+      // Settings
+      'settings',
+    ]),
+    'hr-admin': new Set([
+      '', // Allow main dashboard
+      'AttendanceCheck',
+      'AttendanceTable',
+      'AttendanceCheck/TimesheetLayout',
+      'UserProfile',
+      'settings',
     ]),
     admin: new Set([
       '',
@@ -183,6 +266,8 @@ export const isDashboardPathAllowedForRole = (
       // 'Reports',
       'teams',
       'EmployeeProfileView',
+      // Settings
+      'settings',
     ]),
     manager: new Set([
       'AttendanceCheck',
@@ -192,6 +277,8 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'leaves',
       'UserProfile',
+      // Settings
+      'settings',
     ]),
     employee: new Set([
       'AttendanceCheck',
@@ -200,6 +287,8 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
+      // Settings
+      'settings',
     ]),
     user: new Set([
       'AttendanceCheck',
@@ -208,6 +297,8 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
+      // Settings
+      'settings',
     ]),
     unknown: new Set<string>(),
   };
