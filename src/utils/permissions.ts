@@ -53,9 +53,17 @@ export const isMenuVisibleForRole = (
       'employees',
       'teams',
       'attendance',
+      'report',
     ],
-    admin: ['dashboard', 'department', 'employees', 'teams', 'attendance'],
-    manager: ['teams', 'attendance'],
+    admin: [
+      'dashboard',
+      'department',
+      'employees',
+      'teams',
+      'attendance',
+      'report',
+    ],
+    manager: ['teams', 'attendance', 'report'],
     employee: ['attendance'],
     user: ['attendance'],
     unknown: [],
@@ -69,6 +77,7 @@ export const isMenuVisibleForRole = (
     if (label.includes('employee')) return 'employees';
     if (label.includes('team')) return 'teams';
     if (label.includes('attendance')) return 'attendance';
+    if (label.includes('report')) return 'report';
     // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
     return 'misc';
   })();
@@ -162,6 +171,7 @@ export const isDashboardPathAllowedForRole = (
       'leaves',
       'AttendanceTable',
       'Reports',
+      'attendance-summary',
       // Teams
       'teams',
       // Employee profile view
@@ -183,6 +193,7 @@ export const isDashboardPathAllowedForRole = (
       // 'Reports',
       'teams',
       'EmployeeProfileView',
+      'attendance-summary',
     ]),
     manager: new Set([
       'AttendanceCheck',
@@ -192,6 +203,7 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'leaves',
       'UserProfile',
+      'attendance-summary',
     ]),
     employee: new Set([
       'AttendanceCheck',
