@@ -63,13 +63,18 @@ export const isMenuVisibleForRole = (
       'employees',
       'teams',
       'attendance',
+      'report',
     ],
+    admin: [
     'network-admin': [
       'dashboard',
       'department',
       'employees',
       'teams',
       'attendance',
+      'report',
+    ],
+    manager: ['teams', 'attendance', 'report'],
     ],
     'hr-admin': [
       'attendance',
@@ -89,6 +94,7 @@ export const isMenuVisibleForRole = (
     if (label.includes('employee')) return 'employees';
     if (label.includes('team')) return 'teams';
     if (label.includes('attendance')) return 'attendance';
+    if (label.includes('report')) return 'report';
     // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
     return 'misc';
   })();
@@ -107,9 +113,29 @@ export const isSubMenuVisibleForRole = (
   const parent = parentMenuLabel.trim().toLowerCase();
   const sub = subLabel.trim().toLowerCase();
 
-  // Default: visible unless explicitly hidden below
+  // Default visible unless explicitly restricted
   let visible = true;
 
+  // --- Attendance submenu visibility rules ---
+  if (parent.includes('attendance')) {
+    // Hide "Reports" for everyone except system-admin
+    if (sub === 'reports') {
+      visible = false;
+    }
+
+    // Show new "Report" only for admin + manager
+    if (sub === 'report') {
+      visible = r === 'admin' || r === 'manager';
+    }
+
+    // Everyone else can see the other attendance options
+  }
+
+  // --- System-admin rules ---
+  if (r === 'system-admin') {
+    // Hide check-in/out sub item
+    if (parent.includes('attendance') && sub === 'attendance') {
+      visible = false;
   // System-admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports
   if (r === 'system-admin') {
     if (parent.includes('department')) {
@@ -157,7 +183,7 @@ export const isSubMenuVisibleForRole = (
     }
   }
 
-  // Admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
+  // --- Admin rules ---
   if (r === 'admin') {
     if (parent.includes('department')) {
       if (
@@ -168,6 +194,9 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+  }
+
+  // --- Manager rules ---
     if (parent.includes('attendance')) {
       if (sub.includes('reports')) {
         visible = false;
@@ -175,15 +204,19 @@ export const isSubMenuVisibleForRole = (
     }
   }
   if (r === 'manager') {
-    if (parent.includes('attendance') && sub.includes('reports')) {
+    // manager sees only attendance summary (Report), not Reports
+    if (parent.includes('attendance') && sub === 'reports') {
       visible = false;
     }
   }
 
-  // Employee/User: hide Attendance -> Reports
+  // --- Employee/User rules ---
   if (r === 'employee' || r === 'user') {
-    if (parent.includes('attendance') && sub.includes('reports')) {
-      visible = false;
+    if (parent.includes('attendance')) {
+      // Hide both Reports and Report for employees/users
+      if (sub === 'reports' || sub === 'report') {
+        visible = false;
+      }
     }
   }
 
@@ -215,6 +248,8 @@ export const isDashboardPathAllowedForRole = (
       'leaves',
       'AttendanceCheck',
       'AttendanceTable',
+      'Reports',
+      'attendance-summary',
       'AttendanceCheck/TimesheetLayout',
       // Teams
       'teams',
@@ -266,6 +301,7 @@ export const isDashboardPathAllowedForRole = (
       // 'Reports',
       'teams',
       'EmployeeProfileView',
+      'attendance-summary',
       // Settings
       'settings',
     ]),
@@ -277,6 +313,7 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'leaves',
       'UserProfile',
+      'attendance-summary',
       // Settings
       'settings',
     ]),

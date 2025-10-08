@@ -32,6 +32,7 @@ import CompanyDetails from './components/CompanyDetails';
 import SelectPlan from './components/SelectPlan';
 import ConfirmPayment from './components/ConfirmPayment';
 import SignupSuccess from './components/SignupSuccess';
+import AttendanceSummaryReport from './components/Attendance/AttendanceSummaryReport';
 import SettingsPage from './components/Settings/SettingsPage';
 function App() {
   return (
@@ -72,6 +73,7 @@ function App() {
                 <Route path='UserList' element={<UserList />} />
                 <Route path='UserProfile' element={<UserProfileComponent />} />
                 <Route path='leaves' element={<LeaveRequestPage />} />
+                <Route path='attendance-summary' element={<AttendanceSummaryReport />} />
 
                 <Route
                   path='EmployeeProfileView'
