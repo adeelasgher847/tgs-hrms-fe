@@ -5,7 +5,7 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
-  role: 'user' | 'admin' | { id: string; name: string; description: string };
+  role: 'user' | 'admin' | 'system-admin' | 'network-admin' | 'hr-admin' | 'hr admin' | 'HR-Admin' | { id: string; name: string; description: string };
   tenant_id?: string;
 }
 
@@ -39,7 +39,13 @@ export const isAdmin = (): boolean => {
     roleLc === 'admin' ||
     roleLc === 'system-admin' ||
     roleLc === 'system admin' ||
-    roleLc === 'system_admin';
+    roleLc === 'system_admin' ||
+    roleLc === 'network-admin' ||
+    roleLc === 'network admin' ||
+    roleLc === 'network_admin' ||
+    roleLc === 'hr-admin' ||
+    roleLc === 'hr admin' ||
+    roleLc === 'hr_admin';
 
   return result;
 };
@@ -65,6 +71,45 @@ export const isManager = (): boolean => {
   const result = roleName === 'manager' || roleName === 'Manager';
 
   return result;
+};
+
+/**
+ * Checks if a user is a system admin
+ * @returns True if the user is a system admin
+ */
+export const isSystemAdmin = (): boolean => {
+  const user = getCurrentUser();
+  if (!user) return false;
+
+  const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
+  const roleLc = (roleName || '').toLowerCase();
+  return roleLc === 'system-admin' || roleLc === 'system admin' || roleLc === 'system_admin';
+};
+
+/**
+ * Checks if a user is a network admin
+ * @returns True if the user is a network admin
+ */
+export const isNetworkAdmin = (): boolean => {
+  const user = getCurrentUser();
+  if (!user) return false;
+
+  const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
+  const roleLc = (roleName || '').toLowerCase();
+  return roleLc === 'network-admin' || roleLc === 'network admin' || roleLc === 'network_admin';
+};
+
+/**
+ * Checks if a user is an HR admin
+ * @returns True if the user is an HR admin
+ */
+export const isHRAdmin = (): boolean => {
+  const user = getCurrentUser();
+  if (!user) return false;
+
+  const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
+  const roleLc = (roleName || '').toLowerCase();
+  return roleLc === 'hr-admin' || roleLc === 'hr admin' || roleLc === 'hr_admin' || roleLc === 'HR-Admin';
 };
 
 export const getAuthToken = (): string | null => {

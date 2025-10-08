@@ -17,9 +17,11 @@ import {
   Typography,
   Paper,
   DialogActions,
+  Tooltip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import WarningIcon from '@mui/icons-material/Warning';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useOutletContext } from 'react-router-dom';
 import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeList from './EmployeeList';
@@ -52,7 +54,7 @@ interface Employee {
     tenantId: string;
     createdAt: string;
     updatedAt: string;
-  };
+  } | null;
   designation: {
     id: string;
     title: string;
@@ -60,7 +62,7 @@ interface Employee {
     departmentId: string;
     createdAt: string;
     updatedAt: string;
-  };
+  } | null;
   tenantId: string;
   createdAt: string;
   updatedAt: string;
@@ -613,6 +615,36 @@ const EmployeeManager: React.FC = () => {
     setDesignationFilter('');
   };
 
+  const handleResendInvite = async (employee: Employee) => {
+    try {
+      setError(null);
+      
+      // Immediately update the status to "Invite Sent" in the local state
+      setEmployees(prev => 
+        prev.map(emp => 
+          emp.id === employee.id 
+            ? { ...emp, status: 'Invite Sent' }
+            : emp
+        )
+      );
+      
+      await employeeApi.resendInvite(employee.id);
+      setSuccessMessage(`Invite resent successfully to ${employee.name}!`);
+    } catch (error: unknown) {
+      // If API call fails, revert the status back to "Invite Expired"
+      setEmployees(prev => 
+        prev.map(emp => 
+          emp.id === employee.id 
+            ? { ...emp, status: 'Invite Expired' }
+            : emp
+        )
+      );
+      
+      const errorResult = extractErrorMessage(error);
+      setError(errorResult.message);
+    }
+  };
+
   // Server-driven filtering; render employees as-is
 
   const getLabel = (en: string, ar: string) => (direction === 'rtl' ? ar : en);
@@ -634,17 +666,6 @@ const EmployeeManager: React.FC = () => {
 
   return (
     <Box>
-      <Box mb={2} display='flex' justifyContent='flex-end'>
-        <Button
-          variant='contained'
-          color='primary'
-          onClick={() =>
-            exportCSV('/employees/export', 'employees.csv', token, filters)
-          }
-        >
-          Export Employees CSV
-        </Button>
-      </Box>
       <Typography variant='h6' gutterBottom>
         Employee List
       </Typography>
@@ -653,6 +674,7 @@ const EmployeeManager: React.FC = () => {
         display='flex'
         justifyContent='space-between'
         alignItems='flex-start'
+        flexWrap='wrap'
         flexDirection={isMobile ? 'column' : 'row'}
         gap={2}
         mb={2}
@@ -757,9 +779,8 @@ const EmployeeManager: React.FC = () => {
           >
             {getLabel('Clear Filters', 'مسح الفلاتر')}
           </Button>
-        </Stack>
 
-        {/* Add Employee Button */}
+              {/* Add Employee Button */}
         <Button
           variant='contained'
           onClick={() => {
@@ -776,6 +797,28 @@ const EmployeeManager: React.FC = () => {
         >
           {getLabel('Add Employee', 'إضافة موظف')}
         </Button>
+        </Stack>
+        <Box display='flex' justifyContent='flex-end'>
+        <Tooltip title="Export Employees CSV">
+          <IconButton
+            color="primary"
+            onClick={() =>
+              exportCSV('/employees/export', 'employees.csv', token, filters)
+            }
+            sx={{
+              backgroundColor: 'primary.main',
+              borderRadius: '6px',
+              padding: '6px',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              },
+            }}
+          >
+            <FileDownloadIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
       </Box>
 
       {/* Employee List */}
@@ -783,7 +826,8 @@ const EmployeeManager: React.FC = () => {
         <EmployeeList
           employees={employees}
           onDelete={requestDeleteEmployee}
-          onEdit={(employee: any) => handleEditOpen(employee as any)}
+          onEdit={handleEditOpen}
+          onResendInvite={handleResendInvite}
           loading={loading}
           departments={departments}
           designations={designations}

@@ -7,6 +7,7 @@ import {
   ListItemText,
   Collapse,
   Switch,
+  Skeleton,
 } from '@mui/material';
 import {
   Dashboard,
@@ -27,6 +28,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { useTheme } from '../theme/hooks';
+import { useCompany } from '../context/CompanyContext';
+import companyApi from '../api/companyApi';
 import {
   isMenuVisibleForRole,
   isSubMenuVisibleForRole,
@@ -151,6 +154,9 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   const { toggleTheme } = useTheme();
   const location = useLocation();
   const { user } = useUser();
+  const { companyName } = useCompany();
+  const [sidebarLogo, setSidebarLogo] = useState<string | null>(null);
+  const [logoLoading, setLogoLoading] = useState(false);
   const role = user?.role;
   const [openItem, setOpenItem] = useState<string>('');
   const [activeSubItem, setActiveSubItem] = useState<string>('');
@@ -175,6 +181,58 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
         ),
       }));
   }, [role]);
+
+  // Fetch company logo using same API as company details modal
+  useEffect(() => {
+    const fetchCompanyLogo = async () => {
+      if (!user) return;
+      
+      setLogoLoading(true);
+      try {
+        const details = await companyApi.getCompanyDetails();
+        const logoUrl = await companyApi.getCompanyLogo(details.tenant_id);
+        setSidebarLogo(logoUrl);
+      } catch (err) {
+        console.error('Failed to fetch company logo for sidebar:', err);
+        setSidebarLogo(null);
+      } finally {
+        setLogoLoading(false);
+      }
+    };
+
+    // Only fetch if user exists (after login)
+    if (user) {
+      fetchCompanyLogo();
+    } else {
+      // console.log('Sidebar: No user found, skipping logo fetch');
+    }
+  }, [user]);
+
+  // Listen for logo updates from other components
+  useEffect(() => {
+    const handleLogoUpdate = async () => {
+      if (!user) return;
+      
+      setLogoLoading(true);
+      try {
+        const details = await companyApi.getCompanyDetails();
+        const logoUrl = await companyApi.getCompanyLogo(details.tenant_id);
+        setSidebarLogo(logoUrl);
+      } catch (err) {
+        console.error('Failed to fetch company logo for sidebar:', err);
+        setSidebarLogo(null);
+      } finally {
+        setLogoLoading(false);
+      }
+    };
+
+    // Listen for custom event when logo is updated
+    window.addEventListener('logoUpdated', handleLogoUpdate);
+    
+    return () => {
+      window.removeEventListener('logoUpdated', handleLogoUpdate);
+    };
+  }, [user]);
 
   // Auto expand parent & highlight subitem on URL change
   useEffect(() => {
@@ -241,8 +299,8 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
         <Box sx={{ py: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box
             sx={{
-              width: 45,
-              height: 45,
+              width: 60,
+              height: 60,
               bgcolor: 'white',
               color: '#464b8a',
               borderRadius: '50%',
@@ -251,13 +309,38 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
               justifyContent: 'center',
               fontWeight: 'bold',
               fontSize: 22,
-              p: 1,
+              // p: 1,
+              overflow: 'hidden',
             }}
           >
-            <Clipboard />
+            {logoLoading ? (
+              <Skeleton
+                variant="circular"
+                width="100%"
+                height="100%"
+                sx={{
+                  borderRadius: '50%',
+                }}
+              />
+            ) : sidebarLogo ? (
+              <Box
+                component="img"
+                src={sidebarLogo}
+                alt="Company Logo"
+                loading="lazy"
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '50%',
+                }}
+              />
+            ) : (
+              <Clipboard />
+            )}
           </Box>
           <Typography sx={{ mt: 1, fontWeight: '700', fontSize: '18px' }}>
-            HRMS
+            {companyName}
           </Typography>
         </Box>
 

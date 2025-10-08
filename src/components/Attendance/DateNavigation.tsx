@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, IconButton, Typography, Paper } from '@mui/material';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 
@@ -13,20 +13,20 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
   onDateChange,
   disabled = false,
 }) => {
-  // Get the current date and generate 5 consecutive dates (including current date)
-  const getDateSequence = (dateStr: string) => {
-    // If dateStr is 'all', use today's date as the center
-    const centerDate = dateStr === 'all' ? new Date() : new Date(dateStr);
+  // State to track the center date of the sequence
+  const [sequenceCenter, setSequenceCenter] = useState<Date>(new Date());
+  // Get a date sequence centered around the sequenceCenter state
+  const getDateSequence = () => {
     const dates = [];
     
-    // Start from 4 days before the current date to show 5 days total
-    for (let i = 4; i >= 0; i--) {
-      const d = new Date(centerDate);
-      d.setDate(centerDate.getDate() - i);
+    // Show 5 days centered around sequenceCenter
+    for (let i = 2; i >= -2; i--) {
+      const d = new Date(sequenceCenter);
+      d.setDate(sequenceCenter.getDate() + i);
       dates.push(d);
     }
     
-    return dates.reverse();
+    return dates;
   };
 
   const formatDate = (date: Date) => {
@@ -57,36 +57,37 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
   };
 
   const handlePrevious = () => {
-    if (currentDate === 'all') {
-      // If currently showing all, navigate from today
-      const date = new Date();
-      date.setDate(date.getDate() - 1);
-      onDateChange(formatDateToString(date));
-    } else {
-      const date = new Date(currentDate);
-      date.setDate(date.getDate() - 1);
-      onDateChange(formatDateToString(date));
-    }
+    // Move the sequence center back by 1 day
+    const newCenter = new Date(sequenceCenter);
+    newCenter.setDate(sequenceCenter.getDate() - 1);
+    setSequenceCenter(newCenter);
+    
+    // Automatically select the new center date
+    onDateChange(formatDateToString(newCenter));
   };
 
   const handleNext = () => {
-    if (currentDate === 'all') {
-      // If currently showing all, navigate from today
-      const date = new Date();
-      date.setDate(date.getDate() + 1);
-      onDateChange(formatDateToString(date));
-    } else {
-      const date = new Date(currentDate);
-      date.setDate(date.getDate() + 1);
-      onDateChange(formatDateToString(date));
-    }
+    // Move the sequence center forward by 1 day
+    const newCenter = new Date(sequenceCenter);
+    newCenter.setDate(sequenceCenter.getDate() + 1);
+    setSequenceCenter(newCenter);
+    
+    // Automatically select the new center date
+    onDateChange(formatDateToString(newCenter));
   };
 
   const handleDateClick = (date: Date) => {
     onDateChange(formatDateToString(date));
   };
 
-  const dateSequence = getDateSequence(currentDate);
+  // Reset sequence center to today when currentDate is 'all'
+  useEffect(() => {
+    if (currentDate === 'all') {
+      setSequenceCenter(new Date());
+    }
+  }, [currentDate]);
+
+  const dateSequence = getDateSequence();
   const today = formatDateToString(new Date());
 
   return (
@@ -127,6 +128,7 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
                 backgroundColor: isSelected ? 'primary.50' : isToday ? 'action.hover' : 'background.paper',
                 borderRadius: '8px',
                 transition: 'all 0.2s ease',
+                boxShadow: 'none',
                 '&:hover': {
                   backgroundColor: isSelected ? 'primary.100' : 'action.hover',
                   transform: 'translateY(-1px)',
