@@ -65,7 +65,6 @@ export const isMenuVisibleForRole = (
       'attendance',
       'report',
     ],
-    admin: [
     'network-admin': [
       'dashboard',
       'department',
@@ -74,13 +73,16 @@ export const isMenuVisibleForRole = (
       'attendance',
       'report',
     ],
-    manager: ['teams', 'attendance', 'report'],
-    ],
-    'hr-admin': [
+    admin: [
+      'dashboard',
+      'department',
+      'employees',
+      'teams',
       'attendance',
+      'report',
     ],
-    admin: ['dashboard', 'department', 'employees', 'teams', 'attendance'],
-    manager: ['teams', 'attendance'],
+    'hr-admin': ['attendance'],
+    manager: ['teams', 'attendance', 'report'],
     employee: ['attendance'],
     user: ['attendance'],
     unknown: [],
@@ -116,26 +118,6 @@ export const isSubMenuVisibleForRole = (
   // Default visible unless explicitly restricted
   let visible = true;
 
-  // --- Attendance submenu visibility rules ---
-  if (parent.includes('attendance')) {
-    // Hide "Reports" for everyone except system-admin
-    if (sub === 'reports') {
-      visible = false;
-    }
-
-    // Show new "Report" only for admin + manager
-    if (sub === 'report') {
-      visible = r === 'admin' || r === 'manager';
-    }
-
-    // Everyone else can see the other attendance options
-  }
-
-  // --- System-admin rules ---
-  if (r === 'system-admin') {
-    // Hide check-in/out sub item
-    if (parent.includes('attendance') && sub === 'attendance') {
-      visible = false;
   // System-admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports
   if (r === 'system-admin') {
     if (parent.includes('department')) {
@@ -153,6 +135,11 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+  }
+
+  // Show new "Report" only for admin + manager
+  if (sub === 'report') {
+    visible = r === 'admin' || r === 'manager';
   }
 
   // Network-admin: same as admin - hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
@@ -194,15 +181,14 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
-  }
-
-  // --- Manager rules ---
     if (parent.includes('attendance')) {
       if (sub.includes('reports')) {
         visible = false;
       }
     }
   }
+
+  // --- Manager rules ---
   if (r === 'manager') {
     // manager sees only attendance summary (Report), not Reports
     if (parent.includes('attendance') && sub === 'reports') {
@@ -219,6 +205,18 @@ export const isSubMenuVisibleForRole = (
       }
     }
   }
+  if (r === 'manager') {
+    if (parent.includes('attendance') && sub.includes('reports')) {
+      visible = false;
+    }
+  }
+
+  // Employee/User: hide Attendance -> Reports
+  if (r === 'employee' || r === 'user') {
+    if (parent.includes('attendance') && sub.includes('reports')) {
+      visible = false;
+    }
+  }
 
   return visible;
 };
@@ -233,7 +231,12 @@ export const isDashboardPathAllowedForRole = (
 
   // Index /dashboard
   if (p === '') {
-    return r === 'admin' || r === 'system-admin' || r === 'network-admin' || r === 'hr-admin';
+    return (
+      r === 'admin' ||
+      r === 'system-admin' ||
+      r === 'network-admin' ||
+      r === 'hr-admin'
+    );
   }
 
   const allowlists: Record<NormalizedRole, Set<string>> = {
@@ -250,6 +253,7 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceTable',
       'Reports',
       'attendance-summary',
+      'AttendanceCheck/TimesheetLayout',
       'AttendanceCheck/TimesheetLayout',
       // Teams
       'teams',
@@ -274,6 +278,7 @@ export const isDashboardPathAllowedForRole = (
       // 'Reports',
       'teams',
       'EmployeeProfileView',
+      'attendance-summary',
       // Settings
       'settings',
     ]),
@@ -302,6 +307,7 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'EmployeeProfileView',
       'attendance-summary',
+      'attendance-summary',
       // Settings
       'settings',
     ]),
@@ -313,6 +319,7 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'leaves',
       'UserProfile',
+      'attendance-summary',
       'attendance-summary',
       // Settings
       'settings',

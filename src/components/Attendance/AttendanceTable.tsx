@@ -684,24 +684,7 @@ const AttendanceTable = () => {
       <Typography variant='h4' gutterBottom>
         Attendance Management
       </Typography>
-
       {/* Admin View Toggle */}
-      {isAdminLike && (
-        <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
-          <Button
-            variant={adminView === 'my' ? 'contained' : 'outlined'}
-            onClick={handleMyAttendance}
-          >
-            My Attendance
-          </Button>
-          <Button
-            variant={adminView === 'all' ? 'contained' : 'outlined'}
-            onClick={handleAllAttendance}
-          >
-            All Attendance
-          </Button>
-        </Box>
-      )}
 
       {/* Manager View Toggle */}
       {isManager && !isAdminLike && (
@@ -720,7 +703,6 @@ const AttendanceTable = () => {
           </Button>
         </Box>
       )}
-
       {/* Tabs - Only show for regular users (non-Managers and non-Admins) */}
       {!isManager && !isAdminLike && (
         <Box sx={{ mb: 3 }}>
@@ -756,160 +738,6 @@ const AttendanceTable = () => {
       {((tab === 0 && !isManager && !isAdminLike) ||
         (isManager && !isAdminLike && managerView === 'my') ||
         (isAdminLike && (adminView === 'my' || adminView === 'all'))) && (
-        <Paper sx={{ background: 'unset', boxShadow: 'none' }}>
-          {/* Filters */}
-          <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            {/* Employee Filter - Only show for admin "All" view */}
-            {isAdminLike && adminView === 'all' && (
-              <TextField
-                select
-                label='Select Employee'
-                value={selectedEmployee}
-                onChange={e => handleEmployeeChange(e.target.value)}
-                sx={{ minWidth: 200 }}
-                size='small'
-              >
-                <MenuItem value=''>All Employees</MenuItem>
-                {employees.map(emp => (
-                  <MenuItem key={emp.id} value={emp.id}>
-                    {emp.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-            {/* Date Range Filter - Always show */}
-            <Box>
-              <DatePicker
-                range
-                numberOfMonths={2}
-                value={
-                  startDate && endDate
-                    ? [new Date(startDate), new Date(endDate)]
-                    : startDate
-                      ? [new Date(startDate)]
-                      : []
-                }
-                onChange={dates => {
-                  if (dates && dates.length === 2) {
-                    const start = dates[0]?.format('YYYY-MM-DD') || '';
-                    const end = dates[1]?.format('YYYY-MM-DD') || '';
-                    setStartDate(start);
-                    setEndDate(end);
-                    // Trigger the filter change
-                    setCurrentPage(1);
-                    const view = isAdminUser ? adminView : 'my';
-                    const selectedId =
-                      view === 'all' ? selectedEmployee : undefined;
-                    fetchAttendance(1, view, selectedId, start, end);
-                  } else if (dates && dates.length === 1) {
-                    const start = dates[0]?.format('YYYY-MM-DD') || '';
-                    setStartDate(start);
-                    setEndDate('');
-                    // Trigger the filter change
-                    setCurrentPage(1);
-                    const view = isAdminUser ? adminView : 'my';
-                    const selectedId =
-                      view === 'all' ? selectedEmployee : undefined;
-                    fetchAttendance(1, view, selectedId, start, '');
-                  } else {
-                    setStartDate('');
-                    setEndDate('');
-                    // Trigger the filter change
-                    setCurrentPage(1);
-                    const view = isAdminUser ? adminView : 'my';
-                    const selectedId =
-                      view === 'all' ? selectedEmployee : undefined;
-                    fetchAttendance(1, view, selectedId, '', '');
-                  }
-                }}
-                format='MM/DD/YYYY'
-                placeholder='Start Date - End Date'
-                style={{
-                  width: '100%',
-                  height: '40px',
-                  padding: '6.5px 14px',
-                  border: '1px solid rgba(0, 0, 0, 0.23)',
-                  borderRadius: '4px',
-                  fontSize: '16px',
-                  fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
-                  backgroundColor: 'transparent',
-                  outline: 'none',
-                }}
-                containerStyle={{
-                  width: '100%',
-                }}
-                inputClass='custom-date-picker-input'
-                className='custom-date-picker'
-                editable={false}
-                showOtherDays={true}
-                onOpen={() => {
-                  // Prevent body scroll when calendar opens
-                  document.body.style.overflow = 'hidden';
-                }}
-                onClose={() => {
-                  // Restore body scroll when calendar closes
-                  document.body.style.overflow = 'auto';
-                }}
-              />
-            </Box>
-
-            <Button variant='contained' onClick={handleFilterChange}>
-              Clear Filters
-            </Button>
-          </Box>
-          {/* Export Buttons */}
-          <Box
-            sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mb: 2 }}
-          >
-            {isAdminUser && (
-              <Button
-                variant='contained'
-                onClick={() =>
-                  exportCSV(
-                    '/attendance/export/all',
-                    'attendance-all.csv',
-                    token,
-                    filters
-                  )
-                }
-              >
-                Export All Attendance
-              </Button>
-            )}
-            {isManager && (
-              <Button
-                variant='contained'
-                onClick={() =>
-                  exportCSV(
-                    '/attendance/export/team',
-                    'attendance-team.csv',
-                    token,
-                    filters
-                  )
-                }
-              >
-                Export Team Attendance
-              </Button>
-            )}
-            {/* Export Button for Employees */}
-            {!isAdminUser && (
-              <Box mb={0} display='flex' justifyContent='flex-end'>
-                <Button
-                  variant='contained'
-                  color='primary'
-                  onClick={() =>
-                    exportCSV(
-                      '/attendance/export/self',
-                      'attendance-self.csv',
-                      token,
-                      filters
-                    )
-                  }
-                >
-                  Export My Attendance CSV
-                </Button>
-              </Box>
-            )}
         <Paper sx={{ background: 'unset', boxShadow: 'none'}}>
           {/* All Controls in Same Line */}
           <Box sx={{ mb: 3, mt: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between', }}>
