@@ -254,6 +254,7 @@ export const isDashboardPathAllowedForRole = (
       'Reports',
       'attendance-summary',
       'AttendanceCheck/TimesheetLayout',
+      'AttendanceCheck/TimesheetLayout',
       // Teams
       'teams',
       // Employee profile view
@@ -306,6 +307,7 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'EmployeeProfileView',
       'attendance-summary',
+      'attendance-summary',
       // Settings
       'settings',
     ]),
@@ -317,6 +319,7 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'leaves',
       'UserProfile',
+      'attendance-summary',
       'attendance-summary',
       // Settings
       'settings',
