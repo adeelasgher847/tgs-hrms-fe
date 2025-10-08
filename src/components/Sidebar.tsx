@@ -186,7 +186,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   useEffect(() => {
     const fetchCompanyLogo = async () => {
       if (!user) return;
-
+      
       setLogoLoading(true);
       try {
         const details = await companyApi.getCompanyDetails();
@@ -212,7 +212,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   useEffect(() => {
     const handleLogoUpdate = async () => {
       if (!user) return;
-
+      
       setLogoLoading(true);
       try {
         const details = await companyApi.getCompanyDetails();
@@ -228,7 +228,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
 
     // Listen for custom event when logo is updated
     window.addEventListener('logoUpdated', handleLogoUpdate);
-
+    
     return () => {
       window.removeEventListener('logoUpdated', handleLogoUpdate);
     };
@@ -315,19 +315,19 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
           >
             {logoLoading ? (
               <Skeleton
-                variant='circular'
-                width='100%'
-                height='100%'
+                variant="circular"
+                width="100%"
+                height="100%"
                 sx={{
                   borderRadius: '50%',
                 }}
               />
             ) : sidebarLogo ? (
               <Box
-                component='img'
+                component="img"
                 src={sidebarLogo}
-                alt='Company Logo'
-                loading='lazy'
+                alt="Company Logo"
+                loading="lazy"
                 sx={{
                   width: '100%',
                   height: '100%',

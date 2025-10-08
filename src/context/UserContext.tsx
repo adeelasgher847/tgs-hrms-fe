@@ -63,24 +63,18 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
           return;
         }
 
-        // First validate the token to ensure user still exists
-        const validationResult = await validateToken();
-        if (!validationResult.isValid) {
-          console.warn('Token validation failed:', validationResult.error);
-          clearAuthData();
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-
-        // Load from localStorage for immediate display
+        // Load from localStorage for immediate display first
         const userData = localStorage.getItem('user');
         if (userData) {
-          const parsedUser = JSON.parse(userData);
-          setUser(parsedUser);
+          try {
+            const parsedUser = JSON.parse(userData);
+            setUser(parsedUser);
+          } catch (parseError) {
+            console.warn('Failed to parse user data from localStorage:', parseError);
+          }
         }
 
-        // Always refresh from API to ensure consistency
+        // Try to refresh from API to ensure consistency
         try {
           const apiUser = await profileApiService.getUserProfile();
           setUser(apiUser);
@@ -91,6 +85,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
             console.warn('User profile fetch failed - user may have been deleted');
             clearAuthData();
             setUser(null);
+          } else {
+            // For other errors (network, server issues), keep the localStorage data
+            console.warn('Failed to refresh user profile, keeping localStorage data:', error?.message);
           }
         }
       } catch (error) {
@@ -104,8 +101,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
 
     loadUserData();
 
-    // Set up periodic token validation (every 5 minutes)
-    const cleanup = setupTokenValidation(5);
+    // Set up periodic token validation (every 10 minutes - less aggressive)
+    const cleanup = setupTokenValidation(10);
     return cleanup;
   }, []);
 

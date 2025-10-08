@@ -18,8 +18,8 @@ export async function validateToken(): Promise<TokenValidationResult> {
     }
 
     // Make a lightweight API call to validate the token
-    // Using a simple profile endpoint that requires authentication
-    const response = await axiosInstance.get('/auth/validate-token');
+    // Using the profile endpoint that actually exists
+    const response = await axiosInstance.get('/profile/me');
     
     return {
       isValid: true,
@@ -28,14 +28,16 @@ export async function validateToken(): Promise<TokenValidationResult> {
   } catch (error: any) {
     // If we get 401, 403, or any auth-related error, the token is invalid
     if (error?.response?.status === 401 || error?.response?.status === 403) {
+      console.warn('Token validation failed - authentication error:', error?.response?.status);
       return { 
         isValid: false, 
         error: 'Token is invalid or user has been deleted' 
       };
     }
     
-    // For other errors, we'll assume the token is still valid
+    // For other errors (404, 500, network issues), we'll assume the token is still valid
     // This prevents network issues from logging out users
+    console.warn('Token validation failed with non-auth error:', error?.response?.status, error?.message);
     return { 
       isValid: true, 
       error: 'Network error during validation' 
@@ -68,18 +70,29 @@ export function shouldLogout(error: any): boolean {
   
   const status = error.response.status;
   const message = error.response.data?.message?.toLowerCase() || '';
+  const url = error.config?.url || '';
   
-  // Logout on authentication errors
-  if (status === 401 || status === 403) {
+  // Always logout on 401 (Unauthorized) - token is invalid
+  if (status === 401) {
     return true;
   }
   
-  // Logout on specific error messages indicating user deletion
-  if (message.includes('user not found') || 
-      message.includes('user has been deleted') ||
-      message.includes('invalid user') ||
-      message.includes('user does not exist')) {
-    return true;
+  // For 403 (Forbidden), be more selective - only logout for specific cases
+  if (status === 403) {
+    // Logout on specific error messages indicating user deletion or account issues
+    if (message.includes('user not found') || 
+        message.includes('user has been deleted') ||
+        message.includes('invalid user') ||
+        message.includes('user does not exist') ||
+        message.includes('account disabled') ||
+        message.includes('account suspended') ||
+        message.includes('access denied') && message.includes('account')) {
+      return true;
+    }
+    
+    // Don't logout for permission-based 403 errors (like teams access for HR admin)
+    // These are legitimate permission restrictions, not authentication failures
+    return false;
   }
   
   return false;

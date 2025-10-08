@@ -76,6 +76,17 @@ export interface CompleteSignupResponse {
   status: 'active';
 }
 
+export interface LogoUploadRequest {
+  signupSessionId: string;
+  logo: File;
+}
+
+export interface LogoUploadResponse {
+  logoUrl: string;
+  signupSessionId: string;
+}
+
+
 class SignupApiService {
   private baseUrl = '/signup';
 
@@ -196,6 +207,29 @@ class SignupApiService {
       throw error;
     }
   }
+
+  // Upload Company Logo
+  async uploadLogo(data: LogoUploadRequest): Promise<LogoUploadResponse> {
+    try {
+      const formData = new FormData();
+      formData.append('signupSessionId', data.signupSessionId);
+      formData.append('file', data.logo); // Changed from 'logo' to 'file'
+
+      const response = await axiosInstance.post(
+        `${this.baseUrl}/upload-logo`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
 }
 
 const signupApi = new SignupApiService();
