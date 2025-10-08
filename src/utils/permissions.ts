@@ -63,6 +63,7 @@ export const isMenuVisibleForRole = (
       'employees',
       'teams',
       'attendance',
+      'report',
     ],
     'network-admin': [
       'dashboard',
@@ -70,12 +71,18 @@ export const isMenuVisibleForRole = (
       'employees',
       'teams',
       'attendance',
+      'report',
     ],
-    'hr-admin': [
+    admin: [
+      'dashboard',
+      'department',
+      'employees',
+      'teams',
       'attendance',
+      'report',
     ],
-    admin: ['dashboard', 'department', 'employees', 'teams', 'attendance'],
-    manager: ['teams', 'attendance'],
+    manager: ['teams', 'attendance', 'report'],
+    'hr-admin': ['attendance'],
     employee: ['attendance'],
     user: ['attendance'],
     unknown: [],
@@ -89,6 +96,7 @@ export const isMenuVisibleForRole = (
     if (label.includes('employee')) return 'employees';
     if (label.includes('team')) return 'teams';
     if (label.includes('attendance')) return 'attendance';
+    if (label.includes('report')) return 'report';
     // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
     return 'misc';
   })();
@@ -107,10 +115,11 @@ export const isSubMenuVisibleForRole = (
   const parent = parentMenuLabel.trim().toLowerCase();
   const sub = subLabel.trim().toLowerCase();
 
-  // Default: visible unless explicitly hidden below
+  // Default visible unless explicitly restricted
   let visible = true;
 
   // System-admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports
+
   if (r === 'system-admin') {
     if (parent.includes('department')) {
       if (
@@ -127,6 +136,11 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+  }
+
+  // Show new "Report" only for admin + manager
+  if (sub === 'report') {
+    visible = r === 'admin' || r === 'manager';
   }
 
   // Network-admin: same as admin - hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
@@ -157,7 +171,7 @@ export const isSubMenuVisibleForRole = (
     }
   }
 
-  // Admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
+  // --- Admin rules ---
   if (r === 'admin') {
     if (parent.includes('department')) {
       if (
@@ -168,22 +182,44 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
-    if (parent.includes('attendance')) {
-      if (sub.includes('reports')) {
-        visible = false;
-      }
-    }
-  }
-  if (r === 'manager') {
-    if (parent.includes('attendance') && sub.includes('reports')) {
+    if (parent.includes('attendance') && sub === 'reports') {
       visible = false;
     }
   }
 
-  // Employee/User: hide Attendance -> Reports
-  if (r === 'employee' || r === 'user') {
-    if (parent.includes('attendance') && sub.includes('reports')) {
+  // --- Manager rules ---
+  if (r === 'manager') {
+    // manager sees only attendance summary (Report), not Reports
+    if (parent.includes('attendance') && sub === 'reports') {
       visible = false;
+    }
+  }
+
+  // --- Employee/User rules ---
+  if (r === 'employee' || r === 'user') {
+    if (parent.includes('attendance')) {
+      // Hide both Reports and Report for employees/users
+      if (sub === 'reports' || sub === 'report') {
+        visible = false;
+      }
+    }
+  }
+
+  // --- Manager rules ---
+  if (r === 'manager') {
+    // manager sees only attendance summary (Report), not Reports
+    if (parent.includes('attendance') && sub === 'reports') {
+      visible = false;
+    }
+  }
+
+  // --- Employee/User rules ---
+  if (r === 'employee' || r === 'user') {
+    if (parent.includes('attendance')) {
+      // Hide both Reports and Report for employees/users
+      if (sub === 'reports' || sub === 'report') {
+        visible = false;
+      }
     }
   }
 
@@ -200,7 +236,12 @@ export const isDashboardPathAllowedForRole = (
 
   // Index /dashboard
   if (p === '') {
-    return r === 'admin' || r === 'system-admin' || r === 'network-admin' || r === 'hr-admin';
+    return (
+      r === 'admin' ||
+      r === 'system-admin' ||
+      r === 'network-admin' ||
+      r === 'hr-admin'
+    );
   }
 
   const allowlists: Record<NormalizedRole, Set<string>> = {
@@ -215,6 +256,9 @@ export const isDashboardPathAllowedForRole = (
       'leaves',
       'AttendanceCheck',
       'AttendanceTable',
+      'Reports',
+      'attendance-summary',
+      'AttendanceCheck/TimesheetLayout',
       'AttendanceCheck/TimesheetLayout',
       // Teams
       'teams',
@@ -239,6 +283,7 @@ export const isDashboardPathAllowedForRole = (
       // 'Reports',
       'teams',
       'EmployeeProfileView',
+      'attendance-summary',
       // Settings
       'settings',
     ]),
@@ -266,6 +311,7 @@ export const isDashboardPathAllowedForRole = (
       // 'Reports',
       'teams',
       'EmployeeProfileView',
+      'attendance-summary',
       // Settings
       'settings',
     ]),
@@ -277,6 +323,7 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'leaves',
       'UserProfile',
+      'attendance-summary',
       // Settings
       'settings',
     ]),
