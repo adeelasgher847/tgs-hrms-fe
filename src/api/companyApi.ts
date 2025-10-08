@@ -7,9 +7,28 @@ export interface BackendCompany {
   createdAt?: string;
 }
 
+// Company Details interface
+export interface CompanyDetails {
+  id: string;
+  company_name: string;
+  domain: string;
+  logo_url: string;
+  plan_id: string;
+  is_paid: boolean;
+  tenant_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Create/Update DTO interface
 export interface CompanyDto {
   name: string;
+}
+
+// Update Company Details DTO
+export interface UpdateCompanyDetailsDto {
+  company_name: string;
+  domain: string;
 }
 
 // Backend envelope
@@ -80,6 +99,45 @@ class CompanyApiService {
       `${this.baseUrl}/${id}`
     );
     return { id: response.data.id, message: response.data.message };
+  }
+
+  // Get company details
+  async getCompanyDetails(): Promise<CompanyDetails> {
+    const response = await axiosInstance.get<CompanyDetails>('/company');
+    // console.log(response);
+    return response.data;
+  }
+
+  // Update company details
+  async updateCompanyDetails(data: UpdateCompanyDetailsDto): Promise<CompanyDetails> {
+    const response = await axiosInstance.put<CompanyDetails>('/company', data);
+    return response.data;
+  }
+
+  // Get company logo
+  async getCompanyLogo(tenantId: string): Promise<string> {
+    const response = await axiosInstance.get(`/company/logo/${tenantId}`, {
+      responseType: 'blob'
+    });
+    
+    // Create blob URL from binary response
+    const blob = new Blob([response.data], { type: response.data.type || 'image/jpeg' });
+    const blobUrl = URL.createObjectURL(blob);
+    return blobUrl;
+  }
+
+  // Upload/Update company logo
+  async uploadCompanyLogo(logoFile: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('logo', logoFile);
+    
+    const response = await axiosInstance.post('/company/logo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    console.log(response);
+    return response.data.logo_url || response.data;
   }
 }
 

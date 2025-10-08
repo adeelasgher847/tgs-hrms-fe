@@ -10,6 +10,7 @@ import { DepartmentList } from './components/department/Department-list';
 import { LanguageProvider } from './context/LanguageContext';
 import { UserProvider } from './context/UserContext';
 import { ProfilePictureProvider } from './context/ProfilePictureContext';
+import { CompanyProvider } from './context/CompanyContext';
 import DesignationManager from './components/Desigantions/Designation-manager';
 import Error404 from './components/Error404';
 import { TenantPage } from './components/Tenant';
@@ -32,12 +33,14 @@ import SelectPlan from './components/SelectPlan';
 import ConfirmPayment from './components/ConfirmPayment';
 import SignupSuccess from './components/SignupSuccess';
 import AttendanceSummaryReport from './components/Attendance/AttendanceSummaryReport';
+import SettingsPage from './components/Settings/SettingsPage';
 function App() {
   return (
     <LanguageProvider>
       <UserProvider>
         <ProfilePictureProvider>
-          <Router>
+          <CompanyProvider>
+            <Router>
             <Routes>
               <Route path='/' element={<Login />} />
               <Route path='/forget' element={<Forget />} />
@@ -88,11 +91,13 @@ function App() {
                   element={<TimesheetLayout />}
                 />
                 <Route path='teams' element={<TeamManager />} />
+                <Route path='settings' element={<SettingsPage />} />
               </Route>
               <Route path='/company-details' element={<CompanyDetails />} />
               <Route path='*' element={<Error404 />} />
             </Routes>
-          </Router>
+            </Router>
+          </CompanyProvider>
         </ProfilePictureProvider>
       </UserProvider>
     </LanguageProvider>

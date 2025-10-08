@@ -477,6 +477,23 @@ class EmployeeApiService {
     );
     return response.data;
   }
+
+  // Resend invite to employee
+  async resendInvite(id: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await axiosInstance.post<{ message: string }>(
+        `${this.baseUrl}/${id}/refresh-invite-status`
+      );
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      const errorResult = handleApiError(error, {
+        operation: 'update',
+        resource: 'employee',
+        isGlobal: false,
+      });
+      throw new Error(errorResult.message);
+    }
+  }
 }
 
 // Get employee joining report
