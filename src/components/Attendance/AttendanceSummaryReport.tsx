@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -20,23 +20,33 @@ import { Download as DownloadIcon } from '@mui/icons-material';
 import { useUser } from '../../hooks/useUser';
 import attendanceSummaryApi from '../../api/reportApi';
 
-const AttendanceSummaryReport = () => {
+interface AttendanceSummaryItem {
+  employeeName?: string;
+  department?: string;
+  designation?: string;
+  workingDays?: number;
+  presents?: number;
+  absents?: number;
+  informedLeaves?: number;
+}
+
+const ITEMS_PER_PAGE = 10;
+
+const AttendanceSummaryReport: React.FC = () => {
   const { user, loading: userLoading } = useUser();
-  const [summaryData, setSummaryData] = useState([]);
+  const [summaryData, setSummaryData] = useState<AttendanceSummaryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<
     'thisMonth' | 'prevMonth' | '60days' | '90days'
   >('thisMonth');
-  const [totalPages, setTotalPages] = useState(1);
-
-  const itemsPerPage = 10;
+  const [totalPages, setTotalPages] = useState<number>(1);
 
   const getDaysRange = () => {
     switch (filter) {
       case 'thisMonth':
-        return new Date().getDate();
-      case 'prevMonth':
+        return new Date().getDate(); 
+      case 'prevMonth': {
         const lastMonth = new Date();
         lastMonth.setMonth(lastMonth.getMonth() - 1);
         return new Date(
@@ -44,6 +54,7 @@ const AttendanceSummaryReport = () => {
           lastMonth.getMonth() + 1,
           0
         ).getDate();
+      }
       case '60days':
         return 60;
       case '90days':
@@ -58,36 +69,77 @@ const AttendanceSummaryReport = () => {
       if (userLoading) return;
       if (!user?.tenant) {
         console.warn('Missing tenantId — cannot fetch report.');
+        setSummaryData([]);
+        setLoading(false);
         return;
       }
 
       setLoading(true);
       try {
         const days = getDaysRange();
-        const response = await attendanceSummaryApi.getAttendanceSummary(
+        const resp = await attendanceSummaryApi.getAttendanceSummary(
           user.tenant,
           days
         );
-        setSummaryData(response.items || []);
-        setTotalPages(response.totalPages || 1);
+
+        let items: AttendanceSummaryItem[] = [];
+        let serverTotalPages: number | undefined;
+
+        if (!resp) {
+          items = [];
+        } else if (Array.isArray(resp)) {
+          items = resp as AttendanceSummaryItem[];
+        } else if (Array.isArray((resp as any).items)) {
+          items = (resp as any).items as AttendanceSummaryItem[];
+          serverTotalPages = (resp as any).totalPages;
+        } else if (Array.isArray((resp as any).data)) {
+          items = (resp as any).data as AttendanceSummaryItem[];
+        } else {
+          items = [];
+        }
+
+        setSummaryData(items);
+
+        if (typeof serverTotalPages === 'number' && serverTotalPages > 0) {
+          setTotalPages(serverTotalPages);
+        } else {
+          setTotalPages(Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE)));
+        }
+
+        setPage(prev => {
+          const computedCount =
+            serverTotalPages ??
+            Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
+          return Math.min(prev, computedCount);
+        });
       } catch (err) {
         console.error('Error fetching summary:', err);
         setSummaryData([]);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
     };
 
     fetchSummary();
+    setPage(1);
   }, [user, userLoading, filter]);
 
-  const paginatedData = summaryData.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage
+  const safeData = Array.isArray(summaryData) ? summaryData : [];
+
+  const paginatedData = safeData.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
   );
 
+  const csvEscape = (value: any) => {
+    if (value === null || value === undefined) return '';
+    const s = String(value).replace(/"/g, '""');
+    return `"${s}"`;
+  };
+
   const handleDownload = () => {
-    if (summaryData.length === 0) {
+    if (safeData.length === 0) {
       alert('No data to download.');
       return;
     }
@@ -95,25 +147,30 @@ const AttendanceSummaryReport = () => {
     const csvHeader = [
       'Employee Name',
       'Department',
+      'Designation',
       'Working Days',
-      'Leaves',
-      'Absent Days',
+      'Presents',
+      'Absents',
+      'Informed Leaves',
     ];
-    const csvRows = summaryData.map(row =>
+
+    const rows = safeData.map(row =>
       [
-        row.employeeName,
-        row.department,
-        row.workingDays,
-        row.leaves,
-        row.absentDays,
+        csvEscape(row.employeeName),
+        csvEscape(row.department),
+        csvEscape(row.designation),
+        csvEscape(row.workingDays),
+        csvEscape(row.presents),
+        csvEscape(row.absents),
+        csvEscape(row.informedLeaves),
       ].join(',')
     );
 
-    const csvContent = [csvHeader.join(','), ...csvRows].join('\n');
+    const csvContent = [csvHeader.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    link.href = url;
+    const a = document.createElement('a');
+    a.href = url;
 
     const label =
       filter === 'thisMonth'
@@ -124,47 +181,48 @@ const AttendanceSummaryReport = () => {
             ? 'Last60Days'
             : 'Last90Days';
 
-    link.setAttribute('download', `AttendanceSummary_${label}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    a.setAttribute('download', `AttendanceSummary_${label}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
     <Box>
-      <Box>
-        <Typography variant='h4'>Attendance Summary Report</Typography>
+      <Typography variant='h4' gutterBottom>
+        Attendance Summary Report
+      </Typography>
 
-        <Box
-          display='flex'
-          justifyContent='space-between'
-          alignItems='center'
-          gap={2}
-        >
-          <FormControl size='small' sx={{ minWidth: 160 }}>
-            <Select
-              value={filter}
-              onChange={e => {
-                setFilter(e.target.value);
-                setPage(1);
-              }}
-            >
-              <MenuItem value='thisMonth'>This Month</MenuItem>
-              <MenuItem value='prevMonth'>Previous Month</MenuItem>
-              <MenuItem value='60days'>Last 60 Days</MenuItem>
-              <MenuItem value='90days'>Last 90 Days</MenuItem>
-            </Select>
-          </FormControl>
-
-          <Button
-            variant='contained'
-            color='primary'
-            startIcon={<DownloadIcon />}
-            onClick={handleDownload}
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        gap={2}
+      >
+        <FormControl size='small' sx={{ minWidth: 160 }}>
+          <Select
+            value={filter}
+            onChange={e => {
+              setFilter(e.target.value as any);
+              setPage(1);
+            }}
           >
-            Download
-          </Button>
-        </Box>
+            <MenuItem value='thisMonth'>This Month</MenuItem>
+            <MenuItem value='prevMonth'>Previous Month</MenuItem>
+            <MenuItem value='60days'>Last 60 Days</MenuItem>
+            <MenuItem value='90days'>Last 90 Days</MenuItem>
+          </Select>
+        </FormControl>
+
+        <Button
+          variant='contained'
+          color='primary'
+          startIcon={<DownloadIcon />}
+          onClick={handleDownload}
+        >
+          Download
+        </Button>
       </Box>
 
       {loading ? (
@@ -188,31 +246,47 @@ const AttendanceSummaryReport = () => {
                   <TableCell>
                     <b>Department</b>
                   </TableCell>
+                  <TableCell>
+                    <b>Designation</b>
+                  </TableCell>
                   <TableCell align='center'>
                     <b>Working Days</b>
                   </TableCell>
                   <TableCell align='center'>
-                    <b>Leaves</b>
+                    <b>Presents</b>
                   </TableCell>
                   <TableCell align='center'>
-                    <b>Absent Days</b>
+                    <b>Absents</b>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <b>Informed Leaves</b>
                   </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {paginatedData.length > 0 ? (
-                  paginatedData.map((row, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{row.employeeName}</TableCell>
-                      <TableCell>{row.department}</TableCell>
-                      <TableCell align='center'>{row.workingDays}</TableCell>
-                      <TableCell align='center'>{row.leaves}</TableCell>
-                      <TableCell align='center'>{row.absentDays}</TableCell>
+                  paginatedData.map((row, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{row.employeeName ?? '--'}</TableCell>
+                      <TableCell>{row.department ?? '--'}</TableCell>
+                      <TableCell>{row.designation ?? '--'}</TableCell>
+                      <TableCell align='center'>
+                        {row.workingDays ?? '--'}
+                      </TableCell>
+                      <TableCell align='center'>
+                        {row.presents ?? '--'}
+                      </TableCell>
+                      <TableCell align='center'>
+                        {row.absents ?? '--'}
+                      </TableCell>
+                      <TableCell align='center'>
+                        {row.informedLeaves ?? '--'}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} align='center'>
+                    <TableCell colSpan={7} align='center'>
                       No data found
                     </TableCell>
                   </TableRow>
@@ -223,24 +297,24 @@ const AttendanceSummaryReport = () => {
         </Paper>
       )}
 
-      {summaryData.length > itemsPerPage && (
-        <Box textAlign='center' my={2} px={2}>
-          <Box display='inline-block'>
-            <Pagination
-              count={Math.ceil(summaryData.length / itemsPerPage)}
-              page={page}
-              onChange={(e, value) => setPage(value)}
-              color='primary'
-            />
-            <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
-              Showing{' '}
-              {Math.min((page - 1) * itemsPerPage + 1, summaryData.length)}–
-              {Math.min(page * itemsPerPage, summaryData.length)} of{' '}
-              {summaryData.length} records
-            </Typography>
-          </Box>
+      <Box textAlign='center' my={2} px={2}>
+        <Box display='inline-block'>
+          <Pagination
+            count={Math.max(1, totalPages)}
+            page={page}
+            onChange={(_, value) => setPage(value)}
+            color='primary'
+          />
+          <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
+            Showing{' '}
+            {safeData.length === 0
+              ? 0
+              : Math.min((page - 1) * ITEMS_PER_PAGE + 1, safeData.length)}
+            –{Math.min(page * ITEMS_PER_PAGE, safeData.length)} of{' '}
+            {safeData.length} records
+          </Typography>
         </Box>
-      )}
+      </Box>
     </Box>
   );
 };

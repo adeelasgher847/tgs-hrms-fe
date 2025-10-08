@@ -96,20 +96,33 @@ export const isSubMenuVisibleForRole = (
   const parent = parentMenuLabel.trim().toLowerCase();
   const sub = subLabel.trim().toLowerCase();
 
-  // Default: visible unless explicitly hidden below
+  // Default visible unless explicitly restricted
   let visible = true;
 
-  // System-admin: hide only the "Attendance" submenu (check-in/check-out)
+  // --- Attendance submenu visibility rules ---
+  if (parent.includes('attendance')) {
+    // Hide "Reports" for everyone except system-admin
+    if (sub === 'reports') {
+      visible = false;
+    }
+
+    // Show new "Report" only for admin + manager
+    if (sub === 'report') {
+      visible = r === 'admin' || r === 'manager';
+    }
+
+    // Everyone else can see the other attendance options
+  }
+
+  // --- System-admin rules ---
   if (r === 'system-admin') {
-    if (parent.includes('attendance')) {
-      // Hide only the exact "Attendance" sub item (check-in/check-out), keep "Attendance Table" and "Reports"
-      if (sub === 'attendance') {
-        visible = false;
-      }
+    // Hide check-in/out sub item
+    if (parent.includes('attendance') && sub === 'attendance') {
+      visible = false;
     }
   }
 
-  // Admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
+  // --- Admin rules ---
   if (r === 'admin') {
     if (parent.includes('department')) {
       if (
@@ -120,25 +133,23 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+  }
+
+  // --- Manager rules ---
+  if (r === 'manager') {
+    // manager sees only attendance summary (Report), not Reports
+    if (parent.includes('attendance') && sub === 'reports') {
+      visible = false;
+    }
+  }
+
+  // --- Employee/User rules ---
+  if (r === 'employee' || r === 'user') {
     if (parent.includes('attendance')) {
-      // hide only Reports for admin, but keep Attendance and Attendance Table visible
-      if (sub.includes('reports')) {
+      // Hide both Reports and Report for employees/users
+      if (sub === 'reports' || sub === 'report') {
         visible = false;
       }
-    }
-  }
-
-  // Manager: hide Attendance -> Reports
-  if (r === 'manager') {
-    if (parent.includes('attendance') && sub.includes('reports')) {
-      visible = false;
-    }
-  }
-
-  // Employee/User: hide Attendance -> Reports
-  if (r === 'employee' || r === 'user') {
-    if (parent.includes('attendance') && sub.includes('reports')) {
-      visible = false;
     }
   }
 

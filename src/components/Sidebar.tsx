@@ -97,15 +97,11 @@ const menuItems: MenuItem[] = [
     icon: <Receipt />,
     subItems: [
       { label: 'Attendance', path: 'AttendanceCheck' },
-      { label: 'Attendance Table', path: 'AttendanceTable' },
+      { label: 'Daily Attendance', path: 'AttendanceTable' },
       { label: 'Reports', path: 'Reports' },
+      { label: 'Report', path: 'attendance-summary' },
       { label: 'Leave Request', path: 'leaves' },
     ],
-  },
-  {
-    label: 'Report',
-    icon: <Receipt />,
-    path: 'attendance-summary',
   },
   {
     label: 'Accounts',
