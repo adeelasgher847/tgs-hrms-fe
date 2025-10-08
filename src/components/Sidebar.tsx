@@ -20,6 +20,7 @@ import {
   Apps,
   Code,
   Widgets,
+  Inventory,
 } from '@mui/icons-material';
 import dotted from './../assets/dashboardIcon/dotted-down.svg';
 import Clipboard from '../assets/dashboardIcon/Clipboard';
@@ -95,6 +96,15 @@ const menuItems: MenuItem[] = [
     label: 'Teams',
     icon: <Group />,
     subItems: [{ label: 'Team Management', path: 'teams' }],
+  },
+  {
+    label: 'Assets',
+    icon: <Inventory />,
+    subItems: [
+      { label: 'Asset Inventory', path: 'assets' },
+      { label: 'Asset Requests', path: 'assets/requests' },
+      { label: 'Request Management', path: 'assets/request-management' },
+    ],
   },
   {
     label: 'Attendance',
@@ -300,9 +310,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                 variant="circular"
                 width="100%"
                 height="100%"
-                sx={{
-                  borderRadius: '50%',
-                }}
+                borderRadius="50%"
               />
             ) : sidebarLogo ? (
               <Box
@@ -310,12 +318,9 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                 src={sidebarLogo}
                 alt="Company Logo"
                 loading="lazy"
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: '50%',
-                }}
+                width="100%"
+                height="100%"
+                borderRadius="50%"
               />
             ) : (
               <Clipboard />

@@ -62,6 +62,7 @@ export const isMenuVisibleForRole = (
       'department',
       'employees',
       'teams',
+      'assets',
       'attendance',
     ],
     'network-admin': [
@@ -69,15 +70,17 @@ export const isMenuVisibleForRole = (
       'department',
       'employees',
       'teams',
+      'assets',
       'attendance',
     ],
     'hr-admin': [
       'attendance',
+      'assets',
     ],
-    admin: ['dashboard', 'department', 'employees', 'teams', 'attendance'],
-    manager: ['teams', 'attendance'],
-    employee: ['attendance'],
-    user: ['attendance'],
+    admin: ['dashboard', 'department', 'employees', 'teams', 'assets', 'attendance'],
+    manager: ['teams', 'attendance', 'assets'],
+    employee: ['attendance', 'assets'],
+    user: ['attendance', 'assets'],
     unknown: [],
   };
 
@@ -88,6 +91,7 @@ export const isMenuVisibleForRole = (
     if (label.includes('department')) return 'department';
     if (label.includes('employee')) return 'employees';
     if (label.includes('team')) return 'teams';
+    if (label.includes('asset')) return 'assets';
     if (label.includes('attendance')) return 'attendance';
     // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
     return 'misc';
@@ -218,6 +222,11 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       // Teams
       'teams',
+      // Assets
+      'assets',
+      'assets/inventory',
+      'assets/requests',
+      'assets/request-management',
       // Employee profile view
       'EmployeeProfileView',
       // Settings
@@ -238,6 +247,11 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       // 'Reports',
       'teams',
+      // Assets
+      'assets',
+      'assets/inventory',
+      'assets/requests',
+      'assets/request-management',
       'EmployeeProfileView',
       // Settings
       'settings',
@@ -248,6 +262,11 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceTable',
       'AttendanceCheck/TimesheetLayout',
       'UserProfile',
+      // Assets
+      'assets',
+      'assets/inventory',
+      'assets/requests',
+      'assets/request-management',
       'settings',
     ]),
     admin: new Set([
@@ -265,6 +284,11 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       // 'Reports',
       'teams',
+      // Assets
+      'assets',
+      'assets/inventory',
+      'assets/requests',
+      'assets/request-management',
       'EmployeeProfileView',
       // Settings
       'settings',
@@ -277,6 +301,11 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'leaves',
       'UserProfile',
+      // Assets
+      'assets',
+      'assets/inventory',
+      'assets/requests',
+      'assets/request-management',
       // Settings
       'settings',
     ]),
@@ -287,6 +316,11 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
+      // Assets
+      'assets',
+      'assets/inventory',
+      'assets/requests',
+      'assets/request-management',
       // Settings
       'settings',
     ]),
@@ -297,6 +331,11 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
+      // Assets
+      'assets',
+      'assets/inventory',
+      'assets/requests',
+      'assets/request-management',
       // Settings
       'settings',
     ]),
