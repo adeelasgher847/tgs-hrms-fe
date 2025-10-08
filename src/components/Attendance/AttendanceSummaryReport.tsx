@@ -319,8 +319,4 @@ const AttendanceSummaryReport: React.FC = () => {
   );
 };
 
-<<<<<<< HEAD
 export default AttendanceSummaryReport;
-=======
-export default AttendanceSummaryReport;
->>>>>>> 7bb60b7653d61cbd65d40e9821004c5924cc9039

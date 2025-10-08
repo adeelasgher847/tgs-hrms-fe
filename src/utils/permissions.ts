@@ -81,10 +81,8 @@ export const isMenuVisibleForRole = (
       'attendance',
       'report',
     ],
-    admin: ['dashboard', 'department', 'employees', 'teams', 'attendance','report'],
-    manager: ['teams', 'attendance','report'],
-    'hr-admin': ['attendance'],
     manager: ['teams', 'attendance', 'report'],
+    'hr-admin': ['attendance'],
     employee: ['attendance'],
     user: ['attendance'],
     unknown: [],
@@ -121,12 +119,7 @@ export const isSubMenuVisibleForRole = (
   let visible = true;
 
   // System-admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports
-  // Show new "Report" only for admin + manager
-    if (sub === 'report') {
-      visible = r === 'admin' || r === 'manager';
-    }
 
-  
   if (r === 'system-admin') {
     if (parent.includes('department')) {
       if (
@@ -189,6 +182,9 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (parent.includes('attendance') && sub === 'reports') {
+      visible = false;
+    }
   }
 
   // --- Manager rules ---
@@ -224,18 +220,6 @@ export const isSubMenuVisibleForRole = (
       if (sub === 'reports' || sub === 'report') {
         visible = false;
       }
-    }
-  }
-  if (r === 'manager') {
-    if (parent.includes('attendance') && sub.includes('reports')) {
-      visible = false;
-    }
-  }
-
-  // Employee/User: hide Attendance -> Reports
-  if (r === 'employee' || r === 'user') {
-    if (parent.includes('attendance') && sub.includes('reports')) {
-      visible = false;
     }
   }
 

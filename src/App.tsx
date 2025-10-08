@@ -41,40 +41,46 @@ function App() {
         <ProfilePictureProvider>
           <CompanyProvider>
             <Router>
-            <Routes>
-              <Route path='/' element={<Login />} />
-              <Route path='/forget' element={<Forget />} />
-              <Route path='/reset-password' element={<ResetPassword />} />
-              <Route path='/confirm-password' element={<ConfirmPassword />} />
-              <Route path='/Signup' element={<Signup />} />
-              <Route
-                path='/signup/company-details'
-                element={<CompanyDetails />}
-              />
-              <Route path='/signup/select-plan' element={<SelectPlan />} />
-              <Route
-                path='/signup/confirm-payment'
-                element={<ConfirmPayment />}
-              />
-              <Route path='/signup/success' element={<SignupSuccess />} />
-              <Route
-                path='/dashboard'
-                element={
-                  <ThemeProvider>
-                    <Layout />
-                  </ThemeProvider>
-                }
-              >
-                <Route path='tenant' element={<TenantPage />} />
-                <Route index element={<Dashboard />} />
-                <Route path='departments' element={<DepartmentList />} />
-                <Route path='Designations' element={<DesignationManager />} />
-                <Route path='EmployeeManager' element={<EmployeeManager />} />
-                <Route path='UserList' element={<UserList />} />
-                <Route path='UserProfile' element={<UserProfileComponent />} />
-                <Route path='leaves' element={<LeaveRequestPage />} />
-                <Route path='attendance-summary' element={<AttendanceSummaryReport />} />
-
+              <Routes>
+                <Route path='/' element={<Login />} />
+                <Route path='/forget' element={<Forget />} />
+                <Route path='/reset-password' element={<ResetPassword />} />
+                <Route path='/confirm-password' element={<ConfirmPassword />} />
+                <Route path='/Signup' element={<Signup />} />
+                <Route
+                  path='/signup/company-details'
+                  element={<CompanyDetails />}
+                />
+                <Route path='/signup/select-plan' element={<SelectPlan />} />
+                <Route
+                  path='/signup/confirm-payment'
+                  element={<ConfirmPayment />}
+                />
+                <Route path='/signup/success' element={<SignupSuccess />} />
+                <Route
+                  path='/dashboard'
+                  element={
+                    <ThemeProvider>
+                      <Layout />
+                    </ThemeProvider>
+                  }
+                >
+                  <Route path='tenant' element={<TenantPage />} />
+                  <Route index element={<Dashboard />} />
+                  <Route path='departments' element={<DepartmentList />} />
+                  <Route path='Designations' element={<DesignationManager />} />
+                  <Route path='EmployeeManager' element={<EmployeeManager />} />
+                  <Route path='UserList' element={<UserList />} />
+                  <Route
+                    path='UserProfile'
+                    element={<UserProfileComponent />}
+                  />
+                  <Route path='leaves' element={<LeaveRequestPage />} />
+                  <Route
+                    path='attendance-summary'
+                    element={<AttendanceSummaryReport />}
+                  />
+                </Route>
                 <Route
                   path='/signup/company-details'
                   element={<CompanyDetails />}
