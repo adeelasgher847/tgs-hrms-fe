@@ -226,9 +226,7 @@ class AttendanceApiService {
   }
 
   // Get team attendance for manager
-  async getTeamAttendance(
-    page: number = 1
-  ): Promise<{
+  async getTeamAttendance(page: number = 1): Promise<{
     items: AttendanceEvent[];
     total: number;
     page: number;

@@ -52,7 +52,6 @@ import EmployeeProfileView from '../Employee/EmployeeProfileView';
 import EditProfileModal from './EditProfileModal';
 import { useIsDarkMode } from '../../theme';
 
-
 const UserProfileComponent = React.memo(() => {
   const { user: profile, loading, refreshUser, updateUser } = useUser();
   const { updateProfilePicture } = useProfilePicture();
@@ -385,8 +384,15 @@ const UserProfileComponent = React.memo(() => {
             alignItems: 'center',
             mb: 4,
           }}
-                >
-          <Typography variant='h4' component='h1' sx={{ fontWeight: 600, color: darkMode ? '#8f8f8f' : theme.palette.text.primary }}>
+        >
+          <Typography
+            variant='h4'
+            component='h1'
+            sx={{
+              fontWeight: 600,
+              color: darkMode ? '#8f8f8f' : theme.palette.text.primary,
+            }}
+          >
             User Profile
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -465,12 +471,22 @@ const UserProfileComponent = React.memo(() => {
                 />
                 <Typography
                   variant='body2'
-                  sx={{ mb: 0.5, color: darkMode ? '#8f8f8f' : theme.palette.text.secondary }}
+                  sx={{
+                    mb: 0.5,
+                    color: darkMode ? '#8f8f8f' : theme.palette.text.secondary,
+                  }}
                 >
                   {profile.email}
                 </Typography>
                 {profile.phone && (
-                  <Typography variant='body2' sx={{ color: darkMode ? '#8f8f8f' : theme.palette.text.secondary }}>
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      color: darkMode
+                        ? '#8f8f8f'
+                        : theme.palette.text.secondary,
+                    }}
+                  >
                     {profile.phone}
                   </Typography>
                 )}
@@ -501,7 +517,13 @@ const UserProfileComponent = React.memo(() => {
                   <Box sx={{ flex: 1 }}>
                     <Typography
                       variant='body2'
-                      sx={{ mb: 0.5, fontWeight: 500, color: darkMode ? '#8f8f8f' : theme.palette.text.secondary }}
+                      sx={{
+                        mb: 0.5,
+                        fontWeight: 500,
+                        color: darkMode
+                          ? '#8f8f8f'
+                          : theme.palette.text.secondary,
+                      }}
                     >
                       {item.label}
                     </Typography>

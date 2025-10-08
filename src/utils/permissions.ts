@@ -71,12 +71,20 @@ export const isMenuVisibleForRole = (
       'employees',
       'teams',
       'attendance',
+      'report',
     ],
-    'hr-admin': [
+    admin: [
+      'dashboard',
+      'department',
+      'employees',
+      'teams',
       'attendance',
+      'report',
     ],
     admin: ['dashboard', 'department', 'employees', 'teams', 'attendance','report'],
     manager: ['teams', 'attendance','report'],
+    'hr-admin': ['attendance'],
+    manager: ['teams', 'attendance', 'report'],
     employee: ['attendance'],
     user: ['attendance'],
     unknown: [],
@@ -137,6 +145,11 @@ export const isSubMenuVisibleForRole = (
     }
   }
 
+  // Show new "Report" only for admin + manager
+  if (sub === 'report') {
+    visible = r === 'admin' || r === 'manager';
+  }
+
   // Network-admin: same as admin - hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
   if (r === 'network-admin') {
     if (parent.includes('department')) {
@@ -195,6 +208,24 @@ export const isSubMenuVisibleForRole = (
       }
     }
   }
+
+  // --- Manager rules ---
+  if (r === 'manager') {
+    // manager sees only attendance summary (Report), not Reports
+    if (parent.includes('attendance') && sub === 'reports') {
+      visible = false;
+    }
+  }
+
+  // --- Employee/User rules ---
+  if (r === 'employee' || r === 'user') {
+    if (parent.includes('attendance')) {
+      // Hide both Reports and Report for employees/users
+      if (sub === 'reports' || sub === 'report') {
+        visible = false;
+      }
+    }
+  }
   if (r === 'manager') {
     if (parent.includes('attendance') && sub.includes('reports')) {
       visible = false;
@@ -221,7 +252,12 @@ export const isDashboardPathAllowedForRole = (
 
   // Index /dashboard
   if (p === '') {
-    return r === 'admin' || r === 'system-admin' || r === 'network-admin' || r === 'hr-admin';
+    return (
+      r === 'admin' ||
+      r === 'system-admin' ||
+      r === 'network-admin' ||
+      r === 'hr-admin'
+    );
   }
 
   const allowlists: Record<NormalizedRole, Set<string>> = {
@@ -238,6 +274,7 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceTable',
       'Reports',
       'attendance-summary',
+      'AttendanceCheck/TimesheetLayout',
       'AttendanceCheck/TimesheetLayout',
       // Teams
       'teams',
@@ -262,6 +299,7 @@ export const isDashboardPathAllowedForRole = (
       // 'Reports',
       'teams',
       'EmployeeProfileView',
+      'attendance-summary',
       // Settings
       'settings',
     ]),
