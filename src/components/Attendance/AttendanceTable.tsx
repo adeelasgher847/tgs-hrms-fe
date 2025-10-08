@@ -268,7 +268,7 @@ const AttendanceTable = () => {
   };
 
   // Fetch attendance data for a specific date (for date navigation)
-  const fetchAttendanceByDate = async (date: string, view: 'all' | 'team') => {
+  const fetchAttendanceByDate = async (date: string, view: 'all' | 'team', preservePage: boolean = false) => {
     if (view === 'all') {
       setLoading(true);
     } else {
@@ -290,8 +290,11 @@ const AttendanceTable = () => {
       let response: AttendanceResponse;
 
       if (view === 'all') {
+        // Use current page if preserving pagination, otherwise use page 1
+        const pageToFetch = preservePage ? currentPage : 1;
+        
         response = await attendanceApi.getAllAttendance(
-          1, // Always page 1 for date-based fetching
+          pageToFetch,
           date, // Start date
           date  // End date (same day)
         );
@@ -314,9 +317,17 @@ const AttendanceTable = () => {
         setFilteredData(rows);
         
         // Set pagination state for date-filtered results
-        setCurrentPage(1);
-        setTotalPages(1);
-        setTotalItems(rows.length);
+        if (preservePage) {
+          // Maintain current page and pagination info from API response
+          setCurrentPage(response.page || 1);
+          setTotalPages(response.totalPages || 1);
+          setTotalItems(response.total || 0);
+        } else {
+          // Reset to page 1 for new date selection
+          setCurrentPage(1);
+          setTotalPages(1);
+          setTotalItems(rows.length);
+        }
       } else {
         // For Team Attendance, we'll keep the existing team attendance logic
         // but could be modified to fetch by date if the API supports it
@@ -514,7 +525,13 @@ const AttendanceTable = () => {
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    fetchAttendance(page, canViewAllAttendance ? adminView : 'my');
+    
+    // If we're viewing a specific date (not 'all'), use date-based fetching
+    if (canViewAllAttendance && adminView === 'all' && currentNavigationDate !== 'all') {
+      fetchAttendanceByDate(currentNavigationDate, 'all', true);
+    } else {
+      fetchAttendance(page, canViewAllAttendance ? adminView : 'my');
+    }
   };
 
   // Handle team page change
@@ -530,7 +547,8 @@ const AttendanceTable = () => {
       // Show all records (no pagination)
       fetchAttendance(1, 'all', selectedEmployee, '', '', true);
     } else {
-      fetchAttendanceByDate(newDate, 'all');
+      // Preserve current page when navigating to a specific date
+      fetchAttendanceByDate(newDate, 'all', true);
     }
   };
 
@@ -562,7 +580,7 @@ const AttendanceTable = () => {
     fetchAttendance(1, 'my', undefined, '', '');
   };
 
-  const handleAllAttendance = async () => {
+  const handleAllAttendance = () => {
     setAdminView('all');
     setCurrentPage(1);
     setSelectedEmployee('');
@@ -571,10 +589,10 @@ const AttendanceTable = () => {
     // Reset to show all records for date navigation
     setCurrentNavigationDate('all');
 
-    // Fetch employees from attendance data first, then attendance
-    await fetchEmployeesFromAttendance();
     // Show all records initially (no date filtering)
     fetchAttendance(1, 'all', undefined, '', '', true);
+    // Fetch employees from attendance data after initial load
+    fetchEmployeesFromAttendance();
   };
 
   // Handle manager view change - separate buttons
@@ -967,8 +985,10 @@ const AttendanceTable = () => {
             />
           )}
 
-          {/* Pagination - Only show for My Attendance */}
-          {!(canViewAllAttendance && adminView === 'all') && totalPages > 1 && (
+          {/* Pagination - Show for My Attendance and when viewing specific dates in All Attendance */}
+          {((!(canViewAllAttendance && adminView === 'all')) || 
+            (canViewAllAttendance && adminView === 'all' && currentNavigationDate !== 'all')) && 
+            totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <Pagination
                 count={totalPages}
@@ -979,8 +999,10 @@ const AttendanceTable = () => {
             </Box>
           )}
 
-          {/* Pagination Info - Only show for My Attendance */}
-          {!(canViewAllAttendance && adminView === 'all') && totalItems > 0 && (
+          {/* Pagination Info - Show for My Attendance and when viewing specific dates in All Attendance */}
+          {((!(canViewAllAttendance && adminView === 'all')) || 
+            (canViewAllAttendance && adminView === 'all' && currentNavigationDate !== 'all')) && 
+            totalItems > 0 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
               <Typography variant='body2' color='text.secondary'>
                 Showing {(currentPage - 1) * 10 + 1} to{' '}
