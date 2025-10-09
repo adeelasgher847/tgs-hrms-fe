@@ -684,10 +684,9 @@ const AttendanceTable = () => {
       <Typography variant='h4' gutterBottom>
         Attendance Management
       </Typography>
-      {/* Admin View Toggle */}
 
       {/* Manager View Toggle */}
-      {isManager && !isAdminLike && (
+      {isManager && !isAdminLike && managerView === 'team' && (
         <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
           <Button
             variant={managerView === 'my' ? 'contained' : 'outlined'}
