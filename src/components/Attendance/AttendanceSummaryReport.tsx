@@ -15,8 +15,10 @@ import {
   Select,
   MenuItem,
   Button,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
-import { Download as DownloadIcon } from '@mui/icons-material';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useUser } from '../../hooks/useUser';
 import attendanceSummaryApi from '../../api/reportApi';
 
@@ -45,7 +47,7 @@ const AttendanceSummaryReport: React.FC = () => {
   const getDaysRange = () => {
     switch (filter) {
       case 'thisMonth':
-        return new Date().getDate(); 
+        return new Date().getDate();
       case 'prevMonth': {
         const lastMonth = new Date();
         lastMonth.setMonth(lastMonth.getMonth() - 1);
@@ -215,14 +217,23 @@ const AttendanceSummaryReport: React.FC = () => {
           </Select>
         </FormControl>
 
-        <Button
-          variant='contained'
-          color='primary'
-          startIcon={<DownloadIcon />}
-          onClick={handleDownload}
-        >
-          Download
-        </Button>
+        <Tooltip title='Export All Attendance'>
+          <IconButton
+            color='primary'
+            onClick={handleDownload}
+            sx={{
+              backgroundColor: 'primary.main',
+              borderRadius: '6px',
+              padding: '6px',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              },
+            }}
+          >
+            <FileDownloadIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       {loading ? (
@@ -299,12 +310,6 @@ const AttendanceSummaryReport: React.FC = () => {
 
       <Box textAlign='center' my={2} px={2}>
         <Box display='inline-block'>
-          <Pagination
-            count={Math.max(1, totalPages)}
-            page={page}
-            onChange={(_, value) => setPage(value)}
-            color='primary'
-          />
           <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
             Showing{' '}
             {safeData.length === 0
