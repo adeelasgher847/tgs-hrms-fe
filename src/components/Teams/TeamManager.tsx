@@ -325,7 +325,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
         >
           {lang.title}
         </Typography>
-        {isAdmin() && (
+        {isAdmin() && !isHRAdmin() && (
           <Button
             variant='contained'
             startIcon={<AddIcon />}

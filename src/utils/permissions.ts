@@ -54,18 +54,6 @@ export const isMenuVisibleForRole = (
   const r = normalizeRole(role);
   const label = (menuLabel || '').toLowerCase().replace(/\s+/g, '').trim();
 
-  // Map sidebar menu names to permission keys
-  const normalizedMenuKey = (() => {
-    if (label.includes('dashboard')) return 'dashboard';
-    if (label.includes('tenant')) return 'tenant';
-    if (label.includes('department')) return 'department';
-    if (label.includes('employee')) return 'employees';
-    if (label.includes('team')) return 'teams';
-    if (label.includes('attendance')) return 'attendance';
-    if (label.includes('report')) return 'report';
-    return 'misc'; 
-  })();
-
   const allowedByRole: Record<NormalizedRole, string[]> = {
     'system-admin': [
       'dashboard',
