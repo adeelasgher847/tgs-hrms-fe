@@ -52,9 +52,20 @@ export const isMenuVisibleForRole = (
   role?: string
 ): boolean => {
   const r = normalizeRole(role);
-  const label = menuLabel.trim().toLowerCase();
+  const label = (menuLabel || '').toLowerCase().replace(/\s+/g, '').trim();
 
-  // Only keep core HRMS sections per requirements
+  // Map sidebar menu names to permission keys
+  const normalizedMenuKey = (() => {
+    if (label.includes('dashboard')) return 'dashboard';
+    if (label.includes('tenant')) return 'tenant';
+    if (label.includes('department')) return 'department';
+    if (label.includes('employee')) return 'employees';
+    if (label.includes('team')) return 'teams';
+    if (label.includes('attendance')) return 'attendance';
+    if (label.includes('report')) return 'report';
+    return 'misc'; 
+  })();
+
   const allowedByRole: Record<NormalizedRole, string[]> = {
     'system-admin': [
       'dashboard',
@@ -75,16 +86,9 @@ export const isMenuVisibleForRole = (
       'attendance',
       'report',
     ],
-    admin: [
-      'dashboard',
-      'department',
-      'employees',
-      'teams',
-      'attendance',
-      'report',
-    ],
-    admin: ['dashboard', 'department', 'employees', 'teams', 'assets', 'attendance'],
-    manager: ['teams', 'attendance', 'assets'],
+    'hr-admin': ['attendance', 'teams'],
+    admin: ['dashboard', 'department', 'employees', 'teams', 'assets', 'attendance', 'report'],
+    manager: ['teams', 'attendance', 'assets', 'report'],
     employee: ['attendance', 'assets'],
     user: ['attendance', 'assets'],
     unknown: [],
@@ -353,6 +357,7 @@ export const isDashboardPathAllowedForRole = (
       'UserProfile',
       // Assets - HR admin has no access
       'settings',
+      'teams',
     ]),
     admin: new Set([
       '',
