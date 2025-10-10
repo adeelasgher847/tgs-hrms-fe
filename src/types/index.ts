@@ -1,5 +1,8 @@
 // Mock Data for Designation Management System
 import type { Department, Designation } from '../Data/mockData'; // Departments Mock Data
+
+// Export Asset Management Types
+export * from './asset';
 export const mockDepartments: Department[] = [
   {
     id: 1,
