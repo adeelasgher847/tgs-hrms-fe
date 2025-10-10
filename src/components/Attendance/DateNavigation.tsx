@@ -57,12 +57,11 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
   };
 
   const handlePrevious = () => {
-    // Move the sequence center back by 1 day
     const newCenter = new Date(sequenceCenter);
     newCenter.setDate(sequenceCenter.getDate() - 1);
     setSequenceCenter(newCenter);
     
-    // Automatically select the new center date
+  
     onDateChange(formatDateToString(newCenter));
   };
 
@@ -72,11 +71,17 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
     newCenter.setDate(sequenceCenter.getDate() + 1);
     setSequenceCenter(newCenter);
     
-    // Automatically select the new center date
+  
     onDateChange(formatDateToString(newCenter));
   };
 
-  const handleDateClick = (date: Date) => {
+  const handleDateClick = (date: Date, index: number) => {
+    // If clicking on the last date (index 4), slide it to position 2 (center)
+    if (index === 4) {
+      // Move the sequence center to make the clicked date the center
+      const newCenter = new Date(date);
+      setSequenceCenter(newCenter);
+    }
     onDateChange(formatDateToString(date));
   };
 
@@ -87,8 +92,35 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
     }
   }, [currentDate]);
 
+  // Ensure the rightmost date doesn't exceed today
+  useEffect(() => {
+    const dateSequence = getDateSequence();
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    
+    const rightmostDate = new Date(dateSequence[dateSequence.length - 1]);
+    rightmostDate.setHours(0, 0, 0, 0);
+    
+    // If rightmost date is in the future, adjust sequence center
+    if (rightmostDate > todayDate) {
+      const adjustedCenter = new Date(todayDate);
+      adjustedCenter.setDate(todayDate.getDate() - 2); // Center should be 2 days before today
+      setSequenceCenter(adjustedCenter);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sequenceCenter]);
+
   const dateSequence = getDateSequence();
   const today = formatDateToString(new Date());
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+
+  // Check if the rightmost date exceeds today
+  const rightmostDate = new Date(dateSequence[dateSequence.length - 1]);
+  rightmostDate.setHours(0, 0, 0, 0);
+  
+  // Disable next button if the rightmost date is today or in the future
+  const isNextDisabled = rightmostDate >= todayDate;
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3,justifyContent: 'center', mt: 3 }}>
@@ -117,7 +149,7 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
           return (
             <Paper
               key={dateStr}
-              onClick={() => handleDateClick(date)}
+              onClick={() => handleDateClick(date, index)}
               sx={{
                 p: 1,
                 minWidth: 56,
@@ -155,7 +187,7 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
       {/* Next Button */}
       <IconButton
         onClick={handleNext}
-        disabled={disabled}
+        disabled={disabled || isNextDisabled}
         sx={{
           border: '1px solid',
           borderColor: 'divider',

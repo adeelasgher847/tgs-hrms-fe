@@ -511,7 +511,7 @@ const Signup: React.FC = () => {
                         }}
                       />
                     </Box>
-                    <Box sx={{ flex: 1 }}>
+                    <Box sx={{ flex: 1, position: 'relative' }} className="signup-phone-input">
                       <Typography
                         component='label'
                         htmlFor='phone'
@@ -576,12 +576,14 @@ const Signup: React.FC = () => {
                           ),
                         }}
                         sx={{
+                          position: 'relative',
                           '& .MuiOutlinedInput-root': {
                             padding: '0px',
                             backgroundColor: '#eee',
                             borderRadius: '8px',
                             height: '46px',
                             marginTop: '5px',
+                            position: 'relative',
                             '& fieldset': { border: 'none' },
                             '&:hover fieldset': { border: 'none' },
                             '&.Mui-focused fieldset': { border: 'none' },
