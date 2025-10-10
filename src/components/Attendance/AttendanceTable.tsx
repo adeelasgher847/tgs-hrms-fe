@@ -41,7 +41,7 @@ interface AttendanceRecord {
   checkIn: string | null; // display
   checkOut: string | null; // display
   workedHours: number | null;
-  user?: { first_name: string };
+  user?: { first_name: string; last_name?: string };
 }
 
 const formatLocalYMD = (d: Date) => {
@@ -74,21 +74,24 @@ const AttendanceTable = () => {
   const [managerView, setManagerView] = useState<'my' | 'team'>('my');
   const [tab, setTab] = useState(0); // 0: My Attendance, 1: Team Attendance
   const [teamAttendance, setTeamAttendance] = useState<AttendanceEvent[]>([]);
-  const [filteredTeamAttendance, setFilteredTeamAttendance] = useState<AttendanceEvent[]>([]);
+  const [filteredTeamAttendance, setFilteredTeamAttendance] = useState<
+    AttendanceEvent[]
+  >([]);
   const [teamLoading, setTeamLoading] = useState(false);
   const [teamError, setTeamError] = useState('');
   const [teamCurrentPage, setTeamCurrentPage] = useState(1);
   const [teamTotalPages, setTeamTotalPages] = useState(1);
   const [teamTotalItems, setTeamTotalItems] = useState(0);
-  
+
   // Date navigation state for All Attendance and Team Attendance
   const [currentNavigationDate, setCurrentNavigationDate] = useState('all');
-  const [teamCurrentNavigationDate, setTeamCurrentNavigationDate] = useState('all');
+  const [teamCurrentNavigationDate, setTeamCurrentNavigationDate] =
+    useState('all');
 
   const toDisplayTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString() : null;
-   const token = localStorage.getItem('token');
-   const filters = { page: '1' };
+  const token = localStorage.getItem('token');
+  const filters = { page: '1' };
 
   // Function to handle daily summaries from backend (cross-day compatible)
   const buildFromSummaries = (
@@ -105,7 +108,10 @@ const AttendanceTable = () => {
       checkIn: summary.checkIn ? toDisplayTime(summary.checkIn) : null,
       checkOut: summary.checkOut ? toDisplayTime(summary.checkOut) : null,
       workedHours: summary.workedHours || null,
-      user: { first_name: 'Current User' }, // Will be updated from API response
+      user: {
+        first_name:
+          `${summary.user.first_name} ${summary.user.last_name || ''}`.trim(),
+      },
     }));
   };
 
@@ -139,7 +145,7 @@ const AttendanceTable = () => {
         id: string;
         timestamp: string;
         type: 'check-in' | 'check-out';
-        user?: { first_name?: string };
+        user?: { first_name?: string; last_name?: string };
       }>
     >();
 
@@ -163,7 +169,7 @@ const AttendanceTable = () => {
         checkIn: {
           id: string;
           timestamp: string;
-          user?: { first_name?: string };
+          user?: { first_name?: string, last_name?: string};
         };
         checkOut: { id: string; timestamp: string } | null;
       }> = [];
@@ -220,13 +226,16 @@ const AttendanceTable = () => {
         sessions.push({
           id: `${session.checkIn.id}-${session.checkOut ? session.checkOut.id : 'open'}`,
           userId,
-          date: shiftDate, // This will be the check-in date
+          date: shiftDate,
           checkInISO: session.checkIn.timestamp,
           checkOutISO,
           checkIn: toDisplayTime(session.checkIn.timestamp),
           checkOut: checkOutDisplay,
           workedHours,
-          user: { first_name: session.checkIn.user?.first_name || 'N/A' },
+          user: {
+            first_name: session.checkIn.user?.first_name || 'N/A',
+            last_name: session.checkIn.user?.last_name || '',
+          },
         });
       }
     }
@@ -274,7 +283,7 @@ const AttendanceTable = () => {
     } else {
       setTeamLoading(true);
     }
-    
+
     try {
       const storedUser = localStorage.getItem('user');
       if (!storedUser) {
@@ -296,15 +305,18 @@ const AttendanceTable = () => {
         response = await attendanceApi.getAllAttendance(
           pageToFetch,
           date, // Start date
-          date  // End date (same day)
+          date // End date (same day)
         );
-        
-        const events: AttendanceEvent[] = (response.items as AttendanceEvent[]) || [];
+
+        const events: AttendanceEvent[] =
+          (response.items as AttendanceEvent[]) || [];
         let rows: AttendanceRecord[] = [];
-        
+
         // Check if response contains shift-based data or events
-        const isShiftBased = events.length > 0 && events[0] && 
-          (events[0] as any).date && 
+        const isShiftBased =
+          events.length > 0 &&
+          events[0] &&
+          (events[0] as any).date &&
           (events[0] as any).checkIn !== undefined;
 
         if (isShiftBased) {
@@ -315,7 +327,7 @@ const AttendanceTable = () => {
 
         setAttendanceData(rows);
         setFilteredData(rows);
-        
+
         // Set pagination state for date-filtered results
         if (preservePage) {
           // Maintain current page and pagination info from API response
@@ -559,13 +571,18 @@ const AttendanceTable = () => {
       setFilteredTeamAttendance(teamAttendance);
     } else {
       // Filter team records for specific date
-      const filtered = teamAttendance.map(member => {
-        const filteredAttendance = (member as any).attendance?.filter((att: any) => att.date === newDate) || [];
-        return {
-          ...member,
-          attendance: filteredAttendance
-        };
-      }).filter(member => (member as any).attendance.length > 0);
+      const filtered = teamAttendance
+        .map(member => {
+          const filteredAttendance =
+            (member as any).attendance?.filter(
+              (att: any) => att.date === newDate
+            ) || [];
+          return {
+            ...member,
+            attendance: filteredAttendance,
+          };
+        })
+        .filter(member => (member as any).attendance.length > 0);
       setFilteredTeamAttendance(filtered);
     }
   };
@@ -668,6 +685,23 @@ const AttendanceTable = () => {
         Attendance Management
       </Typography>
 
+      {/* Manager View Toggle */}
+      {isManager && !isAdminLike && managerView === 'team' && (
+        <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+          <Button
+            variant={managerView === 'my' ? 'contained' : 'outlined'}
+            onClick={handleManagerMyAttendance}
+          >
+            My Attendance
+          </Button>
+          <Button
+            variant={managerView === 'team' ? 'contained' : 'outlined'}
+            onClick={handleManagerTeamAttendance}
+          >
+            Team Attendance
+          </Button>
+        </Box>
+      )}
       {/* Tabs - Only show for regular users (non-Managers and non-Admins) */}
       {!isManager && !isAdminLike && (
         <Box sx={{ mb: 3 }}>
@@ -694,15 +728,11 @@ const AttendanceTable = () => {
               >
                 Team Attendance
               </Button>
-              
             )}
-            
           </Box>
-         
         </Box>
-        
       )}
- 
+
       {/* My Attendance Tab - Show for regular users (tab 0) or when Manager/Admin is viewing My Attendance or Admin is viewing All Attendance */}
       {((tab === 0 && !isManager && !isAdminLike) ||
         (isManager && !isAdminLike && managerView === 'my') ||
@@ -953,10 +983,14 @@ const AttendanceTable = () => {
                     <TableRow key={record.id}>
                       {canViewAllAttendance && adminView === 'all' && (
                         <TableCell>
-                          {record.user?.first_name || 'N/A'}
+                          {record.user?.first_name} {record.user?.last_name}
                         </TableCell>
                       )}
-                      <TableCell>{record.checkInISO ? record.checkInISO.split('T')[0] : '--'}</TableCell>
+                      <TableCell>
+                        {record.checkInISO
+                          ? record.checkInISO.split('T')[0]
+                          : '--'}
+                      </TableCell>
                       <TableCell>{record.checkIn || '--'}</TableCell>
                       <TableCell>{record.checkOut || '--'}</TableCell>
                       <TableCell>{record.workedHours ?? '--'}</TableCell>
@@ -1035,9 +1069,7 @@ const AttendanceTable = () => {
                   <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>
-                    Days Worked
-                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Days Worked</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>
                     Hours Worked
                   </TableCell>
@@ -1057,26 +1089,43 @@ const AttendanceTable = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredTeamAttendance.flatMap(member => 
-                    (member as any).attendance && (member as any).attendance.length > 0 
-                      ? (member as any).attendance.map((attendance: any, index: number) => (
-                          <TableRow key={`${(member as any).user_id}-${index}`}>
-                            <TableCell>
-                              {(member as any).first_name}{' '}
-                              {(member as any).last_name}
-                            </TableCell>
-                            <TableCell>{attendance.date || '--'}</TableCell>
-                            <TableCell>{attendance.checkIn ? new Date(attendance.checkIn).toLocaleTimeString() : '--'}</TableCell>
-                            <TableCell>{attendance.checkOut ? new Date(attendance.checkOut).toLocaleTimeString() : '--'}</TableCell>
-                            <TableCell>
-                              {(member as any).totalDaysWorked}
-                            </TableCell>
-                            <TableCell>
-                              {attendance.workedHours || 0}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      : [(
+                  filteredTeamAttendance.flatMap(member =>
+                    (member as any).attendance &&
+                    (member as any).attendance.length > 0
+                      ? (member as any).attendance.map(
+                          (attendance: any, index: number) => (
+                            <TableRow
+                              key={`${(member as any).user_id}-${index}`}
+                            >
+                              <TableCell>
+                                {(member as any).first_name}{' '}
+                                {(member as any).last_name}
+                              </TableCell>
+                              <TableCell>{attendance.date || '--'}</TableCell>
+                              <TableCell>
+                                {attendance.checkIn
+                                  ? new Date(
+                                      attendance.checkIn
+                                    ).toLocaleTimeString()
+                                  : '--'}
+                              </TableCell>
+                              <TableCell>
+                                {attendance.checkOut
+                                  ? new Date(
+                                      attendance.checkOut
+                                    ).toLocaleTimeString()
+                                  : '--'}
+                              </TableCell>
+                              <TableCell>
+                                {(member as any).totalDaysWorked}
+                              </TableCell>
+                              <TableCell>
+                                {attendance.workedHours || 0}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        )
+                      : [
                           <TableRow key={(member as any).user_id}>
                             <TableCell>
                               {(member as any).first_name}{' '}
@@ -1091,8 +1140,8 @@ const AttendanceTable = () => {
                             <TableCell>
                               {(member as any).totalHoursWorked}
                             </TableCell>
-                          </TableRow>
-                        )]
+                          </TableRow>,
+                        ]
                   )
                 )}
               </TableBody>
@@ -1148,23 +1197,40 @@ const AttendanceTable = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredTeamAttendance.flatMap(member => 
-                    (member as any).attendance && (member as any).attendance.length > 0 
-                      ? (member as any).attendance.map((attendance: any, index: number) => (
-                          <TableRow key={`${(member as any).user_id}-${index}`}>
-                            <TableCell>
-                              {(member as any).first_name}{' '}
-                              {(member as any).last_name}
-                            </TableCell>
-                            <TableCell>{attendance.date || '--'}</TableCell>
-                            <TableCell>{attendance.checkIn ? new Date(attendance.checkIn).toLocaleTimeString() : '--'}</TableCell>
-                            <TableCell>{attendance.checkOut ? new Date(attendance.checkOut).toLocaleTimeString() : '--'}</TableCell>
-                            <TableCell>
-                              {attendance.workedHours || 0}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      : [(
+                  filteredTeamAttendance.flatMap(member =>
+                    (member as any).attendance &&
+                    (member as any).attendance.length > 0
+                      ? (member as any).attendance.map(
+                          (attendance: any, index: number) => (
+                            <TableRow
+                              key={`${(member as any).user_id}-${index}`}
+                            >
+                              <TableCell>
+                                {(member as any).first_name}{' '}
+                                {(member as any).last_name}
+                              </TableCell>
+                              <TableCell>{attendance.date || '--'}</TableCell>
+                              <TableCell>
+                                {attendance.checkIn
+                                  ? new Date(
+                                      attendance.checkIn
+                                    ).toLocaleTimeString()
+                                  : '--'}
+                              </TableCell>
+                              <TableCell>
+                                {attendance.checkOut
+                                  ? new Date(
+                                      attendance.checkOut
+                                    ).toLocaleTimeString()
+                                  : '--'}
+                              </TableCell>
+                              <TableCell>
+                                {attendance.workedHours || 0}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        )
+                      : [
                           <TableRow key={(member as any).user_id}>
                             <TableCell>
                               {(member as any).first_name}{' '}
@@ -1176,8 +1242,8 @@ const AttendanceTable = () => {
                             <TableCell>
                               {(member as any).totalHoursWorked}
                             </TableCell>
-                          </TableRow>
-                        )]
+                          </TableRow>,
+                        ]
                   )
                 )}
               </TableBody>

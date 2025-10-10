@@ -38,7 +38,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
     if (!user || !user.tenant) {
       return;
     }
-    
+
     try {
       setLoading(true);
       setError(null);
