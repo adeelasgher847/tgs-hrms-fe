@@ -34,6 +34,11 @@ import ConfirmPayment from './components/ConfirmPayment';
 import SignupSuccess from './components/SignupSuccess';
 import AttendanceSummaryReport from './components/Attendance/AttendanceSummaryReport';
 import SettingsPage from './components/Settings/SettingsPage';
+import AssetInventory from './components/AssetManagement/AssetInventory';
+import AssetRequests from './components/AssetManagement/AssetRequests';
+import RequestManagement from './components/AssetManagement/RequestManagement';
+import NotificationToast from './components/AssetManagement/NotificationToast';
+
 function App() {
   return (
     <LanguageProvider>
@@ -132,11 +137,16 @@ function App() {
                   />
                   <Route path='teams' element={<TeamManager />} />
                   <Route path='settings' element={<SettingsPage />} />
+                  <Route path='assets' element={<AssetInventory />} />
+                <Route path='assets/inventory' element={<AssetInventory />} />
+                <Route path='assets/requests' element={<AssetRequests />} />
+                <Route path='assets/request-management' element={<RequestManagement />} />
                 </Route>
                 <Route path='/company-details' element={<CompanyDetails />} />
                 <Route path='*' element={<Error404 />} />
               </Routes>
             </Router>
+            <NotificationToast />
           </CompanyProvider>
         </ProfilePictureProvider>
       </UserProvider>
