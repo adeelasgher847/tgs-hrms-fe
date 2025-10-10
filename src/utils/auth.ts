@@ -45,6 +45,7 @@ export const isAdmin = (): boolean => {
     roleLc === 'network_admin' ||
     roleLc === 'hr-admin' ||
     roleLc === 'hr admin' ||
+    roleLc === 'Hr-admin' ||
     roleLc === 'hr_admin';
 
   return result;
@@ -109,7 +110,7 @@ export const isHRAdmin = (): boolean => {
 
   const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
   const roleLc = (roleName || '').toLowerCase();
-  return roleLc === 'hr-admin' || roleLc === 'hr admin' || roleLc === 'hr_admin' || roleLc === 'HR-Admin';
+  return roleLc === 'hr-admin' || roleLc === 'hr admin' || roleLc === 'hr_admin' || roleLc === 'HR-Admin' || roleLc === 'Hr-admin';
 };
 
 export const getAuthToken = (): string | null => {

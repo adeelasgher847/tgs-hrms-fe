@@ -33,6 +33,7 @@ import EditTeamForm from './EditTeamForm';
 import DeleteTeamDialog from './DeleteTeamDialog';
 import AvailableEmployees from './AvailableEmployees';
 import { exportCSV } from '../../api/exportApi';
+import { isAdmin, isHRAdmin } from '../../utils/auth';
 
 interface TeamListProps {
   teams: Team[];
@@ -196,10 +197,12 @@ const TeamList: React.FC<TeamListProps> = ({
   // Export button always at the top
   const exportButton = (
     <Box mb={2} display='flex' justifyContent='flex-end'>
-      <Tooltip title="Export Teams CSV">
+      <Tooltip title='Export Teams CSV'>
         <IconButton
-          color="primary"
-          onClick={() => exportCSV('/teams/export', 'teams.csv', token, filters)}
+          color='primary'
+          onClick={() =>
+            exportCSV('/teams/export', 'teams.csv', token, filters)
+          }
           sx={{
             backgroundColor: 'primary.main',
             borderRadius: '6px',
@@ -241,7 +244,7 @@ const TeamList: React.FC<TeamListProps> = ({
 
   return (
     <>
-      {exportButton}
+      {!isHRAdmin() && exportButton}
       <Box>
         <Box
           sx={{
@@ -291,80 +294,84 @@ const TeamList: React.FC<TeamListProps> = ({
                   height: '100%',
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <Avatar
-                    sx={{
-                      backgroundColor: generateAvatarColor(team.name),
-                      mr: 2,
-                      width: { xs: 40, sm: 48 },
-                      height: { xs: 40, sm: 48 },
-                      flexShrink: 0,
-                    }}
-                  >
-                    <GroupIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                  </Avatar>
-                  <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
-                    <Typography
-                      variant='h6'
+                {isAdmin() && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <Avatar
                       sx={{
-                        color: theme => theme.palette.text.primary,
-                        fontWeight: 600,
-                        fontSize: { xs: '1rem', sm: '1.25rem' },
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap', // Always keep in single line
-                        lineHeight: 1.2,
-                        minHeight: 'auto',
+                        backgroundColor: generateAvatarColor(team.name),
+                        mr: 2,
+                        width: { xs: 40, sm: 48 },
+                        height: { xs: 40, sm: 48 },
+                        flexShrink: 0,
                       }}
-                      title={team.name} // Show full name on hover
                     >
-                      {team.name}
-                    </Typography>
-                    <Typography
-                      variant='body2'
-                      sx={{
-                        color: theme => theme.palette.text.secondary,
-                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap', // Always keep in single line
-                        lineHeight: 1.2,
-                        minHeight: 'auto',
-                      }}
-                      title={`${team.manager?.first_name} ${team.manager?.last_name}`} // Show full name on hover
-                    >
-                      {team.manager?.first_name} {team.manager?.last_name}
-                    </Typography>
+                      <GroupIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
+                    </Avatar>
+                    <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
+                      <Typography
+                        variant='h6'
+                        sx={{
+                          color: theme => theme.palette.text.primary,
+                          fontWeight: 600,
+                          fontSize: { xs: '1rem', sm: '1.25rem' },
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap', // Always keep in single line
+                          lineHeight: 1.2,
+                          minHeight: 'auto',
+                        }}
+                        title={team.name} // Show full name on hover
+                      >
+                        {team.name}
+                      </Typography>
+                      <Typography
+                        variant='body2'
+                        sx={{
+                          color: theme => theme.palette.text.secondary,
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap', // Always keep in single line
+                          lineHeight: 1.2,
+                          minHeight: 'auto',
+                        }}
+                        title={`${team.manager?.first_name} ${team.manager?.last_name}`} // Show full name on hover
+                      >
+                        {team.manager?.first_name} {team.manager?.last_name}
+                      </Typography>
+                    </Box>
+                    {!isHRAdmin() && (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          gap: { xs: 0.5, sm: 1 },
+                          flexShrink: 0,
+                        }}
+                      >
+                        <IconButton
+                          size='small'
+                          onClick={() => handleEditTeam(team)}
+                          sx={{
+                            color: theme => theme.palette.primary.main,
+                            padding: { xs: 0.5, sm: 1 },
+                          }}
+                        >
+                          <EditIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                        </IconButton>
+                        <IconButton
+                          size='small'
+                          onClick={() => handleDeleteTeam(team)}
+                          sx={{
+                            color: theme => theme.palette.error.main,
+                            padding: { xs: 0.5, sm: 1 },
+                          }}
+                        >
+                          <DeleteIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                        </IconButton>
+                      </Box>
+                    )}
                   </Box>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      gap: { xs: 0.5, sm: 1 },
-                      flexShrink: 0,
-                    }}
-                  >
-                    <IconButton
-                      size='small'
-                      onClick={() => handleEditTeam(team)}
-                      sx={{
-                        color: theme => theme.palette.primary.main,
-                        padding: { xs: 0.5, sm: 1 },
-                      }}
-                    >
-                      <EditIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
-                    </IconButton>
-                    <IconButton
-                      size='small'
-                      onClick={() => handleDeleteTeam(team)}
-                      sx={{
-                        color: theme => theme.palette.error.main,
-                        padding: { xs: 0.5, sm: 1 },
-                      }}
-                    >
-                      <DeleteIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
-                    </IconButton>
-                  </Box>
-                </Box>
+                )}
 
                 {team.description && (
                   <Typography
@@ -450,27 +457,29 @@ const TeamList: React.FC<TeamListProps> = ({
                   >
                     {lang.viewMembers}
                   </Button>
-                  <Button
-                    variant='outlined'
-                    size='small'
-                    startIcon={
-                      <AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                    }
-                    onClick={() => handleAddMember(team)}
-                    sx={{
-                      borderColor: theme => theme.palette.primary.main,
-                      color: theme => theme.palette.primary.main,
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                      py: { xs: 0.5, sm: 0.75 },
-                      px: { xs: 1, sm: 1.5 },
-                      '&:hover': {
-                        borderColor: theme => theme.palette.primary.dark,
-                        backgroundColor: theme => theme.palette.action.hover,
-                      },
-                    }}
-                  >
-                    {lang.addMember}
-                  </Button>
+                  {!isHRAdmin() && (
+                    <Button
+                      variant='outlined'
+                      size='small'
+                      startIcon={
+                        <AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                      }
+                      onClick={() => handleAddMember(team)}
+                      sx={{
+                        borderColor: theme => theme.palette.primary.main,
+                        color: theme => theme.palette.primary.main,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                        py: { xs: 0.5, sm: 0.75 },
+                        px: { xs: 1, sm: 1.5 },
+                        '&:hover': {
+                          borderColor: theme => theme.palette.primary.dark,
+                          backgroundColor: theme => theme.palette.action.hover,
+                        },
+                      }}
+                    >
+                      {lang.addMember}
+                    </Button>
+                  )}
                 </Stack>
               </CardContent>
             </Card>
@@ -500,25 +509,30 @@ const TeamList: React.FC<TeamListProps> = ({
         </Dialog>
 
         {/* Add Member Dialog */}
-        <Dialog
-          open={showAddMemberDialog}
-          onClose={() => setShowAddMemberDialog(false)}
-          maxWidth='md'
-          fullWidth
-          pa
-        >
-          <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
-            {lang.addMember} - {selectedTeam?.name}
-          </DialogTitle>
-          <DialogContent>
-            <AvailableEmployees darkMode={darkMode} teamId={selectedTeam?.id} />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setShowAddMemberDialog(false)}>
-              {lang.cancel}
-            </Button>
-          </DialogActions>
-        </Dialog>
+        {!isHRAdmin() && (
+          <Dialog
+            open={showAddMemberDialog}
+            onClose={() => setShowAddMemberDialog(false)}
+            maxWidth='md'
+            fullWidth
+            pa
+          >
+            <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+              {lang.addMember} - {selectedTeam?.name}
+            </DialogTitle>
+            <DialogContent>
+              <AvailableEmployees
+                darkMode={darkMode}
+                teamId={selectedTeam?.id}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setShowAddMemberDialog(false)}>
+                {lang.cancel}
+              </Button>
+            </DialogActions>
+          </Dialog>
+        )}
 
         {/* Edit Team Dialog */}
         <EditTeamForm

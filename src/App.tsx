@@ -62,30 +62,7 @@ function App() {
                   element={<ConfirmPayment />}
                 />
                 <Route path='/signup/success' element={<SignupSuccess />} />
-                <Route
-                  path='/dashboard'
-                  element={
-                    <ThemeProvider>
-                      <Layout />
-                    </ThemeProvider>
-                  }
-                >
-                  <Route path='tenant' element={<TenantPage />} />
-                  <Route index element={<Dashboard />} />
-                  <Route path='departments' element={<DepartmentList />} />
-                  <Route path='Designations' element={<DesignationManager />} />
-                  <Route path='EmployeeManager' element={<EmployeeManager />} />
-                  <Route path='UserList' element={<UserList />} />
-                  <Route
-                    path='UserProfile'
-                    element={<UserProfileComponent />}
-                  />
-                  <Route path='leaves' element={<LeaveRequestPage />} />
-                  <Route
-                    path='attendance-summary'
-                    element={<AttendanceSummaryReport />}
-                  />
-                </Route>
+
                 <Route
                   path='/signup/company-details'
                   element={<CompanyDetails />}
@@ -138,9 +115,12 @@ function App() {
                   <Route path='teams' element={<TeamManager />} />
                   <Route path='settings' element={<SettingsPage />} />
                   <Route path='assets' element={<AssetInventory />} />
-                <Route path='assets/inventory' element={<AssetInventory />} />
-                <Route path='assets/requests' element={<AssetRequests />} />
-                <Route path='assets/request-management' element={<RequestManagement />} />
+                  <Route path='assets/inventory' element={<AssetInventory />} />
+                  <Route path='assets/requests' element={<AssetRequests />} />
+                  <Route
+                    path='assets/request-management'
+                    element={<RequestManagement />}
+                  />
                 </Route>
                 <Route path='/company-details' element={<CompanyDetails />} />
                 <Route path='*' element={<Error404 />} />
