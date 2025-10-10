@@ -7,6 +7,7 @@ import {
   useMediaQuery,
   useTheme,
   InputAdornment,
+  Typography,
 } from '@mui/material';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
@@ -22,12 +23,16 @@ import {
   designationApiService,
   type BackendDesignation,
 } from '../../api/designationApi';
+import { rolesApiService, type Role } from '../../api/rolesApi';
 
 // Types
 type FormValues = EmployeeDto & {
   departmentId?: string;
   gender: string;
   role: string;
+  role_name?: string;
+  role_id?: string;
+  team_id?: string;
 };
 
 type Errors = Partial<FormValues> & {
@@ -40,6 +45,9 @@ interface AddEmployeeFormProps {
       departmentId?: string;
       designationId?: string;
       role?: string;
+      role_name?: string;
+      role_id?: string;
+      team_id?: string;
     }
   ) => Promise<{ success: boolean; errors?: Record<string, string> }>;
   initialData?: {
@@ -52,6 +60,9 @@ interface AddEmployeeFormProps {
     departmentId?: string;
     gender?: string;
     role?: string;
+    role_name?: string;
+    role_id?: string;
+    team_id?: string;
   } | null;
   submitting?: boolean;
 }
@@ -79,7 +90,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     designationId: initialData?.designationId ?? '',
     departmentId: initialData?.departmentId ?? '',
     gender: initialData?.gender ?? '',
-    role: initialData?.role ?? 'employee', // Default to employee
+    role: initialData?.role ?? 'Employee', // Default to employee
+    role_name: initialData?.role_name ?? '',
+    //role_id: initialData?.role_id ?? '',
+    team_id: initialData?.team_id ?? '',
   });
 
   const [originalValues] = useState<FormValues>({
@@ -90,22 +104,34 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     designationId: initialData?.designationId ?? '',
     departmentId: initialData?.departmentId ?? '',
     gender: initialData?.gender ?? '',
-    role: initialData?.role ?? 'employee',
+    role: initialData?.role ?? 'Employee',
+    role_name: initialData?.role_name ?? '',
+    //role_id: initialData?.role_id ?? '',
+    team_id: initialData?.team_id ?? '',
   });
 
   const [errors, setErrors] = useState<Errors>({});
   const [departments, setDepartments] = useState<BackendDepartment[]>([]);
   const [designations, setDesignations] = useState<BackendDesignation[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingDesignations, setLoadingDesignations] = useState(false);
-
+  const [loadingRoles, setLoadingRoles] = useState(false);
   // Track initialization to avoid clearing designation on first prefill
   const isInitializingRef = useRef<boolean>(true);
 
-  // Load departments on component mount
+  const roleOptions = React.useMemo(() => {
+    const allowedRoles = ['Employee', 'Manager', 'hr-admin'];
+
+    return (roles || [])
+      .map(r => (r.name || '').trim())
+      .filter(name => allowedRoles.includes(name));
+  }, [roles]);
+
+  // Load departments and roles on component mount
   useEffect(() => {
     (async () => {
-      await loadDepartments();
+      await Promise.all([loadDepartments(), loadRoles()]);
       // If we have initial department and designation, ensure options include them
       if (initialData?.departmentId) {
         await loadDesignations(initialData.departmentId);
@@ -136,6 +162,9 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
         departmentId: initialData.departmentId ?? prev.departmentId,
         gender: initialData.gender ?? prev.gender,
         role: initialData.role ?? prev.role,
+        role_name: initialData.role_name ?? prev.role_name,
+        // role_id: initialData.role_id ?? prev.role_id,
+        team_id: initialData.team_id ?? prev.team_id,
       }));
       if (initialData.departmentId) {
         // Load designations for department; keep designationId as provided
@@ -161,7 +190,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       values.designationId !== originalValues.designationId ||
       values.departmentId !== originalValues.departmentId ||
       values.gender !== originalValues.gender ||
-      values.role !== originalValues.role
+      values.role !== originalValues.role ||
+      values.role_name !== originalValues.role_name ||
+      // values.role_id !== originalValues.role_id ||
+      values.team_id !== originalValues.team_id
     : values.first_name.trim() !== '' ||
       values.last_name.trim() !== '' ||
       values.email.trim() !== '' ||
@@ -169,7 +201,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       values.designationId !== '' ||
       values.departmentId !== '' ||
       values.gender !== '' ||
-      values.role !== 'employee';
+      values.role !== 'Employee' ||
+      values.role_name !== '' ||
+      // values.role_id !== '' ||
+      values.team_id !== '';
 
   // Remove filtering: always show all designations in the dropdown
   const filteredDesignations = designations;
@@ -199,6 +234,20 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     }
   };
 
+  const loadRoles = async () => {
+    try {
+      setLoadingRoles(true);
+      const data = await rolesApiService.getAllRoles();
+      console.log('Loaded roles from API:', data);
+      setRoles(data);
+    } catch (error) {
+      console.error('Error loading roles:', error);
+      // Handle error silently
+    } finally {
+      setLoadingRoles(false);
+    }
+  };
+
   const dir = language === 'ar' ? 'rtl' : 'ltr';
   const label = (en: string, ar: string) => (language === 'ar' ? ar : en);
 
@@ -219,11 +268,29 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
   const handleChange =
     (field: keyof FormValues) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setValues({ ...values, [field]: e.target.value });
+      const value = (e.target.value ?? '').toString();
+
+      // Special handling for role field
+      if (field === 'role') {
+        const normalized = value.trim();
+        setValues(prev => ({
+          ...prev,
+          role: normalized,
+          role_id: normalized, // Use role name as ID since roles don't have separate IDs
+          role_name: normalized,
+        }));
+      } else {
+        setValues({ ...values, [field]: value });
+      }
+
       // Clear both field-specific and general errors when user starts typing
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[field];
+        if (field === 'role') {
+          delete newErrors.role_id;
+          delete newErrors.role_name;
+        }
         delete newErrors.general;
         return newErrors;
       });
@@ -285,7 +352,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       // Basic validation for phone number format
       const phoneRegex = /^\+[1-9]\d{1,14}$/;
       if (!phoneRegex.test(values.phone)) {
-        newErrors.phone = label('Please enter a valid phone number', 'يرجى إدخال رقم هاتف صحيح');
+        newErrors.phone = label(
+          'Please enter a valid phone number',
+          'يرجى إدخال رقم هاتف صحيح'
+        );
       }
     }
     if (!values.designationId)
@@ -310,7 +380,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       designationId: '',
       departmentId: '',
       gender: '',
-      role: 'employee', // Reset to default
+      role: 'Employee', // Reset to default
+      role_name: '',
+      role_id: '',
+      team_id: '',
     });
     setErrors({});
   };
@@ -410,15 +483,18 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
             fullWidth
             label={label('Phone', 'رقم الهاتف')}
             value={values.phone}
-            onChange={(e) => handlePhoneChange(e.target.value)}
+            onChange={e => handlePhoneChange(e.target.value)}
             error={!!errors.phone}
             helperText={errors.phone}
             placeholder={label('Enter phone number', 'أدخل رقم الهاتف')}
             InputProps={{
               startAdornment: (
-                <InputAdornment position="start" sx={{ margin: 0, padding: '28px 0px' }}>
+                <InputAdornment
+                  position='start'
+                  sx={{ margin: 0, padding: '28px 0px' }}
+                >
                   <PhoneInput
-                    defaultCountry="pk"
+                    defaultCountry='pk'
                     value={values.phone}
                     onChange={handlePhoneChange}
                     style={{
@@ -450,11 +526,8 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                       },
-                      dropdownStyleProps: {
-                        zIndex: 9999,
-                      },
                     }}
-                    className="phone-input-textfield-adornment"
+                    className='phone-input-textfield-adornment'
                   />
                 </InputAdornment>
               ),
@@ -535,56 +608,37 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
           </Box>
         )}
 
-        {/* Role - Only show when creating new employee, not when editing */}
-        {!initialData && (
+        {/* Role Selection */}
           <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
             <TextField
               select
               fullWidth
               label={label('Role', 'الدور')}
-              value={values.role ?? 'employee'}
+              value={(values.role || '').trim()}
               onChange={handleChange('role')}
               error={!!errors.role}
               helperText={errors.role}
+              disabled={loadingRoles}
               sx={darkInputStyles}
             >
-              <MenuItem value='employee'>
-                <span style={{ display: 'flex', alignItems: 'center' }}>
-                  <svg
-                    width='20'
-                    height='20'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    style={{ marginRight: 8 }}
-                  >
-                    <path
-                      d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'
-                      fill='#4caf50'
-                    />
-                  </svg>
-                  {label('Employee', 'موظف')}
-                </span>
-              </MenuItem>
-              <MenuItem value='manager'>
-                <span style={{ display: 'flex', alignItems: 'center' }}>
-                  <svg
-                    width='20'
-                    height='20'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    style={{ marginRight: 8 }}
-                  >
-                    <path
-                      d='M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L14 10.5c-.47-.62-1.21-.99-2.01-.99H9.46c-.8 0-1.54.37-2.01.99L6 10.5c-.47-.62-1.21-.99-2.01-.99H2.46c-.8 0-1.54.37-2.01.99L0 10.5v7.5h2v6h4v-6h2v6h4v-6h2v6h4z'
-                      fill='#ff9800'
-                    />
-                  </svg>
-                  {label('Manager', 'مدير')}
-                </span>
-              </MenuItem>
+
+              {loadingRoles ? (
+                <MenuItem value=''>
+                  {label('Loading roles...', 'جاري تحميل الأدوار...')}
+                </MenuItem>
+              ) : roleOptions.length === 0 ? (
+                <MenuItem value='' disabled>
+                  {label('No roles available', 'لا توجد أدوار متاحة')}
+                </MenuItem>
+              ) : (
+                roleOptions.map((name, index) => (
+                  <MenuItem key={`${name}-${index}`} value={name}>
+                    {name.charAt(0).toUpperCase() + name.slice(1)}
+                  </MenuItem>
+                ))
+              )}
             </TextField>
           </Box>
-        )}
 
         {/* Department */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>

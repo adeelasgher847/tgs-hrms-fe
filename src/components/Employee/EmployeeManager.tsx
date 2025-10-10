@@ -46,6 +46,7 @@ interface Employee {
   phone: string;
   departmentId: string;
   designationId: string;
+  role_name?: string;
   status?: string;
   department: {
     id: string;
@@ -278,6 +279,9 @@ const EmployeeManager: React.FC = () => {
       departmentId?: string;
       designationId?: string;
       role?: string;
+      role_name?: string;
+      role_id?: string;
+      team_id?: string;
     }
   ) => {
     try {
@@ -294,11 +298,11 @@ const EmployeeManager: React.FC = () => {
         throw new Error('Required fields are missing');
       }
 
-      // Use different API endpoints based on role
-      const newEmployee =
-        employeeData.role === 'manager'
-          ? await employeeApi.createManager(employeeData as EmployeeDto)
-          : await employeeApi.createEmployee(employeeData as EmployeeDto);
+      // Remove role_id before submitting
+      const { role_id, ...employeePayload } = employeeData;
+      const newEmployee = await employeeApi.createEmployee(
+        employeePayload as EmployeeDto
+      );
 
       // Fetch the complete employee data to get proper department and designation info
       const completeEmployee = await employeeApi.getEmployeeById(
@@ -316,15 +320,25 @@ const EmployeeManager: React.FC = () => {
         departmentId: completeEmployee.departmentId,
         designationId: completeEmployee.designationId,
         status: completeEmployee.status,
-        department: completeEmployee.department || {
-          id: completeEmployee.departmentId,
-          name:
-            departments[completeEmployee.departmentId] || 'Unknown Department',
-          description: '',
-          tenantId: completeEmployee.tenantId,
-          createdAt: completeEmployee.createdAt,
-          updatedAt: completeEmployee.updatedAt,
-        },
+        department: completeEmployee.department
+          ? {
+              id: completeEmployee.department.id,
+              name: completeEmployee.department.name,
+              description: completeEmployee.department.description,
+              tenantId: completeEmployee.department.tenantId,
+              createdAt: completeEmployee.department.createdAt,
+              updatedAt: completeEmployee.department.updatedAt,
+            }
+          : {
+              id: completeEmployee.departmentId,
+              name:
+                departments[completeEmployee.departmentId] ||
+                'Unknown Department',
+              description: '',
+              tenantId: completeEmployee.tenantId,
+              createdAt: completeEmployee.createdAt,
+              updatedAt: completeEmployee.updatedAt,
+            },
         designation: completeEmployee.designation || {
           id: completeEmployee.designationId,
           title:
@@ -454,7 +468,7 @@ const EmployeeManager: React.FC = () => {
       if (isGlobalError) {
         // For global errors, only show snackbar, don't set form error
         setError(errorResult.message); // This will show in the snackbar
-        return { success: false, errors: {} }; // Return empty errors to avoid form display
+        return { success: false }; // Return empty errors to avoid form display
       } else {
         // For other errors, show both snackbar and form error
         setError(errorResult.message);
@@ -474,18 +488,27 @@ const EmployeeManager: React.FC = () => {
     updates: Partial<EmployeeDto> & {
       designationId?: string;
       password?: string;
+      role_name?: string;
+      team_id?: string;
     }
   ) => {
     if (!editing)
       return { success: false, errors: { general: 'No employee selected' } };
+
     try {
       setSubmitting(true);
       setError(null);
-      // Ensure a valid designationId is sent if user selected a new one; otherwise keep current
+
       const nextDesignationId =
         updates.designationId && updates.designationId !== ''
           ? updates.designationId
           : editing.designationId;
+
+      const nextRoleName =
+        updates.role_name && updates.role_name !== ''
+          ? updates.role_name
+          : editing.role_name;
+
       const updatedEmployee = await employeeApi.updateEmployee(editing.id, {
         first_name: updates.first_name,
         last_name: updates.last_name,
@@ -493,6 +516,7 @@ const EmployeeManager: React.FC = () => {
         phone: updates.phone,
         password: updates.password,
         designationId: nextDesignationId,
+        role_name: nextRoleName,
       });
 
       // Update the employee in the list without reloading
@@ -525,17 +549,35 @@ const EmployeeManager: React.FC = () => {
                 departmentId: newDepartmentId,
                 designationId: nextDesignationId,
                 status: updatedEmployee.status || emp.status,
-                department: {
-                  ...emp.department,
-                  id: newDepartmentId,
-                  name: departmentName,
-                },
-                designation: {
-                  ...emp.designation,
-                  id: nextDesignationId,
-                  title: designationName,
-                  departmentId: newDepartmentId,
-                },
+                department: emp.department
+                  ? {
+                      ...emp.department,
+                      id: newDepartmentId,
+                      name: departmentName,
+                    }
+                  : {
+                      id: newDepartmentId,
+                      name: departmentName,
+                      description: '',
+                      tenantId: emp.tenantId,
+                      createdAt: emp.createdAt,
+                      updatedAt: emp.updatedAt,
+                    },
+                designation: emp.designation
+                  ? {
+                      ...emp.designation,
+                      id: nextDesignationId,
+                      title: designationName,
+                      departmentId: newDepartmentId,
+                    }
+                  : {
+                      id: nextDesignationId,
+                      title: designationName,
+                      tenantId: emp.tenantId,
+                      departmentId: newDepartmentId,
+                      createdAt: emp.createdAt,
+                      updatedAt: emp.updatedAt,
+                    },
                 updatedAt: updatedEmployee.updatedAt,
               }
             : emp
@@ -560,7 +602,7 @@ const EmployeeManager: React.FC = () => {
       if (isGlobalError) {
         // For global errors, only show snackbar, don't set form error
         setError(errorResult.message); // This will show in the snackbar
-        return { success: false, errors: {} }; // Return empty errors to avoid form display
+        return { success: false }; // Return empty errors to avoid form display
       } else {
         // For other errors, show both snackbar and form error
         setError(errorResult.message);
@@ -618,28 +660,24 @@ const EmployeeManager: React.FC = () => {
   const handleResendInvite = async (employee: Employee) => {
     try {
       setError(null);
-      
+
       // Immediately update the status to "Invite Sent" in the local state
-      setEmployees(prev => 
-        prev.map(emp => 
-          emp.id === employee.id 
-            ? { ...emp, status: 'Invite Sent' }
-            : emp
+      setEmployees(prev =>
+        prev.map(emp =>
+          emp.id === employee.id ? { ...emp, status: 'Invite Sent' } : emp
         )
       );
-      
+
       await employeeApi.resendInvite(employee.id);
       setSuccessMessage(`Invite resent successfully to ${employee.name}!`);
     } catch (error: unknown) {
       // If API call fails, revert the status back to "Invite Expired"
-      setEmployees(prev => 
-        prev.map(emp => 
-          emp.id === employee.id 
-            ? { ...emp, status: 'Invite Expired' }
-            : emp
+      setEmployees(prev =>
+        prev.map(emp =>
+          emp.id === employee.id ? { ...emp, status: 'Invite Expired' } : emp
         )
       );
-      
+
       const errorResult = extractErrorMessage(error);
       setError(errorResult.message);
     }
@@ -780,45 +818,50 @@ const EmployeeManager: React.FC = () => {
             {getLabel('Clear Filters', 'مسح الفلاتر')}
           </Button>
 
-              {/* Add Employee Button */}
-        <Button
-          variant='contained'
-          onClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
-          sx={{
-            backgroundColor: darkMode ? '#464b8a' : '#484c7f',
-            width: isMobile ? '100%' : 'auto',
-            '&:hover': {
-              backgroundColor: darkMode ? '#464b8a' : '#5b56a0',
-            },
-          }}
-        >
-          {getLabel('Add Employee', 'إضافة موظف')}
-        </Button>
-        </Stack>
-        <Box display='flex' justifyContent='flex-end'>
-        <Tooltip title="Export Employees CSV">
-          <IconButton
-            color="primary"
-            onClick={() =>
-              exportCSV('/employees/export', 'employees.csv', token, filters)
-            }
+          {/* Add Employee Button */}
+          <Button
+            variant='contained'
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
             sx={{
-              backgroundColor: 'primary.main',
-              borderRadius: '6px',
-              padding: '6px',
-              color: 'white',
+              backgroundColor: darkMode ? '#464b8a' : '#484c7f',
+              width: isMobile ? '100%' : 'auto',
               '&:hover': {
-                backgroundColor: 'primary.dark',
+                backgroundColor: darkMode ? '#464b8a' : '#5b56a0',
               },
             }}
           >
-            <FileDownloadIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
+            {getLabel('Add Employee', 'إضافة موظف')}
+          </Button>
+        </Stack>
+        <Box display='flex' justifyContent='flex-end'>
+          <Tooltip title='Export Employees CSV'>
+            <IconButton
+              color='primary'
+              onClick={() =>
+                exportCSV(
+                  '/employees/export',
+                  'employees.csv',
+                  token || '',
+                  filters
+                )
+              }
+              sx={{
+                backgroundColor: 'primary.main',
+                borderRadius: '6px',
+                padding: '6px',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: 'primary.dark',
+                },
+              }}
+            >
+              <FileDownloadIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       {/* Employee List */}
@@ -984,6 +1027,7 @@ const EmployeeManager: React.FC = () => {
                     lastName: editing.lastName || '',
                     email: editing.email,
                     phone: editing.phone,
+                    role_name: editing.role_name || '',
                     designationId: editing.designationId,
                     departmentId: editing.departmentId,
                   }
