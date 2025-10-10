@@ -27,7 +27,6 @@ interface AssetModalProps {
   onClose: () => void;
   onSubmit: (data: UpdateAssetRequest & { assignedTo?: string }) => void;
   asset?: Asset | null;
-  categories: AssetCategory[];
   users: MockUser[];
   loading?: boolean;
   title?: string;
@@ -35,12 +34,9 @@ interface AssetModalProps {
 
 const schema = yup.object({
   name: yup.string().required('Asset name is required'),
-  categoryId: yup.string().required('Category is required'),
-  serialNumber: yup.string().required('Serial number is required'),
+  category: yup.string().required('Category is required'),
   purchaseDate: yup.date().required('Purchase date is required'),
   warrantyExpiry: yup.date().nullable(),
-  location: yup.string().required('Location is required'),
-  description: yup.string(),
   assignedTo: yup.string().nullable(),
 });
 
@@ -49,7 +45,6 @@ const AssetModal: React.FC<AssetModalProps> = ({
   onClose,
   onSubmit,
   asset,
-  categories,
   users,
   loading = false,
   title,
@@ -68,28 +63,22 @@ const AssetModal: React.FC<AssetModalProps> = ({
     resolver: yupResolver(schema),
     defaultValues: {
       name: '',
-      categoryId: '',
-      serialNumber: '',
+      category: '',
       purchaseDate: new Date(),
       warrantyExpiry: null,
-      location: '',
-      description: '',
       assignedTo: '',
     },
   });
 
-  const selectedCategoryId = watch('categoryId');
+  const selectedCategory = watch('category');
 
   useEffect(() => {
     if (asset) {
       reset({
         name: asset.name,
-        categoryId: asset.category.id,
-        serialNumber: asset.serialNumber,
+        category: asset.category.name,
         purchaseDate: new Date(asset.purchaseDate),
         warrantyExpiry: asset.warrantyExpiry ? new Date(asset.warrantyExpiry) : null,
-        location: asset.location,
-        description: asset.description || '',
         assignedTo: asset.assignedTo || '',
       });
       setSelectedDate(new Date(asset.purchaseDate));
@@ -97,12 +86,9 @@ const AssetModal: React.FC<AssetModalProps> = ({
     } else {
       reset({
         name: '',
-        categoryId: '',
-        serialNumber: '',
+        category: '',
         purchaseDate: new Date(),
         warrantyExpiry: null,
-        location: '',
-        description: '',
         assignedTo: '',
       });
       setSelectedDate(new Date());
@@ -168,57 +154,16 @@ const AssetModal: React.FC<AssetModalProps> = ({
 
                   <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
                     <Controller
-                      name="categoryId"
-                      control={control}
-                      render={({ field }) => (
-                        <FormControl fullWidth error={!!errors.categoryId}>
-                          <InputLabel>Category</InputLabel>
-                          <Select
-                            {...field}
-                            label="Category"
-                            disabled={loading}
-                          >
-                            {categories.map((category) => (
-                              <MenuItem key={category.id} value={category.id}>
-                                {category.name}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      )}
-                    />
-                  </Box>
-                </Box>
-
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                  <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                    <Controller
-                      name="serialNumber"
+                      name="category"
                       control={control}
                       render={({ field }) => (
                         <TextField
                           {...field}
                           fullWidth
-                          label="Serial Number"
-                          error={!!errors.serialNumber}
-                          helperText={errors.serialNumber?.message}
-                          disabled={loading}
-                        />
-                      )}
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                    <Controller
-                      name="location"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          fullWidth
-                          label="Location"
-                          error={!!errors.location}
-                          helperText={errors.location?.message}
+                          label="Category"
+                          placeholder="Enter asset category (e.g., Laptop, Monitor, Phone)"
+                          error={!!errors.category}
+                          helperText={errors.category?.message}
                           disabled={loading}
                         />
                       )}
@@ -245,64 +190,6 @@ const AssetModal: React.FC<AssetModalProps> = ({
                       }}
                     />
                   </Box>
-
-                  <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                    <DatePicker
-                      label="Warranty Expiry (Optional)"
-                      value={selectedWarrantyDate}
-                      onChange={(date) => {
-                        setSelectedWarrantyDate(date);
-                        setValue('warrantyExpiry', date || null);
-                      }}
-                      disabled={loading}
-                      slotProps={{
-                        textField: {
-                          fullWidth: true,
-                        },
-                      }}
-                    />
-                  </Box>
-                </Box>
-
-                <Box>
-                  <Controller
-                    name="assignedTo"
-                    control={control}
-                    render={({ field }) => (
-                      <Autocomplete
-                        {...field}
-                        options={users}
-                        getOptionLabel={(option) => option.name}
-                        value={users.find(user => user.id === field.value) || null}
-                        onChange={(_, value) => field.onChange(value?.id || '')}
-                        disabled={loading}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Assign to User (Optional)"
-                            placeholder="Select a user"
-                          />
-                        )}
-                      />
-                    )}
-                  />
-                </Box>
-
-                <Box>
-                  <Controller
-                    name="description"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        label="Description"
-                        multiline
-                        rows={3}
-                        disabled={loading}
-                      />
-                    )}
-                  />
                 </Box>
               </Box>
             </Box>

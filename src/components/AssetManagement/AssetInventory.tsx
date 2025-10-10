@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -33,29 +33,103 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
-  Assignment as AssignmentIcon,
+  Build as BuildIcon,
 } from '@mui/icons-material';
 import type { Asset, AssetFilters, AssetCategory, MockUser, AssetStatus } from '../../types/asset';
-import { mockAssets, mockAssetCategories, mockUsers } from '../../data/assetMockData';
+import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
+import employeeApi from '../../api/employeeApi';
 import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
 
 const AssetInventory: React.FC = () => {
-  const [assets, setAssets] = useState<Asset[]>(mockAssets);
-  const [filteredAssets, setFilteredAssets] = useState<Asset[]>(mockAssets);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<AssetFilters>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
-  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [assetToAssign, setAssetToAssign] = useState<Asset | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+
+  // Mock data for users (these might need to be fetched from API later)
+  const mockUsers: MockUser[] = [
+    { id: '1', name: 'John Doe', email: 'john.doe@company.com', department: 'IT' },
+    { id: '2', name: 'Jane Smith', email: 'jane.smith@company.com', department: 'HR' },
+    { id: '3', name: 'Mike Johnson', email: 'mike.johnson@company.com', department: 'Finance' },
+  ];
+
+  // Helper function to fetch user name by user ID
+  const fetchUserName = async (userId: string): Promise<string> => {
+    try {
+      const profile = await employeeApi.getEmployeeProfile(userId);
+      return profile.name || `User ${userId}`;
+    } catch (error) {
+      console.error(`Failed to fetch user name for ${userId}:`, error);
+      return `User ${userId}`;
+    }
+  };
+
+  // Fetch assets from API
+  useEffect(() => {
+    const fetchAssets = async () => {
+      try {
+        setInitialLoading(true);
+        const apiAssets = await assetApi.getAllAssets();
+        
+        // Fetch user names for all unique user IDs in assigned_to
+        const uniqueUserIds = new Set<string>();
+        apiAssets.forEach((asset: ApiAsset) => {
+          if (asset.assigned_to) uniqueUserIds.add(asset.assigned_to);
+        });
+
+        // Create a map of userId to userName
+        const userNameMap = new Map<string, string>();
+        await Promise.all(
+          Array.from(uniqueUserIds).map(async (userId) => {
+            const name = await fetchUserName(userId);
+            userNameMap.set(userId, name);
+          })
+        );
+        
+        // Transform API assets to match component interface
+        const transformedAssets: Asset[] = apiAssets.map((apiAsset: ApiAsset) => ({
+          id: apiAsset.id,
+          name: apiAsset.name,
+          category: { id: apiAsset.category, name: apiAsset.category, nameAr: apiAsset.category, description: '' },
+          status: apiAsset.status,
+          assignedTo: apiAsset.assigned_to,
+          assignedToName: apiAsset.assigned_to ? userNameMap.get(apiAsset.assigned_to) : undefined,
+          serialNumber: '', // Not provided by API
+          purchaseDate: apiAsset.purchase_date,
+          location: '', // Not provided by API
+          description: '', // Not provided by API
+          createdAt: apiAsset.created_at,
+          updatedAt: apiAsset.created_at,
+        }));
+        
+        setAssets(transformedAssets);
+        
+        // Extract unique categories from assets
+        const uniqueCategories = [...new Set(transformedAssets.map(asset => asset.category.name))];
+        setAvailableCategories(uniqueCategories);
+        
+      } catch (error) {
+        console.error('Failed to fetch assets:', error);
+        showErrorToast('Failed to load assets');
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    fetchAssets();
+  }, []);
 
   // Filter and search logic
   useMemo(() => {
@@ -78,7 +152,7 @@ const AssetInventory: React.FC = () => {
 
     // Category filter
     if (filters.category && filters.category.length > 0) {
-      filtered = filtered.filter(asset => filters.category!.includes(asset.category.id));
+      filtered = filtered.filter(asset => filters.category!.includes(asset.category.name));
     }
 
     setFilteredAssets(filtered);
@@ -101,12 +175,6 @@ const AssetInventory: React.FC = () => {
     setAnchorEl(null);
   };
 
-  const handleAssignAsset = (asset: Asset) => {
-    setAssetToAssign(asset);
-    setAssignDialogOpen(true);
-    setAnchorEl(null);
-  };
-
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>, assetId: string) => {
     setAnchorEl(event.currentTarget);
     setSelectedAssetId(assetId);
@@ -120,41 +188,93 @@ const AssetInventory: React.FC = () => {
   const handleAssetSubmit = async (data: any) => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       if (editingAsset) {
         // Update existing asset
-        const updatedAsset = {
-          ...editingAsset,
-          ...data,
-          category: mockAssetCategories.find(c => c.id === data.categoryId) || editingAsset.category,
-          assignedToName: data.assignedTo ? mockUsers.find(u => u.id === data.assignedTo)?.name : undefined,
-          updatedAt: new Date().toISOString(),
+        const updateData = {
+          name: data.name,
+          category: data.category,
+          purchaseDate: data.purchaseDate,
         };
 
-        setAssets(prev => prev.map(asset => 
-          asset.id === editingAsset.id ? updatedAsset : asset
-        ));
+        const updatedApiAsset = await assetApi.updateAsset(editingAsset.id, updateData);
+        
+        // Fetch user name if assigned
+        let assignedToName: string | undefined;
+        if (updatedApiAsset.assigned_to) {
+          assignedToName = await fetchUserName(updatedApiAsset.assigned_to);
+        }
+        
+        // Transform and update local state
+        const updatedAsset: Asset = {
+          id: updatedApiAsset.id,
+          name: updatedApiAsset.name,
+          category: { id: updatedApiAsset.category, name: updatedApiAsset.category, nameAr: updatedApiAsset.category, description: '' },
+          status: updatedApiAsset.status,
+          assignedTo: updatedApiAsset.assigned_to,
+          assignedToName: assignedToName,
+          serialNumber: '',
+          purchaseDate: updatedApiAsset.purchase_date,
+          location: '',
+          description: '',
+          createdAt: updatedApiAsset.created_at,
+          updatedAt: updatedApiAsset.created_at,
+        };
+
+        setAssets(prev => {
+          const updatedAssets = prev.map(asset => 
+            asset.id === editingAsset.id ? updatedAsset : asset
+          );
+          // Update available categories
+          const uniqueCategories = [...new Set(updatedAssets.map(asset => asset.category.name))];
+          setAvailableCategories(uniqueCategories);
+          return updatedAssets;
+        });
         showSuccessToast('Asset updated successfully');
       } else {
         // Create new asset
-        const newAsset: Asset = {
-          id: Date.now().toString(),
-          ...data,
-          category: mockAssetCategories.find(c => c.id === data.categoryId)!,
-          status: data.assignedTo ? 'assigned' : 'available',
-          assignedToName: data.assignedTo ? mockUsers.find(u => u.id === data.assignedTo)?.name : undefined,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+        const createData = {
+          name: data.name,
+          category: data.category,
+          purchaseDate: data.purchaseDate,
         };
 
-        setAssets(prev => [newAsset, ...prev]);
+        const newApiAsset = await assetApi.createAsset(createData);
+        
+        // Fetch user name if assigned
+        let assignedToName: string | undefined;
+        if (newApiAsset.assigned_to) {
+          assignedToName = await fetchUserName(newApiAsset.assigned_to);
+        }
+        
+        // Transform and add to local state
+        const newAsset: Asset = {
+          id: newApiAsset.id,
+          name: newApiAsset.name,
+          category: { id: newApiAsset.category, name: newApiAsset.category, nameAr: newApiAsset.category, description: '' },
+          status: newApiAsset.status,
+          assignedTo: newApiAsset.assigned_to,
+          assignedToName: assignedToName,
+          serialNumber: '',
+          purchaseDate: newApiAsset.purchase_date,
+          location: '',
+          description: '',
+          createdAt: newApiAsset.created_at,
+          updatedAt: newApiAsset.created_at,
+        };
+
+        setAssets(prev => {
+          const updatedAssets = [newAsset, ...prev];
+          // Update available categories
+          const uniqueCategories = [...new Set(updatedAssets.map(asset => asset.category.name))];
+          setAvailableCategories(uniqueCategories);
+          return updatedAssets;
+        });
         showSuccessToast('Asset created successfully');
       }
 
       setIsModalOpen(false);
     } catch (error) {
+      console.error('Failed to save asset:', error);
       showErrorToast('Failed to save asset');
     } finally {
       setLoading(false);
@@ -166,15 +286,39 @@ const AssetInventory: React.FC = () => {
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+      await assetApi.deleteAsset(assetToDelete.id);
+      
       setAssets(prev => prev.filter(asset => asset.id !== assetToDelete.id));
       showSuccessToast('Asset deleted successfully');
       setDeleteDialogOpen(false);
       setAssetToDelete(null);
     } catch (error) {
+      console.error('Failed to delete asset:', error);
       showErrorToast('Failed to delete asset');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkAsMaintenance = async (asset: Asset) => {
+    setLoading(true);
+    try {
+      await assetApi.updateAssetStatus(asset.id, 'under_maintenance', {
+        name: asset.name,
+        category: asset.category.name,
+        purchaseDate: asset.purchaseDate,
+      });
+      
+      // Update local state
+      setAssets(prev => prev.map(a => 
+        a.id === asset.id ? { ...a, status: 'under_maintenance' as AssetStatus } : a
+      ));
+      
+      showSuccessToast('Asset marked as under maintenance');
+      setAnchorEl(null);
+    } catch (error) {
+      console.error('Failed to update asset status:', error);
+      showErrorToast('Failed to update asset status');
     } finally {
       setLoading(false);
     }
@@ -191,6 +335,14 @@ const AssetInventory: React.FC = () => {
   };
 
   const statusCounts = getStatusCounts();
+
+  if (initialLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <Typography>Loading assets...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -317,9 +469,9 @@ const AssetInventory: React.FC = () => {
                   onChange={(e) => setFilters((prev: AssetFilters) => ({ ...prev, category: e.target.value as string[] }))}
                   label="Category"
                 >
-                  {mockAssetCategories.map(category => (
-                    <MenuItem key={category.id} value={category.id}>
-                      {category.name}
+                  {availableCategories.map((category) => (
+                    <MenuItem key={category} value={category}>
+                      {category}
                     </MenuItem>
                   ))}
                 </Select>
@@ -348,10 +500,8 @@ const AssetInventory: React.FC = () => {
               <TableRow>
                 <TableCell>Asset Name</TableCell>
                 <TableCell>Category</TableCell>
-                <TableCell>Serial Number</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Assigned To</TableCell>
-                <TableCell>Location</TableCell>
                 <TableCell>Purchase Date</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
@@ -372,7 +522,6 @@ const AssetInventory: React.FC = () => {
                     </Box>
                   </TableCell>
                   <TableCell>{asset.category.name}</TableCell>
-                  <TableCell>{asset.serialNumber}</TableCell>
                   <TableCell>
                     <StatusChip status={asset.status} type="asset" />
                   </TableCell>
@@ -390,7 +539,6 @@ const AssetInventory: React.FC = () => {
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell>{asset.location}</TableCell>
                   <TableCell>
                     {new Date(asset.purchaseDate).toLocaleDateString()}
                   </TableCell>
@@ -412,12 +560,15 @@ const AssetInventory: React.FC = () => {
                         </ListItemIcon>
                         <ListItemText>Edit</ListItemText>
                       </MenuItem>
-                      {asset.status === 'available' && (
-                        <MenuItem onClick={() => handleAssignAsset(asset)}>
+                      {asset.status !== 'under_maintenance' && (
+                        <MenuItem 
+                          onClick={() => handleMarkAsMaintenance(asset)}
+                          sx={{ color: 'warning.main' }}
+                        >
                           <ListItemIcon>
-                            <AssignmentIcon fontSize="small" />
+                            <BuildIcon fontSize="small" color="warning" />
                           </ListItemIcon>
-                          <ListItemText>Assign</ListItemText>
+                          <ListItemText>Mark as Maintenance</ListItemText>
                         </MenuItem>
                       )}
                       <MenuItem 
@@ -444,7 +595,6 @@ const AssetInventory: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAssetSubmit}
         asset={editingAsset}
-        categories={mockAssetCategories}
         users={mockUsers}
         loading={loading}
       />
@@ -459,21 +609,6 @@ const AssetInventory: React.FC = () => {
         onCancel={() => setDeleteDialogOpen(false)}
         severity="error"
         loading={loading}
-      />
-
-      {/* Assign Asset Dialog - This would be a separate component in a real app */}
-      <ConfirmationDialog
-        open={assignDialogOpen}
-        title="Assign Asset"
-        message={`Assign "${assetToAssign?.name}" to a user?`}
-        confirmText="Assign"
-        onConfirm={() => {
-          // Handle assignment logic here
-          setAssignDialogOpen(false);
-          setAssetToAssign(null);
-        }}
-        onCancel={() => setAssignDialogOpen(false)}
-        severity="info"
       />
     </Box>
   );

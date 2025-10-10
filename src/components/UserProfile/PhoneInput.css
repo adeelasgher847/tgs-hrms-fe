@@ -173,3 +173,14 @@
   width: 230px !important; /* jo width chahiye */
   max-width: 210px;        /* overflow prevent karega */
 }
+
+/* Signup page specific styles */
+.signup-phone-input .phone-input-textfield-adornment .react-international-phone-country-selector-dropdown {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  margin-top: 4px !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+}

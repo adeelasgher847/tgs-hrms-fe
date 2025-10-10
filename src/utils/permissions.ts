@@ -75,7 +75,6 @@ export const isMenuVisibleForRole = (
     ],
     'hr-admin': [
       'attendance',
-      'assets',
     ],
     admin: ['dashboard', 'department', 'employees', 'teams', 'assets', 'attendance'],
     manager: ['teams', 'attendance', 'assets'],
@@ -189,6 +188,55 @@ export const isSubMenuVisibleForRole = (
     if (parent.includes('attendance') && sub.includes('reports')) {
       visible = false;
     }
+    // For Assets menu - employees only see Asset Requests
+    if (parent.includes('assets')) {
+      if (sub.includes('asset inventory') || sub.includes('management')) {
+        visible = false;
+      }
+    }
+  }
+
+  // Network Admin: For Assets menu - only see Asset Inventory and Management (not Asset Requests)
+  if (r === 'network-admin') {
+    if (parent.includes('assets')) {
+      if (sub.includes('asset requests')) {
+        visible = false;
+      }
+    }
+  }
+
+  // System Admin: For Assets menu - only see Asset Inventory and Management (not Asset Requests)
+  if (r === 'system-admin') {
+    if (parent.includes('assets')) {
+      if (sub.includes('asset requests')) {
+        visible = false;
+      }
+    }
+  }
+
+  // HR Admin: hide all asset submenus
+  if (r === 'hr-admin') {
+    if (parent.includes('assets')) {
+      visible = false;
+    }
+  }
+
+  // Admin: For Assets menu - only see Asset Inventory and Management (not Asset Requests)
+  if (r === 'admin') {
+    if (parent.includes('assets')) {
+      if (sub.includes('asset requests')) {
+        visible = false;
+      }
+    }
+  }
+
+  // Manager: For Assets menu - only see Asset Requests
+  if (r === 'manager') {
+    if (parent.includes('assets')) {
+      if (sub.includes('asset inventory') || sub.includes('management')) {
+        visible = false;
+      }
+    }
   }
 
   return visible;
@@ -222,10 +270,8 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       // Teams
       'teams',
-      // Assets
+      // Assets - System admin sees Inventory and Management only
       'assets',
-      'assets/inventory',
-      'assets/requests',
       'assets/request-management',
       // Employee profile view
       'EmployeeProfileView',
@@ -247,10 +293,8 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       // 'Reports',
       'teams',
-      // Assets
+      // Assets - Network admin sees Inventory and Management only
       'assets',
-      'assets/inventory',
-      'assets/requests',
       'assets/request-management',
       'EmployeeProfileView',
       // Settings
@@ -262,11 +306,7 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceTable',
       'AttendanceCheck/TimesheetLayout',
       'UserProfile',
-      // Assets
-      'assets',
-      'assets/inventory',
-      'assets/requests',
-      'assets/request-management',
+      // Assets - HR admin has no access
       'settings',
     ]),
     admin: new Set([
@@ -284,10 +324,8 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       // 'Reports',
       'teams',
-      // Assets
+      // Assets - Admin sees Inventory and Management only
       'assets',
-      'assets/inventory',
-      'assets/requests',
       'assets/request-management',
       'EmployeeProfileView',
       // Settings
@@ -301,11 +339,8 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'leaves',
       'UserProfile',
-      // Assets
-      'assets',
-      'assets/inventory',
+      // Assets - Manager sees only Requests
       'assets/requests',
-      'assets/request-management',
       // Settings
       'settings',
     ]),
@@ -316,11 +351,8 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
-      // Assets
-      'assets',
-      'assets/inventory',
+      // Assets - Employee sees only Requests
       'assets/requests',
-      'assets/request-management',
       // Settings
       'settings',
     ]),
@@ -331,11 +363,8 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
-      // Assets
-      'assets',
-      'assets/inventory',
+      // Assets - User sees only Requests
       'assets/requests',
-      'assets/request-management',
       // Settings
       'settings',
     ]),

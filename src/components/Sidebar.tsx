@@ -103,7 +103,7 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: 'Asset Inventory', path: 'assets' },
       { label: 'Asset Requests', path: 'assets/requests' },
-      { label: 'Request Management', path: 'assets/request-management' },
+      { label: 'Management', path: 'assets/request-management' },
     ],
   },
   {

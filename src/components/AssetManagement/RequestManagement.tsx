@@ -46,18 +46,15 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import type { AssetRequest, ProcessRequestRequest, AssetCategory, Asset } from '../../types/asset';
-import { mockAssetRequests, mockAssetCategories, mockAssets, getAvailableAssetsByCategory } from '../../data/assetMockData';
+import { assetApi, type AssetRequest as ApiAssetRequest } from '../../api/assetApi';
+import employeeApi from '../../api/employeeApi';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
 
 const schema = yup.object({
   action: yup.string().required('Action is required'),
-  rejectionReason: yup.string().when('action', {
-    is: 'reject',
-    then: (schema) => schema.required('Rejection reason is required'),
-    otherwise: (schema) => schema.notRequired(),
-  }),
+  rejectionReason: yup.string().notRequired(),
   assignedAssetId: yup.string().when('action', {
     is: 'approve',
     then: (schema) => schema.required('Please select an asset to assign'),
@@ -88,20 +85,31 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const RequestManagement: React.FC = () => {
-  // Initialize with localStorage data if available, otherwise use mock data
-  const [requests, setRequests] = useState<AssetRequest[]>(() => {
-    const savedRequests = localStorage.getItem('assetRequests');
-    return savedRequests ? JSON.parse(savedRequests) : mockAssetRequests;
-  });
-  const [assets, setAssets] = useState<Asset[]>(mockAssets);
+  const [requests, setRequests] = useState<AssetRequest[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
   const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<AssetRequest | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [tabValue, setTabValue] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+
+  // Common asset categories for reference
+  const commonCategories = [
+    'Laptop',
+    'Desktop Computer', 
+    'Monitor',
+    'Printer',
+    'Phone',
+    'Tablet',
+    'Projector',
+    'Camera',
+    'Headset',
+    'Office Furniture'
+  ];
 
   const {
     control,
@@ -122,35 +130,87 @@ const RequestManagement: React.FC = () => {
   const selectedAction = watch('action');
   const selectedCategoryId = selectedRequest?.category.id;
 
-  // Listen for localStorage changes to sync with AssetRequests component
+  // Helper function to fetch user name by user ID
+  const fetchUserName = async (userId: string): Promise<string> => {
+    try {
+      const profile = await employeeApi.getEmployeeProfile(userId);
+      return profile.name || `User ${userId}`;
+    } catch (error) {
+      console.error(`Failed to fetch user name for ${userId}:`, error);
+      return `User ${userId}`;
+    }
+  };
+
+  // Fetch data from API
   React.useEffect(() => {
-    const handleStorageChange = () => {
-      const savedRequests = localStorage.getItem('assetRequests');
-      if (savedRequests) {
-        setRequests(JSON.parse(savedRequests));
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also check for changes periodically (since storage event doesn't fire for same tab)
-    const interval = setInterval(() => {
-      const savedRequests = localStorage.getItem('assetRequests');
-      if (savedRequests) {
-        const parsedRequests = JSON.parse(savedRequests);
-        setRequests(currentRequests => {
-          if (JSON.stringify(currentRequests) !== JSON.stringify(parsedRequests)) {
-            return parsedRequests;
-          }
-          return currentRequests;
+    const fetchData = async () => {
+      try {
+        setInitialLoading(true);
+        
+        // Fetch asset requests
+        const apiRequests = await assetApi.getAllAssetRequests();
+        
+        // Fetch user names for all unique user IDs
+        const uniqueUserIds = new Set<string>();
+        apiRequests.forEach((req: ApiAssetRequest) => {
+          if (req.requested_by) uniqueUserIds.add(req.requested_by);
+          if (req.approved_by) uniqueUserIds.add(req.approved_by);
         });
-      }
-    }, 1000);
 
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
+        // Create a map of userId to userName
+        const userNameMap = new Map<string, string>();
+        await Promise.all(
+          Array.from(uniqueUserIds).map(async (userId) => {
+            const name = await fetchUserName(userId);
+            userNameMap.set(userId, name);
+          })
+        );
+
+        const transformedRequests: AssetRequest[] = apiRequests.map((apiRequest: ApiAssetRequest) => ({
+          id: apiRequest.id,
+          employeeId: apiRequest.requested_by,
+          employeeName: apiRequest.requestedByName || userNameMap.get(apiRequest.requested_by) || `User ${apiRequest.requested_by}`,
+          category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
+          remarks: apiRequest.remarks,
+          status: apiRequest.status,
+          requestedDate: apiRequest.requested_date,
+          processedDate: apiRequest.approved_date,
+          processedBy: apiRequest.approved_by,
+          processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? userNameMap.get(apiRequest.approved_by) || `User ${apiRequest.approved_by}` : undefined),
+          rejectionReason: undefined, // Not provided by API
+          assignedAssetId: undefined, // Not provided by API
+          assignedAssetName: undefined, // Not provided by API
+        }));
+        
+        setRequests(transformedRequests);
+
+        // Fetch assets for assignment
+        const apiAssets = await assetApi.getAllAssets();
+        const transformedAssets: Asset[] = apiAssets.map((apiAsset: any) => ({
+          id: apiAsset.id,
+          name: apiAsset.name,
+          category: { id: apiAsset.category, name: apiAsset.category, nameAr: apiAsset.category, description: '' },
+          status: apiAsset.status,
+          assignedTo: apiAsset.assigned_to,
+          assignedToName: undefined,
+          serialNumber: '',
+          purchaseDate: apiAsset.purchase_date,
+          location: '',
+          description: '',
+          createdAt: apiAsset.created_at,
+          updatedAt: apiAsset.created_at,
+        }));
+        
+        setAssets(transformedAssets);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+        showErrorToast('Failed to load data');
+      } finally {
+        setInitialLoading(false);
+      }
     };
+
+    fetchData();
   }, []);
 
   // Filter requests
@@ -211,44 +271,56 @@ const RequestManagement: React.FC = () => {
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const updatedRequest: AssetRequest = {
-        ...selectedRequest,
-        status: data.action as 'approved' | 'rejected',
-        processedDate: new Date().toISOString(),
-        processedBy: '1', // Current admin user ID
-        processedByName: 'John Doe', // Current admin name
-        ...(data.action === 'reject' && { rejectionReason: data.rejectionReason }),
-        ...(data.action === 'approve' && {
-          assignedAssetId: data.assignedAssetId,
-          assignedAssetName: assets.find(a => a.id === data.assignedAssetId)?.name,
-        }),
-      };
-
-      // Update request
-      const updatedRequests = requests.map(request =>
-        request.id === selectedRequest.id ? updatedRequest : request
-      );
-      setRequests(updatedRequests);
-      
-      // Update localStorage to sync with AssetRequests component
-      localStorage.setItem('assetRequests', JSON.stringify(updatedRequests));
-
-      // If approved, update asset status
-      if (data.action === 'approve' && data.assignedAssetId) {
-        setAssets(prev => prev.map(asset =>
-          asset.id === data.assignedAssetId
-            ? { ...asset, status: 'assigned' as const, assignedTo: selectedRequest.employeeId, assignedToName: selectedRequest.employeeName }
-            : asset
-        ));
+      if (data.action === 'approve') {
+        await assetApi.approveAssetRequest(selectedRequest.id, {
+          asset_id: data.assignedAssetId
+        });
+      } else if (data.action === 'reject') {
+        await assetApi.rejectAssetRequest(selectedRequest.id);
       }
+
+      // Refresh data from API
+      const apiRequests = await assetApi.getAllAssetRequests();
+      
+      // Fetch user names for all unique user IDs
+      const uniqueUserIds = new Set<string>();
+      apiRequests.forEach((req: ApiAssetRequest) => {
+        if (req.requested_by) uniqueUserIds.add(req.requested_by);
+        if (req.approved_by) uniqueUserIds.add(req.approved_by);
+      });
+
+      // Create a map of userId to userName
+      const userNameMap = new Map<string, string>();
+      await Promise.all(
+        Array.from(uniqueUserIds).map(async (userId) => {
+          const name = await fetchUserName(userId);
+          userNameMap.set(userId, name);
+        })
+      );
+
+      const transformedRequests: AssetRequest[] = apiRequests.map((apiRequest: ApiAssetRequest) => ({
+        id: apiRequest.id,
+        employeeId: apiRequest.requested_by,
+        employeeName: apiRequest.requestedByName || userNameMap.get(apiRequest.requested_by) || `User ${apiRequest.requested_by}`,
+        category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
+        remarks: apiRequest.remarks,
+        status: apiRequest.status,
+        requestedDate: apiRequest.requested_date,
+        processedDate: apiRequest.approved_date,
+        processedBy: apiRequest.approved_by,
+        processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? userNameMap.get(apiRequest.approved_by) || `User ${apiRequest.approved_by}` : undefined),
+        rejectionReason: undefined,
+        assignedAssetId: undefined,
+        assignedAssetName: undefined,
+      }));
+      
+      setRequests(transformedRequests);
 
       showSuccessToast(`Request ${data.action}ed successfully`);
       setIsProcessModalOpen(false);
       setSelectedRequest(null);
     } catch (error) {
+      console.error('Failed to process request:', error);
       showErrorToast('Failed to process request');
     } finally {
       setLoading(false);
@@ -265,6 +337,14 @@ const RequestManagement: React.FC = () => {
   };
 
   const statusCounts = getStatusCounts();
+
+  if (initialLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <Typography>Loading requests...</Typography>
+      </Box>
+    );
+  }
 
   const renderRequestRow = (request: AssetRequest) => (
     <TableRow key={request.id} hover>
@@ -629,10 +709,10 @@ const RequestManagement: React.FC = () => {
                         <TextField
                           {...field}
                           fullWidth
-                          label="Rejection Reason"
+                          label="Rejection Reason (Optional)"
                           multiline
                           rows={3}
-                          placeholder="Please provide a reason for rejection..."
+                          placeholder="Optionally provide a reason for rejection..."
                           error={!!errors.rejectionReason}
                           helperText={errors.rejectionReason?.message}
                           disabled={loading}
@@ -703,9 +783,6 @@ const RequestManagement: React.FC = () => {
                       <Typography variant="body2">
                         <strong>Name:</strong> {selectedRequest.employeeName}
                       </Typography>
-                      <Typography variant="body2">
-                        <strong>Employee ID:</strong> {selectedRequest.employeeId}
-                      </Typography>
                     </Box>
                   </Card>
                 </Box>
@@ -722,10 +799,12 @@ const RequestManagement: React.FC = () => {
                       </Typography>
                       <Typography variant="body2">
                         <strong>Status:</strong> 
-                        <StatusChip status={selectedRequest.status} type="request" sx={{ ml: 1 }} />
+                        <Box component="span" sx={{ ml: 1 }}>
+                          <StatusChip status={selectedRequest.status} type="request" />
+                        </Box>
                       </Typography>
                       <Typography variant="body2">
-                        <strong>Requested Date:</strong> {new Date(selectedRequest.requestedDate).toLocaleString()}
+                        <strong>Requested Date:</strong> {new Date(selectedRequest.requestedDate).toLocaleDateString()}
                       </Typography>
                     </Box>
                   </Card>
@@ -755,7 +834,7 @@ const RequestManagement: React.FC = () => {
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         {selectedRequest.processedDate && (
                           <Typography variant="body2">
-                            <strong>Processed Date:</strong> {new Date(selectedRequest.processedDate).toLocaleString()}
+                            <strong>Processed Date:</strong> {new Date(selectedRequest.processedDate).toLocaleDateString()}
                           </Typography>
                         )}
                         {selectedRequest.processedByName && (

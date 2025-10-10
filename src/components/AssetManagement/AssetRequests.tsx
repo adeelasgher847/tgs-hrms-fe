@@ -27,30 +27,43 @@ import {
   Tabs,
   Tab,
   InputAdornment,
+  Autocomplete,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Search as SearchIcon,
-  Cancel as CancelIcon,
+  Delete as DeleteIcon,
   Visibility as VisibilityIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon2,
   Pending as PendingIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import type { AssetRequest, CreateAssetRequest, AssetCategory } from '../../types/asset';
-import { mockAssetRequests, mockAssetCategories } from '../../data/assetMockData';
+import { assetApi, type AssetRequest as ApiAssetRequest } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
 
-// Mock current user - in real app this would come from auth context
-const currentUserId = '4'; // Sarah Wilson
+// Get current user from localStorage or auth context
+const getCurrentUserId = () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      return user.id || user.user_id || '1'; // Fallback to '1' if no ID found
+    } catch {
+      return '1'; // Fallback if parsing fails
+    }
+  }
+  return '1'; // Default fallback
+};
 
 const schema = yup.object({
-  categoryId: yup.string().required('Category is required'),
+  category: yup.string().required('Category is required'),
   remarks: yup.string(),
 });
 
@@ -77,17 +90,16 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const AssetRequests: React.FC = () => {
-  // Initialize with localStorage data if available, otherwise use mock data
-  const [requests, setRequests] = useState<AssetRequest[]>(() => {
-    const savedRequests = localStorage.getItem('assetRequests');
-    return savedRequests ? JSON.parse(savedRequests) : mockAssetRequests;
-  });
+  const [requests, setRequests] = useState<AssetRequest[]>([]);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [requestToCancel, setRequestToCancel] = useState<AssetRequest | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [tabValue, setTabValue] = useState(0);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
 
   const {
     control,
@@ -97,10 +109,78 @@ const AssetRequests: React.FC = () => {
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      categoryId: '',
+      category: '',
       remarks: '',
     },
   });
+
+  // Get current user ID on component mount
+  React.useEffect(() => {
+    const userId = getCurrentUserId();
+    setCurrentUserId(userId);
+  }, []);
+
+  // Fetch user's asset requests and available categories from API
+  React.useEffect(() => {
+    if (!currentUserId) return; // Don't fetch until we have user ID
+    
+    const fetchData = async () => {
+      try {
+        setInitialLoading(true);
+        
+        // Fetch asset requests
+        const apiRequests = await assetApi.getAllAssetRequests();
+        
+        // Filter requests for current user
+        let requestsToShow = apiRequests.filter((request: ApiAssetRequest) => 
+          request.requested_by === currentUserId
+        );
+        
+        // If no user-specific requests found, show all requests for debugging
+        if (requestsToShow.length === 0 && apiRequests.length > 0) {
+          console.log('No user-specific requests found, showing all requests for debugging');
+          requestsToShow = apiRequests;
+        }
+        
+        const transformedRequests: AssetRequest[] = requestsToShow.map((apiRequest: ApiAssetRequest) => ({
+          id: apiRequest.id,
+          employeeId: apiRequest.requested_by,
+          employeeName: `Employee ${apiRequest.requested_by}`,
+          category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
+          remarks: apiRequest.remarks,
+          status: apiRequest.status,
+          requestedDate: apiRequest.requested_date,
+          processedDate: apiRequest.approved_date,
+          processedBy: apiRequest.approved_by,
+          processedByName: apiRequest.approved_by ? `Admin ${apiRequest.approved_by}` : undefined,
+          rejectionReason: undefined,
+          assignedAssetId: undefined,
+          assignedAssetName: undefined,
+        }));
+        
+        setRequests(transformedRequests);
+
+        // Fetch available assets to get unique categories
+        const apiAssets = await assetApi.getAllAssets();
+        const uniqueCategories = [...new Set(apiAssets.map((asset: any) => asset.category))] as string[];
+        setAvailableCategories(uniqueCategories);
+        
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+        showErrorToast('Failed to load data');
+        
+        // Retry after a short delay
+        setTimeout(() => {
+          console.log('Retrying data fetch...');
+          fetchData();
+        }, 2000);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentUserId]);
 
   // Filter requests for current user
   const userRequests = useMemo(() => {
@@ -124,32 +204,40 @@ const AssetRequests: React.FC = () => {
     return filteredRequests.filter(request => request.status === statusFilter);
   };
 
-  const handleSubmitRequest = async (data: CreateAssetRequest) => {
+  const handleSubmitRequest = async (data: { category: string; remarks?: string }) => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const newRequest: AssetRequest = {
-        id: Date.now().toString(),
-        employeeId: currentUserId,
-        employeeName: 'Sarah Wilson', // This would come from auth context
-        category: mockAssetCategories.find(c => c.id === data.categoryId)!,
-        remarks: data.remarks,
-        status: 'pending',
-        requestedDate: new Date().toISOString(),
+      const requestData = {
+        assetCategory: data.category,
+        remarks: data.remarks || '',
       };
 
-      const updatedRequests = [newRequest, ...requests];
-      setRequests(updatedRequests);
+      const newApiRequest = await assetApi.createAssetRequest(requestData);
       
-      // Update localStorage to sync with RequestManagement component
-      localStorage.setItem('assetRequests', JSON.stringify(updatedRequests));
+      // Transform and add to local state
+      const newRequest: AssetRequest = {
+        id: newApiRequest.id,
+        employeeId: newApiRequest.requested_by,
+        employeeName: `Employee ${newApiRequest.requested_by}`,
+        category: { id: newApiRequest.asset_category, name: newApiRequest.asset_category, nameAr: newApiRequest.asset_category, description: '' },
+        remarks: newApiRequest.remarks,
+        status: newApiRequest.status,
+        requestedDate: newApiRequest.requested_date,
+        processedDate: newApiRequest.approved_date,
+        processedBy: newApiRequest.approved_by,
+        processedByName: newApiRequest.approved_by ? `Admin ${newApiRequest.approved_by}` : undefined,
+        rejectionReason: undefined,
+        assignedAssetId: undefined,
+        assignedAssetName: undefined,
+      };
+
+      setRequests(prev => [newRequest, ...prev]);
       
       setIsRequestModalOpen(false);
       reset();
       showSuccessToast('Asset request submitted successfully');
     } catch (error) {
+      console.error('Failed to submit request:', error);
       showErrorToast('Failed to submit request');
     } finally {
       setLoading(false);
@@ -161,30 +249,88 @@ const AssetRequests: React.FC = () => {
     setIsCancelDialogOpen(true);
   };
 
+  const handleOpenRequestModal = async () => {
+    setIsRequestModalOpen(true);
+    // Refresh available categories when opening the modal
+    try {
+      const apiAssets = await assetApi.getAllAssets();
+      const uniqueCategories = [...new Set(apiAssets.map((asset: any) => asset.category))] as string[];
+      setAvailableCategories(uniqueCategories);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
+  };
+
+  const handleRefreshData = async () => {
+    if (!currentUserId) return;
+    
+    setInitialLoading(true);
+    try {
+      
+      // Fetch asset requests
+      const apiRequests = await assetApi.getAllAssetRequests();
+      
+      // Filter requests for current user
+      let requestsToShow = apiRequests.filter((request: ApiAssetRequest) => 
+        request.requested_by === currentUserId
+      );
+      
+      // If no user-specific requests found, show all requests for debugging
+      if (requestsToShow.length === 0 && apiRequests.length > 0) {
+        console.log('No user-specific requests found, showing all requests for debugging');
+        requestsToShow = apiRequests;
+      }
+      
+      const transformedRequests: AssetRequest[] = requestsToShow.map((apiRequest: ApiAssetRequest) => ({
+        id: apiRequest.id,
+        employeeId: apiRequest.requested_by,
+        employeeName: `Employee ${apiRequest.requested_by}`,
+        category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
+        remarks: apiRequest.remarks,
+        status: apiRequest.status,
+        requestedDate: apiRequest.requested_date,
+        processedDate: apiRequest.approved_date,
+        processedBy: apiRequest.approved_by,
+        processedByName: apiRequest.approved_by ? `Admin ${apiRequest.approved_by}` : undefined,
+        rejectionReason: undefined,
+        assignedAssetId: undefined,
+        assignedAssetName: undefined,
+      }));
+      
+      setRequests(transformedRequests);
+
+      // Fetch available assets to get unique categories
+      const apiAssets = await assetApi.getAllAssets();
+      const uniqueCategories = [...new Set(apiAssets.map((asset: any) => asset.category))] as string[];
+      setAvailableCategories(uniqueCategories);
+      
+      showSuccessToast('Data refreshed successfully');
+    } catch (error) {
+      console.error('Failed to refresh data:', error);
+      showErrorToast('Failed to refresh data');
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
   const handleConfirmCancel = async () => {
     if (!requestToCancel) return;
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const updatedRequests = requests.map(request =>
-        request.id === requestToCancel.id
-          ? { ...request, status: 'cancelled' as const }
-          : request
-      );
+      // Delete the request using DELETE API
+      await assetApi.deleteAssetRequest(requestToCancel.id);
       
+      // Remove from local state
+      const updatedRequests = requests.filter(request => request.id !== requestToCancel.id);
       setRequests(updatedRequests);
-      
-      // Update localStorage to sync with RequestManagement component
-      localStorage.setItem('assetRequests', JSON.stringify(updatedRequests));
 
-      showSuccessToast('Request cancelled successfully');
+      showSuccessToast('Request deleted successfully');
       setIsCancelDialogOpen(false);
       setRequestToCancel(null);
     } catch (error) {
-      showErrorToast('Failed to cancel request');
+      console.error('Failed to delete request:', error);
+      showErrorToast('Failed to delete request');
     } finally {
       setLoading(false);
     }
@@ -196,11 +342,18 @@ const AssetRequests: React.FC = () => {
       pending: userRequests.filter(r => r.status === 'pending').length,
       approved: userRequests.filter(r => r.status === 'approved').length,
       rejected: userRequests.filter(r => r.status === 'rejected').length,
-      cancelled: userRequests.filter(r => r.status === 'cancelled').length,
     };
   };
 
   const statusCounts = getStatusCounts();
+
+  if (initialLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <Typography>Loading requests...</Typography>
+      </Box>
+    );
+  }
 
   const renderRequestRow = (request: AssetRequest) => (
     <TableRow key={request.id} hover>
@@ -227,26 +380,15 @@ const AssetRequests: React.FC = () => {
           new Date(request.processedDate).toLocaleDateString()
         )}
       </TableCell>
-      <TableCell>
-        {request.rejectionReason && (
-          <Typography variant="caption" color="error">
-            {request.rejectionReason}
-          </Typography>
-        )}
-        {request.assignedAssetName && (
-          <Typography variant="caption" color="success.main">
-            Assigned: {request.assignedAssetName}
-          </Typography>
-        )}
-      </TableCell>
       <TableCell align="right">
         {request.status === 'pending' && (
           <IconButton
             onClick={() => handleCancelRequest(request)}
             size="small"
             color="error"
+            title="Delete Request"
           >
-            <CancelIcon />
+            <DeleteIcon />
           </IconButton>
         )}
         {request.status === 'approved' && request.assignedAssetName && (
@@ -264,13 +406,23 @@ const AssetRequests: React.FC = () => {
         <Typography variant="h4" fontWeight={600}>
           My Asset Requests
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setIsRequestModalOpen(true)}
-        >
-          Request Asset
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={handleRefreshData}
+            disabled={initialLoading}
+          >
+            Refresh
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenRequestModal}
+          >
+            Request Asset
+          </Button>
+        </Box>
       </Box>
 
       {/* Statistics Cards */}
@@ -323,18 +475,6 @@ const AssetRequests: React.FC = () => {
             </CardContent>
           </Card>
         </Box>
-        <Box flex={1} sx={{ minWidth: '150px' }} >
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Cancelled
-              </Typography>
-              <Typography variant="h4" fontWeight={600} color="text.secondary">
-                {statusCounts.cancelled}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Box>
       </Box>
 
       {/* Search */}
@@ -376,7 +516,6 @@ const AssetRequests: React.FC = () => {
                   <TableCell>Status</TableCell>
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Processed Date</TableCell>
-                  <TableCell>Notes</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -396,7 +535,6 @@ const AssetRequests: React.FC = () => {
                   <TableCell>Status</TableCell>
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Processed Date</TableCell>
-                  <TableCell>Notes</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -416,7 +554,6 @@ const AssetRequests: React.FC = () => {
                   <TableCell>Status</TableCell>
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Processed Date</TableCell>
-                  <TableCell>Notes</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -436,7 +573,6 @@ const AssetRequests: React.FC = () => {
                   <TableCell>Status</TableCell>
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Processed Date</TableCell>
-                  <TableCell>Notes</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -472,23 +608,32 @@ const AssetRequests: React.FC = () => {
               <Box sx={{ display: 'flex', gap: 2,flexWrap: 'wrap',flexDirection: 'column' }}>
                 <Box>
                   <Controller
-                    name="categoryId"
+                    name="category"
                     control={control}
                     render={({ field }) => (
-                      <FormControl fullWidth error={!!errors.categoryId}>
-                        <InputLabel>Asset Category</InputLabel>
-                        <Select
-                          {...field}
-                          label="Asset Category"
-                          disabled={loading}
-                        >
-                          {mockAssetCategories.map((category) => (
-                            <MenuItem key={category.id} value={category.id}>
-                              {category.name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                      <Autocomplete
+                        {...field}
+                        freeSolo
+                        options={availableCategories}
+                        value={field.value || ''}
+                        onChange={(event, newValue) => {
+                          field.onChange(newValue || '');
+                        }}
+                        onInputChange={(event, newInputValue) => {
+                          field.onChange(newInputValue);
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            label="Asset Category"
+                            placeholder="Enter or select from available categories"
+                            error={!!errors.category}
+                            helperText={errors.category?.message || (availableCategories.length > 0 ? `Available categories: ${availableCategories.join(', ')}` : 'No categories available yet. You can still enter a custom category.')}
+                            disabled={loading}
+                          />
+                        )}
+                      />
                     )}
                   />
                 </Box>
@@ -535,15 +680,15 @@ const AssetRequests: React.FC = () => {
         </form>
       </Dialog>
 
-      {/* Cancel Request Confirmation Dialog */}
+      {/* Delete Request Confirmation Dialog */}
       <ConfirmationDialog
         open={isCancelDialogOpen}
-        title="Cancel Request"
-        message={`Are you sure you want to cancel your request for "${requestToCancel?.category.name}"?`}
-        confirmText="Cancel Request"
+        title="Delete Request"
+        message={`Are you sure you want to delete your request for "${requestToCancel?.category.name}"? This action cannot be undone.`}
+        confirmText="Delete Request"
         onConfirm={handleConfirmCancel}
         onCancel={() => setIsCancelDialogOpen(false)}
-        severity="warning"
+        severity="error"
         loading={loading}
       />
     </Box>
