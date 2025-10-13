@@ -34,14 +34,12 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
   const [error, setError] = useState<string | null>(null);
 
   const refreshCompanyDetails = useCallback(async () => {
-    // Only fetch if user is authenticated
-    if (!user || !user.tenant) {
-      return;
-    }
+    if (!user || !user.tenant) return;
 
     try {
       setLoading(true);
       setError(null);
+
       const details = await companyApi.getCompanyDetails();
       setCompanyDetails(details);
     } catch (err: any) {
@@ -56,20 +54,22 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
     setCompanyDetails(details);
   }, []);
 
-  // Load company details on mount only if user is authenticated
   useEffect(() => {
     if (user && user.tenant) {
       refreshCompanyDetails();
     }
   }, [refreshCompanyDetails, user]);
 
-  const companyName = useMemo(() => {
-    return companyDetails?.company_name || 'HRMS';
-  }, [companyDetails]);
+  const companyName = useMemo(
+    () => companyDetails?.company_name || 'HRMS',
+    [companyDetails]
+  );
 
   const companyLogo = useMemo(() => {
     if (!companyDetails?.logo_url) return null;
-    return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/public${companyDetails.logo_url}`;
+    if (companyDetails.logo_url.startsWith('http'))
+      return companyDetails.logo_url;
+    return `${import.meta.env.VITE_API_BASE_URL || 'http://192.168.0.129:3001'}${companyDetails.logo_url}`;
   }, [companyDetails]);
 
   const contextValue: CompanyContextType = useMemo(
@@ -100,7 +100,6 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-// Custom hook to use the company context
 export const useCompany = (): CompanyContextType => {
   const context = React.useContext(CompanyContext);
   if (!context) {
