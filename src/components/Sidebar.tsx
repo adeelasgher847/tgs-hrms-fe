@@ -30,13 +30,11 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { useTheme } from '../theme/hooks';
 import { useCompany } from '../context/CompanyContext';
-import companyApi from '../api/companyApi';
 import {
   isMenuVisibleForRole,
   isSubMenuVisibleForRole,
 } from '../utils/permissions';
 
-//Types
 interface SubItem {
   label: string;
   path: string;
@@ -55,7 +53,6 @@ interface SidebarProps {
   onMenuItemClick?: () => void;
 }
 
-//  Menu data
 const menuItems: MenuItem[] = [
   {
     label: 'Dashboard',
@@ -164,20 +161,17 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   const { toggleTheme } = useTheme();
   const location = useLocation();
   const { user } = useUser();
-  const { companyName } = useCompany();
-  const [sidebarLogo, setSidebarLogo] = useState<string | null>(null);
-  const [logoLoading, setLogoLoading] = useState(false);
+  const { companyLogo, companyName, loading: logoLoading } = useCompany();
   const role = user?.role;
   const [openItem, setOpenItem] = useState<string>('');
   const [activeSubItem, setActiveSubItem] = useState<string>('');
 
-  // Filter menu items based on role
   const filteredMenuItems = useMemo(() => {
     return menuItems
       .filter(item =>
         isMenuVisibleForRole(
           item.label,
-          typeof role === 'string' ? role : (role as unknown)?.name
+          typeof role === 'string' ? role : (role as any)?.name
         )
       )
       .map(item => ({
@@ -186,75 +180,18 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
           isSubMenuVisibleForRole(
             item.label,
             sub.label,
-            typeof role === 'string' ? role : (role as unknown)?.name
+            typeof role === 'string' ? role : (role as any)?.name
           )
         ),
       }));
   }, [role]);
 
-  // Fetch company logo using same API as company details modal
-  useEffect(() => {
-    const fetchCompanyLogo = async () => {
-      if (!user) return;
-      
-      setLogoLoading(true);
-      try {
-        const details = await companyApi.getCompanyDetails();
-        const logoUrl = await companyApi.getCompanyLogo(details.tenant_id);
-        setSidebarLogo(logoUrl);
-      } catch (err) {
-        console.error('Failed to fetch company logo for sidebar:', err);
-        setSidebarLogo(null);
-      } finally {
-        setLogoLoading(false);
-      }
-    };
-
-    // Only fetch if user exists (after login)
-    if (user) {
-      fetchCompanyLogo();
-    } else {
-      // console.log('Sidebar: No user found, skipping logo fetch');
-    }
-  }, [user]);
-
-  // Listen for logo updates from other components
-  useEffect(() => {
-    const handleLogoUpdate = async () => {
-      if (!user) return;
-      
-      setLogoLoading(true);
-      try {
-        const details = await companyApi.getCompanyDetails();
-        const logoUrl = await companyApi.getCompanyLogo(details.tenant_id);
-        setSidebarLogo(logoUrl);
-      } catch (err) {
-        console.error('Failed to fetch company logo for sidebar:', err);
-        setSidebarLogo(null);
-      } finally {
-        setLogoLoading(false);
-      }
-    };
-
-    // Listen for custom event when logo is updated
-    window.addEventListener('logoUpdated', handleLogoUpdate);
-    
-    return () => {
-      window.removeEventListener('logoUpdated', handleLogoUpdate);
-    };
-  }, [user]);
-
-  // Auto expand parent & highlight subitem on URL change
   useEffect(() => {
     let currentPath = location.pathname.replace('/dashboard/', '');
-    if (location.pathname === '/dashboard') {
-      currentPath = ''; // handle Hr Dashboard
-    }
+    if (location.pathname === '/dashboard') currentPath = '';
 
     let matched = false;
-
     for (const item of filteredMenuItems) {
-      // Check if subitem matches
       const matchedSub = item.subItems?.find(sub => sub.path === currentPath);
       if (matchedSub) {
         setOpenItem(item.label);
@@ -262,8 +199,6 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
         matched = true;
         break;
       }
-
-      // Check if direct link matches
       if (item.path === currentPath) {
         setOpenItem(item.label);
         setActiveSubItem('');
@@ -271,8 +206,6 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
         break;
       }
     }
-
-    // if no match, collapse all
     if (!matched) {
       setOpenItem('');
       setActiveSubItem('');
@@ -282,10 +215,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   const handleSubItemClick = (parent: string, subLabel: string) => {
     setOpenItem(parent);
     setActiveSubItem(subLabel);
-    // Close sidebar on mobile when menu item is clicked
-    if (onMenuItemClick) {
-      onMenuItemClick();
-    }
+    onMenuItemClick?.();
   };
 
   return (
@@ -298,19 +228,17 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
         justifyContent: 'space-between',
         fontFamily: 'Open Sans, sans-serif',
         height: '100%',
-        overflowY: 'auto',
-        '&::-webkit-scrollbar': {
-          display: 'none',
-        },
+        overflow: 'hidden',
       }}
     >
-      {/* Top Section */}
-      <Box>
-        <Box sx={{ py: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ position: 'sticky', top: 0, zIndex: 10, px: 2, py: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box
             sx={{
               width: 60,
               height: 60,
+              minWidth: 60,
+              minHeight: 60,
               bgcolor: 'white',
               color: '#464b8a',
               borderRadius: '50%',
@@ -319,37 +247,58 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
               justifyContent: 'center',
               fontWeight: 'bold',
               fontSize: 22,
-              // p: 1,
               overflow: 'hidden',
+              flexShrink: 0,
             }}
           >
             {logoLoading ? (
               <Skeleton
-                variant="circular"
-                width="100%"
-                height="100%"
-                borderRadius="50%"
+                variant='circular'
+                width='100%'
+                height='100%'
+                sx={{ borderRadius: '50%' }}
               />
-            ) : sidebarLogo ? (
+            ) : companyLogo ? (
               <Box
-                component="img"
-                src={sidebarLogo}
-                alt="Company Logo"
-                loading="lazy"
-                width="100%"
-                height="100%"
-                borderRadius="50%"
+                component='img'
+                src={companyLogo}
+                alt='Company Logo'
+                loading='lazy'
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                }}
               />
             ) : (
               <Clipboard />
             )}
           </Box>
-          <Typography sx={{ mt: 1, fontWeight: '700', fontSize: '18px' }}>
-            {companyName}
-          </Typography>
-        </Box>
 
-        {/* Sidebar Menu */}
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                fontSize: 18,
+                lineHeight: 1.2,
+                wordBreak: 'break-word',
+              }}
+            >
+              {companyName || 'Trans Global Services'}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          '&::-webkit-scrollbar': { display: 'none' },
+          px: 1,
+        }}
+      >
         <List>
           {filteredMenuItems.map(item => {
             const isParentActive = openItem === item.label;
@@ -365,7 +314,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                     onClick={() => {
                       setOpenItem(item.label);
                       setActiveSubItem('');
-                      if (onMenuItemClick) onMenuItemClick();
+                      onMenuItemClick?.();
                     }}
                     sx={{
                       color: location.pathname.includes(item.path)
@@ -388,7 +337,6 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                   </ListItemButton>
                 ) : (
                   <>
-                    {/* Collapsible menu for items with submenus */}
                     <ListItemButton
                       onClick={() =>
                         setOpenItem(isParentActive ? '' : item.label)
@@ -452,8 +400,8 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
           })}
         </List>
       </Box>
-      {/* Bottom Settings */}
-      <Box sx={{ px: 2, pb: 2 }}>
+
+      <Box sx={{ px: 2, pb: 2, pt: 1, bottom: 0, zIndex: 10 }}>
         <Box
           display='flex'
           alignItems='center'
@@ -463,8 +411,6 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
           <Typography variant='body2'>Enable Dark Mode!</Typography>
           <Switch checked={darkMode} onChange={toggleTheme} />
         </Box>
-
-        {/* Collapse Icon */}
         <Box textAlign='center' mt={2}>
           <Box
             component='img'

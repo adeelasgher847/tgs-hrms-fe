@@ -329,6 +329,7 @@ class TeamApiService {
       const response = await axiosInstance.get<PaginatedResponse<TeamMember & { team?: { id: string; name: string } }>>(
         `${this.baseUrl}/all-members?page=${page}`
       );
+      console.log("Get all team members response:", response)
       return response.data;
     } catch {
       return {
