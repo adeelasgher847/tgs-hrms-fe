@@ -104,7 +104,6 @@ class CompanyApiService {
   // Get company details
   async getCompanyDetails(): Promise<CompanyDetails> {
     const response = await axiosInstance.get<CompanyDetails>('/company');
-    // console.log(response);
     return response.data;
   }
 
@@ -119,7 +118,6 @@ class CompanyApiService {
     const response = await axiosInstance.get(`/company/logo/${tenantId}`, {
       responseType: 'blob'
     });
-    // console.log(response);
     
     // Create blob URL from binary response
     const blob = new Blob([response.data], { type: response.data.type || 'image/jpeg' });

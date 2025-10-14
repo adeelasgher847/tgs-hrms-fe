@@ -30,47 +30,48 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(
     null
   );
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refreshCompanyDetails = useCallback(async () => {
-    if (!user || !user.tenant) return;
-
     try {
       setLoading(true);
       setError(null);
 
       const details = await companyApi.getCompanyDetails();
+      console.log("Company details:", details)
       setCompanyDetails(details);
+
+      const tenantId = details.tenant_id;
+      if (!tenantId) {
+        console.warn('tenant_id not found in company details');
+        return;
+      }
+
+      const logoUrl = await companyApi.getCompanyLogo(tenantId);
+
+      setCompanyLogo(logoUrl);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch company details');
       console.error('Error fetching company details:', err);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   const updateCompanyDetails = useCallback((details: CompanyDetails) => {
     setCompanyDetails(details);
   }, []);
 
   useEffect(() => {
-    if (user && user.tenant) {
-      refreshCompanyDetails();
-    }
-  }, [refreshCompanyDetails, user]);
+    refreshCompanyDetails();
+  }, [refreshCompanyDetails]);
 
   const companyName = useMemo(
     () => companyDetails?.company_name || 'HRMS',
     [companyDetails]
   );
-
-  const companyLogo = useMemo(() => {
-    if (!companyDetails?.logo_url) return null;
-    if (companyDetails.logo_url.startsWith('http'))
-      return companyDetails.logo_url;
-    return `${import.meta.env.VITE_API_BASE_URL || 'http://192.168.0.129:3001'}${companyDetails.logo_url}`;
-  }, [companyDetails]);
 
   const contextValue: CompanyContextType = useMemo(
     () => ({

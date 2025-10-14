@@ -183,6 +183,12 @@ const SettingsPage: React.FC = () => {
     handleEditCompanyDetails();
   }, [handleEditCompanyDetails]);
 
+  useEffect(() => {
+    if (companyLogo && companyModalOpen && !logoUploading) {
+      setModalCompanyLogo(companyLogo);
+    }
+  }, [companyLogo, companyModalOpen, logoUploading]);
+
   return (
     <Box>
       {/* Header */}
