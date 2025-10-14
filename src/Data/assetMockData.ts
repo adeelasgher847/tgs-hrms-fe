@@ -1,18 +1,15 @@
 import type { Asset, AssetCategory, AssetRequest, MockUser, AssetStatistics } from '../types/asset';
+import { assetCategories } from './assetCategories';
 
-// Mock Asset Categories
-export const mockAssetCategories: AssetCategory[] = [
-  { id: '1', name: 'Laptop', nameAr: 'جهاز كمبيوتر محمول', description: 'Portable computers' },
-  { id: '2', name: 'Desktop Computer', nameAr: 'جهاز كمبيوتر مكتبي', description: 'Desktop computers' },
-  { id: '3', name: 'Monitor', nameAr: 'شاشة', description: 'Computer monitors' },
-  { id: '4', name: 'Printer', nameAr: 'طابعة', description: 'Printing devices' },
-  { id: '5', name: 'Phone', nameAr: 'هاتف', description: 'Mobile and desk phones' },
-  { id: '6', name: 'Tablet', nameAr: 'جهاز لوحي', description: 'Tablet devices' },
-  { id: '7', name: 'Projector', nameAr: 'جهاز عرض', description: 'Presentation projectors' },
-  { id: '8', name: 'Camera', nameAr: 'كاميرا', description: 'Digital cameras' },
-  { id: '9', name: 'Headset', nameAr: 'سماعات', description: 'Audio headsets' },
-  { id: '10', name: 'Office Furniture', nameAr: 'أثاث مكتبي', description: 'Desks, chairs, etc.' },
-];
+// Use comprehensive asset categories as mock data
+export const mockAssetCategories: AssetCategory[] = assetCategories.map(cat => ({
+  id: cat.id,
+  name: cat.name,
+  nameAr: cat.nameAr,
+  description: cat.description,
+  color: cat.color,
+  subcategories: cat.subcategories
+}));
 
 // Mock Users
 export const mockUsers: MockUser[] = [
@@ -31,7 +28,10 @@ export const mockAssets: Asset[] = [
   {
     id: '1',
     name: 'Dell Latitude 5520',
-    category: mockAssetCategories[0],
+    category: {
+      ...mockAssetCategories.find(cat => cat.id === 'it-equipment')!,
+      name: 'Laptop' // Use subcategory name
+    },
     status: 'assigned',
     assignedTo: '1',
     assignedToName: 'John Doe',
@@ -46,7 +46,10 @@ export const mockAssets: Asset[] = [
   {
     id: '2',
     name: 'HP EliteDesk 800',
-    category: mockAssetCategories[1],
+    category: {
+      ...mockAssetCategories.find(cat => cat.id === 'it-equipment')!,
+      name: 'Desktop'
+    },
     status: 'available',
     serialNumber: 'HP001234568',
     purchaseDate: '2023-02-10T00:00:00Z',
@@ -59,7 +62,10 @@ export const mockAssets: Asset[] = [
   {
     id: '3',
     name: 'Samsung 27" Monitor',
-    category: mockAssetCategories[2],
+    category: {
+      ...mockAssetCategories.find(cat => cat.id === 'it-equipment')!,
+      name: 'Monitor'
+    },
     status: 'assigned',
     assignedTo: '2',
     assignedToName: 'Jane Smith',
@@ -74,7 +80,10 @@ export const mockAssets: Asset[] = [
   {
     id: '4',
     name: 'Canon PIXMA Printer',
-    category: mockAssetCategories[3],
+    category: {
+      ...mockAssetCategories.find(cat => cat.id === 'it-equipment')!,
+      name: 'Printers'
+    },
     status: 'under_maintenance',
     serialNumber: 'CN001234570',
     purchaseDate: '2022-12-01T00:00:00Z',
@@ -87,7 +96,10 @@ export const mockAssets: Asset[] = [
   {
     id: '5',
     name: 'iPhone 14 Pro',
-    category: mockAssetCategories[4],
+    category: {
+      ...mockAssetCategories.find(cat => cat.id === 'it-equipment')!,
+      name: 'Phone'
+    },
     status: 'assigned',
     assignedTo: '3',
     assignedToName: 'Mike Johnson',
@@ -215,6 +227,75 @@ export const mockAssets: Asset[] = [
     description: '2-in-1 tablet laptop',
     createdAt: '2023-11-15T00:00:00Z',
     updatedAt: '2023-11-15T00:00:00Z',
+  },
+  // Additional examples from different categories
+  {
+    id: '15',
+    name: 'Ergonomic Office Chair',
+    category: {
+      ...mockAssetCategories.find(cat => cat.id === 'office-equipment')!,
+      name: 'Chairs'
+    },
+    status: 'available',
+    serialNumber: 'CHAIR001',
+    purchaseDate: '2023-10-01T00:00:00Z',
+    warrantyExpiry: '2025-10-01T00:00:00Z',
+    location: 'Office Floor 1',
+    description: 'Ergonomic office chair with lumbar support',
+    createdAt: '2023-10-01T00:00:00Z',
+    updatedAt: '2023-10-01T00:00:00Z',
+  },
+  {
+    id: '16',
+    name: 'Company Vehicle - Honda Civic',
+    category: {
+      ...mockAssetCategories.find(cat => cat.id === 'mobility-transport')!,
+      name: 'Company Vehicle'
+    },
+    status: 'assigned',
+    assignedTo: '7',
+    assignedToName: 'Tom Anderson',
+    serialNumber: 'HONDA2023',
+    purchaseDate: '2023-09-15T00:00:00Z',
+    warrantyExpiry: '2026-09-15T00:00:00Z',
+    location: 'Company Garage',
+    description: 'Company vehicle for sales team',
+    createdAt: '2023-09-15T00:00:00Z',
+    updatedAt: '2023-09-15T00:00:00Z',
+  },
+  {
+    id: '17',
+    name: 'Microsoft Office 365 License',
+    category: {
+      ...mockAssetCategories.find(cat => cat.id === 'software-licenses')!,
+      name: 'Productivity Tools (MS Office, Google Workspace, Notion, Slack)'
+    },
+    status: 'assigned',
+    assignedTo: '1',
+    assignedToName: 'John Doe',
+    serialNumber: 'MS365-2023-001',
+    purchaseDate: '2023-01-01T00:00:00Z',
+    warrantyExpiry: '2024-01-01T00:00:00Z',
+    location: 'Cloud License',
+    description: 'Annual Microsoft Office 365 subscription',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+  },
+  {
+    id: '18',
+    name: 'Safety Helmet',
+    category: {
+      ...mockAssetCategories.find(cat => cat.id === 'health-safety')!,
+      name: 'Safety Helmets'
+    },
+    status: 'available',
+    serialNumber: 'HELMET001',
+    purchaseDate: '2023-08-20T00:00:00Z',
+    warrantyExpiry: '2025-08-20T00:00:00Z',
+    location: 'Safety Equipment Storage',
+    description: 'Construction safety helmet',
+    createdAt: '2023-08-20T00:00:00Z',
+    updatedAt: '2023-08-20T00:00:00Z',
   },
 ];
 

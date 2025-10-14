@@ -21,6 +21,8 @@ export interface AssetCategory {
   name: string;
   nameAr: string;
   description?: string;
+  color?: string;
+  subcategories?: string[];
 }
 
 export type AssetStatus = 'available' | 'assigned' | 'under_maintenance' | 'retired';

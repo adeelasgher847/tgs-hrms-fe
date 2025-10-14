@@ -32,6 +32,8 @@ import {
   Menu,
   ListItemIcon,
   ListItemText,
+  CircularProgress,
+  Stack,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -51,6 +53,7 @@ import employeeApi from '../../api/employeeApi';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
+import { assetCategories, getCategoryById } from '../../data/assetCategories';
 
 const schema = yup.object({
   action: yup.string().required('Action is required'),
@@ -97,19 +100,8 @@ const RequestManagement: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
 
-  // Common asset categories for reference
-  const commonCategories = [
-    'Laptop',
-    'Desktop Computer', 
-    'Monitor',
-    'Printer',
-    'Phone',
-    'Tablet',
-    'Projector',
-    'Camera',
-    'Headset',
-    'Office Furniture'
-  ];
+  // Get all subcategories from comprehensive categories
+  const commonCategories = assetCategories.flatMap(cat => cat.subcategories || [cat.name]);
 
   const {
     control,
@@ -166,40 +158,82 @@ const RequestManagement: React.FC = () => {
           })
         );
 
-        const transformedRequests: AssetRequest[] = apiRequests.map((apiRequest: ApiAssetRequest) => ({
-          id: apiRequest.id,
-          employeeId: apiRequest.requested_by,
-          employeeName: apiRequest.requestedByName || userNameMap.get(apiRequest.requested_by) || `User ${apiRequest.requested_by}`,
-          category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
-          remarks: apiRequest.remarks,
-          status: apiRequest.status,
-          requestedDate: apiRequest.requested_date,
-          processedDate: apiRequest.approved_date,
-          processedBy: apiRequest.approved_by,
-          processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? userNameMap.get(apiRequest.approved_by) || `User ${apiRequest.approved_by}` : undefined),
-          rejectionReason: undefined, // Not provided by API
-          assignedAssetId: undefined, // Not provided by API
-          assignedAssetName: undefined, // Not provided by API
-        }));
+        const transformedRequests: AssetRequest[] = apiRequests.map((apiRequest: ApiAssetRequest) => {
+          // Try to find matching category from our comprehensive list
+          const matchingCategory = assetCategories.find(cat => 
+            cat.name.toLowerCase() === apiRequest.asset_category.toLowerCase() ||
+            cat.subcategories?.some(sub => sub.toLowerCase() === apiRequest.asset_category.toLowerCase())
+          );
+
+          return {
+            id: apiRequest.id,
+            employeeId: apiRequest.requested_by,
+            employeeName: apiRequest.requestedByName || userNameMap.get(apiRequest.requested_by) || `User ${apiRequest.requested_by}`,
+            category: matchingCategory ? {
+              id: matchingCategory.id,
+              name: matchingCategory.name,
+              nameAr: matchingCategory.nameAr,
+              description: matchingCategory.description,
+              color: matchingCategory.color,
+              subcategories: matchingCategory.subcategories
+            } : { 
+              id: apiRequest.asset_category, 
+              name: apiRequest.asset_category, 
+              nameAr: apiRequest.asset_category, 
+              description: '',
+              color: '#757575'
+            },
+            remarks: apiRequest.remarks,
+            status: apiRequest.status,
+            requestedDate: apiRequest.requested_date,
+            processedDate: apiRequest.approved_date,
+            processedBy: apiRequest.approved_by,
+            processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? userNameMap.get(apiRequest.approved_by) || `User ${apiRequest.approved_by}` : undefined),
+            rejectionReason: undefined, // Not provided by API
+            assignedAssetId: undefined, // Not provided by API
+            assignedAssetName: undefined, // Not provided by API
+          };
+        });
         
         setRequests(transformedRequests);
 
         // Fetch assets for assignment
         const apiAssets = await assetApi.getAllAssets();
-        const transformedAssets: Asset[] = apiAssets.map((apiAsset: any) => ({
-          id: apiAsset.id,
-          name: apiAsset.name,
-          category: { id: apiAsset.category, name: apiAsset.category, nameAr: apiAsset.category, description: '' },
-          status: apiAsset.status,
-          assignedTo: apiAsset.assigned_to,
-          assignedToName: undefined,
-          serialNumber: '',
-          purchaseDate: apiAsset.purchase_date,
-          location: '',
-          description: '',
-          createdAt: apiAsset.created_at,
-          updatedAt: apiAsset.created_at,
-        }));
+        const transformedAssets: Asset[] = apiAssets.map((apiAsset: any) => {
+          // Try to find matching category from our comprehensive list
+          const matchingCategory = assetCategories.find(cat => 
+            cat.name.toLowerCase() === apiAsset.category.toLowerCase() ||
+            cat.subcategories?.some(sub => sub.toLowerCase() === apiAsset.category.toLowerCase())
+          );
+
+          return {
+            id: apiAsset.id,
+            name: apiAsset.name,
+            category: matchingCategory ? {
+              id: matchingCategory.id,
+              name: matchingCategory.name,
+              nameAr: matchingCategory.nameAr,
+              description: matchingCategory.description,
+              color: matchingCategory.color,
+              subcategories: matchingCategory.subcategories
+            } : { 
+              id: apiAsset.category, 
+              name: apiAsset.category, 
+              nameAr: apiAsset.category, 
+              description: '',
+              color: '#757575'
+            },
+            status: apiAsset.status,
+            assignedTo: apiAsset.assigned_to,
+            assignedToName: undefined,
+            serialNumber: '',
+            purchaseDate: apiAsset.purchase_date,
+            location: '',
+            description: '',
+            createdAt: apiAsset.created_at,
+            updatedAt: apiAsset.created_at,
+          };
+        });
         
         setAssets(transformedAssets);
       } catch (error) {
@@ -341,7 +375,9 @@ const RequestManagement: React.FC = () => {
   if (initialLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <Typography>Loading requests...</Typography>
+        <Stack alignItems="center" py={4}>
+          <CircularProgress />
+        </Stack>
       </Box>
     );
   }
@@ -435,12 +471,6 @@ const RequestManagement: React.FC = () => {
         <Typography variant="h4" fontWeight={600}>
           Asset Request Management
         </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<FilterIcon />}
-        >
-          Advanced Filters
-        </Button>
       </Box>
 
       {/* Statistics Cards */}

@@ -93,6 +93,16 @@ const menuItems: MenuItem[] = [
     subItems: [{ label: 'Employee List', path: 'EmployeeManager' }],
   },
   {
+    label: 'Benefits',
+    icon: <Payments />,
+    subItems: [
+      { label: 'Benefit List', path: 'benefits' },
+      { label: 'Assign Benefits', path: 'benefits/assign' },
+      { label: 'Reporting', path: 'benefits/reporting' },
+      { label: 'My Benefits', path: 'my-benefits' },
+    ],
+  },
+  {
     label: 'Teams',
     icon: <Group />,
     subItems: [{ label: 'Team Management', path: 'teams' }],
@@ -173,23 +183,27 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
 
   // Filter menu items based on role
   const filteredMenuItems = useMemo(() => {
-    return menuItems
-      .filter(item =>
-        isMenuVisibleForRole(
-          item.label,
-          typeof role === 'string' ? role : (role as unknown)?.name
-        )
-      )
+    const userRole = typeof role === 'string' ? role : (role as unknown)?.name;
+    console.log('Current user role:', userRole);
+    console.log('All menu items:', menuItems.map(item => item.label));
+    
+    const filtered = menuItems
+      .filter(item => {
+        const isVisible = isMenuVisibleForRole(item.label, userRole);
+        console.log(`Menu "${item.label}" visible for role "${userRole}":`, isVisible);
+        return isVisible;
+      })
       .map(item => ({
         ...item,
-        subItems: item.subItems.filter(sub =>
-          isSubMenuVisibleForRole(
-            item.label,
-            sub.label,
-            typeof role === 'string' ? role : (role as unknown)?.name
-          )
-        ),
+        subItems: item.subItems.filter(sub => {
+          const isSubVisible = isSubMenuVisibleForRole(item.label, sub.label, userRole);
+          console.log(`Submenu "${sub.label}" under "${item.label}" visible for role "${userRole}":`, isSubVisible);
+          return isSubVisible;
+        }),
       }));
+    
+    console.log('Filtered menu items:', filtered.map(item => item.label));
+    return filtered;
   }, [role]);
 
   // Fetch company logo using same API as company details modal
