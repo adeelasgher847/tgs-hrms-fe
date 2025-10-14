@@ -28,6 +28,7 @@ import {
   CameraAlt,
   BusinessCenter,
 } from '@mui/icons-material';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const SettingsPage: React.FC = () => {
   const theme = useTheme();
@@ -55,18 +56,16 @@ const SettingsPage: React.FC = () => {
 
   const isModalOpenRef = useRef(false);
 
-  // Open modal and initialize edit state
   const handleEditCompanyDetails = useCallback(async () => {
     if (!user) return;
 
     setCompanyModalOpen(true);
-    setIsEditing(false);
+    setIsEditing(true);
     isModalOpenRef.current = true;
 
     try {
       setModalLogoLoading(true);
 
-      // Initialize form with context values
       if (contextCompanyDetails) {
         setEditFormData({
           company_name: contextCompanyDetails.company_name,
@@ -121,7 +120,6 @@ const SettingsPage: React.FC = () => {
         domain: editFormData.domain,
       });
 
-      // Update context
       await refreshCompanyDetails();
 
       setIsEditing(false);
@@ -166,7 +164,6 @@ const SettingsPage: React.FC = () => {
           setModalCompanyLogo(logoUrl);
         }
 
-        // Update context for main logo
         await refreshCompanyDetails();
         setError(null);
       } catch (err) {
@@ -179,9 +176,21 @@ const SettingsPage: React.FC = () => {
     [contextCompanyDetails?.tenant_id, refreshCompanyDetails, user]
   );
 
-  useEffect(() => {
-    handleEditCompanyDetails();
-  }, [handleEditCompanyDetails]);
+  const handleDeleteLogo = useCallback(async () => {
+    if (!contextCompanyDetails?.tenant_id) return;
+
+    try {
+      setLogoUploading(true);
+      await companyApi.deleteCompanyLogo(contextCompanyDetails.tenant_id);
+      setModalCompanyLogo(null);
+      await refreshCompanyDetails();
+    } catch (err) {
+      console.error('Failed to delete company logo:', err);
+      setError('Failed to delete company logo');
+    } finally {
+      setLogoUploading(false);
+    }
+  }, [contextCompanyDetails?.tenant_id, refreshCompanyDetails]);
 
   useEffect(() => {
     if (companyLogo && companyModalOpen && !logoUploading) {
@@ -450,6 +459,9 @@ const SettingsPage: React.FC = () => {
                       position: 'relative',
                       cursor: isEditing ? 'pointer' : 'default',
                       '&:hover .camera-overlay': { opacity: isEditing ? 1 : 0 },
+                      '&:hover .delete-icon': {
+                        opacity: isEditing && modalCompanyLogo ? 1 : 0,
+                      },
                       '&:hover .avatar': {
                         filter: isEditing ? 'brightness(0.7)' : 'none',
                       },
@@ -503,6 +515,30 @@ const SettingsPage: React.FC = () => {
                     >
                       <CameraAlt sx={{ color: 'white', fontSize: 40 }} />
                     </Box>
+
+                    {/* {isEditing && modalCompanyLogo && (
+                      <IconButton
+                        onClick={handleDeleteLogo}
+                        className='delete-icon'
+                        sx={{
+                          position: 'absolute',
+                          top: 6,
+                          right: 6,
+                          backgroundColor: 'rgba(0,0,0,0.6)',
+                          color: '#ff6b6b',
+                          opacity: 0,
+                          transition: 'opacity 0.3s ease',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            color: '#ff1744',
+                          },
+                        }}
+                        size='small'
+                      >
+                        <DeleteIcon fontSize='small' />
+                      </IconButton>
+                    )} */}
+
                     <input
                       accept='image/*'
                       style={{ display: 'none' }}

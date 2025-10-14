@@ -285,7 +285,11 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                 wordBreak: 'break-word',
               }}
             >
-              {companyName || 'Trans Global Services'}
+              {companyName
+                ? companyName.length > 15
+                  ? companyName.slice(0, 15) + '...'
+                  : companyName
+                : 'Trans Global Services'}
             </Typography>
           </Box>
         </Box>
