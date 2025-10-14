@@ -19,7 +19,7 @@ import {
 } from '@mui/icons-material';
 
 import { useLanguage } from '../../hooks/useLanguage';
-import { isAdmin, isManager } from '../../utils/auth';
+import { isAdmin, isManager, isHRAdmin } from '../../utils/auth';
 import { teamApiService } from '../../api/teamApi';
 import type { Team, TeamMember } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
@@ -121,6 +121,10 @@ const TeamManager: React.FC<TeamManagerProps> = ({
           // Load all teams for admin with members included
           const teamsData = await teamApiService.getAllTeams(1);
           setTeams(teamsData.items || []);
+        } else if (isHRAdmin()) {
+          // Load all teams for HR admin without members
+          const teamsData = await teamApiService.getAllTeams(1);
+          setTeams(teamsData.items || []);
         }
       } catch {
         setError('Failed to load team data');
@@ -150,6 +154,10 @@ const TeamManager: React.FC<TeamManagerProps> = ({
             setTeamMembers(membersData.items || []);
           } else if (isAdmin()) {
             // Load all teams for admin with members included
+            const teamsData = await teamApiService.getAllTeams(1);
+            setTeams(teamsData.items || []);
+          } else if (isHRAdmin()) {
+            // Load all teams of the current tenant (view-only)
             const teamsData = await teamApiService.getAllTeams(1);
             setTeams(teamsData.items || []);
           }
@@ -238,7 +246,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
         // Load all teams for admin with members included
         const teamsData = await teamApiService.getAllTeams(1);
         setTeams(teamsData.items || []);
-      }
+      } 
     } catch {
       setError('Failed to refresh team data');
     } finally {
@@ -310,20 +318,20 @@ const TeamManager: React.FC<TeamManagerProps> = ({
         <Typography
           variant='h4'
           sx={{
-            color: (theme) => theme.palette.text.primary,
+            color: theme => theme.palette.text.primary,
             fontSize: { xs: '1.5rem', sm: '2.125rem' },
             textAlign: { xs: 'left', sm: 'left' },
           }}
         >
           {lang.title}
         </Typography>
-        {isAdmin() && (
+        {isAdmin() && !isHRAdmin() && (
           <Button
             variant='contained'
             startIcon={<AddIcon />}
             onClick={() => setShowCreateForm(true)}
             sx={{
-              backgroundColor: (theme) => theme.palette.primary.main,
+              backgroundColor: theme => theme.palette.primary.main,
               minWidth: { xs: '100%', sm: 'auto' },
               py: { xs: 1.5, sm: 1 },
             }}
@@ -346,7 +354,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
           mb: 3,
         }}
       >
-        <Card sx={{ backgroundColor: (theme) => theme.palette.background.paper }}>
+        <Card sx={{ backgroundColor: theme => theme.palette.background.paper }}>
           <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
             <Box
               sx={{
@@ -359,7 +367,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                 <Typography
                   variant='h4'
                   sx={{
-                    color: (theme) => theme.palette.text.primary,
+                    color: theme => theme.palette.text.primary,
                     fontSize: { xs: '1.75rem', sm: '2.125rem' },
                   }}
                 >
@@ -368,7 +376,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                 <Typography
                   variant='body2'
                   sx={{
-                    color: (theme) => theme.palette.text.secondary,
+                    color: theme => theme.palette.text.secondary,
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   }}
                 >
@@ -378,7 +386,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
               <BusinessIcon
                 sx={{
                   fontSize: { xs: 32, sm: 40 },
-                  color: (theme) => theme.palette.primary.main,
+                  color: theme => theme.palette.primary.main,
                 }}
               />
             </Box>
@@ -387,7 +395,9 @@ const TeamManager: React.FC<TeamManagerProps> = ({
 
         {/* Only show Members Count Card for Managers */}
         {isManager() && (
-          <Card sx={{ backgroundColor: (theme) => theme.palette.background.paper }}>
+          <Card
+            sx={{ backgroundColor: theme => theme.palette.background.paper }}
+          >
             <CardContent>
               <Box
                 sx={{
@@ -400,7 +410,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                   <Typography
                     variant='h4'
                     sx={{
-                      color: (theme) => theme.palette.text.primary,
+                      color: theme => theme.palette.text.primary,
                       fontSize: { xs: '1.75rem', sm: '2.125rem' },
                     }}
                   >
@@ -409,7 +419,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                   <Typography
                     variant='body2'
                     sx={{
-                      color: (theme) => theme.palette.text.secondary,
+                      color: theme => theme.palette.text.secondary,
                       fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     }}
                   >
@@ -419,7 +429,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                 <PersonIcon
                   sx={{
                     fontSize: { xs: 32, sm: 40 },
-                    color: (theme) => theme.palette.primary.main,
+                    color: theme => theme.palette.primary.main,
                   }}
                 />
               </Box>
@@ -440,12 +450,12 @@ const TeamManager: React.FC<TeamManagerProps> = ({
               justifyContent: 'flex-start', // Always align to start on all screen sizes
             },
             '& .MuiTab-root': {
-              color: (theme) => theme.palette.text.secondary,
+              color: theme => theme.palette.text.secondary,
               fontSize: { xs: '0.875rem', sm: '1rem' },
               minHeight: { xs: 48, sm: 56 },
               minWidth: 'auto',
               '&.Mui-selected': {
-                color: (theme) => theme.palette.primary.main,
+                color: theme => theme.palette.primary.main,
               },
             },
           }}
@@ -457,7 +467,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
               iconPosition='start'
             />
           )}
-          {isAdmin() && (
+          {(isAdmin() || isHRAdmin() )&& (
             <Tab
               label={lang.allTeams}
               icon={<BusinessIcon />}
@@ -474,7 +484,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
         </TabPanel>
       )}
 
-      {isAdmin() && (
+      {(isAdmin() || isHRAdmin()) && (
         <TabPanel value={tabValue} index={isManager() ? 1 : 0}>
           <TeamList
             teams={teams}

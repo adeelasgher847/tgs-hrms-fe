@@ -44,7 +44,8 @@ interface SubItem {
 interface MenuItem {
   label: string;
   icon: React.ReactNode;
-  subItems: SubItem[];
+  path?: string;
+  subItems?: SubItem[];
 }
 interface SidebarProps {
   rtlMode: boolean;
@@ -72,9 +73,7 @@ const menuItems: MenuItem[] = [
   {
     label: 'Tenant',
     icon: <ConfirmationNumber />,
-    subItems: [
-      { label: 'Add Tenant', path: 'tenant' },
-    ],
+    subItems: [{ label: 'Add Tenant', path: 'tenant' }],
   },
   {
     label: 'Department',
@@ -121,8 +120,9 @@ const menuItems: MenuItem[] = [
     icon: <Receipt />,
     subItems: [
       { label: 'Attendance', path: 'AttendanceCheck' },
-      { label: 'Attendance Table', path: 'AttendanceTable' },
+      { label: 'Daily Attendance', path: 'AttendanceTable' },
       { label: 'Reports', path: 'Reports' },
+      { label: 'Report', path: 'attendance-summary' },
       { label: 'Leave Request', path: 'leaves' },
     ],
   },
@@ -184,25 +184,21 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   // Filter menu items based on role
   const filteredMenuItems = useMemo(() => {
     const userRole = typeof role === 'string' ? role : (role as unknown)?.name;
-    console.log('Current user role:', userRole);
-    console.log('All menu items:', menuItems.map(item => item.label));
     
     const filtered = menuItems
       .filter(item => {
         const isVisible = isMenuVisibleForRole(item.label, userRole);
-        console.log(`Menu "${item.label}" visible for role "${userRole}":`, isVisible);
         return isVisible;
       })
       .map(item => ({
         ...item,
         subItems: item.subItems.filter(sub => {
           const isSubVisible = isSubMenuVisibleForRole(item.label, sub.label, userRole);
-          console.log(`Submenu "${sub.label}" under "${item.label}" visible for role "${userRole}":`, isSubVisible);
+
           return isSubVisible;
         }),
+
       }));
-    
-    console.log('Filtered menu items:', filtered.map(item => item.label));
     return filtered;
   }, [role]);
 
@@ -265,13 +261,31 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
       currentPath = ''; // handle Hr Dashboard
     }
 
+    let matched = false;
+
     for (const item of filteredMenuItems) {
-      const matchedSub = item.subItems.find(sub => sub.path === currentPath);
+      // Check if subitem matches
+      const matchedSub = item.subItems?.find(sub => sub.path === currentPath);
       if (matchedSub) {
         setOpenItem(item.label);
         setActiveSubItem(matchedSub.label);
+        matched = true;
         break;
       }
+
+      // Check if direct link matches
+      if (item.path === currentPath) {
+        setOpenItem(item.label);
+        setActiveSubItem('');
+        matched = true;
+        break;
+      }
+    }
+
+    // if no match, collapse all
+    if (!matched) {
+      setOpenItem('');
+      setActiveSubItem('');
     }
   }, [location.pathname, filteredMenuItems]);
 
@@ -349,33 +363,32 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
         <List>
           {filteredMenuItems.map(item => {
             const isParentActive = openItem === item.label;
-            const isDirectLink =
-              item.subItems.length === 1 && item.subItems[0].path === '';
+            const hasSubMenu = item.subItems && item.subItems.length > 0;
+            const isDirectLink = !hasSubMenu && item.path;
 
             return (
               <Box key={item.label}>
                 {isDirectLink ? (
-                  // Direct link for single sub-item with empty path (like HR Dashboard)
                   <ListItemButton
                     component={NavLink}
-                    to='/dashboard'
+                    to={`/dashboard/${item.path}`}
                     onClick={() => {
-                      handleSubItemClick(item.label, item.subItems[0].label);
+                      setOpenItem(item.label);
+                      setActiveSubItem('');
+                      if (onMenuItemClick) onMenuItemClick();
                     }}
                     sx={{
-                      color:
-                        activeSubItem === item.subItems[0].label
-                          ? 'orange'
-                          : 'white',
+                      color: location.pathname.includes(item.path)
+                        ? 'orange'
+                        : 'white',
                       pl: 1,
                     }}
                   >
                     <ListItemIcon
                       sx={{
-                        color:
-                          activeSubItem === item.subItems[0].label
-                            ? 'orange'
-                            : 'white',
+                        color: location.pathname.includes(item.path)
+                          ? 'orange'
+                          : 'white',
                         minWidth: '36px',
                       }}
                     >
@@ -384,8 +397,8 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                     <ListItemText primary={item.label} />
                   </ListItemButton>
                 ) : (
-                  // Collapsible menu for multiple sub-items
                   <>
+                    {/* Collapsible menu for items with submenus */}
                     <ListItemButton
                       onClick={() =>
                         setOpenItem(isParentActive ? '' : item.label)
@@ -404,21 +417,23 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                         {item.icon}
                       </ListItemIcon>
                       <ListItemText primary={item.label} />
-                      <img
-                        src={dotted}
-                        alt='dotted'
-                        style={{
-                          width: 23,
-                          height: 23,
-                          filter:
-                            'invert(57%) sepia(9%) saturate(388%) hue-rotate(195deg) brightness(89%) contrast(85%)',
-                        }}
-                      />
+                      {item.subItems && (
+                        <img
+                          src={dotted}
+                          alt='dotted'
+                          style={{
+                            width: 23,
+                            height: 23,
+                            filter:
+                              'invert(57%) sepia(9%) saturate(388%) hue-rotate(195deg) brightness(89%) contrast(85%)',
+                          }}
+                        />
+                      )}
                     </ListItemButton>
 
                     <Collapse in={isParentActive} timeout='auto' unmountOnExit>
                       <List component='div' disablePadding>
-                        {item.subItems.map(sub => (
+                        {item.subItems?.map(sub => (
                           <ListItemButton
                             key={sub.path}
                             component={NavLink}
@@ -458,7 +473,6 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
           <Typography variant='body2'>Enable Dark Mode!</Typography>
           <Switch checked={darkMode} onChange={toggleTheme} />
         </Box>
-       
 
         {/* Collapse Icon */}
         <Box textAlign='center' mt={2}>

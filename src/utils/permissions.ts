@@ -52,10 +52,9 @@ export const isMenuVisibleForRole = (
   role?: string
 ): boolean => {
   const r = normalizeRole(role);
-  const label = menuLabel.trim().toLowerCase();
-  console.log(`Checking menu visibility: "${menuLabel}" for role "${role}" -> normalized: "${r}"`);
+  const label = (menuLabel || '').toLowerCase().replace(/\s+/g, '').trim();
 
-  // Only keep core HRMS sections per requirements
+
   const allowedByRole: Record<NormalizedRole, string[]> = {
     'system-admin': [
       'dashboard',
@@ -66,6 +65,7 @@ export const isMenuVisibleForRole = (
       'assets',
       'attendance',
       'benefits',
+      'report',
     ],
     'network-admin': [
       'dashboard',
@@ -74,14 +74,15 @@ export const isMenuVisibleForRole = (
       'teams',
       'assets',
       'attendance',
+      'report',
       'benefits',
     ],
     'hr-admin': [
       'attendance',
       'benefits',
     ],
-    admin: ['dashboard', 'department', 'employees', 'teams', 'assets', 'attendance', 'benefits'],
-    manager: ['teams', 'attendance', 'assets', 'benefits'],
+    admin: ['dashboard', 'department', 'employees', 'teams', 'assets', 'attendance', 'report' , 'benefits'],
+    manager: ['teams', 'attendance', 'assets','report',  'benefits'],
     employee: ['attendance', 'assets', 'benefits'],
     user: ['attendance', 'assets', 'benefits'],
     unknown: ['benefits'], // Temporarily allow benefits for unknown roles
@@ -97,6 +98,7 @@ export const isMenuVisibleForRole = (
     if (label.includes('asset')) return 'assets';
     if (label.includes('benefit')) return 'benefits';
     if (label.includes('attendance')) return 'attendance';
+    if (label.includes('report')) return 'report';
     // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
     return 'misc';
   })();
@@ -115,10 +117,11 @@ export const isSubMenuVisibleForRole = (
   const parent = parentMenuLabel.trim().toLowerCase();
   const sub = subLabel.trim().toLowerCase();
 
-  // Default: visible unless explicitly hidden below
+  // Default visible unless explicitly restricted
   let visible = true;
 
   // System-admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports
+
   if (r === 'system-admin') {
     if (parent.includes('department')) {
       if (
@@ -135,6 +138,11 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+  }
+
+  // Show new "Report" only for admin + manager
+  if (sub === 'report') {
+    visible = r === 'admin' || r === 'manager';
   }
 
   // Network-admin: same as admin - hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
@@ -165,7 +173,7 @@ export const isSubMenuVisibleForRole = (
     }
   }
 
-  // Admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
+  // --- Admin rules ---
   if (r === 'admin') {
     if (parent.includes('department')) {
       if (
@@ -176,22 +184,44 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
-    if (parent.includes('attendance')) {
-      if (sub.includes('reports')) {
-        visible = false;
-      }
-    }
-  }
-  if (r === 'manager') {
-    if (parent.includes('attendance') && sub.includes('reports')) {
+    if (parent.includes('attendance') && sub === 'reports') {
       visible = false;
     }
   }
 
-  // Employee/User: hide Attendance -> Reports
-  if (r === 'employee' || r === 'user') {
-    if (parent.includes('attendance') && sub.includes('reports')) {
+  // --- Manager rules ---
+  if (r === 'manager') {
+    // manager sees only attendance summary (Report), not Reports
+    if (parent.includes('attendance') && sub === 'reports') {
       visible = false;
+    }
+  }
+
+  // --- Employee/User rules ---
+  if (r === 'employee' || r === 'user') {
+    if (parent.includes('attendance')) {
+      // Hide both Reports and Report for employees/users
+      if (sub === 'reports' || sub === 'report') {
+        visible = false;
+      }
+    }
+  }
+
+  // --- Manager rules ---
+  if (r === 'manager') {
+    // manager sees only attendance summary (Report), not Reports
+    if (parent.includes('attendance') && sub === 'reports') {
+      visible = false;
+    }
+  }
+
+  // --- Employee/User rules ---
+  if (r === 'employee' || r === 'user') {
+    if (parent.includes('attendance')) {
+      // Hide both Reports and Report for employees/users
+      if (sub === 'reports' || sub === 'report') {
+        visible = false;
+      }
     }
     // For Assets menu - employees only see Asset Requests
     if (parent.includes('assets')) {
@@ -257,7 +287,12 @@ export const isDashboardPathAllowedForRole = (
 
   // Index /dashboard
   if (p === '') {
-    return r === 'admin' || r === 'system-admin' || r === 'network-admin' || r === 'hr-admin';
+    return (
+      r === 'admin' ||
+      r === 'system-admin' ||
+      r === 'network-admin' ||
+      r === 'hr-admin'
+    );
   }
 
   const allowlists: Record<NormalizedRole, Set<string>> = {
@@ -272,6 +307,9 @@ export const isDashboardPathAllowedForRole = (
       'leaves',
       'AttendanceCheck',
       'AttendanceTable',
+      'Reports',
+      'attendance-summary',
+      'AttendanceCheck/TimesheetLayout',
       'AttendanceCheck/TimesheetLayout',
       // Teams
       'teams',
@@ -307,6 +345,7 @@ export const isDashboardPathAllowedForRole = (
       'assets',
       'assets/request-management',
       'EmployeeProfileView',
+      'attendance-summary',
       // Settings
       'settings',
       // Benefits
@@ -327,6 +366,7 @@ export const isDashboardPathAllowedForRole = (
       'benefits/assign',
       'benefits/reporting',
       'my-benefits',
+      'teams',
     ]),
     admin: new Set([
       '',
@@ -347,6 +387,7 @@ export const isDashboardPathAllowedForRole = (
       'assets',
       'assets/request-management',
       'EmployeeProfileView',
+      'attendance-summary',
       // Settings
       'settings',
       // Benefits
@@ -365,6 +406,7 @@ export const isDashboardPathAllowedForRole = (
       'UserProfile',
       // Assets - Manager sees only Requests
       'assets/requests',
+      'attendance-summary',
       // Settings
       'settings',
       // Benefits

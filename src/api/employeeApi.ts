@@ -21,6 +21,8 @@ export interface BackendEmployee {
   lastName?: string;
   email: string;
   phone: string;
+  role_id?: string;
+  role_name?: string;
   departmentId: string;
   designationId: string;
   status?: string;
@@ -86,6 +88,9 @@ export interface EmployeeDto {
   password?: string; // Made optional since backend will generate temporary password
   designationId: string; // UX carries department selection separately
   gender: string; // <-- Add gender
+  role_name?: string; // Role name for employee creation
+  role_id?: string; // Role ID (optional)
+  team_id?: string; // Team ID (optional)
 }
 
 export interface EmployeeUpdateDto {
@@ -95,6 +100,8 @@ export interface EmployeeUpdateDto {
   phone?: string;
   password?: string;
   designationId?: string;
+  role_id?: string;
+  role_name?: string;
   gender?: string; // <-- Optionally add gender for updates
 }
 
@@ -150,6 +157,9 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
   const user = data?.user as RawUser | undefined;
   const designation = data?.designation as RawDesignation | undefined;
   const department = designation?.department;
+  const roleId =
+    (data.role_id as string) || (user && (user as any).role_id) || '';
+  const roleName = (data.role_name as string) || (user && (user as any).role_name) || '';
 
   // If the data looks like a designation (has title), create a mock employee structure
   if (data.title && !data.user) {
@@ -163,6 +173,8 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
       departmentId: (data.department_id as string) || '',
       designationId: (data.id as string) || '',
       status: data.invite_status as string,
+      role_id: roleId,
+      role_name: roleName, 
       department: null, // Will be populated by department mapping
       designation: {
         id: data.id as string,
@@ -189,6 +201,8 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
       lastName: user?.last_name,
       email: user?.email ?? '',
       phone: user?.phone ?? '',
+      role_id: roleId,
+      role_name: roleName,
       departmentId: designation?.department_id ?? '',
       designationId: data.designation_id as string,
       status: data.invite_status as string,
@@ -376,7 +390,10 @@ class EmployeeApiService {
         phone: employeeData.phone,
         password: employeeData.password,
         designation_id: employeeData.designationId,
-        gender: employeeData.gender, // <-- Add gender to payload
+        gender: employeeData.gender,
+        role_name: employeeData.role_name,
+        role_id: employeeData.role_id,
+        team_id: employeeData.team_id,
       };
       const response = await axiosInstance.post<RawEmployee>(
         this.baseUrl,
@@ -403,6 +420,9 @@ class EmployeeApiService {
       password: employeeData.password,
       designation_id: employeeData.designationId,
       gender: employeeData.gender,
+      role_name: employeeData.role_name,
+      role_id: employeeData.role_id,
+      team_id: employeeData.team_id,
     };
     const response = await axiosInstance.post<RawEmployee>(
       `${this.baseUrl}/manager`,
@@ -411,37 +431,60 @@ class EmployeeApiService {
     return normalizeEmployee(response.data);
   }
 
+  // Create a new HR admin employee
+  async createHrAdmin(employeeData: EmployeeDto): Promise<BackendEmployee> {
+    const payload = {
+      first_name: employeeData.first_name,
+      last_name: employeeData.last_name,
+      email: employeeData.email,
+      phone: employeeData.phone,
+      password: employeeData.password,
+      designation_id: employeeData.designationId,
+      gender: employeeData.gender,
+      role_name: employeeData.role_name,
+      role_id: employeeData.role_id,
+      team_id: employeeData.team_id,
+    };
+    const response = await axiosInstance.post<RawEmployee>(
+      `${this.baseUrl}/hr-admin`,
+      payload
+    );
+    return normalizeEmployee(response.data);
+  }
+
   async updateEmployee(
     id: string,
-    updates: EmployeeUpdateDto
+    updates: EmployeeUpdateDto & { role_name?: string }
   ): Promise<BackendEmployee> {
     try {
-      const payload: Partial<
-        Pick<
-          EmployeeUpdateDto,
-          | 'first_name'
-          | 'last_name'
-          | 'email'
-          | 'phone'
-          | 'password'
-          | 'designationId'
-        >
-      > = {};
+      const payload: Record<string, any> = {};
+
       if (updates.first_name !== undefined)
         payload.first_name = updates.first_name;
-      if (updates.last_name !== undefined) payload.last_name = updates.last_name;
+      if (updates.last_name !== undefined)
+        payload.last_name = updates.last_name;
       if (updates.email !== undefined) payload.email = updates.email;
       if (updates.phone !== undefined) payload.phone = updates.phone;
-      if (updates.password !== undefined && updates.password !== '')
+      if (updates.password && updates.password.trim() !== '')
         payload.password = updates.password;
-      if (updates.designationId && updates.designationId.trim() !== '') {
-        // @ts-expect-error: API expects 'designation_id', but TS type only allows 'designationId'
-        payload['designation_id'] = updates.designationId;
+      if (updates.gender !== undefined) payload.gender = updates.gender;
+
+      if (updates.role_name && updates.role_name.trim() !== '') {
+        payload.role_name = updates.role_name;
       }
+
+      if (updates.designationId && updates.designationId.trim() !== '') {
+        payload.designation_id = updates.designationId;
+      }
+
+      console.log('Payload before PUT:', payload);
+
       const response = await axiosInstance.put<RawEmployee>(
         `${this.baseUrl}/${id}`,
         payload
       );
+
+      console.log('Update response data:', response.data);
       return normalizeEmployee(response.data);
     } catch (error) {
       const errorResult = handleApiError(error, {
@@ -479,7 +522,9 @@ class EmployeeApiService {
   }
 
   // Resend invite to employee
-  async resendInvite(id: string): Promise<{ success: boolean; message: string }> {
+  async resendInvite(
+    id: string
+  ): Promise<{ success: boolean; message: string }> {
     try {
       const response = await axiosInstance.post<{ message: string }>(
         `${this.baseUrl}/${id}/refresh-invite-status`
