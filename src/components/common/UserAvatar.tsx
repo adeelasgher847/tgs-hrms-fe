@@ -27,7 +27,6 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
   const { profilePictureUrl } = useProfilePicture();
   const { user: currentUser } = useUser();
-
   const [imgError, setImgError] = useState(false);
 
   const getInitials = (first: string, last: string): string => {
@@ -69,9 +68,9 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     fontSize: `${size * 0.4}px`,
     cursor: clickable ? 'pointer' : 'default',
     backgroundColor:
-      effectiveProfilePictureUrl || user.profile_pic
-        ? 'transparent'
-        : generateAvatarColor(user.first_name),
+      imgError || !(effectiveProfilePictureUrl || user.profile_pic)
+        ? generateAvatarColor(user.first_name)
+        : 'transparent',
     '& .MuiAvatar-img': {
       objectFit: 'cover',
       objectPosition: 'top',
@@ -86,40 +85,32 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     ...sx,
   };
 
-  let imageUrl: string | null = null;
-
-  if (effectiveProfilePictureUrl) {
-    imageUrl = effectiveProfilePictureUrl;
-  } else if (user.profile_pic) {
-    imageUrl = user.profile_pic.startsWith('http')
-      ? user.profile_pic
-      : `${API_BASE_URL}/users/${user.id}/profile-picture`;
-  }
-
-  if (!imageUrl || imgError) {
-    imageUrl = '/avatar.png';
-  }
+  const imageUrl = effectiveProfilePictureUrl
+    ? effectiveProfilePictureUrl
+    : user.profile_pic
+      ? user.id
+        ? `${API_BASE_URL}/users/${user.id}/profile-picture`
+        : `${API_BASE_URL}${user.profile_pic}`
+      : '';
 
   return (
-    <Avatar
-      sx={avatarStyle}
-      onClick={onClick}
-      {...avatarProps}
-      alt={`${user.first_name} ${user.last_name}`}
-    >
-      <img
-        src={imageUrl}
-        alt={`${user.first_name} ${user.last_name}`}
-        onError={() => setImgError(true)} 
-        loading='lazy'
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'top',
-          borderRadius: '50%',
-        }}
-      />
+    <Avatar sx={avatarStyle} onClick={onClick} {...avatarProps}>
+      {!imgError && imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={`${user.first_name} ${user.last_name}`}
+          loading='lazy'
+          onError={() => setImgError(true)}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'top',
+          }}
+        />
+      ) : (
+        getInitials(user.first_name, user.last_name)
+      )}
     </Avatar>
   );
 };
