@@ -104,7 +104,6 @@ class CompanyApiService {
   // Get company details
   async getCompanyDetails(): Promise<CompanyDetails> {
     const response = await axiosInstance.get<CompanyDetails>('/company');
-    // console.log(response);
     return response.data;
   }
 

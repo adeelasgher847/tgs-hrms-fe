@@ -2,7 +2,7 @@ import axios from 'axios';
 import { shouldLogout, forceLogout } from '../utils/authValidation';
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -29,7 +29,7 @@ async function refreshAccessToken() {
   const refreshToken = getRefreshToken();
   if (!refreshToken) throw new Error('No refresh token found');
   const response = await axios.post(
-    `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/auth/refresh-token`,
+    `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173'}/auth/refresh-token`,
     { refreshToken },
     { headers: { 'Content-Type': 'application/json' } }
   );
