@@ -29,12 +29,12 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   const { user: currentUser } = useUser();
 
   const [imgError, setImgError] = useState(false);
+  const [defaultError, setDefaultError] = useState(false);
 
-  const getInitials = (first: string, last: string): string => {
-    return `${first?.charAt(0) || ''}${last?.charAt(0) || ''}`.toUpperCase();
-  };
+  const getInitials = (first: string, last: string) =>
+    `${first?.charAt(0) || ''}${last?.charAt(0) || ''}`.toUpperCase();
 
-  const generateAvatarColor = (name: string): string => {
+  const generateAvatarColor = (name: string) => {
     const colors = [
       '#f44336',
       '#e91e63',
@@ -56,12 +56,21 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
       '#9e9e9e',
       '#607d8b',
     ];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
+    return colors[name.charCodeAt(0) % colors.length];
   };
 
   const isCurrentUser = currentUser?.id === user.id;
   const effectiveProfilePictureUrl = isCurrentUser ? profilePictureUrl : null;
+
+  const userImageUrl = effectiveProfilePictureUrl
+    ? effectiveProfilePictureUrl
+    : user.profile_pic
+      ? user.id
+        ? `${API_BASE_URL}/users/${user.id}/profile-picture`
+        : `${API_BASE_URL}${user.profile_pic}`
+      : '';
+
+  const defaultImageUrl = '/avatar.png';
 
   const avatarStyle = {
     width: size,
@@ -69,13 +78,12 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     fontSize: `${size * 0.4}px`,
     cursor: clickable ? 'pointer' : 'default',
     backgroundColor:
-      effectiveProfilePictureUrl || user.profile_pic
-        ? 'transparent'
-        : generateAvatarColor(user.first_name),
-    '& .MuiAvatar-img': {
-      objectFit: 'cover',
-      objectPosition: 'top',
-    },
+      imgError && defaultError
+        ? generateAvatarColor(user.first_name)
+        : !defaultError 
+        ? '#808080'
+        : 'transparent',
+    '& .MuiAvatar-img': { objectFit: 'cover', objectPosition: 'top' },
     '&:hover': clickable
       ? {
           opacity: 0.8,
@@ -86,40 +94,39 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     ...sx,
   };
 
-  let imageUrl: string | null = null;
-
-  if (effectiveProfilePictureUrl) {
-    imageUrl = effectiveProfilePictureUrl;
-  } else if (user.profile_pic) {
-    imageUrl = user.profile_pic.startsWith('http')
-      ? user.profile_pic
-      : `${API_BASE_URL}/users/${user.id}/profile-picture`;
-  }
-
-  if (!imageUrl || imgError) {
-    imageUrl = '/avatar.png';
-  }
-
   return (
-    <Avatar
-      sx={avatarStyle}
-      onClick={onClick}
-      {...avatarProps}
-      alt={`${user.first_name} ${user.last_name}`}
-    >
-      <img
-        src={imageUrl}
-        alt={`${user.first_name} ${user.last_name}`}
-        onError={() => setImgError(true)} 
-        loading='lazy'
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'top',
-          borderRadius: '50%',
-        }}
-      />
+    <Avatar sx={avatarStyle} onClick={onClick} {...avatarProps}>
+      {!imgError ? (
+        userImageUrl && (
+          <img
+            src={userImageUrl}
+            alt={`${user.first_name} ${user.last_name}`}
+            loading='lazy'
+            onError={() => setImgError(true)}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'top',
+            }}
+          />
+        )
+      ) : !defaultError ? (
+        <img
+          src={defaultImageUrl}
+          alt='default avatar'
+          loading='lazy'
+          onError={() => setDefaultError(true)}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+          }}
+        />
+      ) : (
+        getInitials(user.first_name, user.last_name)
+      )}
     </Avatar>
   );
 };

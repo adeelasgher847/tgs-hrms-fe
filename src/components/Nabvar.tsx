@@ -316,20 +316,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 </Typography>
               </Box>
               <IconButton onClick={handleMenuOpen}>
-                {user && user?.profile_pic ? (
-                  <UserAvatar user={user} size={50} clickable={false} />
-                ) : (
-                  <img
-                    src='./avatar.png'
-                    alt='Default Avatar'
-                    style={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                    }}
-                  />
-                )}
+                {user && <UserAvatar user={user} size={50} clickable={false} />}
               </IconButton>
               {/* Language Toggle */}
               {/* <ToggleButtonGroup
