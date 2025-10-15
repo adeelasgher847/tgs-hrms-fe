@@ -50,7 +50,6 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import type { AssetRequest, ProcessRequestRequest, AssetCategory, Asset } from '../../types/asset';
 import { assetApi, type AssetRequest as ApiAssetRequest, type PaginatedResponse } from '../../api/assetApi';
-import employeeApi from '../../api/employeeApi';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
@@ -150,17 +149,6 @@ const RequestManagement: React.FC = () => {
   const selectedAction = watch('action');
   const selectedCategoryId = selectedRequest?.category.id;
 
-  // Helper function to fetch user name by user ID
-  const fetchUserName = async (userId: string): Promise<string> => {
-    try {
-      const profile = await employeeApi.getEmployeeProfile(userId);
-      return profile.name || `User ${userId}`;
-    } catch (error) {
-      console.error(`Failed to fetch user name for ${userId}:`, error);
-      return `User ${userId}`;
-    }
-  };
-
   // Fetch data from API
   React.useEffect(() => {
     const fetchData = async () => {
@@ -179,22 +167,6 @@ const RequestManagement: React.FC = () => {
           total: apiResponse.total || 0,
           totalPages: apiResponse.totalPages || 1,
         }));
-        
-        // Fetch user names for all unique user IDs
-        const uniqueUserIds = new Set<string>();
-        apiResponse.items.forEach((req: ApiAssetRequest) => {
-          if (req.requested_by) uniqueUserIds.add(req.requested_by);
-          if (req.approved_by) uniqueUserIds.add(req.approved_by);
-        });
-
-        // Create a map of userId to userName
-        const userNameMap = new Map<string, string>();
-        await Promise.all(
-          Array.from(uniqueUserIds).map(async (userId) => {
-            const name = await fetchUserName(userId);
-            userNameMap.set(userId, name);
-          })
-        );
 
         const transformedRequests: AssetRequest[] = apiResponse.items.map((apiRequest: ApiAssetRequest) => {
           // Debug logging to understand the API response
@@ -209,7 +181,7 @@ const RequestManagement: React.FC = () => {
           return {
             id: apiRequest.id,
             employeeId: apiRequest.requested_by,
-            employeeName: apiRequest.requestedByName || userNameMap.get(apiRequest.requested_by) || `User ${apiRequest.requested_by}`,
+            employeeName: apiRequest.requestedByName || `User ${apiRequest.requested_by}`,
             category: matchingCategory ? {
               id: matchingCategory.id,
               name: matchingCategory.name,
@@ -229,7 +201,7 @@ const RequestManagement: React.FC = () => {
             requestedDate: apiRequest.requested_date,
             processedDate: apiRequest.approved_date || undefined,
             processedBy: apiRequest.approved_by || undefined,
-            processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? userNameMap.get(apiRequest.approved_by) || `User ${apiRequest.approved_by}` : undefined),
+            processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
             rejectionReason: undefined, // Not provided by API
             assignedAssetId: undefined, // Not provided by API
             assignedAssetName: undefined, // Not provided by API
@@ -359,34 +331,18 @@ const RequestManagement: React.FC = () => {
         page: pagination.page,
         limit: pagination.limit,
       });
-      
-      // Fetch user names for all unique user IDs
-      const uniqueUserIds = new Set<string>();
-      apiResponse.items.forEach((req: ApiAssetRequest) => {
-        if (req.requested_by) uniqueUserIds.add(req.requested_by);
-        if (req.approved_by) uniqueUserIds.add(req.approved_by);
-      });
-
-      // Create a map of userId to userName
-      const userNameMap = new Map<string, string>();
-      await Promise.all(
-        Array.from(uniqueUserIds).map(async (userId) => {
-          const name = await fetchUserName(userId);
-          userNameMap.set(userId, name);
-        })
-      );
 
       const transformedRequests: AssetRequest[] = apiResponse.items.map((apiRequest: ApiAssetRequest) => ({
         id: apiRequest.id,
         employeeId: apiRequest.requested_by,
-        employeeName: apiRequest.requestedByName || userNameMap.get(apiRequest.requested_by) || `User ${apiRequest.requested_by}`,
+        employeeName: apiRequest.requestedByName || `User ${apiRequest.requested_by}`,
         category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
         remarks: apiRequest.remarks,
         status: normalizeRequestStatus(apiRequest.status),
         requestedDate: apiRequest.requested_date,
         processedDate: apiRequest.approved_date || undefined,
         processedBy: apiRequest.approved_by || undefined,
-        processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? userNameMap.get(apiRequest.approved_by) || `User ${apiRequest.approved_by}` : undefined),
+        processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
         rejectionReason: undefined,
         assignedAssetId: undefined,
         assignedAssetName: undefined,

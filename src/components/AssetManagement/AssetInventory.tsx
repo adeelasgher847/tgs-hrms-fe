@@ -11,16 +11,13 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
-  Chip,
   TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   InputAdornment,
-  Tooltip,
   Menu,
   ListItemIcon,
   ListItemText,
@@ -39,14 +36,14 @@ import {
   Build as BuildIcon,
   CheckCircle as AvailableIcon,
 } from '@mui/icons-material';
-import type { Asset, AssetFilters, AssetCategory, MockUser, AssetStatus } from '../../types/asset';
+import type { Asset, AssetFilters, MockUser, AssetStatus } from '../../types/asset';
 import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
 import employeeApi from '../../api/employeeApi';
 import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
-import { assetCategories, getCategoryById } from '../../data/assetCategories';
+import { assetCategories } from '../../data/assetCategories';
 
 const AssetInventory: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -61,7 +58,6 @@ const AssetInventory: React.FC = () => {
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -165,9 +161,6 @@ const AssetInventory: React.FC = () => {
         console.log('AssetInventory - Transformed Assets:', transformedAssets);
         setAssets(transformedAssets);
         
-        // Extract unique categories from assets
-        const uniqueCategories = [...new Set(transformedAssets.map(asset => asset.category.name))];
-        setAvailableCategories(uniqueCategories);
         
       } catch (error) {
         console.error('Failed to fetch assets:', error);
@@ -190,7 +183,7 @@ const AssetInventory: React.FC = () => {
     
     testConnection();
     fetchAssets(pagination.page, pagination.limit);
-  }, []);
+  }, [pagination.page, pagination.limit]);
 
   // Filter and search logic
   useMemo(() => {
@@ -247,7 +240,7 @@ const AssetInventory: React.FC = () => {
     setSelectedAssetId(null);
   };
 
-  const handleAssetSubmit = async (data: any) => {
+  const handleAssetSubmit = async (data: { name: string; category: string; purchaseDate: string }) => {
     setLoading(true);
     try {
       if (editingAsset) {
@@ -260,11 +253,7 @@ const AssetInventory: React.FC = () => {
 
         const updatedApiAsset = await assetApi.updateAsset(editingAsset.id, updateData);
         
-        // Fetch user name if assigned
-        let assignedToName: string | undefined;
-        if (updatedApiAsset.assigned_to) {
-          assignedToName = await fetchUserName(updatedApiAsset.assigned_to);
-        }
+        // User name will be fetched in the refresh
         
         // Assets will be refreshed from API
         showSuccessToast('Asset updated successfully');
@@ -280,11 +269,7 @@ const AssetInventory: React.FC = () => {
 
         const newApiAsset = await assetApi.createAsset(createData);
         
-        // Fetch user name if assigned
-        let assignedToName: string | undefined;
-        if (newApiAsset.assigned_to) {
-          assignedToName = await fetchUserName(newApiAsset.assigned_to);
-        }
+        // User name will be fetched in the refresh
         
         // Assets will be refreshed from API
         showSuccessToast('Asset created successfully');

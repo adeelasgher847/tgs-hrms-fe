@@ -41,7 +41,6 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon2,
   Pending as PendingIcon,
-  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -51,6 +50,7 @@ import { assetApi, type AssetRequest as ApiAssetRequest } from '../../api/assetA
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
+import { assetCategories } from '../../data/assetCategories';
 
 // Get current user from localStorage or auth context
 const getCurrentUserId = () => {
@@ -87,6 +87,7 @@ const normalizeRequestStatus = (status: string): 'pending' | 'approved' | 'rejec
 
 const schema = yup.object({
   category: yup.string().required('Category is required'),
+  subcategory: yup.string(),
   remarks: yup.string(),
 });
 
@@ -122,6 +123,7 @@ const AssetRequests: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [tabValue, setTabValue] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -135,14 +137,30 @@ const AssetRequests: React.FC = () => {
     control,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       category: '',
+      subcategory: '',
       remarks: '',
     },
   });
+
+  // Watch category changes to update subcategory options
+  const watchedCategory = watch('category');
+  
+  React.useEffect(() => {
+    if (watchedCategory) {
+      setSelectedCategory(watchedCategory);
+      // Reset subcategory when category changes
+      setValue('subcategory', '');
+    } else {
+      setSelectedCategory('');
+    }
+  }, [watchedCategory, setValue]);
 
   // Get current user ID on component mount
   React.useEffect(() => {
@@ -238,11 +256,16 @@ const AssetRequests: React.FC = () => {
     return filteredRequests.filter(request => request.status === statusFilter);
   };
 
-  const handleSubmitRequest = async (data: { category: string; remarks?: string }) => {
+  const handleSubmitRequest = async (data: { category: string; subcategory?: string; remarks?: string }) => {
     setLoading(true);
     try {
+      // Combine category and subcategory if subcategory is selected
+      const categoryName = data.subcategory && data.subcategory.trim() 
+        ? `${data.category} - ${data.subcategory}` 
+        : data.category;
+        
       const requestData = {
-        assetCategory: data.category,
+        assetCategory: categoryName,
         remarks: data.remarks || '',
       };
 
@@ -268,9 +291,10 @@ const AssetRequests: React.FC = () => {
       setRequests(prev => [newRequest, ...prev]);
       
       // Show success toast
-      showSuccessToast(`Asset request for "${data.category}" has been submitted successfully`);
+      showSuccessToast(`Asset request for "${categoryName}" has been submitted successfully`);
       
       setIsRequestModalOpen(false);
+      setSelectedCategory('');
       reset();
     } catch (error) {
       console.error('Failed to submit request:', error);
@@ -287,6 +311,7 @@ const AssetRequests: React.FC = () => {
   };
 
   const handleOpenRequestModal = () => {
+    setSelectedCategory('');
     setIsRequestModalOpen(true);
   };
 
@@ -456,28 +481,20 @@ const AssetRequests: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 ,flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h4" fontWeight={600}>
-          My Asset Requests
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={handleRefreshData}
-            disabled={initialLoading}
-          >
-            Refresh
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenRequestModal}
-          >
-            Request Asset
-          </Button>
-        </Box>
-      </Box>
+       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 ,flexWrap: 'wrap', gap: 1 }}>
+         <Typography variant="h4" fontWeight={600}>
+           My Asset Requests
+         </Typography>
+         <Box sx={{ display: 'flex', gap: 1 }}>
+           <Button
+             variant="contained"
+             startIcon={<AddIcon />}
+             onClick={handleOpenRequestModal}
+           >
+             Request Asset
+           </Button>
+         </Box>
+       </Box>
 
       {/* Statistics Cards */}
       <Box  sx={{ mb: 3 ,display: 'flex', gap: 1,flexWrap: 'wrap'}}>
@@ -691,18 +708,88 @@ const AssetRequests: React.FC = () => {
                     name="category"
                     control={control}
                     render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        label="Asset Category"
-                        placeholder="Enter asset category"
-                        error={!!errors.category}
-                        helperText={errors.category?.message || 'Enter the asset category you need'}
-                        disabled={loading}
-                      />
+                      <FormControl fullWidth error={!!errors.category}>
+                        <InputLabel>Asset Category</InputLabel>
+                        <Select
+                          {...field}
+                          label="Asset Category"
+                          disabled={loading}
+                          MenuProps={{
+                            PaperProps: {
+                              style: {
+                                maxHeight: 300,
+                              },
+                            },
+                          }}
+                        >
+                          {assetCategories.map((category) => (
+                            <MenuItem key={category.id} value={category.name}>
+                              <Box>
+                                <Typography variant="body1" fontWeight={500}>
+                                  {category.name}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {category.description}
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        {errors.category && (
+                          <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                            {errors.category.message}
+                          </Typography>
+                        )}
+                        {!errors.category && (
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1.75 }}>
+                            Select the asset category you need
+                          </Typography>
+                        )}
+                      </FormControl>
                     )}
                   />
                 </Box>
+
+                {/* Subcategory selection - only show if a category with subcategories is selected */}
+                {selectedCategory && assetCategories.find(cat => cat.name === selectedCategory)?.subcategories && (
+                  <Box>
+                    <Controller
+                      name="subcategory"
+                      control={control}
+                      render={({ field }) => (
+                        <FormControl fullWidth>
+                          <InputLabel>Specific Item (Optional)</InputLabel>
+                          <Select
+                            {...field}
+                            label="Specific Item (Optional)"
+                            disabled={loading}
+                            MenuProps={{
+                              PaperProps: {
+                                style: {
+                                  maxHeight: 300,
+                                },
+                              },
+                            }}
+                          >
+                            <MenuItem value="">
+                              <em>None - General Request</em>
+                            </MenuItem>
+                            {assetCategories
+                              .find(cat => cat.name === selectedCategory)
+                              ?.subcategories?.map((subcategory) => (
+                                <MenuItem key={subcategory} value={subcategory}>
+                                  {subcategory}
+                                </MenuItem>
+                              ))}
+                          </Select>
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1.75 }}>
+                            Optionally specify the exact item you need
+                          </Typography>
+                        </FormControl>
+                      )}
+                    />
+                  </Box>
+                )}
 
                 <Box>
                   <Controller
