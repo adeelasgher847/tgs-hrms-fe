@@ -27,9 +27,11 @@ import {
   Tabs,
   Tab,
   InputAdornment,
-  Autocomplete,
   CircularProgress,
   Stack,
+  Pagination,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -62,6 +64,25 @@ const getCurrentUserId = () => {
     }
   }
   return '1'; // Default fallback
+};
+
+// Normalize status to ensure it matches expected values
+const normalizeRequestStatus = (status: string): 'pending' | 'approved' | 'rejected' | 'cancelled' => {
+  const normalized = status.toLowerCase().trim();
+  switch (normalized) {
+    case 'pending':
+      return 'pending';
+    case 'approved':
+      return 'approved';
+    case 'rejected':
+      return 'rejected';
+    case 'cancelled':
+    case 'canceled':
+      return 'cancelled';
+    default:
+      console.warn('Unknown status received from API:', status, 'normalized to:', normalized);
+      return 'pending'; // Default fallback
+  }
 };
 
 const schema = yup.object({
@@ -100,8 +121,15 @@ const AssetRequests: React.FC = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [tabValue, setTabValue] = useState(0);
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 25,
+    total: 0,
+    totalPages: 0,
+  });
 
   const {
     control,
@@ -129,57 +157,68 @@ const AssetRequests: React.FC = () => {
     const fetchData = async () => {
       try {
         setInitialLoading(true);
+        // Use getAssetRequestById to get current user's requests with pagination
+        const apiResponse = await assetApi.getAssetRequestById(currentUserId, {
+          page: pagination.page,
+          limit: pagination.limit,
+        });
         
-        // Fetch asset requests
-        const apiRequests = await assetApi.getAllAssetRequests();
-        // Filter requests for current user
-        let requestsToShow = apiRequests.data.filter((request: ApiAssetRequest) => 
-          request.requested_by === currentUserId
-        );
-        
-        // If no user-specific requests found, show all requests for debugging
-        if (requestsToShow.length === 0 && apiRequests.length > 0) {
-          console.log('No user-specific requests found, showing all requests for debugging');
-          requestsToShow = apiRequests;
-        }
-        
-        const transformedRequests: AssetRequest[] = requestsToShow.map((apiRequest: ApiAssetRequest) => ({
-          id: apiRequest.id,
-          employeeId: apiRequest.requested_by,
-          employeeName: `Employee ${apiRequest.requested_by}`,
-          category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
-          remarks: apiRequest.remarks,
-          status: apiRequest.status,
+        // Transform API requests to component format
+        const transformedRequests: AssetRequest[] = (apiResponse.items || []).map((apiRequest: ApiAssetRequest) => {
+          // Debug logging to understand the API response
+          console.log('API Request status:', apiRequest.status, 'for request:', apiRequest.id);
+          
+          return {
+            id: apiRequest.id,
+            employeeId: apiRequest.requested_by,
+            employeeName: apiRequest.requestedByName || 
+              (apiRequest.requestedByUser ? 
+                `${apiRequest.requestedByUser.first_name} ${apiRequest.requestedByUser.last_name}` : 
+                `User ${apiRequest.requested_by}`),
+            category: { 
+              id: apiRequest.asset_category, 
+              name: apiRequest.asset_category, 
+              nameAr: apiRequest.asset_category, 
+              description: '' 
+            },
+            remarks: apiRequest.remarks,
+            status: normalizeRequestStatus(apiRequest.status),
           requestedDate: apiRequest.requested_date,
-          processedDate: apiRequest.approved_date,
-          processedBy: apiRequest.approved_by,
-          processedByName: apiRequest.approved_by ? `Admin ${apiRequest.approved_by}` : undefined,
+          processedDate: apiRequest.approved_date || undefined,
+          processedBy: apiRequest.approved_by || undefined,
+          processedByName: apiRequest.approvedByName || 
+            (apiRequest.approvedByUser ? 
+              `${apiRequest.approvedByUser.first_name} ${apiRequest.approvedByUser.last_name}` : 
+              apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
           rejectionReason: undefined,
           assignedAssetId: undefined,
           assignedAssetName: undefined,
-        }));
+          };
+        });
         
         setRequests(transformedRequests);
+        
+        // Update pagination info from API response
+        setPagination(prev => ({
+          ...prev,
+          total: apiResponse.total || 0,
+          totalPages: apiResponse.totalPages || 1,
+        }));
 
-        // Fetch available assets to get unique categories
-        const apiAssets = await assetApi.getAllAssets();
-        const uniqueCategories = [...new Set(apiAssets.map((asset: any) => asset.category))] as string[];
-        setAvailableCategories(uniqueCategories);
         
       } catch (error) {
         console.error('Failed to fetch data:', error);
-     
       } finally {
         setInitialLoading(false);
       }
     };
 
     fetchData();
-  }, [currentUserId]);
+  }, [currentUserId, pagination.page, pagination.limit]);
 
-  // Filter requests for current user
+  // Since we're now fetching only current user's requests, we can use requests directly
   const userRequests = useMemo(() => {
-    return requests.filter(request => request.employeeId === currentUserId);
+    return requests; // All requests are already filtered for current user
   }, [requests]);
 
   // Filter by search term
@@ -228,12 +267,15 @@ const AssetRequests: React.FC = () => {
 
       setRequests(prev => [newRequest, ...prev]);
       
+      // Show success toast
+      showSuccessToast(`Asset request for "${data.category}" has been submitted successfully`);
+      
       setIsRequestModalOpen(false);
       reset();
-      showSuccessToast('Asset request submitted successfully');
     } catch (error) {
       console.error('Failed to submit request:', error);
-      showErrorToast('Failed to submit request');
+      // Show error toast
+      showErrorToast('Failed to submit asset request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -244,16 +286,8 @@ const AssetRequests: React.FC = () => {
     setIsCancelDialogOpen(true);
   };
 
-  const handleOpenRequestModal = async () => {
+  const handleOpenRequestModal = () => {
     setIsRequestModalOpen(true);
-    // Refresh available categories when opening the modal
-    try {
-      const apiAssets = await assetApi.getAllAssets();
-      const uniqueCategories = [...new Set(apiAssets.map((asset: any) => asset.category))] as string[];
-      setAvailableCategories(uniqueCategories);
-    } catch (error) {
-      console.error('Failed to fetch categories:', error);
-    }
   };
 
   const handleRefreshData = async () => {
@@ -261,51 +295,71 @@ const AssetRequests: React.FC = () => {
     
     setInitialLoading(true);
     try {
+      // Reset to first page when refreshing
+      setPagination(prev => ({ ...prev, page: 1 }));
       
-      // Fetch asset requests
-      const apiRequests = await assetApi.getAllAssetRequests();
+      // Use getAssetRequestById to get current user's requests with pagination
+      const apiResponse = await assetApi.getAssetRequestById(currentUserId, {
+        page: 1,
+        limit: pagination.limit,
+      });
       
-      // Filter requests for current user
-      let requestsToShow = apiRequests.filter((request: ApiAssetRequest) => 
-        request.requested_by === currentUserId
-      );
-      
-      // If no user-specific requests found, show all requests for debugging
-      if (requestsToShow.length === 0 && apiRequests.length > 0) {
-        console.log('No user-specific requests found, showing all requests for debugging');
-        requestsToShow = apiRequests;
-      }
-      
-      const transformedRequests: AssetRequest[] = requestsToShow.map((apiRequest: ApiAssetRequest) => ({
-        id: apiRequest.id,
-        employeeId: apiRequest.requested_by,
-        employeeName: `Employee ${apiRequest.requested_by}`,
-        category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
-        remarks: apiRequest.remarks,
-        status: apiRequest.status,
+      // Transform API requests to component format
+      const transformedRequests: AssetRequest[] = (apiResponse.items || []).map((apiRequest: ApiAssetRequest) => {
+        // Debug logging to understand the API response
+        console.log('Refresh - API Request status:', apiRequest.status, 'for request:', apiRequest.id);
+        
+        return {
+          id: apiRequest.id,
+          employeeId: apiRequest.requested_by,
+          employeeName: apiRequest.requestedByName || 
+            (apiRequest.requestedByUser ? 
+              `${apiRequest.requestedByUser.first_name} ${apiRequest.requestedByUser.last_name}` : 
+              `User ${apiRequest.requested_by}`),
+          category: { 
+            id: apiRequest.asset_category, 
+            name: apiRequest.asset_category, 
+            nameAr: apiRequest.asset_category, 
+            description: '' 
+          },
+          remarks: apiRequest.remarks,
+          status: normalizeRequestStatus(apiRequest.status),
         requestedDate: apiRequest.requested_date,
-        processedDate: apiRequest.approved_date,
+        processedDate: apiRequest.approved_date || undefined,
         processedBy: apiRequest.approved_by,
-        processedByName: apiRequest.approved_by ? `Admin ${apiRequest.approved_by}` : undefined,
+        processedByName: apiRequest.approvedByName || 
+          (apiRequest.approvedByUser ? 
+            `${apiRequest.approvedByUser.first_name} ${apiRequest.approvedByUser.last_name}` : 
+            apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
         rejectionReason: undefined,
         assignedAssetId: undefined,
         assignedAssetName: undefined,
-      }));
+        };
+      });
       
       setRequests(transformedRequests);
-
-      // Fetch available assets to get unique categories
-      const apiAssets = await assetApi.getAllAssets();
-      const uniqueCategories = [...new Set(apiAssets.map((asset: any) => asset.category))] as string[];
-      setAvailableCategories(uniqueCategories);
       
-      showSuccessToast('Data refreshed successfully');
+      // Update pagination info from API response
+      setPagination(prev => ({
+        ...prev,
+        total: apiResponse.total || 0,
+        totalPages: apiResponse.totalPages || 1,
+      }));
+
+      // Show success toast
+      showSuccessToast('Asset requests refreshed successfully');
+
     } catch (error) {
       console.error('Failed to refresh data:', error);
-      showErrorToast('Failed to refresh data');
+      // Show error toast
+      showErrorToast('Failed to refresh asset requests. Please try again.');
     } finally {
       setInitialLoading(false);
     }
+  };
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setPagination(prev => ({ ...prev, page }));
   };
 
   const handleConfirmCancel = async () => {
@@ -320,12 +374,15 @@ const AssetRequests: React.FC = () => {
       const updatedRequests = requests.filter(request => request.id !== requestToCancel.id);
       setRequests(updatedRequests);
 
-      showSuccessToast('Request deleted successfully');
+      // Show success toast
+      showSuccessToast(`Asset request for "${requestToCancel.category.name}" has been deleted successfully`);
+
       setIsCancelDialogOpen(false);
       setRequestToCancel(null);
     } catch (error) {
       console.error('Failed to delete request:', error);
-      showErrorToast('Failed to delete request');
+      // Show error toast
+      showErrorToast('Failed to delete asset request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -581,6 +638,32 @@ const AssetRequests: React.FC = () => {
         </TabPanel>
       </Card>
 
+      {/* Pagination Controls */}
+      {pagination.totalPages > 1 && (
+        <Card sx={{ mt: 2 }}>
+          <CardContent>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 2
+            }}>
+              <Typography variant="body2" color="text.secondary">
+                Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} requests
+              </Typography>
+              <Pagination
+                count={pagination.totalPages}
+                page={pagination.page}
+                onChange={handlePageChange}
+                color="primary"
+                disabled={initialLoading}
+              />
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Request Asset Modal */}
       <Dialog
         open={isRequestModalOpen}
@@ -608,28 +691,14 @@ const AssetRequests: React.FC = () => {
                     name="category"
                     control={control}
                     render={({ field }) => (
-                      <Autocomplete
+                      <TextField
                         {...field}
-                        freeSolo
-                        options={availableCategories}
-                        value={field.value || ''}
-                        onChange={(event, newValue) => {
-                          field.onChange(newValue || '');
-                        }}
-                        onInputChange={(event, newInputValue) => {
-                          field.onChange(newInputValue);
-                        }}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            label="Asset Category"
-                            placeholder="Enter or select from available categories"
-                            error={!!errors.category}
-                            helperText={errors.category?.message || (availableCategories.length > 0 ? `Available categories: ${availableCategories.join(', ')}` : 'No categories available yet. You can still enter a custom category.')}
-                            disabled={loading}
-                          />
-                        )}
+                        fullWidth
+                        label="Asset Category"
+                        placeholder="Enter asset category"
+                        error={!!errors.category}
+                        helperText={errors.category?.message || 'Enter the asset category you need'}
+                        disabled={loading}
                       />
                     )}
                   />
