@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Avatar, type AvatarProps } from '@mui/material';
 import { useProfilePicture } from '../../context/ProfilePictureContext';
 import { useUser } from '../../hooks/useUser';
@@ -27,6 +27,8 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
   const { profilePictureUrl } = useProfilePicture();
   const { user: currentUser } = useUser();
+
+  const [imgError, setImgError] = useState(false);
 
   const getInitials = (first: string, last: string): string => {
     return `${first?.charAt(0) || ''}${last?.charAt(0) || ''}`.toUpperCase();
@@ -58,7 +60,6 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     return colors[index];
   };
 
-  // ✅ Only use profilePictureUrl from context if this is the current user's avatar
   const isCurrentUser = currentUser?.id === user.id;
   const effectiveProfilePictureUrl = isCurrentUser ? profilePictureUrl : null;
 
@@ -73,7 +74,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
         : generateAvatarColor(user.first_name),
     '& .MuiAvatar-img': {
       objectFit: 'cover',
-      objectPosition: 'top', // ✅ NEW: Centers image at top
+      objectPosition: 'top',
     },
     '&:hover': clickable
       ? {
@@ -85,49 +86,40 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     ...sx,
   };
 
-  // ✅ Use effectiveProfilePictureUrl (only for current user) or fall back to user.profile_pic
-  const hasProfilePicture = effectiveProfilePictureUrl || user.profile_pic;
+  let imageUrl: string | null = null;
 
-  if (hasProfilePicture) {
-    let imageUrl: string;
+  if (effectiveProfilePictureUrl) {
+    imageUrl = effectiveProfilePictureUrl;
+  } else if (user.profile_pic) {
+    imageUrl = user.profile_pic.startsWith('http')
+      ? user.profile_pic
+      : `${API_BASE_URL}/users/${user.id}/profile-picture`;
+  }
 
-    if (effectiveProfilePictureUrl) {
-      // If this is the current user and we have a profilePictureUrl from context, use it
-      imageUrl = effectiveProfilePictureUrl;
-    } else if (user.profile_pic) {
-      // Fall back to constructing URL from user.profile_pic
-      imageUrl = user.id
-        ? `${API_BASE_URL}/users/${user.id}/profile-picture`
-        : `${API_BASE_URL}${user.profile_pic}`;
-    } else {
-      // This shouldn't happen, but just in case
-      imageUrl = '';
-    }
-
-    return (
-      <Avatar
-        sx={avatarStyle}
-        onClick={onClick}
-        {...avatarProps}
-      >
-        <img
-          src={imageUrl}
-          alt={`${user.first_name} ${user.last_name}`}
-          loading="lazy"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'top',
-          }}
-        />
-      </Avatar>
-    );
+  if (!imageUrl || imgError) {
+    imageUrl = '/avatar.png';
   }
 
   return (
-    <Avatar sx={avatarStyle} onClick={onClick} {...avatarProps}>
-      {getInitials(user.first_name, user.last_name)}
+    <Avatar
+      sx={avatarStyle}
+      onClick={onClick}
+      {...avatarProps}
+      alt={`${user.first_name} ${user.last_name}`}
+    >
+      <img
+        src={imageUrl}
+        alt={`${user.first_name} ${user.last_name}`}
+        onError={() => setImgError(true)} 
+        loading='lazy'
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'top',
+          borderRadius: '50%',
+        }}
+      />
     </Avatar>
   );
 };

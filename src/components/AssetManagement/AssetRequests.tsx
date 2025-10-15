@@ -157,7 +157,6 @@ const AssetRequests: React.FC = () => {
     const fetchData = async () => {
       try {
         setInitialLoading(true);
-        
         // Use getAssetRequestById to get current user's requests with pagination
         const apiResponse = await assetApi.getAssetRequestById(currentUserId, {
           page: pagination.page,

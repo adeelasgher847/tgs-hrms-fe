@@ -7,14 +7,11 @@ import React, {
   type ReactNode,
 } from 'react';
 import companyApi, { type CompanyDetails } from '../api/companyApi';
-import { useUser } from '../hooks/useUser';
 
 interface CompanyContextType {
   companyDetails: CompanyDetails | null;
   companyName: string;
   companyLogo: string | null;
-  loading: boolean;
-  error: string | null;
   refreshCompanyDetails: () => Promise<void>;
   updateCompanyDetails: (details: CompanyDetails) => void;
 }
@@ -26,59 +23,44 @@ export const CompanyContext = createContext<CompanyContextType | undefined>(
 export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const { user } = useUser();
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(
     null
   );
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
 
   const refreshCompanyDetails = useCallback(async () => {
-    // Only fetch if user is authenticated
-    if (!user || !user.tenant) {
-      return;
-    }
-
     try {
-      setLoading(true);
-      setError(null);
       const details = await companyApi.getCompanyDetails();
       setCompanyDetails(details);
+
+      const tenantId = details.tenant_id;
+      if (tenantId) {
+        const logoUrl = await companyApi.getCompanyLogo(tenantId);
+        setCompanyLogo(logoUrl);
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch company details');
       console.error('Error fetching company details:', err);
-    } finally {
-      setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   const updateCompanyDetails = useCallback((details: CompanyDetails) => {
     setCompanyDetails(details);
   }, []);
 
-  // Load company details on mount only if user is authenticated
   useEffect(() => {
-    if (user && user.tenant) {
-      refreshCompanyDetails();
-    }
-  }, [refreshCompanyDetails, user]);
+    refreshCompanyDetails();
+  }, []);
 
-  const companyName = useMemo(() => {
-    return companyDetails?.company_name || 'HRMS';
-  }, [companyDetails]);
+  const companyName = useMemo(
+    () => companyDetails?.company_name || 'HRMS',
+    [companyDetails]
+  );
 
-  const companyLogo = useMemo(() => {
-    if (!companyDetails?.logo_url) return null;
-    return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/public${companyDetails.logo_url}`;
-  }, [companyDetails]);
-
-  const contextValue: CompanyContextType = useMemo(
+  const contextValue = useMemo(
     () => ({
       companyDetails,
       companyName,
       companyLogo,
-      loading,
-      error,
       refreshCompanyDetails,
       updateCompanyDetails,
     }),
@@ -86,8 +68,6 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
       companyDetails,
       companyName,
       companyLogo,
-      loading,
-      error,
       refreshCompanyDetails,
       updateCompanyDetails,
     ]
@@ -100,7 +80,6 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-// Custom hook to use the company context
 export const useCompany = (): CompanyContextType => {
   const context = React.useContext(CompanyContext);
   if (!context) {
