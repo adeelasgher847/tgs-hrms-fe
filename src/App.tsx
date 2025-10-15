@@ -38,6 +38,8 @@ import { ProfilePictureProvider } from './context/ProfilePictureContext';
 import { CompanyProvider } from './context/CompanyContext';
 import { ThemeProvider } from './theme';
 import './App.css';
+import BenefitList from './components/Benefits/BenefitList';
+import EmployeeBenefits from './components/Benefits/EmployeeBenefits';
 
 function App() {
   return (
@@ -106,6 +108,8 @@ function App() {
                   path='assets/request-management'
                   element={<RequestManagement />}
                 />
+                <Route path='benefits-list' element={<BenefitList />} />
+                <Route path='employee-benefit' element={<EmployeeBenefits />} />
               </Route>
 
               <Route path='/company-details' element={<CompanyDetails />} />

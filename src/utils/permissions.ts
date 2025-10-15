@@ -74,8 +74,16 @@ export const isMenuVisibleForRole = (
       'attendance',
       'report',
     ],
-    'hr-admin': ['attendance', 'teams'],
-    admin: ['dashboard', 'department', 'employees', 'teams', 'assets', 'attendance', 'report'],
+    'hr-admin': ['attendance', 'teams', 'benefits'],
+    admin: [
+      'dashboard',
+      'department',
+      'employees',
+      'teams',
+      'assets',
+      'attendance',
+      'report',
+    ],
     manager: ['teams', 'attendance', 'assets', 'report'],
     employee: ['attendance', 'assets'],
     user: ['attendance', 'assets'],
@@ -92,6 +100,7 @@ export const isMenuVisibleForRole = (
     if (label.includes('asset')) return 'assets';
     if (label.includes('attendance')) return 'attendance';
     if (label.includes('report')) return 'report';
+    if (label.includes('benefits')) return 'benefits';
     // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
     return 'misc';
   })();
@@ -346,6 +355,8 @@ export const isDashboardPathAllowedForRole = (
       // Assets - HR admin has no access
       'settings',
       'teams',
+      'benefits-list',
+      'employee-benefit',
     ]),
     admin: new Set([
       '',

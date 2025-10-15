@@ -21,6 +21,7 @@ import {
   Code,
   Widgets,
   Inventory,
+  CardGiftcard,
 } from '@mui/icons-material';
 import dotted from './../assets/dashboardIcon/dotted-down.svg';
 import Clipboard from '../assets/dashboardIcon/Clipboard';
@@ -111,6 +112,14 @@ const menuItems: MenuItem[] = [
       { label: 'Reports', path: 'Reports' },
       { label: 'Report', path: 'attendance-summary' },
       { label: 'Leave Request', path: 'leaves' },
+    ],
+  },
+  {
+    label: 'Benefits',
+    icon: <CardGiftcard />,
+    subItems: [
+      { label: 'Benefits List', path: 'benefits-list' },
+      { label: 'Employee Benefits', path: 'employee-benefit' }
     ],
   },
   {
