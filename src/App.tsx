@@ -105,18 +105,17 @@ function App() {
                 <Route path='settings' element={<SettingsPage />} />
                 <Route path='assets' element={<AssetInventory />} />
                 <Route path='assets/requests' element={<AssetRequests />} />
-                <Route path='assets/request-management' element={<RequestManagement />}/>
-                 <Route path='benefits' element={<BenefitList />} />
+                <Route path='assets/request-management' element={<RequestManagement />} />
+                <Route path='benefits' element={<BenefitList />} />
                 <Route path='benefits/reporting' element={<ReportingView />} />
                 <Route path='benefits/assign' element={<AssignBenefits employeeId={'e1'} />} />
                 <Route path='my-benefits' element={<MyBenefits employeeId={'e1'} />} />
-
               </Route>
                 <Route path='/company-details' element={<CompanyDetails />} />
                 <Route path='*' element={<Error404 />} />
               </Routes>
             </Router>   
-             <NotificationToast />
+           <NotificationToast />
         </ProfilePictureProvider>
       </UserProvider>
     </LanguageProvider>

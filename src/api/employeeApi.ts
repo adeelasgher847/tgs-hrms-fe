@@ -457,7 +457,7 @@ class EmployeeApiService {
     updates: EmployeeUpdateDto & { role_name?: string }
   ): Promise<BackendEmployee> {
     try {
-      const payload: Record<string, any> = {};
+      const payload: Record<string, string | number | boolean> = {};
 
       if (updates.first_name !== undefined)
         payload.first_name = updates.first_name;

@@ -116,7 +116,7 @@ class TeamApiService {
       }
 
       return newTeam;
-    } catch {
+    } catch (error) {
       throw error;
     }
   }
@@ -158,7 +158,7 @@ class TeamApiService {
       }
 
       return teams;
-    } catch {
+    } catch (error) {
       throw error;
     }
   }
@@ -168,7 +168,7 @@ class TeamApiService {
     try {
       const response = await axiosInstance.get<Team>(`${this.baseUrl}/${id}`);
       return response.data;
-    } catch {
+    } catch (error) {
       throw error;
     }
   }
@@ -205,7 +205,7 @@ class TeamApiService {
       }
 
       return updatedTeam;
-    } catch {
+    } catch (error) {
       throw error;
     }
   }
@@ -214,7 +214,7 @@ class TeamApiService {
   async deleteTeam(id: string): Promise<void> {
     try {
       await axiosInstance.delete(`${this.baseUrl}/${id}`);
-    } catch {
+    } catch (error) {
       throw error;
     }
   }
@@ -302,7 +302,7 @@ class TeamApiService {
       await axiosInstance.post(`${this.baseUrl}/${teamId}/add-member`, {
         employee_id: employeeId,
       });
-    } catch {
+    } catch (error) {
       throw error;
     }
   }
@@ -316,7 +316,7 @@ class TeamApiService {
       await axiosInstance.post(`${this.baseUrl}/${teamId}/remove-member`, {
         employee_id: employeeId,
       });
-    } catch {
+    } catch (error) {
       throw error;
     }
   }
@@ -329,7 +329,6 @@ class TeamApiService {
       const response = await axiosInstance.get<PaginatedResponse<TeamMember & { team?: { id: string; name: string } }>>(
         `${this.baseUrl}/all-members?page=${page}`
       );
-      console.log("Get all team members response:", response)
       return response.data;
     } catch {
       return {
