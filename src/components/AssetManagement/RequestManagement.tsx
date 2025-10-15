@@ -34,6 +34,7 @@ import {
   ListItemText,
   CircularProgress,
   Stack,
+  Pagination,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -48,12 +49,31 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import type { AssetRequest, ProcessRequestRequest, AssetCategory, Asset } from '../../types/asset';
-import { assetApi, type AssetRequest as ApiAssetRequest } from '../../api/assetApi';
+import { assetApi, type AssetRequest as ApiAssetRequest, type PaginatedResponse } from '../../api/assetApi';
 import employeeApi from '../../api/employeeApi';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
 import { assetCategories, getCategoryById } from '../../data/assetCategories';
+
+// Normalize status to ensure it matches expected values
+const normalizeRequestStatus = (status: string): 'pending' | 'approved' | 'rejected' | 'cancelled' => {
+  const normalized = status.toLowerCase().trim();
+  switch (normalized) {
+    case 'pending':
+      return 'pending';
+    case 'approved':
+      return 'approved';
+    case 'rejected':
+      return 'rejected';
+    case 'cancelled':
+    case 'canceled':
+      return 'cancelled';
+    default:
+      console.warn('Unknown status received from API:', status, 'normalized to:', normalized);
+      return 'pending'; // Default fallback
+  }
+};
 
 const schema = yup.object({
   action: yup.string().required('Action is required'),
@@ -99,6 +119,14 @@ const RequestManagement: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 25,
+    total: 0,
+    totalPages: 0,
+  });
 
   // Get all subcategories from comprehensive categories
   const commonCategories = assetCategories.flatMap(cat => cat.subcategories || [cat.name]);
@@ -139,12 +167,22 @@ const RequestManagement: React.FC = () => {
       try {
         setInitialLoading(true);
         
-        // Fetch asset requests
-        const apiRequests = await assetApi.getAllAssetRequests();
+        // Fetch asset requests with pagination
+        const apiResponse: PaginatedResponse<ApiAssetRequest> = await assetApi.getAllAssetRequests({
+          page: pagination.page,
+          limit: pagination.limit,
+        });
+        
+        // Update pagination info from API response
+        setPagination(prev => ({
+          ...prev,
+          total: apiResponse.total || 0,
+          totalPages: apiResponse.totalPages || 1,
+        }));
         
         // Fetch user names for all unique user IDs
         const uniqueUserIds = new Set<string>();
-        apiRequests.forEach((req: ApiAssetRequest) => {
+        apiResponse.items.forEach((req: ApiAssetRequest) => {
           if (req.requested_by) uniqueUserIds.add(req.requested_by);
           if (req.approved_by) uniqueUserIds.add(req.approved_by);
         });
@@ -158,7 +196,10 @@ const RequestManagement: React.FC = () => {
           })
         );
 
-        const transformedRequests: AssetRequest[] = apiRequests.map((apiRequest: ApiAssetRequest) => {
+        const transformedRequests: AssetRequest[] = apiResponse.items.map((apiRequest: ApiAssetRequest) => {
+          // Debug logging to understand the API response
+          console.log('RequestManagement - API Request status:', apiRequest.status, 'for request:', apiRequest.id);
+          
           // Try to find matching category from our comprehensive list
           const matchingCategory = assetCategories.find(cat => 
             cat.name.toLowerCase() === apiRequest.asset_category.toLowerCase() ||
@@ -184,10 +225,10 @@ const RequestManagement: React.FC = () => {
               color: '#757575'
             },
             remarks: apiRequest.remarks,
-            status: apiRequest.status,
+            status: normalizeRequestStatus(apiRequest.status),
             requestedDate: apiRequest.requested_date,
-            processedDate: apiRequest.approved_date,
-            processedBy: apiRequest.approved_by,
+            processedDate: apiRequest.approved_date || undefined,
+            processedBy: apiRequest.approved_by || undefined,
             processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? userNameMap.get(apiRequest.approved_by) || `User ${apiRequest.approved_by}` : undefined),
             rejectionReason: undefined, // Not provided by API
             assignedAssetId: undefined, // Not provided by API
@@ -198,8 +239,8 @@ const RequestManagement: React.FC = () => {
         setRequests(transformedRequests);
 
         // Fetch assets for assignment
-        const apiAssets = await assetApi.getAllAssets();
-        const transformedAssets: Asset[] = apiAssets.map((apiAsset: any) => {
+        const apiAssetsResponse = await assetApi.getAllAssets();
+        const transformedAssets: Asset[] = apiAssetsResponse.assets.map((apiAsset: any) => {
           // Try to find matching category from our comprehensive list
           const matchingCategory = assetCategories.find(cat => 
             cat.name.toLowerCase() === apiAsset.category.toLowerCase() ||
@@ -245,7 +286,7 @@ const RequestManagement: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [pagination.page, pagination.limit]);
 
   // Filter requests
   const filteredRequests = useMemo(() => {
@@ -314,11 +355,14 @@ const RequestManagement: React.FC = () => {
       }
 
       // Refresh data from API
-      const apiRequests = await assetApi.getAllAssetRequests();
+      const apiResponse: PaginatedResponse<ApiAssetRequest> = await assetApi.getAllAssetRequests({
+        page: pagination.page,
+        limit: pagination.limit,
+      });
       
       // Fetch user names for all unique user IDs
       const uniqueUserIds = new Set<string>();
-      apiRequests.forEach((req: ApiAssetRequest) => {
+      apiResponse.items.forEach((req: ApiAssetRequest) => {
         if (req.requested_by) uniqueUserIds.add(req.requested_by);
         if (req.approved_by) uniqueUserIds.add(req.approved_by);
       });
@@ -332,16 +376,16 @@ const RequestManagement: React.FC = () => {
         })
       );
 
-      const transformedRequests: AssetRequest[] = apiRequests.map((apiRequest: ApiAssetRequest) => ({
+      const transformedRequests: AssetRequest[] = apiResponse.items.map((apiRequest: ApiAssetRequest) => ({
         id: apiRequest.id,
         employeeId: apiRequest.requested_by,
         employeeName: apiRequest.requestedByName || userNameMap.get(apiRequest.requested_by) || `User ${apiRequest.requested_by}`,
         category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
         remarks: apiRequest.remarks,
-        status: apiRequest.status,
+        status: normalizeRequestStatus(apiRequest.status),
         requestedDate: apiRequest.requested_date,
-        processedDate: apiRequest.approved_date,
-        processedBy: apiRequest.approved_by,
+        processedDate: apiRequest.approved_date || undefined,
+        processedBy: apiRequest.approved_by || undefined,
         processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? userNameMap.get(apiRequest.approved_by) || `User ${apiRequest.approved_by}` : undefined),
         rejectionReason: undefined,
         assignedAssetId: undefined,
@@ -349,6 +393,13 @@ const RequestManagement: React.FC = () => {
       }));
       
       setRequests(transformedRequests);
+      
+      // Update pagination info from API response
+      setPagination(prev => ({
+        ...prev,
+        total: apiResponse.total || 0,
+        totalPages: apiResponse.totalPages || 1,
+      }));
 
       showSuccessToast(`Request ${data.action}ed successfully`);
       setIsProcessModalOpen(false);
@@ -359,6 +410,10 @@ const RequestManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setPagination(prev => ({ ...prev, page }));
   };
 
   const getStatusCounts = () => {
@@ -636,6 +691,32 @@ const RequestManagement: React.FC = () => {
           </TableContainer>
         </TabPanel>
       </Card>
+
+      {/* Pagination Controls */}
+      {pagination.totalPages > 1 && (
+        <Card sx={{ mt: 2 }}>
+          <CardContent>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 2
+            }}>
+              <Typography variant="body2" color="text.secondary">
+                Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} requests
+              </Typography>
+              <Pagination
+                count={pagination.totalPages}
+                page={pagination.page}
+                onChange={handlePageChange}
+                color="primary"
+                disabled={initialLoading}
+              />
+            </Box>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Process Request Modal */}
       <Dialog
