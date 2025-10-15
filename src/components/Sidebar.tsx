@@ -286,10 +286,9 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
               }}
-              title={'Trans Global Services'} 
+              title={companyName || 'Trans Global Services'} 
             >
-              {/* {companyName || 'Trans Global Services'} */}
-              Trans Global Services
+              {companyName || 'Trans Global Services'}
             </Typography>
           </Box>
         </Box>
