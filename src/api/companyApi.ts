@@ -104,12 +104,13 @@ class CompanyApiService {
   // Get company details
   async getCompanyDetails(): Promise<CompanyDetails> {
     const response = await axiosInstance.get<CompanyDetails>('/company');
-    // console.log(response);
     return response.data;
   }
 
   // Update company details
-  async updateCompanyDetails(data: UpdateCompanyDetailsDto): Promise<CompanyDetails> {
+  async updateCompanyDetails(
+    data: UpdateCompanyDetailsDto
+  ): Promise<CompanyDetails> {
     const response = await axiosInstance.put<CompanyDetails>('/company', data);
     return response.data;
   }
@@ -117,11 +118,13 @@ class CompanyApiService {
   // Get company logo
   async getCompanyLogo(tenantId: string): Promise<string> {
     const response = await axiosInstance.get(`/company/logo/${tenantId}`, {
-      responseType: 'blob'
+      responseType: 'blob',
     });
-    
+
     // Create blob URL from binary response
-    const blob = new Blob([response.data], { type: response.data.type || 'image/jpeg' });
+    const blob = new Blob([response.data], {
+      type: response.data.type || 'image/jpeg',
+    });
     const blobUrl = URL.createObjectURL(blob);
     return blobUrl;
   }
@@ -130,14 +133,20 @@ class CompanyApiService {
   async uploadCompanyLogo(logoFile: File): Promise<string> {
     const formData = new FormData();
     formData.append('logo', logoFile);
-    
+
     const response = await axiosInstance.post('/company/logo', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    console.log(response);
     return response.data.logo_url || response.data;
+  }
+
+  async deleteCompanyLogo(tenantId: string): Promise<{ message: string }> {
+    const response = await axiosInstance.delete<{ message: string }>(
+      `/company/logo/${tenantId}`
+    );
+    return response.data;
   }
 }
 

@@ -132,9 +132,8 @@ const AssetRequests: React.FC = () => {
         
         // Fetch asset requests
         const apiRequests = await assetApi.getAllAssetRequests();
-        
         // Filter requests for current user
-        let requestsToShow = apiRequests.filter((request: ApiAssetRequest) => 
+        let requestsToShow = apiRequests.data.filter((request: ApiAssetRequest) => 
           request.requested_by === currentUserId
         );
         
@@ -169,13 +168,7 @@ const AssetRequests: React.FC = () => {
         
       } catch (error) {
         console.error('Failed to fetch data:', error);
-        showErrorToast('Failed to load data');
-        
-        // Retry after a short delay
-        setTimeout(() => {
-          console.log('Retrying data fetch...');
-          fetchData();
-        }, 2000);
+     
       } finally {
         setInitialLoading(false);
       }

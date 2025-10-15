@@ -4,10 +4,16 @@ import {
   useTheme as useMuiTheme,
   CircularProgress,
 } from '@mui/material';
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+} from 'react';
 import Sidebar from './Sidebar';
 import Navbar from './Nabvar';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useState, useRef } from 'react';
 import '../layout.css';
 import EmployeeInviteModal from './Modal/EmployeeInviteModal';
 
@@ -17,6 +23,7 @@ import {
   getDefaultDashboardRoute,
   isDashboardPathAllowedForRole,
 } from '../utils/permissions';
+
 const Layout = () => {
   const muiTheme = useMuiTheme();
   const { mode: themeMode, setMode } = useTheme();
@@ -30,6 +37,7 @@ const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading } = useUser();
+
   const role =
     typeof user?.role === 'string'
       ? user?.role
@@ -40,17 +48,12 @@ const Layout = () => {
     setSidebarOpen(isLargeScreen);
   }, [isLargeScreen]);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(prev => !prev);
-  };
+  const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
+  const closeSidebar = useCallback(() => {
+    if (!isLargeScreen) setSidebarOpen(false);
+  }, [isLargeScreen]);
 
-  const closeSidebar = () => {
-    if (!isLargeScreen) {
-      setSidebarOpen(false);
-    }
-  };
-
-  // Handle clicks outside sidebar
+  // Handle outside clicks
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -62,48 +65,29 @@ const Layout = () => {
         closeSidebar();
       }
     };
-
     if (sidebarOpen && !isLargeScreen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [sidebarOpen, isLargeScreen, closeSidebar]);
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [sidebarOpen, isLargeScreen]);
-
-  // Role-based guard and default redirects for /dashboard/*
+  // Role-based route guard
   useEffect(() => {
-    // Only guard dashboard routes
     if (!location.pathname.startsWith('/dashboard')) return;
 
-    // Wait for user loading to finish to avoid premature redirects on refresh
-    // If there's no token, redirect to login immediately. If token exists but user
-    // is not yet loaded, keep waiting (show spinner) instead of redirecting — this
-    // avoids a bounce where Layout redirects to login and Login immediately
-    // redirects back to dashboard while user data is still populating.
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      // No token: user is not authenticated, redirect to login
       navigate('/', { replace: true });
       return;
     }
 
-    // If token exists but user is not yet available, do not redirect — let the
-    // loading spinner remain until user is populated by UserProvider.
-    if (!user) {
-      return;
-    }
+    if (!user) return;
 
-    // Extract subpath after /dashboard
     const subPath = location.pathname
       .replace('/dashboard', '')
       .replace(/^\/+/, '');
 
-    // Don't redirect if user is on UserProfile page - allow profile updates
-    if (subPath === 'UserProfile') {
-      return;
-    }
+    if (subPath === 'UserProfile') return;
 
     const allowed = isDashboardPathAllowedForRole(subPath, role);
 
@@ -113,9 +97,8 @@ const Layout = () => {
         navigate(target, { replace: true });
       }
     }
-  }, [location.pathname, role, navigate, user, loading]);
+  }, [location.pathname, role, navigate, user]);
 
-  // Determine access for current dashboard route to avoid UI flash
   const isDashboardRoute = location.pathname.startsWith('/dashboard');
   const subPath = isDashboardRoute
     ? location.pathname.replace('/dashboard', '').replace(/^\/+/, '')
@@ -126,34 +109,10 @@ const Layout = () => {
       ? isDashboardPathAllowedForRole(subPath, role)
       : false;
 
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        height: '100vh',
-        fontFamily: 'sans-serif',
-        overflow: 'hidden',
-        // flexDirection: rtlMode ? "row-reverse" : "row",
-      }}
-    >
-      {/* Mobile Backdrop */}
-      {sidebarOpen && !isLargeScreen && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 999,
-          }}
-          onClick={closeSidebar}
-        />
-      )}
-
-      {/* Sidebar */}
-      {sidebarOpen && (
+  // Memoized Sidebar & Navbar (render once)
+  const MemoizedSidebar = useMemo(
+    () =>
+      sidebarOpen && (
         <Box
           ref={sidebarRef}
           className='sidebar'
@@ -164,28 +123,15 @@ const Layout = () => {
             display: 'flex',
             flexDirection: 'column',
             direction: rtlMode ? 'rtl' : 'ltr',
-            height: {
-              xs: '100vh',
-              lg: 'calc(100vh - 50px)',
-            },
-
-            position: {
-              xs: 'absolute',
-              lg: 'fixed',
-            },
-            // left: 0,
+            height: { xs: '100vh', lg: 'calc(100vh - 50px)' },
+            width: '270px',
+            position: { xs: 'absolute', lg: 'fixed' },
             top: 0,
             left: rtlMode ? 'auto' : 0,
             right: rtlMode ? 0 : 'auto',
-            m: {
-              xs: 0,
-              lg: 3,
-            },
+            m: { xs: 0, lg: 3 },
             mr: 0,
-            borderRadius: {
-              xs: 0,
-              lg: '17.6px',
-            },
+            borderRadius: { xs: 0, lg: '17.6px' },
             zIndex: 1000,
           }}
         >
@@ -201,8 +147,65 @@ const Layout = () => {
             onMenuItemClick={closeSidebar}
           />
         </Box>
+      ),
+    [sidebarOpen, rtlMode, darkMode, closeSidebar, setMode]
+  );
+
+  const MemoizedNavbar = useMemo(
+    () => (
+      <Box
+        sx={{
+          height: 'auto',
+          display: 'flex',
+          alignItems: 'center',
+          flexShrink: 0,
+          mt: 3,
+          mb: 3,
+        }}
+      >
+        <Navbar
+          onOpenInviteModal={() => setInviteModalOpen(true)}
+          onToggleSidebar={toggleSidebar}
+          darkMode={darkMode}
+        />
+        <EmployeeInviteModal
+          open={inviteModalOpen}
+          darkMode={darkMode}
+          onClose={() => setInviteModalOpen(false)}
+        />
+      </Box>
+    ),
+    [darkMode, inviteModalOpen, toggleSidebar]
+  );
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        height: '100vh',
+        fontFamily: 'sans-serif',
+        overflow: 'hidden',
+      }}
+    >
+      {sidebarOpen && !isLargeScreen && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 999,
+          }}
+          onClick={closeSidebar}
+        />
       )}
-      {/* Right Section */}
+
+      {/* Sidebar (rendered once, static) */}
+      {MemoizedSidebar}
+
+      {/* Main Area */}
       <Box
         className='main-area content'
         sx={{
@@ -212,37 +215,16 @@ const Layout = () => {
           overflow: 'auto',
           height: '100%',
           transition: 'margin 0.3s ease',
-          marginLeft: isLargeScreen && sidebarOpen && !rtlMode ? '274px' : 0,
+          marginLeft: isLargeScreen && sidebarOpen && !rtlMode ? '290px' : 0,
           marginRight: isLargeScreen && sidebarOpen && rtlMode ? '274px' : 0,
           width: '100%',
           direction: rtlMode ? 'rtl' : 'ltr',
         }}
       >
-        {/* Navbar */}
-        <Box
-          sx={{
-            height: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            // padding: "0 20px",
-            flexShrink: 0,
-            mt: 3,
-            mb: 3,
-          }}
-        >
-          <Navbar
-            onOpenInviteModal={() => setInviteModalOpen(true)}
-            onToggleSidebar={toggleSidebar}
-            darkMode={darkMode}
-          />
-          <EmployeeInviteModal
-            open={inviteModalOpen}
-            darkMode={darkMode}
-            onClose={() => setInviteModalOpen(false)}
-          />
-        </Box>
+        {/* Navbar (static) */}
+        {MemoizedNavbar}
 
-        {/* Scrollable Content */}
+        {/* Scrollable Outlet */}
         <Box
           component='main'
           sx={{ flex: 1, px: { xs: '7px', md: '24px' }, py: 3 }}
@@ -267,4 +249,4 @@ const Layout = () => {
   );
 };
 
-export default Layout;
+export default React.memo(Layout);

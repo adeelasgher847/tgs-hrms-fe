@@ -59,7 +59,8 @@ export const assetApi = {
     if (filters?.category) params.append('category', filters.category);
     
     const response = await axiosInstance.get(`/assets?${params.toString()}`);
-    return response.data;
+    console.log("Response of Assets from data :",response.data.data)
+    return response.data.data;
   },
 
   getAssetById: async (id: string) => {
@@ -100,6 +101,7 @@ export const assetApi = {
     if (filters?.tenant) params.append('tenant', filters.tenant);
     
     const response = await axiosInstance.get(`/asset-requests?${params.toString()}`);
+    console.log("Response of Asset Requests from data :",response.data)    
     return response.data;
   },
 
