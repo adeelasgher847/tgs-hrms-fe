@@ -52,7 +52,6 @@ export interface AssetRequest {
 // Utility function to validate and normalize status from API
 export const validateRequestStatus = (status: string | number | boolean): 'pending' | 'approved' | 'rejected' => {
   if (typeof status !== 'string') {
-    console.warn('Invalid status type received from API:', typeof status, status);
     return 'pending';
   }
   
@@ -65,7 +64,6 @@ export const validateRequestStatus = (status: string | number | boolean): 'pendi
     case 'rejected':
       return 'rejected';
     default:
-      console.warn('Unknown status received from API:', status, 'normalized to:', normalized);
       return 'pending';
   }
 };
@@ -93,12 +91,9 @@ export const assetApi = {
   // Test function to check API connectivity
   testApiConnection: async () => {
     try {
-      console.log('Testing API connection...');
       const response = await axiosInstance.get('/assets');
-      console.log('API Test Response:', response);
       return response;
     } catch (error) {
-      console.error('API Test Error:', error);
       throw error;
     }
   },
@@ -113,17 +108,11 @@ export const assetApi = {
     
     const response = await axiosInstance.get(`/assets?${params.toString()}`);
     
-    // Debug: Log the actual response structure
-    console.log('API Response:', response.data);
-    console.log('API Response Type:', typeof response.data);
-    console.log('API Response Keys:', Object.keys(response.data || {}));
-    
     // Handle different possible response structures
     const responseData = response.data;
     
     // Case 1: Paginated response with data array
     if (responseData.data && Array.isArray(responseData.data)) {
-      console.log('Using paginated response structure with data array');
       return {
         assets: responseData.data,
         pagination: {
@@ -137,7 +126,7 @@ export const assetApi = {
     
     // Case 2: Paginated response with items array
     if (responseData.items && Array.isArray(responseData.items)) {
-      console.log('Using paginated response structure with items array');
+
       return {
         assets: responseData.items,
         pagination: {
@@ -151,7 +140,6 @@ export const assetApi = {
     
     // Case 3: Paginated response with results array
     if (responseData.results && Array.isArray(responseData.results)) {
-      console.log('Using paginated response structure with results array');
       return {
         assets: responseData.results,
         pagination: {
@@ -165,7 +153,6 @@ export const assetApi = {
     
     // Case 4: Direct array response
     if (Array.isArray(responseData)) {
-      console.log('Using direct array response structure');
       return {
         assets: responseData,
         pagination: {
@@ -179,7 +166,6 @@ export const assetApi = {
     
     // Case 5: Object with assets property
     if (responseData.assets && Array.isArray(responseData.assets)) {
-      console.log('Using response structure with assets property');
       return {
         assets: responseData.assets,
         pagination: {
@@ -194,9 +180,8 @@ export const assetApi = {
     // Fallback: Try to find any array in the response
     const possibleArrays = Object.values(responseData).filter(Array.isArray);
     if (possibleArrays.length > 0) {
-      console.log('Using fallback - found array in response');
       return {
-        assets: possibleArrays[0] as Asset[],
+        assets: (possibleArrays[0] || []) as Asset[],
         pagination: {
           total: responseData.total || possibleArrays[0].length,
           page: responseData.page || 1,
@@ -207,7 +192,6 @@ export const assetApi = {
     }
     
     // Final fallback
-    console.log('Using final fallback - empty array');
     return {
       assets: [],
       pagination: {
@@ -260,40 +244,12 @@ export const assetApi = {
     
     const response = await axiosInstance.get(`/asset-requests?${params.toString()}`);
     
-    // Debug: Log the actual response structure
-    console.log('Asset Requests API Response:', response.data);
-    console.log('Asset Requests API Response Type:', typeof response.data);
-    console.log('Asset Requests API Response Keys:', Object.keys(response.data || {}));
     
     // Debug: Log individual request statuses
     const responseData = response.data;
-    if (responseData.items && Array.isArray(responseData.items)) {
-      console.log('Individual request statuses:');
-      responseData.items.forEach((item: AssetRequest, index: number) => {
-        console.log(`Request ${index + 1}:`, {
-          id: item.id,
-          status: item.status,
-          statusType: typeof item.status,
-          statusLength: item.status?.length
-        });
-      });
-    } else if (responseData.data && Array.isArray(responseData.data)) {
-      console.log('Individual request statuses (data array):');
-      responseData.data.forEach((item: AssetRequest, index: number) => {
-        console.log(`Request ${index + 1}:`, {
-          id: item.id,
-          status: item.status,
-          statusType: typeof item.status,
-          statusLength: item.status?.length
-        });
-      });
-    }
-    
-    // Handle different possible response structures
     
     // Case 1: Paginated response with data array
     if (responseData.data && Array.isArray(responseData.data)) {
-      console.log('Using paginated response structure with data array');
       return {
         items: responseData.data,
         total: responseData.total || 0,
@@ -305,7 +261,7 @@ export const assetApi = {
     
     // Case 2: Paginated response with items array
     if (responseData.items && Array.isArray(responseData.items)) {
-      console.log('Using paginated response structure with items array');
+
       return {
         items: responseData.items,
         total: responseData.total || 0,
@@ -317,7 +273,6 @@ export const assetApi = {
     
     // Case 3: Paginated response with results array
     if (responseData.results && Array.isArray(responseData.results)) {
-      console.log('Using paginated response structure with results array');
       return {
         items: responseData.results,
         total: responseData.total || 0,
@@ -329,7 +284,6 @@ export const assetApi = {
     
     // Case 4: Direct array response
     if (Array.isArray(responseData)) {
-      console.log('Using direct array response structure');
       return {
         items: responseData,
         total: responseData.length,
@@ -341,7 +295,6 @@ export const assetApi = {
     
     // Case 5: Object with assetRequests property
     if (responseData.assetRequests && Array.isArray(responseData.assetRequests)) {
-      console.log('Using response structure with assetRequests property');
       return {
         items: responseData.assetRequests,
         total: responseData.total || responseData.assetRequests.length,
@@ -354,7 +307,6 @@ export const assetApi = {
     // Fallback: Try to find any array in the response
     const possibleArrays = Object.values(responseData).filter(Array.isArray);
     if (possibleArrays.length > 0) {
-      console.log('Using fallback - found array in response');
       return {
         items: possibleArrays[0] as AssetRequest[],
         total: responseData.total || possibleArrays[0].length,
@@ -364,8 +316,6 @@ export const assetApi = {
       };
     }
     
-    // Final fallback
-    console.log('Using final fallback - empty array');
     return {
       items: [],
       total: 0,
@@ -395,42 +345,15 @@ export const assetApi = {
     
     const response = await axiosInstance.get(`/asset-requests/?${params.toString()}`);
     
-    // Debug: Log the actual response structure for user requests
-    console.log('User Asset Requests API Response:', response.data);
-    console.log('User Asset Requests API Response Type:', typeof response.data);
     
     // Debug: Log individual request statuses for user requests
     const responseData = response.data;
-    if (responseData.items && Array.isArray(responseData.items)) {
-      console.log('User request statuses (items array):');
-      responseData.items.forEach((item: AssetRequest, index: number) => {
-        console.log(`User Request ${index + 1}:`, {
-          id: item.id,
-          status: item.status,
-          statusType: typeof item.status,
-          statusLength: item.status?.length,
-          rawStatus: JSON.stringify(item.status)
-        });
-      });
-    } else if (responseData.data && Array.isArray(responseData.data)) {
-      console.log('User request statuses (data array):');
-      responseData.data.forEach((item: AssetRequest, index: number) => {
-        console.log(`User Request ${index + 1}:`, {
-          id: item.id,
-          status: item.status,
-          statusType: typeof item.status,
-          statusLength: item.status?.length,
-          rawStatus: JSON.stringify(item.status)
-        });
-      });
-    }
     
     return response.data;
   },
 
   createAssetRequest: async (data: CreateAssetRequestRequest) => {
     const response = await axiosInstance.post('/asset-requests', data);
-    console.log(response);
     return response.data;
   },
 

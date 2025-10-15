@@ -1,5 +1,5 @@
 import axiosInstance from './axiosInstance';
-import { handleApiError, isGlobalDesignation } from '../utils/errorHandler';
+import { handleApiError } from '../utils/errorHandler';
 
 // Normalized types exposed to the rest of the app (camelCase)
 export interface BackendDesignation {

@@ -169,9 +169,6 @@ const RequestManagement: React.FC = () => {
         }));
 
         const transformedRequests: AssetRequest[] = apiResponse.items.map((apiRequest: ApiAssetRequest) => {
-          // Debug logging to understand the API response
-          console.log('RequestManagement - API Request status:', apiRequest.status, 'for request:', apiRequest.id);
-          
           // Try to find matching category from our comprehensive list
           const matchingCategory = assetCategories.find(cat => 
             cat.name.toLowerCase() === apiRequest.asset_category.toLowerCase() ||
@@ -478,7 +475,7 @@ const RequestManagement: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3,flexWrap: 'wrap', gap: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h4" fontWeight={600}>
           Asset Request Management
         </Typography>
