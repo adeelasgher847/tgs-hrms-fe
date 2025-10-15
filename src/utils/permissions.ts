@@ -411,6 +411,7 @@ export const isDashboardPathAllowedForRole = (
       'settings',
       // Benefits
       'benefits',
+      'benefits/assign',
       'benefits/reporting',
       'my-benefits',
     ]),
@@ -426,6 +427,9 @@ export const isDashboardPathAllowedForRole = (
       // Settings
       'settings',
       // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
       'my-benefits',
     ]),
     user: new Set([
@@ -440,6 +444,9 @@ export const isDashboardPathAllowedForRole = (
       // Settings
       'settings',
       // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
       'my-benefits',
     ]),
     unknown: new Set<string>(),

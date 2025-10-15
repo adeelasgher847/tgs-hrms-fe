@@ -36,14 +36,14 @@ import {
   Build as BuildIcon,
   CheckCircle as AvailableIcon,
 } from '@mui/icons-material';
-import type { Asset, AssetFilters, MockUser, AssetStatus } from '../../types/asset';
+import type { Asset, AssetFilters, MockUser, AssetStatus, UpdateAssetRequest } from '../../types/asset';
 import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
 import employeeApi from '../../api/employeeApi';
 import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
-import { assetCategories } from '../../data/assetCategories';
+import { assetCategories } from '../../data/assetCategories.ts';
 
 const AssetInventory: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -240,14 +240,14 @@ const AssetInventory: React.FC = () => {
     setSelectedAssetId(null);
   };
 
-  const handleAssetSubmit = async (data: { name: string; category: string; purchaseDate: string }) => {
+  const handleAssetSubmit = async (data: UpdateAssetRequest & { assignedTo?: string }) => {
     setLoading(true);
     try {
       if (editingAsset) {
         // Update existing asset
         const updateData = {
           name: data.name,
-          category: data.category,
+          category: data.categoryId,
           purchaseDate: data.purchaseDate,
         };
 
@@ -263,7 +263,7 @@ const AssetInventory: React.FC = () => {
         // Create new asset
         const createData = {
           name: data.name,
-          category: data.category,
+          category: data.categoryId,
           purchaseDate: data.purchaseDate,
         };
 

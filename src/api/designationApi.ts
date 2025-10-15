@@ -43,7 +43,7 @@ export interface DesignationDto {
   departmentId: string;
 }
 
-function normalizeDesignation(raw: unknown): BackendDesignation {
+function normalizeDesignation(raw: any): BackendDesignation {
   return {
     id: raw?.id,
     title: raw?.title,
@@ -54,7 +54,7 @@ function normalizeDesignation(raw: unknown): BackendDesignation {
   };
 }
 
-function normalizeDepartment(raw: unknown): BackendDepartment {
+function normalizeDepartment(raw: any): BackendDepartment {
   return {
     id: raw?.id,
     name: raw?.name,

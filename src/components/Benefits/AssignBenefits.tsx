@@ -3,7 +3,7 @@ import { assignBenefits, listBenefits, listEmployeeBenefits } from '../../api/be
 import type { Benefit, EmployeeBenefitAssignment } from '../../types/benefits';
 import { Button, Card, CardContent, Chip, CircularProgress, FormControl, InputLabel, MenuItem, OutlinedInput, Select, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, Box } from '@mui/material';
 import { toast } from 'react-toastify';
-import { mockEmployees, getEmployeeById } from '../../data/employees';
+import { mockEmployees, getEmployeeById } from '../../data/employees.ts';
 
 interface AssignBenefitsProps {
   employeeId?: string;
