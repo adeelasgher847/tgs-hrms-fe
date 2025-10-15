@@ -105,7 +105,7 @@ function App() {
                 <Route path='settings' element={<SettingsPage />} />
                 <Route path='assets' element={<AssetInventory />} />
                 <Route path='assets/requests' element={<AssetRequests />} />
-                <Route path='assets/request-management'  element={<RequestManagement />}/>
+                <Route path='assets/request-management' element={<RequestManagement />}/>
                  <Route path='benefits' element={<BenefitList />} />
                 <Route path='benefits/reporting' element={<ReportingView />} />
                 <Route path='benefits/assign' element={<AssignBenefits employeeId={'e1'} />} />
