@@ -89,6 +89,16 @@ const menuItems: MenuItem[] = [
     subItems: [{ label: 'Employee List', path: 'EmployeeManager' }],
   },
   {
+    label: 'Benefits',
+    icon: <Payments />,
+    subItems: [
+      { label: 'Benefit List', path: 'benefits' },
+      { label: 'Assign Benefits', path: 'benefits/assign' },
+      { label: 'Reporting', path: 'benefits/reporting' },
+      { label: 'My Benefits', path: 'my-benefits' },
+    ],
+  },
+  {
     label: 'Teams',
     icon: <Group />,
     subItems: [{ label: 'Team Management', path: 'teams' }],
@@ -167,23 +177,24 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   const [activeSubItem, setActiveSubItem] = useState<string>('');
 
   const filteredMenuItems = useMemo(() => {
-    return menuItems
-      .filter(item =>
-        isMenuVisibleForRole(
-          item.label,
-          typeof role === 'string' ? role : (role as any)?.name
-        )
-      )
+    const userRole = typeof role === 'string' ? role : (role as unknown)?.name;
+    
+    const filtered = menuItems
+      .filter(item => {
+        const isVisible = isMenuVisibleForRole(item.label, userRole);
+        return isVisible;
+      })
       .map(item => ({
         ...item,
-        subItems: item.subItems?.filter(sub =>
-          isSubMenuVisibleForRole(
-            item.label,
-            sub.label,
-            typeof role === 'string' ? role : (role as any)?.name
-          )
-        ),
+        subItems: item.subItems.filter(sub => {
+          const isSubVisible = isSubMenuVisibleForRole(item.label, sub.label, userRole);
+
+          return isSubVisible;
+        }),
+
+
       }));
+    return filtered;
   }, [role]);
 
   useEffect(() => {

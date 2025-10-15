@@ -32,6 +32,10 @@ import AssetInventory from './components/AssetManagement/AssetInventory';
 import AssetRequests from './components/AssetManagement/AssetRequests';
 import RequestManagement from './components/AssetManagement/RequestManagement';
 import NotificationToast from './components/AssetManagement/NotificationToast';
+import BenefitList from './components/Benefits/BenefitList';
+import ReportingView from './components/Benefits/ReportingView';
+import MyBenefits from './components/Benefits/MyBenefits';
+import AssignBenefits from './components/Benefits/AssignBenefits';
 import { LanguageProvider } from './context/LanguageContext';
 import { UserProvider } from './context/UserContext';
 import { ProfilePictureProvider } from './context/ProfilePictureContext';
@@ -106,14 +110,17 @@ function App() {
                   path='assets/request-management'
                   element={<RequestManagement />}
                 />
+                 <Route path='benefits' element={<BenefitList />} />
+                <Route path='benefits/reporting' element={<ReportingView />} />
+                <Route path='benefits/assign' element={<AssignBenefits employeeId={'e1'} />} />
+                <Route path='my-benefits' element={<MyBenefits employeeId={'e1'} />} />
+
               </Route>
-
-              <Route path='/company-details' element={<CompanyDetails />} />
-
-              <Route path='*' element={<Error404 />} />
-            </Routes>
-          </Router>
-          <NotificationToast />
+                <Route path='/company-details' element={<CompanyDetails />} />
+                <Route path='*' element={<Error404 />} />
+              </Routes>
+            </Router>   
+             <NotificationToast />
         </ProfilePictureProvider>
       </UserProvider>
     </LanguageProvider>

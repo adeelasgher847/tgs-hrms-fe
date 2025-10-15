@@ -24,6 +24,8 @@ import {
   Menu,
   ListItemIcon,
   ListItemText,
+  CircularProgress,
+  Stack,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -34,6 +36,7 @@ import {
   Delete as DeleteIcon,
   Person as PersonIcon,
   Build as BuildIcon,
+  CheckCircle as AvailableIcon,
 } from '@mui/icons-material';
 import type { Asset, AssetFilters, AssetCategory, MockUser, AssetStatus } from '../../types/asset';
 import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
@@ -42,6 +45,7 @@ import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
+import { assetCategories, getCategoryById } from '../../data/assetCategories';
 
 const AssetInventory: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -99,20 +103,41 @@ const AssetInventory: React.FC = () => {
         );
         
         // Transform API assets to match component interface
-        const transformedAssets: Asset[] = apiAssets.map((apiAsset: ApiAsset) => ({
-          id: apiAsset.id,
-          name: apiAsset.name,
-          category: { id: apiAsset.category, name: apiAsset.category, nameAr: apiAsset.category, description: '' },
-          status: apiAsset.status,
-          assignedTo: apiAsset.assigned_to,
-          assignedToName: apiAsset.assigned_to ? userNameMap.get(apiAsset.assigned_to) : undefined,
-          serialNumber: '', // Not provided by API
-          purchaseDate: apiAsset.purchase_date,
-          location: '', // Not provided by API
-          description: '', // Not provided by API
-          createdAt: apiAsset.created_at,
-          updatedAt: apiAsset.created_at,
-        }));
+        const transformedAssets: Asset[] = apiAssets.map((apiAsset: ApiAsset) => {
+          // Try to find matching category from our comprehensive list
+          const matchingCategory = assetCategories.find(cat => 
+            cat.name.toLowerCase() === apiAsset.category.toLowerCase() ||
+            cat.subcategories?.some(sub => sub.toLowerCase() === apiAsset.category.toLowerCase())
+          );
+          
+          return {
+            id: apiAsset.id,
+            name: apiAsset.name,
+            category: matchingCategory ? {
+              id: matchingCategory.id,
+              name: matchingCategory.name,
+              nameAr: matchingCategory.nameAr,
+              description: matchingCategory.description,
+              color: matchingCategory.color,
+              subcategories: matchingCategory.subcategories
+            } : { 
+              id: apiAsset.category, 
+              name: apiAsset.category, 
+              nameAr: apiAsset.category, 
+              description: '',
+              color: '#757575'
+            },
+            status: apiAsset.status,
+            assignedTo: apiAsset.assigned_to,
+            assignedToName: apiAsset.assigned_to ? userNameMap.get(apiAsset.assigned_to) : undefined,
+            serialNumber: '', // Not provided by API
+            purchaseDate: apiAsset.purchase_date,
+            location: '', // Not provided by API
+            description: '', // Not provided by API
+            createdAt: apiAsset.created_at,
+            updatedAt: apiAsset.created_at,
+          };
+        });
         
         setAssets(transformedAssets);
         
@@ -324,6 +349,30 @@ const AssetInventory: React.FC = () => {
     }
   };
 
+  const handleMarkAsAvailable = async (asset: Asset) => {
+    setLoading(true);
+    try {
+      await assetApi.updateAssetStatus(asset.id, 'available', {
+        name: asset.name,
+        category: asset.category.name,
+        purchaseDate: asset.purchaseDate,
+      });
+      
+      // Update local state
+      setAssets(prev => prev.map(a => 
+        a.id === asset.id ? { ...a, status: 'available' as AssetStatus } : a
+      ));
+      
+      showSuccessToast('Asset marked as available');
+      setAnchorEl(null);
+    } catch (error) {
+      console.error('Failed to update asset status:', error);
+      showErrorToast('Failed to update asset status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusCounts = () => {
     return {
       total: assets.length,
@@ -339,7 +388,9 @@ const AssetInventory: React.FC = () => {
   if (initialLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <Typography>Loading assets...</Typography>
+        <Stack alignItems="center" py={4}>
+          <CircularProgress />
+        </Stack>
       </Box>
     );
   }
@@ -469,9 +520,9 @@ const AssetInventory: React.FC = () => {
                   onChange={(e) => setFilters((prev: AssetFilters) => ({ ...prev, category: e.target.value as string[] }))}
                   label="Category"
                 >
-                  {availableCategories.map((category) => (
-                    <MenuItem key={category} value={category}>
-                      {category}
+                  {assetCategories.map((category) => (
+                    <MenuItem key={category.id} value={category.name}>
+                      <Typography variant="body2">{category.name}</Typography>
                     </MenuItem>
                   ))}
                 </Select>
@@ -521,7 +572,11 @@ const AssetInventory: React.FC = () => {
                       )}
                     </Box>
                   </TableCell>
-                  <TableCell>{asset.category.name}</TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {asset.category.name}
+                    </Typography>
+                  </TableCell>
                   <TableCell>
                     <StatusChip status={asset.status} type="asset" />
                   </TableCell>
@@ -569,6 +624,17 @@ const AssetInventory: React.FC = () => {
                             <BuildIcon fontSize="small" color="warning" />
                           </ListItemIcon>
                           <ListItemText>Mark as Maintenance</ListItemText>
+                        </MenuItem>
+                      )}
+                      {asset.status === 'under_maintenance' && (
+                        <MenuItem 
+                          onClick={() => handleMarkAsAvailable(asset)}
+                          sx={{ color: 'success.main' }}
+                        >
+                          <ListItemIcon>
+                            <AvailableIcon fontSize="small" color="success" />
+                          </ListItemIcon>
+                          <ListItemText>Mark as Available</ListItemText>
                         </MenuItem>
                       )}
                       <MenuItem 

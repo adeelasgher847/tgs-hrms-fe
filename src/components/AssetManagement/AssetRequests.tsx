@@ -28,6 +28,8 @@ import {
   Tab,
   InputAdornment,
   Autocomplete,
+  CircularProgress,
+  Stack,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -343,7 +345,9 @@ const AssetRequests: React.FC = () => {
   if (initialLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <Typography>Loading requests...</Typography>
+        <Stack alignItems="center" py={4}>
+          <CircularProgress />
+        </Stack>
       </Box>
     );
   }
