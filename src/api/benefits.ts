@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Benefit, BenefitFilters, EmployeeBenefitAssignment, PagedResult } from '../types/benefits';
-import { seedBenefits, seedAssignments } from '../data/benefits';
+import {seedBenefits, seedAssignments } from '../data/benefits.ts';
 
 let benefitsDb: Benefit[] = [...seedBenefits];
 let assignmentsDb: EmployeeBenefitAssignment[] = [...seedAssignments];

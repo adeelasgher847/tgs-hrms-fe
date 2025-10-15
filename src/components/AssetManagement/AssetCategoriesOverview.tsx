@@ -31,9 +31,9 @@ const AssetCategoriesOverview: React.FC = () => {
         </Typography>
       </Box>
 
-      <Grid container spacing={3}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 3 }}>
         {assetCategories.map((category) => (
-          <Grid item xs={12} md={6} lg={4} key={category.id}>
+          <Box key={category.id}>
             <Card 
               sx={{ 
                 height: '100%',
@@ -148,9 +148,9 @@ const AssetCategoriesOverview: React.FC = () => {
                 </Box>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
       <Box sx={{ mt: 4 }}>
         <Card variant="outlined">
@@ -158,8 +158,8 @@ const AssetCategoriesOverview: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               Category Statistics
             </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6} sm={3}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 2 }}>
+              <Box>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="primary" fontWeight={600}>
                     {assetCategories.length}
@@ -168,8 +168,8 @@ const AssetCategoriesOverview: React.FC = () => {
                     Main Categories
                   </Typography>
                 </Box>
-              </Grid>
-              <Grid item xs={6} sm={3}>
+              </Box>
+              <Box>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="secondary" fontWeight={600}>
                     {assetCategories.reduce((sum, cat) => sum + (cat.subcategories?.length || 0), 0)}
@@ -178,8 +178,8 @@ const AssetCategoriesOverview: React.FC = () => {
                     Total Subcategories
                   </Typography>
                 </Box>
-              </Grid>
-              <Grid item xs={6} sm={3}>
+              </Box>
+              <Box>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="success.main" fontWeight={600}>
                     {assetCategories.filter(cat => cat.subcategories && cat.subcategories.length > 0).length}
@@ -188,8 +188,8 @@ const AssetCategoriesOverview: React.FC = () => {
                     Categories with Subcategories
                   </Typography>
                 </Box>
-              </Grid>
-              <Grid item xs={6} sm={3}>
+              </Box>
+              <Box>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="warning.main" fontWeight={600}>
                     8
@@ -198,8 +198,8 @@ const AssetCategoriesOverview: React.FC = () => {
                     Default Categories
                   </Typography>
                 </Box>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </CardContent>
         </Card>
       </Box>

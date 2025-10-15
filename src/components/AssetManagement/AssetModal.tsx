@@ -21,7 +21,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import type { Asset, AssetCategory, UpdateAssetRequest, MockUser } from '../../types/asset';
-import { assetCategories } from '../../data/assetCategories';
+import { assetCategories } from '../../data/assetCategories.ts';
 
 interface AssetModalProps {
   open: boolean;
