@@ -37,12 +37,20 @@ export interface AssetRequest {
   created_at: string;
   requestedByName?: string;
   approvedByName?: string;
-  requestedByUser?: any;
-  approvedByUser?: any;
+  requestedByUser?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  approvedByUser?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 // Utility function to validate and normalize status from API
-export const validateRequestStatus = (status: any): 'pending' | 'approved' | 'rejected' => {
+export const validateRequestStatus = (status: string | number | boolean): 'pending' | 'approved' | 'rejected' => {
   if (typeof status !== 'string') {
     console.warn('Invalid status type received from API:', typeof status, status);
     return 'pending';
@@ -188,7 +196,7 @@ export const assetApi = {
     if (possibleArrays.length > 0) {
       console.log('Using fallback - found array in response');
       return {
-        assets: possibleArrays[0] as any[],
+        assets: possibleArrays[0] as Asset[],
         pagination: {
           total: responseData.total || possibleArrays[0].length,
           page: responseData.page || 1,
@@ -261,7 +269,7 @@ export const assetApi = {
     const responseData = response.data;
     if (responseData.items && Array.isArray(responseData.items)) {
       console.log('Individual request statuses:');
-      responseData.items.forEach((item: any, index: number) => {
+      responseData.items.forEach((item: AssetRequest, index: number) => {
         console.log(`Request ${index + 1}:`, {
           id: item.id,
           status: item.status,
@@ -271,7 +279,7 @@ export const assetApi = {
       });
     } else if (responseData.data && Array.isArray(responseData.data)) {
       console.log('Individual request statuses (data array):');
-      responseData.data.forEach((item: any, index: number) => {
+      responseData.data.forEach((item: AssetRequest, index: number) => {
         console.log(`Request ${index + 1}:`, {
           id: item.id,
           status: item.status,
@@ -348,7 +356,7 @@ export const assetApi = {
     if (possibleArrays.length > 0) {
       console.log('Using fallback - found array in response');
       return {
-        items: possibleArrays[0] as any[],
+        items: possibleArrays[0] as AssetRequest[],
         total: responseData.total || possibleArrays[0].length,
         page: responseData.page || 1,
         limit: responseData.limit || possibleArrays[0].length || 25,
@@ -395,7 +403,7 @@ export const assetApi = {
     const responseData = response.data;
     if (responseData.items && Array.isArray(responseData.items)) {
       console.log('User request statuses (items array):');
-      responseData.items.forEach((item: any, index: number) => {
+      responseData.items.forEach((item: AssetRequest, index: number) => {
         console.log(`User Request ${index + 1}:`, {
           id: item.id,
           status: item.status,
@@ -406,7 +414,7 @@ export const assetApi = {
       });
     } else if (responseData.data && Array.isArray(responseData.data)) {
       console.log('User request statuses (data array):');
-      responseData.data.forEach((item: any, index: number) => {
+      responseData.data.forEach((item: AssetRequest, index: number) => {
         console.log(`User Request ${index + 1}:`, {
           id: item.id,
           status: item.status,
