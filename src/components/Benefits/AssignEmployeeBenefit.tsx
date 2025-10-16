@@ -20,6 +20,9 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import employeeApi from '../../api/employeeApi';
+import benefitsApi from '../../api/benefitApi';
+import employeeBenefitApi from '../../api/employeeBenefitApi';
 
 interface Employee {
   id: string;
@@ -32,19 +35,11 @@ interface Benefit {
   name: string;
 }
 
-export interface AssignEmployeeBenefitValues {
+interface AssignEmployeeBenefitValues {
   employeeId: string;
   benefitIds: string[];
-  benefitType: string;
   startDate: string;
-}
-
-interface AssignEmployeeBenefitProps {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (data: AssignEmployeeBenefitValues) => void;
-  employees: Employee[];
-  benefits: Benefit[];
+  endDate: string;
 }
 
 const schema = yup.object({
@@ -53,18 +48,18 @@ const schema = yup.object({
     .array()
     .min(1, 'Select at least one benefit')
     .required('Benefits are required'),
-  benefitType: yup.string().required('Benefit type is required'),
   startDate: yup.string().required('Start date is required'),
+  endDate: yup.string().required('End date is required'),
 });
 
-const AssignEmployeeBenefit: React.FC<AssignEmployeeBenefitProps> = ({
-  open,
-  onClose,
-  onSubmit,
-  employees,
-  benefits,
-}) => {
+const AssignEmployeeBenefit: React.FC<{
+  open: boolean;
+  onClose: () => void;
+}> = ({ open, onClose }) => {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [showToast, setShowToast] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const {
     control,
@@ -76,41 +71,59 @@ const AssignEmployeeBenefit: React.FC<AssignEmployeeBenefitProps> = ({
     defaultValues: {
       employeeId: '',
       benefitIds: [],
-      benefitType: '',
       startDate: new Date().toISOString().split('T')[0],
+      endDate: '',
     },
   });
 
   useEffect(() => {
-    reset({
-      employeeId: '',
-      benefitIds: [],
-      benefitType: '',
-      startDate: new Date().toISOString().split('T')[0],
-    });
-  }, [open, reset]);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        console.log('Fetching employees & benefits...');
+        const [empResp, benResp] = await Promise.all([
+          employeeApi.getAllEmployees(),
+          benefitsApi.getBenefits(1),
+        ]);
+        console.log('Employees: ', empResp);
+        console.log('Benefits: ', benResp);
+        setEmployees(empResp.items || []);
+        setBenefits(Array.isArray(benResp) ? benResp : benResp.items || []);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleFormSubmit = (data: AssignEmployeeBenefitValues) => {
+    fetchData();
+  }, []); 
+
+  const handleFormSubmit = async (data: AssignEmployeeBenefitValues) => {
     try {
-      onSubmit(data);
+      setLoading(true);
+      for (const benefitId of data.benefitIds) {
+        await employeeBenefitApi.assignBenefit({
+          employeeId: data.employeeId,
+          benefitId,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          status: 'active',
+        });
+      }
       setShowToast(true);
       reset();
+      onClose();
     } catch (err) {
-      console.error(err);
+      console.error('Error assigning benefit:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <>
-      <Dialog
-        open={open}
-        onClose={onClose}
-        maxWidth='sm'
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 2, overflow: 'hidden' },
-        }}
-      >
+      <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
         <DialogTitle>
           <Typography variant='h6' fontWeight={600}>
             Assign Benefits to Employee
@@ -118,11 +131,8 @@ const AssignEmployeeBenefit: React.FC<AssignEmployeeBenefitProps> = ({
         </DialogTitle>
 
         <form onSubmit={handleSubmit(handleFormSubmit)}>
-          <DialogContent
-            sx={{ px: 2, maxHeight: '60vh', overflowY: 'visible' }}
-          >
+          <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {/* Employee Selection */}
               <Controller
                 name='employeeId'
                 control={control}
@@ -145,7 +155,6 @@ const AssignEmployeeBenefit: React.FC<AssignEmployeeBenefitProps> = ({
                 )}
               />
 
-              {/* Benefits Selection */}
               <Controller
                 name='benefitIds'
                 control={control}
@@ -163,37 +172,16 @@ const AssignEmployeeBenefit: React.FC<AssignEmployeeBenefitProps> = ({
                           .join(', ')
                       }
                     >
-                      {benefits.map(benefit => (
-                        <MenuItem key={benefit.id} value={benefit.id}>
-                          <Checkbox
-                            checked={field.value.includes(benefit.id)}
-                          />
-                          <ListItemText primary={benefit.name} />
+                      {benefits.map(b => (
+                        <MenuItem key={b.id} value={b.id}>
+                          <Checkbox checked={field.value.includes(b.id)} />
+                          <ListItemText primary={b.name} />
                         </MenuItem>
                       ))}
                     </Select>
                     {errors.benefitIds && (
                       <Typography variant='caption' color='error'>
                         {errors.benefitIds.message}
-                      </Typography>
-                    )}
-                  </FormControl>
-                )}
-              />
-
-              <Controller
-                name='benefitType'
-                control={control}
-                render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.benefitType}>
-                    <InputLabel>Benefit Type</InputLabel>
-                    <Select {...field} label='Benefit Type'>
-                      <MenuItem value='Monetary'>Monetary</MenuItem>
-                      <MenuItem value='Non-Monetary'>Non-Monetary</MenuItem>
-                    </Select>
-                    {errors.benefitType && (
-                      <Typography variant='caption' color='error'>
-                        {errors.benefitType.message}
                       </Typography>
                     )}
                   </FormControl>
@@ -215,24 +203,31 @@ const AssignEmployeeBenefit: React.FC<AssignEmployeeBenefitProps> = ({
                   />
                 )}
               />
+
+              <Controller
+                name='endDate'
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label='End Date'
+                    type='date'
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    error={!!errors.endDate}
+                    helperText={errors.endDate?.message}
+                  />
+                )}
+              />
             </Box>
           </DialogContent>
 
-          <DialogActions
-            sx={{
-              position: 'sticky',
-              bottom: 0,
-              backgroundColor: 'background.paper',
-              px: 2,
-              py: 2,
-              gap: 1,
-            }}
-          >
+          <DialogActions>
             <Button onClick={onClose} variant='outlined'>
               Cancel
             </Button>
-            <Button type='submit' variant='contained'>
-              Assign
+            <Button type='submit' variant='contained' disabled={loading}>
+              {loading ? 'Assigning...' : 'Assign'}
             </Button>
           </DialogActions>
         </form>
@@ -240,16 +235,12 @@ const AssignEmployeeBenefit: React.FC<AssignEmployeeBenefitProps> = ({
 
       <Snackbar
         open={showToast}
-        autoHideDuration={2500}
+        autoHideDuration={3000}
         onClose={() => setShowToast(false)}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert
-          severity='success'
-          variant='filled'
-          onClose={() => setShowToast(false)}
-        >
-          Benefit(s) assigned successfully!
+        <Alert severity='success' variant='filled'>
+          Benefits assigned successfully!
         </Alert>
       </Snackbar>
     </>

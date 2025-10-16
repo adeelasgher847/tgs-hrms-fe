@@ -21,7 +21,6 @@ const BenefitCard: React.FC<BenefitCardProps> = ({
       elevation={3}
       sx={{
         p: 2.5,
-        borderRadius: 3,
         minWidth: 320,
         maxWidth: 380,
         display: 'flex',

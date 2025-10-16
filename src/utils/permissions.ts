@@ -73,8 +73,9 @@ export const isMenuVisibleForRole = (
       'assets',
       'attendance',
       'report',
+      'benefits',
     ],
-    'hr-admin': ['attendance', 'teams', 'benefits'],
+    'hr-admin': ['employees', 'attendance', 'teams', 'benefits'],
     admin: [
       'dashboard',
       'department',
@@ -85,7 +86,7 @@ export const isMenuVisibleForRole = (
       'report',
     ],
     manager: ['teams', 'attendance', 'assets', 'report'],
-    employee: ['attendance', 'assets'],
+    employee: ['attendance', 'assets', 'benefits'],
     user: ['attendance', 'assets'],
     unknown: [],
   };
@@ -231,12 +232,23 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (parent.includes('benefits')) {
+      if (!sub.includes('benefit details')) {
+        visible = false;
+      }
+    }
   }
 
   // Network Admin: For Assets menu - only see Asset Inventory and Management (not Asset Requests)
   if (r === 'network-admin') {
     if (parent.includes('assets')) {
       if (sub.includes('asset requests')) {
+        visible = false;
+      }
+    }
+
+    if (parent.includes('benefits')) {
+      if (!sub.includes('benefits report')) {
         visible = false;
       }
     }
@@ -255,6 +267,11 @@ export const isSubMenuVisibleForRole = (
   if (r === 'hr-admin') {
     if (parent.includes('assets')) {
       visible = false;
+    }
+    if (parent.includes('benefits')) {
+      if (sub.includes('benefit details') || sub.includes('benefits report')) {
+        visible = false;
+      }
     }
   }
 
@@ -345,6 +362,7 @@ export const isDashboardPathAllowedForRole = (
       'attendance-summary',
       // Settings
       'settings',
+      'benefit-report',
     ]),
     'hr-admin': new Set([
       '', // Allow main dashboard
@@ -357,6 +375,7 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'benefits-list',
       'employee-benefit',
+      'EmployeeManager',
     ]),
     admin: new Set([
       '',
@@ -406,6 +425,7 @@ export const isDashboardPathAllowedForRole = (
       'assets/requests',
       // Settings
       'settings',
+      'benefit-details',
     ]),
     user: new Set([
       'AttendanceCheck',

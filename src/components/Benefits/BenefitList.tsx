@@ -10,7 +10,6 @@ import {
   TableBody,
   TableContainer,
   CircularProgress,
-  Pagination,
   FormControl,
   Select,
   MenuItem,
@@ -22,93 +21,191 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import DoNotDisturbAltIcon from '@mui/icons-material/DoNotDisturbAlt';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import BenefitFormModal from './BenefitFormModal'; // ✅ default import only
+import BenefitFormModal from './BenefitFormModal';
+import type { BenefitFormValues } from './BenefitFormModal';
+import benefitsApi from '../../api/benefitApi';
 
 const ITEMS_PER_PAGE = 10;
 
 interface Benefit {
-  id: number;
+  id: string;
   name: string;
   type: string;
   description: string;
-  eligibility: string;
+  eligibilityCriteria: string;
   status: string;
 }
-
-const mockBenefits: Benefit[] = [
-  {
-    id: 1,
-    name: 'Health Insurance',
-    type: 'Health',
-    description: 'Covers medical expenses and hospitalization.',
-    eligibility: 'Full-time employees',
-    status: 'Active',
-  },
-  {
-    id: 2,
-    name: 'Transport Allowance',
-    type: 'Allowance',
-    description: 'All employees',
-    eligibility: 'Employees with daily office attendance',
-    status: 'Active',
-  },
-  {
-    id: 3,
-    name: 'Meal Voucher',
-    type: 'Voucher',
-    description: 'Monthly meal voucher credits.',
-    eligibility: 'Full-time employees',
-    status: 'Inactive',
-  },
-];
 
 const BenefitList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
-  const [filterType, setFilterType] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBenefit, setEditingBenefit] = useState<Benefit | null>(null);
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>(
+    'success'
+  );
+  const [types, setTypes] = useState<string[]>([]);
+  const [statuses, setStatuses] = useState<string[]>([]);
 
-  useEffect(() => {
+  const fetchBenefits = async () => {
     setLoading(true);
-    const timeout = setTimeout(() => {
-      setBenefits(mockBenefits);
-      setTotalPages(
-        Math.max(1, Math.ceil(mockBenefits.length / ITEMS_PER_PAGE))
-      );
-      setLoading(false);
-    }, 800);
-    return () => clearTimeout(timeout);
-  }, []);
+    try {
+      const params = {
+        page,
+        limit: ITEMS_PER_PAGE,
+      };
 
-  const filteredData = benefits.filter(b => {
-    const matchType = filterType === 'all' || b.type === filterType;
-    const matchStatus = filterStatus === 'all' || b.status === filterStatus;
-    return matchType && matchStatus;
+      const resp = await benefitsApi.getBenefits(params);
+
+      const items = Array.isArray(resp) ? resp : resp.items || [];
+
+      setBenefits(items);
+
+      // Extract unique types and statuses
+      const uniqueTypes = Array.from(new Set(items.map(b => b.type)));
+      const uniqueStatuses = Array.from(new Set(items.map(b => b.status)));
+
+      setTypes(uniqueTypes);
+      setStatuses(uniqueStatuses);
+
+      setTotalPages(resp?.totalPages || 1);
+    } catch (err) {
+      console.error('Error fetching benefits:', err);
+      setBenefits([]);
+      setTypes([]);
+      setStatuses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredBenefits = benefits.filter(b => {
+    const matchesType =
+      filterType === 'all' || b.type.toLowerCase() === filterType.toLowerCase();
+    const matchesStatus =
+      filterStatus === 'all' ||
+      b.status.toLowerCase() === filterStatus.toLowerCase();
+    return matchesType && matchesStatus;
   });
 
-  const paginatedData = filteredData.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
-  );
+  useEffect(() => {
+    fetchBenefits();
+  }, [page, filterType, filterStatus]);
 
-  // Dummy UI submit handler
-  const handleCreateBenefit = (data: any) => {
-    console.log('Form submitted:', data);
-    setModalOpen(false);
-    setEditingBenefit(null);
-    setShowToast(true);
+  const handleSaveBenefit = async (data: BenefitFormValues) => {
+    try {
+      setLoading(true);
+      const payload = {
+        name: data.name,
+        description: data.description,
+        type: data.type,
+        eligibilityCriteria: data.eligibilityCriteria,
+        status: data.status.toLowerCase(),
+      };
+
+      if (editingBenefit) {
+        await benefitsApi.updateBenefit(editingBenefit.id, payload);
+        setToastMessage('Benefit updated successfully!');
+      } else {
+        await benefitsApi.createBenefit(payload);
+        setToastMessage('Benefit created successfully!');
+      }
+
+      setToastSeverity('success');
+      setShowToast(true);
+      setModalOpen(false);
+      setEditingBenefit(null);
+      fetchBenefits();
+    } catch (error: any) {
+      console.error('Error saving benefit:', error);
+      setToastSeverity('error');
+      if (error.response?.status === 404) {
+        setToastMessage('Benefit not found.');
+      } else if (error.response?.status === 409) {
+        setToastMessage('A benefit with this name already exists.');
+      } else {
+        setToastMessage('Failed to save benefit.');
+      }
+      setShowToast(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteBenefit = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this benefit?'))
+      return;
+
+    try {
+      setLoading(true);
+      await benefitsApi.deleteBenefit(id);
+      setToastMessage('Benefit deleted successfully!');
+      setToastSeverity('success');
+      setShowToast(true);
+      fetchBenefits();
+    } catch (error: any) {
+      console.error('Error deleting benefit:', error);
+      setToastSeverity('error');
+      if (error.response?.status === 404) {
+        setToastMessage('Benefit not found.');
+      } else {
+        setToastMessage('Failed to delete benefit.');
+      }
+      setShowToast(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const csvEscape = (value: any) => {
+    if (value === null || value === undefined) return '';
+    const s = String(value).replace(/"/g, '""');
+    return `"${s}"`;
   };
 
   const handleDownload = () => {
-    alert('CSV export will be available after API integration.');
+    if (benefits.length === 0) {
+      alert('No data to download.');
+      return;
+    }
+
+    const csvHeader = [
+      'Benefit Name',
+      'Type',
+      'Description',
+      'Eligibility Criteria',
+      'Status',
+    ];
+
+    const rows = benefits.map(row =>
+      [
+        csvEscape(row.name),
+        csvEscape(row.type),
+        csvEscape(row.description),
+        csvEscape(row.eligibilityCriteria),
+        csvEscape(row.status),
+      ].join(',')
+    );
+
+    const csvContent = [csvHeader.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.setAttribute('download', `BenefitsList_Page${page}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -129,23 +226,34 @@ const BenefitList: React.FC = () => {
           <FormControl size='small' sx={{ minWidth: 160 }}>
             <Select
               value={filterType}
-              onChange={e => setFilterType(e.target.value)}
+              onChange={e => {
+                setFilterType(e.target.value);
+                setPage(1);
+              }}
             >
               <MenuItem value='all'>All Types</MenuItem>
-              <MenuItem value='Health'>Health</MenuItem>
-              <MenuItem value='Allowance'>Allowance</MenuItem>
-              <MenuItem value='Voucher'>Voucher</MenuItem>
+              {types.map(type => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
           <FormControl size='small' sx={{ minWidth: 160 }}>
             <Select
               value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
+              onChange={e => {
+                setFilterStatus(e.target.value);
+                setPage(1);
+              }}
             >
               <MenuItem value='all'>All Status</MenuItem>
-              <MenuItem value='Active'>Active</MenuItem>
-              <MenuItem value='Inactive'>Inactive</MenuItem>
+              {statuses.map(status => (
+                <MenuItem key={status} value={status}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </Box>
@@ -172,9 +280,7 @@ const BenefitList: React.FC = () => {
                 borderRadius: '6px',
                 padding: '6px',
                 color: 'white',
-                '&:hover': {
-                  backgroundColor: 'primary.dark',
-                },
+                '&:hover': { backgroundColor: 'primary.dark' },
               }}
             >
               <FileDownloadIcon />
@@ -219,18 +325,23 @@ const BenefitList: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {paginatedData.length > 0 ? (
-                  paginatedData.map((b, i) => (
-                    <TableRow key={i}>
+                {filteredBenefits.length > 0 ? (
+                  filteredBenefits.map(b => (
+                    <TableRow key={b.id}>
                       <TableCell>{b.name}</TableCell>
                       <TableCell>{b.type}</TableCell>
                       <TableCell>{b.description}</TableCell>
-                      <TableCell>{b.eligibility}</TableCell>
+                      <TableCell>{b.eligibilityCriteria}</TableCell>
                       <TableCell align='center'>
                         <Typography
                           sx={{
                             fontWeight: 500,
-                            color: b.status === 'Active' ? 'green' : 'gray',
+                            backgroundColor:
+                              b.status === 'active' ? '#206d23ff' : '#9e9e9e',
+                            px: 1,
+                            borderRadius: 2,
+                            color: 'white',
+                            textTransform: 'capitalize',
                           }}
                         >
                           {b.status}
@@ -251,9 +362,13 @@ const BenefitList: React.FC = () => {
                             </IconButton>
                           </Tooltip>
 
-                          <Tooltip title='Deactivate'>
-                            <IconButton color='error' size='small'>
-                              <DoNotDisturbAltIcon />
+                          <Tooltip title='Delete'>
+                            <IconButton
+                              color='error'
+                              size='small'
+                              onClick={() => handleDeleteBenefit(b.id)}
+                            >
+                              <DeleteIcon />
                             </IconButton>
                           </Tooltip>
                         </Box>
@@ -273,24 +388,11 @@ const BenefitList: React.FC = () => {
         </Paper>
       )}
 
-      <Box
-        display='flex'
-        justifyContent='center'
-        alignItems='center'
-        mt={2}
-        flexDirection='column'
-      >
-        <Pagination
-          count={totalPages}
-          page={page}
-          onChange={(e, newPage) => setPage(newPage)}
-          color='primary'
-        />
+      <Box textAlign='center' my={2}>
         <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
-          Showing{' '}
-          {filteredData.length === 0 ? 0 : (page - 1) * ITEMS_PER_PAGE + 1}–
-          {Math.min(page * ITEMS_PER_PAGE, filteredData.length)} of{' '}
-          {filteredData.length} records
+          Showing {(page - 1) * ITEMS_PER_PAGE + 1}–
+          {Math.min(page * ITEMS_PER_PAGE, benefits.length)} of{' '}
+          {benefits.length} records
         </Typography>
       </Box>
 
@@ -300,11 +402,10 @@ const BenefitList: React.FC = () => {
           setModalOpen(false);
           setEditingBenefit(null);
         }}
-        onSubmit={handleCreateBenefit}
+        onSubmit={handleSaveBenefit}
         benefit={editingBenefit || undefined}
       />
 
-      {/* Toast */}
       <Snackbar
         open={showToast}
         autoHideDuration={3000}
@@ -312,11 +413,11 @@ const BenefitList: React.FC = () => {
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Alert
-          severity='success'
+          severity={toastSeverity}
           variant='filled'
           onClose={() => setShowToast(false)}
         >
-          Benefit {editingBenefit ? 'updated' : 'created'} successfully!
+          {toastMessage}
         </Alert>
       </Snackbar>
     </Box>

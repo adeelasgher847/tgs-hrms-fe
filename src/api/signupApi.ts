@@ -99,6 +99,7 @@ class SignupApiService {
         `${this.baseUrl}/personal-details`,
         data
       );
+      console.log("Create personal details response: ", response)
       return response.data;
     } catch (error: any) {
       throw error;
@@ -109,6 +110,7 @@ class SignupApiService {
   async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
     try {
       const response = await axiosInstance.get('/subscription-plans');
+      console.log("Get subscription plans response: ", response)
       return response.data;
     } catch (error: any) {
       throw error;
@@ -124,6 +126,7 @@ class SignupApiService {
       const response = await axiosInstance.get(
         `/subscription-plans/prices?${params.toString()}`
       );
+      console.log("Get stripe prices response: ", response)
       return response.data;
     } catch (error: any) {
       throw error;
@@ -140,6 +143,7 @@ class SignupApiService {
       const response = await axiosInstance.get(
         `/subscription-plans/prices-by-plans?${params.toString()}`
       );
+      console.log("Get stripe prices by plans id response: ", response)
       return response.data;
     } catch (error: any) {
       console.error(
@@ -159,6 +163,7 @@ class SignupApiService {
         `${this.baseUrl}/company-details`,
         data
       );
+      console.log("Create company details response: ", response)
       return response.data;
     } catch (error: any) {
       throw error;
@@ -172,6 +177,7 @@ class SignupApiService {
         `${this.baseUrl}/payment`,
         data
       );
+      console.log("Create payment response: ", response)
       return response.data;
     } catch (error: any) {
       throw error;
@@ -187,6 +193,7 @@ class SignupApiService {
         `${this.baseUrl}/payment/confirm`,
         data
       );
+      console.log("Confirm payment response: ", response)
       return response.data;
     } catch (error: any) {
       throw error;
@@ -202,6 +209,7 @@ class SignupApiService {
         `${this.baseUrl}/complete`,
         data
       );
+      console.log("Complete signup response: ", response)
       return response.data;
     } catch (error: any) {
       throw error;

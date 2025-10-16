@@ -3,17 +3,17 @@ import React, {
   useState,
   useCallback,
   useMemo,
-  useEffect,
   type ReactNode,
 } from 'react';
-import companyApi, { type CompanyDetails } from '../api/companyApi';
+import { type CompanyDetails } from '../api/companyApi';
 
 interface CompanyContextType {
   companyDetails: CompanyDetails | null;
   companyName: string;
   companyLogo: string | null;
-  refreshCompanyDetails: () => Promise<void>;
-  updateCompanyDetails: (details: CompanyDetails) => void;
+  setCompanyDetails: (details: CompanyDetails | null) => void;
+  setCompanyLogo: (logoUrl: string | null) => void;
+  clearCompanyData: () => void;
 }
 
 export const CompanyContext = createContext<CompanyContextType | undefined>(
@@ -28,27 +28,9 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
   );
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
 
-  const refreshCompanyDetails = useCallback(async () => {
-    try {
-      const details = await companyApi.getCompanyDetails();
-      setCompanyDetails(details);
-
-      const tenantId = details.tenant_id;
-      if (tenantId) {
-        const logoUrl = await companyApi.getCompanyLogo(tenantId);
-        setCompanyLogo(logoUrl);
-      }
-    } catch (err: any) {
-      console.error('Error fetching company details:', err);
-    }
-  }, []);
-
-  const updateCompanyDetails = useCallback((details: CompanyDetails) => {
-    setCompanyDetails(details);
-  }, []);
-
-  useEffect(() => {
-    refreshCompanyDetails();
+  const clearCompanyData = useCallback(() => {
+    setCompanyDetails(null);
+    setCompanyLogo(null);
   }, []);
 
   const companyName = useMemo(
@@ -61,15 +43,17 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
       companyDetails,
       companyName,
       companyLogo,
-      refreshCompanyDetails,
-      updateCompanyDetails,
+      setCompanyDetails,
+      setCompanyLogo,
+      clearCompanyData,
     }),
     [
       companyDetails,
       companyName,
       companyLogo,
-      refreshCompanyDetails,
-      updateCompanyDetails,
+      setCompanyDetails,
+      setCompanyLogo,
+      clearCompanyData,
     ]
   );
 

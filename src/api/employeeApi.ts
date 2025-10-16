@@ -294,7 +294,7 @@ class EmployeeApiService {
       const url = `${this.baseUrl}?${params.toString()}`;
 
       const response = await axiosInstance.get(url);
-
+      console.log("Response of employee:", response);
       // Handle the new backend structure
       if (
         response.data &&
