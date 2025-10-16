@@ -12,7 +12,9 @@ const SignupSuccess: React.FC = () => {
     localStorage.removeItem('companyDetails');
     try {
       sessionStorage.removeItem('pendingSignupCredentials');
-    } catch {}
+    } catch {
+      // Ignore sessionStorage errors
+    }
 
     // Redirect to dashboard after 5 seconds
     const timer = setTimeout(() => {

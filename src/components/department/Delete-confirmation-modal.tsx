@@ -6,7 +6,6 @@ import {
   Button,
   Typography,
   Box,
-  useTheme,
 } from '@mui/material';
 import { Warning as WarningIcon } from '@mui/icons-material';
 import type { Department } from '../../types';
@@ -23,7 +22,7 @@ interface DeleteConfirmationModalProps {
 export const DeleteConfirmationModal: React.FC<
   DeleteConfirmationModalProps
 > = ({ open, onClose, onConfirm, department, isRtl = false }) => {
-  const theme = useTheme();
+  // const theme = useTheme();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
   const bgColor = darkMode ? '#111' : '#fff';

@@ -42,7 +42,7 @@ import employeeApi from '../../api/employeeApi';
 import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
-import { showSuccessToast, showErrorToast } from './NotificationToast';
+import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
 import { assetCategories } from '../../data/assetCategories.ts';
 
 const AssetInventory: React.FC = () => {

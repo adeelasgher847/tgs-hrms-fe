@@ -34,7 +34,7 @@ const Signup: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [, setSuccess] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -198,7 +198,7 @@ const Signup: React.FC = () => {
             password: personalDetails.password,
           })
         );
-      } catch (e) {
+      } catch {
         // Ignore storage errors
         // Ignore storage errors
       }
@@ -207,7 +207,7 @@ const Signup: React.FC = () => {
       setTimeout(() => {
         navigate('/signup/company-details');
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle different error types
       if (err.response?.data?.message) {
         const errorData = err.response.data.message;

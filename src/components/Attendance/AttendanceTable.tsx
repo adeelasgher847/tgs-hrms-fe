@@ -23,7 +23,6 @@ import 'react-multi-date-picker/styles/layouts/mobile.css';
 import 'react-multi-date-picker/styles/colors/teal.css';
 import './AttendanceTable.css';
 import attendanceApi from '../../api/attendanceApi';
-import employeeApi from '../../api/employeeApi';
 import { exportCSV } from '../../api/exportApi';
 import type {
   AttendanceEvent,
@@ -78,10 +77,10 @@ const AttendanceTable = () => {
     AttendanceEvent[]
   >([]);
   const [teamLoading, setTeamLoading] = useState(false);
-  const [teamError, setTeamError] = useState('');
-  const [teamCurrentPage, setTeamCurrentPage] = useState(1);
-  const [teamTotalPages, setTeamTotalPages] = useState(1);
-  const [teamTotalItems, setTeamTotalItems] = useState(0);
+  const [, setTeamError] = useState('');
+  const [, setTeamCurrentPage] = useState(1);
+  const [, setTeamTotalPages] = useState(1);
+  const [, setTeamTotalItems] = useState(0);
 
   // Date navigation state for All Attendance and Team Attendance
   const [currentNavigationDate, setCurrentNavigationDate] = useState('all');
@@ -95,11 +94,10 @@ const AttendanceTable = () => {
 
   // Function to handle daily summaries from backend (cross-day compatible)
   const buildFromSummaries = (
-    summariesRaw: any[],
-    currentUserId: string,
-    isAllAttendance: boolean = false
+    summariesRaw: Record<string, unknown>[],
+    currentUserId: string
   ): AttendanceRecord[] => {
-    return summariesRaw.map((summary: any) => ({
+    return summariesRaw.map((summary: Record<string, unknown>) => ({
       id: `${summary.date}-${currentUserId}`,
       userId: currentUserId,
       date: summary.date,
@@ -122,13 +120,13 @@ const AttendanceTable = () => {
     isAllAttendance: boolean = false
   ): AttendanceRecord[] => {
     const events = eventsRaw
-      .filter(e => e && (e as any).timestamp && (e as any).type)
+      .filter(e => e && (e as Record<string, unknown>).timestamp && (e as Record<string, unknown>).type)
       .map(e => ({
-        id: (e as any).id,
-        user_id: (e as any).user_id || (isAllAttendance ? null : currentUserId),
-        timestamp: (e as any).timestamp,
-        type: (e as any).type as 'check-in' | 'check-out',
-        user: (e as any).user,
+        id: (e as Record<string, unknown>).id,
+        user_id: (e as Record<string, unknown>).user_id || (isAllAttendance ? null : currentUserId),
+        timestamp: (e as Record<string, unknown>).timestamp,
+        type: (e as Record<string, unknown>).type as 'check-in' | 'check-out',
+        user: (e as Record<string, unknown>).user,
       }))
       .filter(e => e.user_id)
       .sort(
@@ -151,15 +149,15 @@ const AttendanceTable = () => {
 
     // Group events by user
     for (const ev of events) {
-      const userId = (ev as any).user_id;
+      const userId = (ev as Record<string, unknown>).user_id;
       if (!userEvents.has(userId)) {
         userEvents.set(userId, []);
       }
       userEvents.get(userId)!.push({
-        id: (ev as any).id,
-        timestamp: (ev as any).timestamp,
-        type: (ev as any).type,
-        user: (ev as any).user,
+        id: (ev as Record<string, unknown>).id,
+        timestamp: (ev as Record<string, unknown>).timestamp,
+        type: (ev as Record<string, unknown>).type,
+        user: (ev as Record<string, unknown>).user,
       });
     }
 
@@ -316,8 +314,8 @@ const AttendanceTable = () => {
         const isShiftBased =
           events.length > 0 &&
           events[0] &&
-          (events[0] as any).date &&
-          (events[0] as any).checkIn !== undefined;
+          (events[0] as Record<string, unknown>).date &&
+          (events[0] as Record<string, unknown>).checkIn !== undefined;
 
         if (isShiftBased) {
           rows = buildFromSummaries(events, currentUser.id, true);
@@ -354,7 +352,7 @@ const AttendanceTable = () => {
         };
         setTeamAttendance((response.items as AttendanceEvent[]) || []);
       }
-    } catch (error) {
+    } catch {
       if (view === 'all') {
         setAttendanceData([]);
         setFilteredData([]);
@@ -381,7 +379,7 @@ const AttendanceTable = () => {
       do {
         const attendanceResponse = await attendanceApi.getAllAttendance(page);
         if (attendanceResponse && attendanceResponse.items) {
-          attendanceResponse.items.forEach((item: any) => {
+          attendanceResponse.items.forEach((item: Record<string, unknown>) => {
             if (item.user_id && item.user?.first_name) {
               const employeeId = item.user_id;
               const employeeName =
@@ -428,7 +426,6 @@ const AttendanceTable = () => {
         currentUser.role ||
         ''
       ).toString();
-      const roleLc = roleName.toLowerCase();
       setUserRole(roleName);
       const isManagerFlag = checkIsManager(currentUser.role);
       const isAdminFlag = isAdmin(currentUser.role);
@@ -503,8 +500,8 @@ const AttendanceTable = () => {
       const isShiftBased =
         events.length > 0 &&
         events[0] &&
-        (events[0] as any).date &&
-        (events[0] as any).checkIn !== undefined;
+        (events[0] as Record<string, unknown>).date &&
+        (events[0] as Record<string, unknown>).checkIn !== undefined;
 
       let rows: AttendanceRecord[];
 
@@ -547,10 +544,10 @@ const AttendanceTable = () => {
   };
 
   // Handle team page change
-  const handleTeamPageChange = (page: number) => {
-    setTeamCurrentPage(page);
-    fetchTeamAttendance(page);
-  };
+  // const _handleTeamPageChange = (page: number) => {
+  //   setTeamCurrentPage(page);
+  //   fetchTeamAttendance(page);
+  // };
 
   // Handle date navigation changes
   const handleDateNavigationChange = (newDate: string) => {
@@ -574,15 +571,15 @@ const AttendanceTable = () => {
       const filtered = teamAttendance
         .map(member => {
           const filteredAttendance =
-            (member as any).attendance?.filter(
-              (att: any) => att.date === newDate
+            (member as Record<string, unknown>).attendance?.filter(
+              (att: Record<string, unknown>) => att.date === newDate
             ) || [];
           return {
             ...member,
             attendance: filteredAttendance,
           };
         })
-        .filter(member => (member as any).attendance.length > 0);
+        .filter(member => (member as Record<string, unknown>).attendance.length > 0);
       setFilteredTeamAttendance(filtered);
     }
   };
@@ -637,11 +634,11 @@ const AttendanceTable = () => {
   }, []);
 
   // helper to convert YYYY-MM-DD -> Date at local midnight
-  const ymdToLocalDate = (ymd: string) => {
-    if (!ymd) return null;
-    const [y, m, d] = ymd.split('-').map(Number);
-    return new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0);
-  };
+  // const _ymdToLocalDate = (ymd: string) => {
+  //   if (!ymd) return null;
+  //   const [y, m, d] = ymd.split('-').map(Number);
+  //   return new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0);
+  // };
 
   // Separate effect for data filtering (only by selected employee; dates handled server-side)
   useEffect(() => {
@@ -674,7 +671,7 @@ const AttendanceTable = () => {
   const isAdminLike = userRoleLc === 'admin' || userRoleLc === 'system_admin' || userRoleLc === 'network_admin' || userRoleLc === 'hr_admin';
   
   // Check if user is strictly an admin (not system-admin, network-admin, or hr-admin)
-  const isStrictAdmin = isAdminUser && !isSystemAdminUser && !isNetworkAdminUser && !isHRAdminUser;
+  // const _isStrictAdmin = isAdminUser && !isSystemAdminUser && !isNetworkAdminUser && !isHRAdminUser;
   
   // Check if user can view all attendance (Admin, System-Admin, Network-Admin, or HR-Admin)
   const canViewAllAttendance = isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser;
@@ -1090,16 +1087,16 @@ const AttendanceTable = () => {
                   </TableRow>
                 ) : (
                   filteredTeamAttendance.flatMap(member =>
-                    (member as any).attendance &&
-                    (member as any).attendance.length > 0
-                      ? (member as any).attendance.map(
-                          (attendance: any, index: number) => (
+                    (member as Record<string, unknown>).attendance &&
+                    (member as Record<string, unknown>).attendance.length > 0
+                      ? (member as Record<string, unknown>).attendance.map(
+                          (attendance: Record<string, unknown>, index: number) => (
                             <TableRow
-                              key={`${(member as any).user_id}-${index}`}
+                              key={`${(member as Record<string, unknown>).user_id}-${index}`}
                             >
                               <TableCell>
-                                {(member as any).first_name}{' '}
-                                {(member as any).last_name}
+                                {(member as Record<string, unknown>).first_name}{' '}
+                                {(member as Record<string, unknown>).last_name}
                               </TableCell>
                               <TableCell>{attendance.date || '--'}</TableCell>
                               <TableCell>
@@ -1117,7 +1114,7 @@ const AttendanceTable = () => {
                                   : '--'}
                               </TableCell>
                               <TableCell>
-                                {(member as any).totalDaysWorked}
+                                {(member as Record<string, unknown>).totalDaysWorked}
                               </TableCell>
                               <TableCell>
                                 {attendance.workedHours || 0}
@@ -1126,19 +1123,19 @@ const AttendanceTable = () => {
                           )
                         )
                       : [
-                          <TableRow key={(member as any).user_id}>
+                          <TableRow key={(member as Record<string, unknown>).user_id}>
                             <TableCell>
-                              {(member as any).first_name}{' '}
-                              {(member as any).last_name}
+                              {(member as Record<string, unknown>).first_name}{' '}
+                              {(member as Record<string, unknown>).last_name}
                             </TableCell>
                             <TableCell>--</TableCell>
                             <TableCell>--</TableCell>
                             <TableCell>--</TableCell>
                             <TableCell>
-                              {(member as any).totalDaysWorked}
+                              {(member as Record<string, unknown>).totalDaysWorked}
                             </TableCell>
                             <TableCell>
-                              {(member as any).totalHoursWorked}
+                              {(member as Record<string, unknown>).totalHoursWorked}
                             </TableCell>
                           </TableRow>,
                         ]
@@ -1198,16 +1195,16 @@ const AttendanceTable = () => {
                   </TableRow>
                 ) : (
                   filteredTeamAttendance.flatMap(member =>
-                    (member as any).attendance &&
-                    (member as any).attendance.length > 0
-                      ? (member as any).attendance.map(
-                          (attendance: any, index: number) => (
+                    (member as Record<string, unknown>).attendance &&
+                    (member as Record<string, unknown>).attendance.length > 0
+                      ? (member as Record<string, unknown>).attendance.map(
+                          (attendance: Record<string, unknown>, index: number) => (
                             <TableRow
-                              key={`${(member as any).user_id}-${index}`}
+                              key={`${(member as Record<string, unknown>).user_id}-${index}`}
                             >
                               <TableCell>
-                                {(member as any).first_name}{' '}
-                                {(member as any).last_name}
+                                {(member as Record<string, unknown>).first_name}{' '}
+                                {(member as Record<string, unknown>).last_name}
                               </TableCell>
                               <TableCell>{attendance.date || '--'}</TableCell>
                               <TableCell>
@@ -1231,16 +1228,16 @@ const AttendanceTable = () => {
                           )
                         )
                       : [
-                          <TableRow key={(member as any).user_id}>
+                          <TableRow key={(member as Record<string, unknown>).user_id}>
                             <TableCell>
-                              {(member as any).first_name}{' '}
-                              {(member as any).last_name}
+                              {(member as Record<string, unknown>).first_name}{' '}
+                              {(member as Record<string, unknown>).last_name}
                             </TableCell>
                             <TableCell>--</TableCell>
                             <TableCell>--</TableCell>
                             <TableCell>--</TableCell>
                             <TableCell>
-                              {(member as any).totalHoursWorked}
+                              {(member as Record<string, unknown>).totalHoursWorked}
                             </TableCell>
                           </TableRow>,
                         ]

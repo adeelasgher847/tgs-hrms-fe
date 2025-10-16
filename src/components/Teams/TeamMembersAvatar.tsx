@@ -18,7 +18,6 @@ import {
 import UserAvatar from '../common/UserAvatar';
 import { Avatar } from '@mui/material';
 import {
-  Add as AddIcon,
   Group as GroupIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
@@ -37,13 +36,11 @@ import { useLanguage } from '../../hooks/useLanguage';
 
 interface TeamMembersAvatarProps {
   maxAvatars?: number;
-  onOpenInviteModal?: () => void;
   darkMode?: boolean;
 }
 
 const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
   maxAvatars = 4,
-  onOpenInviteModal,
   darkMode = false,
 }) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);

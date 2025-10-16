@@ -14,8 +14,6 @@ import {
   Skeleton,
   Alert,
   TablePagination,
-  TextField,
-  InputAdornment,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -29,12 +27,11 @@ import {
 import UserAvatar from '../common/UserAvatar';
 import {
   Add as AddIcon,
-  Search as SearchIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
-import employeeApi, { type BackendEmployee } from '../../api/employeeApi';
+import employeeApi from '../../api/employeeApi';
 import type { TeamMember, Team } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
 import { isAdmin } from '../../utils/auth';
@@ -54,7 +51,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm] = useState('');
   const [showTeamDialog, setShowTeamDialog] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
@@ -201,11 +198,11 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
     setPage(0);
   };
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    setSearchTerm(value);
-    setPage(0);
-  };
+  // const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   const value = event.target.value;
+  //   setSearchTerm(value);
+  //   setPage(0);
+  // };
 
   // Load teams for selection
   useEffect(() => {

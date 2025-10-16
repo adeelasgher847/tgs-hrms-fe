@@ -71,12 +71,12 @@ axiosInstance.interceptors.request.use(
 );
 
 // Response interceptor to handle token refresh and error formatting
-axiosInstance.interceptors.response.use(undefined, async (error: any) => {
-  const originalRequest = error.config;
+axiosInstance.interceptors.response.use(undefined, async (error: unknown) => {
+  const originalRequest = (error as Record<string, unknown>).config as Record<string, unknown>;
   
   // Check if user should be logged out (deleted user, invalid token, etc.)
   if (shouldLogout(error)) {
-    console.warn('User should be logged out due to:', error.response?.data?.message || 'Authentication error');
+    console.warn('User should be logged out due to:', (((error as Record<string, unknown>).response as Record<string, unknown>)?.data as Record<string, unknown>)?.message || 'Authentication error');
     forceLogout();
     return Promise.reject(error);
   }
@@ -87,21 +87,21 @@ axiosInstance.interceptors.response.use(undefined, async (error: any) => {
     typeof error === 'object' &&
     'response' in error &&
     (error as { response: { status: number } }).response.status === 401 &&
-    !originalRequest._retry
+    !(originalRequest as Record<string, unknown>)._retry
   ) {
     if (isRefreshing) {
       return new Promise(function (resolve, reject) {
         failedQueue.push({ resolve, reject });
       })
         .then(token => {
-          originalRequest.headers.Authorization = 'Bearer ' + token;
-          return axiosInstance(originalRequest);
+          (originalRequest as Record<string, unknown>).headers = { ...((originalRequest as Record<string, unknown>).headers as Record<string, unknown> || {}), Authorization: 'Bearer ' + token };
+          return axiosInstance(originalRequest as Record<string, unknown>);
         })
         .catch(err => {
           return Promise.reject(err);
         });
     }
-    originalRequest._retry = true;
+    (originalRequest as Record<string, unknown>)._retry = true;
     isRefreshing = true;
     try {
       const data = await refreshAccessToken();
@@ -112,8 +112,8 @@ axiosInstance.interceptors.response.use(undefined, async (error: any) => {
       axiosInstance.defaults.headers.common['Authorization'] =
         'Bearer ' + data.accessToken;
       processQueue(null, data.accessToken);
-      originalRequest.headers.Authorization = 'Bearer ' + data.accessToken;
-      return axiosInstance(originalRequest);
+      (originalRequest as Record<string, unknown>).headers = { ...((originalRequest as Record<string, unknown>).headers as Record<string, unknown> || {}), Authorization: 'Bearer ' + data.accessToken };
+      return axiosInstance(originalRequest as Record<string, unknown>);
     } catch (refreshError) {
       processQueue(refreshError, null);
       // If refresh fails, check if it's due to user deletion
@@ -133,12 +133,12 @@ axiosInstance.interceptors.response.use(undefined, async (error: any) => {
   
   // For all other errors, ensure the error object has proper structure
   if (error && typeof error === 'object' && 'response' in error) {
-    const axiosError = error as any;
+    const axiosError = error as Record<string, unknown>;
     
     // Ensure error response has proper structure for frontend handling
-    if (axiosError.response?.data && typeof axiosError.response.data === 'object') {
+    if ((axiosError.response as Record<string, unknown>)?.data && typeof ((axiosError.response as Record<string, unknown>).data as Record<string, unknown>) === 'object') {
       // If backend returns structured error, preserve it
-      if (axiosError.response.data.message) {
+      if (((axiosError.response as Record<string, unknown>).data as Record<string, unknown>).message) {
         // Error already has proper structure, pass it through
         return Promise.reject(error);
       }

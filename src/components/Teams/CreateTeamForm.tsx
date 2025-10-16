@@ -29,7 +29,6 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
   open,
   onClose,
   onSubmit,
-  darkMode = false,
 }) => {
   const [formData, setFormData] = useState<CreateTeamDto>({
     name: '',

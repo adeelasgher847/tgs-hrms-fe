@@ -10,6 +10,7 @@ import { profileApiService, type UserProfile } from '../api/profileApi';
 import type { UserContextType } from '../types/context';
 import { setupTokenValidation, clearAuthData } from '../utils/authValidation';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const UserContext = createContext<UserContextType | undefined>(
   undefined
 );

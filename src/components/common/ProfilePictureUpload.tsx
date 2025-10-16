@@ -40,6 +40,7 @@ interface ProfilePictureUploadProps {
 const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
   ({
     user,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onProfileUpdate,
     size = 80,
     showUploadButton = true,
@@ -53,7 +54,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
     onRemoveSelected,
     suppressExistingImage = false,
   }) => {
-    const { updateUser, refreshUser } = useUser();
+    const { updateUser } = useUser();
     const { updateProfilePicture, clearProfilePicture } = useProfilePicture();
     const [uploading, setUploading] = useState(false);
     const [removing, setRemoving] = useState(false);
@@ -206,6 +207,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       } finally {
         setUploading(false);
       }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedFile, updateProfilePicture]); // ✅ Removed refreshUser from dependencies
 
     const handleRemove = useCallback(async () => {
@@ -222,7 +224,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       setError(null);
 
       try {
-        const response = await profileApiService.removeProfilePicture();
+        await profileApiService.removeProfilePicture();
 
         // Update profile picture context - this will update the UI immediately
         clearProfilePicture();
