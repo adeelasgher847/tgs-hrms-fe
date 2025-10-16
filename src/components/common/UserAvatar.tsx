@@ -68,10 +68,11 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     height: size,
     fontSize: `${size * 0.4}px`,
     cursor: clickable ? 'pointer' : 'default',
-    backgroundColor:
-      effectiveProfilePictureUrl || user.profile_pic
-        ? 'transparent'
-        : generateAvatarColor(user.first_name),
+    backgroundColor: imgError
+      ? '#9e9e9e'
+      : effectiveProfilePictureUrl || user.profile_pic
+      ? 'transparent'
+      : generateAvatarColor(user.first_name),
     '& .MuiAvatar-img': {
       objectFit: 'cover',
       objectPosition: 'top',
@@ -97,7 +98,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   }
 
   if (!imageUrl || imgError) {
-    imageUrl = '/avatar.png';
+    imageUrl = null;
   }
 
   return (
@@ -107,19 +108,23 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
       {...avatarProps}
       alt={`${user.first_name} ${user.last_name}`}
     >
-      <img
-        src={imageUrl}
-        alt={`${user.first_name} ${user.last_name}`}
-        onError={() => setImgError(true)} 
-        loading='lazy'
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'top',
-          borderRadius: '50%',
-        }}
-      />
+      {imageUrl && !imgError ? (
+        <img
+          src={imageUrl}
+          alt={`${user.first_name} ${user.last_name}`}
+          onError={() => setImgError(true)}
+          loading='lazy'
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'top',
+            borderRadius: '50%',
+          }}
+        />
+      ) : imgError ? null : (
+        getInitials(user.first_name, user.last_name)
+      )}
     </Avatar>
   );
 };

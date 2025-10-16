@@ -316,7 +316,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 </Typography>
               </Box>
               <IconButton onClick={handleMenuOpen}>
-                {user && user?.profile_pic ? (
+                {user ? (
                   <UserAvatar user={user} size={50} clickable={false} />
                 ) : (
                   <img
