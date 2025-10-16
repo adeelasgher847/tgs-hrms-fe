@@ -109,6 +109,7 @@ const EmployeeProfileView: React.FC = () => {
       }
     };
     loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const formatTime = (iso: string | null) => {
@@ -222,13 +223,13 @@ const EmployeeProfileView: React.FC = () => {
                 .map(
                   (
                     log: EmployeeProfileAttendanceSummaryItem,
-                    _index: number
+                    index: number
                   ) => (
                     <TableRow
-                      key={_index}
+                      key={index}
                       sx={{
                         backgroundColor:
-                          _index % 2 === 0 ? 'background.default' : 'grey.50',
+                          index % 2 === 0 ? 'background.default' : 'grey.50',
                       }}
                     >
                       <TableCell>{log.date}</TableCell>

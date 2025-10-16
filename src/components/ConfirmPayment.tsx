@@ -120,10 +120,12 @@ const ConfirmPayment: React.FC = () => {
                   localStorage.setItem('user', JSON.stringify(res.data.user));
                   try {
                     updateUser(res.data.user);
-                  } catch (e) {
+                  } catch {
                     try {
                       await refreshUser();
-                    } catch {}
+                    } catch {
+                      // Ignore refresh error
+                    }
                   }
                 }
                 if (res.data.permissions)

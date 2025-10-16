@@ -1,5 +1,5 @@
 import React from 'react';
-import { toast, ToastContainer } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 interface NotificationToastProps {
@@ -45,51 +45,5 @@ const NotificationToast: React.FC<NotificationToastProps> = ({
   );
 };
 
-// Utility functions for showing notifications
-const showSuccessToast = (message: string) => {
-  toast.success(message, {
-    position: 'top-right',
-    autoClose: 3000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-  });
-};
-
-const showErrorToast = (message: string) => {
-  toast.error(message, {
-    position: 'top-right',
-    autoClose: 4000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-  });
-};
-
-const showWarningToast = (message: string) => {
-  toast.warning(message, {
-    position: 'top-right',
-    autoClose: 3500,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-  });
-};
-
-const showInfoToast = (message: string) => {
-  toast.info(message, {
-    position: 'top-right',
-    autoClose: 3000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-  });
-};
-
-export { showSuccessToast, showErrorToast, showWarningToast, showInfoToast };
-
+// Export default component only
 export default NotificationToast;

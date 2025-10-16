@@ -299,6 +299,7 @@ const EmployeeManager: React.FC = () => {
       }
 
       // Remove role_id before submitting
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { role_id, ...employeePayload } = employeeData;
       const newEmployee = await employeeApi.createEmployee(
         employeePayload as EmployeeDto

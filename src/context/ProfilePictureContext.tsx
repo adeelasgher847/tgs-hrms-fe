@@ -12,6 +12,7 @@ interface ProfilePictureContextType {
   clearProfilePicture: () => void;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const ProfilePictureContext = createContext<
   ProfilePictureContextType | undefined
 >(undefined);
@@ -51,7 +52,8 @@ const ProfilePictureProvider: React.FC<{ children: ReactNode }> = ({
 export { ProfilePictureProvider };
 
 // Custom hook to use the profile picture context
-const useProfilePicture = (): ProfilePictureContextType => {
+// eslint-disable-next-line react-refresh/only-export-components
+export const useProfilePicture = (): ProfilePictureContextType => {
   const context = React.useContext(ProfilePictureContext);
   if (!context) {
     throw new Error(
@@ -62,4 +64,4 @@ const useProfilePicture = (): ProfilePictureContextType => {
 };
 
 // Export hook separately
-export { useProfilePicture };
+// export { useProfilePicture };

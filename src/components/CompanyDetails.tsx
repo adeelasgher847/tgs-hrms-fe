@@ -17,7 +17,7 @@ const CompanyDetails: React.FC = () => {
   const [lang] = useState<'en' | 'ar'>('en');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // const [success, setSuccess] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -247,6 +247,13 @@ const CompanyDetails: React.FC = () => {
                   {error && (
                     <Alert severity='error' sx={{ mt: 2, mb: 2 }}>
                       {error}
+                    </Alert>
+                  )}
+
+                  {/* Success Message */}
+                  {success && (
+                    <Alert severity='success' sx={{ mt: 2, mb: 2 }}>
+                      {success}
                     </Alert>
                   )}
 

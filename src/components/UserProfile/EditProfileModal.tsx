@@ -9,9 +9,6 @@ import {
   Box,
   Alert,
   CircularProgress,
-  FormControl,
-  FormHelperText,
-  InputLabel,
   InputAdornment,
 } from '@mui/material';
 import { PhoneInput } from 'react-international-phone';

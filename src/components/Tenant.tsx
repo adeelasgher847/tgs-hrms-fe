@@ -19,13 +19,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Drawer,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Business as BusinessIcon,
   Warning as WarningIcon,
-  Close as CloseIcon,
 } from '@mui/icons-material';
 import companyApi from '../api/companyApi';
 import type { BackendCompany, CompanyDto } from '../api/companyApi';

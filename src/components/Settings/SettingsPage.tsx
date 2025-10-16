@@ -28,7 +28,6 @@ import {
   CameraAlt,
   BusinessCenter,
 } from '@mui/icons-material';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 const SettingsPage: React.FC = () => {
   const theme = useTheme();
@@ -52,7 +51,7 @@ const SettingsPage: React.FC = () => {
   const [modalLogoLoading, setModalLogoLoading] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
 
   const isModalOpenRef = useRef(false);
 
@@ -115,7 +114,7 @@ const SettingsPage: React.FC = () => {
 
     setEditLoading(true);
     try {
-      const updatedDetails = await companyApi.updateCompanyDetails({
+      await companyApi.updateCompanyDetails({
         company_name: editFormData.company_name,
         domain: editFormData.domain,
       });
@@ -176,21 +175,21 @@ const SettingsPage: React.FC = () => {
     [contextCompanyDetails?.tenant_id, refreshCompanyDetails, user]
   );
 
-  const handleDeleteLogo = useCallback(async () => {
-    if (!contextCompanyDetails?.tenant_id) return;
+  // const _handleDeleteLogo = useCallback(async () => {
+  //   if (!contextCompanyDetails?.tenant_id) return;
 
-    try {
-      setLogoUploading(true);
-      await companyApi.deleteCompanyLogo(contextCompanyDetails.tenant_id);
-      setModalCompanyLogo(null);
-      await refreshCompanyDetails();
-    } catch (err) {
-      console.error('Failed to delete company logo:', err);
-      setError('Failed to delete company logo');
-    } finally {
-      setLogoUploading(false);
-    }
-  }, [contextCompanyDetails?.tenant_id, refreshCompanyDetails]);
+  //   try {
+  //     setLogoUploading(true);
+  //     await companyApi.deleteCompanyLogo(contextCompanyDetails.tenant_id);
+  //     setModalCompanyLogo(null);
+  //     await refreshCompanyDetails();
+  //   } catch (err) {
+  //     console.error('Failed to delete company logo:', err);
+  //     setError('Failed to delete company logo');
+  //   } finally {
+  //     setLogoUploading(false);
+  //   }
+  // }, [contextCompanyDetails?.tenant_id, refreshCompanyDetails]);
 
   useEffect(() => {
     if (companyLogo && companyModalOpen && !logoUploading) {

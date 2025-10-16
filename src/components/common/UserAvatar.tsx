@@ -29,7 +29,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   const { user: currentUser } = useUser();
 
   const [imgError, setImgError] = useState(false);
-  const [defaultError, setDefaultError] = useState(false);
+  // const [defaultError] = useState(false);
 
   const getInitials = (first: string, last: string) =>
     `${first?.charAt(0) || ''}${last?.charAt(0) || ''}`.toUpperCase();
@@ -62,15 +62,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   const isCurrentUser = currentUser?.id === user.id;
   const effectiveProfilePictureUrl = isCurrentUser ? profilePictureUrl : null;
 
-  const userImageUrl = effectiveProfilePictureUrl
-    ? effectiveProfilePictureUrl
-    : user.profile_pic
-      ? user.id
-        ? `${API_BASE_URL}/users/${user.id}/profile-picture`
-        : `${API_BASE_URL}${user.profile_pic}`
-      : '';
-
-  const defaultImageUrl = '/avatar.png';
+  // const defaultImageUrl = '/avatar.png';
 
   const avatarStyle = {
     width: size,

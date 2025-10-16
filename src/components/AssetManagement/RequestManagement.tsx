@@ -49,7 +49,7 @@ import * as yup from 'yup';
 import type { AssetRequest, Asset } from '../../types/asset';
 import { assetApi, type AssetRequest as ApiAssetRequest, type PaginatedResponse } from '../../api/assetApi';
 import StatusChip from './StatusChip';
-import { showSuccessToast, showErrorToast } from './NotificationToast';
+import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
 import { assetCategories } from '../../data/assetCategories.ts';
 
 // Normalize status to ensure it matches expected values
@@ -209,8 +209,8 @@ const RequestManagement: React.FC = () => {
         const transformedAssets: Asset[] = apiAssetsResponse.assets.map((apiAsset: Record<string, unknown>) => {
           // Try to find matching category from our comprehensive list
           const matchingCategory = assetCategories.find(cat => 
-            cat.name.toLowerCase() === apiAsset.category.toLowerCase() ||
-            cat.subcategories?.some(sub => sub.toLowerCase() === apiAsset.category.toLowerCase())
+            cat.name.toLowerCase() === (apiAsset.category as string).toLowerCase() ||
+            cat.subcategories?.some(sub => sub.toLowerCase() === (apiAsset.category as string).toLowerCase())
           );
 
           return {
@@ -314,7 +314,7 @@ const RequestManagement: React.FC = () => {
     try {
       if (data.action === 'approve') {
         await assetApi.approveAssetRequest(selectedRequest.id, {
-          asset_id: data.assignedAssetId
+          asset_id: data.assignedAssetId as string
         });
       } else if (data.action === 'reject') {
         await assetApi.rejectAssetRequest(selectedRequest.id);

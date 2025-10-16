@@ -113,7 +113,7 @@ const SelectPlan: React.FC = () => {
           // Try to fetch prices from backend using Stripe price IDs
           const prices = await signupApi.getStripePrices(priceIds);
           priceInfoByPriceId = (prices || []).reduce(
-            (acc, pr: any) => {
+            (acc, pr: Record<string, unknown>) => {
               const amount =
                 typeof pr.unit_amount === 'number' ? pr.unit_amount : 0;
               const currency = pr.currency?.toUpperCase?.() || 'USD';
@@ -131,7 +131,7 @@ const SelectPlan: React.FC = () => {
             },
             {} as Record<string, { formatted: string; intervalLabel: string }>
           );
-        } catch (priceErr) {
+        } catch {
           // Fallback to default prices if API is not available
           // Fallback: Use default prices based on plan index
           priceIds.forEach((priceId, index) => {
@@ -177,7 +177,7 @@ const SelectPlan: React.FC = () => {
       });
 
       setPlans(transformedPlans);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching plans:', err);
       setError('Failed to load subscription plans. Using default plans.');
       // Keep default plans as fallback
@@ -217,7 +217,7 @@ const SelectPlan: React.FC = () => {
         planId: selectedPlan,
       };
 
-      const companyResult = await signupApi.createCompanyDetails(
+      await signupApi.createCompanyDetails(
         companyDetailsRequest
       );
 
@@ -242,7 +242,7 @@ const SelectPlan: React.FC = () => {
 
           await signupApi.uploadLogo(logoUploadData);
           console.log('Logo uploaded successfully');
-        } catch (logoError: any) {
+        } catch (logoError: unknown) {
           console.error('Logo upload failed:', logoError);
           // Don't block the flow if logo upload fails
         }
@@ -268,7 +268,7 @@ const SelectPlan: React.FC = () => {
       } else {
         throw new Error('No checkout URL received from server');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       let errorMessage = 'Failed to create payment session. Please try again.';
 
       if (err.response?.data) {

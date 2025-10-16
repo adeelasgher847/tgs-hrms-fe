@@ -28,7 +28,6 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
   onClose,
   onConfirm,
   team,
-  darkMode = false,
   loading = false,
   error = null,
 }) => {

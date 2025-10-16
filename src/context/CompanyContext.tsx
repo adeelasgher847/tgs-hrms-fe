@@ -16,6 +16,7 @@ interface CompanyContextType {
   updateCompanyDetails: (details: CompanyDetails) => void;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const CompanyContext = createContext<CompanyContextType | undefined>(
   undefined
 );
@@ -38,7 +39,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
         const logoUrl = await companyApi.getCompanyLogo(tenantId);
         setCompanyLogo(logoUrl);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching company details:', err);
     }
   }, []);
@@ -49,6 +50,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
 
   useEffect(() => {
     refreshCompanyDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const companyName = useMemo(
@@ -80,6 +82,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useCompany = (): CompanyContextType => {
   const context = React.useContext(CompanyContext);
   if (!context) {

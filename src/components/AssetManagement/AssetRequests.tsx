@@ -41,7 +41,7 @@ import type { AssetRequest } from '../../types/asset';
 import { assetApi, type AssetRequest as ApiAssetRequest } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
-import { showSuccessToast, showErrorToast } from './NotificationToast';
+import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
 import { assetCategories } from '../../data/assetCategories.ts';
 
 // Get current user from localStorage or auth context
