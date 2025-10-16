@@ -19,13 +19,13 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { Asset, UpdateAssetRequest, MockUser } from '../../types/asset';
+import type { Asset, MockUser } from '../../types/asset';
 import { assetCategories } from '../../data/assetCategories.ts';
 
 interface AssetModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: UpdateAssetRequest & { assignedTo?: string }) => void;
+  onSubmit: (data: { name: string; category: string; purchaseDate: string; assignedTo?: string }) => void;
   asset?: Asset | null;
   users: MockUser[];
   loading?: boolean;
@@ -50,7 +50,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
   title,
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-  const [selectedWarrantyDate, setSelectedWarrantyDate] = useState<Date | null>(null);
+  const [, setSelectedWarrantyDate] = useState<Date | null>(null);
 
   const {
     control,
@@ -103,10 +103,10 @@ const AssetModal: React.FC<AssetModalProps> = ({
 
   const handleFormSubmit = (data: Record<string, unknown>) => {
     onSubmit({
-      ...data,
-      category: data.subcategory || data.category, // Use subcategory if available, otherwise use category
+      name: data.name as string,
+      category: String(data.subcategory || data.category), // Use subcategory if available, otherwise use category
       purchaseDate: selectedDate?.toISOString() || '',
-      warrantyExpiry: selectedWarrantyDate?.toISOString() || undefined,
+      assignedTo: data.assignedTo as string,
     });
   };
 

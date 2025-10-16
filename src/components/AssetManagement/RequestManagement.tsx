@@ -46,7 +46,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { AssetRequest, Asset } from '../../types/asset';
+import type { AssetRequest, Asset, AssetCategory } from '../../types/asset';
 import { assetApi, type AssetRequest as ApiAssetRequest, type PaginatedResponse } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
@@ -167,10 +167,27 @@ const RequestManagement: React.FC = () => {
 
         const transformedRequests: AssetRequest[] = apiResponse.items.map((apiRequest: ApiAssetRequest) => {
           // Try to find matching category from our comprehensive list
-          const matchingCategory = assetCategories.find(cat => 
+          let matchingCategory = assetCategories.find(cat => 
             cat.name.toLowerCase() === apiRequest.asset_category.toLowerCase() ||
             cat.subcategories?.some(sub => sub.toLowerCase() === apiRequest.asset_category.toLowerCase())
           );
+          
+          // If no direct match, try to match subcategory format (e.g., "Mobility / Transport - Fuel Card")
+          if (!matchingCategory && apiRequest.asset_category.includes(' - ')) {
+            const [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+            matchingCategory = assetCategories.find(cat => 
+              cat.name.toLowerCase() === mainCategoryName.toLowerCase() &&
+              cat.subcategories?.some(sub => sub.toLowerCase() === subcategoryName.toLowerCase())
+            );
+          }
+
+          // Parse the original request category to extract main category and subcategory
+          let mainCategoryName = apiRequest.asset_category;
+          let subcategoryName = '';
+          
+          if (apiRequest.asset_category.includes(' - ')) {
+            [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+          }
 
           return {
             id: apiRequest.id,
@@ -182,13 +199,16 @@ const RequestManagement: React.FC = () => {
               nameAr: matchingCategory.nameAr,
               description: matchingCategory.description,
               color: matchingCategory.color,
-              subcategories: matchingCategory.subcategories
+              subcategories: matchingCategory.subcategories,
+              // Add the specific item requested
+              requestedItem: subcategoryName || apiRequest.asset_category
             } : { 
               id: apiRequest.asset_category, 
-              name: apiRequest.asset_category, 
+              name: mainCategoryName, 
               nameAr: apiRequest.asset_category, 
               description: '',
-              color: '#757575'
+              color: '#757575',
+              requestedItem: subcategoryName || apiRequest.asset_category
             },
             remarks: apiRequest.remarks,
             status: normalizeRequestStatus(apiRequest.status),
@@ -206,6 +226,12 @@ const RequestManagement: React.FC = () => {
 
         // Fetch assets for assignment
         const apiAssetsResponse = await assetApi.getAllAssets();
+        console.log('=== Raw Assets from API ===');
+        console.log('API Response:', apiAssetsResponse);
+        console.log('Assets count:', apiAssetsResponse.assets?.length || 0);
+        console.log('Available assets:', apiAssetsResponse.assets?.filter((a: Record<string, unknown>) => a.status === 'available').map((a: Record<string, unknown>) => ({ id: a.id, name: a.name, category: a.category, status: a.status })));
+        console.log('=== End Raw Assets ===');
+        
         const transformedAssets: Asset[] = apiAssetsResponse.assets.map((apiAsset: Record<string, unknown>) => {
           // Try to find matching category from our comprehensive list
           const matchingCategory = assetCategories.find(cat => 
@@ -269,10 +295,50 @@ const RequestManagement: React.FC = () => {
   // Get available assets for the selected category
   const availableAssets = useMemo(() => {
     if (!selectedCategoryId) return [];
-    return assets.filter(asset => 
-      asset.category.id === selectedCategoryId && asset.status === 'available'
-    );
-  }, [selectedCategoryId, assets]);
+    
+    console.log('=== Available Assets Debug ===');
+    console.log('selectedCategoryId:', selectedCategoryId);
+    console.log('selectedRequest?.category:', selectedRequest?.category);
+    console.log('All assets:', assets);
+    
+    const filtered = assets.filter(asset => {
+      // Check if asset status is available
+      if (asset.status !== 'available') {
+        console.log(`Asset ${asset.name} not available (status: ${asset.status})`);
+        return false;
+      }
+      
+      // Direct ID match
+      if (asset.category.id === selectedCategoryId) {
+        console.log(`Asset ${asset.name} matched by direct ID`);
+        return true;
+      }
+      
+      // Check if the request category name matches the asset category name
+      if (asset.category.name === selectedCategoryId) {
+        console.log(`Asset ${asset.name} matched by category name`);
+        return true;
+      }
+      
+      // Check if the request category is a subcategory of the asset's main category
+      const requestCategoryName = selectedRequest?.category.name || '';
+      if (requestCategoryName.includes(' - ')) {
+        const mainCategoryName = requestCategoryName.split(' - ')[0];
+        if (asset.category.name === mainCategoryName) {
+          console.log(`Asset ${asset.name} matched by subcategory (${mainCategoryName})`);
+          return true;
+        }
+      }
+      
+      console.log(`Asset ${asset.name} did not match any criteria`);
+      return false;
+    });
+    
+    console.log('Filtered available assets:', filtered);
+    console.log('=== End Debug ===');
+    
+    return filtered;
+  }, [selectedCategoryId, assets, selectedRequest]);
 
   // Filter by tab
   const getFilteredRequestsByTab = (statusFilter?: string) => {
@@ -313,9 +379,81 @@ const RequestManagement: React.FC = () => {
     setLoading(true);
     try {
       if (data.action === 'approve') {
-        await assetApi.approveAssetRequest(selectedRequest.id, {
+        console.log('=== Approval Debug ===');
+        console.log('Request ID:', selectedRequest.id);
+        console.log('Selected Asset ID:', data.assignedAssetId);
+        console.log('Available Assets:', availableAssets);
+        console.log('Payload being sent:', { asset_id: data.assignedAssetId });
+        console.log('=== End Approval Debug ===');
+        
+        // Validate that we have a valid asset ID
+        if (!data.assignedAssetId) {
+          throw new Error('No asset selected for assignment');
+        }
+        
+        // Check if the selected asset is actually in our available assets list
+        const selectedAsset = availableAssets.find(asset => asset.id === data.assignedAssetId);
+        if (!selectedAsset) {
+          console.error('Selected asset not found in available assets:', {
+            selectedAssetId: data.assignedAssetId,
+            availableAssets: availableAssets.map(a => ({ id: a.id, name: a.name, category: a.category.name, status: a.status }))
+          });
+          throw new Error('Selected asset is not available or not in the correct category');
+        }
+        
+        // Try with just asset_id first
+        const payload = {
           asset_id: data.assignedAssetId as string
+        };
+        
+        console.log('Trying payload:', payload);
+        console.log('Selected asset details:', {
+          id: selectedAsset.id,
+          name: selectedAsset.name,
+          category: selectedAsset.category.name,
+          status: selectedAsset.status
         });
+        
+        // Try to fetch the asset details from backend to verify it exists and is available
+        try {
+          console.log('Fetching asset details from backend for verification...');
+          console.log('Asset ID to verify:', selectedAsset.id);
+          const assetDetails = await assetApi.getAssetById(selectedAsset.id);
+          console.log('Backend asset details:', assetDetails);
+          
+          if (assetDetails.status !== 'available') {
+            console.error('Asset status mismatch:', {
+              frontendStatus: selectedAsset.status,
+              backendStatus: assetDetails.status
+            });
+            throw new Error(`Asset is not available in backend. Frontend status: ${selectedAsset.status}, Backend status: ${assetDetails.status}`);
+          }
+          
+          console.log('Asset verification successful:', {
+            id: assetDetails.id,
+            name: assetDetails.name,
+            category: assetDetails.category,
+            status: assetDetails.status
+          });
+          
+          if (assetDetails.category !== selectedRequest.category.name && 
+              !assetDetails.category.includes('Mobility') && 
+              !selectedRequest.category.name.includes('Mobility')) {
+            console.warn('Category mismatch detected:', {
+              requestCategory: selectedRequest.category.name,
+              assetCategory: assetDetails.category
+            });
+          }
+        } catch (assetFetchError: unknown) {
+          console.error('Failed to fetch asset details from backend:', assetFetchError);
+          const errorMessage = assetFetchError instanceof Error 
+            ? assetFetchError.message 
+            : 'Unknown error occurred';
+          console.error('Error details:', errorMessage);
+          throw new Error(`Asset ${selectedAsset.id} not found in backend or not accessible: ${errorMessage}`);
+        }
+        
+        await assetApi.approveAssetRequest(selectedRequest.id, payload);
       } else if (data.action === 'reject') {
         await assetApi.rejectAssetRequest(selectedRequest.id);
       }
@@ -326,21 +464,62 @@ const RequestManagement: React.FC = () => {
         limit: pagination.limit,
       });
 
-      const transformedRequests: AssetRequest[] = apiResponse.items.map((apiRequest: ApiAssetRequest) => ({
-        id: apiRequest.id,
-        employeeId: apiRequest.requested_by,
-        employeeName: apiRequest.requestedByName || `User ${apiRequest.requested_by}`,
-        category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
-        remarks: apiRequest.remarks,
-        status: normalizeRequestStatus(apiRequest.status),
-        requestedDate: apiRequest.requested_date,
-        processedDate: apiRequest.approved_date || undefined,
-        processedBy: apiRequest.approved_by || undefined,
-        processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
-        rejectionReason: undefined,
-        assignedAssetId: undefined,
-        assignedAssetName: undefined,
-      }));
+      const transformedRequests: AssetRequest[] = apiResponse.items.map((apiRequest: ApiAssetRequest) => {
+        // Try to find matching category from our comprehensive list
+        let matchingCategory = assetCategories.find(cat => 
+          cat.name.toLowerCase() === apiRequest.asset_category.toLowerCase() ||
+          cat.subcategories?.some(sub => sub.toLowerCase() === apiRequest.asset_category.toLowerCase())
+        );
+        
+        // If no direct match, try to match subcategory format (e.g., "Mobility / Transport - Fuel Card")
+        if (!matchingCategory && apiRequest.asset_category.includes(' - ')) {
+          const [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+          matchingCategory = assetCategories.find(cat => 
+            cat.name.toLowerCase() === mainCategoryName.toLowerCase() &&
+            cat.subcategories?.some(sub => sub.toLowerCase() === subcategoryName.toLowerCase())
+          );
+        }
+
+        // Parse the original request category to extract main category and subcategory
+        let mainCategoryName = apiRequest.asset_category;
+        let subcategoryName = '';
+        
+        if (apiRequest.asset_category.includes(' - ')) {
+          [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+        }
+
+        return {
+          id: apiRequest.id,
+          employeeId: apiRequest.requested_by,
+          employeeName: apiRequest.requestedByName || `User ${apiRequest.requested_by}`,
+          category: matchingCategory ? {
+            id: matchingCategory.id,
+            name: matchingCategory.name,
+            nameAr: matchingCategory.nameAr,
+            description: matchingCategory.description,
+            color: matchingCategory.color,
+            subcategories: matchingCategory.subcategories,
+            // Add the specific item requested
+            requestedItem: subcategoryName || apiRequest.asset_category
+          } : { 
+            id: apiRequest.asset_category, 
+            name: mainCategoryName, 
+            nameAr: apiRequest.asset_category, 
+            description: '',
+            color: '#757575',
+            requestedItem: subcategoryName || apiRequest.asset_category
+          },
+          remarks: apiRequest.remarks,
+          status: normalizeRequestStatus(apiRequest.status),
+          requestedDate: apiRequest.requested_date,
+          processedDate: apiRequest.approved_date || undefined,
+          processedBy: apiRequest.approved_by || undefined,
+          processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
+          rejectionReason: undefined,
+          assignedAssetId: undefined,
+          assignedAssetName: undefined,
+        };
+      });
       
       setRequests(transformedRequests);
       
@@ -401,6 +580,11 @@ const RequestManagement: React.FC = () => {
             <Typography variant="caption" color="text.secondary">
               {request.category.name}
             </Typography>
+            {(request.category as AssetCategory & { requestedItem?: string }).requestedItem && (request.category as AssetCategory & { requestedItem?: string }).requestedItem !== request.category.name && (
+              <Typography variant="caption" color="primary.main" sx={{ display: 'block', fontWeight: 500 }}>
+                {`${(request.category as AssetCategory & { requestedItem?: string }).requestedItem}`}
+              </Typography>
+            )}
           </Box>
         </Box>
       </TableCell>
@@ -687,6 +871,11 @@ const RequestManagement: React.FC = () => {
           {selectedRequest && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               {selectedRequest.employeeName} - {selectedRequest.category.name}
+              {(selectedRequest.category as AssetCategory & { requestedItem?: string }).requestedItem && (selectedRequest.category as AssetCategory & { requestedItem?: string }).requestedItem !== selectedRequest.category.name && (
+                <span style={{ color: '#1976d2', fontWeight: 500 }}>
+                  {' '}- {(selectedRequest.category as AssetCategory & { requestedItem?: string }).requestedItem}
+                </span>
+              )}
             </Typography>
           )}
         </DialogTitle>

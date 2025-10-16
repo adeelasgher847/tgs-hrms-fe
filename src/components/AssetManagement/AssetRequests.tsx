@@ -37,7 +37,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { AssetRequest } from '../../types/asset';
+import type { AssetRequest, AssetCategory } from '../../types/asset';
 import { assetApi, type AssetRequest as ApiAssetRequest } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
@@ -178,6 +178,29 @@ const AssetRequests: React.FC = () => {
           // Debug logging to understand the API response
           console.log('API Request status:', apiRequest.status, 'for request:', apiRequest.id);
           
+          // Try to find matching category from our comprehensive list
+          let matchingCategory = assetCategories.find(cat => 
+            cat.name.toLowerCase() === apiRequest.asset_category.toLowerCase() ||
+            cat.subcategories?.some(sub => sub.toLowerCase() === apiRequest.asset_category.toLowerCase())
+          );
+          
+          // If no direct match, try to match subcategory format (e.g., "Mobility / Transport - Fuel Card")
+          if (!matchingCategory && apiRequest.asset_category.includes(' - ')) {
+            const [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+            matchingCategory = assetCategories.find(cat => 
+              cat.name.toLowerCase() === mainCategoryName.toLowerCase() &&
+              cat.subcategories?.some(sub => sub.toLowerCase() === subcategoryName.toLowerCase())
+            );
+          }
+          
+          // Parse the original request category to extract main category and subcategory
+          let mainCategoryName = apiRequest.asset_category;
+          let subcategoryName = '';
+          
+          if (apiRequest.asset_category.includes(' - ')) {
+            [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+          }
+
           return {
             id: apiRequest.id,
             employeeId: apiRequest.requested_by,
@@ -185,11 +208,22 @@ const AssetRequests: React.FC = () => {
               (apiRequest.requestedByUser ? 
                 apiRequest.requestedByUser.name : 
                 `User ${apiRequest.requested_by}`),
-            category: { 
+            category: matchingCategory ? {
+              id: matchingCategory.id,
+              name: matchingCategory.name,
+              nameAr: matchingCategory.nameAr,
+              description: matchingCategory.description,
+              color: matchingCategory.color,
+              subcategories: matchingCategory.subcategories,
+              // Add the specific item requested
+              requestedItem: subcategoryName || apiRequest.asset_category
+            } : { 
               id: apiRequest.asset_category, 
-              name: apiRequest.asset_category, 
+              name: mainCategoryName, 
               nameAr: apiRequest.asset_category, 
-              description: '' 
+              description: '',
+              color: '#757575',
+              requestedItem: subcategoryName || apiRequest.asset_category
             },
             remarks: apiRequest.remarks,
             status: normalizeRequestStatus(apiRequest.status),
@@ -367,6 +401,11 @@ const AssetRequests: React.FC = () => {
           <Typography variant="body2" fontWeight={500}>
             {request.category.name}
           </Typography>
+          {(request.category as AssetCategory & { requestedItem?: string }).requestedItem && (request.category as AssetCategory & { requestedItem?: string }).requestedItem !== request.category.name && (
+            <Typography variant="caption" color="primary.main" sx={{ display: 'block', fontWeight: 500 }}>
+              {`${(request.category as AssetCategory & { requestedItem?: string }).requestedItem}`}
+            </Typography>
+          )}
           {request.remarks && (
             <Typography variant="caption" color="text.secondary">
               {request.remarks}

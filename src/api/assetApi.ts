@@ -75,6 +75,7 @@ export interface CreateAssetRequestRequest {
 
 export interface ApproveAssetRequestRequest {
   asset_id?: string;
+  category?: string;
 }
 
 // Pagination response interface
@@ -350,8 +351,20 @@ export const assetApi = {
   },
 
   approveAssetRequest: async (id: string, data?: ApproveAssetRequestRequest) => {
-    const response = await axiosInstance.put(`/asset-requests/${id}/approve`, data || {});
-    return response.data;
+    try {
+      const response = await axiosInstance.put(`/asset-requests/${id}/approve`, data || {});
+      return response.data;
+    } catch (bodyError: unknown) {
+      // If body approach fails and we have asset_id, try query parameter
+      if (data?.asset_id) {
+        const url = `/asset-requests/${id}/approve?asset_id=${data.asset_id}`;
+        const response = await axiosInstance.put(url, {});
+        return response.data;
+      }
+      
+      // If both fail, throw the body error
+      throw bodyError;
+    }
   },
 
   rejectAssetRequest: async (id: string) => {

@@ -36,7 +36,7 @@ import {
   Build as BuildIcon,
   CheckCircle as AvailableIcon,
 } from '@mui/icons-material';
-import type { Asset, AssetFilters, MockUser, AssetStatus, UpdateAssetRequest } from '../../types/asset';
+import type { Asset, AssetFilters, MockUser, AssetStatus } from '../../types/asset';
 import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
 import employeeApi from '../../api/employeeApi';
 import AssetModal from './AssetModal';
@@ -240,14 +240,14 @@ const AssetInventory: React.FC = () => {
     setSelectedAssetId(null);
   };
 
-  const handleAssetSubmit = async (data: UpdateAssetRequest & { assignedTo?: string }) => {
+  const handleAssetSubmit = async (data: { name: string; category: string; purchaseDate: string; assignedTo?: string }) => {
     setLoading(true);
     try {
       if (editingAsset) {
         // Update existing asset
         const updateData = {
           name: data.name,
-          category: data.categoryId,
+          category: data.category,
           purchaseDate: data.purchaseDate,
         };
 
@@ -263,7 +263,7 @@ const AssetInventory: React.FC = () => {
         // Create new asset
         const createData = {
           name: data.name,
-          category: data.categoryId,
+          category: data.category,
           purchaseDate: data.purchaseDate,
         };
 
