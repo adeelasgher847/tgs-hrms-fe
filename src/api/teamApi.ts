@@ -101,122 +101,102 @@ class TeamApiService {
 
   // Create new team (Admin only)
   async createTeam(teamData: CreateTeamDto): Promise<Team> {
-    try {
-      const response = await axiosInstance.post<Team>(this.baseUrl, teamData);
-      const newTeam = response.data;
+    const response = await axiosInstance.post<Team>(this.baseUrl, teamData);
+    const newTeam = response.data;
 
-      // Add the manager as a team member so they appear in team member lists
-      if (newTeam.id && teamData.manager_id) {
-        try {
-          await this.addMemberToTeam(newTeam.id, teamData.manager_id);
-        } catch (error) {
-          console.warn('Failed to add manager as team member:', error);
-          // Don't throw here as the team was created successfully
-        }
+    // Add the manager as a team member so they appear in team member lists
+    if (newTeam.id && teamData.manager_id) {
+      try {
+        await this.addMemberToTeam(newTeam.id, teamData.manager_id);
+      } catch (error) {
+        console.warn('Failed to add manager as team member:', error);
+        // Don't throw here as the team was created successfully
       }
-
-      return newTeam;
-    } catch (error) {
-      throw error;
     }
+
+    return newTeam;
   }
 
   // Get all teams with pagination (Admin only)
   async getAllTeams(page: number = 1): Promise<PaginatedResponse<Team>> {
-    try {
-      const response = await axiosInstance.get<PaginatedResponse<Team>>(
-        `${this.baseUrl}?page=${page}`
-      );
-      const teams = response.data;
+    const response = await axiosInstance.get<PaginatedResponse<Team>>(
+      `${this.baseUrl}?page=${page}`
+    );
+    const teams = response.data;
 
-      // For each team, fetch the member count if not already included
-      if (teams.items) {
-        const teamsWithMembers = await Promise.all(
-          teams.items.map(async team => {
-            if (!team.teamMembers) {
-              try {
-                const membersResponse = await this.getTeamMembers(team.id, 1);
-                return {
-                  ...team,
-                  teamMembers: membersResponse.items || [],
-                };
-              } catch {
-                return {
-                  ...team,
-                  teamMembers: [],
-                };
-              }
+    // For each team, fetch the member count if not already included
+    if (teams.items) {
+      const teamsWithMembers = await Promise.all(
+        teams.items.map(async team => {
+          if (!team.teamMembers) {
+            try {
+              const membersResponse = await this.getTeamMembers(team.id, 1);
+              return {
+                ...team,
+                teamMembers: membersResponse.items || [],
+              };
+            } catch {
+              return {
+                ...team,
+                teamMembers: [],
+              };
             }
-            return team;
-          })
-        );
+          }
+          return team;
+        })
+      );
 
-        return {
-          ...teams,
-          items: teamsWithMembers,
-        };
-      }
-
-      return teams;
-    } catch (error) {
-      throw error;
+      return {
+        ...teams,
+        items: teamsWithMembers,
+      };
     }
+
+    return teams;
   }
 
   // Get specific team details
   async getTeamById(id: string): Promise<Team> {
-    try {
-      const response = await axiosInstance.get<Team>(`${this.baseUrl}/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosInstance.get<Team>(`${this.baseUrl}/${id}`);
+    return response.data;
   }
 
   // Update team (Admin only)
   async updateTeam(id: string, teamData: UpdateTeamDto): Promise<Team> {
-    try {
-      // Get current team data to check if manager is changing
-      const currentTeam = await this.getTeamById(id);
+    // Get current team data to check if manager is changing
+    const currentTeam = await this.getTeamById(id);
 
-      const response = await axiosInstance.patch<Team>(
-        `${this.baseUrl}/${id}`,
-        teamData
-      );
-      const updatedTeam = response.data;
+    const response = await axiosInstance.patch<Team>(
+      `${this.baseUrl}/${id}`,
+      teamData
+    );
+    const updatedTeam = response.data;
 
-      // If manager is changing, update team membership
-      if (
-        teamData.manager_id &&
-        teamData.manager_id !== currentTeam.manager_id
-      ) {
-        try {
-          // Remove old manager from team if they exist
-          if (currentTeam.manager_id) {
-            await this.removeMemberFromTeam(id, currentTeam.manager_id);
-          }
-
-          // Add new manager to team
-          await this.addMemberToTeam(id, teamData.manager_id);
-        } catch (error) {
-          console.warn('Failed to update manager team membership:', error);
-          // Don't throw here as the team was updated successfully
+    // If manager is changing, update team membership
+    if (
+      teamData.manager_id &&
+      teamData.manager_id !== currentTeam.manager_id
+    ) {
+      try {
+        // Remove old manager from team if they exist
+        if (currentTeam.manager_id) {
+          await this.removeMemberFromTeam(id, currentTeam.manager_id);
         }
-      }
 
-      return updatedTeam;
-    } catch (error) {
-      throw error;
+        // Add new manager to team
+        await this.addMemberToTeam(id, teamData.manager_id);
+      } catch (error) {
+        console.warn('Failed to update manager team membership:', error);
+        // Don't throw here as the team was updated successfully
+      }
     }
+
+    return updatedTeam;
   }
 
   // Delete team (Admin only)
   async deleteTeam(id: string): Promise<void> {
-    try {
-      await axiosInstance.delete(`${this.baseUrl}/${id}`);
-    } catch (error) {
-      throw error;
-    }
+    await axiosInstance.delete(`${this.baseUrl}/${id}`);
   }
 
   // Get manager's teams
@@ -298,13 +278,9 @@ class TeamApiService {
 
   // Add member to team
   async addMemberToTeam(teamId: string, employeeId: string): Promise<void> {
-    try {
-      await axiosInstance.post(`${this.baseUrl}/${teamId}/add-member`, {
-        employee_id: employeeId,
-      });
-    } catch (error) {
-      throw error;
-    }
+    await axiosInstance.post(`${this.baseUrl}/${teamId}/add-member`, {
+      employee_id: employeeId,
+    });
   }
 
   // Remove member from team
@@ -312,13 +288,9 @@ class TeamApiService {
     teamId: string,
     employeeId: string
   ): Promise<void> {
-    try {
-      await axiosInstance.post(`${this.baseUrl}/${teamId}/remove-member`, {
-        employee_id: employeeId,
-      });
-    } catch (error) {
-      throw error;
-    }
+    await axiosInstance.post(`${this.baseUrl}/${teamId}/remove-member`, {
+      employee_id: employeeId,
+    });
   }
 
   // Get all team members across all teams (Admin only)

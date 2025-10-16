@@ -2,7 +2,7 @@ import axiosInstance from '../api/axiosInstance';
 
 export interface TokenValidationResult {
   isValid: boolean;
-  user?: any;
+  user?: Record<string, unknown>;
   error?: string;
 }
 
@@ -25,10 +25,11 @@ export async function validateToken(): Promise<TokenValidationResult> {
       isValid: true,
       user: response.data.user || response.data,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // If we get 401, 403, or any auth-related error, the token is invalid
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
-      console.warn('Token validation failed - authentication error:', error?.response?.status);
+    const errorResponse = error as { response?: { status?: number }; message?: string };
+    if (errorResponse?.response?.status === 401 || errorResponse?.response?.status === 403) {
+      console.warn('Token validation failed - authentication error:', errorResponse?.response?.status);
       return { 
         isValid: false, 
         error: 'Token is invalid or user has been deleted' 
@@ -37,7 +38,7 @@ export async function validateToken(): Promise<TokenValidationResult> {
     
     // For other errors (404, 500, network issues), we'll assume the token is still valid
     // This prevents network issues from logging out users
-    console.warn('Token validation failed with non-auth error:', error?.response?.status, error?.message);
+    console.warn('Token validation failed with non-auth error:', errorResponse?.response?.status, errorResponse?.message);
     return { 
       isValid: true, 
       error: 'Network error during validation' 
@@ -65,12 +66,20 @@ export function forceLogout(): void {
 /**
  * Checks if user should be logged out based on error response
  */
-export function shouldLogout(error: any): boolean {
-  if (!error?.response) return false;
+export function shouldLogout(error: unknown): boolean {
+  const errorResponse = error as { 
+    response?: { 
+      status?: number; 
+      data?: { message?: string } 
+    }; 
+    config?: { url?: string } 
+  };
   
-  const status = error.response.status;
-  const message = error.response.data?.message?.toLowerCase() || '';
-  const url = error.config?.url || '';
+  if (!errorResponse?.response) return false;
+  
+  const status = errorResponse.response.status;
+  const message = errorResponse.response.data?.message?.toLowerCase() || '';
+  // const url = errorResponse.config?.url || '';
   
   // Always logout on 401 (Unauthorized) - token is invalid
   if (status === 401) {

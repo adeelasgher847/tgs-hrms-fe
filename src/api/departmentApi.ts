@@ -86,8 +86,6 @@ class DepartmentApiService {
     departmentData: DepartmentDto
   ): Promise<BackendDepartment> {
     try {
-      // Check if this is a global department first
-      const existingDept = await this.getDepartmentById(id);      
       const response = await axiosInstance.put<BackendDepartment>(
         `${this.baseUrl}/${id}`,
         departmentData

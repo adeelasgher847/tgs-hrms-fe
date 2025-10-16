@@ -44,7 +44,7 @@ const AttendanceSummaryReport: React.FC = () => {
   >('thisMonth');
   const [totalPages, setTotalPages] = useState<number>(1);
 
-  const getDaysRange = () => {
+  const getDaysRange = React.useCallback(() => {
     switch (filter) {
       case 'thisMonth':
         return new Date().getDate();
@@ -64,7 +64,7 @@ const AttendanceSummaryReport: React.FC = () => {
       default:
         return 30;
     }
-  };
+  }, [filter]);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -125,7 +125,7 @@ const AttendanceSummaryReport: React.FC = () => {
 
     fetchSummary();
     setPage(1);
-  }, [user, userLoading, filter]);
+  }, [user, userLoading, filter, getDaysRange]);
 
   const safeData = Array.isArray(summaryData) ? summaryData : [];
 

@@ -158,8 +158,8 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
   const designation = data?.designation as RawDesignation | undefined;
   const department = designation?.department;
   const roleId =
-    (data.role_id as string) || (user && (user as any).role_id) || '';
-  const roleName = (data.role_name as string) || (user && (user as any).role_name) || '';
+    (data.role_id as string) || (user && (user as Record<string, unknown>).role_id as string) || '';
+  const roleName = (data.role_name as string) || (user && (user as Record<string, unknown>).role_name as string) || '';
 
   // If the data looks like a designation (has title), create a mock employee structure
   if (data.title && !data.user) {

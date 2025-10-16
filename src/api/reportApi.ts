@@ -8,7 +8,7 @@ class AttendanceSummaryApi {
     days: number = 30,
     page: number = 1
   ): Promise<{
-    items: any[];
+    items: Record<string, unknown>[];
     total: number;
     page: number;
     limit: number;
@@ -27,7 +27,7 @@ class AttendanceSummaryApi {
     } catch (error: unknown) {
       console.error(
         'Error fetching attendance summary:',
-        (error as any)?.response?.data || (error as any)?.message
+        (error as Record<string, unknown>)?.response?.data || (error as Record<string, unknown>)?.message
       );
       throw error;
     }

@@ -60,8 +60,8 @@ export default function AssignBenefits({ employeeId: propEmployeeId, onAssignmen
           detail: { employeeId: selectedEmployeeId, benefitIds: selectedBenefitIds } 
         }));
       }
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to assign benefits');
+    } catch (e: unknown) {
+      toast.error((e as Record<string, unknown>)?.message as string || 'Failed to assign benefits');
     } finally {
       setLoading(false);
     }

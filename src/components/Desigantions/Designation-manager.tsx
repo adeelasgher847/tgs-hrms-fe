@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -16,8 +16,6 @@ import {
   TableRow,
   TableCell,
   IconButton,
-  Snackbar,
-  Alert,
   Pagination,
 } from '@mui/material';
 import {
@@ -40,7 +38,7 @@ import {
 } from '../../api/departmentApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
-import { extractErrorMessage } from '../../utils/errorHandler';
+// import { extractErrorMessage } from '../../utils/errorHandler';
 
 export default function DesignationManager() {
   const { language } = useLanguage();
@@ -67,7 +65,7 @@ export default function DesignationManager() {
   const getText = (en: string, ar: string) => (language === 'ar' ? ar : en);
 
   // Fetch all departments from backend
-  const fetchDepartments = async () => {
+  const fetchDepartments = useCallback(async () => {
     try {
       setDepartmentsLoading(true);
       const backendDepartments = await departmentApiService.getAllDepartments();
@@ -80,10 +78,10 @@ export default function DesignationManager() {
     } finally {
       setDepartmentsLoading(false);
     }
-  };
+  }, [showError]);
 
   // Fetch designations for a specific department with pagination
-  const fetchDesignations = async (departmentId: string, page: number = 1) => {
+  const fetchDesignations = useCallback(async (departmentId: string, page: number = 1) => {
     try {
       setLoading(true);
       const response = await designationApiService.getDesignationsByDepartment(
@@ -103,7 +101,7 @@ export default function DesignationManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
 
   // Handle page change for designations
   const handlePageChange = (page: number) => {
@@ -118,7 +116,7 @@ export default function DesignationManager() {
   };
 
   // Fetch all designations from all departments
-  const fetchAllDesignations = async () => {
+  const fetchAllDesignations = useCallback(async () => {
     try {
       setLoading(true);
       const backendDesignations =
@@ -132,12 +130,12 @@ export default function DesignationManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
 
   // Load departments on component mount
   useEffect(() => {
     fetchDepartments();
-  }, []);
+  }, [fetchDepartments]);
 
   // Load designations when department changes
   useEffect(() => {
@@ -146,7 +144,7 @@ export default function DesignationManager() {
     } else {
       fetchAllDesignations();
     }
-  }, [selectedDepartmentId]);
+  }, [selectedDepartmentId, fetchDesignations, fetchAllDesignations]);
 
   const handleSaveDesignation = async (data: {
     title: string;

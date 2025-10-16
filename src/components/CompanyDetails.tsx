@@ -9,18 +9,15 @@ import {
   Alert,
   CircularProgress,
   Snackbar,
-  FormControl,
-  MenuItem,
-  Select,
 } from '@mui/material';
-import signupApi, { type CompanyDetailsRequest, type LogoUploadRequest } from '../api/signupApi';
+// import signupApi, { type CompanyDetailsRequest, type LogoUploadRequest } from '../api/signupApi';
 
 const CompanyDetails: React.FC = () => {
   const navigate = useNavigate();
   const [lang] = useState<'en' | 'ar'>('en');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  // const [success, setSuccess] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -149,7 +146,7 @@ const CompanyDetails: React.FC = () => {
       setTimeout(() => {
         navigate('/signup/select-plan');
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
 
       if (err.response?.data?.message) {
         const errorData = err.response.data.message;

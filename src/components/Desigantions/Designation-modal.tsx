@@ -12,9 +12,6 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
-  FormControl,
-  InputLabel,
-  Select,
   MenuItem,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
@@ -56,7 +53,7 @@ export default function DesignationModal({
   const [originalTitleAr, setOriginalTitleAr] = useState('');
   const [originalDepartmentId, setOriginalDepartmentId] = useState('');
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
-  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  // const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [errors, setErrors] = useState<{ title?: string; titleAr?: string; departmentId?: string }>(
     {}
   );
@@ -92,7 +89,7 @@ export default function DesignationModal({
 
   const loadDepartments = async () => {
     try {
-      setLoadingDepartments(true);
+      // setLoadingDepartments(true);
       const backendDepartments = await departmentApiService.getAllDepartments();
       const frontendDepartments = backendDepartments.map(dept =>
         departmentApiService.convertBackendToFrontend(dept)
@@ -102,7 +99,7 @@ export default function DesignationModal({
       console.error('Error loading departments:', error);
       setDepartments([]);
     } finally {
-      setLoadingDepartments(false);
+      // setLoadingDepartments(false);
     }
   };
 

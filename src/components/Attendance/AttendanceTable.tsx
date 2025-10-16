@@ -401,7 +401,7 @@ const AttendanceTable = () => {
       } while (page <= totalPages);
 
       setEmployees(Array.from(uniqueEmployees.values()));
-    } catch (error) {
+    } catch {
       setEmployees([]);
     }
   };
@@ -526,7 +526,7 @@ const AttendanceTable = () => {
 
       setAttendanceData(rows);
       setFilteredData(rows);
-    } catch (error) {
+    } catch {
       setAttendanceData([]);
       setFilteredData([]);
     } finally {

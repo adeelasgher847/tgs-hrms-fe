@@ -12,7 +12,6 @@ import {
   MenuItem,
   Box,
   Typography,
-  Autocomplete,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -20,7 +19,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { Asset, AssetCategory, UpdateAssetRequest, MockUser } from '../../types/asset';
+import type { Asset, UpdateAssetRequest, MockUser } from '../../types/asset';
 import { assetCategories } from '../../data/assetCategories.ts';
 
 interface AssetModalProps {
@@ -47,7 +46,6 @@ const AssetModal: React.FC<AssetModalProps> = ({
   onClose,
   onSubmit,
   asset,
-  users,
   loading = false,
   title,
 }) => {
@@ -74,7 +72,6 @@ const AssetModal: React.FC<AssetModalProps> = ({
   });
 
   const selectedCategory = watch('category');
-  const selectedSubcategory = watch('subcategory');
 
   // Get available subcategories for selected category
   const availableSubcategories = assetCategories.find(cat => cat.name === selectedCategory)?.subcategories || [];
@@ -104,7 +101,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
     }
   }, [asset, reset]);
 
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = (data: Record<string, unknown>) => {
     onSubmit({
       ...data,
       category: data.subcategory || data.category, // Use subcategory if available, otherwise use category

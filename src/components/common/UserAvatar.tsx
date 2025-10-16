@@ -77,13 +77,15 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     height: size,
     fontSize: `${size * 0.4}px`,
     cursor: clickable ? 'pointer' : 'default',
-    backgroundColor:
-      imgError && defaultError
-        ? generateAvatarColor(user.first_name)
-        : !defaultError 
-        ? '#808080'
-        : 'transparent',
-    '& .MuiAvatar-img': { objectFit: 'cover', objectPosition: 'top' },
+    backgroundColor: imgError
+      ? '#9e9e9e'
+      : effectiveProfilePictureUrl || user.profile_pic
+      ? 'transparent'
+      : generateAvatarColor(user.first_name),
+    '& .MuiAvatar-img': {
+      objectFit: 'cover',
+      objectPosition: 'top',
+    },
     '&:hover': clickable
       ? {
           opacity: 0.8,
@@ -93,38 +95,42 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
       : {},
     ...sx,
   };
+  let imageUrl: string | null = null;
+
+  if (effectiveProfilePictureUrl) {
+    imageUrl = effectiveProfilePictureUrl;
+  } else if (user.profile_pic) {
+    imageUrl = user.profile_pic.startsWith('http')
+      ? user.profile_pic
+      : `${API_BASE_URL}/users/${user.id}/profile-picture`;
+  }
+
+  if (!imageUrl || imgError) {
+    imageUrl = null;
+  }
 
   return (
-    <Avatar sx={avatarStyle} onClick={onClick} {...avatarProps}>
-      {!imgError ? (
-        userImageUrl && (
-          <img
-            src={userImageUrl}
-            alt={`${user.first_name} ${user.last_name}`}
-            loading='lazy'
-            onError={() => setImgError(true)}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'top',
-            }}
-          />
-        )
-      ) : !defaultError ? (
+    <Avatar
+      sx={avatarStyle}
+      onClick={onClick}
+      {...avatarProps}
+      alt={`${user.first_name} ${user.last_name}`}
+    >
+      {imageUrl && !imgError ? (
         <img
-          src={defaultImageUrl}
-          alt='default avatar'
+          src={imageUrl}
+          alt={`${user.first_name} ${user.last_name}`}
+          onError={() => setImgError(true)}
           loading='lazy'
-          onError={() => setDefaultError(true)}
           style={{
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            objectPosition: 'center',
+            objectPosition: 'top',
+            borderRadius: '50%',
           }}
         />
-      ) : (
+      ) : imgError ? null : (
         getInitials(user.first_name, user.last_name)
       )}
     </Avatar>
