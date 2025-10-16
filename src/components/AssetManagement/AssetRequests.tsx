@@ -50,7 +50,7 @@ import { assetApi, type AssetRequest as ApiAssetRequest } from '../../api/assetA
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
-import { assetCategories } from '../../data/assetCategories';
+import { assetCategories } from '../../data/assetCategories.ts';
 
 // Get current user from localStorage or auth context
 const getCurrentUserId = () => {
@@ -191,7 +191,7 @@ const AssetRequests: React.FC = () => {
             employeeId: apiRequest.requested_by,
             employeeName: apiRequest.requestedByName || 
               (apiRequest.requestedByUser ? 
-                `${apiRequest.requestedByUser.first_name} ${apiRequest.requestedByUser.last_name}` : 
+                apiRequest.requestedByUser.name : 
                 `User ${apiRequest.requested_by}`),
             category: { 
               id: apiRequest.asset_category, 
@@ -206,7 +206,7 @@ const AssetRequests: React.FC = () => {
           processedBy: apiRequest.approved_by || undefined,
           processedByName: apiRequest.approvedByName || 
             (apiRequest.approvedByUser ? 
-              `${apiRequest.approvedByUser.first_name} ${apiRequest.approvedByUser.last_name}` : 
+              apiRequest.approvedByUser.name : 
               apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
           rejectionReason: undefined,
           assignedAssetId: undefined,
@@ -339,7 +339,7 @@ const AssetRequests: React.FC = () => {
           employeeId: apiRequest.requested_by,
           employeeName: apiRequest.requestedByName || 
             (apiRequest.requestedByUser ? 
-              `${apiRequest.requestedByUser.first_name} ${apiRequest.requestedByUser.last_name}` : 
+              apiRequest.requestedByUser.name : 
               `User ${apiRequest.requested_by}`),
           category: { 
             id: apiRequest.asset_category, 
@@ -354,7 +354,7 @@ const AssetRequests: React.FC = () => {
         processedBy: apiRequest.approved_by,
         processedByName: apiRequest.approvedByName || 
           (apiRequest.approvedByUser ? 
-            `${apiRequest.approvedByUser.first_name} ${apiRequest.approvedByUser.last_name}` : 
+            apiRequest.approvedByUser.name : 
             apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
         rejectionReason: undefined,
         assignedAssetId: undefined,

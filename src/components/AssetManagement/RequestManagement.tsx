@@ -53,7 +53,7 @@ import { assetApi, type AssetRequest as ApiAssetRequest, type PaginatedResponse 
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
-import { assetCategories, getCategoryById } from '../../data/assetCategories';
+import { assetCategories, getCategoryById } from '../../data/assetCategories.ts';
 
 // Normalize status to ensure it matches expected values
 const normalizeRequestStatus = (status: string): 'pending' | 'approved' | 'rejected' | 'cancelled' => {

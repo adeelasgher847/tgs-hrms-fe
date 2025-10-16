@@ -287,20 +287,19 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
             )}
           </Box>
 
-          <Box sx={{ flex: 1 }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               sx={{
                 fontWeight: 700,
                 fontSize: 18,
                 lineHeight: 1.2,
-                wordBreak: 'break-word',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
+              title={companyName || 'Trans Global Services'} 
             >
-              {companyName
-                ? companyName.length > 15
-                  ? companyName.slice(0, 15) + '...'
-                  : companyName
-                : 'Trans Global Services'}
+              {companyName || 'Trans Global Services'}
             </Typography>
           </Box>
         </Box>
