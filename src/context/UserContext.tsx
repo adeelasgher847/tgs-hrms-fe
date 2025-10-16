@@ -8,13 +8,13 @@ import React, {
 } from 'react';
 import { profileApiService, type UserProfile } from '../api/profileApi';
 import type { UserContextType } from '../types/context';
-import { validateToken, setupTokenValidation, clearAuthData } from '../utils/authValidation';
+import { setupTokenValidation, clearAuthData } from '../utils/authValidation';
 
 export const UserContext = createContext<UserContextType | undefined>(
   undefined
 );
 
-export const UserProvider: React.FC<{ children: ReactNode }> = ({
+const UserProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -79,15 +79,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
           const apiUser = await profileApiService.getUserProfile();
           setUser(apiUser);
           localStorage.setItem('user', JSON.stringify(apiUser));
-        } catch (error: any) {
+        } catch (error: unknown) {
           // If API call fails, check if it's due to user deletion
-          if (error?.response?.status === 401 || error?.response?.status === 403) {
+          const errorResponse = error as { response?: { status?: number }; message?: string };
+          if (errorResponse?.response?.status === 401 || errorResponse?.response?.status === 403) {
             console.warn('User profile fetch failed - user may have been deleted');
             clearAuthData();
             setUser(null);
           } else {
             // For other errors (network, server issues), keep the localStorage data
-            console.warn('Failed to refresh user profile, keeping localStorage data:', error?.message);
+            console.warn('Failed to refresh user profile, keeping localStorage data:', errorResponse?.message);
           }
         }
       } catch (error) {
@@ -121,3 +122,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
   );
 };
+
+// Export provider separately
+export { UserProvider };

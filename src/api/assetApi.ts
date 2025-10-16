@@ -90,12 +90,8 @@ export interface PaginatedResponse<T> {
 export const assetApi = {
   // Test function to check API connectivity
   testApiConnection: async () => {
-    try {
-      const response = await axiosInstance.get('/assets');
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosInstance.get('/assets');
+    return response;
   },
 
   // Assets CRUD operations
@@ -344,10 +340,6 @@ export const assetApi = {
     if (filters?.limit) params.append('limit', filters.limit.toString());
     
     const response = await axiosInstance.get(`/asset-requests/?${params.toString()}`);
-    
-    
-    // Debug: Log individual request statuses for user requests
-    const responseData = response.data;
     
     return response.data;
   },

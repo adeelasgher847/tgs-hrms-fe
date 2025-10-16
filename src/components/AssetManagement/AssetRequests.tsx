@@ -11,7 +11,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Dialog,
   DialogTitle,
@@ -22,30 +21,23 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Chip,
-  Alert,
   Tabs,
   Tab,
   InputAdornment,
   CircularProgress,
   Stack,
   Pagination,
-  FormControlLabel,
-  Switch,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Search as SearchIcon,
   Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
   CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon2,
-  Pending as PendingIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { AssetRequest, CreateAssetRequest, AssetCategory } from '../../types/asset';
+import type { AssetRequest } from '../../types/asset';
 import { assetApi, type AssetRequest as ApiAssetRequest } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
@@ -315,73 +307,7 @@ const AssetRequests: React.FC = () => {
     setIsRequestModalOpen(true);
   };
 
-  const handleRefreshData = async () => {
-    if (!currentUserId) return;
-    
-    setInitialLoading(true);
-    try {
-      // Reset to first page when refreshing
-      setPagination(prev => ({ ...prev, page: 1 }));
-      
-      // Use getAssetRequestById to get current user's requests with pagination
-      const apiResponse = await assetApi.getAssetRequestById(currentUserId, {
-        page: 1,
-        limit: pagination.limit,
-      });
-      
-      // Transform API requests to component format
-      const transformedRequests: AssetRequest[] = (apiResponse.items || []).map((apiRequest: ApiAssetRequest) => {
-        // Debug logging to understand the API response
-        console.log('Refresh - API Request status:', apiRequest.status, 'for request:', apiRequest.id);
-        
-        return {
-          id: apiRequest.id,
-          employeeId: apiRequest.requested_by,
-          employeeName: apiRequest.requestedByName || 
-            (apiRequest.requestedByUser ? 
-              apiRequest.requestedByUser.name : 
-              `User ${apiRequest.requested_by}`),
-          category: { 
-            id: apiRequest.asset_category, 
-            name: apiRequest.asset_category, 
-            nameAr: apiRequest.asset_category, 
-            description: '' 
-          },
-          remarks: apiRequest.remarks,
-          status: normalizeRequestStatus(apiRequest.status),
-        requestedDate: apiRequest.requested_date,
-        processedDate: apiRequest.approved_date || undefined,
-        processedBy: apiRequest.approved_by,
-        processedByName: apiRequest.approvedByName || 
-          (apiRequest.approvedByUser ? 
-            apiRequest.approvedByUser.name : 
-            apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
-        rejectionReason: undefined,
-        assignedAssetId: undefined,
-        assignedAssetName: undefined,
-        };
-      });
-      
-      setRequests(transformedRequests);
-      
-      // Update pagination info from API response
-      setPagination(prev => ({
-        ...prev,
-        total: apiResponse.total || 0,
-        totalPages: apiResponse.totalPages || 1,
-      }));
-
-      // Show success toast
-      showSuccessToast('Asset requests refreshed successfully');
-
-    } catch (error) {
-      console.error('Failed to refresh data:', error);
-      // Show error toast
-      showErrorToast('Failed to refresh asset requests. Please try again.');
-    } finally {
-      setInitialLoading(false);
-    }
-  };
+  // Removed unused handleRefreshData function - keeping for future use
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
     setPagination(prev => ({ ...prev, page }));

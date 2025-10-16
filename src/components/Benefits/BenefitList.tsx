@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Benefit, BenefitFilters, EmployeeBenefitAssignment } from '../../types/benefits';
 import { createBenefit, deactivateBenefit, listBenefits, updateBenefit, listAllBenefitAssignments } from '../../api/benefits';
-import { Button, Card, CardContent, CircularProgress, FormControl, InputLabel, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, Chip, Box } from '@mui/material';
+import { Button, Card, CardContent, CircularProgress, FormControl, InputLabel, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, Box } from '@mui/material';
 import BenefitFormModal from './BenefitFormModal';
 import { toast } from 'react-toastify';
 import { getEmployeeById, getEmployeeName } from '../../data/employees.ts';
@@ -19,7 +19,7 @@ export default function BenefitList() {
 
   const filters: BenefitFilters = useMemo(() => ({ search, status, type }), [search, status, type]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -31,16 +31,16 @@ export default function BenefitList() {
       ]);
       setItems(benefitsRes.items);
       setAssignments(assignmentsRes);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load benefits');
+    } catch (e: unknown) {
+      setError((e as Error)?.message || 'Failed to load benefits');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   useEffect(() => {
     loadData();
-  }, [filters]);
+  }, [loadData]);
 
   // Listen for benefit assignment events to refresh data
   useEffect(() => {
@@ -53,22 +53,22 @@ export default function BenefitList() {
     return () => {
       window.removeEventListener('benefitsAssigned', handleBenefitsAssigned);
     };
-  }, [filters]);
+  }, [loadData]);
 
-  const handleDeactivate = async (id: string) => {
-    setLoading(true);
-    try {
-      await deactivateBenefit(id);
-      await loadData();
-      toast.success('Benefit deactivated');
-    } catch (e: any) {
-      const msg = e?.message || 'Failed to deactivate';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const handleDeactivate = async (id: string) => {
+  //   setLoading(true);
+  //   try {
+  //     await deactivateBenefit(id);
+  //     await loadData();
+  //     toast.success('Benefit deactivated');
+  //   } catch (e: unknown) {
+  //     const msg = (e as Error)?.message || 'Failed to deactivate';
+  //     setError(msg);
+  //     toast.error(msg);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleToggleActive = async (b: Benefit) => {
     setLoading(true);
@@ -81,8 +81,8 @@ export default function BenefitList() {
         toast.success('Benefit activated');
       }
       await loadData();
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to update status');
+    } catch (e: unknown) {
+      toast.error((e as Error)?.message || 'Failed to update status');
     } finally {
       setLoading(false);
     }
@@ -108,8 +108,8 @@ export default function BenefitList() {
         toast.success('Benefit created');
       }
       await loadData();
-    } catch (e: any) {
-      toast.error(e?.message || 'Operation failed');
+    } catch (e: unknown) {
+      toast.error((e as Error)?.message || 'Operation failed');
     }
   };
 
@@ -135,7 +135,7 @@ export default function BenefitList() {
               <TextField label="Search" value={search} onChange={(e) => setSearch(e.target.value)} size="small" />
               <FormControl size="small" sx={{ minWidth: 160 }}>
                 <InputLabel>Status</InputLabel>
-                <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value as any)}>
+                <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value as 'all' | 'active' | 'inactive')}>
                   <MenuItem value="all">All</MenuItem>
                   <MenuItem value="active">Active</MenuItem>
                   <MenuItem value="inactive">Inactive</MenuItem>
@@ -143,7 +143,7 @@ export default function BenefitList() {
               </FormControl>
               <FormControl size="small" sx={{ minWidth: 180 }}>
                 <InputLabel>Type</InputLabel>
-                <Select label="Type" value={type} onChange={(e) => setType(e.target.value as any)}>
+                <Select label="Type" value={type} onChange={(e) => setType(e.target.value as 'all' | Benefit['type'])}>
                   <MenuItem value="all">All</MenuItem>
                   <MenuItem value="health">Health</MenuItem>
                   <MenuItem value="dental">Dental</MenuItem>

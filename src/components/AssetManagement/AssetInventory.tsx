@@ -84,7 +84,7 @@ const AssetInventory: React.FC = () => {
   };
 
   // Fetch assets from API
-  const fetchAssets = async (page: number = 1, limit: number = 25) => {
+  const fetchAssets = React.useCallback(async (page: number = 1, limit: number = 25) => {
     try {
       setInitialLoading(true);
       console.log('Fetching assets with page:', page, 'limit:', limit);
@@ -168,7 +168,7 @@ const AssetInventory: React.FC = () => {
       } finally {
         setInitialLoading(false);
       }
-    };
+    }, []);
 
   useEffect(() => {
     // Test API connection first
@@ -183,7 +183,7 @@ const AssetInventory: React.FC = () => {
     
     testConnection();
     fetchAssets(pagination.page, pagination.limit);
-  }, [pagination.page, pagination.limit]);
+  }, [pagination.page, pagination.limit, fetchAssets]);
 
   // Filter and search logic
   useMemo(() => {
@@ -251,7 +251,7 @@ const AssetInventory: React.FC = () => {
           purchaseDate: data.purchaseDate,
         };
 
-        const updatedApiAsset = await assetApi.updateAsset(editingAsset.id, updateData);
+        await assetApi.updateAsset(editingAsset.id, updateData);
         
         // User name will be fetched in the refresh
         
@@ -267,7 +267,7 @@ const AssetInventory: React.FC = () => {
           purchaseDate: data.purchaseDate,
         };
 
-        const newApiAsset = await assetApi.createAsset(createData);
+        await assetApi.createAsset(createData);
         
         // User name will be fetched in the refresh
         

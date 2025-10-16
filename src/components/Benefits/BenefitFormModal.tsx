@@ -36,10 +36,10 @@ export default function BenefitFormModal({ open, initial, onClose, onSubmit }: B
     if (open) {
       reset({
         name: initial?.name || '',
-        type: (initial?.type as any) || 'health',
+        type: (initial?.type as Benefit['type']) || 'health',
         description: initial?.description || '',
         eligibility: initial?.eligibility || '',
-        status: (initial?.status as any) || 'active',
+        status: (initial?.status as Benefit['status']) || 'active',
       });
     }
   }, [open, initial, reset]);

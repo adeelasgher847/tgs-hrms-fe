@@ -11,7 +11,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Dialog,
   DialogTitle,
@@ -42,18 +41,16 @@ import {
   Cancel as RejectIcon,
   Visibility as ViewIcon,
   MoreVert as MoreVertIcon,
-  FilterList as FilterIcon,
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { AssetRequest, ProcessRequestRequest, AssetCategory, Asset } from '../../types/asset';
+import type { AssetRequest, Asset } from '../../types/asset';
 import { assetApi, type AssetRequest as ApiAssetRequest, type PaginatedResponse } from '../../api/assetApi';
 import StatusChip from './StatusChip';
-import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from './NotificationToast';
-import { assetCategories, getCategoryById } from '../../data/assetCategories.ts';
+import { assetCategories } from '../../data/assetCategories.ts';
 
 // Normalize status to ensure it matches expected values
 const normalizeRequestStatus = (status: string): 'pending' | 'approved' | 'rejected' | 'cancelled' => {
@@ -127,15 +124,15 @@ const RequestManagement: React.FC = () => {
     totalPages: 0,
   });
 
-  // Get all subcategories from comprehensive categories
-  const commonCategories = assetCategories.flatMap(cat => cat.subcategories || [cat.name]);
+  // Get all subcategories from comprehensive categories - keeping for future use
+  // const commonCategories = assetCategories.flatMap(cat => cat.subcategories || [cat.name]);
 
   const {
     control,
     handleSubmit,
     reset,
     watch,
-    setValue,
+    // setValue,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
@@ -209,7 +206,7 @@ const RequestManagement: React.FC = () => {
 
         // Fetch assets for assignment
         const apiAssetsResponse = await assetApi.getAllAssets();
-        const transformedAssets: Asset[] = apiAssetsResponse.assets.map((apiAsset: any) => {
+        const transformedAssets: Asset[] = apiAssetsResponse.assets.map((apiAsset: Record<string, unknown>) => {
           // Try to find matching category from our comprehensive list
           const matchingCategory = assetCategories.find(cat => 
             cat.name.toLowerCase() === apiAsset.category.toLowerCase() ||
@@ -310,7 +307,7 @@ const RequestManagement: React.FC = () => {
     setSelectedRequestId(null);
   };
 
-  const handleProcessSubmit = async (data: any) => {
+  const handleProcessSubmit = async (data: Record<string, unknown>) => {
     if (!selectedRequest) return;
 
     setLoading(true);

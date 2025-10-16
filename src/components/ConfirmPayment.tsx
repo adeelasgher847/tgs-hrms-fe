@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
@@ -21,11 +21,7 @@ const ConfirmPayment: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const { updateUser, refreshUser } = useUser();
 
-  useEffect(() => {
-    handlePaymentConfirmation();
-  }, []);
-
-  const handlePaymentConfirmation = async () => {
+  const handlePaymentConfirmation = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -66,10 +62,10 @@ const ConfirmPayment: React.FC = () => {
 
         // Now set the new user's data if available
         if (
-          (signupResult as any).accessToken &&
-          (signupResult as any).refreshToken
+          (signupResult as Record<string, unknown>).accessToken &&
+          (signupResult as Record<string, unknown>).refreshToken
         ) {
-          const data: any = signupResult as any;
+          const data = signupResult as Record<string, unknown>;
           localStorage.setItem('accessToken', data.accessToken);
           localStorage.setItem('refreshToken', data.refreshToken);
           if (data.user) {
@@ -83,17 +79,21 @@ const ConfirmPayment: React.FC = () => {
             // Update UserContext immediately so dashboard shows user without refresh
             try {
               updateUser(data.user);
-            } catch (e) {
+            } catch {
               // If updateUser fails for any reason, fallback to refresh
               try {
                 await refreshUser();
-              } catch {}
+              } catch {
+                // Ignore refresh errors
+              }
             }
           } else {
             // If there's no user object in response, try refreshing the user
             try {
               await refreshUser();
-            } catch {}
+            } catch {
+              // Ignore refresh errors
+            }
           }
         } else {
           // Fallback: try to login using pending credentials saved in sessionStorage
@@ -144,10 +144,14 @@ const ConfirmPayment: React.FC = () => {
         // Cleanup pending signup storage
         try {
           sessionStorage.removeItem('pendingSignupCredentials');
-        } catch {}
+        } catch {
+          // Ignore cleanup errors
+        }
         try {
           localStorage.removeItem('signupSessionId');
-        } catch {}
+        } catch {
+          // Ignore cleanup errors
+        }
 
         // 3. Redirect to dashboard
         setTimeout(() => {
@@ -156,12 +160,16 @@ const ConfirmPayment: React.FC = () => {
       } else {
         throw new Error('Payment was not successful');
       }
-    } catch (err: any) {
-      setError(err.message || 'Payment confirmation failed');
+    } catch (err: unknown) {
+      setError((err as Error)?.message || 'Payment confirmation failed');
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchParams, navigate, updateUser, refreshUser]);
+
+  useEffect(() => {
+    handlePaymentConfirmation();
+  }, [handlePaymentConfirmation]);
 
   const handleRetry = () => {
     navigate('/signup/select-plan');
