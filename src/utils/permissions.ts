@@ -248,7 +248,10 @@ export const isSubMenuVisibleForRole = (
     }
 
     if (parent.includes('benefits')) {
-      if (!sub.includes('benefits report')) {
+      if (
+        !sub.includes('benefits report') ||
+        !sub.includes('benefit details')
+      ) {
         visible = false;
       }
     }
@@ -269,7 +272,7 @@ export const isSubMenuVisibleForRole = (
       visible = false;
     }
     if (parent.includes('benefits')) {
-      if (sub.includes('benefit details') || sub.includes('benefits report')) {
+      if (sub.includes('benefits report')) {
         visible = false;
       }
     }
@@ -363,6 +366,7 @@ export const isDashboardPathAllowedForRole = (
       // Settings
       'settings',
       'benefit-report',
+      'benefit-details',
     ]),
     'hr-admin': new Set([
       '', // Allow main dashboard
@@ -376,6 +380,7 @@ export const isDashboardPathAllowedForRole = (
       'benefits-list',
       'employee-benefit',
       'EmployeeManager',
+      'benefit-details',
     ]),
     admin: new Set([
       '',
