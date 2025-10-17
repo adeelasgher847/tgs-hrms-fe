@@ -4,8 +4,7 @@ import { createBenefit, deactivateBenefit, listBenefits, updateBenefit, listAllB
 import { Button, Card, CardContent, CircularProgress, FormControl, InputLabel, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, Box } from '@mui/material';
 import BenefitFormModal from './BenefitFormModal';
 import { toast } from 'react-toastify';
-import { getEmployeeById, getEmployeeName } from '../../data/employees';
-
+import { getEmployeeById, getEmployeeName } from '../../data/employees.ts';
 export default function BenefitList() {
   const [items, setItems] = useState<Benefit[]>([]);
   const [assignments, setAssignments] = useState<EmployeeBenefitAssignment[]>([]);
