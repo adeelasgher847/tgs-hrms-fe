@@ -16,7 +16,7 @@ import {
 import {
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
-import { assetCategories } from '../../data/assetCategories';
+import { assetCategories } from '../../data/assetCategories.ts';
 
 const AssetCategoriesOverview: React.FC = () => {
   return (
