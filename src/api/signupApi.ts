@@ -94,40 +94,28 @@ class SignupApiService {
   async createPersonalDetails(
     data: PersonalDetailsRequest
   ): Promise<PersonalDetailsResponse> {
-    try {
-      const response = await axiosInstance.post(
-        `${this.baseUrl}/personal-details`,
-        data
-      );
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
+    const response = await axiosInstance.post(
+      `${this.baseUrl}/personal-details`,
+      data
+    );
+    return response.data;
   }
 
   // Get Subscription Plans
   async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-    try {
-      const response = await axiosInstance.get('/subscription-plans');
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
+    const response = await axiosInstance.get('/subscription-plans');
+    return response.data;
   }
 
   // Get Stripe prices for a list of price IDs (server must proxy this)
   async getStripePrices(priceIds: string[]): Promise<StripePriceInfo[]> {
-    try {
-      // Try the new endpoint first
-      const params = new URLSearchParams();
-      params.set('ids', priceIds.join(','));
-      const response = await axiosInstance.get(
-        `/subscription-plans/prices?${params.toString()}`
-      );
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
+    // Try the new endpoint first
+    const params = new URLSearchParams();
+    params.set('ids', priceIds.join(','));
+    const response = await axiosInstance.get(
+      `/subscription-plans/prices?${params.toString()}`
+    );
+    return response.data;
   }
 
   // Get prices by plan IDs (backend supports this)
@@ -141,10 +129,10 @@ class SignupApiService {
         `/subscription-plans/prices-by-plans?${params.toString()}`
       );
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         'Stripe prices by plan IDs API Error:',
-        error.response?.data || error.message
+        (error as Record<string, unknown>)?.response?.data || (error as Record<string, unknown>)?.message
       );
       throw error;
     }
@@ -154,80 +142,60 @@ class SignupApiService {
   async createCompanyDetails(
     data: CompanyDetailsRequest
   ): Promise<CompanyDetailsResponse> {
-    try {
-      const response = await axiosInstance.post(
-        `${this.baseUrl}/company-details`,
-        data
-      );
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
+    const response = await axiosInstance.post(
+      `${this.baseUrl}/company-details`,
+      data
+    );
+    return response.data;
   }
 
   // Step 3: Create Payment Intent
   async createPayment(data: PaymentRequest): Promise<PaymentResponse> {
-    try {
-      const response = await axiosInstance.post(
-        `${this.baseUrl}/payment`,
-        data
-      );
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
+    const response = await axiosInstance.post(
+      `${this.baseUrl}/payment`,
+      data
+    );
+    return response.data;
   }
 
   // Step 4: Confirm Payment
   async confirmPayment(
     data: PaymentConfirmRequest
   ): Promise<PaymentConfirmResponse> {
-    try {
-      const response = await axiosInstance.post(
-        `${this.baseUrl}/payment/confirm`,
-        data
-      );
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
+    const response = await axiosInstance.post(
+      `${this.baseUrl}/payment/confirm`,
+      data
+    );
+    return response.data;
   }
 
   // Step 5: Complete Signup
   async completeSignup(
     data: CompleteSignupRequest
   ): Promise<CompleteSignupResponse> {
-    try {
-      const response = await axiosInstance.post(
-        `${this.baseUrl}/complete`,
-        data
-      );
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
+    const response = await axiosInstance.post(
+      `${this.baseUrl}/complete`,
+      data
+    );
+    return response.data;
   }
 
   // Upload Company Logo
   async uploadLogo(data: LogoUploadRequest): Promise<LogoUploadResponse> {
-    try {
-      const formData = new FormData();
-      formData.append('signupSessionId', data.signupSessionId);
-      formData.append('file', data.logo); // Changed from 'logo' to 'file'
+    const formData = new FormData();
+    formData.append('signupSessionId', data.signupSessionId);
+    formData.append('file', data.logo); // Changed from 'logo' to 'file'
 
-      const response = await axiosInstance.post(
-        `${this.baseUrl}/upload-logo`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
+    const response = await axiosInstance.post(
+      `${this.baseUrl}/upload-logo`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
   }
 
 }

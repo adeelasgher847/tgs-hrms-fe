@@ -54,6 +54,7 @@ export const isMenuVisibleForRole = (
   const r = normalizeRole(role);
   const label = (menuLabel || '').toLowerCase().replace(/\s+/g, '').trim();
 
+
   const allowedByRole: Record<NormalizedRole, string[]> = {
     'system-admin': [
       'dashboard',
@@ -63,6 +64,7 @@ export const isMenuVisibleForRole = (
       'teams',
       'assets',
       'attendance',
+      'benefits',
       'report',
     ],
     'network-admin': [
@@ -73,13 +75,17 @@ export const isMenuVisibleForRole = (
       'assets',
       'attendance',
       'report',
+      'benefits',
     ],
-    'hr-admin': ['attendance', 'teams'],
-    admin: ['dashboard', 'department', 'employees', 'teams', 'assets', 'attendance', 'report'],
-    manager: ['teams', 'attendance', 'assets', 'report'],
-    employee: ['attendance', 'assets'],
-    user: ['attendance', 'assets'],
-    unknown: [],
+    'hr-admin': [
+      'attendance',
+      'benefits',
+    ],
+    admin: ['dashboard', 'department', 'employees', 'teams', 'assets', 'attendance', 'report' , 'benefits'],
+    manager: ['teams', 'attendance', 'assets','report',  'benefits'],
+    employee: ['attendance', 'assets', 'benefits'],
+    user: ['attendance', 'assets', 'benefits'],
+    unknown: ['benefits'], // Temporarily allow benefits for unknown roles
   };
 
   // map synonyms from current sidebar to requirement naming
@@ -90,6 +96,7 @@ export const isMenuVisibleForRole = (
     if (label.includes('employee')) return 'employees';
     if (label.includes('team')) return 'teams';
     if (label.includes('asset')) return 'assets';
+    if (label.includes('benefit')) return 'benefits';
     if (label.includes('attendance')) return 'attendance';
     if (label.includes('report')) return 'report';
     // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
@@ -313,6 +320,11 @@ export const isDashboardPathAllowedForRole = (
       'EmployeeProfileView',
       // Settings
       'settings',
+      // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
+      'my-benefits',
     ]),
     'network-admin': new Set([
       '',
@@ -336,6 +348,10 @@ export const isDashboardPathAllowedForRole = (
       'attendance-summary',
       // Settings
       'settings',
+      // Benefits
+      'benefits',
+      'benefits/reporting',
+      'my-benefits',
     ]),
     'hr-admin': new Set([
       '', // Allow main dashboard
@@ -345,6 +361,11 @@ export const isDashboardPathAllowedForRole = (
       'UserProfile',
       // Assets - HR admin has no access
       'settings',
+      // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
+      'my-benefits',
       'teams',
     ]),
     admin: new Set([
@@ -369,6 +390,11 @@ export const isDashboardPathAllowedForRole = (
       'attendance-summary',
       // Settings
       'settings',
+      // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
+      'my-benefits',
     ]),
     manager: new Set([
       'AttendanceCheck',
@@ -383,6 +409,11 @@ export const isDashboardPathAllowedForRole = (
       'attendance-summary',
       // Settings
       'settings',
+      // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
+      'my-benefits',
     ]),
     employee: new Set([
       'AttendanceCheck',
@@ -395,6 +426,11 @@ export const isDashboardPathAllowedForRole = (
       'assets/requests',
       // Settings
       'settings',
+      // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
+      'my-benefits',
     ]),
     user: new Set([
       'AttendanceCheck',
@@ -407,6 +443,11 @@ export const isDashboardPathAllowedForRole = (
       'assets/requests',
       // Settings
       'settings',
+      // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
+      'my-benefits',
     ]),
     unknown: new Set<string>(),
   };

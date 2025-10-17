@@ -7,7 +7,13 @@ class AttendanceSummaryApi {
     tenantId: string,
     days: number = 30,
     page: number = 1
-  ): Promise<any> {
+  ): Promise<{
+    items: Record<string, unknown>[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     try {
       const params = new URLSearchParams({
         tenantId,
@@ -18,10 +24,10 @@ class AttendanceSummaryApi {
         `${this.baseUrl}?${params.toString()}`
       );
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         'Error fetching attendance summary:',
-        error.response?.data || error.message
+        (error as Record<string, unknown>)?.response?.data || (error as Record<string, unknown>)?.message
       );
       throw error;
     }

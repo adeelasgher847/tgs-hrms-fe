@@ -98,11 +98,11 @@ export function useErrorHandler(): UseErrorHandlerReturn {
 export function withErrorHandling<T>(
   apiCall: () => Promise<T>,
   errorHandler: (error: unknown) => void,
-  context?: {
-    operation: 'create' | 'update' | 'delete' | 'fetch';
-    resource: 'department' | 'designation' | 'employee';
-    isGlobal?: boolean;
-  }
+  // context?: {
+  //   operation: 'create' | 'update' | 'delete' | 'fetch';
+  //   resource: 'department' | 'designation' | 'employee';
+  //   isGlobal?: boolean;
+  // }
 ): Promise<T> {
   return apiCall().catch((error: unknown) => {
     errorHandler(error);

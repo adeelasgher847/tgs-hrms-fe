@@ -7,7 +7,6 @@ import {
   useMediaQuery,
   useTheme,
   InputAdornment,
-  Typography,
 } from '@mui/material';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
@@ -207,7 +206,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       values.team_id !== '';
 
   // Remove filtering: always show all designations in the dropdown
-  const filteredDesignations = designations;
+  // const filteredDesignations = designations;
 
   const loadDepartments = async () => {
     try {

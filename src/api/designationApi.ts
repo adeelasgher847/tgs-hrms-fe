@@ -1,5 +1,5 @@
 import axiosInstance from './axiosInstance';
-import { handleApiError, isGlobalDesignation } from '../utils/errorHandler';
+import { handleApiError } from '../utils/errorHandler';
 
 // Normalized types exposed to the rest of the app (camelCase)
 export interface BackendDesignation {
@@ -43,25 +43,25 @@ export interface DesignationDto {
   departmentId: string;
 }
 
-function normalizeDesignation(raw: unknown): BackendDesignation {
+function normalizeDesignation(raw: Record<string, unknown>): BackendDesignation {
   return {
-    id: raw?.id,
-    title: raw?.title,
-    departmentId: raw?.departmentId ?? raw?.department_id,
-    tenantId: raw?.tenantId ?? raw?.tenant_id,
-    createdAt: raw?.createdAt ?? raw?.created_at,
-    updatedAt: raw?.updatedAt ?? raw?.updated_at,
+    id: raw?.id as string,
+    title: raw?.title as string,
+    departmentId: (raw?.departmentId ?? raw?.department_id) as string,
+    tenantId: (raw?.tenantId ?? raw?.tenant_id) as string | undefined,
+    createdAt: (raw?.createdAt ?? raw?.created_at) as string | undefined,
+    updatedAt: (raw?.updatedAt ?? raw?.updated_at) as string | undefined,
   };
 }
 
-function normalizeDepartment(raw: unknown): BackendDepartment {
+function normalizeDepartment(raw: Record<string, unknown>): BackendDepartment {
   return {
-    id: raw?.id,
-    name: raw?.name,
-    description: raw?.description,
-    tenantId: raw?.tenantId ?? raw?.tenant_id,
-    createdAt: raw?.createdAt ?? raw?.created_at,
-    updatedAt: raw?.updatedAt ?? raw?.updated_at,
+    id: raw?.id as string,
+    name: raw?.name as string,
+    description: raw?.description as string | undefined,
+    tenantId: (raw?.tenantId ?? raw?.tenant_id) as string | undefined,
+    createdAt: (raw?.createdAt ?? raw?.created_at) as string | undefined,
+    updatedAt: (raw?.updatedAt ?? raw?.updated_at) as string | undefined,
   };
 }
 
@@ -75,7 +75,7 @@ class DesignationApiService {
       this.departmentUrl
     );
     const items = Array.isArray(response.data) ? response.data : [];
-    return items.map(normalizeDepartment);
+    return items.map((item: unknown) => normalizeDepartment(item as Record<string, unknown>));
   }
 
   // Get all designations for a department with pagination
@@ -121,7 +121,7 @@ class DesignationApiService {
       }
 
       return {
-        items: items.map(normalizeDesignation),
+        items: items.map((item: unknown) => normalizeDesignation(item as Record<string, unknown>)),
         total,
         page: currentPage,
         limit,
@@ -170,7 +170,7 @@ class DesignationApiService {
     const response = await axiosInstance.get<BackendDesignation>(
       `${this.baseUrl}/${id}`
     );
-    return normalizeDesignation(response.data);
+    return normalizeDesignation(response.data as unknown as Record<string, unknown>);
   }
 
   // Create new designation
@@ -187,7 +187,7 @@ class DesignationApiService {
         this.baseUrl,
         payload
       );
-      return normalizeDesignation(response.data);
+      return normalizeDesignation(response.data as unknown as Record<string, unknown>);
     } catch (error) {
       const errorResult = handleApiError(error, {
         operation: 'create',
@@ -210,7 +210,7 @@ class DesignationApiService {
         `${this.baseUrl}/${id}`,
         payload
       );
-      return normalizeDesignation(response.data);
+      return normalizeDesignation(response.data as unknown as Record<string, unknown>);
     } catch (error) {
       const errorResult = handleApiError(error, {
         operation: 'update',

@@ -11,19 +11,19 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
-  Chip,
   TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   InputAdornment,
-  Tooltip,
   Menu,
   ListItemIcon,
   ListItemText,
+  CircularProgress,
+  Stack,
+  Pagination,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -34,14 +34,16 @@ import {
   Delete as DeleteIcon,
   Person as PersonIcon,
   Build as BuildIcon,
+  CheckCircle as AvailableIcon,
 } from '@mui/icons-material';
-import type { Asset, AssetFilters, AssetCategory, MockUser, AssetStatus } from '../../types/asset';
+import type { Asset, AssetFilters, MockUser, AssetStatus } from '../../types/asset';
 import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
 import employeeApi from '../../api/employeeApi';
 import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
-import { showSuccessToast, showErrorToast } from './NotificationToast';
+import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
+import { assetCategories } from '../../data/assetCategories';
 
 const AssetInventory: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -56,7 +58,12 @@ const AssetInventory: React.FC = () => {
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 25,
+    totalPages: 1
+  });
 
   // Mock data for users (these might need to be fetched from API later)
   const mockUsers: MockUser[] = [
@@ -77,11 +84,27 @@ const AssetInventory: React.FC = () => {
   };
 
   // Fetch assets from API
-  useEffect(() => {
-    const fetchAssets = async () => {
-      try {
-        setInitialLoading(true);
-        const apiAssets = await assetApi.getAllAssets();
+  const fetchAssets = React.useCallback(async (page: number = 1, limit: number = 25) => {
+    try {
+      setInitialLoading(true);
+      console.log('Fetching assets with page:', page, 'limit:', limit);
+      
+      const response = await assetApi.getAllAssets({ page, limit });
+      console.log('AssetInventory - API Response:', response);
+      
+      const apiAssets = response.assets; // Extract assets from paginated response
+      console.log('AssetInventory - Extracted Assets:', apiAssets);
+      console.log('AssetInventory - Extracted Assets Length:', apiAssets?.length);
+      
+      // Update pagination state
+      setPagination(response.pagination);
+      
+      // Check if we have assets
+      if (!apiAssets || apiAssets.length === 0) {
+        console.log('No assets found in response');
+        setAssets([]);
+        return;
+      }
         
         // Fetch user names for all unique user IDs in assigned_to
         const uniqueUserIds = new Set<string>();
@@ -99,26 +122,45 @@ const AssetInventory: React.FC = () => {
         );
         
         // Transform API assets to match component interface
-        const transformedAssets: Asset[] = apiAssets.map((apiAsset: ApiAsset) => ({
-          id: apiAsset.id,
-          name: apiAsset.name,
-          category: { id: apiAsset.category, name: apiAsset.category, nameAr: apiAsset.category, description: '' },
-          status: apiAsset.status,
-          assignedTo: apiAsset.assigned_to,
-          assignedToName: apiAsset.assigned_to ? userNameMap.get(apiAsset.assigned_to) : undefined,
-          serialNumber: '', // Not provided by API
-          purchaseDate: apiAsset.purchase_date,
-          location: '', // Not provided by API
-          description: '', // Not provided by API
-          createdAt: apiAsset.created_at,
-          updatedAt: apiAsset.created_at,
-        }));
+        const transformedAssets: Asset[] = apiAssets.map((apiAsset: ApiAsset) => {
+          // Try to find matching category from our comprehensive list
+          const matchingCategory = assetCategories.find(cat => 
+            cat.name.toLowerCase() === apiAsset.category.toLowerCase() ||
+            cat.subcategories?.some(sub => sub.toLowerCase() === apiAsset.category.toLowerCase())
+          );
+          
+          return {
+            id: apiAsset.id,
+            name: apiAsset.name,
+            category: matchingCategory ? {
+              id: matchingCategory.id,
+              name: matchingCategory.name,
+              nameAr: matchingCategory.nameAr,
+              description: matchingCategory.description,
+              color: matchingCategory.color,
+              subcategories: matchingCategory.subcategories
+            } : { 
+              id: apiAsset.category, 
+              name: apiAsset.category, 
+              nameAr: apiAsset.category, 
+              description: '',
+              color: '#757575'
+            },
+            status: apiAsset.status,
+            assignedTo: apiAsset.assigned_to,
+            assignedToName: apiAsset.assigned_to ? userNameMap.get(apiAsset.assigned_to) : undefined,
+            serialNumber: '', // Not provided by API
+            purchaseDate: apiAsset.purchase_date,
+            location: '', // Not provided by API
+            description: '', // Not provided by API
+            createdAt: apiAsset.created_at,
+            updatedAt: apiAsset.created_at,
+          };
+        });
         
+        console.log('AssetInventory - Transformed Assets:', transformedAssets);
         setAssets(transformedAssets);
         
-        // Extract unique categories from assets
-        const uniqueCategories = [...new Set(transformedAssets.map(asset => asset.category.name))];
-        setAvailableCategories(uniqueCategories);
         
       } catch (error) {
         console.error('Failed to fetch assets:', error);
@@ -126,10 +168,22 @@ const AssetInventory: React.FC = () => {
       } finally {
         setInitialLoading(false);
       }
-    };
+    }, []);
 
-    fetchAssets();
-  }, []);
+  useEffect(() => {
+    // Test API connection first
+    const testConnection = async () => {
+      try {
+        await assetApi.testApiConnection();
+      } catch (error) {
+        console.error('API connection test failed:', error);
+        showErrorToast('Failed to connect to API');
+      }
+    };
+    
+    testConnection();
+    fetchAssets(pagination.page, pagination.limit);
+  }, [pagination.page, pagination.limit, fetchAssets]);
 
   // Filter and search logic
   useMemo(() => {
@@ -155,6 +209,7 @@ const AssetInventory: React.FC = () => {
       filtered = filtered.filter(asset => filters.category!.includes(asset.category.name));
     }
 
+    console.log('AssetInventory - Filtered Assets:', filtered);
     setFilteredAssets(filtered);
   }, [assets, searchTerm, filters]);
 
@@ -185,7 +240,7 @@ const AssetInventory: React.FC = () => {
     setSelectedAssetId(null);
   };
 
-  const handleAssetSubmit = async (data: any) => {
+  const handleAssetSubmit = async (data: { name: string; category: string; purchaseDate: string; assignedTo?: string }) => {
     setLoading(true);
     try {
       if (editingAsset) {
@@ -196,40 +251,14 @@ const AssetInventory: React.FC = () => {
           purchaseDate: data.purchaseDate,
         };
 
-        const updatedApiAsset = await assetApi.updateAsset(editingAsset.id, updateData);
+        await assetApi.updateAsset(editingAsset.id, updateData);
         
-        // Fetch user name if assigned
-        let assignedToName: string | undefined;
-        if (updatedApiAsset.assigned_to) {
-          assignedToName = await fetchUserName(updatedApiAsset.assigned_to);
-        }
+        // User name will be fetched in the refresh
         
-        // Transform and update local state
-        const updatedAsset: Asset = {
-          id: updatedApiAsset.id,
-          name: updatedApiAsset.name,
-          category: { id: updatedApiAsset.category, name: updatedApiAsset.category, nameAr: updatedApiAsset.category, description: '' },
-          status: updatedApiAsset.status,
-          assignedTo: updatedApiAsset.assigned_to,
-          assignedToName: assignedToName,
-          serialNumber: '',
-          purchaseDate: updatedApiAsset.purchase_date,
-          location: '',
-          description: '',
-          createdAt: updatedApiAsset.created_at,
-          updatedAt: updatedApiAsset.created_at,
-        };
-
-        setAssets(prev => {
-          const updatedAssets = prev.map(asset => 
-            asset.id === editingAsset.id ? updatedAsset : asset
-          );
-          // Update available categories
-          const uniqueCategories = [...new Set(updatedAssets.map(asset => asset.category.name))];
-          setAvailableCategories(uniqueCategories);
-          return updatedAssets;
-        });
+        // Assets will be refreshed from API
         showSuccessToast('Asset updated successfully');
+        // Refresh the current page
+        fetchAssets(pagination.page, pagination.limit);
       } else {
         // Create new asset
         const createData = {
@@ -238,38 +267,14 @@ const AssetInventory: React.FC = () => {
           purchaseDate: data.purchaseDate,
         };
 
-        const newApiAsset = await assetApi.createAsset(createData);
+        await assetApi.createAsset(createData);
         
-        // Fetch user name if assigned
-        let assignedToName: string | undefined;
-        if (newApiAsset.assigned_to) {
-          assignedToName = await fetchUserName(newApiAsset.assigned_to);
-        }
+        // User name will be fetched in the refresh
         
-        // Transform and add to local state
-        const newAsset: Asset = {
-          id: newApiAsset.id,
-          name: newApiAsset.name,
-          category: { id: newApiAsset.category, name: newApiAsset.category, nameAr: newApiAsset.category, description: '' },
-          status: newApiAsset.status,
-          assignedTo: newApiAsset.assigned_to,
-          assignedToName: assignedToName,
-          serialNumber: '',
-          purchaseDate: newApiAsset.purchase_date,
-          location: '',
-          description: '',
-          createdAt: newApiAsset.created_at,
-          updatedAt: newApiAsset.created_at,
-        };
-
-        setAssets(prev => {
-          const updatedAssets = [newAsset, ...prev];
-          // Update available categories
-          const uniqueCategories = [...new Set(updatedAssets.map(asset => asset.category.name))];
-          setAvailableCategories(uniqueCategories);
-          return updatedAssets;
-        });
+        // Assets will be refreshed from API
         showSuccessToast('Asset created successfully');
+        // Refresh the current page
+        fetchAssets(pagination.page, pagination.limit);
       }
 
       setIsModalOpen(false);
@@ -288,10 +293,11 @@ const AssetInventory: React.FC = () => {
     try {
       await assetApi.deleteAsset(assetToDelete.id);
       
-      setAssets(prev => prev.filter(asset => asset.id !== assetToDelete.id));
       showSuccessToast('Asset deleted successfully');
       setDeleteDialogOpen(false);
       setAssetToDelete(null);
+      // Refresh the current page
+      fetchAssets(pagination.page, pagination.limit);
     } catch (error) {
       console.error('Failed to delete asset:', error);
       showErrorToast('Failed to delete asset');
@@ -309,13 +315,31 @@ const AssetInventory: React.FC = () => {
         purchaseDate: asset.purchaseDate,
       });
       
-      // Update local state
-      setAssets(prev => prev.map(a => 
-        a.id === asset.id ? { ...a, status: 'under_maintenance' as AssetStatus } : a
-      ));
-      
       showSuccessToast('Asset marked as under maintenance');
       setAnchorEl(null);
+      // Refresh the current page
+      fetchAssets(pagination.page, pagination.limit);
+    } catch (error) {
+      console.error('Failed to update asset status:', error);
+      showErrorToast('Failed to update asset status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkAsAvailable = async (asset: Asset) => {
+    setLoading(true);
+    try {
+      await assetApi.updateAssetStatus(asset.id, 'available', {
+        name: asset.name,
+        category: asset.category.name,
+        purchaseDate: asset.purchaseDate,
+      });
+      
+      showSuccessToast('Asset marked as available');
+      setAnchorEl(null);
+      // Refresh the current page
+      fetchAssets(pagination.page, pagination.limit);
     } catch (error) {
       console.error('Failed to update asset status:', error);
       showErrorToast('Failed to update asset status');
@@ -336,10 +360,16 @@ const AssetInventory: React.FC = () => {
 
   const statusCounts = getStatusCounts();
 
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    fetchAssets(page, pagination.limit);
+  };
+
   if (initialLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <Typography>Loading assets...</Typography>
+        <Stack alignItems="center" py={4}>
+          <CircularProgress />
+        </Stack>
       </Box>
     );
   }
@@ -469,9 +499,9 @@ const AssetInventory: React.FC = () => {
                   onChange={(e) => setFilters((prev: AssetFilters) => ({ ...prev, category: e.target.value as string[] }))}
                   label="Category"
                 >
-                  {availableCategories.map((category) => (
-                    <MenuItem key={category} value={category}>
-                      {category}
+                  {assetCategories.map((category) => (
+                    <MenuItem key={category.id} value={category.name}>
+                      <Typography variant="body2">{category.name}</Typography>
                     </MenuItem>
                   ))}
                 </Select>
@@ -507,7 +537,16 @@ const AssetInventory: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredAssets.map((asset) => (
+              {filteredAssets.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    <Typography variant="body2" color="text.secondary">
+                      No assets found
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredAssets.map((asset) => (
                 <TableRow key={asset.id} hover>
                   <TableCell>
                     <Box>
@@ -521,7 +560,11 @@ const AssetInventory: React.FC = () => {
                       )}
                     </Box>
                   </TableCell>
-                  <TableCell>{asset.category.name}</TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {asset.category.name}
+                    </Typography>
+                  </TableCell>
                   <TableCell>
                     <StatusChip status={asset.status} type="asset" />
                   </TableCell>
@@ -571,6 +614,17 @@ const AssetInventory: React.FC = () => {
                           <ListItemText>Mark as Maintenance</ListItemText>
                         </MenuItem>
                       )}
+                      {asset.status === 'under_maintenance' && (
+                        <MenuItem 
+                          onClick={() => handleMarkAsAvailable(asset)}
+                          sx={{ color: 'success.main' }}
+                        >
+                          <ListItemIcon>
+                            <AvailableIcon fontSize="small" color="success" />
+                          </ListItemIcon>
+                          <ListItemText>Mark as Available</ListItemText>
+                        </MenuItem>
+                      )}
                       <MenuItem 
                         onClick={() => handleDeleteAsset(asset)}
                         sx={{ color: 'error.main' }}
@@ -583,11 +637,26 @@ const AssetInventory: React.FC = () => {
                     </Menu>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
       </Card>
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Pagination
+            count={pagination.totalPages}
+            page={pagination.page}
+            onChange={handlePageChange}
+            color="primary"
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
 
       {/* Asset Modal */}
       <AssetModal

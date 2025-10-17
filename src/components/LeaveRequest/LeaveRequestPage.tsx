@@ -86,8 +86,8 @@ const LeaveRequestPage = () => {
     userIsUser || userIsManager || userIsAdmin ? 0 : 0
   );
 
-  const token = localStorage.getItem('token');
-  const filters = { page: '1' };
+  // const token = localStorage.getItem('token');
+  // const filters = { page: '1' };
 
   const loadLeaves = useCallback(
     async (page: number = 1) => {
@@ -139,10 +139,6 @@ const LeaveRequestPage = () => {
           }
         } else if (userIsUser || userIsManager) {
           // Regular user or manager gets their own leaves
-          //   currentUserId: currentUser?.id,
-          //   userRole: currentUser?.role,
-          //   page
-          // });
           const response = await leaveApi.getUserLeaves(currentUser?.id, page);
           leavesData = response.items.map(leave => ({
             id: leave.id,
@@ -182,12 +178,13 @@ const LeaveRequestPage = () => {
         setLoading(false);
       }
     },
-    [currentUser, userIsAdmin, userIsUser]
+    [currentUser, userIsAdmin, userIsUser, userIsManager]
   );
 
   // Load leaves on component mount
   useEffect(() => {
     loadLeaves();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only run once on mount
 
   // Handle page change
@@ -204,10 +201,7 @@ const LeaveRequestPage = () => {
       setTeamLeavesLoading(true);
       setTeamLeavesError(null);
 
-      //   managerId: currentUser?.id,
-      //   tenantId: currentUser?.tenant_id,
-      //   page
-      // });
+      // Load team leaves for managers
 
       const response = await leaveApi.getTeamLeaves(page);
 
@@ -655,7 +649,7 @@ const LeaveRequestPage = () => {
             <IconButton
               color="primary"
               onClick={() =>
-                exportCSV('/leaves/export/all', 'leaves-all.csv', token, filters)
+                exportCSV('/leaves/export/all', 'leaves-all.csv', localStorage.getItem('token'), { page: '1' })
               }
               sx={{
                 backgroundColor: 'primary.main',
@@ -683,8 +677,8 @@ const LeaveRequestPage = () => {
                 exportCSV(
                   '/leaves/export/team',
                   'leaves-team.csv',
-                  token,
-                  filters
+                  localStorage.getItem('token'),
+                  { page: '1' }
                 )
               }
               sx={{
@@ -713,8 +707,8 @@ const LeaveRequestPage = () => {
                 exportCSV(
                   '/leaves/export/self',
                   'leaves-self.csv',
-                  token,
-                  filters
+                  localStorage.getItem('token'),
+                  { page: '1' }
                 )
               }
               sx={{

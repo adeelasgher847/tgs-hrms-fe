@@ -65,12 +65,12 @@ const UserProfileComponent = React.memo(() => {
         // ignore; fallback remains
       });
     }
-  }, [profile?.tenant, loading, refreshUser]); // Only depend on tenant, not entire profile
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.tenant, loading]); // Only depend on tenant, not entire profile
 
   // Initialize profile picture state when user data loads
   useEffect(() => {
     if (profile?.profile_pic) {
-      // ✅ Construct the full API URL for the profile picture
       const API_BASE_URL =
         import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
       const profilePicUrl = `${API_BASE_URL}/users/${profile.id}/profile-picture`;
@@ -114,15 +114,6 @@ const UserProfileComponent = React.memo(() => {
 
   // Determine if the user should see the employee profile view (managers included)
   const userIsEmployee = isEmployee(profile?.role) || isManager(profile?.role);
-
-  if (loading)
-    return (
-      <Box display='flex' justifyContent='center' mt={6}>
-        <CircularProgress />
-      </Box>
-    );
-  if (error) return <Alert severity='error'>{error}</Alert>;
-  if (!profile) return null;
 
   const profileItems = useMemo(
     () => [
@@ -172,6 +163,15 @@ const UserProfileComponent = React.memo(() => {
       profile.created_at,
     ]
   );
+
+  if (loading)
+    return (
+      <Box display='flex' justifyContent='center' mt={6}>
+        <CircularProgress />
+      </Box>
+    );
+  if (error) return <Alert severity='error'>{error}</Alert>;
+  if (!profile) return null;
 
   return (
     <Box sx={{ py: 2 }}>
@@ -285,9 +285,9 @@ const UserProfileComponent = React.memo(() => {
                 gap: 2,
               }}
             >
-              {profileItems.map((item, _index) => (
+              {profileItems.map((item, index) => (
                 <Box
-                  key={_index}
+                  key={index}
                   sx={{
                     flex: { xs: '1 1 100%', sm: '1 1 48%' },
                     p: 2,

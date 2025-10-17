@@ -26,10 +26,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import AddIcon from '@mui/icons-material/Add';
-import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
-import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
@@ -316,7 +314,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 </Typography>
               </Box>
               <IconButton onClick={handleMenuOpen}>
-                {user && user?.profile_pic ? (
+                {user ? (
                   <UserAvatar user={user} size={50} clickable={false} />
                 ) : (
                   <img

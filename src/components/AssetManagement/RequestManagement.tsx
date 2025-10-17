@@ -11,7 +11,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Dialog,
   DialogTitle,
@@ -32,6 +31,9 @@ import {
   Menu,
   ListItemIcon,
   ListItemText,
+  CircularProgress,
+  Stack,
+  Pagination,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -39,18 +41,35 @@ import {
   Cancel as RejectIcon,
   Visibility as ViewIcon,
   MoreVert as MoreVertIcon,
-  FilterList as FilterIcon,
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { AssetRequest, ProcessRequestRequest, AssetCategory, Asset } from '../../types/asset';
-import { assetApi, type AssetRequest as ApiAssetRequest } from '../../api/assetApi';
-import employeeApi from '../../api/employeeApi';
+import type { AssetRequest, Asset, AssetCategory } from '../../types/asset';
+import { assetApi, type AssetRequest as ApiAssetRequest, type PaginatedResponse } from '../../api/assetApi';
 import StatusChip from './StatusChip';
-import ConfirmationDialog from './ConfirmationDialog';
-import { showSuccessToast, showErrorToast } from './NotificationToast';
+import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
+import { assetCategories } from '../../data/assetCategories';
+
+// Normalize status to ensure it matches expected values
+const normalizeRequestStatus = (status: string): 'pending' | 'approved' | 'rejected' | 'cancelled' => {
+  const normalized = status.toLowerCase().trim();
+  switch (normalized) {
+    case 'pending':
+      return 'pending';
+    case 'approved':
+      return 'approved';
+    case 'rejected':
+      return 'rejected';
+    case 'cancelled':
+    case 'canceled':
+      return 'cancelled';
+    default:
+      console.warn('Unknown status received from API:', status, 'normalized to:', normalized);
+      return 'pending'; // Default fallback
+  }
+};
 
 const schema = yup.object({
   action: yup.string().required('Action is required'),
@@ -96,27 +115,24 @@ const RequestManagement: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 25,
+    total: 0,
+    totalPages: 0,
+  });
 
-  // Common asset categories for reference
-  const commonCategories = [
-    'Laptop',
-    'Desktop Computer', 
-    'Monitor',
-    'Printer',
-    'Phone',
-    'Tablet',
-    'Projector',
-    'Camera',
-    'Headset',
-    'Office Furniture'
-  ];
+  // Get all subcategories from comprehensive categories - keeping for future use
+  // const commonCategories = assetCategories.flatMap(cat => cat.subcategories || [cat.name]);
 
   const {
     control,
     handleSubmit,
     reset,
     watch,
-    setValue,
+    // setValue,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
@@ -130,76 +146,127 @@ const RequestManagement: React.FC = () => {
   const selectedAction = watch('action');
   const selectedCategoryId = selectedRequest?.category.id;
 
-  // Helper function to fetch user name by user ID
-  const fetchUserName = async (userId: string): Promise<string> => {
-    try {
-      const profile = await employeeApi.getEmployeeProfile(userId);
-      return profile.name || `User ${userId}`;
-    } catch (error) {
-      console.error(`Failed to fetch user name for ${userId}:`, error);
-      return `User ${userId}`;
-    }
-  };
-
   // Fetch data from API
   React.useEffect(() => {
     const fetchData = async () => {
       try {
         setInitialLoading(true);
         
-        // Fetch asset requests
-        const apiRequests = await assetApi.getAllAssetRequests();
-        
-        // Fetch user names for all unique user IDs
-        const uniqueUserIds = new Set<string>();
-        apiRequests.forEach((req: ApiAssetRequest) => {
-          if (req.requested_by) uniqueUserIds.add(req.requested_by);
-          if (req.approved_by) uniqueUserIds.add(req.approved_by);
+        // Fetch asset requests with pagination
+        const apiResponse: PaginatedResponse<ApiAssetRequest> = await assetApi.getAllAssetRequests({
+          page: pagination.page,
+          limit: pagination.limit,
         });
-
-        // Create a map of userId to userName
-        const userNameMap = new Map<string, string>();
-        await Promise.all(
-          Array.from(uniqueUserIds).map(async (userId) => {
-            const name = await fetchUserName(userId);
-            userNameMap.set(userId, name);
-          })
-        );
-
-        const transformedRequests: AssetRequest[] = apiRequests.map((apiRequest: ApiAssetRequest) => ({
-          id: apiRequest.id,
-          employeeId: apiRequest.requested_by,
-          employeeName: apiRequest.requestedByName || userNameMap.get(apiRequest.requested_by) || `User ${apiRequest.requested_by}`,
-          category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
-          remarks: apiRequest.remarks,
-          status: apiRequest.status,
-          requestedDate: apiRequest.requested_date,
-          processedDate: apiRequest.approved_date,
-          processedBy: apiRequest.approved_by,
-          processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? userNameMap.get(apiRequest.approved_by) || `User ${apiRequest.approved_by}` : undefined),
-          rejectionReason: undefined, // Not provided by API
-          assignedAssetId: undefined, // Not provided by API
-          assignedAssetName: undefined, // Not provided by API
+        
+        // Update pagination info from API response
+        setPagination(prev => ({
+          ...prev,
+          total: apiResponse.total || 0,
+          totalPages: apiResponse.totalPages || 1,
         }));
+
+        const transformedRequests: AssetRequest[] = apiResponse.items.map((apiRequest: ApiAssetRequest) => {
+          // Try to find matching category from our comprehensive list
+          let matchingCategory = assetCategories.find(cat => 
+            cat.name.toLowerCase() === apiRequest.asset_category.toLowerCase() ||
+            cat.subcategories?.some(sub => sub.toLowerCase() === apiRequest.asset_category.toLowerCase())
+          );
+          
+          // If no direct match, try to match subcategory format (e.g., "Mobility / Transport - Fuel Card")
+          if (!matchingCategory && apiRequest.asset_category.includes(' - ')) {
+            const [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+            matchingCategory = assetCategories.find(cat => 
+              cat.name.toLowerCase() === mainCategoryName.toLowerCase() &&
+              cat.subcategories?.some(sub => sub.toLowerCase() === subcategoryName.toLowerCase())
+            );
+          }
+
+          // Parse the original request category to extract main category and subcategory
+          let mainCategoryName = apiRequest.asset_category;
+          let subcategoryName = '';
+          
+          if (apiRequest.asset_category.includes(' - ')) {
+            [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+          }
+
+          return {
+            id: apiRequest.id,
+            employeeId: apiRequest.requested_by,
+            employeeName: apiRequest.requestedByName || `User ${apiRequest.requested_by}`,
+            category: matchingCategory ? {
+              id: matchingCategory.id,
+              name: matchingCategory.name,
+              nameAr: matchingCategory.nameAr,
+              description: matchingCategory.description,
+              color: matchingCategory.color,
+              subcategories: matchingCategory.subcategories,
+              // Add the specific item requested
+              requestedItem: subcategoryName || apiRequest.asset_category
+            } : { 
+              id: apiRequest.asset_category, 
+              name: mainCategoryName, 
+              nameAr: apiRequest.asset_category, 
+              description: '',
+              color: '#757575',
+              requestedItem: subcategoryName || apiRequest.asset_category
+            },
+            remarks: apiRequest.remarks,
+            status: normalizeRequestStatus(apiRequest.status),
+            requestedDate: apiRequest.requested_date,
+            processedDate: apiRequest.approved_date || undefined,
+            processedBy: apiRequest.approved_by || undefined,
+            processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
+            rejectionReason: undefined, // Not provided by API
+            assignedAssetId: undefined, // Not provided by API
+            assignedAssetName: undefined, // Not provided by API
+          };
+        });
         
         setRequests(transformedRequests);
 
         // Fetch assets for assignment
-        const apiAssets = await assetApi.getAllAssets();
-        const transformedAssets: Asset[] = apiAssets.map((apiAsset: any) => ({
-          id: apiAsset.id,
-          name: apiAsset.name,
-          category: { id: apiAsset.category, name: apiAsset.category, nameAr: apiAsset.category, description: '' },
-          status: apiAsset.status,
-          assignedTo: apiAsset.assigned_to,
-          assignedToName: undefined,
-          serialNumber: '',
-          purchaseDate: apiAsset.purchase_date,
-          location: '',
-          description: '',
-          createdAt: apiAsset.created_at,
-          updatedAt: apiAsset.created_at,
-        }));
+        const apiAssetsResponse = await assetApi.getAllAssets();
+        console.log('=== Raw Assets from API ===');
+        console.log('API Response:', apiAssetsResponse);
+        console.log('Assets count:', apiAssetsResponse.assets?.length || 0);
+        console.log('Available assets:', apiAssetsResponse.assets?.filter((a: Record<string, unknown>) => a.status === 'available').map((a: Record<string, unknown>) => ({ id: a.id, name: a.name, category: a.category, status: a.status })));
+        console.log('=== End Raw Assets ===');
+        
+        const transformedAssets: Asset[] = apiAssetsResponse.assets.map((apiAsset: Record<string, unknown>) => {
+          // Try to find matching category from our comprehensive list
+          const matchingCategory = assetCategories.find(cat => 
+            cat.name.toLowerCase() === (apiAsset.category as string).toLowerCase() ||
+            cat.subcategories?.some(sub => sub.toLowerCase() === (apiAsset.category as string).toLowerCase())
+          );
+
+          return {
+            id: apiAsset.id,
+            name: apiAsset.name,
+            category: matchingCategory ? {
+              id: matchingCategory.id,
+              name: matchingCategory.name,
+              nameAr: matchingCategory.nameAr,
+              description: matchingCategory.description,
+              color: matchingCategory.color,
+              subcategories: matchingCategory.subcategories
+            } : { 
+              id: apiAsset.category, 
+              name: apiAsset.category, 
+              nameAr: apiAsset.category, 
+              description: '',
+              color: '#757575'
+            },
+            status: apiAsset.status,
+            assignedTo: apiAsset.assigned_to,
+            assignedToName: undefined,
+            serialNumber: '',
+            purchaseDate: apiAsset.purchase_date,
+            location: '',
+            description: '',
+            createdAt: apiAsset.created_at,
+            updatedAt: apiAsset.created_at,
+          };
+        });
         
         setAssets(transformedAssets);
       } catch (error) {
@@ -211,7 +278,7 @@ const RequestManagement: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [pagination.page, pagination.limit]);
 
   // Filter requests
   const filteredRequests = useMemo(() => {
@@ -228,10 +295,50 @@ const RequestManagement: React.FC = () => {
   // Get available assets for the selected category
   const availableAssets = useMemo(() => {
     if (!selectedCategoryId) return [];
-    return assets.filter(asset => 
-      asset.category.id === selectedCategoryId && asset.status === 'available'
-    );
-  }, [selectedCategoryId, assets]);
+    
+    console.log('=== Available Assets Debug ===');
+    console.log('selectedCategoryId:', selectedCategoryId);
+    console.log('selectedRequest?.category:', selectedRequest?.category);
+    console.log('All assets:', assets);
+    
+    const filtered = assets.filter(asset => {
+      // Check if asset status is available
+      if (asset.status !== 'available') {
+        console.log(`Asset ${asset.name} not available (status: ${asset.status})`);
+        return false;
+      }
+      
+      // Direct ID match
+      if (asset.category.id === selectedCategoryId) {
+        console.log(`Asset ${asset.name} matched by direct ID`);
+        return true;
+      }
+      
+      // Check if the request category name matches the asset category name
+      if (asset.category.name === selectedCategoryId) {
+        console.log(`Asset ${asset.name} matched by category name`);
+        return true;
+      }
+      
+      // Check if the request category is a subcategory of the asset's main category
+      const requestCategoryName = selectedRequest?.category.name || '';
+      if (requestCategoryName.includes(' - ')) {
+        const mainCategoryName = requestCategoryName.split(' - ')[0];
+        if (asset.category.name === mainCategoryName) {
+          console.log(`Asset ${asset.name} matched by subcategory (${mainCategoryName})`);
+          return true;
+        }
+      }
+      
+      console.log(`Asset ${asset.name} did not match any criteria`);
+      return false;
+    });
+    
+    console.log('Filtered available assets:', filtered);
+    console.log('=== End Debug ===');
+    
+    return filtered;
+  }, [selectedCategoryId, assets, selectedRequest]);
 
   // Filter by tab
   const getFilteredRequestsByTab = (statusFilter?: string) => {
@@ -266,55 +373,162 @@ const RequestManagement: React.FC = () => {
     setSelectedRequestId(null);
   };
 
-  const handleProcessSubmit = async (data: any) => {
+  const handleProcessSubmit = async (data: Record<string, unknown>) => {
     if (!selectedRequest) return;
 
     setLoading(true);
     try {
       if (data.action === 'approve') {
-        await assetApi.approveAssetRequest(selectedRequest.id, {
-          asset_id: data.assignedAssetId
+        console.log('=== Approval Debug ===');
+        console.log('Request ID:', selectedRequest.id);
+        console.log('Selected Asset ID:', data.assignedAssetId);
+        console.log('Available Assets:', availableAssets);
+        console.log('Payload being sent:', { asset_id: data.assignedAssetId });
+        console.log('=== End Approval Debug ===');
+        
+        // Validate that we have a valid asset ID
+        if (!data.assignedAssetId) {
+          throw new Error('No asset selected for assignment');
+        }
+        
+        // Check if the selected asset is actually in our available assets list
+        const selectedAsset = availableAssets.find(asset => asset.id === data.assignedAssetId);
+        if (!selectedAsset) {
+          console.error('Selected asset not found in available assets:', {
+            selectedAssetId: data.assignedAssetId,
+            availableAssets: availableAssets.map(a => ({ id: a.id, name: a.name, category: a.category.name, status: a.status }))
+          });
+          throw new Error('Selected asset is not available or not in the correct category');
+        }
+        
+        // Try with just asset_id first
+        const payload = {
+          asset_id: data.assignedAssetId as string
+        };
+        
+        console.log('Trying payload:', payload);
+        console.log('Selected asset details:', {
+          id: selectedAsset.id,
+          name: selectedAsset.name,
+          category: selectedAsset.category.name,
+          status: selectedAsset.status
         });
+        
+        // Try to fetch the asset details from backend to verify it exists and is available
+        try {
+          console.log('Fetching asset details from backend for verification...');
+          console.log('Asset ID to verify:', selectedAsset.id);
+          const assetDetails = await assetApi.getAssetById(selectedAsset.id);
+          console.log('Backend asset details:', assetDetails);
+          
+          if (assetDetails.status !== 'available') {
+            console.error('Asset status mismatch:', {
+              frontendStatus: selectedAsset.status,
+              backendStatus: assetDetails.status
+            });
+            throw new Error(`Asset is not available in backend. Frontend status: ${selectedAsset.status}, Backend status: ${assetDetails.status}`);
+          }
+          
+          console.log('Asset verification successful:', {
+            id: assetDetails.id,
+            name: assetDetails.name,
+            category: assetDetails.category,
+            status: assetDetails.status
+          });
+          
+          if (assetDetails.category !== selectedRequest.category.name && 
+              !assetDetails.category.includes('Mobility') && 
+              !selectedRequest.category.name.includes('Mobility')) {
+            console.warn('Category mismatch detected:', {
+              requestCategory: selectedRequest.category.name,
+              assetCategory: assetDetails.category
+            });
+          }
+        } catch (assetFetchError: unknown) {
+          console.error('Failed to fetch asset details from backend:', assetFetchError);
+          const errorMessage = assetFetchError instanceof Error 
+            ? assetFetchError.message 
+            : 'Unknown error occurred';
+          console.error('Error details:', errorMessage);
+          throw new Error(`Asset ${selectedAsset.id} not found in backend or not accessible: ${errorMessage}`);
+        }
+        
+        await assetApi.approveAssetRequest(selectedRequest.id, payload);
       } else if (data.action === 'reject') {
         await assetApi.rejectAssetRequest(selectedRequest.id);
       }
 
       // Refresh data from API
-      const apiRequests = await assetApi.getAllAssetRequests();
-      
-      // Fetch user names for all unique user IDs
-      const uniqueUserIds = new Set<string>();
-      apiRequests.forEach((req: ApiAssetRequest) => {
-        if (req.requested_by) uniqueUserIds.add(req.requested_by);
-        if (req.approved_by) uniqueUserIds.add(req.approved_by);
+      const apiResponse: PaginatedResponse<ApiAssetRequest> = await assetApi.getAllAssetRequests({
+        page: pagination.page,
+        limit: pagination.limit,
       });
 
-      // Create a map of userId to userName
-      const userNameMap = new Map<string, string>();
-      await Promise.all(
-        Array.from(uniqueUserIds).map(async (userId) => {
-          const name = await fetchUserName(userId);
-          userNameMap.set(userId, name);
-        })
-      );
+      const transformedRequests: AssetRequest[] = apiResponse.items.map((apiRequest: ApiAssetRequest) => {
+        // Try to find matching category from our comprehensive list
+        let matchingCategory = assetCategories.find(cat => 
+          cat.name.toLowerCase() === apiRequest.asset_category.toLowerCase() ||
+          cat.subcategories?.some(sub => sub.toLowerCase() === apiRequest.asset_category.toLowerCase())
+        );
+        
+        // If no direct match, try to match subcategory format (e.g., "Mobility / Transport - Fuel Card")
+        if (!matchingCategory && apiRequest.asset_category.includes(' - ')) {
+          const [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+          matchingCategory = assetCategories.find(cat => 
+            cat.name.toLowerCase() === mainCategoryName.toLowerCase() &&
+            cat.subcategories?.some(sub => sub.toLowerCase() === subcategoryName.toLowerCase())
+          );
+        }
 
-      const transformedRequests: AssetRequest[] = apiRequests.map((apiRequest: ApiAssetRequest) => ({
-        id: apiRequest.id,
-        employeeId: apiRequest.requested_by,
-        employeeName: apiRequest.requestedByName || userNameMap.get(apiRequest.requested_by) || `User ${apiRequest.requested_by}`,
-        category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
-        remarks: apiRequest.remarks,
-        status: apiRequest.status,
-        requestedDate: apiRequest.requested_date,
-        processedDate: apiRequest.approved_date,
-        processedBy: apiRequest.approved_by,
-        processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? userNameMap.get(apiRequest.approved_by) || `User ${apiRequest.approved_by}` : undefined),
-        rejectionReason: undefined,
-        assignedAssetId: undefined,
-        assignedAssetName: undefined,
-      }));
+        // Parse the original request category to extract main category and subcategory
+        let mainCategoryName = apiRequest.asset_category;
+        let subcategoryName = '';
+        
+        if (apiRequest.asset_category.includes(' - ')) {
+          [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+        }
+
+        return {
+          id: apiRequest.id,
+          employeeId: apiRequest.requested_by,
+          employeeName: apiRequest.requestedByName || `User ${apiRequest.requested_by}`,
+          category: matchingCategory ? {
+            id: matchingCategory.id,
+            name: matchingCategory.name,
+            nameAr: matchingCategory.nameAr,
+            description: matchingCategory.description,
+            color: matchingCategory.color,
+            subcategories: matchingCategory.subcategories,
+            // Add the specific item requested
+            requestedItem: subcategoryName || apiRequest.asset_category
+          } : { 
+            id: apiRequest.asset_category, 
+            name: mainCategoryName, 
+            nameAr: apiRequest.asset_category, 
+            description: '',
+            color: '#757575',
+            requestedItem: subcategoryName || apiRequest.asset_category
+          },
+          remarks: apiRequest.remarks,
+          status: normalizeRequestStatus(apiRequest.status),
+          requestedDate: apiRequest.requested_date,
+          processedDate: apiRequest.approved_date || undefined,
+          processedBy: apiRequest.approved_by || undefined,
+          processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
+          rejectionReason: undefined,
+          assignedAssetId: undefined,
+          assignedAssetName: undefined,
+        };
+      });
       
       setRequests(transformedRequests);
+      
+      // Update pagination info from API response
+      setPagination(prev => ({
+        ...prev,
+        total: apiResponse.total || 0,
+        totalPages: apiResponse.totalPages || 1,
+      }));
 
       showSuccessToast(`Request ${data.action}ed successfully`);
       setIsProcessModalOpen(false);
@@ -325,6 +539,10 @@ const RequestManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setPagination(prev => ({ ...prev, page }));
   };
 
   const getStatusCounts = () => {
@@ -341,7 +559,9 @@ const RequestManagement: React.FC = () => {
   if (initialLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <Typography>Loading requests...</Typography>
+        <Stack alignItems="center" py={4}>
+          <CircularProgress />
+        </Stack>
       </Box>
     );
   }
@@ -360,6 +580,11 @@ const RequestManagement: React.FC = () => {
             <Typography variant="caption" color="text.secondary">
               {request.category.name}
             </Typography>
+            {(request.category as AssetCategory & { requestedItem?: string }).requestedItem && (request.category as AssetCategory & { requestedItem?: string }).requestedItem !== request.category.name && (
+              <Typography variant="caption" color="primary.main" sx={{ display: 'block', fontWeight: 500 }}>
+                {`${(request.category as AssetCategory & { requestedItem?: string }).requestedItem}`}
+              </Typography>
+            )}
           </Box>
         </Box>
       </TableCell>
@@ -431,16 +656,10 @@ const RequestManagement: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3,flexWrap: 'wrap', gap: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h4" fontWeight={600}>
           Asset Request Management
         </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<FilterIcon />}
-        >
-          Advanced Filters
-        </Button>
       </Box>
 
       {/* Statistics Cards */}
@@ -607,6 +826,32 @@ const RequestManagement: React.FC = () => {
         </TabPanel>
       </Card>
 
+      {/* Pagination Controls */}
+      {pagination.totalPages > 1 && (
+        <Card sx={{ mt: 2 }}>
+          <CardContent>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 2
+            }}>
+              <Typography variant="body2" color="text.secondary">
+                Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} requests
+              </Typography>
+              <Pagination
+                count={pagination.totalPages}
+                page={pagination.page}
+                onChange={handlePageChange}
+                color="primary"
+                disabled={initialLoading}
+              />
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Process Request Modal */}
       <Dialog
         open={isProcessModalOpen}
@@ -626,6 +871,11 @@ const RequestManagement: React.FC = () => {
           {selectedRequest && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               {selectedRequest.employeeName} - {selectedRequest.category.name}
+              {(selectedRequest.category as AssetCategory & { requestedItem?: string }).requestedItem && (selectedRequest.category as AssetCategory & { requestedItem?: string }).requestedItem !== selectedRequest.category.name && (
+                <span style={{ color: '#1976d2', fontWeight: 500 }}>
+                  {' '}- {(selectedRequest.category as AssetCategory & { requestedItem?: string }).requestedItem}
+                </span>
+              )}
             </Typography>
           )}
         </DialogTitle>

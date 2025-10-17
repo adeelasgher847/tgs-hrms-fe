@@ -89,6 +89,16 @@ const menuItems: MenuItem[] = [
     subItems: [{ label: 'Employee List', path: 'EmployeeManager' }],
   },
   {
+    label: 'Benefits',
+    icon: <Payments />,
+    subItems: [
+      { label: 'Benefit List', path: 'benefits' },
+      { label: 'Assign Benefits', path: 'benefits/assign' },
+      { label: 'Reporting', path: 'benefits/reporting' },
+      { label: 'My Benefits', path: 'my-benefits' },
+    ],
+  },
+  {
     label: 'Teams',
     icon: <Group />,
     subItems: [{ label: 'Team Management', path: 'teams' }],
@@ -167,23 +177,24 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   const [activeSubItem, setActiveSubItem] = useState<string>('');
 
   const filteredMenuItems = useMemo(() => {
-    return menuItems
-      .filter(item =>
-        isMenuVisibleForRole(
-          item.label,
-          typeof role === 'string' ? role : (role as any)?.name
-        )
-      )
+    const userRole = typeof role === 'string' ? role : (role as unknown)?.name;
+    
+    const filtered = menuItems
+      .filter(item => {
+        const isVisible = isMenuVisibleForRole(item.label, userRole);
+        return isVisible;
+      })
       .map(item => ({
         ...item,
-        subItems: item.subItems?.filter(sub =>
-          isSubMenuVisibleForRole(
-            item.label,
-            sub.label,
-            typeof role === 'string' ? role : (role as any)?.name
-          )
-        ),
+        subItems: item.subItems.filter(sub => {
+          const isSubVisible = isSubMenuVisibleForRole(item.label, sub.label, userRole);
+
+          return isSubVisible;
+        }),
+
+
       }));
+    return filtered;
   }, [role]);
 
   useEffect(() => {
@@ -276,20 +287,19 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
             )}
           </Box>
 
-          <Box sx={{ flex: 1 }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               sx={{
                 fontWeight: 700,
                 fontSize: 18,
                 lineHeight: 1.2,
-                wordBreak: 'break-word',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
+              title={companyName || 'Trans Global Services'} 
             >
-              {companyName
-                ? companyName.length > 15
-                  ? companyName.slice(0, 15) + '...'
-                  : companyName
-                : 'Trans Global Services'}
+              {companyName || 'Trans Global Services'}
             </Typography>
           </Box>
         </Box>

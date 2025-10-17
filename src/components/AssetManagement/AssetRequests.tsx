@@ -11,7 +11,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Dialog,
   DialogTitle,
@@ -22,31 +21,28 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Chip,
-  Alert,
   Tabs,
   Tab,
   InputAdornment,
-  Autocomplete,
+  CircularProgress,
+  Stack,
+  Pagination,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Search as SearchIcon,
   Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
   CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon2,
-  Pending as PendingIcon,
-  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { AssetRequest, CreateAssetRequest, AssetCategory } from '../../types/asset';
+import type { AssetRequest, AssetCategory } from '../../types/asset';
 import { assetApi, type AssetRequest as ApiAssetRequest } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
-import { showSuccessToast, showErrorToast } from './NotificationToast';
+import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
+import { assetCategories } from '../../data/assetCategories';
 
 // Get current user from localStorage or auth context
 const getCurrentUserId = () => {
@@ -62,8 +58,28 @@ const getCurrentUserId = () => {
   return '1'; // Default fallback
 };
 
+// Normalize status to ensure it matches expected values
+const normalizeRequestStatus = (status: string): 'pending' | 'approved' | 'rejected' | 'cancelled' => {
+  const normalized = status.toLowerCase().trim();
+  switch (normalized) {
+    case 'pending':
+      return 'pending';
+    case 'approved':
+      return 'approved';
+    case 'rejected':
+      return 'rejected';
+    case 'cancelled':
+    case 'canceled':
+      return 'cancelled';
+    default:
+      console.warn('Unknown status received from API:', status, 'normalized to:', normalized);
+      return 'pending'; // Default fallback
+  }
+};
+
 const schema = yup.object({
   category: yup.string().required('Category is required'),
+  subcategory: yup.string(),
   remarks: yup.string(),
 });
 
@@ -98,21 +114,45 @@ const AssetRequests: React.FC = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [tabValue, setTabValue] = useState(0);
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 25,
+    total: 0,
+    totalPages: 0,
+  });
 
   const {
     control,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       category: '',
+      subcategory: '',
       remarks: '',
     },
   });
+
+  // Watch category changes to update subcategory options
+  const watchedCategory = watch('category');
+  
+  React.useEffect(() => {
+    if (watchedCategory) {
+      setSelectedCategory(watchedCategory);
+      // Reset subcategory when category changes
+      setValue('subcategory', '');
+    } else {
+      setSelectedCategory('');
+    }
+  }, [watchedCategory, setValue]);
 
   // Get current user ID on component mount
   React.useEffect(() => {
@@ -127,57 +167,102 @@ const AssetRequests: React.FC = () => {
     const fetchData = async () => {
       try {
         setInitialLoading(true);
+        // Use getAssetRequestById to get current user's requests with pagination
+        const apiResponse = await assetApi.getAssetRequestById(currentUserId, {
+          page: pagination.page,
+          limit: pagination.limit,
+        });
         
-        // Fetch asset requests
-        const apiRequests = await assetApi.getAllAssetRequests();
-        // Filter requests for current user
-        let requestsToShow = apiRequests.data.filter((request: ApiAssetRequest) => 
-          request.requested_by === currentUserId
-        );
-        
-        // If no user-specific requests found, show all requests for debugging
-        if (requestsToShow.length === 0 && apiRequests.length > 0) {
-          console.log('No user-specific requests found, showing all requests for debugging');
-          requestsToShow = apiRequests;
-        }
-        
-        const transformedRequests: AssetRequest[] = requestsToShow.map((apiRequest: ApiAssetRequest) => ({
-          id: apiRequest.id,
-          employeeId: apiRequest.requested_by,
-          employeeName: `Employee ${apiRequest.requested_by}`,
-          category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
-          remarks: apiRequest.remarks,
-          status: apiRequest.status,
+        // Transform API requests to component format
+        const transformedRequests: AssetRequest[] = (apiResponse.items || []).map((apiRequest: ApiAssetRequest) => {
+          // Debug logging to understand the API response
+          console.log('API Request status:', apiRequest.status, 'for request:', apiRequest.id);
+          
+          // Try to find matching category from our comprehensive list
+          let matchingCategory = assetCategories.find(cat => 
+            cat.name.toLowerCase() === apiRequest.asset_category.toLowerCase() ||
+            cat.subcategories?.some(sub => sub.toLowerCase() === apiRequest.asset_category.toLowerCase())
+          );
+          
+          // If no direct match, try to match subcategory format (e.g., "Mobility / Transport - Fuel Card")
+          if (!matchingCategory && apiRequest.asset_category.includes(' - ')) {
+            const [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+            matchingCategory = assetCategories.find(cat => 
+              cat.name.toLowerCase() === mainCategoryName.toLowerCase() &&
+              cat.subcategories?.some(sub => sub.toLowerCase() === subcategoryName.toLowerCase())
+            );
+          }
+          
+          // Parse the original request category to extract main category and subcategory
+          let mainCategoryName = apiRequest.asset_category;
+          let subcategoryName = '';
+          
+          if (apiRequest.asset_category.includes(' - ')) {
+            [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+          }
+
+          return {
+            id: apiRequest.id,
+            employeeId: apiRequest.requested_by,
+            employeeName: apiRequest.requestedByName || 
+              (apiRequest.requestedByUser ? 
+                apiRequest.requestedByUser.name : 
+                `User ${apiRequest.requested_by}`),
+            category: matchingCategory ? {
+              id: matchingCategory.id,
+              name: matchingCategory.name,
+              nameAr: matchingCategory.nameAr,
+              description: matchingCategory.description,
+              color: matchingCategory.color,
+              subcategories: matchingCategory.subcategories,
+              // Add the specific item requested
+              requestedItem: subcategoryName || apiRequest.asset_category
+            } : { 
+              id: apiRequest.asset_category, 
+              name: mainCategoryName, 
+              nameAr: apiRequest.asset_category, 
+              description: '',
+              color: '#757575',
+              requestedItem: subcategoryName || apiRequest.asset_category
+            },
+            remarks: apiRequest.remarks,
+            status: normalizeRequestStatus(apiRequest.status),
           requestedDate: apiRequest.requested_date,
-          processedDate: apiRequest.approved_date,
-          processedBy: apiRequest.approved_by,
-          processedByName: apiRequest.approved_by ? `Admin ${apiRequest.approved_by}` : undefined,
+          processedDate: apiRequest.approved_date || undefined,
+          processedBy: apiRequest.approved_by || undefined,
+          processedByName: apiRequest.approvedByName || 
+            (apiRequest.approvedByUser ? 
+              apiRequest.approvedByUser.name : 
+              apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
           rejectionReason: undefined,
           assignedAssetId: undefined,
           assignedAssetName: undefined,
-        }));
+          };
+        });
         
         setRequests(transformedRequests);
+        
+        // Update pagination info from API response
+        setPagination(prev => ({
+          ...prev,
+          total: apiResponse.total || 0,
+          totalPages: apiResponse.totalPages || 1,
+        }));
 
-        // Fetch available assets to get unique categories
-        const apiAssets = await assetApi.getAllAssets();
-        const uniqueCategories = [...new Set(apiAssets.map((asset: any) => asset.category))] as string[];
-        setAvailableCategories(uniqueCategories);
         
       } catch (error) {
         console.error('Failed to fetch data:', error);
-     
       } finally {
         setInitialLoading(false);
       }
     };
 
     fetchData();
-  }, [currentUserId]);
+  }, [currentUserId, pagination.page, pagination.limit]);
 
-  // Filter requests for current user
+  // Since we're now fetching only current user's requests, we can use requests directly
   const userRequests = useMemo(() => {
-    return requests.filter(request => request.employeeId === currentUserId);
+    return requests; // All requests are already filtered for current user
   }, [requests]);
 
   // Filter by search term
@@ -197,11 +282,16 @@ const AssetRequests: React.FC = () => {
     return filteredRequests.filter(request => request.status === statusFilter);
   };
 
-  const handleSubmitRequest = async (data: { category: string; remarks?: string }) => {
+  const handleSubmitRequest = async (data: { category: string; subcategory?: string; remarks?: string }) => {
     setLoading(true);
     try {
+      // Combine category and subcategory if subcategory is selected
+      const categoryName = data.subcategory && data.subcategory.trim() 
+        ? `${data.category} - ${data.subcategory}` 
+        : data.category;
+        
       const requestData = {
-        assetCategory: data.category,
+        assetCategory: categoryName,
         remarks: data.remarks || '',
       };
 
@@ -226,12 +316,16 @@ const AssetRequests: React.FC = () => {
 
       setRequests(prev => [newRequest, ...prev]);
       
+      // Show success toast
+      showSuccessToast(`Asset request for "${categoryName}" has been submitted successfully`);
+      
       setIsRequestModalOpen(false);
+      setSelectedCategory('');
       reset();
-      showSuccessToast('Asset request submitted successfully');
     } catch (error) {
       console.error('Failed to submit request:', error);
-      showErrorToast('Failed to submit request');
+      // Show error toast
+      showErrorToast('Failed to submit asset request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -242,68 +336,15 @@ const AssetRequests: React.FC = () => {
     setIsCancelDialogOpen(true);
   };
 
-  const handleOpenRequestModal = async () => {
+  const handleOpenRequestModal = () => {
+    setSelectedCategory('');
     setIsRequestModalOpen(true);
-    // Refresh available categories when opening the modal
-    try {
-      const apiAssets = await assetApi.getAllAssets();
-      const uniqueCategories = [...new Set(apiAssets.map((asset: any) => asset.category))] as string[];
-      setAvailableCategories(uniqueCategories);
-    } catch (error) {
-      console.error('Failed to fetch categories:', error);
-    }
   };
 
-  const handleRefreshData = async () => {
-    if (!currentUserId) return;
-    
-    setInitialLoading(true);
-    try {
-      
-      // Fetch asset requests
-      const apiRequests = await assetApi.getAllAssetRequests();
-      
-      // Filter requests for current user
-      let requestsToShow = apiRequests.filter((request: ApiAssetRequest) => 
-        request.requested_by === currentUserId
-      );
-      
-      // If no user-specific requests found, show all requests for debugging
-      if (requestsToShow.length === 0 && apiRequests.length > 0) {
-        console.log('No user-specific requests found, showing all requests for debugging');
-        requestsToShow = apiRequests;
-      }
-      
-      const transformedRequests: AssetRequest[] = requestsToShow.map((apiRequest: ApiAssetRequest) => ({
-        id: apiRequest.id,
-        employeeId: apiRequest.requested_by,
-        employeeName: `Employee ${apiRequest.requested_by}`,
-        category: { id: apiRequest.asset_category, name: apiRequest.asset_category, nameAr: apiRequest.asset_category, description: '' },
-        remarks: apiRequest.remarks,
-        status: apiRequest.status,
-        requestedDate: apiRequest.requested_date,
-        processedDate: apiRequest.approved_date,
-        processedBy: apiRequest.approved_by,
-        processedByName: apiRequest.approved_by ? `Admin ${apiRequest.approved_by}` : undefined,
-        rejectionReason: undefined,
-        assignedAssetId: undefined,
-        assignedAssetName: undefined,
-      }));
-      
-      setRequests(transformedRequests);
+  // Removed unused handleRefreshData function - keeping for future use
 
-      // Fetch available assets to get unique categories
-      const apiAssets = await assetApi.getAllAssets();
-      const uniqueCategories = [...new Set(apiAssets.map((asset: any) => asset.category))] as string[];
-      setAvailableCategories(uniqueCategories);
-      
-      showSuccessToast('Data refreshed successfully');
-    } catch (error) {
-      console.error('Failed to refresh data:', error);
-      showErrorToast('Failed to refresh data');
-    } finally {
-      setInitialLoading(false);
-    }
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setPagination(prev => ({ ...prev, page }));
   };
 
   const handleConfirmCancel = async () => {
@@ -318,12 +359,15 @@ const AssetRequests: React.FC = () => {
       const updatedRequests = requests.filter(request => request.id !== requestToCancel.id);
       setRequests(updatedRequests);
 
-      showSuccessToast('Request deleted successfully');
+      // Show success toast
+      showSuccessToast(`Asset request for "${requestToCancel.category.name}" has been deleted successfully`);
+
       setIsCancelDialogOpen(false);
       setRequestToCancel(null);
     } catch (error) {
       console.error('Failed to delete request:', error);
-      showErrorToast('Failed to delete request');
+      // Show error toast
+      showErrorToast('Failed to delete asset request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -343,7 +387,9 @@ const AssetRequests: React.FC = () => {
   if (initialLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <Typography>Loading requests...</Typography>
+        <Stack alignItems="center" py={4}>
+          <CircularProgress />
+        </Stack>
       </Box>
     );
   }
@@ -355,6 +401,11 @@ const AssetRequests: React.FC = () => {
           <Typography variant="body2" fontWeight={500}>
             {request.category.name}
           </Typography>
+          {(request.category as AssetCategory & { requestedItem?: string }).requestedItem && (request.category as AssetCategory & { requestedItem?: string }).requestedItem !== request.category.name && (
+            <Typography variant="caption" color="primary.main" sx={{ display: 'block', fontWeight: 500 }}>
+              {`${(request.category as AssetCategory & { requestedItem?: string }).requestedItem}`}
+            </Typography>
+          )}
           {request.remarks && (
             <Typography variant="caption" color="text.secondary">
               {request.remarks}
@@ -395,28 +446,20 @@ const AssetRequests: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 ,flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h4" fontWeight={600}>
-          My Asset Requests
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={handleRefreshData}
-            disabled={initialLoading}
-          >
-            Refresh
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenRequestModal}
-          >
-            Request Asset
-          </Button>
-        </Box>
-      </Box>
+       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 ,flexWrap: 'wrap', gap: 1 }}>
+         <Typography variant="h4" fontWeight={600}>
+           My Asset Requests
+         </Typography>
+         <Box sx={{ display: 'flex', gap: 1 }}>
+           <Button
+             variant="contained"
+             startIcon={<AddIcon />}
+             onClick={handleOpenRequestModal}
+           >
+             Request Asset
+           </Button>
+         </Box>
+       </Box>
 
       {/* Statistics Cards */}
       <Box  sx={{ mb: 3 ,display: 'flex', gap: 1,flexWrap: 'wrap'}}>
@@ -577,6 +620,32 @@ const AssetRequests: React.FC = () => {
         </TabPanel>
       </Card>
 
+      {/* Pagination Controls */}
+      {pagination.totalPages > 1 && (
+        <Card sx={{ mt: 2 }}>
+          <CardContent>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 2
+            }}>
+              <Typography variant="body2" color="text.secondary">
+                Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} requests
+              </Typography>
+              <Pagination
+                count={pagination.totalPages}
+                page={pagination.page}
+                onChange={handlePageChange}
+                color="primary"
+                disabled={initialLoading}
+              />
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Request Asset Modal */}
       <Dialog
         open={isRequestModalOpen}
@@ -604,32 +673,88 @@ const AssetRequests: React.FC = () => {
                     name="category"
                     control={control}
                     render={({ field }) => (
-                      <Autocomplete
-                        {...field}
-                        freeSolo
-                        options={availableCategories}
-                        value={field.value || ''}
-                        onChange={(event, newValue) => {
-                          field.onChange(newValue || '');
-                        }}
-                        onInputChange={(event, newInputValue) => {
-                          field.onChange(newInputValue);
-                        }}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            label="Asset Category"
-                            placeholder="Enter or select from available categories"
-                            error={!!errors.category}
-                            helperText={errors.category?.message || (availableCategories.length > 0 ? `Available categories: ${availableCategories.join(', ')}` : 'No categories available yet. You can still enter a custom category.')}
-                            disabled={loading}
-                          />
+                      <FormControl fullWidth error={!!errors.category}>
+                        <InputLabel>Asset Category</InputLabel>
+                        <Select
+                          {...field}
+                          label="Asset Category"
+                          disabled={loading}
+                          MenuProps={{
+                            PaperProps: {
+                              style: {
+                                maxHeight: 300,
+                              },
+                            },
+                          }}
+                        >
+                          {assetCategories.map((category) => (
+                            <MenuItem key={category.id} value={category.name}>
+                              <Box>
+                                <Typography variant="body1" fontWeight={500}>
+                                  {category.name}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {category.description}
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        {errors.category && (
+                          <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                            {errors.category.message}
+                          </Typography>
                         )}
-                      />
+                        {!errors.category && (
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1.75 }}>
+                            Select the asset category you need
+                          </Typography>
+                        )}
+                      </FormControl>
                     )}
                   />
                 </Box>
+
+                {/* Subcategory selection - only show if a category with subcategories is selected */}
+                {selectedCategory && assetCategories.find(cat => cat.name === selectedCategory)?.subcategories && (
+                  <Box>
+                    <Controller
+                      name="subcategory"
+                      control={control}
+                      render={({ field }) => (
+                        <FormControl fullWidth>
+                          <InputLabel>Specific Item (Optional)</InputLabel>
+                          <Select
+                            {...field}
+                            label="Specific Item (Optional)"
+                            disabled={loading}
+                            MenuProps={{
+                              PaperProps: {
+                                style: {
+                                  maxHeight: 300,
+                                },
+                              },
+                            }}
+                          >
+                            <MenuItem value="">
+                              <em>None - General Request</em>
+                            </MenuItem>
+                            {assetCategories
+                              .find(cat => cat.name === selectedCategory)
+                              ?.subcategories?.map((subcategory) => (
+                                <MenuItem key={subcategory} value={subcategory}>
+                                  {subcategory}
+                                </MenuItem>
+                              ))}
+                          </Select>
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1.75 }}>
+                            Optionally specify the exact item you need
+                          </Typography>
+                        </FormControl>
+                      )}
+                    />
+                  </Box>
+                )}
 
                 <Box>
                   <Controller

@@ -12,11 +12,12 @@ interface ProfilePictureContextType {
   clearProfilePicture: () => void;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const ProfilePictureContext = createContext<
   ProfilePictureContextType | undefined
 >(undefined);
 
-export const ProfilePictureProvider: React.FC<{ children: ReactNode }> = ({
+const ProfilePictureProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
@@ -47,7 +48,11 @@ export const ProfilePictureProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
+// Export provider separately
+export { ProfilePictureProvider };
+
 // Custom hook to use the profile picture context
+// eslint-disable-next-line react-refresh/only-export-components
 export const useProfilePicture = (): ProfilePictureContextType => {
   const context = React.useContext(ProfilePictureContext);
   if (!context) {
@@ -57,3 +62,6 @@ export const useProfilePicture = (): ProfilePictureContextType => {
   }
   return context;
 };
+
+// Export hook separately
+// export { useProfilePicture };

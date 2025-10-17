@@ -21,6 +21,9 @@ export interface AssetCategory {
   name: string;
   nameAr: string;
   description?: string;
+  color?: string;
+  subcategories?: string[];
+  requestedItem?: string; // Specific item requested (subcategory)
 }
 
 export type AssetStatus = 'available' | 'assigned' | 'under_maintenance' | 'retired';
@@ -50,7 +53,7 @@ export interface CreateAssetRequest {
 
 export interface UpdateAssetRequest {
   name: string;
-  categoryId: string;
+  category: string;
   serialNumber: string;
   purchaseDate: string;
   warrantyExpiry?: string;

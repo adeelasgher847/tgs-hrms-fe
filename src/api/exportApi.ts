@@ -1,6 +1,7 @@
 import axiosInstance from './axiosInstance';
 
-export const exportCSV = async (endpoint: string, filename: string, token?: string, params?: Record<string, any>) => {
+// Line 3 - Replace any with proper types
+export const exportCSV = async (endpoint: string, filename: string, token?: string, params?: Record<string, string | number>) => {
   try {
     const response = await axiosInstance.get(endpoint, {
       params,

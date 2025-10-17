@@ -127,7 +127,7 @@ const Login: React.FC = () => {
     }
     try {
       if (!googleInitializedRef.current) {
-        (window as any).google.accounts.id.initialize({
+        (window as Record<string, unknown>).google.accounts.id.initialize({
           client_id:
             (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) ||
             '723870948758-ks4h9v6svagoptgt5vqj5hfbhacvcfn7.apps.googleusercontent.com',
@@ -148,7 +148,9 @@ const Login: React.FC = () => {
                 );
                 try {
                   updateUser(data.user);
-                } catch {}
+                } catch {
+                  // Ignore update error
+                }
                 const role =
                   typeof data.user?.role === 'string'
                     ? data.user?.role
@@ -184,7 +186,7 @@ const Login: React.FC = () => {
         if (googleBtnRef.current) {
           googleBtnRef.current.innerHTML = '';
         }
-        (window as any).google.accounts.id.renderButton(googleBtnRef.current, {
+        (window as Record<string, unknown>).google.accounts.id.renderButton(googleBtnRef.current, {
           theme: 'outline',
           size: 'large',
         });

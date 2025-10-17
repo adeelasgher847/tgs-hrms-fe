@@ -1,11 +1,12 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, type ReactNode } from 'react';
 import type { LanguageContextType } from '../types/context';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const LanguageContext = createContext<LanguageContextType | undefined>(
   undefined
 );
 
-export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
+const LanguageProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [language, setLanguage] = useState<'en' | 'ar'>('en');
@@ -16,3 +17,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
     </LanguageContext.Provider>
   );
 };
+
+// Export provider separately
+export { LanguageProvider };

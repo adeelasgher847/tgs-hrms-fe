@@ -31,7 +31,6 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
   onClose,
   onSubmit,
   team,
-  darkMode = false,
 }) => {
   const [formData, setFormData] = useState<UpdateTeamDto>({
     name: '',
