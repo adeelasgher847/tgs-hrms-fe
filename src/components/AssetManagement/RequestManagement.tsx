@@ -50,7 +50,7 @@ import type { AssetRequest, Asset, AssetCategory } from '../../types/asset';
 import { assetApi, type AssetRequest as ApiAssetRequest, type PaginatedResponse } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
-import { assetCategories } from '../../data/assetCategories';
+import { assetCategories } from '../../data/assetCategories.ts';
 
 // Normalize status to ensure it matches expected values
 const normalizeRequestStatus = (status: string): 'pending' | 'approved' | 'rejected' | 'cancelled' => {
