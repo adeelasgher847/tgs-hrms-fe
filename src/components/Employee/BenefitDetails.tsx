@@ -15,10 +15,9 @@ import {
   Button,
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import BenefitCard from '../Benefits/BenefitCard';
 import employeeBenefitApi from '../../api/employeeBenefitApi';
-import { useUser } from '../../hooks/useUser'; // Assuming hook for current user
+import { useUser } from '../../hooks/useUser';
+import BenefitCard from '../Benefits/BenefitCard';
 
 const BenefitDetails: React.FC = () => {
   const [benefits, setBenefits] = useState<any[]>([]);
@@ -38,17 +37,23 @@ const BenefitDetails: React.FC = () => {
     fetchBenefits();
   }, [user]);
 
+  const formatDate = (date: string) =>
+    date ? new Date(date).toLocaleDateString() : '-';
+
   return (
     <Box>
       <Typography variant='h4' gutterBottom>
         My Benefits
       </Typography>
 
-      <Paper sx={{ mt: 2 }}>
+      <Paper sx={{ mt: 2, overflowX: 'auto' }}>
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>Benefit Name</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell>Eligibility</TableCell>
               <TableCell>Start Date</TableCell>
               <TableCell>End Date</TableCell>
               <TableCell>Status</TableCell>
@@ -60,9 +65,12 @@ const BenefitDetails: React.FC = () => {
             {benefits.length > 0 ? (
               benefits.map(b => (
                 <TableRow key={b.id}>
-                  <TableCell>{b.benefitName}</TableCell>
-                  <TableCell>{b.startDate}</TableCell>
-                  <TableCell>{b.endDate}</TableCell>
+                  <TableCell>{b.benefit?.name || '-'}</TableCell>
+                  <TableCell>{b.benefit?.type || '-'}</TableCell>
+                  <TableCell>{b.benefit?.description || '-'}</TableCell>
+                  <TableCell>{b.benefit?.eligibilityCriteria || '-'}</TableCell>
+                  <TableCell>{formatDate(b.startDate)}</TableCell>
+                  <TableCell>{formatDate(b.endDate)}</TableCell>
                   <TableCell>
                     <Chip
                       label={b.status}
@@ -84,7 +92,7 @@ const BenefitDetails: React.FC = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} align='center'>
+                <TableCell colSpan={8} align='center'>
                   No assigned benefits found.
                 </TableCell>
               </TableRow>
@@ -93,15 +101,26 @@ const BenefitDetails: React.FC = () => {
         </Table>
       </Paper>
 
-      <Dialog open={!!selectedBenefit} onClose={() => setSelectedBenefit(null)}>
+      <Dialog
+        open={!!selectedBenefit}
+        onClose={() => setSelectedBenefit(null)}
+        fullWidth
+        maxWidth='sm'
+      >
         {selectedBenefit && (
-          <BenefitCard
-            name={selectedBenefit.benefitName}
-            type={selectedBenefit.type}
-            eligibility={selectedBenefit.eligibility}
-            description={selectedBenefit.description}
-            startDate={selectedBenefit.startDate}
-          />
+          <Box p={3}>
+            <BenefitCard
+              name={selectedBenefit.benefit?.name}
+              type={selectedBenefit.benefit?.type}
+              eligibility={selectedBenefit.benefit?.eligibilityCriteria}
+              description={selectedBenefit.benefit?.description}
+              startDate={formatDate(selectedBenefit.startDate)}
+              endDate={formatDate(selectedBenefit.endDate)}
+            />
+            <Box textAlign='right' mt={2}>
+              <Button onClick={() => setSelectedBenefit(null)}>Close</Button>
+            </Box>
+          </Box>
         )}
       </Dialog>
     </Box>

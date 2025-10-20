@@ -87,18 +87,17 @@ const AssignEmployeeBenefit: React.FC<{
     const fetchData = async () => {
       try {
         setFetching(true);
-        const [empResp, benResp] = await Promise.all([
-          employeeApi.getAllEmployees(),
+        const [employeesData, benResp] = await Promise.all([
+          employeeApi.getAllEmployeesWithoutPagination(),
           benefitsApi.getBenefits(1),
         ]);
 
-        const normalizedEmployees =
-          empResp.items?.map((emp: any) => ({
-            id: emp.id,
-            firstName: emp.firstName,
-            lastName: emp.lastName,
-            name: emp.name || `${emp.firstName} ${emp.lastName}`,
-          })) || [];
+        const normalizedEmployees = employeesData.map(emp => ({
+          id: emp.id,
+          firstName: emp.firstName,
+          lastName: emp.lastName,
+          name: emp.name || `${emp.firstName} ${emp.lastName}`,
+        }));
 
         const allBenefits: Benefit[] = Array.isArray(benResp)
           ? benResp
@@ -161,13 +160,31 @@ const AssignEmployeeBenefit: React.FC<{
           <form onSubmit={handleSubmit(handleFormSubmit)}>
             <DialogContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {/* Employee Dropdown */}
                 <Controller
                   name='employeeId'
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.employeeId}>
                       <InputLabel>Select Employee</InputLabel>
-                      <Select {...field} label='Select Employee'>
+                      <Select
+                        {...field}
+                        label='Select Employee'
+                        MenuProps={{
+                          PaperProps: {
+                            style: {
+                              maxHeight: 300,
+                              overflowY: 'auto',
+                              marginTop: 8,
+                            },
+                          },
+                        }}
+                        sx={{
+                          '& .MuiSelect-select': {
+                            py: 1.2,
+                          },
+                        }}
+                      >
                         {employees.map(emp => (
                           <MenuItem key={emp.id} value={emp.id}>
                             {emp.name || `${emp.firstName} ${emp.lastName}`}
@@ -183,6 +200,7 @@ const AssignEmployeeBenefit: React.FC<{
                   )}
                 />
 
+                {/* Benefits Dropdown */}
                 <Controller
                   name='benefitIds'
                   control={control}
@@ -193,12 +211,26 @@ const AssignEmployeeBenefit: React.FC<{
                         {...field}
                         multiple
                         label='Select Benefits'
+                        MenuProps={{
+                          PaperProps: {
+                            style: {
+                              maxHeight: 300,
+                              overflowY: 'auto',
+                              marginTop: 8,
+                            },
+                          },
+                        }}
                         renderValue={selected =>
                           benefits
                             .filter(b => selected.includes(b.id))
                             .map(b => b.name)
                             .join(', ')
                         }
+                        sx={{
+                          '& .MuiSelect-select': {
+                            py: 1.2,
+                          },
+                        }}
                       >
                         {benefits.map(b => (
                           <MenuItem key={b.id} value={b.id}>
@@ -229,6 +261,7 @@ const AssignEmployeeBenefit: React.FC<{
                       InputLabelProps={{ shrink: true }}
                       error={!!errors.startDate}
                       helperText={errors.startDate?.message}
+                      sx={{ mt: 1 }}
                     />
                   )}
                 />
@@ -246,13 +279,14 @@ const AssignEmployeeBenefit: React.FC<{
                       InputLabelProps={{ shrink: true }}
                       error={!!errors.endDate}
                       helperText={errors.endDate?.message}
+                      sx={{ mt: 1 }}
                     />
                   )}
                 />
               </Box>
             </DialogContent>
 
-            <DialogActions>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
               <Button onClick={onClose} variant='outlined'>
                 Cancel
               </Button>

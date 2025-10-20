@@ -159,7 +159,8 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
   const department = designation?.department;
   const roleId =
     (data.role_id as string) || (user && (user as any).role_id) || '';
-  const roleName = (data.role_name as string) || (user && (user as any).role_name) || '';
+  const roleName =
+    (data.role_name as string) || (user && (user as any).role_name) || '';
 
   // If the data looks like a designation (has title), create a mock employee structure
   if (data.title && !data.user) {
@@ -174,7 +175,7 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
       designationId: (data.id as string) || '',
       status: data.invite_status as string,
       role_id: roleId,
-      role_name: roleName, 
+      role_name: roleName,
       department: null, // Will be populated by department mapping
       designation: {
         id: data.id as string,
@@ -294,7 +295,7 @@ class EmployeeApiService {
       const url = `${this.baseUrl}?${params.toString()}`;
 
       const response = await axiosInstance.get(url);
-      console.log("Response of employee:", response);
+      console.log('Response of employee:', response);
       // Handle the new backend structure
       if (
         response.data &&
@@ -361,6 +362,30 @@ class EmployeeApiService {
         limit: 25,
         totalPages: 1,
       };
+    }
+  }
+
+  async getAllEmployeesWithoutPagination(): Promise<BackendEmployee[]> {
+    try {
+      let allEmployees: BackendEmployee[] = [];
+      let currentPage = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await this.getAllEmployees({}, currentPage);
+        allEmployees = [...allEmployees, ...response.items];
+
+        if (currentPage >= response.totalPages) {
+          hasMore = false;
+        } else {
+          currentPage++;
+        }
+      }
+
+      return allEmployees;
+    } catch (error) {
+      console.error('Error fetching all employees:', error);
+      return [];
     }
   }
 
