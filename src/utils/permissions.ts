@@ -167,7 +167,7 @@ export const isSubMenuVisibleForRole = (
   // HR-admin: hide Attendance -> Reports and Leave Request
   if (r === 'hr-admin') {
     if (parent.includes('attendance')) {
-      if (sub.includes('reports') || sub.includes('leave request')) {
+      if (sub.includes('reports')) {
         visible = false;
       }
     }
@@ -367,6 +367,7 @@ export const isDashboardPathAllowedForRole = (
       'benefits/reporting',
       'my-benefits',
       'teams',
+      'leaves',
     ]),
     admin: new Set([
       '',

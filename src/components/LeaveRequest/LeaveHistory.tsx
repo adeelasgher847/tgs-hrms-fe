@@ -19,27 +19,16 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import UndoIcon from '@mui/icons-material/Undo';
 import type { Leave } from '../../type/levetypes';
 
-const typeColor: Record<
-  string,
-  'success' | 'error' | 'info' | 'warning' | 'default'
-> = {
-  Vacation: 'success',
-  Emergency: 'error',
-  Sick: 'info',
-  Casual: 'warning',
-  Other: 'default',
-};
-
 const statusConfig: Record<
   string,
   {
     color: 'success' | 'error' | 'warning' | 'default';
-    icon: React.ReactElement;
+    icon: React.ReactElement | null;
   }
 > = {
   pending: {
     color: 'warning',
-    // icon: <AccessTimeIcon fontSize='small' sx={{ mr: 0.5 }} />,
+    icon: <AccessTimeIcon fontSize='small' sx={{ mr: 0.5 }} />,
   },
   approved: {
     color: 'success',
@@ -55,16 +44,27 @@ const statusConfig: Record<
   },
 };
 
+const formatDate = (dateString?: string) => {
+  if (!dateString) return 'N/A';
+  try {
+    return new Date(dateString).toISOString().split('T')[0];
+  } catch {
+    return 'N/A';
+  }
+};
+
 const LeaveHistory = ({
   leaves,
   isAdmin,
+  isManager = false,
   onAction,
   onWithdraw,
-  title = 'My Leaves',
+  title = 'Leave History',
   showNames = false,
 }: {
   leaves: Leave[];
   isAdmin: boolean;
+  isManager?: boolean;
   onAction: (id: string, action: 'approved' | 'rejected') => void;
   onWithdraw?: (id: string) => void;
   title?: string;
@@ -72,23 +72,26 @@ const LeaveHistory = ({
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
 
-  // Filtered leaves list
   const filteredLeaves = useMemo(() => {
     if (!selectedEmployee) return leaves;
-    return leaves.filter(leave => leave.name === selectedEmployee);
+    return leaves.filter(
+      leave =>
+        leave.employee?.first_name === selectedEmployee ||
+        leave.name === selectedEmployee
+    );
   }, [selectedEmployee, leaves]);
 
   if (!Array.isArray(leaves)) {
     return (
       <Box>
-        <Typography>Error: Invalid leaves data</Typography>
+        <Typography color='error'>Error: Invalid leaves data</Typography>
       </Box>
     );
   }
 
   return (
     <Box>
-      {/* Title + Dropdown filter */}
+      {/* Header Row */}
       <Box
         sx={{
           display: 'flex',
@@ -104,8 +107,7 @@ const LeaveHistory = ({
           </Typography>
         </Box>
 
-        {/* Show dropdown only for Admin */}
-        {isAdmin && (
+        {(isAdmin || isManager) && (
           <TextField
             select
             size='small'
@@ -114,24 +116,22 @@ const LeaveHistory = ({
             sx={{ minWidth: 200 }}
             SelectProps={{
               displayEmpty: true,
-              renderValue: value => {
-                if (value === '') {
-                  return 'All Employee';
-                }
-                return value;
-              },
+              renderValue: value => (value === '' ? 'All Employees' : value),
             }}
           >
-            <MenuItem value=''>All Employee</MenuItem>
-            {[...new Set(leaves.map(l => l.name))].map(name => (
-              <MenuItem key={name} value={name}>
-                {name}
-              </MenuItem>
-            ))}
+            <MenuItem value=''>All Employees</MenuItem>
+            {[...new Set(leaves.map(l => l.employee?.first_name || l.name))]
+              .filter(Boolean)
+              .map(name => (
+                <MenuItem key={name} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
           </TextField>
         )}
       </Box>
 
+      {/* Table */}
       {filteredLeaves.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant='h6' color='textSecondary' gutterBottom>
@@ -140,122 +140,113 @@ const LeaveHistory = ({
           <Typography variant='body2' color='textSecondary'>
             {title === 'My Leaves'
               ? "You haven't applied for any leaves yet."
-              : 'No leave requests found.'}
+              : 'No leave requests available.'}
           </Typography>
         </Box>
       ) : (
-        <TableContainer
-          component={Paper}
-          elevation={0}
-          sx={{ borderRadius: 0 }}
-        >
+        <TableContainer component={Paper} elevation={1}>
           <Table>
             <TableHead>
               <TableRow>
-                {(isAdmin || showNames) && <TableCell>Name</TableCell>}
+                {(isAdmin || isManager || showNames) && (
+                  <TableCell>Name</TableCell>
+                )}
                 <TableCell>Type</TableCell>
                 <TableCell>From</TableCell>
                 <TableCell>To</TableCell>
                 <TableCell>Applied</TableCell>
-                <TableCell>Status</TableCell>
                 <TableCell>Reason</TableCell>
-                {isAdmin && <TableCell>Actions</TableCell>}
-                {!isAdmin && onWithdraw && <TableCell>Actions</TableCell>}
+                <TableCell>Status</TableCell>
+                <TableCell>Actions / Remarks</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredLeaves.map((leave, _index) => {
-                if (!leave || typeof leave !== 'object') {
-                  return null;
-                }
-
-                return (
-                  <TableRow key={leave.id || _index}>
-                    {(isAdmin || showNames) && (
-                      <TableCell>{leave.name || 'N/A'}</TableCell>
-                    )}
+              {filteredLeaves.map((leave, index) => (
+                <TableRow key={leave.id || index}>
+                  {(isAdmin || isManager || showNames) && (
                     <TableCell>
-                      <Chip
-                        label={leave.type || 'Unknown'}
-                        color={typeColor[leave.type] || 'default'}
-                        sx={{
-                          fontSize: 15,
-                          px: 1,
-                          py: 1,
-                          width: '100%',
-                        }}
-                      />
+                      {leave.employee?.first_name || leave.name || 'N/A'}
                     </TableCell>
-                    <TableCell>{leave.fromDate || 'N/A'}</TableCell>
-                    <TableCell>{leave.toDate || 'N/A'}</TableCell>
-                    <TableCell>{leave.applied || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Chip
+                  )}
+
+                  <TableCell>
+                    {leave.leaveType?.name || leave.type || 'Unknown'}
+                  </TableCell>
+
+                  <TableCell>{formatDate(leave.startDate)}</TableCell>
+                  <TableCell>{formatDate(leave.endDate)}</TableCell>
+                  <TableCell>{formatDate(leave.createdAt)}</TableCell>
+
+                  <TableCell>
+                    <Typography sx={{ fontSize: 14 }}>
+                      {leave.reason || 'N/A'}
+                    </Typography>
+                  </TableCell>
+
+                  <TableCell>
+                    <Chip
                       icon={statusConfig[leave.status]?.icon}
-                        label={
-    leave.status
-      ? leave.status.charAt(0).toUpperCase() + leave.status.slice(1)
-      : 'Unknown'
-  }
-  color={statusConfig[leave.status]?.color}
-  sx={{
-    fontSize: 15,
-    px: 1,
-    py: 1,
-    width: '100%',
-  }}
-/>
+                      label={
+                        leave.status
+                          ? leave.status.charAt(0).toUpperCase() +
+                            leave.status.slice(1)
+                          : 'Unknown'
+                      }
+                      color={statusConfig[leave.status]?.color}
+                      sx={{ fontSize: 15, width: '100%' }}
+                    />
+                  </TableCell>
 
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: 14 }}>{leave.reason || 'N/A'}</Typography>
-                      {leave.status === 'rejected' && leave.secondaryReason && (
+                  <TableCell>
+                    <Box
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
+                    >
+                      {leave.status === 'rejected' && leave.remarks && (
                         <Typography
                           variant='body2'
-                          color='error'
-                          sx={{ mt: 0.5, fontSize: 14 }}
+                          // color='error'
+                          sx={{
+                            mt: 0.5,
+                            fontSize: 13,
+                            // fontStyle: 'italic',
+                            // backgroundColor: '#ffe6e6',
+                            p: 0.5,
+                            borderRadius: 1,
+                          }}
                         >
-                          {leave.secondaryReason}
+                          {leave.remarks}
                         </Typography>
                       )}
-                    </TableCell>
-                    {isAdmin && leave.status === 'pending' && (
-                      <TableCell>
+
+                      {(isAdmin || isManager) && leave.status === 'pending' && (
                         <Box sx={{ display: 'flex', gap: 1 }}>
                           <Chip
                             label='Approve'
                             color='success'
                             clickable
                             onClick={() => onAction(leave.id, 'approved')}
-                            sx={{ width: '100%' }}
                           />
                           <Chip
                             label='Reject'
                             color='error'
                             clickable
                             onClick={() => onAction(leave.id, 'rejected')}
-                            sx={{ width: '100%' }}
                           />
                         </Box>
-                      </TableCell>
-                    )}
-                    {isAdmin && leave.status !== 'pending' && <TableCell />}
-                    {!isAdmin && onWithdraw && (
-                      <TableCell>
-                        {leave.status === 'pending' && (
-                          <Chip
-                            label='Withdraw'
-                            color='warning'
-                            clickable
-                            onClick={() => onWithdraw(leave.id)}
-                            sx={{ width: '100%' }}
-                          />
-                        )}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })}
+                      )}
+
+                      {!isAdmin && onWithdraw && leave.status === 'pending' && (
+                        <Chip
+                          label='Withdraw'
+                          color='warning'
+                          clickable
+                          onClick={() => onWithdraw(leave.id)}
+                        />
+                      )}
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
