@@ -152,7 +152,7 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
               onClick={() => handleDateClick(date, index)}
               sx={{
                 p: 1,
-                minWidth: 56,
+                minWidth: { lg: 56, xs: 83 },
                 textAlign: 'center',
                 cursor: 'pointer',
                 border: isSelected ? '2px solid' : '1px solid',
