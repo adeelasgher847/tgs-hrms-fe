@@ -1,0 +1,268 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Tooltip,
+  IconButton,
+  Chip,
+  Dialog,
+  Button,
+  Pagination,
+  CircularProgress,
+} from '@mui/material';
+import InfoIcon from '@mui/icons-material/Info';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import employeeBenefitApi from '../../api/employeeBenefitApi';
+import BenefitCard from '../Benefits/BenefitCard';
+
+const ITEMS_PER_PAGE = 10;
+
+const BenefitDetails: React.FC = () => {
+  const [benefits, setBenefits] = useState<any[]>([]);
+  const [selectedBenefit, setSelectedBenefit] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const fetchBenefits = async () => {
+      setLoading(true);
+      try {
+        const employeeId = localStorage.getItem('employeeId');
+        if (!employeeId) {
+          console.warn('No employeeId found in localStorage');
+          setLoading(false);
+          return;
+        }
+
+        const response = await employeeBenefitApi.getEmployeeBenefits(page);
+        console.log('Get Employee Benefits Response:', response);
+
+        const employeeData = response.find(
+          (emp: any) => emp.employeeId === employeeId
+        );
+
+        if (employeeData && Array.isArray(employeeData.benefits)) {
+          setBenefits(employeeData.benefits);
+        } else {
+          setBenefits([]);
+        }
+      } catch (err) {
+        console.error('Error fetching employee benefits:', err);
+        setBenefits([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBenefits();
+  }, [page]);
+
+  const formatDate = (date: string) =>
+    date ? new Date(date).toLocaleDateString() : '-';
+
+  const csvEscape = (value: any) => {
+    if (value === null || value === undefined) return '';
+    const s = String(value).replace(/"/g, '""');
+    return `"${s}"`;
+  };
+
+  const handleDownload = () => {
+    if (benefits.length === 0) {
+      alert('No data to download.');
+      return;
+    }
+
+    const csvHeader = [
+      'Benefit Name',
+      'Type',
+      'Start Date',
+      'End Date',
+      'Status',
+    ];
+    const rows = benefits.map(row =>
+      [
+        csvEscape(row.name),
+        csvEscape(row.type),
+        csvEscape(formatDate(row.startDate)),
+        csvEscape(formatDate(row.endDate)),
+        csvEscape(row.statusOfAssignment || row.status),
+      ].join(',')
+    );
+    const csvContent = [csvHeader.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.setAttribute('download', `MyBenefits_Page${page}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const totalRecords = benefits.length;
+  const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
+  const paginatedBenefits = benefits.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+  };
+
+  return (
+    <Box>
+      <Box display='flex' justifyContent='space-between' alignItems='center'>
+        <Typography variant='h4' gutterBottom>
+          My Benefits
+        </Typography>
+
+        <Tooltip title='Download My Benefits'>
+          <IconButton
+            color='primary'
+            onClick={handleDownload}
+            sx={{
+              backgroundColor: 'primary.main',
+              borderRadius: '6px',
+              padding: '6px',
+              color: 'white',
+              '&:hover': { backgroundColor: 'primary.dark' },
+            }}
+          >
+            <FileDownloadIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
+
+      {loading ? (
+        <Box
+          display='flex'
+          justifyContent='center'
+          alignItems='center'
+          minHeight='200px'
+        >
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Paper sx={{ mt: 2, overflowX: 'auto' }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  <b>Benefit Name</b>
+                </TableCell>
+                <TableCell>
+                  <b>Type</b>
+                </TableCell>
+                <TableCell>
+                  <b>Start Date</b>
+                </TableCell>
+                <TableCell>
+                  <b>End Date</b>
+                </TableCell>
+                <TableCell>
+                  <b>Status</b>
+                </TableCell>
+                <TableCell align='center'>
+                  <b>Details</b>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {paginatedBenefits.length > 0 ? (
+                paginatedBenefits.map(b => (
+                  <TableRow key={b.benefitAssignmentId || b.id}>
+                    <TableCell>{b.name || '-'}</TableCell>
+                    <TableCell>{b.type || '-'}</TableCell>
+                    <TableCell>{formatDate(b.startDate)}</TableCell>
+                    <TableCell>{formatDate(b.endDate)}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={b.statusOfAssignment || b.status || '-'}
+                        color={
+                          (b.statusOfAssignment || b.status) === 'active'
+                            ? 'success'
+                            : 'default'
+                        }
+                        size='small'
+                      />
+                    </TableCell>
+                    <TableCell align='center'>
+                      <Tooltip title='View Details'>
+                        <IconButton
+                          color='primary'
+                          onClick={() => setSelectedBenefit(b)}
+                        >
+                          <InfoIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} align='center'>
+                    No assigned benefits found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </Paper>
+      )}
+
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' alignItems='center' py={2}>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={handlePageChange}
+            color='primary'
+          />
+        </Box>
+      )}
+
+      <Box textAlign='center' my={2}>
+        <Typography variant='body2' color='text.secondary'>
+          Showing{' '}
+          {totalRecords === 0
+            ? 0
+            : Math.min((page - 1) * ITEMS_PER_PAGE + 1, totalRecords)}
+          –{Math.min(page * ITEMS_PER_PAGE, totalRecords)} of {totalRecords}{' '}
+          records
+        </Typography>
+      </Box>
+
+      <Dialog
+        open={!!selectedBenefit}
+        onClose={() => setSelectedBenefit(null)}
+      >
+        {selectedBenefit && (
+          <Box>
+            <BenefitCard
+              name={selectedBenefit.name}
+              type={selectedBenefit.type}
+              eligibilityCriteria={selectedBenefit.eligibilityCriteria}
+              description={selectedBenefit.description}
+              startDate={formatDate(selectedBenefit.startDate)}
+              endDate={formatDate(selectedBenefit.endDate)}
+              status={
+                selectedBenefit.statusOfAssignment || selectedBenefit.status
+              }
+            />
+          </Box>
+        )}
+      </Dialog>
+    </Box>
+  );
+};
+
+export default BenefitDetails;

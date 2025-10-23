@@ -3,17 +3,17 @@ import React, {
   useState,
   useCallback,
   useMemo,
-  useEffect,
   type ReactNode,
 } from 'react';
-import companyApi, { type CompanyDetails } from '../api/companyApi';
+import { type CompanyDetails } from '../api/companyApi';
 
 interface CompanyContextType {
   companyDetails: CompanyDetails | null;
   companyName: string;
   companyLogo: string | null;
-  refreshCompanyDetails: () => Promise<void>;
-  updateCompanyDetails: (details: CompanyDetails) => void;
+  setCompanyDetails: (details: CompanyDetails | null) => void;
+  setCompanyLogo: (logoUrl: string | null) => void;
+  clearCompanyData: () => void;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -63,15 +63,17 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
       companyDetails,
       companyName,
       companyLogo,
-      refreshCompanyDetails,
-      updateCompanyDetails,
+      setCompanyDetails,
+      setCompanyLogo,
+      clearCompanyData,
     }),
     [
       companyDetails,
       companyName,
       companyLogo,
-      refreshCompanyDetails,
-      updateCompanyDetails,
+      setCompanyDetails,
+      setCompanyLogo,
+      clearCompanyData,
     ]
   );
 
