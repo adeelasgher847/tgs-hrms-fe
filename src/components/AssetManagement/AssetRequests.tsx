@@ -41,7 +41,7 @@ import type { AssetRequest, AssetCategory } from '../../types/asset';
 import { assetApi, type AssetRequest as ApiAssetRequest } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
-import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
+import { Snackbar, Alert } from '@mui/material';
 import { type AssetSubcategory } from '../../api/assetApi';
 
 // Get current user from localStorage or auth context
@@ -119,6 +119,19 @@ const AssetRequests: React.FC = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [subcategories, setSubcategories] = useState<AssetSubcategory[]>([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'warning' | 'info';
+  }>({ open: false, message: '', severity: 'success' });
+
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
   
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -195,24 +208,54 @@ const AssetRequests: React.FC = () => {
     
     const fetchData = async () => {
       try {
-        setInitialLoading(true);
+        // Only show initial loading on first load, not on pagination
+        if (pagination.page === 1) {
+          setInitialLoading(true);
+        }
         // Use getAssetRequestById to get current user's requests with pagination
         const apiResponse = await assetApi.getAssetRequestById(currentUserId, {
           page: pagination.page,
           limit: pagination.limit,
         });
         
+        
         // Transform API requests to component format
         const transformedRequests: AssetRequest[] = (apiResponse.items || []).map((apiRequest: ApiAssetRequest) => {
-          // Debug logging to understand the API response
           
           // Parse the original request category to extract main category and subcategory
           let mainCategoryName = apiRequest.asset_category;
           let subcategoryName = '';
           
-          if (apiRequest.asset_category.includes(' - ')) {
+          // Check if API response has subcategory information in different possible fields
+          if ((apiRequest as any).subcategory_name) {
+            subcategoryName = (apiRequest as any).subcategory_name;
+          } else if ((apiRequest as any).subcategory) {
+            // Handle case where subcategory is an object
+            const subcategory = (apiRequest as any).subcategory;
+            if (typeof subcategory === 'object' && subcategory !== null) {
+              // Try different possible property names for the subcategory name
+              subcategoryName = subcategory.name || 
+                               subcategory.title || 
+                               subcategory.subcategory_name || 
+                               subcategory.subcategoryName ||
+                               subcategory.display_name ||
+                               subcategory.label ||
+                               (subcategory as any).name ||
+                               JSON.stringify(subcategory);
+            } else {
+              subcategoryName = subcategory;
+            }
+          } else if ((apiRequest as any).subcategoryId && (apiRequest as any).subcategoryName) {
+            subcategoryName = (apiRequest as any).subcategoryName;
+          } else if (apiRequest.asset_category.includes(' - ')) {
             [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+          } else if (apiRequest.asset_category.includes(' / ')) {
+            [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' / ');
+          } else {
+            // If no subcategory found, check if the category itself might be a subcategory
+            // This handles cases where the API returns just the subcategory name
           }
+          
 
           return {
             id: apiRequest.id,
@@ -227,7 +270,7 @@ const AssetRequests: React.FC = () => {
               nameAr: apiRequest.asset_category, 
               description: '',
               color: '#757575',
-              requestedItem: subcategoryName || apiRequest.asset_category
+              requestedItem: subcategoryName || undefined
             },
             remarks: apiRequest.remarks,
             status: normalizeRequestStatus(apiRequest.status),
@@ -238,7 +281,7 @@ const AssetRequests: React.FC = () => {
             (apiRequest.approvedByUser ? 
               apiRequest.approvedByUser.name : 
               apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
-          rejectionReason: undefined,
+          rejectionReason: (apiRequest as any).rejection_reason && (apiRequest as any).rejection_reason !== null ? (apiRequest as any).rejection_reason : undefined,
           assignedAssetId: undefined,
           assignedAssetName: undefined,
           };
@@ -257,7 +300,10 @@ const AssetRequests: React.FC = () => {
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
-        setInitialLoading(false);
+        // Only set initial loading to false on first page
+        if (pagination.page === 1) {
+          setInitialLoading(false);
+        }
       }
     };
 
@@ -330,16 +376,16 @@ const AssetRequests: React.FC = () => {
 
       setRequests(prev => [newRequest, ...prev]);
       
-      // Show success toast
-      showSuccessToast(`Asset request for "${data.category}" has been submitted successfully`);
+      // Show success snackbar
+      showSnackbar(`Asset request for "${data.category}" has been submitted successfully`, 'success');
       
       setIsRequestModalOpen(false);
       setSelectedCategory('');
       reset();
     } catch (error) {
       console.error('Failed to submit request:', error);
-      // Show error toast
-      showErrorToast('Failed to submit asset request. Please try again.');
+      // Show error snackbar
+      showSnackbar('Failed to submit asset request. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -373,15 +419,15 @@ const AssetRequests: React.FC = () => {
       const updatedRequests = requests.filter(request => request.id !== requestToCancel.id);
       setRequests(updatedRequests);
 
-      // Show success toast
-      showSuccessToast(`Asset request for "${requestToCancel.category.name}" has been deleted successfully`);
+      // Show success snackbar
+      showSnackbar(`Asset request for "${requestToCancel.category.name}" has been deleted successfully`, 'success');
 
       setIsCancelDialogOpen(false);
       setRequestToCancel(null);
     } catch (error) {
       console.error('Failed to delete request:', error);
-      // Show error toast
-      showErrorToast('Failed to delete asset request. Please try again.');
+      // Show error snackbar
+      showSnackbar('Failed to delete asset request. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -420,12 +466,14 @@ const AssetRequests: React.FC = () => {
               {`${(request.category as AssetCategory & { requestedItem?: string }).requestedItem}`}
             </Typography>
           )}
-          {request.remarks && (
-            <Typography variant="caption" color="text.secondary">
-              {request.remarks}
-            </Typography>
-          )}
         </Box>
+      </TableCell>
+      <TableCell>
+        {request.remarks && (
+          <Typography variant="body2" color="text.secondary">
+            {request.remarks}
+          </Typography>
+        )}
       </TableCell>
       <TableCell>
         <StatusChip status={request.status} type="request" />
@@ -436,6 +484,13 @@ const AssetRequests: React.FC = () => {
       <TableCell>
         {request.processedDate && (
           new Date(request.processedDate).toLocaleDateString()
+        )}
+      </TableCell>
+      <TableCell>
+        {request.rejectionReason && request.rejectionReason !== null && request.rejectionReason.trim() !== '' && (
+          <Typography variant="body2" color="text.primary">
+            {request.rejectionReason}
+          </Typography>
         )}
       </TableCell>
       <TableCell align="right">
@@ -563,14 +618,26 @@ const AssetRequests: React.FC = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Asset Category</TableCell>
+                  <TableCell>Remarks</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Processed Date</TableCell>
+                  <TableCell>Rejection Reason</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {getFilteredRequestsByTab().map(renderRequestRow)}
+                {getFilteredRequestsByTab().length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No records found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  getFilteredRequestsByTab().map(renderRequestRow)
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -582,14 +649,26 @@ const AssetRequests: React.FC = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Asset Category</TableCell>
+                  <TableCell>Remarks</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Processed Date</TableCell>
+                  <TableCell>Rejection Reason</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {getFilteredRequestsByTab('pending').map(renderRequestRow)}
+                {getFilteredRequestsByTab('pending').length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No records found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  getFilteredRequestsByTab('pending').map(renderRequestRow)
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -601,14 +680,26 @@ const AssetRequests: React.FC = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Asset Category</TableCell>
+                  <TableCell>Remarks</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Processed Date</TableCell>
+                  <TableCell>Rejection Reason</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {getFilteredRequestsByTab('approved').map(renderRequestRow)}
+                {getFilteredRequestsByTab('approved').length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No records found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  getFilteredRequestsByTab('approved').map(renderRequestRow)
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -620,14 +711,26 @@ const AssetRequests: React.FC = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Asset Category</TableCell>
+                  <TableCell>Remarks</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Processed Date</TableCell>
+                  <TableCell>Rejection Reason</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {getFilteredRequestsByTab('rejected').map(renderRequestRow)}
+                {getFilteredRequestsByTab('rejected').length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No records found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  getFilteredRequestsByTab('rejected').map(renderRequestRow)
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -825,6 +928,22 @@ const AssetRequests: React.FC = () => {
         severity="error"
         loading={loading}
       />
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

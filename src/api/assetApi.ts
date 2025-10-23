@@ -404,8 +404,10 @@ export const assetApi = {
     }
   },
 
-  rejectAssetRequest: async (id: string) => {
-    const response = await axiosInstance.put(`/asset-requests/${id}/reject`);
+  rejectAssetRequest: async (id: string, rejectionReason?: string) => {
+    const response = await axiosInstance.put(`/asset-requests/${id}/reject`, {
+      rejection_reason: rejectionReason
+    });
     return response.data;
   },
 
