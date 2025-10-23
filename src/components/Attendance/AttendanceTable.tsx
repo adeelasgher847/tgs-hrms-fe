@@ -30,6 +30,7 @@ import type {
 } from '../../api/attendanceApi';
 import { isManager as checkIsManager, isAdmin, isSystemAdmin, isNetworkAdmin, isHRAdmin } from '../../utils/roleUtils';
 import DateNavigation from './DateNavigation';
+import { useTheme } from '../../theme/hooks';
 
 interface AttendanceRecord {
   id: string;
@@ -51,6 +52,7 @@ const formatLocalYMD = (d: Date) => {
 };
 
 const AttendanceTable = () => {
+  const { mode } = useTheme();
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [filteredData, setFilteredData] = useState<AttendanceRecord[]>([]);
   const [userRole, setUserRole] = useState<string>('');
@@ -276,7 +278,7 @@ const AttendanceTable = () => {
   };
 
   // Fetch attendance data for a specific date (for date navigation)
-  const fetchAttendanceByDate = async (date: string, view: 'all' | 'my' | 'team', preservePage: boolean = false) => {
+  const fetchAttendanceByDate = async (date: string, view: 'all' | 'my' | 'team') => {
     if (view === 'all' || view === 'my') {
       setLoading(true);
     } else {
@@ -298,11 +300,8 @@ const AttendanceTable = () => {
       let response: AttendanceResponse;
 
       if (view === 'all') {
-        // Use current page if preserving pagination, otherwise use page 1
-        const pageToFetch = preservePage ? currentPage : 1;
-        
         response = await attendanceApi.getAllAttendance(
-          pageToFetch,
+          1, // Always page 1 - show all records
           date, // Start date
           date // End date (same day)
         );
@@ -327,18 +326,10 @@ const AttendanceTable = () => {
         setAttendanceData(rows);
         setFilteredData(rows);
 
-        // Set pagination state for date-filtered results
-        if (preservePage) {
-          // Maintain current page and pagination info from API response
-          setCurrentPage(response.page || 1);
-          setTotalPages(response.totalPages || 1);
-          setTotalItems(response.total || 0);
-        } else {
-          // Reset to page 1 for new date selection
-          setCurrentPage(1);
-          setTotalPages(1);
-          setTotalItems(rows.length);
-        }
+        // Always show all records without pagination
+        setCurrentPage(1);
+        setTotalPages(1);
+        setTotalItems(rows.length);
       } else if (view === 'my') {
         // For My Attendance, fetch events for the current user for specific date
         response = await attendanceApi.getAttendanceEvents(
@@ -368,7 +359,7 @@ const AttendanceTable = () => {
         setAttendanceData(rows);
         setFilteredData(rows);
 
-        // Set pagination state for date-filtered results
+        // Always show all records without pagination
         setCurrentPage(1);
         setTotalPages(1);
         setTotalItems(rows.length);
@@ -439,7 +430,6 @@ const AttendanceTable = () => {
   };
 
   const fetchAttendance = async (
-    page: number = 1,
     view?: 'my' | 'all',
     selectedUserId?: string,
     startDateOverride?: string,
@@ -484,14 +474,14 @@ const AttendanceTable = () => {
           // When a specific employee is selected, fetch events for that user
           response = await attendanceApi.getAttendanceEvents(
             effectiveSelectedEmployee,
-            page,
+            1, // Always page 1 - show all records
             effectiveStartDate || undefined,
             effectiveEndDate || undefined
           );
         } else {
           // No employee selected: fetch all attendance without pagination
           response = await attendanceApi.getAllAttendance(
-            1, // Always page 1 when showing all
+            1, // Always page 1 - show all records
             effectiveStartDate || undefined,
             effectiveEndDate || undefined
           );
@@ -500,16 +490,11 @@ const AttendanceTable = () => {
         // For non-admins or 'my' view, fetch events for the current user
         response = await attendanceApi.getAttendanceEvents(
           currentUser.id,
-          1, // Always page 1 when showing all
+          1, // Always page 1 - show all records
           effectiveStartDate || undefined,
           effectiveEndDate || undefined
         );
       }
-
-      // Always show all records without pagination
-      setCurrentPage(1);
-      setTotalPages(1);
-      setTotalItems(response.total || 0);
 
       const events: AttendanceEvent[] =
         (response.items as AttendanceEvent[]) || [];
@@ -538,6 +523,11 @@ const AttendanceTable = () => {
         );
       }
 
+      // Always show all records without pagination
+      setCurrentPage(1);
+      setTotalPages(1);
+      setTotalItems(rows.length);
+
       setAttendanceData(rows);
       setFilteredData(rows);
     } catch {
@@ -560,10 +550,10 @@ const AttendanceTable = () => {
     setCurrentNavigationDate(newDate);
     if (newDate === 'all') {
       // Show all records (no pagination)
-      fetchAttendance(1, 'all', selectedEmployee, '', '');
+      fetchAttendance('all', selectedEmployee, '', '');
     } else {
       // Show all records for specific date
-      fetchAttendanceByDate(newDate, 'all', true);
+      fetchAttendanceByDate(newDate, 'all');
     }
   };
 
@@ -572,10 +562,10 @@ const AttendanceTable = () => {
     setMyAttendanceNavigationDate(newDate);
     if (newDate === 'all') {
       // Show all records (no pagination)
-      fetchAttendance(1, 'my', undefined, '', '');
+      fetchAttendance('my', undefined, '', '');
     } else {
       // Show all records for specific date in My Attendance
-      fetchAttendanceByDate(newDate, 'my', true);
+      fetchAttendanceByDate(newDate, 'my');
     }
   };
 
@@ -611,7 +601,7 @@ const AttendanceTable = () => {
     setEndDate('');
     // Reset to show all records for date navigation
     setMyAttendanceNavigationDate('all');
-    fetchAttendance(1, 'my', undefined, '', '');
+    fetchAttendance('my', undefined, '', '');
   };
 
   const handleAllAttendance = () => {
@@ -624,7 +614,7 @@ const AttendanceTable = () => {
     setCurrentNavigationDate('all');
 
     // Show all records initially (no date filtering)
-    fetchAttendance(1, 'all', undefined, '', '');
+    fetchAttendance('all', undefined, '', '');
     // Fetch employees from attendance data after initial load
     fetchEmployeesFromAttendance();
   };
@@ -637,7 +627,7 @@ const AttendanceTable = () => {
     setEndDate('');
     // Reset to show all records for date navigation
     setMyAttendanceNavigationDate('all');
-    fetchAttendance(1, 'my', undefined, '', '');
+    fetchAttendance('my', undefined, '', '');
   };
 
   const handleManagerTeamAttendance = () => {
@@ -649,9 +639,18 @@ const AttendanceTable = () => {
     fetchTeamAttendance(1);
   };
 
+  // Set theme attribute on body when component mounts or theme changes
+  useEffect(() => {
+    if (mode === 'dark') {
+      document.body.setAttribute('data-theme', 'dark');
+    } else {
+      document.body.removeAttribute('data-theme');
+    }
+  }, [mode]);
+
   // Initial load
   useEffect(() => {
-    fetchAttendance(1, 'my', undefined, '', '');
+    fetchAttendance('my', undefined, '', '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -677,7 +676,7 @@ const AttendanceTable = () => {
     setStartDate('');
     setEndDate('');
     setSelectedEmployee('');
-    fetchAttendance(1, canViewAllAttendance ? adminView : 'my', '', '', '');
+    fetchAttendance(canViewAllAttendance ? adminView : 'my', '', '', '');
   };
 
   // Handle employee selection change
@@ -685,7 +684,7 @@ const AttendanceTable = () => {
     setSelectedEmployee(value);
     setCurrentPage(1);
     // Immediately pass the selected employee to avoid stale state in fetch
-    fetchAttendance(1, 'all', value, startDate, endDate);
+    fetchAttendance('all', value, startDate, endDate);
   };
 
   // Determine admin-like UI behavior (Admin, System-Admin, Network-Admin, or HR-Admin)
@@ -830,7 +829,7 @@ const AttendanceTable = () => {
                        setCurrentPage(1);
                        const view = canViewAllAttendance ? adminView : 'my';
                        const selectedId = view === 'all' ? selectedEmployee : undefined;
-                       fetchAttendance(1, view, selectedId, start, end);
+                       fetchAttendance(view, selectedId, start, end);
                      } else if (dates && dates.length === 1) {
                        const start = dates[0]?.format('YYYY-MM-DD') || '';
                        setStartDate(start);
@@ -839,7 +838,7 @@ const AttendanceTable = () => {
                        setCurrentPage(1);
                        const view = canViewAllAttendance ? adminView : 'my';
                        const selectedId = view === 'all' ? selectedEmployee : undefined;
-                       fetchAttendance(1, view, selectedId, start, '');
+                       fetchAttendance(view, selectedId, start, '');
                      } else {
                        setStartDate('');
                        setEndDate('');
@@ -847,7 +846,7 @@ const AttendanceTable = () => {
                        setCurrentPage(1);
                        const view = canViewAllAttendance ? adminView : 'my';
                        const selectedId = view === 'all' ? selectedEmployee : undefined;
-                       fetchAttendance(1, view, selectedId, '', '');
+                       fetchAttendance(view, selectedId, '', '');
                      }
                    }}
                    format="MM/DD/YYYY"
@@ -866,8 +865,8 @@ const AttendanceTable = () => {
                    containerStyle={{
                      width: '100%',
                    }}
-                   inputClass="custom-date-picker-input"
-                   className="custom-date-picker"
+                   inputClass={`custom-date-picker-input ${mode === 'dark' ? 'theme-dark' : ''}`}
+                   className={`custom-date-picker ${mode === 'dark' ? 'theme-dark' : ''}`}
                    editable={false}
                    showOtherDays={true}
                    onOpen={() => {
