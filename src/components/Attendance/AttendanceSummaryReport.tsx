@@ -14,9 +14,10 @@ import {
   FormControl,
   Select,
   MenuItem,
-  Button,
   Tooltip,
   IconButton,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useUser } from '../../hooks/useUser';
@@ -43,6 +44,22 @@ const AttendanceSummaryReport: React.FC = () => {
     'thisMonth' | 'prevMonth' | '60days' | '90days'
   >('thisMonth');
   const [totalPages, setTotalPages] = useState<number>(1);
+
+  // Snackbar states
+  const [openToast, setOpenToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastSeverity, setToastSeverity] = useState<
+    'success' | 'error' | 'warning' | 'info'
+  >('success');
+
+  const showToast = (
+    message: string,
+    severity: 'success' | 'error' | 'warning' | 'info' = 'info'
+  ) => {
+    setToastMessage(message);
+    setToastSeverity(severity);
+    setOpenToast(true);
+  };
 
   const getDaysRange = () => {
     switch (filter) {
@@ -118,6 +135,7 @@ const AttendanceSummaryReport: React.FC = () => {
         console.error('Error fetching summary:', err);
         setSummaryData([]);
         setTotalPages(1);
+        showToast('Failed to fetch attendance summary.', 'error');
       } finally {
         setLoading(false);
       }
@@ -142,7 +160,7 @@ const AttendanceSummaryReport: React.FC = () => {
 
   const handleDownload = () => {
     if (safeData.length === 0) {
-      alert('No data to download.');
+      showToast('No data to download.', 'warning');
       return;
     }
 
@@ -188,6 +206,8 @@ const AttendanceSummaryReport: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    showToast('CSV file downloaded successfully.', 'success');
   };
 
   return (
@@ -320,6 +340,30 @@ const AttendanceSummaryReport: React.FC = () => {
           </Typography>
         </Box>
       </Box>
+
+      {/* ✅ Snackbar */}
+      <Snackbar
+        open={openToast}
+        autoHideDuration={4000}
+        onClose={() => setOpenToast(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setOpenToast(false)}
+          severity={toastSeverity}
+          sx={{
+            width: '100%',
+            backgroundColor:
+              toastSeverity === 'success' ? '#2e7d32' : '#d32f2f',
+            color: 'white !important',
+            '& .MuiAlert-icon': {
+              color: 'white',
+            },
+          }}
+        >
+          {toastMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

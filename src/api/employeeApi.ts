@@ -295,14 +295,11 @@ class EmployeeApiService {
       const url = `${this.baseUrl}?${params.toString()}`;
 
       const response = await axiosInstance.get(url);
-      console.log('Response of employee:', response);
-      // Handle the new backend structure
       if (
         response.data &&
         response.data.items &&
         Array.isArray(response.data.items)
       ) {
-        // Normalize each item
         const normalizedItems = response.data.items
           .map((item: unknown) => {
             try {
@@ -324,7 +321,6 @@ class EmployeeApiService {
           totalPages: response.data.totalPages || 1,
         };
       } else if (Array.isArray(response.data)) {
-        // Normalize each item
         const normalizedItems = response.data
           .map((item: unknown) => {
             try {
@@ -396,15 +392,12 @@ class EmployeeApiService {
     return normalizeEmployee(response.data);
   }
 
-  // Get full employee profile by user id (designation, department, attendance, leaves)
   async getEmployeeProfile(userId: string): Promise<EmployeeFullProfile> {
     const response = await axiosInstance.get<EmployeeFullProfile>(
       `${this.baseUrl}/users/${userId}/profile`
     );
     return response.data;
   }
-
-  // Create new company
 
   async createEmployee(employeeData: EmployeeDto): Promise<BackendEmployee> {
     try {
@@ -435,7 +428,6 @@ class EmployeeApiService {
     }
   }
 
-  // Create a new manager employee
   async createManager(employeeData: EmployeeDto): Promise<BackendEmployee> {
     const payload = {
       first_name: employeeData.first_name,

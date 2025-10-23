@@ -8,8 +8,6 @@ import {
   TextField,
   Box,
   Typography,
-  Snackbar,
-  Alert,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -44,8 +42,6 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
   onSubmit,
   benefit,
 }) => {
-  const [showToast, setShowToast] = React.useState(false);
-
   const {
     control,
     handleSubmit,
@@ -75,148 +71,124 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
   }, [benefit, reset]);
 
   const handleFormSubmit = (data: BenefitFormValues) => {
-    try {
-      onSubmit(data);
-      setShowToast(true);
-    } catch (err) {
-      console.error(err);
-    }
+    onSubmit(data);
   };
 
   return (
-    <>
-      <Dialog
-        open={open}
-        onClose={onClose}
-        maxWidth='sm'
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 2,  } }}
-      >
-        <DialogTitle>
-          <Typography variant='h6' fontWeight={600}>
-            {benefit ? 'Edit Benefit' : 'Create Benefit'}
-          </Typography>
-        </DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth='sm'
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 2 } }}
+    >
+      <DialogTitle>
+        <Typography variant='h6' fontWeight={600}>
+          {benefit ? 'Edit Benefit' : 'Create Benefit'}
+        </Typography>
+      </DialogTitle>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)}>
-          <DialogContent
-            sx={{ px: 2, maxHeight: '60vh', overflowY: 'visible' }}
-          >
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <Box sx={{ display: 'flex', gap: 3, }}>
-                <Controller
-                  name='name'
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label='Benefit Name'
-                      error={!!errors.name}
-                      helperText={errors.name?.message}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name='type'
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label='Benefit Type'
-                      placeholder='Health, Allowance, Voucher...'
-                      error={!!errors.type}
-                      helperText={errors.type?.message}
-                    />
-                  )}
-                />
-              </Box>
-
+      <form onSubmit={handleSubmit(handleFormSubmit)}>
+        <DialogContent sx={{ px: 2, maxHeight: '60vh', overflowY: 'visible' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', gap: 3 }}>
               <Controller
-                name='description'
+                name='name'
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    label='Description'
-                    multiline
-                    rows={2}
-                    error={!!errors.description}
-                    helperText={errors.description?.message}
+                    label='Benefit Name'
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
                   />
                 )}
               />
 
               <Controller
-                name='eligibilityCriteria'
+                name='type'
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    label='Eligibility'
-                    placeholder='e.g., All Employees / Full-time / etc.'
-                    error={!!errors.eligibilityCriteria}
-                    helperText={errors.eligibilityCriteria?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name='status'
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label='Status'
-                    placeholder='Active / Inactive'
-                    error={!!errors.status}
-                    helperText={errors.status?.message}
+                    label='Benefit Type'
+                    placeholder='Health, Allowance, Voucher...'
+                    error={!!errors.type}
+                    helperText={errors.type?.message}
                   />
                 )}
               />
             </Box>
-          </DialogContent>
 
-          <DialogActions
-            sx={{
-              position: 'sticky',
-              bottom: 0,
-              backgroundColor: 'background.paper',
-              px: 2,
-              py: 2,
-              gap: 1,
-            }}
-          >
-            <Button onClick={onClose} variant='outlined'>
-              Cancel
-            </Button>
-            <Button type='submit' variant='contained'>
-              {benefit ? 'Update' : 'Create'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+            <Controller
+              name='description'
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label='Description'
+                  multiline
+                  rows={2}
+                  error={!!errors.description}
+                  helperText={errors.description?.message}
+                />
+              )}
+            />
 
-      <Snackbar
-        open={showToast}
-        autoHideDuration={2500}
-        onClose={() => setShowToast(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          severity='success'
-          variant='filled'
-          onClose={() => setShowToast(false)}
+            <Controller
+              name='eligibilityCriteria'
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label='Eligibility'
+                  placeholder='e.g., All Employees / Full-time / etc.'
+                  error={!!errors.eligibilityCriteria}
+                  helperText={errors.eligibilityCriteria?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name='status'
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label='Status'
+                  placeholder='Active / Inactive'
+                  error={!!errors.status}
+                  helperText={errors.status?.message}
+                />
+              )}
+            />
+          </Box>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            position: 'sticky',
+            bottom: 0,
+            backgroundColor: 'background.paper',
+            px: 2,
+            py: 2,
+            gap: 1,
+          }}
         >
-          Benefit {benefit ? 'updated' : 'created'} successfully!
-        </Alert>
-      </Snackbar>
-    </>
+          <Button onClick={onClose} variant='outlined'>
+            Cancel
+          </Button>
+          <Button type='submit' variant='contained'>
+            {benefit ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   );
 };
 

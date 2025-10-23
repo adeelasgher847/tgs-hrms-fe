@@ -43,41 +43,60 @@ const SummaryCard = ({ title, value, icon }: SummaryCardProps) => {
         border: '1px solid',
         borderColor,
         borderRadius: 2,
-        p: 2,
+        p: 2.5,
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: 'column',
         justifyContent: 'space-between',
-        minHeight: 90,
+        minHeight: 120,
         bgcolor: bgColor,
         color: textColor,
         direction: language === 'ar' ? 'rtl' : 'ltr',
+        boxShadow: darkMode
+          ? '0 2px 6px rgba(0,0,0,0.4)'
+          : '0 2px 8px rgba(0,0,0,0.08)',
+        maxWidth: {
+          xs: '100%',
+          sm: 300, 
+          md: 350, 
+        },
+        width: '100%',
+        mx: 'auto', 
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Box
           sx={{
             borderRadius: '50%',
-            width: 48,
-            height: 48,
+            width: 50,
+            height: 50,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             bgcolor: darkMode ? '#222' : '#f5f5f5',
+            flexShrink: 0,
           }}
         >
           {icon}
         </Box>
-        <Typography fontSize={14} fontWeight={600}>
+        <Typography
+          variant='subtitle1'
+          fontWeight={600}
+          sx={{ color: textColor, opacity: 0.9 }}
+        >
           {translatedTitle}
         </Typography>
       </Box>
 
       <Typography
-        variant='h5'
-        fontWeight='bold'
         sx={{
-          fontFamily: 'monospace',
+          mt: 2,
+          fontWeight: 600,
+          fontFamily: 'Poppins, monospace',
           color: textColor,
+          textAlign: language === 'ar' ? 'left' : 'right',
+          lineHeight: 1.3,
+          fontSize: { xs: '1rem', md: '1.3rem' },
+          wordBreak: 'break-word',
         }}
       >
         {value}

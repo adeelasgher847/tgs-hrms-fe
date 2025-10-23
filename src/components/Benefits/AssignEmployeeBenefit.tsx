@@ -122,20 +122,23 @@ const AssignEmployeeBenefit: React.FC<{
   const handleFormSubmit = async (data: AssignEmployeeBenefitValues) => {
     try {
       setLoading(true);
-      for (const benefitId of data.benefitIds) {
-        await employeeBenefitApi.assignBenefit({
+
+      const assignments = data.benefitIds.map(benefitId =>
+        employeeBenefitApi.assignBenefit({
           employeeId: data.employeeId,
           benefitId,
           startDate: data.startDate,
           endDate: data.endDate,
           status: 'active',
-        });
-      }
+        })
+      );
+
+      await Promise.all(assignments);
 
       setShowToast(true);
       reset();
       onClose();
-      onAssigned?.();
+      onAssigned?.(); 
     } catch (err: any) {
       console.error('Error assigning benefit:', err.response?.data || err);
     } finally {
@@ -160,7 +163,6 @@ const AssignEmployeeBenefit: React.FC<{
           <form onSubmit={handleSubmit(handleFormSubmit)}>
             <DialogContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {/* Employee Dropdown */}
                 <Controller
                   name='employeeId'
                   control={control}
@@ -172,16 +174,15 @@ const AssignEmployeeBenefit: React.FC<{
                         label='Select Employee'
                         MenuProps={{
                           PaperProps: {
-                            style: {
-                              maxHeight: 300,
-                              overflowY: 'auto',
-                              marginTop: 8,
-                            },
+                            style: { maxHeight: 300, overflowY: 'auto' },
                           },
                         }}
                         sx={{
                           '& .MuiSelect-select': {
-                            py: 1.2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            height: '1.4375em',
+                            padding: '16.5px 14px',
                           },
                         }}
                       >
@@ -200,7 +201,6 @@ const AssignEmployeeBenefit: React.FC<{
                   )}
                 />
 
-                {/* Benefits Dropdown */}
                 <Controller
                   name='benefitIds'
                   control={control}
@@ -211,24 +211,23 @@ const AssignEmployeeBenefit: React.FC<{
                         {...field}
                         multiple
                         label='Select Benefits'
-                        MenuProps={{
-                          PaperProps: {
-                            style: {
-                              maxHeight: 300,
-                              overflowY: 'auto',
-                              marginTop: 8,
-                            },
-                          },
-                        }}
                         renderValue={selected =>
                           benefits
                             .filter(b => selected.includes(b.id))
                             .map(b => b.name)
                             .join(', ')
                         }
+                        MenuProps={{
+                          PaperProps: {
+                            style: { maxHeight: 300, overflowY: 'auto' },
+                          },
+                        }}
                         sx={{
                           '& .MuiSelect-select': {
-                            py: 1.2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            height: '1.4375em',
+                            padding: '16.5px 14px',
                           },
                         }}
                       >
@@ -248,7 +247,6 @@ const AssignEmployeeBenefit: React.FC<{
                   )}
                 />
 
-                {/* Start Date */}
                 <Controller
                   name='startDate'
                   control={control}
@@ -266,7 +264,6 @@ const AssignEmployeeBenefit: React.FC<{
                   )}
                 />
 
-                {/* End Date */}
                 <Controller
                   name='endDate'
                   control={control}
@@ -298,7 +295,6 @@ const AssignEmployeeBenefit: React.FC<{
         )}
       </Dialog>
 
-      {/* Toast Notification */}
       <Snackbar
         open={showToast}
         autoHideDuration={3000}

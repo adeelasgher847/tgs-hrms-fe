@@ -20,6 +20,12 @@ export interface BenefitResponse {
   createdAt: string;
 }
 
+export interface BenefitSummaryResponse {
+  totalActiveBenefits: number;
+  mostCommonBenefitType: string;
+  totalEmployeesCovered: number;
+}
+
 class BenefitsApiService {
   private baseUrl = '/benefits';
 
@@ -53,6 +59,20 @@ class BenefitsApiService {
     }
   }
 
+  async getBenefitById(id: string): Promise<BenefitResponse> {
+    try {
+      const response = await axiosInstance.get(`${this.baseUrl}/${id}`);
+      console.log('Get benefit by ID response:', response);
+      return response.data;
+    } catch (error: any) {
+      console.error(
+        'Get benefit by ID API Error:',
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  }
+
   async updateBenefit(
     id: string,
     data: CreateBenefitRequest
@@ -70,14 +90,28 @@ class BenefitsApiService {
     }
   }
 
-  async deleteBenefit(id: string): Promise<{ message: string }> {
+  async deleteBenefit(id: string): Promise<{ deleted: boolean; id: string }> {
     try {
       const response = await axiosInstance.delete(`${this.baseUrl}/${id}`);
-      console.log('Delete benefit response:', response);
+      console.log('Delete benefit response:', response.data);
       return response.data;
     } catch (error: any) {
       console.error(
         'Delete benefit API Error:',
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  }
+
+  async getBenefitSummary(): Promise<BenefitSummaryResponse> {
+    try {
+      const response = await axiosInstance.get('/employee-benefits/summary');
+      console.log('Get benefit summary response:', response);
+      return response.data;
+    } catch (error: any) {
+      console.error(
+        'Get benefit summary API Error:',
         error.response?.data || error.message
       );
       throw error;

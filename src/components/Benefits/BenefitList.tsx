@@ -18,6 +18,12 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Pagination,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -42,10 +48,8 @@ const BenefitList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBenefit, setEditingBenefit] = useState<Benefit | null>(null);
   const [showToast, setShowToast] = useState(false);
@@ -55,29 +59,17 @@ const BenefitList: React.FC = () => {
   );
   const [types, setTypes] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<string[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedBenefit, setSelectedBenefit] = useState<Benefit | null>(null);
 
   const fetchBenefits = async () => {
     setLoading(true);
     try {
-      const params = {
-        page,
-        limit: ITEMS_PER_PAGE,
-      };
-
-      const resp = await benefitsApi.getBenefits(params);
-
+      const resp = await benefitsApi.getBenefits(page);
       const items = Array.isArray(resp) ? resp : resp.items || [];
-
       setBenefits(items);
-
-      // Extract unique types and statuses
-      const uniqueTypes = Array.from(new Set(items.map(b => b.type)));
-      const uniqueStatuses = Array.from(new Set(items.map(b => b.status)));
-
-      setTypes(uniqueTypes);
-      setStatuses(uniqueStatuses);
-
-      setTotalPages(resp?.totalPages || 1);
+      setTypes(Array.from(new Set(items.map(b => b.type))));
+      setStatuses(Array.from(new Set(items.map(b => b.status))));
     } catch (err) {
       console.error('Error fetching benefits:', err);
       setBenefits([]);
@@ -88,18 +80,9 @@ const BenefitList: React.FC = () => {
     }
   };
 
-  const filteredBenefits = benefits.filter(b => {
-    const matchesType =
-      filterType === 'all' || b.type.toLowerCase() === filterType.toLowerCase();
-    const matchesStatus =
-      filterStatus === 'all' ||
-      b.status.toLowerCase() === filterStatus.toLowerCase();
-    return matchesType && matchesStatus;
-  });
-
   useEffect(() => {
     fetchBenefits();
-  }, [page, filterType, filterStatus]);
+  }, [page]);
 
   const handleSaveBenefit = async (data: BenefitFormValues) => {
     try {
@@ -128,41 +111,42 @@ const BenefitList: React.FC = () => {
     } catch (error: any) {
       console.error('Error saving benefit:', error);
       setToastSeverity('error');
-      if (error.response?.status === 404) {
-        setToastMessage('Benefit not found.');
-      } else if (error.response?.status === 409) {
-        setToastMessage('A benefit with this name already exists.');
-      } else {
-        setToastMessage('Failed to save benefit.');
-      }
+      setToastMessage('Failed to save benefit.');
       setShowToast(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteBenefit = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this benefit?'))
-      return;
+  const handleOpenDeleteDialog = (benefit: Benefit) => {
+    setSelectedBenefit(benefit);
+    setDeleteDialogOpen(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!selectedBenefit) return;
     try {
       setLoading(true);
-      await benefitsApi.deleteBenefit(id);
-      setToastMessage('Benefit deleted successfully!');
-      setToastSeverity('success');
-      setShowToast(true);
-      fetchBenefits();
+      const res = await benefitsApi.deleteBenefit(selectedBenefit.id);
+      if (res.deleted) {
+        setToastMessage('Benefit deleted successfully!');
+        setToastSeverity('success');
+        setShowToast(true);
+        fetchBenefits();
+      } else {
+        throw new Error('Delete failed');
+      }
     } catch (error: any) {
       console.error('Error deleting benefit:', error);
       setToastSeverity('error');
-      if (error.response?.status === 404) {
-        setToastMessage('Benefit not found.');
-      } else {
-        setToastMessage('Failed to delete benefit.');
-      }
+      setToastMessage(
+        error.response?.data?.message || 'Failed to delete benefit.'
+      );
       setShowToast(true);
     } finally {
       setLoading(false);
+      setDeleteDialogOpen(false);
+      setSelectedBenefit(null);
     }
   };
 
@@ -185,7 +169,6 @@ const BenefitList: React.FC = () => {
       'Eligibility Criteria',
       'Status',
     ];
-
     const rows = benefits.map(row =>
       [
         csvEscape(row.name),
@@ -195,7 +178,6 @@ const BenefitList: React.FC = () => {
         csvEscape(row.status),
       ].join(',')
     );
-
     const csvContent = [csvHeader.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -208,10 +190,27 @@ const BenefitList: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const filteredBenefits = benefits.filter(b => {
+    const typeMatch = filterType === 'all' || b.type === filterType;
+    const statusMatch = filterStatus === 'all' || b.status === filterStatus;
+    return typeMatch && statusMatch;
+  });
+
+  const totalRecords = filteredBenefits.length;
+  const totalFilteredPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
+  const paginatedBenefits = filteredBenefits.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+  };
+
   return (
     <Box>
-      <Box display='flex' alignItems='center' gap={1} mb={1}>
-        <Typography variant='h4' gutterBottom>
+      <Box display='flex' alignItems='center' gap={1} mb={2}>
+        <Typography variant='h4' fontWeight={600}>
           Benefit Management
         </Typography>
       </Box>
@@ -220,10 +219,11 @@ const BenefitList: React.FC = () => {
         display='flex'
         justifyContent='space-between'
         alignItems='center'
+        flexWrap='wrap'
         gap={2}
       >
-        <Box display='flex' gap={2}>
-          <FormControl size='small' sx={{ minWidth: 160 }}>
+        <Box display='flex' flexWrap='wrap' gap={2}>
+          <FormControl size='small' sx={{ minWidth: 160, maxWidth: 220 }}>
             <Select
               value={filterType}
               onChange={e => {
@@ -240,7 +240,7 @@ const BenefitList: React.FC = () => {
             </Select>
           </FormControl>
 
-          <FormControl size='small' sx={{ minWidth: 160 }}>
+          <FormControl size='small' sx={{ minWidth: 160, maxWidth: 220 }}>
             <Select
               value={filterStatus}
               onChange={e => {
@@ -258,7 +258,7 @@ const BenefitList: React.FC = () => {
           </FormControl>
         </Box>
 
-        <Box display='flex' gap={1}>
+        <Box display='flex' gap={1} flexWrap='wrap'>
           <Button
             variant='contained'
             startIcon={<AddIcon />}
@@ -325,8 +325,14 @@ const BenefitList: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredBenefits.length > 0 ? (
-                  filteredBenefits.map(b => (
+                {paginatedBenefits.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align='center'>
+                      No benefits found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedBenefits.map(b => (
                     <TableRow key={b.id}>
                       <TableCell>{b.name}</TableCell>
                       <TableCell>{b.type}</TableCell>
@@ -338,10 +344,14 @@ const BenefitList: React.FC = () => {
                             fontWeight: 500,
                             backgroundColor:
                               b.status === 'active' ? '#206d23ff' : '#9e9e9e',
-                            px: 1,
+                            px: 1.2,
+                            py: 0.3,
                             borderRadius: 2,
                             color: 'white',
                             textTransform: 'capitalize',
+                            display: 'inline-block',
+                            minWidth: 70,
+                            textAlign: 'center',
                           }}
                         >
                           {b.status}
@@ -361,12 +371,11 @@ const BenefitList: React.FC = () => {
                               <EditIcon />
                             </IconButton>
                           </Tooltip>
-
                           <Tooltip title='Delete'>
                             <IconButton
                               color='error'
                               size='small'
-                              onClick={() => handleDeleteBenefit(b.id)}
+                              onClick={() => handleOpenDeleteDialog(b)}
                             >
                               <DeleteIcon />
                             </IconButton>
@@ -375,12 +384,6 @@ const BenefitList: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} align='center'>
-                      No benefits found
-                    </TableCell>
-                  </TableRow>
                 )}
               </TableBody>
             </Table>
@@ -388,13 +391,53 @@ const BenefitList: React.FC = () => {
         </Paper>
       )}
 
+      {totalFilteredPages > 1 && (
+        <Box display='flex' justifyContent='center' alignItems='center' py={2}>
+          <Pagination
+            count={totalFilteredPages}
+            page={page}
+            onChange={handlePageChange}
+            color='primary'
+          />
+        </Box>
+      )}
+
       <Box textAlign='center' my={2}>
-        <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
-          Showing {(page - 1) * ITEMS_PER_PAGE + 1}–
-          {Math.min(page * ITEMS_PER_PAGE, benefits.length)} of{' '}
-          {benefits.length} records
+        <Typography variant='body2' color='text.secondary'>
+          Showing{' '}
+          {totalRecords === 0
+            ? 0
+            : Math.min((page - 1) * ITEMS_PER_PAGE + 1, totalRecords)}
+          –{Math.min(page * ITEMS_PER_PAGE, totalRecords)} of {totalRecords}{' '}
+          records
         </Typography>
       </Box>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Delete Benefit</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {`Are you sure you want to delete the benefit "${
+              selectedBenefit?.name || ''
+            }"? This action cannot be undone.`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color='primary'>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color='error'
+            variant='contained'
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <BenefitFormModal
         open={modalOpen}

@@ -122,7 +122,11 @@ const Login: React.FC = () => {
 
   const initGoogleButton = () => {
     if (!isLoaded) {
-      setSnackbar({ open: true, message: 'Google script not loaded yet', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: 'Google script not loaded yet',
+        severity: 'error',
+      });
       return;
     }
     try {
@@ -191,12 +195,18 @@ const Login: React.FC = () => {
         googleButtonRenderedRef.current = true;
       }
 
-      const nativeBtn = googleBtnRef.current?.querySelector('div[role="button"]') as HTMLElement | null;
+      const nativeBtn = googleBtnRef.current?.querySelector(
+        'div[role="button"]'
+      ) as HTMLElement | null;
       if (nativeBtn) {
         nativeBtn.click();
       }
     } catch {
-      setSnackbar({ open: true, message: 'Failed to initialize Google Sign-In', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: 'Failed to initialize Google Sign-In',
+        severity: 'error',
+      });
     }
   };
 
@@ -204,12 +214,12 @@ const Login: React.FC = () => {
     e: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
     e.preventDefault();
-    let valid = true;
 
-    // Clear previous errors
+    let valid = true;
     setEmailError('');
     setPasswordError('');
 
+    // --- Validation ---
     if (!email) {
       setEmailError(
         lang === 'ar'
@@ -243,15 +253,27 @@ const Login: React.FC = () => {
           password,
         }
       );
-      localStorage.setItem('accessToken', res.data.accessToken);
-      localStorage.setItem('refreshToken', res.data.refreshToken);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-      localStorage.setItem('permissions', JSON.stringify(res.data.permissions));
-      // Update user context without causing re-render
+
+      const { accessToken, refreshToken, user, permissions, employee } =
+        res.data;
+
+      const employeeId = employee?.id || null;
+
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('permissions', JSON.stringify(permissions));
+
+      if (employeeId) {
+        localStorage.setItem('employeeId', employeeId);
+      } else {
+        console.warn('No employeeId found in response');
+      }
+
       try {
-        updateUser(res.data.user);
-      } catch {
-        /* Error handled silently */
+        updateUser(user);
+      } catch (err) {
+        console.warn('updateUser error (non-blocking):', err);
       }
 
       if (rememberMe) {
@@ -262,21 +284,20 @@ const Login: React.FC = () => {
       } else {
         localStorage.removeItem('rememberedLogin');
       }
+
       setSnackbar({
         open: true,
         message: lang === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Login Successful!',
         severity: 'success',
       });
 
-      // Navigate immediately to role-specific default route
       const role =
-        typeof res.data.user?.role === 'string'
-          ? res.data.user?.role
-          : res.data.user?.role?.name;
+        typeof user?.role === 'string' ? user.role : user?.role?.name;
       const target = getDefaultDashboardRoute(role);
       navigate(target, { replace: true });
     } catch (err: unknown) {
-      // Backend may send { field: 'email' | 'password', message: string }
+      console.error('Login API error:', err);
+
       const data =
         err && typeof err === 'object' && 'response' in err
           ? (
@@ -294,7 +315,6 @@ const Login: React.FC = () => {
       } else {
         setEmailError('');
         setPasswordError('');
-        // No snackbar for error
       }
     }
   };
@@ -460,7 +480,14 @@ const Login: React.FC = () => {
                   </Typography>
                 </Box>
                 <Box sx={{ textAlign: 'center', mb: 1 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                    }}
+                  >
                     <Button
                       variant='outlined'
                       onClick={initGoogleButton}
@@ -497,7 +524,11 @@ const Login: React.FC = () => {
                         ? 'تسجيل الدخول باستخدام جوجل'
                         : 'Sign in with Google'}
                     </Button>
-                    <Box id='googleBtn' ref={googleBtnRef} sx={{ display: 'none' }} />
+                    <Box
+                      id='googleBtn'
+                      ref={googleBtnRef}
+                      sx={{ display: 'none' }}
+                    />
                   </Box>
                   <Divider
                     sx={{

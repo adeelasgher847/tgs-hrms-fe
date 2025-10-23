@@ -121,7 +121,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
   const isInitializingRef = useRef<boolean>(true);
 
   const roleOptions = React.useMemo(() => {
-    const allowedRoles = ['Employee', 'Manager', 'hr-admin'];
+    const allowedRoles = ['Employee', 'Manager', 'hr-admin', 'network-admin'];
 
     return (roles || [])
       .map(r => (r.name || '').trim())

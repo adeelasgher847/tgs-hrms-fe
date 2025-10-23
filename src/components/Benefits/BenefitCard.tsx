@@ -1,21 +1,38 @@
 import React from 'react';
-import { Box, Typography, Paper, Chip, Divider } from '@mui/material';
+import { Box, Typography, Paper, Chip, Divider, Button } from '@mui/material';
 
 interface BenefitCardProps {
   name: string;
   type: string;
-  eligibility: string;
+  eligibilityCriteria: string;
   description?: string;
-  startDate?: string;
+  status: string;
+  createdAt?: string;
+  onCancel?: () => void;
 }
 
 const BenefitCard: React.FC<BenefitCardProps> = ({
   name,
   type,
-  eligibility,
+  eligibilityCriteria,
   description,
-  startDate,
+  status,
+  createdAt,
+  onCancel,
 }) => {
+  const getStatusColor = () => {
+    switch (status) {
+      case 'active':
+        return 'success';
+      case 'expired':
+        return 'default';
+      case 'cancelled':
+        return 'warning';
+      default:
+        return 'default';
+    }
+  };
+
   return (
     <Paper
       elevation={3}
@@ -46,18 +63,18 @@ const BenefitCard: React.FC<BenefitCardProps> = ({
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography variant='subtitle2' color='text.secondary'></Typography>
-        <Typography variant='body2'>{eligibility}</Typography>
+        <Typography variant='subtitle2' color='text.secondary'>
+          Status:
+        </Typography>
+        <Chip label={status} color={getStatusColor()} size='small' />
       </Box>
 
-      {startDate && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant='subtitle2' color='text.secondary'>
-            Start Date:
-          </Typography>
-          <Typography variant='body2'>{startDate}</Typography>
-        </Box>
-      )}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography variant='subtitle2' color='text.secondary'>
+          Eligibility:
+        </Typography>
+        <Typography variant='body2'>{eligibilityCriteria}</Typography>
+      </Box>
 
       {description && (
         <Box sx={{ mt: 1 }}>
@@ -67,6 +84,19 @@ const BenefitCard: React.FC<BenefitCardProps> = ({
           <Typography variant='body2' sx={{ whiteSpace: 'pre-line' }}>
             {description}
           </Typography>
+        </Box>
+      )}
+
+      {onCancel && (
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant='contained'
+            color='error'
+            size='small'
+            onClick={onCancel}
+          >
+            Cancel Benefit
+          </Button>
         </Box>
       )}
     </Paper>
