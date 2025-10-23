@@ -40,6 +40,7 @@ interface ProfilePictureUploadProps {
 const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
   ({
     user,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onProfileUpdate,
     size = 80,
     showUploadButton = true,
@@ -53,7 +54,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
     onRemoveSelected,
     suppressExistingImage = false,
   }) => {
-    const { updateUser, refreshUser } = useUser();
+    const { updateUser } = useUser();
     const { updateProfilePicture, clearProfilePicture } = useProfilePicture();
     const [uploading, setUploading] = useState(false);
     const [removing, setRemoving] = useState(false);
@@ -62,6 +63,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [showOverlay, setShowOverlay] = useState(false);
+    const [imgError, setImgError] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const API_BASE_URL =
@@ -205,6 +207,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       } finally {
         setUploading(false);
       }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedFile, updateProfilePicture]); // ✅ Removed refreshUser from dependencies
 
     const handleRemove = useCallback(async () => {
@@ -221,7 +224,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       setError(null);
 
       try {
-        const response = await profileApiService.removeProfilePicture();
+        await profileApiService.removeProfilePicture();
 
         // Update profile picture context - this will update the UI immediately
         clearProfilePicture();
@@ -259,7 +262,9 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
         height: size,
         fontSize: `${size * 0.4}px`,
         cursor: clickable ? 'pointer' : 'default',
-        backgroundColor: user.profile_pic
+        backgroundColor: imgError
+          ? '#9e9e9e'
+          : user.profile_pic
           ? 'transparent'
           : generateAvatarColor(user.first_name),
         transition: 'all 0.3s ease-in-out',
@@ -274,7 +279,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
             }
           : {},
       }),
-      [size, clickable, user.profile_pic, user.first_name]
+      [size, clickable, user.profile_pic, user.first_name, imgError]
     );
 
     const { profilePictureUrl } = useProfilePicture();
@@ -302,7 +307,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
         (!!previewImageOverride && !suppressExistingImage) ||
         (!suppressExistingImage && (profilePictureUrl || user.profile_pic));
 
-      if (hasProfilePicture && imageUrl) {
+      if (hasProfilePicture && imageUrl && !imgError) {
         return (
           <Avatar
             sx={avatarStyle}
@@ -311,6 +316,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
             <img
               src={imageUrl}
               alt={`${user.first_name} ${user.last_name}`}
+              onError={() => setImgError(true)}
               loading="lazy"
               style={{
                 width: '100%',
@@ -325,7 +331,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
 
       return (
         <Avatar sx={avatarStyle} onClick={handleAvatarClick}>
-          {getInitials(user.first_name, user.last_name)}
+          {imgError ? null : getInitials(user.first_name, user.last_name)}
         </Avatar>
       );
     }, [
@@ -338,6 +344,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       user.last_name,
       avatarStyle,
       handleAvatarClick,
+      imgError,
     ]);
 
     return (

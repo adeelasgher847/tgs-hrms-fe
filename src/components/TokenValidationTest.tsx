@@ -22,8 +22,8 @@ export const TokenValidationTest: React.FC = () => {
       } else {
         setValidationResult(`❌ Token is invalid. Error: ${result.error}`);
       }
-    } catch (error: any) {
-      setValidationResult(`❌ Validation failed: ${error.message}`);
+    } catch (error: unknown) {
+      setValidationResult(`❌ Validation failed: ${(error as Error).message}`);
     } finally {
       setIsValidating(false);
     }

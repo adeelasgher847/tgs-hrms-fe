@@ -1,5 +1,5 @@
 import axiosInstance from './axiosInstance';
-import { handleApiError, isGlobalDepartment } from '../utils/errorHandler';
+import { handleApiError } from '../utils/errorHandler';
 
 // Backend Department interface (matches your NestJS entity)
 export interface BackendDepartment {
@@ -86,10 +86,6 @@ class DepartmentApiService {
     departmentData: DepartmentDto
   ): Promise<BackendDepartment> {
     try {
-      // Check if this is a global department first
-      const existingDept = await this.getDepartmentById(id);
-      const isGlobal = isGlobalDepartment(existingDept);
-      
       const response = await axiosInstance.put<BackendDepartment>(
         `${this.baseUrl}/${id}`,
         departmentData

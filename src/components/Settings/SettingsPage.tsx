@@ -27,7 +27,7 @@ import {
   BusinessCenter,
   Business,
   Language,
-  Delete as DeleteIcon,
+//   Delete as DeleteIcon,
 } from '@mui/icons-material';
 
 const SettingsPage: React.FC = () => {
@@ -53,8 +53,7 @@ const SettingsPage: React.FC = () => {
   const [modalLogoLoading, setModalLogoLoading] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setError] = useState<string | null>(null);
 
   const isModalOpenRef = useRef(false);
 
@@ -129,7 +128,7 @@ const SettingsPage: React.FC = () => {
 
     setEditLoading(true);
     try {
-      const updatedDetails = await companyApi.updateCompanyDetails({
+      await companyApi.updateCompanyDetails({
         company_name: editFormData.company_name,
         domain: editFormData.domain,
       });
@@ -534,7 +533,7 @@ const SettingsPage: React.FC = () => {
                       </Box>
                     )}
                   </Box>
-
+<!-- 
                   {isEditing && modalCompanyLogo && (
                     <IconButton
                       onClick={handleDeleteLogo}
@@ -555,7 +554,7 @@ const SettingsPage: React.FC = () => {
                     >
                       <DeleteIcon fontSize='small' />
                     </IconButton>
-                  )}
+                  )} -->
                 </Box>
 
                 {/* Hidden File Input */}

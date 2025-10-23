@@ -9,11 +9,8 @@ import {
   Alert,
   CircularProgress,
   Snackbar,
-  FormControl,
-  MenuItem,
-  Select,
 } from '@mui/material';
-import signupApi, { type CompanyDetailsRequest, type LogoUploadRequest } from '../api/signupApi';
+// import signupApi, { type CompanyDetailsRequest, type LogoUploadRequest } from '../api/signupApi';
 
 const CompanyDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -149,7 +146,7 @@ const CompanyDetails: React.FC = () => {
       setTimeout(() => {
         navigate('/signup/select-plan');
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
 
       if (err.response?.data?.message) {
         const errorData = err.response.data.message;
@@ -250,6 +247,13 @@ const CompanyDetails: React.FC = () => {
                   {error && (
                     <Alert severity='error' sx={{ mt: 2, mb: 2 }}>
                       {error}
+                    </Alert>
+                  )}
+
+                  {/* Success Message */}
+                  {success && (
+                    <Alert severity='success' sx={{ mt: 2, mb: 2 }}>
+                      {success}
                     </Alert>
                   )}
 

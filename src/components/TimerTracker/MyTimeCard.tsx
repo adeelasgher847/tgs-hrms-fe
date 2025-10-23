@@ -85,6 +85,7 @@ const MyTimerCard: React.FC = () => {
         setCheckingAttendance(false);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // No dependencies - stable function
 
   const fetchLatestSession = useCallback(async (force = false) => {
@@ -124,7 +125,8 @@ const MyTimerCard: React.FC = () => {
     } finally {
       setRefreshing(false);
     }
-  }, [checkAttendanceStatus, fetchLatestSession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -162,7 +164,8 @@ const MyTimerCard: React.FC = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [handleRefresh]); // Only depend on handleRefresh
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only depend on handleRefresh
 
   // Timer effect - separate from data fetching
   useEffect(() => {
@@ -264,7 +267,8 @@ const MyTimerCard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [checkAttendanceStatus, fetchLatestSession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>

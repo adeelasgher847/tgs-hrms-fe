@@ -48,7 +48,6 @@ function App() {
     <LanguageProvider>
       <UserProvider>
         <ProfilePictureProvider>
-          <CompanyProvider>
             <Router>
               <Routes>
                 <Route path='/' element={<Login />} />
@@ -70,9 +69,11 @@ function App() {
                 <Route
                   path='/dashboard/*'
                   element={
+                     <CompanyProvider>
                     <ThemeProvider>
                       <Layout />
                     </ThemeProvider>
+                    </CompanyProvider>
                   }
                 >
                   <Route index element={<Dashboard />} />
@@ -120,13 +121,10 @@ function App() {
                   <Route path='benefit-details' element={<BenefitDetails />} />
                   <Route path='benefit-report' element={<BenefitReport />} />
                 </Route>
-
                 <Route path='/company-details' element={<CompanyDetails />} />
-
                 <Route path='*' element={<Error404 />} />
               </Routes>
             </Router>
-          </CompanyProvider>
           <NotificationToast />
         </ProfilePictureProvider>
       </UserProvider>

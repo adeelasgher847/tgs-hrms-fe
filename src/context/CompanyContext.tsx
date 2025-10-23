@@ -16,6 +16,7 @@ interface CompanyContextType {
   clearCompanyData: () => void;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const CompanyContext = createContext<CompanyContextType | undefined>(
   undefined
 );
@@ -28,9 +29,28 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
   );
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
 
-  const clearCompanyData = useCallback(() => {
-    setCompanyDetails(null);
-    setCompanyLogo(null);
+  const refreshCompanyDetails = useCallback(async () => {
+    try {
+      const details = await companyApi.getCompanyDetails();
+      setCompanyDetails(details);
+
+      const tenantId = details.tenant_id;
+      if (tenantId) {
+        const logoUrl = await companyApi.getCompanyLogo(tenantId);
+        setCompanyLogo(logoUrl);
+      }
+    } catch (err: unknown) {
+      console.error('Error fetching company details:', err);
+    }
+  }, []);
+
+  const updateCompanyDetails = useCallback((details: CompanyDetails) => {
+    setCompanyDetails(details);
+  }, []);
+
+  useEffect(() => {
+    refreshCompanyDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const companyName = useMemo(
@@ -64,6 +84,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useCompany = (): CompanyContextType => {
   const context = React.useContext(CompanyContext);
   if (!context) {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import {
   Box,
@@ -11,7 +12,6 @@ import {
   TableContainer,
   TextField,
   Button,
-  Pagination,
   CircularProgress,
   MenuItem,
   IconButton,
@@ -23,7 +23,6 @@ import 'react-multi-date-picker/styles/layouts/mobile.css';
 import 'react-multi-date-picker/styles/colors/teal.css';
 import './AttendanceTable.css';
 import attendanceApi from '../../api/attendanceApi';
-import employeeApi from '../../api/employeeApi';
 import { exportCSV } from '../../api/exportApi';
 import type {
   AttendanceEvent,
@@ -31,6 +30,7 @@ import type {
 } from '../../api/attendanceApi';
 import { isManager as checkIsManager, isAdmin, isSystemAdmin, isNetworkAdmin, isHRAdmin } from '../../utils/roleUtils';
 import DateNavigation from './DateNavigation';
+import { useTheme } from '../../theme/hooks';
 
 interface AttendanceRecord {
   id: string;
@@ -52,6 +52,7 @@ const formatLocalYMD = (d: Date) => {
 };
 
 const AttendanceTable = () => {
+  const { mode } = useTheme();
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [filteredData, setFilteredData] = useState<AttendanceRecord[]>([]);
   const [userRole, setUserRole] = useState<string>('');
@@ -63,7 +64,7 @@ const AttendanceTable = () => {
   >([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [isManager, setIsManager] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
@@ -78,13 +79,14 @@ const AttendanceTable = () => {
     AttendanceEvent[]
   >([]);
   const [teamLoading, setTeamLoading] = useState(false);
-  const [teamError, setTeamError] = useState('');
-  const [teamCurrentPage, setTeamCurrentPage] = useState(1);
-  const [teamTotalPages, setTeamTotalPages] = useState(1);
-  const [teamTotalItems, setTeamTotalItems] = useState(0);
+  const [, setTeamError] = useState('');
+  const [, setTeamCurrentPage] = useState(1);
+  const [, setTeamTotalPages] = useState(1);
+  const [, setTeamTotalItems] = useState(0);
 
-  // Date navigation state for All Attendance and Team Attendance
+  // Date navigation state for All Attendance, My Attendance, and Team Attendance
   const [currentNavigationDate, setCurrentNavigationDate] = useState('all');
+  const [myAttendanceNavigationDate, setMyAttendanceNavigationDate] = useState('all');
   const [teamCurrentNavigationDate, setTeamCurrentNavigationDate] =
     useState('all');
 
@@ -95,22 +97,21 @@ const AttendanceTable = () => {
 
   // Function to handle daily summaries from backend (cross-day compatible)
   const buildFromSummaries = (
-    summariesRaw: any[],
-    currentUserId: string,
-    isAllAttendance: boolean = false
+    summariesRaw: Record<string, unknown>[],
+    currentUserId: string
   ): AttendanceRecord[] => {
-    return summariesRaw.map((summary: any) => ({
+    return summariesRaw.map((summary: Record<string, unknown>) => ({
       id: `${summary.date}-${currentUserId}`,
       userId: currentUserId,
-      date: summary.date,
-      checkInISO: summary.checkIn,
-      checkOutISO: summary.checkOut,
-      checkIn: summary.checkIn ? toDisplayTime(summary.checkIn) : null,
-      checkOut: summary.checkOut ? toDisplayTime(summary.checkOut) : null,
-      workedHours: summary.workedHours || null,
+      date: summary.date as string,
+      checkInISO: summary.checkIn as string,
+      checkOutISO: summary.checkOut as string,
+      checkIn: summary.checkIn ? toDisplayTime(summary.checkIn as string) : null,
+      checkOut: summary.checkOut ? toDisplayTime(summary.checkOut as string) : null,
+      workedHours: summary.workedHours as number || null,
       user: {
         first_name:
-          `${summary.user.first_name} ${summary.user.last_name || ''}`.trim(),
+          `${(summary.user as any)?.first_name || ''} ${(summary.user as any)?.last_name || ''}`.trim(),
       },
     }));
   };
@@ -124,9 +125,9 @@ const AttendanceTable = () => {
     const events = eventsRaw
       .filter(e => e && (e as any).timestamp && (e as any).type)
       .map(e => ({
-        id: (e as any).id,
-        user_id: (e as any).user_id || (isAllAttendance ? null : currentUserId),
-        timestamp: (e as any).timestamp,
+        id: (e as any).id as string,
+        user_id: (e as any).user_id as string || (isAllAttendance ? null : currentUserId),
+        timestamp: (e as any).timestamp as string,
         type: (e as any).type as 'check-in' | 'check-out',
         user: (e as any).user,
       }))
@@ -151,15 +152,15 @@ const AttendanceTable = () => {
 
     // Group events by user
     for (const ev of events) {
-      const userId = (ev as any).user_id;
+      const userId = ev.user_id as string;
       if (!userEvents.has(userId)) {
         userEvents.set(userId, []);
       }
       userEvents.get(userId)!.push({
-        id: (ev as any).id,
-        timestamp: (ev as any).timestamp,
-        type: (ev as any).type,
-        user: (ev as any).user,
+        id: ev.id as string,
+        timestamp: ev.timestamp as string,
+        type: ev.type as 'check-in' | 'check-out',
+        user: ev.user as any,
       });
     }
 
@@ -277,8 +278,8 @@ const AttendanceTable = () => {
   };
 
   // Fetch attendance data for a specific date (for date navigation)
-  const fetchAttendanceByDate = async (date: string, view: 'all' | 'team', preservePage: boolean = false) => {
-    if (view === 'all') {
+  const fetchAttendanceByDate = async (date: string, view: 'all' | 'my' | 'team') => {
+    if (view === 'all' || view === 'my') {
       setLoading(true);
     } else {
       setTeamLoading(true);
@@ -287,7 +288,7 @@ const AttendanceTable = () => {
     try {
       const storedUser = localStorage.getItem('user');
       if (!storedUser) {
-        if (view === 'all') {
+        if (view === 'all' || view === 'my') {
           setLoading(false);
         } else {
           setTeamLoading(false);
@@ -299,11 +300,8 @@ const AttendanceTable = () => {
       let response: AttendanceResponse;
 
       if (view === 'all') {
-        // Use current page if preserving pagination, otherwise use page 1
-        const pageToFetch = preservePage ? currentPage : 1;
-        
         response = await attendanceApi.getAllAttendance(
-          pageToFetch,
+          1, // Always page 1 - show all records
           date, // Start date
           date // End date (same day)
         );
@@ -320,7 +318,7 @@ const AttendanceTable = () => {
           (events[0] as any).checkIn !== undefined;
 
         if (isShiftBased) {
-          rows = buildFromSummaries(events, currentUser.id, true);
+          rows = buildFromSummaries(events as any, currentUser.id);
         } else {
           rows = buildFromEvents(events, currentUser.id, true);
         }
@@ -328,18 +326,43 @@ const AttendanceTable = () => {
         setAttendanceData(rows);
         setFilteredData(rows);
 
-        // Set pagination state for date-filtered results
-        if (preservePage) {
-          // Maintain current page and pagination info from API response
-          setCurrentPage(response.page || 1);
-          setTotalPages(response.totalPages || 1);
-          setTotalItems(response.total || 0);
+        // Always show all records without pagination
+        setCurrentPage(1);
+        setTotalPages(1);
+        setTotalItems(rows.length);
+      } else if (view === 'my') {
+        // For My Attendance, fetch events for the current user for specific date
+        response = await attendanceApi.getAttendanceEvents(
+          currentUser.id,
+          1, // Always page 1 when showing all
+          date, // Start date
+          date // End date (same day)
+        );
+
+        const events: AttendanceEvent[] =
+          (response.items as AttendanceEvent[]) || [];
+        let rows: AttendanceRecord[] = [];
+
+        // Check if response contains shift-based data or events
+        const isShiftBased =
+          events.length > 0 &&
+          events[0] &&
+          (events[0] as any).date &&
+          (events[0] as any).checkIn !== undefined;
+
+        if (isShiftBased) {
+          rows = buildFromSummaries(events as any, currentUser.id);
         } else {
-          // Reset to page 1 for new date selection
-          setCurrentPage(1);
-          setTotalPages(1);
-          setTotalItems(rows.length);
+          rows = buildFromEvents(events, currentUser.id, false);
         }
+
+        setAttendanceData(rows);
+        setFilteredData(rows);
+
+        // Always show all records without pagination
+        setCurrentPage(1);
+        setTotalPages(1);
+        setTotalItems(rows.length);
       } else {
         // For Team Attendance, we'll keep the existing team attendance logic
         // but could be modified to fetch by date if the API supports it
@@ -354,15 +377,15 @@ const AttendanceTable = () => {
         };
         setTeamAttendance((response.items as AttendanceEvent[]) || []);
       }
-    } catch (error) {
-      if (view === 'all') {
+    } catch {
+      if (view === 'all' || view === 'my') {
         setAttendanceData([]);
         setFilteredData([]);
       } else {
         setTeamAttendance([]);
       }
     } finally {
-      if (view === 'all') {
+      if (view === 'all' || view === 'my') {
         setLoading(false);
       } else {
         setTeamLoading(false);
@@ -401,18 +424,16 @@ const AttendanceTable = () => {
       } while (page <= totalPages);
 
       setEmployees(Array.from(uniqueEmployees.values()));
-    } catch (error) {
+    } catch {
       setEmployees([]);
     }
   };
 
   const fetchAttendance = async (
-    page: number = 1,
     view?: 'my' | 'all',
     selectedUserId?: string,
     startDateOverride?: string,
-    endDateOverride?: string,
-    showAllRecords: boolean = false
+    endDateOverride?: string
   ) => {
     setLoading(true);
     try {
@@ -428,7 +449,6 @@ const AttendanceTable = () => {
         currentUser.role ||
         ''
       ).toString();
-      const roleLc = roleName.toLowerCase();
       setUserRole(roleName);
       const isManagerFlag = checkIsManager(currentUser.role);
       const isAdminFlag = isAdmin(currentUser.role);
@@ -454,46 +474,26 @@ const AttendanceTable = () => {
           // When a specific employee is selected, fetch events for that user
           response = await attendanceApi.getAttendanceEvents(
             effectiveSelectedEmployee,
-            page,
+            1, // Always page 1 - show all records
             effectiveStartDate || undefined,
             effectiveEndDate || undefined
           );
         } else {
-          // No employee selected: fetch all attendance with pagination/date filters
-          if (showAllRecords) {
-            // Fetch all records without pagination for All Attendance view
-            response = await attendanceApi.getAllAttendance(
-              1, // Always page 1 when showing all
-              undefined, // No date filters
-              undefined
-            );
-          } else {
-            response = await attendanceApi.getAllAttendance(
-              page,
-              effectiveStartDate || undefined,
-              effectiveEndDate || undefined
-            );
-          }
+          // No employee selected: fetch all attendance without pagination
+          response = await attendanceApi.getAllAttendance(
+            1, // Always page 1 - show all records
+            effectiveStartDate || undefined,
+            effectiveEndDate || undefined
+          );
         }
       } else {
         // For non-admins or 'my' view, fetch events for the current user
         response = await attendanceApi.getAttendanceEvents(
           currentUser.id,
-          page,
+          1, // Always page 1 - show all records
           effectiveStartDate || undefined,
           effectiveEndDate || undefined
         );
-      }
-
-      if (showAllRecords) {
-        // When showing all records, set pagination to show everything on one page
-        setCurrentPage(1);
-        setTotalPages(1);
-        setTotalItems(response.total || 0);
-      } else {
-        setCurrentPage(page);
-        setTotalPages(response.totalPages || 1);
-        setTotalItems(response.total || 0);
       }
 
       const events: AttendanceEvent[] =
@@ -511,9 +511,8 @@ const AttendanceTable = () => {
       if (isShiftBased) {
         // Handle shift-based data from backend
         rows = buildFromSummaries(
-          events,
-          currentUser.id,
-          canViewAllAttendance && effectiveView === 'all'
+          events as any,
+          currentUser.id
         );
       } else {
         // Handle events-based data (primary method)
@@ -524,9 +523,14 @@ const AttendanceTable = () => {
         );
       }
 
+      // Always show all records without pagination
+      setCurrentPage(1);
+      setTotalPages(1);
+      setTotalItems(rows.length);
+
       setAttendanceData(rows);
       setFilteredData(rows);
-    } catch (error) {
+    } catch {
       setAttendanceData([]);
       setFilteredData([]);
     } finally {
@@ -534,33 +538,34 @@ const AttendanceTable = () => {
     }
   };
 
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    
-    // If we're viewing a specific date (not 'all'), use date-based fetching
-    if (canViewAllAttendance && adminView === 'all' && currentNavigationDate !== 'all') {
-      fetchAttendanceByDate(currentNavigationDate, 'all', true);
-    } else {
-      fetchAttendance(page, canViewAllAttendance ? adminView : 'my');
-    }
-  };
 
   // Handle team page change
-  const handleTeamPageChange = (page: number) => {
-    setTeamCurrentPage(page);
-    fetchTeamAttendance(page);
-  };
+  // const _handleTeamPageChange = (page: number) => {
+  //   setTeamCurrentPage(page);
+  //   fetchTeamAttendance(page);
+  // };
 
-  // Handle date navigation changes
+  // Handle date navigation changes for All Attendance
   const handleDateNavigationChange = (newDate: string) => {
     setCurrentNavigationDate(newDate);
     if (newDate === 'all') {
       // Show all records (no pagination)
-      fetchAttendance(1, 'all', selectedEmployee, '', '', true);
+      fetchAttendance('all', selectedEmployee, '', '');
     } else {
-      // Preserve current page when navigating to a specific date
-      fetchAttendanceByDate(newDate, 'all', true);
+      // Show all records for specific date
+      fetchAttendanceByDate(newDate, 'all');
+    }
+  };
+
+  // Handle date navigation changes for My Attendance
+  const handleMyAttendanceDateNavigationChange = (newDate: string) => {
+    setMyAttendanceNavigationDate(newDate);
+    if (newDate === 'all') {
+      // Show all records (no pagination)
+      fetchAttendance('my', undefined, '', '');
+    } else {
+      // Show all records for specific date in My Attendance
+      fetchAttendanceByDate(newDate, 'my');
     }
   };
 
@@ -594,7 +599,9 @@ const AttendanceTable = () => {
     setSelectedEmployee('');
     setStartDate('');
     setEndDate('');
-    fetchAttendance(1, 'my', undefined, '', '');
+    // Reset to show all records for date navigation
+    setMyAttendanceNavigationDate('all');
+    fetchAttendance('my', undefined, '', '');
   };
 
   const handleAllAttendance = () => {
@@ -607,7 +614,7 @@ const AttendanceTable = () => {
     setCurrentNavigationDate('all');
 
     // Show all records initially (no date filtering)
-    fetchAttendance(1, 'all', undefined, '', '', true);
+    fetchAttendance('all', undefined, '', '');
     // Fetch employees from attendance data after initial load
     fetchEmployeesFromAttendance();
   };
@@ -618,7 +625,9 @@ const AttendanceTable = () => {
     setCurrentPage(1);
     setStartDate('');
     setEndDate('');
-    fetchAttendance(1, 'my', undefined, '', '');
+    // Reset to show all records for date navigation
+    setMyAttendanceNavigationDate('all');
+    fetchAttendance('my', undefined, '', '');
   };
 
   const handleManagerTeamAttendance = () => {
@@ -630,18 +639,27 @@ const AttendanceTable = () => {
     fetchTeamAttendance(1);
   };
 
+  // Set theme attribute on body when component mounts or theme changes
+  useEffect(() => {
+    if (mode === 'dark') {
+      document.body.setAttribute('data-theme', 'dark');
+    } else {
+      document.body.removeAttribute('data-theme');
+    }
+  }, [mode]);
+
   // Initial load
   useEffect(() => {
-    fetchAttendance(1, 'my');
+    fetchAttendance('my', undefined, '', '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // helper to convert YYYY-MM-DD -> Date at local midnight
-  const ymdToLocalDate = (ymd: string) => {
-    if (!ymd) return null;
-    const [y, m, d] = ymd.split('-').map(Number);
-    return new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0);
-  };
+  // const _ymdToLocalDate = (ymd: string) => {
+  //   if (!ymd) return null;
+  //   const [y, m, d] = ymd.split('-').map(Number);
+  //   return new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0);
+  // };
 
   // Separate effect for data filtering (only by selected employee; dates handled server-side)
   useEffect(() => {
@@ -658,7 +676,7 @@ const AttendanceTable = () => {
     setStartDate('');
     setEndDate('');
     setSelectedEmployee('');
-    fetchAttendance(1, canViewAllAttendance ? adminView : 'my', '', '', '');
+    fetchAttendance(canViewAllAttendance ? adminView : 'my', '', '', '');
   };
 
   // Handle employee selection change
@@ -666,7 +684,7 @@ const AttendanceTable = () => {
     setSelectedEmployee(value);
     setCurrentPage(1);
     // Immediately pass the selected employee to avoid stale state in fetch
-    fetchAttendance(1, 'all', value, startDate, endDate);
+    fetchAttendance('all', value, startDate, endDate);
   };
 
   // Determine admin-like UI behavior (Admin, System-Admin, Network-Admin, or HR-Admin)
@@ -674,7 +692,7 @@ const AttendanceTable = () => {
   const isAdminLike = userRoleLc === 'admin' || userRoleLc === 'system_admin' || userRoleLc === 'network_admin' || userRoleLc === 'hr_admin';
   
   // Check if user is strictly an admin (not system-admin, network-admin, or hr-admin)
-  const isStrictAdmin = isAdminUser && !isSystemAdminUser && !isNetworkAdminUser && !isHRAdminUser;
+  // const _isStrictAdmin = isAdminUser && !isSystemAdminUser && !isNetworkAdminUser && !isHRAdminUser;
   
   // Check if user can view all attendance (Admin, System-Admin, Network-Admin, or HR-Admin)
   const canViewAllAttendance = isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser;
@@ -689,7 +707,7 @@ const AttendanceTable = () => {
       {isManager && !isAdminLike && managerView === 'team' && (
         <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
           <Button
-            variant={managerView === 'my' ? 'contained' : 'outlined'}
+            variant={(managerView as string) === 'my' ? 'contained' : 'outlined'}
             onClick={handleManagerMyAttendance}
           >
             My Attendance
@@ -811,7 +829,7 @@ const AttendanceTable = () => {
                        setCurrentPage(1);
                        const view = canViewAllAttendance ? adminView : 'my';
                        const selectedId = view === 'all' ? selectedEmployee : undefined;
-                       fetchAttendance(1, view, selectedId, start, end);
+                       fetchAttendance(view, selectedId, start, end);
                      } else if (dates && dates.length === 1) {
                        const start = dates[0]?.format('YYYY-MM-DD') || '';
                        setStartDate(start);
@@ -820,7 +838,7 @@ const AttendanceTable = () => {
                        setCurrentPage(1);
                        const view = canViewAllAttendance ? adminView : 'my';
                        const selectedId = view === 'all' ? selectedEmployee : undefined;
-                       fetchAttendance(1, view, selectedId, start, '');
+                       fetchAttendance(view, selectedId, start, '');
                      } else {
                        setStartDate('');
                        setEndDate('');
@@ -828,7 +846,7 @@ const AttendanceTable = () => {
                        setCurrentPage(1);
                        const view = canViewAllAttendance ? adminView : 'my';
                        const selectedId = view === 'all' ? selectedEmployee : undefined;
-                       fetchAttendance(1, view, selectedId, '', '');
+                       fetchAttendance(view, selectedId, '', '');
                      }
                    }}
                    format="MM/DD/YYYY"
@@ -847,8 +865,8 @@ const AttendanceTable = () => {
                    containerStyle={{
                      width: '100%',
                    }}
-                   inputClass="custom-date-picker-input"
-                   className="custom-date-picker"
+                   inputClass={`custom-date-picker-input ${mode === 'dark' ? 'theme-dark' : ''}`}
+                   className={`custom-date-picker ${mode === 'dark' ? 'theme-dark' : ''}`}
                    editable={false}
                    showOtherDays={true}
                    onOpen={() => {
@@ -1019,28 +1037,20 @@ const AttendanceTable = () => {
             />
           )}
 
-          {/* Pagination - Show for My Attendance and when viewing specific dates in All Attendance */}
-          {((!(canViewAllAttendance && adminView === 'all')) || 
-            (canViewAllAttendance && adminView === 'all' && currentNavigationDate !== 'all')) && 
-            totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-              <Pagination
-                count={totalPages}
-                page={currentPage}
-                onChange={(_, page) => handlePageChange(page)}
-                color='primary'
-              />
-            </Box>
+          {/* Date Navigation for My Attendance */}
+          {((!canViewAllAttendance) || (canViewAllAttendance && adminView === 'my') || (isManager && !isAdminLike && managerView === 'my')) && (
+            <DateNavigation
+              currentDate={myAttendanceNavigationDate}
+              onDateChange={handleMyAttendanceDateNavigationChange}
+              disabled={loading}
+            />
           )}
 
-          {/* Pagination Info - Show for My Attendance and when viewing specific dates in All Attendance */}
-          {((!(canViewAllAttendance && adminView === 'all')) || 
-            (canViewAllAttendance && adminView === 'all' && currentNavigationDate !== 'all')) && 
-            totalItems > 0 && (
+          {/* Show total records count */}
+          {totalItems > 0 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
               <Typography variant='body2' color='text.secondary'>
-                Showing {(currentPage - 1) * 10 + 1} to{' '}
-                {Math.min(currentPage * 10, totalItems)} of {totalItems} records
+                Showing all {totalItems} records
               </Typography>
             </Box>
           )}

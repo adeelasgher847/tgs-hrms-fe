@@ -10,7 +10,6 @@ import {
   TableBody,
   TableContainer,
   CircularProgress,
-  Pagination,
   FormControl,
   Select,
   MenuItem,
@@ -43,7 +42,7 @@ const AttendanceSummaryReport: React.FC = () => {
   const [filter, setFilter] = useState<
     'thisMonth' | 'prevMonth' | '60days' | '90days'
   >('thisMonth');
-  const [totalPages, setTotalPages] = useState<number>(1);
+  const [, setTotalPages] = useState<number>(1);
 
   // Snackbar states
   const [openToast, setOpenToast] = useState(false);
@@ -61,7 +60,7 @@ const AttendanceSummaryReport: React.FC = () => {
     setOpenToast(true);
   };
 
-  const getDaysRange = () => {
+  const getDaysRange = React.useCallback(() => {
     switch (filter) {
       case 'thisMonth':
         return new Date().getDate();
@@ -81,7 +80,7 @@ const AttendanceSummaryReport: React.FC = () => {
       default:
         return 30;
     }
-  };
+  }, [filter]);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -108,11 +107,11 @@ const AttendanceSummaryReport: React.FC = () => {
           items = [];
         } else if (Array.isArray(resp)) {
           items = resp as AttendanceSummaryItem[];
-        } else if (Array.isArray((resp as any).items)) {
-          items = (resp as any).items as AttendanceSummaryItem[];
-          serverTotalPages = (resp as any).totalPages;
-        } else if (Array.isArray((resp as any).data)) {
-          items = (resp as any).data as AttendanceSummaryItem[];
+        } else if (Array.isArray((resp as Record<string, unknown>).items)) {
+          items = (resp as Record<string, unknown>).items as AttendanceSummaryItem[];
+          serverTotalPages = (resp as Record<string, unknown>).totalPages as number;
+        } else if (Array.isArray((resp as Record<string, unknown>).data)) {
+          items = (resp as Record<string, unknown>).data as AttendanceSummaryItem[];
         } else {
           items = [];
         }
@@ -143,7 +142,7 @@ const AttendanceSummaryReport: React.FC = () => {
 
     fetchSummary();
     setPage(1);
-  }, [user, userLoading, filter]);
+  }, [user, userLoading, filter, getDaysRange]);
 
   const safeData = Array.isArray(summaryData) ? summaryData : [];
 
@@ -152,7 +151,7 @@ const AttendanceSummaryReport: React.FC = () => {
     page * ITEMS_PER_PAGE
   );
 
-  const csvEscape = (value: any) => {
+  const csvEscape = (value: unknown) => {
     if (value === null || value === undefined) return '';
     const s = String(value).replace(/"/g, '""');
     return `"${s}"`;
@@ -226,7 +225,7 @@ const AttendanceSummaryReport: React.FC = () => {
           <Select
             value={filter}
             onChange={e => {
-              setFilter(e.target.value as any);
+              setFilter(e.target.value as 'thisMonth' | 'prevMonth' | '60days' | '90days');
               setPage(1);
             }}
           >
@@ -266,7 +265,7 @@ const AttendanceSummaryReport: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Paper sx={{ mt: 2 }}>
+        <Paper sx={{ mt: 2, boxShadow: 'none' }}>
           <TableContainer>
             <Table>
               <TableHead>

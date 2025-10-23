@@ -7,8 +7,8 @@ import {
   useMediaQuery,
   Paper,
   Divider,
-  Snackbar,
-  Alert,
+  // Snackbar,
+  // Alert,
   CircularProgress,
   useTheme,
 } from '@mui/material';
@@ -85,6 +85,7 @@ export const DepartmentList: React.FC = () => {
   // Load departments on component mount
   useEffect(() => {
     fetchDepartments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCreateDepartment = async (data: DepartmentFormData) => {

@@ -54,6 +54,7 @@ export const isMenuVisibleForRole = (
   const r = normalizeRole(role);
   const label = (menuLabel || '').toLowerCase().replace(/\s+/g, '').trim();
 
+
   const allowedByRole: Record<NormalizedRole, string[]> = {
     'system-admin': [
       'dashboard',
@@ -63,6 +64,7 @@ export const isMenuVisibleForRole = (
       'teams',
       'assets',
       'attendance',
+      'benefits',
       'report',
     ],
     'network-admin': [
@@ -99,6 +101,7 @@ export const isMenuVisibleForRole = (
     if (label.includes('employee')) return 'employees';
     if (label.includes('team')) return 'teams';
     if (label.includes('asset')) return 'assets';
+    if (label.includes('benefit')) return 'benefits';
     if (label.includes('attendance')) return 'attendance';
     if (label.includes('report')) return 'report';
     if (label.includes('benefits')) return 'benefits';
@@ -329,6 +332,11 @@ export const isDashboardPathAllowedForRole = (
       'EmployeeProfileView',
       // Settings
       'settings',
+      // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
+      'my-benefits',
     ]),
     'network-admin': new Set([
       '',
@@ -362,6 +370,11 @@ export const isDashboardPathAllowedForRole = (
       'UserProfile',
       // Assets - HR admin has no access
       'settings',
+      // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
+      'my-benefits',
       'teams',
       'benefits-list',
       'employee-benefit',
@@ -388,6 +401,11 @@ export const isDashboardPathAllowedForRole = (
       'attendance-summary',
       // Settings
       'settings',
+      // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
+      'my-benefits',
     ]),
     manager: new Set([
       'AttendanceCheck',
@@ -402,6 +420,11 @@ export const isDashboardPathAllowedForRole = (
       'attendance-summary',
       // Settings
       'settings',
+      // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
+      'my-benefits',
     ]),
     employee: new Set([
       'AttendanceCheck',
@@ -427,6 +450,11 @@ export const isDashboardPathAllowedForRole = (
       'assets/requests',
       // Settings
       'settings',
+      // Benefits
+      'benefits',
+      'benefits/assign',
+      'benefits/reporting',
+      'my-benefits',
     ]),
     unknown: new Set<string>(),
   };

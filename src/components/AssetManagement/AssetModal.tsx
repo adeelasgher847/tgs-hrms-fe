@@ -12,7 +12,6 @@ import {
   MenuItem,
   Box,
   Typography,
-  Autocomplete,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -20,12 +19,13 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { Asset, AssetCategory, UpdateAssetRequest, MockUser } from '../../types/asset';
+import type { Asset, MockUser } from '../../types/asset';
+import { assetApi, type AssetSubcategory } from '../../api/assetApi';
 
 interface AssetModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: UpdateAssetRequest & { assignedTo?: string }) => void;
+  onSubmit: (data: { name: string; category: string; subcategoryId?: string; purchaseDate: string; assignedTo?: string }) => void;
   asset?: Asset | null;
   users: MockUser[];
   loading?: boolean;
@@ -35,6 +35,7 @@ interface AssetModalProps {
 const schema = yup.object({
   name: yup.string().required('Asset name is required'),
   category: yup.string().required('Category is required'),
+  subcategory: yup.string().required('Subcategory is required'),
   purchaseDate: yup.date().required('Purchase date is required'),
   warrantyExpiry: yup.date().nullable(),
   assignedTo: yup.string().nullable(),
@@ -45,12 +46,14 @@ const AssetModal: React.FC<AssetModalProps> = ({
   onClose,
   onSubmit,
   asset,
-  users,
   loading = false,
   title,
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-  const [selectedWarrantyDate, setSelectedWarrantyDate] = useState<Date | null>(null);
+  const [, setSelectedWarrantyDate] = useState<Date | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [subcategories, setSubcategories] = useState<AssetSubcategory[]>([]);
+  const [loadingData, setLoadingData] = useState(false);
 
   const {
     control,
@@ -64,6 +67,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
     defaultValues: {
       name: '',
       category: '',
+      subcategory: '',
       purchaseDate: new Date(),
       warrantyExpiry: null,
       assignedTo: '',
@@ -71,6 +75,37 @@ const AssetModal: React.FC<AssetModalProps> = ({
   });
 
   const selectedCategory = watch('category');
+
+  // Fetch categories and subcategories from backend
+  useEffect(() => {
+    const fetchCategoriesAndSubcategories = async () => {
+      try {
+        setLoadingData(true);
+        const [categoriesData, subcategoriesData] = await Promise.all([
+          assetApi.getAssetSubcategoriesByCategory(),
+          assetApi.getAllAssetSubcategories()
+        ]);
+        
+        
+        // Extract unique categories
+        setCategories(categoriesData);
+        
+        // Store all subcategories
+        setSubcategories(subcategoriesData.items || subcategoriesData);
+      } catch (error) {
+        console.error('❌ Failed to fetch categories and subcategories:', error);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    if (open) {
+      fetchCategoriesAndSubcategories();
+    }
+  }, [open]);
+
+  // Get available subcategories for selected category
+  const availableSubcategories = subcategories.filter(sub => sub.category === selectedCategory);
 
   useEffect(() => {
     if (asset) {
@@ -87,6 +122,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
       reset({
         name: '',
         category: '',
+        subcategory: '',
         purchaseDate: new Date(),
         warrantyExpiry: null,
         assignedTo: '',
@@ -96,11 +132,13 @@ const AssetModal: React.FC<AssetModalProps> = ({
     }
   }, [asset, reset]);
 
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = (data: Record<string, unknown>) => {
     onSubmit({
-      ...data,
+      name: data.name as string,
+      category: data.category as string,
+      subcategoryId: data.subcategory as string,
       purchaseDate: selectedDate?.toISOString() || '',
-      warrantyExpiry: selectedWarrantyDate?.toISOString() || undefined,
+      assignedTo: data.assignedTo as string,
     });
   };
 
@@ -157,19 +195,72 @@ const AssetModal: React.FC<AssetModalProps> = ({
                       name="category"
                       control={control}
                       render={({ field }) => (
-                        <TextField
-                          {...field}
-                          fullWidth
-                          label="Category"
-                          placeholder="Enter asset category (e.g., Laptop, Monitor, Phone)"
-                          error={!!errors.category}
-                          helperText={errors.category?.message}
-                          disabled={loading}
-                        />
+                        <FormControl fullWidth error={!!errors.category}>
+                          <InputLabel>Category</InputLabel>
+                          <Select
+                            {...field}
+                            label="Category"
+                            disabled={loading}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              setValue('subcategory', ''); // Reset subcategory when category changes
+                            }}
+                          >
+                            {categories.map((category) => (
+                              <MenuItem key={category} value={category}>
+                                <Typography variant="body2">{category}</Typography>
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          {errors.category && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
+                              {errors.category.message}
+                            </Typography>
+                          )}
+                        </FormControl>
                       )}
                     />
                   </Box>
                 </Box>
+
+                {selectedCategory && availableSubcategories.length > 0 && (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                    <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
+                      <Controller
+                        name="subcategory"
+                        control={control}
+                        render={({ field }) => (
+                          <FormControl fullWidth error={!!errors.subcategory}>
+                            <InputLabel>Subcategory</InputLabel>
+                            <Select
+                              {...field}
+                              label="Subcategory"
+                              disabled={loading || !selectedCategory}
+                            >
+                              {availableSubcategories.map((subcategory) => (
+                                <MenuItem key={subcategory.id} value={subcategory.id}>
+                                  <Box>
+                                    <Typography variant="body2">{subcategory.name}</Typography>
+                                    {subcategory.description && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        {subcategory.description}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </MenuItem>
+                              ))}
+                            </Select>
+                            {errors.subcategory && (
+                              <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
+                                {errors.subcategory.message}
+                              </Typography>
+                            )}
+                          </FormControl>
+                        )}
+                      />
+                    </Box>
+                  </Box>
+                )}
 
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                   <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -100,7 +100,7 @@ const EmployeeManager: React.FC = () => {
   const [designationList, setDesignationList] = useState<BackendDesignation[]>(
     []
   );
-  const [loadingFilters, setLoadingFilters] = useState(false);
+  // const [loadingFilters, setLoadingFilters] = useState(false);
 
   // Delete confirmation dialog state
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -127,27 +127,9 @@ const EmployeeManager: React.FC = () => {
       }
     : {};
 
-  // Load employees on component mount
-  useEffect(() => {
-    loadEmployees(1);
-    loadDepartmentsAndDesignations();
-  }, []);
-
-  // Re-fetch from backend when filters change, reset to first page
-  useEffect(() => {
-    setCurrentPage(1);
-    loadEmployees(1);
-  }, [departmentFilter, designationFilter]);
-
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    loadEmployees(page);
-  };
-
-  const loadDepartmentsAndDesignations = async () => {
+  const loadDepartmentsAndDesignations = useCallback(async () => {
     try {
-      setLoadingFilters(true);
+      // setLoadingFilters(true);
       // Load all departments
       const deptData = await departmentApiService.getAllDepartments();
       const deptMap: Record<string, string> = {};
@@ -168,11 +150,11 @@ const EmployeeManager: React.FC = () => {
     } catch {
       // Handle error silently
     } finally {
-      setLoadingFilters(false);
+      // setLoadingFilters(false);
     }
-  };
+  }, []);
 
-  const loadEmployees = async (page: number = 1) => {
+  const loadEmployees = useCallback(async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
@@ -272,6 +254,24 @@ const EmployeeManager: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  }, [departmentFilter, designationFilter]);
+
+  // Load employees on component mount
+  useEffect(() => {
+    loadEmployees(1);
+    loadDepartmentsAndDesignations();
+  }, [loadEmployees, loadDepartmentsAndDesignations]);
+
+  // Re-fetch from backend when filters change, reset to first page
+  useEffect(() => {
+    setCurrentPage(1);
+    loadEmployees(1);
+  }, [departmentFilter, designationFilter, loadEmployees]);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    loadEmployees(page);
   };
 
   const handleAddEmployee = async (
@@ -299,6 +299,7 @@ const EmployeeManager: React.FC = () => {
       }
 
       // Remove role_id before submitting
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { role_id, ...employeePayload } = employeeData;
       const newEmployee = await employeeApi.createEmployee(
         employeePayload as EmployeeDto
@@ -1041,4 +1042,5 @@ const EmployeeManager: React.FC = () => {
   );
 };
 
+// Export default component only
 export default EmployeeManager;
