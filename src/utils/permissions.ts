@@ -54,7 +54,6 @@ export const isMenuVisibleForRole = (
   const r = normalizeRole(role);
   const label = (menuLabel || '').toLowerCase().replace(/\s+/g, '').trim();
 
-
   const allowedByRole: Record<NormalizedRole, string[]> = {
     'system-admin': [
       'dashboard',
@@ -65,7 +64,7 @@ export const isMenuVisibleForRole = (
       'assets',
       'attendance',
       'benefits',
-      'report',
+      'leave-analytics',
     ],
     'network-admin': [
       'dashboard',
@@ -74,15 +73,19 @@ export const isMenuVisibleForRole = (
       'teams',
       'assets',
       'attendance',
-      'report',
       'benefits',
     ],
-    'hr-admin': [
+    'hr-admin': ['attendance', 'benefits', 'leave-analytics'],
+    admin: [
+      'dashboard',
+      'department',
+      'employees',
+      'teams',
+      'assets',
       'attendance',
       'benefits',
     ],
-    admin: ['dashboard', 'department', 'employees', 'teams', 'assets', 'attendance', 'report' , 'benefits'],
-    manager: ['teams', 'attendance', 'assets','report',  'benefits'],
+    manager: ['teams', 'attendance', 'assets', 'benefits'],
     employee: ['attendance', 'assets', 'benefits'],
     user: ['attendance', 'assets', 'benefits'],
     unknown: ['benefits'], // Temporarily allow benefits for unknown roles
@@ -98,7 +101,8 @@ export const isMenuVisibleForRole = (
     if (label.includes('asset')) return 'assets';
     if (label.includes('benefit')) return 'benefits';
     if (label.includes('attendance')) return 'attendance';
-    if (label.includes('report')) return 'report';
+    if (label.includes('leaveanalytics') || label.includes('leaveanalytics'))
+      return 'leave-analytics';
     // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
     return 'misc';
   })();
@@ -132,12 +136,6 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
-    if (parent.includes('attendance')) {
-      // hide Reports for system-admin
-      if (sub.includes('reports')) {
-        visible = false;
-      }
-    }
   }
 
   // Show new "Report" only for admin + manager
@@ -156,21 +154,6 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
-    if (parent.includes('attendance')) {
-      // hide only Reports for network-admin, but keep Attendance and Attendance Table visible
-      if (sub.includes('reports')) {
-        visible = false;
-      }
-    }
-  }
-
-  // HR-admin: hide Attendance -> Reports and Leave Request
-  if (r === 'hr-admin') {
-    if (parent.includes('attendance')) {
-      if (sub.includes('reports')) {
-        visible = false;
-      }
-    }
   }
 
   // --- Admin rules ---
@@ -184,42 +167,23 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
-    if (parent.includes('attendance') && sub === 'reports') {
-      visible = false;
-    }
-  }
-
-  // --- Manager rules ---
-  if (r === 'manager') {
-    // manager sees only attendance summary (Report), not Reports
-    if (parent.includes('attendance') && sub === 'reports') {
-      visible = false;
-    }
   }
 
   // --- Employee/User rules ---
   if (r === 'employee' || r === 'user') {
     if (parent.includes('attendance')) {
       // Hide both Reports and Report for employees/users
-      if (sub === 'reports' || sub === 'report') {
+      if ( sub === 'report') {
         visible = false;
       }
     }
   }
 
-  // --- Manager rules ---
-  if (r === 'manager') {
-    // manager sees only attendance summary (Report), not Reports
-    if (parent.includes('attendance') && sub === 'reports') {
-      visible = false;
-    }
-  }
-
   // --- Employee/User rules ---
   if (r === 'employee' || r === 'user') {
     if (parent.includes('attendance')) {
       // Hide both Reports and Report for employees/users
-      if (sub === 'reports' || sub === 'report') {
+      if (sub === 'report') {
         visible = false;
       }
     }
@@ -368,6 +332,7 @@ export const isDashboardPathAllowedForRole = (
       'my-benefits',
       'teams',
       'leaves',
+      'Reports',
     ]),
     admin: new Set([
       '',

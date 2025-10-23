@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import LeaveForm from './LeaveForm';
 import LeaveHistory from './LeaveHistory';
-import LeaveApprovalDialog from './LeaveApprovalDialog'; // ✅ Imported like in sample
+import LeaveApprovalDialog from './LeaveApprovalDialog';
 import { leaveApi, type CreateLeaveRequest } from '../../api/leaveApi';
 import type { Leave } from '../../type/levetypes';
 import { getCurrentUser, getUserName, getUserRole } from '../../utils/auth';
@@ -64,16 +64,27 @@ const LeaveRequestPage = () => {
     }
   }, []);
 
+  // ✅ Manager view toggle
+  const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
+
   // ✅ Load Leave Requests
   const loadLeaves = useCallback(async () => {
     try {
       setLoading(true);
       let res;
 
-      if (['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role))
+      if (
+        ['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role)
+      ) {
         res = await leaveApi.getAllLeaves();
-      else if (role === 'manager') res = await leaveApi.getTeamLeaves();
-      else res = await leaveApi.getUserLeaves(currentUser?.id);
+      } else if (role === 'manager') {
+        res =
+          viewMode === 'you'
+            ? await leaveApi.getUserLeaves(currentUser?.id)
+            : await leaveApi.getTeamLeaves();
+      } else {
+        res = await leaveApi.getUserLeaves(currentUser?.id);
+      }
 
       const leavesData: Leave[] = res.items.map((leave: any) => ({
         id: leave.id,
@@ -97,17 +108,13 @@ const LeaveRequestPage = () => {
         updatedAt: leave.updatedAt,
       }));
 
-      const uniqueLeaves = Array.from(
-        new Map(leavesData.map(l => [l.id, l])).values()
-      );
-
-      setLeaves(uniqueLeaves);
+      setLeaves(Array.from(new Map(leavesData.map(l => [l.id, l])).values()));
     } catch (err) {
       console.error('Error loading leaves:', err);
     } finally {
       setLoading(false);
     }
-  }, [currentUser, role]);
+  }, [currentUser, role, viewMode]);
 
   // ✅ Apply Leave
   const handleApply = async (data: CreateLeaveRequest) => {
@@ -128,7 +135,7 @@ const LeaveRequestPage = () => {
     }
   };
 
-  // ✅ Confirm Approval/Reject Dialog
+  // ✅ Approve/Reject
   const handleConfirm = async (reason?: string) => {
     if (!selectedId || !actionType) return;
 
@@ -162,6 +169,7 @@ const LeaveRequestPage = () => {
     }
   };
 
+  // ✅ Withdraw
   const handleConfirmWithdraw = async () => {
     if (!selectedId) return;
     try {
@@ -198,7 +206,7 @@ const LeaveRequestPage = () => {
   useEffect(() => {
     fetchLeaveTypes();
     loadLeaves();
-  }, []);
+  }, [viewMode]); // reload when switching views
 
   if (loading)
     return (
@@ -269,24 +277,67 @@ const LeaveRequestPage = () => {
       </AppBar>
 
       {/* Main Content */}
-      <Box sx={{ p: 3 }}>
-        {/* ✅ For Employees & Managers: show tabs (Apply / History) */}
+      <Box sx={{ py: 3 }}>
         {['employee', 'manager'].includes(role) ? (
           activeTab === 'apply' ? (
             <LeaveForm onSubmit={handleApply} leaveTypes={leaveTypes} />
           ) : (
-            <LeaveHistory
-              leaves={leaves}
-              isAdmin={false}
-              isManager={role === 'manager'}
-              onWithdraw={handleWithdraw}
-            />
+            <>
+              {/* ✅ Manager toggle for Your / Team Leaves */}
+              {role === 'manager' && (
+                <Box sx={{ mb: 2, textAlign: 'right' }}>
+                  <Button
+                    variant={viewMode === 'you' ? 'contained' : 'outlined'}
+                    onClick={() => setViewMode('you')}
+                    sx={{
+                      mr: 1,
+                      borderRadius: '20px',
+                      backgroundColor:
+                        viewMode === 'you' ? '#3c3572' : 'transparent',
+                      color: viewMode === 'you' ? '#fff' : '#3c3572',
+                      borderColor: '#3c3572',
+                      '&:hover': {
+                        backgroundColor:
+                          viewMode === 'you' ? '#2f285b' : '#eae7f5',
+                      },
+                    }}
+                  >
+                    Your Leaves
+                  </Button>
+                  <Button
+                    variant={viewMode === 'team' ? 'contained' : 'outlined'}
+                    onClick={() => setViewMode('team')}
+                    sx={{
+                      borderRadius: '20px',
+                      backgroundColor:
+                        viewMode === 'team' ? '#3c3572' : 'transparent',
+                      color: viewMode === 'team' ? '#fff' : '#3c3572',
+                      borderColor: '#3c3572',
+                      '&:hover': {
+                        backgroundColor:
+                          viewMode === 'team' ? '#2f285b' : '#eae7f5',
+                      },
+                    }}
+                  >
+                    Team Leaves
+                  </Button>
+                </Box>
+              )}
+
+              <LeaveHistory
+                leaves={leaves}
+                isAdmin={false}
+                isManager={role === 'manager'}
+                currentUserId={currentUser?.id}
+                viewMode={viewMode} // 👈 added
+                onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
+              />
+            </>
           )
         ) : (
-          // ✅ For Admins / HR: Show only leave table (approve/reject)
           <LeaveHistory
             leaves={leaves}
-            isAdmin={true}
+            isAdmin={['hr-admin', 'system-admin'].includes(role)}
             isManager={false}
             onAction={handleAction}
           />
