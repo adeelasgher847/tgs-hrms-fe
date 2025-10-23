@@ -38,11 +38,10 @@ import {
 } from '@mui/icons-material';
 import type { Asset, AssetFilters, MockUser, AssetStatus } from '../../types/asset';
 import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
-import employeeApi from '../../api/employeeApi';
 import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
-import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
+import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../data/assetCategories.ts';
 
 const AssetInventory: React.FC = () => {
@@ -58,6 +57,19 @@ const AssetInventory: React.FC = () => {
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'warning' | 'info';
+  }>({ open: false, message: '', severity: 'success' });
+
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -72,21 +84,26 @@ const AssetInventory: React.FC = () => {
     { id: '3', name: 'Mike Johnson', email: 'mike.johnson@company.com', department: 'Finance' },
   ];
 
-  // Helper function to fetch user name by user ID
-  const fetchUserName = async (userId: string): Promise<string> => {
-    try {
-      const profile = await employeeApi.getEmployeeProfile(userId);
-      return profile.name || `User ${userId}`;
-    } catch (error) {
-      console.error(`Failed to fetch user name for ${userId}:`, error);
-      return `User ${userId}`;
+  // Helper function to get user name from API response or fallback
+  const getUserName = (apiAsset: ApiAsset): string => {
+    // Check if the API response includes user name information
+    if ((apiAsset as any).assignedToName) {
+      return (apiAsset as any).assignedToName;
     }
+    if ((apiAsset as any).assignedByUser?.name) {
+      return (apiAsset as any).assignedByUser.name;
+    }
+    // Fallback to user ID if no name is provided
+    return apiAsset.assigned_to ? `User ${apiAsset.assigned_to}` : 'Unassigned';
   };
 
   // Fetch assets from API
   const fetchAssets = React.useCallback(async (page: number = 1, limit: number = 25) => {
     try {
-      setInitialLoading(true);
+      // Only show initial loading on first load, not on pagination
+      if (page === 1) {
+        setInitialLoading(true);
+      }
       
       const response = await assetApi.getAllAssets({ page, limit });
       
@@ -100,21 +117,6 @@ const AssetInventory: React.FC = () => {
         setAssets([]);
         return;
       }
-        
-        // Fetch user names for all unique user IDs in assigned_to
-        const uniqueUserIds = new Set<string>();
-        apiAssets.forEach((asset: ApiAsset) => {
-          if (asset.assigned_to) uniqueUserIds.add(asset.assigned_to);
-        });
-
-        // Create a map of userId to userName
-        const userNameMap = new Map<string, string>();
-        await Promise.all(
-          Array.from(uniqueUserIds).map(async (userId) => {
-            const name = await fetchUserName(userId);
-            userNameMap.set(userId, name);
-          })
-        );
         
         // Transform API assets to match component interface
         const transformedAssets: Asset[] = apiAssets.map((apiAsset: ApiAsset) => {
@@ -143,7 +145,7 @@ const AssetInventory: React.FC = () => {
             },
             status: apiAsset.status,
             assignedTo: apiAsset.assigned_to,
-            assignedToName: apiAsset.assigned_to ? userNameMap.get(apiAsset.assigned_to) : undefined,
+            assignedToName: apiAsset.assigned_to ? getUserName(apiAsset) : undefined,
             serialNumber: '', // Not provided by API
             purchaseDate: apiAsset.purchase_date,
             location: '', // Not provided by API
@@ -158,9 +160,12 @@ const AssetInventory: React.FC = () => {
         
       } catch (error) {
         console.error('Failed to fetch assets:', error);
-        showErrorToast('Failed to load assets');
+        showSnackbar('Failed to load assets', 'error');
       } finally {
-        setInitialLoading(false);
+        // Only set initial loading to false on first page
+        if (page === 1) {
+          setInitialLoading(false);
+        }
       }
     }, []);
 
@@ -171,7 +176,7 @@ const AssetInventory: React.FC = () => {
         await assetApi.testApiConnection();
       } catch (error) {
         console.error('API connection test failed:', error);
-        showErrorToast('Failed to connect to API');
+        showSnackbar('Failed to connect to API', 'error');
       }
     };
     
@@ -250,7 +255,7 @@ const AssetInventory: React.FC = () => {
         // User name will be fetched in the refresh
         
         // Assets will be refreshed from API
-        showSuccessToast('Asset updated successfully');
+        showSnackbar('Asset updated successfully', 'success');
         // Refresh the current page
         fetchAssets(pagination.page, pagination.limit);
       } else {
@@ -267,7 +272,7 @@ const AssetInventory: React.FC = () => {
         // User name will be fetched in the refresh
         
         // Assets will be refreshed from API
-        showSuccessToast('Asset created successfully');
+        showSnackbar('Asset created successfully', 'success');
         // Refresh the current page
         fetchAssets(pagination.page, pagination.limit);
       }
@@ -275,7 +280,7 @@ const AssetInventory: React.FC = () => {
       setIsModalOpen(false);
     } catch (error) {
       console.error('Failed to save asset:', error);
-      showErrorToast('Failed to save asset');
+      showSnackbar('Failed to save asset', 'error');
     } finally {
       setLoading(false);
     }
@@ -288,14 +293,14 @@ const AssetInventory: React.FC = () => {
     try {
       await assetApi.deleteAsset(assetToDelete.id);
       
-      showSuccessToast('Asset deleted successfully');
+      showSnackbar('Asset deleted successfully', 'success');
       setDeleteDialogOpen(false);
       setAssetToDelete(null);
       // Refresh the current page
       fetchAssets(pagination.page, pagination.limit);
     } catch (error) {
       console.error('Failed to delete asset:', error);
-      showErrorToast('Failed to delete asset');
+      showSnackbar('Failed to delete asset', 'error');
     } finally {
       setLoading(false);
     }
@@ -310,13 +315,13 @@ const AssetInventory: React.FC = () => {
         purchaseDate: asset.purchaseDate,
       });
       
-      showSuccessToast('Asset marked as under maintenance');
+      showSnackbar('Asset marked as under maintenance', 'success');
       setAnchorEl(null);
       // Refresh the current page
       fetchAssets(pagination.page, pagination.limit);
     } catch (error) {
       console.error('Failed to update asset status:', error);
-      showErrorToast('Failed to update asset status');
+      showSnackbar('Failed to update asset status', 'error');
     } finally {
       setLoading(false);
     }
@@ -331,13 +336,13 @@ const AssetInventory: React.FC = () => {
         purchaseDate: asset.purchaseDate,
       });
       
-      showSuccessToast('Asset marked as available');
+      showSnackbar('Asset marked as available', 'success');
       setAnchorEl(null);
       // Refresh the current page
       fetchAssets(pagination.page, pagination.limit);
     } catch (error) {
       console.error('Failed to update asset status:', error);
-      showErrorToast('Failed to update asset status');
+      showSnackbar('Failed to update asset status', 'error');
     } finally {
       setLoading(false);
     }
@@ -676,6 +681,22 @@ const AssetInventory: React.FC = () => {
         severity="error"
         loading={loading}
       />
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
