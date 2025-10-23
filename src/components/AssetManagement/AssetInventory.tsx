@@ -87,21 +87,16 @@ const AssetInventory: React.FC = () => {
   const fetchAssets = React.useCallback(async (page: number = 1, limit: number = 25) => {
     try {
       setInitialLoading(true);
-      console.log('Fetching assets with page:', page, 'limit:', limit);
       
       const response = await assetApi.getAllAssets({ page, limit });
-      console.log('AssetInventory - API Response:', response);
       
       const apiAssets = response.assets; // Extract assets from paginated response
-      console.log('AssetInventory - Extracted Assets:', apiAssets);
-      console.log('AssetInventory - Extracted Assets Length:', apiAssets?.length);
       
       // Update pagination state
       setPagination(response.pagination);
       
       // Check if we have assets
       if (!apiAssets || apiAssets.length === 0) {
-        console.log('No assets found in response');
         setAssets([]);
         return;
       }
@@ -158,7 +153,6 @@ const AssetInventory: React.FC = () => {
           };
         });
         
-        console.log('AssetInventory - Transformed Assets:', transformedAssets);
         setAssets(transformedAssets);
         
         
@@ -209,7 +203,6 @@ const AssetInventory: React.FC = () => {
       filtered = filtered.filter(asset => filters.category!.includes(asset.category.name));
     }
 
-    console.log('AssetInventory - Filtered Assets:', filtered);
     setFilteredAssets(filtered);
   }, [assets, searchTerm, filters]);
 
@@ -240,7 +233,7 @@ const AssetInventory: React.FC = () => {
     setSelectedAssetId(null);
   };
 
-  const handleAssetSubmit = async (data: { name: string; category: string; purchaseDate: string; assignedTo?: string }) => {
+  const handleAssetSubmit = async (data: { name: string; category: string; subcategoryId?: string; purchaseDate: string; assignedTo?: string }) => {
     setLoading(true);
     try {
       if (editingAsset) {
@@ -248,6 +241,7 @@ const AssetInventory: React.FC = () => {
         const updateData = {
           name: data.name,
           category: data.category,
+          subcategoryId: data.subcategoryId,
           purchaseDate: data.purchaseDate,
         };
 
@@ -264,6 +258,7 @@ const AssetInventory: React.FC = () => {
         const createData = {
           name: data.name,
           category: data.category,
+          subcategoryId: data.subcategoryId,
           purchaseDate: data.purchaseDate,
         };
 
@@ -380,13 +375,15 @@ const AssetInventory: React.FC = () => {
         <Typography variant="h4" fontWeight={600}>
           Asset Inventory
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAddAsset}
-        >
-          Add Asset
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAddAsset}
+          >
+            Add Asset
+          </Button>
+        </Box>
       </Box>
 
       {/* Statistics Cards */}

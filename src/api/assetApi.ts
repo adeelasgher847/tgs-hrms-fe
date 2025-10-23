@@ -5,6 +5,7 @@ export interface Asset {
   id: string;
   name: string;
   category: string;
+  subcategoryId?: string;
   status: 'available' | 'assigned' | 'under_maintenance' | 'retired';
   assigned_to: string | null;
   purchase_date: string;
@@ -15,13 +16,38 @@ export interface Asset {
 export interface CreateAssetRequest {
   name: string;
   category: string;
+  subcategoryId?: string;
   purchaseDate: string;
 }
 
 export interface UpdateAssetRequest {
   name: string;
   category: string;
+  subcategoryId?: string;
   purchaseDate: string;
+}
+
+// Asset Subcategory Types
+export interface AssetSubcategory {
+  id: string;
+  name: string;
+  category: string;
+  description?: string;
+  tenant_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateAssetSubcategoryRequest {
+  name: string;
+  category: string;
+  description?: string;
+}
+
+export interface UpdateAssetSubcategoryRequest {
+  name: string;
+  category: string;
+  description?: string;
 }
 
 export interface AssetRequest {
@@ -70,12 +96,16 @@ export const validateRequestStatus = (status: string | number | boolean): 'pendi
 
 export interface CreateAssetRequestRequest {
   assetCategory: string;
+  subcategoryId?: string;
   remarks: string;
 }
 
 export interface ApproveAssetRequestRequest {
   asset_id?: string;
+  employee_id?: string;
+  request_id?: string;
   category?: string;
+  subcategory_id?: string;
 }
 
 // Pagination response interface
@@ -352,14 +382,21 @@ export const assetApi = {
 
   approveAssetRequest: async (id: string, data?: ApproveAssetRequestRequest) => {
     try {
+      
+      // Try with body payload first
       const response = await axiosInstance.put(`/asset-requests/${id}/approve`, data || {});
       return response.data;
     } catch (bodyError: unknown) {
+      
       // If body approach fails and we have asset_id, try query parameter
       if (data?.asset_id) {
-        const url = `/asset-requests/${id}/approve?asset_id=${data.asset_id}`;
-        const response = await axiosInstance.put(url, {});
-        return response.data;
+        try {
+          const url = `/asset-requests/${id}/approve?id=${data.request_id}`;
+          const response = await axiosInstance.put(url, {});
+          return response.data;
+        } catch (queryError: unknown) {
+          throw queryError;
+        }
       }
       
       // If both fail, throw the body error
@@ -374,6 +411,42 @@ export const assetApi = {
 
   deleteAssetRequest: async (id: string) => {
     const response = await axiosInstance.delete(`/asset-requests/${id}`);
+    return response.data;
+  },
+
+  // Asset Subcategories CRUD operations
+  getAllAssetSubcategories: async (filters?: { category?: string; page?: number; limit?: number }) => {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    
+    const response = await axiosInstance.get(`/asset-subcategories?${params.toString()}`);
+    return response.data;
+  },
+
+  getAssetSubcategoryById: async (id: string) => {
+    const response = await axiosInstance.get(`/asset-subcategories/${id}`);
+    return response.data;
+  },
+
+  createAssetSubcategory: async (data: CreateAssetSubcategoryRequest) => {
+    const response = await axiosInstance.post('/asset-subcategories', data);
+    return response.data;
+  },
+
+  updateAssetSubcategory: async (id: string, data: UpdateAssetSubcategoryRequest) => {
+    const response = await axiosInstance.put(`/asset-subcategories/${id}`, data);
+    return response.data;
+  },
+
+  deleteAssetSubcategory: async (id: string) => {
+    const response = await axiosInstance.delete(`/asset-subcategories/${id}`);
+    return response.data;
+  },
+
+  getAssetSubcategoriesByCategory: async () => {
+    const response = await axiosInstance.get('/asset-subcategories/categories');
     return response.data;
   },
 };

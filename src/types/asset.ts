@@ -33,6 +33,7 @@ export interface AssetRequest {
   employeeId: string;
   employeeName: string;
   category: AssetCategory;
+  subcategoryId?: string;
   remarks?: string;
   status: RequestStatus;
   requestedDate: string;

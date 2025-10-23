@@ -46,7 +46,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { AssetRequest, Asset, AssetCategory } from '../../types/asset';
+import type { AssetRequest, Asset, AssetCategory, AssetStatus } from '../../types/asset';
 import { assetApi, type AssetRequest as ApiAssetRequest, type PaginatedResponse } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
@@ -181,13 +181,9 @@ const RequestManagement: React.FC = () => {
             );
           }
 
-          // Parse the original request category to extract main category and subcategory
+          // Use asset_category as main category name (no need to split)
           let mainCategoryName = apiRequest.asset_category;
           let subcategoryName = '';
-          
-          if (apiRequest.asset_category.includes(' - ')) {
-            [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
-          }
 
           return {
             id: apiRequest.id,
@@ -210,6 +206,7 @@ const RequestManagement: React.FC = () => {
               color: '#757575',
               requestedItem: subcategoryName || apiRequest.asset_category
             },
+            subcategoryId: (apiRequest as any).subcategory_id || undefined,
             remarks: apiRequest.remarks,
             status: normalizeRequestStatus(apiRequest.status),
             requestedDate: apiRequest.requested_date,
@@ -226,11 +223,6 @@ const RequestManagement: React.FC = () => {
 
         // Fetch assets for assignment
         const apiAssetsResponse = await assetApi.getAllAssets();
-        console.log('=== Raw Assets from API ===');
-        console.log('API Response:', apiAssetsResponse);
-        console.log('Assets count:', apiAssetsResponse.assets?.length || 0);
-        console.log('Available assets:', apiAssetsResponse.assets?.filter((a: Record<string, unknown>) => a.status === 'available').map((a: Record<string, unknown>) => ({ id: a.id, name: a.name, category: a.category, status: a.status })));
-        console.log('=== End Raw Assets ===');
         
         const transformedAssets: Asset[] = apiAssetsResponse.assets.map((apiAsset: Record<string, unknown>) => {
           // Try to find matching category from our comprehensive list
@@ -294,51 +286,69 @@ const RequestManagement: React.FC = () => {
 
   // Get available assets for the selected category
   const availableAssets = useMemo(() => {
-    if (!selectedCategoryId) return [];
+    if (!selectedRequest) return [];
     
-    console.log('=== Available Assets Debug ===');
-    console.log('selectedCategoryId:', selectedCategoryId);
-    console.log('selectedRequest?.category:', selectedRequest?.category);
-    console.log('All assets:', assets);
     
     const filtered = assets.filter(asset => {
       // Check if asset status is available
       if (asset.status !== 'available') {
-        console.log(`Asset ${asset.name} not available (status: ${asset.status})`);
         return false;
       }
       
-      // Direct ID match
-      if (asset.category.id === selectedCategoryId) {
-        console.log(`Asset ${asset.name} matched by direct ID`);
+      // Get the request category name
+      const requestCategoryName = selectedRequest.category.name;
+      
+      // Direct category name match
+      if (asset.category.name === requestCategoryName) {
         return true;
       }
       
-      // Check if the request category name matches the asset category name
-      if (asset.category.name === selectedCategoryId) {
-        console.log(`Asset ${asset.name} matched by category name`);
-        return true;
-      }
-      
-      // Check if the request category is a subcategory of the asset's main category
-      const requestCategoryName = selectedRequest?.category.name || '';
+      // Check if the request has subcategory format (e.g., "IT Equipment - Laptop")
       if (requestCategoryName.includes(' - ')) {
         const mainCategoryName = requestCategoryName.split(' - ')[0];
         if (asset.category.name === mainCategoryName) {
-          console.log(`Asset ${asset.name} matched by subcategory (${mainCategoryName})`);
           return true;
         }
       }
       
-      console.log(`Asset ${asset.name} did not match any criteria`);
+      // If request category is a main category, check if asset category matches
+      // This handles cases where asset might be in a subcategory but request is for main category
+      const mainCategories = [
+        'IT Equipment',
+        'Software & Licenses', 
+        'Office Equipment',
+        'Mobility / Transport',
+        'Employee Accessories',
+        'Facility Assets',
+        'Health & Safety',
+        'Miscellaneous / Custom'
+      ];
+      
+      if (mainCategories.includes(requestCategoryName)) {
+        // Check if asset category starts with the main category
+        if (asset.category.name.startsWith(requestCategoryName)) {
+          return true;
+        }
+      }
+      
       return false;
     });
     
-    console.log('Filtered available assets:', filtered);
-    console.log('=== End Debug ===');
+    
+    // If no assets found, show all available assets for debugging
+    if (filtered.length === 0) {
+      const allAvailableAssets = assets.filter(asset => asset.status === 'available');
+      
+      // Temporary fallback: if no category match found, show all available assets
+      // This helps with debugging and ensures user can still assign assets
+      if (allAvailableAssets.length > 0) {
+        return allAvailableAssets;
+      }
+    }
+    
     
     return filtered;
-  }, [selectedCategoryId, assets, selectedRequest]);
+  }, [assets, selectedRequest]);
 
   // Filter by tab
   const getFilteredRequestsByTab = (statusFilter?: string) => {
@@ -350,7 +360,7 @@ const RequestManagement: React.FC = () => {
     setSelectedRequest(request);
     setIsProcessModalOpen(true);
     reset({
-      action: '',
+      action: request.status === 'approved' ? 'approve' : '',
       rejectionReason: '',
       assignedAssetId: '',
     });
@@ -379,12 +389,6 @@ const RequestManagement: React.FC = () => {
     setLoading(true);
     try {
       if (data.action === 'approve') {
-        console.log('=== Approval Debug ===');
-        console.log('Request ID:', selectedRequest.id);
-        console.log('Selected Asset ID:', data.assignedAssetId);
-        console.log('Available Assets:', availableAssets);
-        console.log('Payload being sent:', { asset_id: data.assignedAssetId });
-        console.log('=== End Approval Debug ===');
         
         // Validate that we have a valid asset ID
         if (!data.assignedAssetId) {
@@ -401,25 +405,19 @@ const RequestManagement: React.FC = () => {
           throw new Error('Selected asset is not available or not in the correct category');
         }
         
-        // Try with just asset_id first
+        // Try with asset_id and employee_id
         const payload = {
-          asset_id: data.assignedAssetId as string
+          asset_id: data.assignedAssetId as string,
+          employee_id: selectedRequest.employeeId,
+          request_id: selectedRequest.id,
+          category: selectedRequest.category.name,
+          subcategory_id: selectedRequest.subcategoryId || undefined
         };
         
-        console.log('Trying payload:', payload);
-        console.log('Selected asset details:', {
-          id: selectedAsset.id,
-          name: selectedAsset.name,
-          category: selectedAsset.category.name,
-          status: selectedAsset.status
-        });
         
         // Try to fetch the asset details from backend to verify it exists and is available
         try {
-          console.log('Fetching asset details from backend for verification...');
-          console.log('Asset ID to verify:', selectedAsset.id);
           const assetDetails = await assetApi.getAssetById(selectedAsset.id);
-          console.log('Backend asset details:', assetDetails);
           
           if (assetDetails.status !== 'available') {
             console.error('Asset status mismatch:', {
@@ -429,12 +427,6 @@ const RequestManagement: React.FC = () => {
             throw new Error(`Asset is not available in backend. Frontend status: ${selectedAsset.status}, Backend status: ${assetDetails.status}`);
           }
           
-          console.log('Asset verification successful:', {
-            id: assetDetails.id,
-            name: assetDetails.name,
-            category: assetDetails.category,
-            status: assetDetails.status
-          });
           
           if (assetDetails.category !== selectedRequest.category.name && 
               !assetDetails.category.includes('Mobility') && 
@@ -453,7 +445,16 @@ const RequestManagement: React.FC = () => {
           throw new Error(`Asset ${selectedAsset.id} not found in backend or not accessible: ${errorMessage}`);
         }
         
-        await assetApi.approveAssetRequest(selectedRequest.id, payload);
+        
+        try {
+          const approvalResponse = await assetApi.approveAssetRequest(selectedRequest.id, payload);
+          
+          // Show success message with asset assignment details
+          showSuccessToast(`Asset "${selectedAsset.name}" has been assigned to ${selectedRequest.employeeName} successfully!`);
+        } catch (approvalError: unknown) {
+          console.error('❌ Approval failed:', approvalError);
+          throw approvalError;
+        }
       } else if (data.action === 'reject') {
         await assetApi.rejectAssetRequest(selectedRequest.id);
       }
@@ -463,6 +464,44 @@ const RequestManagement: React.FC = () => {
         page: pagination.page,
         limit: pagination.limit,
       });
+      
+      // Refresh assets to reflect assignment status
+      const apiAssetsResponse = await assetApi.getAllAssets();
+      const transformedAssets: Asset[] = apiAssetsResponse.assets.map((apiAsset: Record<string, unknown>) => {
+        // Try to find matching category from our comprehensive list
+        const matchingCategory = assetCategories.find(cat => 
+          cat.name.toLowerCase() === (apiAsset.category as string).toLowerCase() ||
+          cat.subcategories?.some(sub => sub.toLowerCase() === (apiAsset.category as string).toLowerCase())
+        );
+
+        return {
+          id: apiAsset.id,
+          name: apiAsset.name,
+          category: matchingCategory ? {
+            id: matchingCategory.id,
+            name: matchingCategory.name,
+            nameAr: matchingCategory.nameAr,
+            description: matchingCategory.description,
+            color: matchingCategory.color,
+            subcategories: matchingCategory.subcategories,
+          } : { 
+            id: apiAsset.category as string, 
+            name: apiAsset.category as string, 
+            nameAr: apiAsset.category as string, 
+            description: '',
+            color: '#757575',
+            subcategories: []
+          },
+          status: apiAsset.status as AssetStatus,
+          assignedTo: apiAsset.assigned_to as string || null,
+          assignedToName: apiAsset.assigned_to_name as string || null,
+          purchaseDate: apiAsset.purchase_date as string,
+          tenantId: apiAsset.tenant_id as string,
+          createdAt: apiAsset.created_at as string,
+        };
+      });
+      
+      setAssets(transformedAssets);
 
       const transformedRequests: AssetRequest[] = apiResponse.items.map((apiRequest: ApiAssetRequest) => {
         // Try to find matching category from our comprehensive list
@@ -480,13 +519,9 @@ const RequestManagement: React.FC = () => {
           );
         }
 
-        // Parse the original request category to extract main category and subcategory
+        // Use asset_category as main category name (no need to split)
         let mainCategoryName = apiRequest.asset_category;
         let subcategoryName = '';
-        
-        if (apiRequest.asset_category.includes(' - ')) {
-          [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
-        }
 
         return {
           id: apiRequest.id,
@@ -647,6 +682,14 @@ const RequestManagement: React.FC = () => {
                 <AssignmentIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText>Process Request</ListItemText>
+            </MenuItem>
+          )}
+          {request.status === 'approved' && !request.assignedAssetName && (
+            <MenuItem onClick={() => handleProcessRequest(request)}>
+              <ListItemIcon>
+                <AssignmentIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Assign Asset</ListItemText>
             </MenuItem>
           )}
         </Menu>
@@ -866,7 +909,7 @@ const RequestManagement: React.FC = () => {
       >
         <DialogTitle>
           <Typography variant="h6" fontWeight={600}>
-            Process Asset Request
+            {selectedRequest?.status === 'approved' ? 'Assign Asset' : 'Process Asset Request'}
           </Typography>
           {selectedRequest && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -884,37 +927,39 @@ const RequestManagement: React.FC = () => {
           <DialogContent >
             <Box sx={{ pt: 1 }}>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, flexDirection: 'column' }}>
-                <Box >
-                  <Controller
-                    name="action"
-                    control={control}
-                    render={({ field }) => (
-                      <FormControl fullWidth error={!!errors.action}>
-                        <InputLabel>Action</InputLabel>
-                        <Select
-                          {...field}
-                          label="Action"
-                          disabled={loading}
-                        >
-                          <MenuItem value="approve">
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <ApproveIcon color="success" />
-                              Approve Request
-                            </Box>
-                          </MenuItem>
-                          <MenuItem value="reject">
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <RejectIcon color="error" />
-                              Reject Request
-                            </Box>
-                          </MenuItem>
-                        </Select>
-                      </FormControl>
-                    )}
-                  />
-                </Box>
+                {selectedRequest?.status !== 'approved' && (
+                  <Box >
+                    <Controller
+                      name="action"
+                      control={control}
+                      render={({ field }) => (
+                        <FormControl fullWidth error={!!errors.action}>
+                          <InputLabel>Action</InputLabel>
+                          <Select
+                            {...field}
+                            label="Action"
+                            disabled={loading}
+                          >
+                            <MenuItem value="approve">
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <ApproveIcon color="success" />
+                                Approve Request
+                              </Box>
+                            </MenuItem>
+                            <MenuItem value="reject">
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <RejectIcon color="error" />
+                                Reject Request
+                              </Box>
+                            </MenuItem>
+                          </Select>
+                        </FormControl>
+                      )}
+                    />
+                  </Box>
+                )}
 
-                {selectedAction === 'approve' && (
+                {(selectedAction === 'approve' || selectedRequest?.status === 'approved') && (
                   <Box>
                     <Controller
                       name="assignedAssetId"
@@ -929,12 +974,19 @@ const RequestManagement: React.FC = () => {
                           >
                             {availableAssets.length === 0 ? (
                               <MenuItem disabled>
-                                No available assets in this category
+                                No available assets found
                               </MenuItem>
                             ) : (
                               availableAssets.map((asset) => (
                                 <MenuItem key={asset.id} value={asset.id}>
-                                  {asset.name} - {asset.serialNumber}
+                                  <Box>
+                                    <Typography variant="body2" fontWeight={500}>
+                                      {asset.name}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      {asset.category.name} - {asset.status}
+                                    </Typography>
+                                  </Box>
                                 </MenuItem>
                               ))
                             )}
@@ -944,13 +996,21 @@ const RequestManagement: React.FC = () => {
                     />
                     {availableAssets.length === 0 && (
                       <Alert severity="warning" sx={{ mt: 1 }}>
-                        No available assets found in this category. Please add assets or wait for assets to become available.
+                        <Typography variant="body2">
+                          <strong>No available assets found for this category.</strong>
+                        </Typography>
+                        <Typography variant="body2" sx={{ mt: 0.5 }}>
+                          Please check if assets exist in the system and have "available" status. You may need to add assets or wait for assets to become available.
+                        </Typography>
+                        <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
+                          Request Category: {selectedRequest?.category.name}
+                        </Typography>
                       </Alert>
                     )}
                   </Box>
                 )}
 
-                {selectedAction === 'reject' && (
+                {selectedAction === 'reject' && selectedRequest?.status !== 'approved' && (
                   <Box>
                     <Controller
                       name="rejectionReason"
@@ -1000,7 +1060,10 @@ const RequestManagement: React.FC = () => {
               disabled={loading || (selectedAction === 'approve' && availableAssets.length === 0)}
               sx={{ minWidth: 80 }}
             >
-              {loading ? 'Processing...' : (selectedAction === 'approve' ? 'Approve' : 'Reject')}
+              {loading ? 'Processing...' : (
+                selectedRequest?.status === 'approved' ? 'Assign Asset' :
+                selectedAction === 'approve' ? 'Approve' : 'Reject'
+              )}
             </Button>
           </DialogActions>
         </form>
