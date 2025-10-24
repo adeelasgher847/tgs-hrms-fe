@@ -13,6 +13,7 @@ import {
   TextField,
   MenuItem,
   Button,
+  Pagination,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -116,7 +117,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     );
   }, [selectedEmployee, leaves, isManager, viewMode, currentUserId]);
 
-  // Pagination Logic (Same style as AttendanceSummaryReport)
+  // Pagination Logic
   const totalPages = Math.max(
     1,
     Math.ceil(filteredLeaves.length / ITEMS_PER_PAGE)
@@ -310,15 +311,24 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </TableContainer>
         </Paper>
       )}
-      <Box textAlign='center' my={2} px={2}>
-        <Box display='flex' justifyContent='center' alignItems='center' gap={2}>
-          <Typography variant='body2' color='textSecondary'>
-            Showing{' '}
-            {Math.min((page - 1) * ITEMS_PER_PAGE + 1, filteredLeaves.length)}–
-            {Math.min(page * ITEMS_PER_PAGE, filteredLeaves.length)} of{' '}
-            {filteredLeaves.length} records
-          </Typography>
-        </Box>
+
+      <Box display='flex' justifyContent='center' my={2}>
+        <Pagination
+          count={totalPages}
+          page={page}
+          onChange={(_, newPage) => setPage(newPage)}
+          color='primary'
+        />
+      </Box>
+      <Box textAlign='center' mb={2}>
+        <Typography variant='body2' color='text.secondary'>
+          Showing{' '}
+          {filteredLeaves.length === 0
+            ? 0
+            : Math.min((page - 1) * ITEMS_PER_PAGE + 1, filteredLeaves.length)}
+          –{Math.min(page * ITEMS_PER_PAGE, filteredLeaves.length)} of{' '}
+          {filteredLeaves.length} records
+        </Typography>
       </Box>
     </Box>
   );

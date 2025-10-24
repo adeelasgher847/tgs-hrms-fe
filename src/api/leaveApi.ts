@@ -43,7 +43,7 @@ export const leaveApi = {
       const response = await axiosInstance.post('/leaves', data);
       return response.data;
     } catch (error) {
-      console.error(' Failed to create leave:', error);
+      console.error('Failed to create leave:', error);
       throw error;
     }
   },
@@ -61,7 +61,7 @@ export const leaveApi = {
     try {
       const params = userId ? { userId, page } : { page };
       const response = await axiosInstance.get('/leaves', { params });
-      console.log('User leaves response: ', response);
+      console.log('User leaves response:', response);
       const data = response.data;
 
       if (data && data.items) return data;
@@ -76,7 +76,7 @@ export const leaveApi = {
       }
       return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
     } catch (error) {
-      console.error(' Failed to fetch user leaves:', error);
+      console.error('Failed to fetch user leaves:', error);
       throw error;
     }
   },
@@ -91,10 +91,8 @@ export const leaveApi = {
     totalPages: number;
   }> => {
     try {
-      const response = await axiosInstance.get('/leaves/all', {
-        params: { page },
-      });
-      console.log('All leaves response: ', response);
+      const response = await axiosInstance.get('/leaves/all', { params: { page } });
+      console.log('All leaves response:', response);
       const data = response.data;
 
       if (data && data.items) return data;
@@ -109,7 +107,7 @@ export const leaveApi = {
       }
       return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
     } catch (error) {
-      console.error(' Failed to fetch all leaves:', error);
+      console.error('Failed to fetch all leaves:', error);
       throw error;
     }
   },
@@ -124,10 +122,8 @@ export const leaveApi = {
     totalPages: number;
   }> => {
     try {
-      const response = await axiosInstance.get('/leaves/team', {
-        params: { page },
-      });
-      console.log('Team leaves response: ', response);
+      const response = await axiosInstance.get('/leaves/team', { params: { page } });
+      console.log('Team leaves response:', response);
       const data = response.data;
 
       if (data && data.items) return data;
@@ -142,7 +138,7 @@ export const leaveApi = {
       }
       return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
     } catch (error) {
-      console.error(' Failed to fetch team leaves:', error);
+      console.error('Failed to fetch team leaves:', error);
       throw error;
     }
   },
@@ -155,7 +151,7 @@ export const leaveApi = {
       const response = await axiosInstance.patch(`/leaves/${id}`, { status });
       return response.data;
     } catch (error) {
-      console.error(` Failed to update leave ${id} status:`, error);
+      console.error(`Failed to update leave ${id} status:`, error);
       throw error;
     }
   },
@@ -165,7 +161,7 @@ export const leaveApi = {
       const response = await axiosInstance.patch(`/leaves/${id}/cancel`);
       return response.data;
     } catch (error) {
-      console.error(` Failed to cancel leave ${id}:`, error);
+      console.error(`Failed to cancel leave ${id}:`, error);
       throw error;
     }
   },
@@ -175,7 +171,7 @@ export const leaveApi = {
       const response = await axiosInstance.put(`/leaves/${id}/approve`);
       return response.data;
     } catch (error) {
-      console.error(` Failed to approve leave ${id}:`, error);
+      console.error(`Failed to approve leave ${id}:`, error);
       throw error;
     }
   },

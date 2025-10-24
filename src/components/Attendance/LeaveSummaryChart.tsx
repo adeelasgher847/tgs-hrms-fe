@@ -16,7 +16,6 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-// Type for select event (works for all MUI versions)
 type SelectChangeEvent = React.ChangeEvent<{ value: unknown }>;
 
 const mockData: Record<string, { name: string; value: number }[]> = {
@@ -58,7 +57,7 @@ const LeaveSummaryChart: React.FC = () => {
         <FormControl fullWidth size='small'>
           <InputLabel
             id='select-label'
-            sx={{ top: '-6px' }} // moves label upward slightly
+            sx={{ top: '-6px' }} 
           >
             User / Department
           </InputLabel>

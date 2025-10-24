@@ -36,7 +36,7 @@ const LeaveRequestPage = () => {
   });
   const [activeTab, setActiveTab] = useState<'apply' | 'history'>('history');
 
-  // Dialog states
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<'approved' | 'rejected' | null>(
     null
@@ -48,7 +48,6 @@ const LeaveRequestPage = () => {
   const role = normalizeRole(getUserRole());
   const userName = getUserName();
 
-  // ✅ Fetch Leave Types
   const fetchLeaveTypes = useCallback(async () => {
     try {
       const response = await fetch(
@@ -64,10 +63,9 @@ const LeaveRequestPage = () => {
     }
   }, []);
 
-  // ✅ Manager view toggle
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
 
-  // ✅ Load Leave Requests
+
   const loadLeaves = useCallback(async () => {
     try {
       setLoading(true);
@@ -116,7 +114,7 @@ const LeaveRequestPage = () => {
     }
   }, [currentUser, role, viewMode]);
 
-  // ✅ Apply Leave
+
   const handleApply = async (data: CreateLeaveRequest) => {
     try {
       setSnackbar({
@@ -134,8 +132,7 @@ const LeaveRequestPage = () => {
       });
     }
   };
-
-  // ✅ Approve/Reject
+t
   const handleConfirm = async (reason?: string) => {
     if (!selectedId || !actionType) return;
 
@@ -169,7 +166,6 @@ const LeaveRequestPage = () => {
     }
   };
 
-  // ✅ Withdraw
   const handleConfirmWithdraw = async () => {
     if (!selectedId) return;
     try {
@@ -206,7 +202,7 @@ const LeaveRequestPage = () => {
   useEffect(() => {
     fetchLeaveTypes();
     loadLeaves();
-  }, [viewMode]); // reload when switching views
+  }, [viewMode]); 
 
   if (loading)
     return (
@@ -239,7 +235,6 @@ const LeaveRequestPage = () => {
             )}
           </Box>
 
-          {/* ✅ Show tabs only for Employees & Managers */}
           {['employee', 'manager'].includes(role) && (
             <Stack direction='row' spacing={2}>
               <Button
@@ -276,14 +271,13 @@ const LeaveRequestPage = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Main Content */}
       <Box sx={{ py: 3 }}>
         {['employee', 'manager'].includes(role) ? (
           activeTab === 'apply' ? (
             <LeaveForm onSubmit={handleApply} leaveTypes={leaveTypes} />
           ) : (
             <>
-              {/* ✅ Manager toggle for Your / Team Leaves */}
+
               {role === 'manager' && (
                 <Box sx={{ mb: 2, textAlign: 'right' }}>
                   <Button
@@ -344,7 +338,6 @@ const LeaveRequestPage = () => {
         )}
       </Box>
 
-      {/* ✅ Admin approval dialog */}
       <LeaveApprovalDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
@@ -352,7 +345,6 @@ const LeaveRequestPage = () => {
         action={actionType || 'approved'}
       />
 
-      {/* ✅ Withdraw dialog */}
       <Dialog
         open={withdrawDialogOpen}
         onClose={() => setWithdrawDialogOpen(false)}
@@ -382,7 +374,6 @@ const LeaveRequestPage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}

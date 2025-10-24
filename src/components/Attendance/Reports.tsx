@@ -1,300 +1,450 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Tabs,
-  Tab,
-  Typography,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Card,
   CardContent,
+  Typography,
   Table,
+  TableBody,
+  TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TableCell,
-  TableBody,
-  Button,
+  Tabs,
+  Tab,
   CircularProgress,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
-import LeaveSummaryChart from './LeaveSummaryChart';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import { leaveReportApi } from '../../api/leaveReportApi';
 
-const cardStyle = (theme: any) => ({
-  width: { xs: '100%', sm: '250px' },
-  flexShrink: 0,
+const cardStyle = {
+  flex: '1 1 calc(33.33% - 16px)',
+  minWidth: '250px',
   boxShadow: 'none',
-  border: `1px solid ${theme.palette.card?.border || theme.palette.divider}`,
-  borderRadius: '0.375rem',
-  backgroundColor:
-    theme.palette.card?.background || theme.palette.background.paper,
-});
+  border: '1px solid #e0e0e0',
+  borderRadius: '0.5rem',
+  backgroundColor: '#ffffff',
+};
+
+interface TeamMemberSummary {
+  name: string;
+  email: string;
+  department: string;
+  designation: string;
+  totalLeaveDays: number;
+}
+
+interface LeaveBalance {
+  leaveTypeName: string;
+  used: number;
+  remaining: number;
+  maxDaysPerYear: number;
+  carryForward: boolean;
+}
+
+interface EmployeeReport {
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  designation: string;
+  leaveSummary: {
+    leaveTypeName: string;
+    maxDaysPerYear: number;
+    totalDays: number;
+    remainingDays: number;
+  }[];
+  totals: {
+    approvedRequests: number;
+    pendingRequests: number;
+    rejectedRequests: number;
+  };
+}
+
+function TabPanel({
+  children,
+  value,
+  index,
+}: {
+  children?: React.ReactNode;
+  value: number;
+  index: number;
+}) {
+  return (
+    <div hidden={value !== index}>
+      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+    </div>
+  );
+}
 
 const Reports: React.FC = () => {
   const [tab, setTab] = useState(0);
-  const [selectedMonth, setSelectedMonth] = useState('');
-  const [selectedUser, setSelectedUser] = useState('');
-  const [teamSummary, setTeamSummary] = useState<any[]>([]);
-  const [leaveBalance, setLeaveBalance] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const direction = 'ltr'; // replace with theme.direction if available
+  const [teamSummary, setTeamSummary] = useState<TeamMemberSummary[]>([]);
+  const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
+  const [allLeaveReports, setAllLeaveReports] = useState<EmployeeReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setTab(newValue);
-  };
+  const { userId, isManager, isHrAdmin } = leaveReportApi.getUserInfo();
 
-  // Fetch team leave summary
-  const fetchTeamLeaveSummary = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch('/reports/team-leave-summary');
-      const data = await res.json();
-      setTeamSummary(data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!userId) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: 400,
+        }}
+      >
+        <Typography color='error'>User not found. Please re-login.</Typography>
+      </Box>
+    );
+  }
 
-  // Fetch leave balance
+  const handleTabChange = (_: any, newValue: number) => setTab(newValue);
+
   const fetchLeaveBalance = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/reports/leave-balance');
-      const data = await res.json();
-      setLeaveBalance(data || []);
-    } catch (err) {
-      console.error(err);
+      setError(null);
+      const data = await leaveReportApi.getLeaveBalance();
+      setLeaveBalance(data.balances || []);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Export CSV
-  const exportCSV = async (url: string, fileName: string) => {
+  const fetchTeamLeaveSummary = async () => {
     try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = fileName;
-      link.click();
+      if (!isManager) return;
+      setLoading(true);
+      setError(null);
+      const now = new Date();
+      const data = await leaveReportApi.getTeamLeaveSummary(
+        now.getMonth() + 1,
+        now.getFullYear()
+      );
+      setTeamSummary(data.teamMembers || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllLeaveReports = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await leaveReportApi.getAllLeaveReports();
+      setAllLeaveReports(data.employeeReports || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      let blob;
+      const now = new Date();
+
+      if (isHrAdmin) {
+        const headers = [
+          'Employee Name',
+          'Department',
+          'Designation',
+          'Leave Type',
+          'Max Days',
+          'Used',
+          'Remaining',
+          'Approved',
+          'Pending',
+          'Rejected',
+        ];
+
+        const rows = allLeaveReports.flatMap(emp =>
+          emp.leaveSummary.map(summary => [
+            emp.employeeName,
+            emp.department,
+            emp.designation,
+            summary.leaveTypeName,
+            summary.maxDaysPerYear,
+            summary.totalDays,
+            summary.remainingDays,
+            emp.totals.approvedRequests,
+            emp.totals.pendingRequests,
+            emp.totals.rejectedRequests,
+          ])
+        );
+
+        const csvContent = [
+          headers.join(','),
+          ...rows.map(row =>
+            row
+              .map(value =>
+                typeof value === 'string' && value.includes(',')
+                  ? `"${value}"`
+                  : (value ?? '')
+              )
+              .join(',')
+          ),
+        ].join('\n');
+
+        blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      } else {
+        if (tab === 0) blob = await leaveReportApi.exportLeaveBalanceCSV();
+        if (isManager && tab === 1)
+          blob = await leaveReportApi.exportTeamLeaveSummaryCSV(
+            now.getMonth() + 1,
+            now.getFullYear()
+          );
+      }
+
+      if (blob) {
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `Leave_Report_${now.toISOString().slice(0, 10)}.csv`;
+        link.click();
+      }
     } catch (err) {
       console.error('Export failed:', err);
     }
   };
 
   useEffect(() => {
-    if (tab === 1) fetchTeamLeaveSummary();
-  }, [tab]);
+    const fetchData = async () => {
+      if (isHrAdmin) await fetchAllLeaveReports();
+      else if (tab === 0) await fetchLeaveBalance();
+      else if (isManager && tab === 1) await fetchTeamLeaveSummary();
+    };
+    fetchData();
+  }, [tab, isHrAdmin, isManager]);
 
-  const attendanceData = [
-    { date: '01 Jan', month: 'January', userId: '1', checkIn: '09:00 AM', status: 'Present', hours: 8 },
-    { date: '02 Jan', month: 'January', userId: '1', checkIn: '-', status: 'Absent', hours: 0 },
-    { date: '01 Feb', month: 'February', userId: '2', checkIn: '09:30 AM', status: 'Present', hours: 7 },
-  ];
-
-  const filteredData = attendanceData.filter(
-    item =>
-      (selectedMonth ? item.month === selectedMonth : true) &&
-      (selectedUser ? item.userId === selectedUser : true)
-  );
-
-  const departmentData = [
-    { title: 'HR Department', count: 12 },
-    { title: 'Designers', count: 8 },
-    { title: 'Developers', count: 15 },
-  ];
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '60vh',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
-      <Tabs
-        value={tab}
-        onChange={handleTabChange}
-        variant='scrollable'
-        scrollButtons='auto'
-        allowScrollButtonsMobile
-        sx={{ borderBottom: 1, borderColor: 'divider' }}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 3,
+          flexWrap: 'wrap',
+          gap: 1,
+        }}
       >
-        <Tab label='Attendance Summary' />
-        <Tab label='Leave Summary' />
-        <Tab label='Headcount Report' />
-      </Tabs>
+        <Typography variant='h4' fontWeight={600}>
+          Leave Reports
+        </Typography>
+        <Tooltip title='Export CSV'>
+          <IconButton
+            color='primary'
+            onClick={handleExport}
+            sx={{
+              backgroundColor: 'primary.main',
+              borderRadius: '6px',
+              color: 'white',
+              '&:hover': { backgroundColor: 'primary.dark' },
+            }}
+          >
+            <FileDownloadIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
 
-      {/* --- ATTENDANCE SUMMARY --- */}
-      {tab === 0 && (
-        <Box mt={4}>
-          <Box display='flex' flexDirection={{ xs: 'column', sm: 'row' }} gap={2}>
-            <FormControl fullWidth size='small'>
-              <InputLabel>{direction === 'rtl' ? 'شهر' : 'Month'}</InputLabel>
-              <Select
-                value={selectedMonth}
-                onChange={e => setSelectedMonth(e.target.value)}
-              >
-                <MenuItem value=''>{direction === 'rtl' ? 'تمام' : 'All'}</MenuItem>
-                <MenuItem value='January'>January</MenuItem>
-                <MenuItem value='February'>February</MenuItem>
-                <MenuItem value='March'>March</MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth size='small'>
-              <InputLabel>{direction === 'rtl' ? 'صارف' : 'User'}</InputLabel>
-              <Select
-                value={selectedUser}
-                onChange={e => setSelectedUser(e.target.value)}
-              >
-                <MenuItem value=''>{direction === 'rtl' ? 'تمام' : 'All'}</MenuItem>
-                <MenuItem value='1'>Ali</MenuItem>
-                <MenuItem value='2'>Sara</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-
-          <Box mt={4} sx={theme => ({
-            overflowX: 'auto',
-            bgcolor: theme.palette.background.paper,
-          })}>
-            <Table sx={{ minWidth: 600 }}>
-              <TableHead>
+      {isHrAdmin && (
+        <Box>
+          {error && <Typography color='error'>{error}</Typography>}
+          <TableContainer
+            component={Card}
+            sx={{ boxShadow: 'none', border: '1px solid #e0e0e0' }}
+          >
+            <Table>
+              <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
                 <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Check-in</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Total Hours</TableCell>
+                  <TableCell>
+                    <b>Employee Name</b>
+                  </TableCell>
+                  <TableCell>
+                    <b>Department</b>
+                  </TableCell>
+                  <TableCell>
+                    <b>Designation</b>
+                  </TableCell>
+                  <TableCell>
+                    <b>Leave Type</b>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <b>Total</b>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <b>Used</b>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <b>Remaining</b>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <b>Approved</b>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <b>Pending</b>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <b>Rejected</b>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredData.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} align='center'>No records found.</TableCell></TableRow>
-                ) : (
-                  filteredData.map((row, _index) => (
-                    <TableRow key={_index}>
-                      <TableCell>{row.date}</TableCell>
-                      <TableCell>{row.checkIn}</TableCell>
-                      <TableCell>{row.status}</TableCell>
-                      <TableCell>{row.hours}</TableCell>
+                {allLeaveReports.flatMap(emp =>
+                  emp.leaveSummary.map((summary, index) => (
+                    <TableRow key={`${emp.employeeId}-${index}`}>
+                      <TableCell>{emp.employeeName}</TableCell>
+                      <TableCell>{emp.department}</TableCell>
+                      <TableCell>{emp.designation}</TableCell>
+                      <TableCell>{summary.leaveTypeName}</TableCell>
+                      <TableCell align='center'>
+                        {summary.maxDaysPerYear}
+                      </TableCell>
+                      <TableCell align='center'>{summary.totalDays}</TableCell>
+                      <TableCell align='center'>
+                        {summary.remainingDays}
+                      </TableCell>
+                      <TableCell align='center'>
+                        {emp.totals.approvedRequests}
+                      </TableCell>
+                      <TableCell align='center'>
+                        {emp.totals.pendingRequests}
+                      </TableCell>
+                      <TableCell align='center'>
+                        {emp.totals.rejectedRequests}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
               </TableBody>
             </Table>
-          </Box>
+          </TableContainer>
         </Box>
       )}
 
-      {/* --- LEAVE SUMMARY --- */}
-      {tab === 1 && (
-        <Box mt={4}>
-          <Box mb={2} display='flex' gap={2} flexWrap='wrap'>
-            <Button
-              variant='contained'
-              color='primary'
-              onClick={fetchTeamLeaveSummary}
-              disabled={loading}
+      {!isHrAdmin && (
+        <>
+          {isManager && (
+            <Tabs
+              value={tab}
+              onChange={handleTabChange}
+              variant='scrollable'
+              scrollButtons='auto'
+              sx={{ borderBottom: 1, borderColor: 'divider' }}
             >
-              {loading ? <CircularProgress size={20} /> : 'Refresh Summary'}
-            </Button>
-            <Button
-              variant='outlined'
-              onClick={() => fetchLeaveBalance()}
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={20} /> : 'Show Leave Balance'}
-            </Button>
-            <Button
-              variant='contained'
-              color='success'
-              onClick={() => exportCSV('/reports/leave-summary/export', 'yearly_leave_summary.csv')}
-            >
-              Export Yearly Summary
-            </Button>
-            <Button
-              variant='contained'
-              color='success'
-              onClick={() => exportCSV('/reports/team-leave-summary/export', 'team_leave_summary.csv')}
-            >
-              Export Team Summary
-            </Button>
-            <Button
-              variant='contained'
-              color='success'
-              onClick={() => exportCSV('/reports/leave-balance/export', 'leave_balance.csv')}
-            >
-              Export Leave Balance
-            </Button>
-          </Box>
+              <Tab label='My Leave Summary' />
+              <Tab label='Team Leave Summary' />
+            </Tabs>
+          )}
 
-          {/* Chart */}
-          <LeaveSummaryChart />
+          <TabPanel value={tab} index={0}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+              {leaveBalance.map((item, idx) => (
+                <Card key={idx} sx={cardStyle}>
+                  <CardContent>
+                    <Typography color='textSecondary' gutterBottom>
+                      {item.leaveTypeName}
+                    </Typography>
+                    <Typography
+                      variant='h4'
+                      fontWeight={600}
+                      color='primary.main'
+                    >
+                      {item.remaining}
+                    </Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      Used: {item.used} / {item.maxDaysPerYear}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
 
-          {/* Team Leave Summary Table */}
-          {teamSummary.length > 0 && (
-            <Box mt={4}>
-              <Typography variant='h6' gutterBottom>Team Leave Summary</Typography>
+            <TableContainer component={Card}>
               <Table>
                 <TableHead>
-                  <TableRow>
-                    <TableCell>Employee</TableCell>
+                  <TableRow sx={{ backgroundColor: '#ffffff' }}>
                     <TableCell>Leave Type</TableCell>
-                    <TableCell>Total Days</TableCell>
+                    <TableCell>Max Days</TableCell>
+                    <TableCell>Used</TableCell>
+                    <TableCell>Remaining</TableCell>
+                    <TableCell>Carry Forward</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {teamSummary.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{item.employeeName}</TableCell>
-                      <TableCell>{item.leaveType}</TableCell>
-                      <TableCell>{item.totalDays}</TableCell>
+                  {leaveBalance.map((item, idx) => (
+                    <TableRow key={idx} hover>
+                      <TableCell>{item.leaveTypeName}</TableCell>
+                      <TableCell>{item.maxDaysPerYear}</TableCell>
+                      <TableCell>{item.used}</TableCell>
+                      <TableCell>{item.remaining}</TableCell>
+                      <TableCell>{item.carryForward ? 'Yes' : 'No'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </Box>
-          )}
+            </TableContainer>
+          </TabPanel>
 
-          {/* Leave Balance */}
-          {leaveBalance.length > 0 && (
-            <Box mt={4}>
-              <Typography variant='h6' gutterBottom>Leave Balance</Typography>
-              <Box display='flex' flexWrap='wrap' gap={2}>
-                {leaveBalance.map((item, index) => (
-                  <Card key={index} sx={cardStyle}>
-                    <CardContent>
-                      <Typography variant='subtitle1'>{item.type}</Typography>
-                      <Typography variant='h4'>{item.remaining}</Typography>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Box>
-            </Box>
+          {isManager && (
+            <TabPanel value={tab} index={1}>
+              {!teamSummary.length && (
+                <Typography>No team data found.</Typography>
+              )}
+              {!!teamSummary.length && (
+                <TableContainer component={Card}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Employee</TableCell>
+                        <TableCell>Email</TableCell>
+                        <TableCell>Department</TableCell>
+                        <TableCell>Designation</TableCell>
+                        <TableCell>Total Leave Days</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {teamSummary.map((member, idx) => (
+                        <TableRow key={idx} hover>
+                          <TableCell>{member.name}</TableCell>
+                          <TableCell>{member.email}</TableCell>
+                          <TableCell>{member.department}</TableCell>
+                          <TableCell>{member.designation}</TableCell>
+                          <TableCell>{member.totalLeaveDays}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </TabPanel>
           )}
-        </Box>
-      )}
-
-      {/* --- HEADCOUNT REPORT --- */}
-      {tab === 2 && (
-        <Box mt={4}>
-          <Typography variant='h6' mb={2}>
-            {direction === 'rtl' ? 'ملازمین کی رپورٹ' : 'Headcount Report'}
-          </Typography>
-          <Box
-            display='flex'
-            flexWrap='wrap'
-            gap={2}
-            justifyContent={{ xs: 'start', md: 'flex-start' }}
-          >
-            {departmentData.map((dept, _index) => (
-              <Card key={_index} sx={cardStyle}>
-                <CardContent>
-                  <Typography variant='subtitle1'>{dept.title}</Typography>
-                  <Typography variant='h4'>{dept.count}</Typography>
-                </CardContent>
-              </Card>
-            ))}
-          </Box>
-        </Box>
+        </>
       )}
     </Box>
   );

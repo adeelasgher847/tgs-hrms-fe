@@ -85,8 +85,8 @@ export const isMenuVisibleForRole = (
       'attendance',
       'benefits',
     ],
-    manager: ['teams', 'attendance', 'assets', 'benefits'],
-    employee: ['attendance', 'assets', 'benefits'],
+    manager: ['teams', 'attendance', 'assets', 'benefits', 'leave-analytics'],
+    employee: ['attendance', 'assets', 'benefits', 'leave-analytics',],
     user: ['attendance', 'assets', 'benefits'],
     unknown: ['benefits'], // Temporarily allow benefits for unknown roles
   };
@@ -365,7 +365,7 @@ export const isDashboardPathAllowedForRole = (
     manager: new Set([
       'AttendanceCheck',
       'AttendanceTable',
-      // 'Reports',
+      'Reports',
       'AttendanceCheck/TimesheetLayout',
       'teams',
       'leaves',
@@ -384,7 +384,7 @@ export const isDashboardPathAllowedForRole = (
     employee: new Set([
       'AttendanceCheck',
       'AttendanceTable',
-      // 'Reports',
+      'Reports',
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
