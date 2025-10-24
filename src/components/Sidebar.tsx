@@ -91,16 +91,6 @@ const menuItems: MenuItem[] = [
     subItems: [{ label: 'Employee List', path: 'EmployeeManager' }],
   },
   {
-    label: 'Benefits',
-    icon: <Payments />,
-    subItems: [
-      { label: 'Benefit List', path: 'benefits' },
-      { label: 'Assign Benefits', path: 'benefits/assign' },
-      { label: 'Reporting', path: 'benefits/reporting' },
-      { label: 'My Benefits', path: 'my-benefits' },
-    ],
-  },
-  {
     label: 'Teams',
     icon: <Group />,
     subItems: [{ label: 'Team Management', path: 'teams' }],

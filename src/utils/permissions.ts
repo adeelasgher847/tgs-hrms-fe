@@ -64,7 +64,6 @@ export const isMenuVisibleForRole = (
       'teams',
       'assets',
       'attendance',
-      'benefits',
       'report',
     ],
     'network-admin': [

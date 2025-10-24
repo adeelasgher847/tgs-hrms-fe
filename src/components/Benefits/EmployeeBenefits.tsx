@@ -40,7 +40,7 @@ const ITEMS_PER_PAGE = 10;
 const EmployeeBenefits: React.FC = () => {
   const [openForm, setOpenForm] = useState(false);
   const [employees, setEmployees] = useState<EmployeeWithBenefits[]>([]);
-  const [selectedBenefit, setSelectedBenefit] = useState<any | null>(null);
+  const [selectedBenefit, setSelectedBenefit] = useState<unknown | null>(null);
   const [openBenefitDialog, setOpenBenefitDialog] = useState(false);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -58,7 +58,7 @@ const EmployeeBenefits: React.FC = () => {
 
   const fetchEmployees = async () => {
     try {
-      setLoading(true); 
+      setLoading(true);
       const data = await employeeBenefitApi.getEmployeesWithBenefits(1);
       const filtered = data.filter(
         emp => emp.benefits && emp.benefits.length > 0
@@ -67,7 +67,7 @@ const EmployeeBenefits: React.FC = () => {
     } catch (error) {
       console.error('Error fetching employee benefits:', error);
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
@@ -138,7 +138,7 @@ const EmployeeBenefits: React.FC = () => {
     setPage(value);
   };
 
-  const csvEscape = (value: any) => {
+  const csvEscape = (value: unknown) => {
     if (value === null || value === undefined) return '';
     const s = String(value).replace(/"/g, '""');
     return `"${s}"`;

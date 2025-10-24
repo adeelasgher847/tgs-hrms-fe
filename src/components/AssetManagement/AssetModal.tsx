@@ -25,7 +25,13 @@ import { assetApi, type AssetSubcategory } from '../../api/assetApi';
 interface AssetModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: { name: string; category: string; subcategoryId?: string; purchaseDate: string; assignedTo?: string }) => void;
+  onSubmit: (data: {
+    name: string;
+    category: string;
+    subcategoryId?: string;
+    purchaseDate: string;
+    assignedTo?: string;
+  }) => void;
   asset?: Asset | null;
   users: MockUser[];
   loading?: boolean;
@@ -53,7 +59,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
   const [, setSelectedWarrantyDate] = useState<Date | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [subcategories, setSubcategories] = useState<AssetSubcategory[]>([]);
-  const [loadingData, setLoadingData] = useState(false);
+  const [, setLoadingData] = useState(false);
 
   const {
     control,
@@ -83,17 +89,19 @@ const AssetModal: React.FC<AssetModalProps> = ({
         setLoadingData(true);
         const [categoriesData, subcategoriesData] = await Promise.all([
           assetApi.getAssetSubcategoriesByCategory(),
-          assetApi.getAllAssetSubcategories()
+          assetApi.getAllAssetSubcategories(),
         ]);
-        
-        
+
         // Extract unique categories
         setCategories(categoriesData);
-        
+
         // Store all subcategories
         setSubcategories(subcategoriesData.items || subcategoriesData);
       } catch (error) {
-        console.error('❌ Failed to fetch categories and subcategories:', error);
+        console.error(
+          '❌ Failed to fetch categories and subcategories:',
+          error
+        );
       } finally {
         setLoadingData(false);
       }
@@ -105,7 +113,9 @@ const AssetModal: React.FC<AssetModalProps> = ({
   }, [open]);
 
   // Get available subcategories for selected category
-  const availableSubcategories = subcategories.filter(sub => sub.category === selectedCategory);
+  const availableSubcategories = subcategories.filter(
+    sub => sub.category === selectedCategory
+  );
 
   useEffect(() => {
     if (asset) {
@@ -113,11 +123,15 @@ const AssetModal: React.FC<AssetModalProps> = ({
         name: asset.name,
         category: asset.category.name,
         purchaseDate: new Date(asset.purchaseDate),
-        warrantyExpiry: asset.warrantyExpiry ? new Date(asset.warrantyExpiry) : null,
+        warrantyExpiry: asset.warrantyExpiry
+          ? new Date(asset.warrantyExpiry)
+          : null,
         assignedTo: asset.assignedTo || '',
       });
       setSelectedDate(new Date(asset.purchaseDate));
-      setSelectedWarrantyDate(asset.warrantyExpiry ? new Date(asset.warrantyExpiry) : null);
+      setSelectedWarrantyDate(
+        asset.warrantyExpiry ? new Date(asset.warrantyExpiry) : null
+      );
     } else {
       reset({
         name: '',
@@ -154,7 +168,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
       <Dialog
         open={open}
         onClose={handleClose}
-        maxWidth="md"
+        maxWidth='md'
         fullWidth
         PaperProps={{
           sx: {
@@ -163,7 +177,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
         }}
       >
         <DialogTitle>
-          <Typography variant="h6" fontWeight={600}>
+          <Typography variant='h6' fontWeight={600}>
             {title || (asset ? 'Edit Asset' : 'Add New Asset')}
           </Typography>
         </DialogTitle>
@@ -175,13 +189,13 @@ const AssetModal: React.FC<AssetModalProps> = ({
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                   <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
                     <Controller
-                      name="name"
+                      name='name'
                       control={control}
                       render={({ field }) => (
                         <TextField
                           {...field}
                           fullWidth
-                          label="Asset Name"
+                          label='Asset Name'
                           error={!!errors.name}
                           helperText={errors.name?.message}
                           disabled={loading}
@@ -192,28 +206,34 @@ const AssetModal: React.FC<AssetModalProps> = ({
 
                   <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
                     <Controller
-                      name="category"
+                      name='category'
                       control={control}
                       render={({ field }) => (
                         <FormControl fullWidth error={!!errors.category}>
                           <InputLabel>Category</InputLabel>
                           <Select
                             {...field}
-                            label="Category"
+                            label='Category'
                             disabled={loading}
-                            onChange={(e) => {
+                            onChange={e => {
                               field.onChange(e);
                               setValue('subcategory', ''); // Reset subcategory when category changes
                             }}
                           >
-                            {categories.map((category) => (
+                            {categories.map(category => (
                               <MenuItem key={category} value={category}>
-                                <Typography variant="body2">{category}</Typography>
+                                <Typography variant='body2'>
+                                  {category}
+                                </Typography>
                               </MenuItem>
                             ))}
                           </Select>
                           {errors.category && (
-                            <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
+                            <Typography
+                              variant='caption'
+                              color='error'
+                              sx={{ mt: 0.5, ml: 2 }}
+                            >
                               {errors.category.message}
                             </Typography>
                           )}
@@ -227,22 +247,30 @@ const AssetModal: React.FC<AssetModalProps> = ({
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                     <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
                       <Controller
-                        name="subcategory"
+                        name='subcategory'
                         control={control}
                         render={({ field }) => (
                           <FormControl fullWidth error={!!errors.subcategory}>
                             <InputLabel>Subcategory</InputLabel>
                             <Select
                               {...field}
-                              label="Subcategory"
+                              label='Subcategory'
                               disabled={loading || !selectedCategory}
                             >
-                              {availableSubcategories.map((subcategory) => (
-                                <MenuItem key={subcategory.id} value={subcategory.id}>
+                              {availableSubcategories.map(subcategory => (
+                                <MenuItem
+                                  key={subcategory.id}
+                                  value={subcategory.id}
+                                >
                                   <Box>
-                                    <Typography variant="body2">{subcategory.name}</Typography>
+                                    <Typography variant='body2'>
+                                      {subcategory.name}
+                                    </Typography>
                                     {subcategory.description && (
-                                      <Typography variant="caption" color="text.secondary">
+                                      <Typography
+                                        variant='caption'
+                                        color='text.secondary'
+                                      >
                                         {subcategory.description}
                                       </Typography>
                                     )}
@@ -251,7 +279,11 @@ const AssetModal: React.FC<AssetModalProps> = ({
                               ))}
                             </Select>
                             {errors.subcategory && (
-                              <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
+                              <Typography
+                                variant='caption'
+                                color='error'
+                                sx={{ mt: 0.5, ml: 2 }}
+                              >
                                 {errors.subcategory.message}
                               </Typography>
                             )}
@@ -265,9 +297,9 @@ const AssetModal: React.FC<AssetModalProps> = ({
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                   <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
                     <DatePicker
-                      label="Purchase Date"
+                      label='Purchase Date'
                       value={selectedDate}
-                      onChange={(date) => {
+                      onChange={date => {
                         setSelectedDate(date);
                         setValue('purchaseDate', date || new Date());
                       }}
@@ -289,19 +321,19 @@ const AssetModal: React.FC<AssetModalProps> = ({
           <DialogActions sx={{ padding: '16px 24px', gap: 1 }}>
             <Button
               onClick={handleClose}
-              variant="outlined"
+              variant='outlined'
               disabled={loading}
               sx={{ minWidth: 80 }}
             >
               Cancel
             </Button>
             <Button
-              type="submit"
-              variant="contained"
+              type='submit'
+              variant='contained'
               disabled={loading}
               sx={{ minWidth: 80 }}
             >
-              {loading ? 'Saving...' : (asset ? 'Update' : 'Create')}
+              {loading ? 'Saving...' : asset ? 'Update' : 'Create'}
             </Button>
           </DialogActions>
         </form>
