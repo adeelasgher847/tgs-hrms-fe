@@ -174,7 +174,7 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
       designationId: (data.id as string) || '',
       status: data.invite_status as string,
       role_id: roleId,
-      role_name: roleName, 
+      role_name: roleName,
       department: null, // Will be populated by department mapping
       designation: {
         id: data.id as string,
@@ -294,14 +294,11 @@ class EmployeeApiService {
       const url = `${this.baseUrl}?${params.toString()}`;
 
       const response = await axiosInstance.get(url);
-
-      // Handle the new backend structure
       if (
         response.data &&
         response.data.items &&
         Array.isArray(response.data.items)
       ) {
-        // Normalize each item
         const normalizedItems = response.data.items
           .map((item: unknown) => {
             try {
@@ -323,7 +320,6 @@ class EmployeeApiService {
           totalPages: response.data.totalPages || 1,
         };
       } else if (Array.isArray(response.data)) {
-        // Normalize each item
         const normalizedItems = response.data
           .map((item: unknown) => {
             try {
@@ -364,6 +360,30 @@ class EmployeeApiService {
     }
   }
 
+  async getAllEmployeesWithoutPagination(): Promise<BackendEmployee[]> {
+    try {
+      let allEmployees: BackendEmployee[] = [];
+      let currentPage = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await this.getAllEmployees({}, currentPage);
+        allEmployees = [...allEmployees, ...response.items];
+
+        if (currentPage >= response.totalPages) {
+          hasMore = false;
+        } else {
+          currentPage++;
+        }
+      }
+
+      return allEmployees;
+    } catch (error) {
+      console.error('Error fetching all employees:', error);
+      return [];
+    }
+  }
+
   async getEmployeeById(id: string): Promise<BackendEmployee> {
     const response = await axiosInstance.get<RawEmployee>(
       `${this.baseUrl}/${id}`
@@ -371,15 +391,12 @@ class EmployeeApiService {
     return normalizeEmployee(response.data);
   }
 
-  // Get full employee profile by user id (designation, department, attendance, leaves)
   async getEmployeeProfile(userId: string): Promise<EmployeeFullProfile> {
     const response = await axiosInstance.get<EmployeeFullProfile>(
       `${this.baseUrl}/users/${userId}/profile`
     );
     return response.data;
   }
-
-  // Create new company
 
   async createEmployee(employeeData: EmployeeDto): Promise<BackendEmployee> {
     try {
@@ -410,7 +427,6 @@ class EmployeeApiService {
     }
   }
 
-  // Create a new manager employee
   async createManager(employeeData: EmployeeDto): Promise<BackendEmployee> {
     const payload = {
       first_name: employeeData.first_name,

@@ -28,7 +28,13 @@ import type {
   AttendanceEvent,
   AttendanceResponse,
 } from '../../api/attendanceApi';
-import { isManager as checkIsManager, isAdmin, isSystemAdmin, isNetworkAdmin, isHRAdmin } from '../../utils/roleUtils';
+import {
+  isManager as checkIsManager,
+  isAdmin,
+  isSystemAdmin,
+  isNetworkAdmin,
+  isHRAdmin,
+} from '../../utils/roleUtils';
 import DateNavigation from './DateNavigation';
 import { useTheme } from '../../theme/hooks';
 
@@ -63,7 +69,7 @@ const AttendanceTable = () => {
     Array<{ id: string; name: string }>
   >([]);
   const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [, setCurrentPage] = useState(1);
   const [, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [isManager, setIsManager] = useState(false);
@@ -86,7 +92,8 @@ const AttendanceTable = () => {
 
   // Date navigation state for All Attendance, My Attendance, and Team Attendance
   const [currentNavigationDate, setCurrentNavigationDate] = useState('all');
-  const [myAttendanceNavigationDate, setMyAttendanceNavigationDate] = useState('all');
+  const [myAttendanceNavigationDate, setMyAttendanceNavigationDate] =
+    useState('all');
   const [teamCurrentNavigationDate, setTeamCurrentNavigationDate] =
     useState('all');
 
@@ -106,9 +113,13 @@ const AttendanceTable = () => {
       date: summary.date as string,
       checkInISO: summary.checkIn as string,
       checkOutISO: summary.checkOut as string,
-      checkIn: summary.checkIn ? toDisplayTime(summary.checkIn as string) : null,
-      checkOut: summary.checkOut ? toDisplayTime(summary.checkOut as string) : null,
-      workedHours: summary.workedHours as number || null,
+      checkIn: summary.checkIn
+        ? toDisplayTime(summary.checkIn as string)
+        : null,
+      checkOut: summary.checkOut
+        ? toDisplayTime(summary.checkOut as string)
+        : null,
+      workedHours: (summary.workedHours as number) || null,
       user: {
         first_name:
           `${(summary.user as any)?.first_name || ''} ${(summary.user as any)?.last_name || ''}`.trim(),
@@ -126,7 +137,9 @@ const AttendanceTable = () => {
       .filter(e => e && (e as any).timestamp && (e as any).type)
       .map(e => ({
         id: (e as any).id as string,
-        user_id: (e as any).user_id as string || (isAllAttendance ? null : currentUserId),
+        user_id:
+          ((e as any).user_id as string) ||
+          (isAllAttendance ? null : currentUserId),
         timestamp: (e as any).timestamp as string,
         type: (e as any).type as 'check-in' | 'check-out',
         user: (e as any).user,
@@ -170,7 +183,7 @@ const AttendanceTable = () => {
         checkIn: {
           id: string;
           timestamp: string;
-          user?: { first_name?: string, last_name?: string};
+          user?: { first_name?: string; last_name?: string };
         };
         checkOut: { id: string; timestamp: string } | null;
       }> = [];
@@ -278,7 +291,10 @@ const AttendanceTable = () => {
   };
 
   // Fetch attendance data for a specific date (for date navigation)
-  const fetchAttendanceByDate = async (date: string, view: 'all' | 'my' | 'team') => {
+  const fetchAttendanceByDate = async (
+    date: string,
+    view: 'all' | 'my' | 'team'
+  ) => {
     if (view === 'all' || view === 'my') {
       setLoading(true);
     } else {
@@ -510,10 +526,7 @@ const AttendanceTable = () => {
 
       if (isShiftBased) {
         // Handle shift-based data from backend
-        rows = buildFromSummaries(
-          events as any,
-          currentUser.id
-        );
+        rows = buildFromSummaries(events as any, currentUser.id);
       } else {
         // Handle events-based data (primary method)
         rows = buildFromEvents(
@@ -537,7 +550,6 @@ const AttendanceTable = () => {
       setLoading(false);
     }
   };
-
 
   // Handle team page change
   // const _handleTeamPageChange = (page: number) => {
@@ -689,13 +701,18 @@ const AttendanceTable = () => {
 
   // Determine admin-like UI behavior (Admin, System-Admin, Network-Admin, or HR-Admin)
   const userRoleLc = (userRole || '').toLowerCase();
-  const isAdminLike = userRoleLc === 'admin' || userRoleLc === 'system_admin' || userRoleLc === 'network_admin' || userRoleLc === 'hr_admin';
-  
+  const isAdminLike =
+    userRoleLc === 'admin' ||
+    userRoleLc === 'system_admin' ||
+    userRoleLc === 'network_admin' ||
+    userRoleLc === 'hr_admin';
+
   // Check if user is strictly an admin (not system-admin, network-admin, or hr-admin)
   // const _isStrictAdmin = isAdminUser && !isSystemAdminUser && !isNetworkAdminUser && !isHRAdminUser;
-  
+
   // Check if user can view all attendance (Admin, System-Admin, Network-Admin, or HR-Admin)
-  const canViewAllAttendance = isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser;
+  const canViewAllAttendance =
+    isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser;
 
   return (
     <Box>
@@ -707,7 +724,9 @@ const AttendanceTable = () => {
       {isManager && !isAdminLike && managerView === 'team' && (
         <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
           <Button
-            variant={(managerView as string) === 'my' ? 'contained' : 'outlined'}
+            variant={
+              (managerView as string) === 'my' ? 'contained' : 'outlined'
+            }
             onClick={handleManagerMyAttendance}
           >
             My Attendance
@@ -755,10 +774,27 @@ const AttendanceTable = () => {
       {((tab === 0 && !isManager && !isAdminLike) ||
         (isManager && !isAdminLike && managerView === 'my') ||
         (isAdminLike && (adminView === 'my' || adminView === 'all'))) && (
-        <Paper sx={{ background: 'unset', boxShadow: 'none'}}>
+        <Paper sx={{ background: 'unset', boxShadow: 'none' }}>
           {/* All Controls in Same Line */}
-          <Box sx={{ mb: 3, mt: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between', }}>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap',}}>
+          <Box
+            sx={{
+              mb: 3,
+              mt: 3,
+              display: 'flex',
+              gap: 2,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 2,
+                alignItems: 'center',
+                flexWrap: 'wrap',
+              }}
+            >
               {/* Admin View Toggle - Show for Admin, System-Admin, Network-Admin, and HR-Admin users */}
               {canViewAllAttendance && (
                 <>
@@ -813,72 +849,81 @@ const AttendanceTable = () => {
                   ))}
                 </TextField>
               )}
-               {/* Date Range Filter - Always show */}
-               <Box >
-                 <DatePicker
-                   range
-                   numberOfMonths={2}
-                   value={startDate && endDate ? [new Date(startDate), new Date(endDate)] : startDate ? [new Date(startDate)] : []}
-                   onChange={(dates) => {
-                     if (dates && dates.length === 2) {
-                       const start = dates[0]?.format('YYYY-MM-DD') || '';
-                       const end = dates[1]?.format('YYYY-MM-DD') || '';
-                       setStartDate(start);
-                       setEndDate(end);
-                       // Trigger the filter change
-                       setCurrentPage(1);
-                       const view = canViewAllAttendance ? adminView : 'my';
-                       const selectedId = view === 'all' ? selectedEmployee : undefined;
-                       fetchAttendance(view, selectedId, start, end);
-                     } else if (dates && dates.length === 1) {
-                       const start = dates[0]?.format('YYYY-MM-DD') || '';
-                       setStartDate(start);
-                       setEndDate('');
-                       // Trigger the filter change
-                       setCurrentPage(1);
-                       const view = canViewAllAttendance ? adminView : 'my';
-                       const selectedId = view === 'all' ? selectedEmployee : undefined;
-                       fetchAttendance(view, selectedId, start, '');
-                     } else {
-                       setStartDate('');
-                       setEndDate('');
-                       // Trigger the filter change
-                       setCurrentPage(1);
-                       const view = canViewAllAttendance ? adminView : 'my';
-                       const selectedId = view === 'all' ? selectedEmployee : undefined;
-                       fetchAttendance(view, selectedId, '', '');
-                     }
-                   }}
-                   format="MM/DD/YYYY"
-                   placeholder="Start Date - End Date"
-                   style={{
-                     width: '100%',
-                     height: '40px',
-                     padding: '6.5px 14px',
-                     border: '1px solid rgba(0, 0, 0, 0.23)',
-                     borderRadius: '4px',
-                     fontSize: '16px',
-                     fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
-                     backgroundColor: 'transparent',
-                     outline: 'none',
-                   }}
-                   containerStyle={{
-                     width: '100%',
-                   }}
-                   inputClass={`custom-date-picker-input ${mode === 'dark' ? 'theme-dark' : ''}`}
-                   className={`custom-date-picker ${mode === 'dark' ? 'theme-dark' : ''}`}
-                   editable={false}
-                   showOtherDays={true}
-                   onOpen={() => {
-                     // Prevent body scroll when calendar opens
-                     document.body.style.overflow = 'hidden';
-                   }}
-                   onClose={() => {
-                     // Restore body scroll when calendar closes
-                     document.body.style.overflow = 'auto';
-                   }}
-                 />
-               </Box>
+              {/* Date Range Filter - Always show */}
+              <Box>
+                <DatePicker
+                  range
+                  numberOfMonths={2}
+                  value={
+                    startDate && endDate
+                      ? [new Date(startDate), new Date(endDate)]
+                      : startDate
+                        ? [new Date(startDate)]
+                        : []
+                  }
+                  onChange={dates => {
+                    if (dates && dates.length === 2) {
+                      const start = dates[0]?.format('YYYY-MM-DD') || '';
+                      const end = dates[1]?.format('YYYY-MM-DD') || '';
+                      setStartDate(start);
+                      setEndDate(end);
+                      // Trigger the filter change
+                      setCurrentPage(1);
+                      const view = canViewAllAttendance ? adminView : 'my';
+                      const selectedId =
+                        view === 'all' ? selectedEmployee : undefined;
+                      fetchAttendance(view, selectedId, start, end);
+                    } else if (dates && dates.length === 1) {
+                      const start = dates[0]?.format('YYYY-MM-DD') || '';
+                      setStartDate(start);
+                      setEndDate('');
+                      // Trigger the filter change
+                      setCurrentPage(1);
+                      const view = canViewAllAttendance ? adminView : 'my';
+                      const selectedId =
+                        view === 'all' ? selectedEmployee : undefined;
+                      fetchAttendance(view, selectedId, start, '');
+                    } else {
+                      setStartDate('');
+                      setEndDate('');
+                      // Trigger the filter change
+                      setCurrentPage(1);
+                      const view = canViewAllAttendance ? adminView : 'my';
+                      const selectedId =
+                        view === 'all' ? selectedEmployee : undefined;
+                      fetchAttendance(view, selectedId, '', '');
+                    }
+                  }}
+                  format='MM/DD/YYYY'
+                  placeholder='Start Date - End Date'
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    padding: '6.5px 14px',
+                    border: '1px solid rgba(0, 0, 0, 0.23)',
+                    borderRadius: '4px',
+                    fontSize: '16px',
+                    fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+                    backgroundColor: 'transparent',
+                    outline: 'none',
+                  }}
+                  containerStyle={{
+                    width: '100%',
+                  }}
+                  inputClass={`custom-date-picker-input ${mode === 'dark' ? 'theme-dark' : ''}`}
+                  className={`custom-date-picker ${mode === 'dark' ? 'theme-dark' : ''}`}
+                  editable={false}
+                  showOtherDays={true}
+                  onOpen={() => {
+                    // Prevent body scroll when calendar opens
+                    document.body.style.overflow = 'hidden';
+                  }}
+                  onClose={() => {
+                    // Restore body scroll when calendar closes
+                    document.body.style.overflow = 'auto';
+                  }}
+                />
+              </Box>
 
               <Button variant='contained' onClick={handleFilterChange}>
                 Clear Filters
@@ -889,9 +934,9 @@ const AttendanceTable = () => {
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               {/* Export All Attendance - For Admin, System-Admin, Network-Admin, and HR-Admin users */}
               {canViewAllAttendance && (
-                <Tooltip title="Export All Attendance">
+                <Tooltip title='Export All Attendance'>
                   <IconButton
-                    color="primary"
+                    color='primary'
                     onClick={() =>
                       exportCSV(
                         '/attendance/export/all',
@@ -916,9 +961,9 @@ const AttendanceTable = () => {
               )}
               {/* Export Team Attendance - Only for Managers */}
               {isManager && !isAdminLike && (
-                <Tooltip title="Export Team Attendance">
+                <Tooltip title='Export Team Attendance'>
                   <IconButton
-                    color="primary"
+                    color='primary'
                     onClick={() =>
                       exportCSV(
                         '/attendance/export/team',
@@ -942,32 +987,36 @@ const AttendanceTable = () => {
                 </Tooltip>
               )}
               {/* Export Button for Regular Employees */}
-              {!isAdminUser && !isSystemAdminUser && !isNetworkAdminUser && !isHRAdminUser && !isManager && (
-                <Tooltip title="Export My Attendance">
-                  <IconButton
-                    color="primary"
-                    onClick={() =>
-                      exportCSV(
-                        '/attendance/export/self',
-                        'attendance-self.csv',
-                        token || '',
-                        filters
-                      )
-                    }
-                    sx={{
-                      backgroundColor: 'primary.main',
-                      borderRadius: '6px',
-                      padding: '6px',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'primary.dark',
-                      },
-                    }}
-                  >
-                    <FileDownloadIcon />
-                  </IconButton>
-                </Tooltip>
-              )}
+              {!isAdminUser &&
+                !isSystemAdminUser &&
+                !isNetworkAdminUser &&
+                !isHRAdminUser &&
+                !isManager && (
+                  <Tooltip title='Export My Attendance'>
+                    <IconButton
+                      color='primary'
+                      onClick={() =>
+                        exportCSV(
+                          '/attendance/export/self',
+                          'attendance-self.csv',
+                          token || '',
+                          filters
+                        )
+                      }
+                      sx={{
+                        backgroundColor: 'primary.main',
+                        borderRadius: '6px',
+                        padding: '6px',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: 'primary.dark',
+                        },
+                      }}
+                    >
+                      <FileDownloadIcon />
+                    </IconButton>
+                  </Tooltip>
+                )}
             </Box>
           </Box>
           {/* Attendance Table */}
@@ -990,7 +1039,9 @@ const AttendanceTable = () => {
                 {loading ? (
                   <TableRow>
                     <TableCell
-                      colSpan={canViewAllAttendance && adminView === 'all' ? 5 : 4}
+                      colSpan={
+                        canViewAllAttendance && adminView === 'all' ? 5 : 4
+                      }
                       align='center'
                     >
                       <CircularProgress />
@@ -1017,7 +1068,9 @@ const AttendanceTable = () => {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={canViewAllAttendance && adminView === 'all' ? 5 : 4}
+                      colSpan={
+                        canViewAllAttendance && adminView === 'all' ? 5 : 4
+                      }
                       align='center'
                     >
                       No attendance records found.
@@ -1038,7 +1091,9 @@ const AttendanceTable = () => {
           )}
 
           {/* Date Navigation for My Attendance */}
-          {((!canViewAllAttendance) || (canViewAllAttendance && adminView === 'my') || (isManager && !isAdminLike && managerView === 'my')) && (
+          {(!canViewAllAttendance ||
+            (canViewAllAttendance && adminView === 'my') ||
+            (isManager && !isAdminLike && managerView === 'my')) && (
             <DateNavigation
               currentDate={myAttendanceNavigationDate}
               onDateChange={handleMyAttendanceDateNavigationChange}
