@@ -104,7 +104,7 @@ const AssignEmployeeBenefit: React.FC<{
           : benResp.items || [];
 
         const activeBenefits = allBenefits.filter(
-          (b: any) => b.status?.toLowerCase() === 'active'
+          (b: { status?: string }) => b.status?.toLowerCase() === 'active'
         );
 
         setEmployees(normalizedEmployees);
@@ -138,9 +138,12 @@ const AssignEmployeeBenefit: React.FC<{
       setShowToast(true);
       reset();
       onClose();
-      onAssigned?.(); 
-    } catch (err: any) {
-      console.error('Error assigning benefit:', err.response?.data || err);
+      onAssigned?.();
+    } catch (err: unknown) {
+      console.error(
+        'Error assigning benefit:',
+        (err as { response?: { data?: unknown } }).response?.data || err
+      );
     } finally {
       setLoading(false);
     }

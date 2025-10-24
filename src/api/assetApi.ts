@@ -76,11 +76,13 @@ export interface AssetRequest {
 }
 
 // Utility function to validate and normalize status from API
-export const validateRequestStatus = (status: string | number | boolean): 'pending' | 'approved' | 'rejected' => {
+export const validateRequestStatus = (
+  status: string | number | boolean
+): 'pending' | 'approved' | 'rejected' => {
   if (typeof status !== 'string') {
     return 'pending';
   }
-  
+
   const normalized = status.toLowerCase().trim();
   switch (normalized) {
     case 'pending':
@@ -126,18 +128,23 @@ export const assetApi = {
   },
 
   // Assets CRUD operations
-  getAllAssets: async (filters?: { status?: string; category?: string; page?: number; limit?: number }) => {
+  getAllAssets: async (filters?: {
+    status?: string;
+    category?: string;
+    page?: number;
+    limit?: number;
+  }) => {
     const params = new URLSearchParams();
     if (filters?.status) params.append('status', filters.status);
     if (filters?.category) params.append('category', filters.category);
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
-    
+
     const response = await axiosInstance.get(`/assets?${params.toString()}`);
-    
+
     // Handle different possible response structures
     const responseData = response.data;
-    
+
     // Case 1: Paginated response with data array
     if (responseData.data && Array.isArray(responseData.data)) {
       return {
@@ -146,25 +153,24 @@ export const assetApi = {
           total: responseData.total || 0,
           page: responseData.page || 1,
           limit: responseData.limit || 25,
-          totalPages: responseData.totalPages || 1
-        }
+          totalPages: responseData.totalPages || 1,
+        },
       };
     }
-    
+
     // Case 2: Paginated response with items array
     if (responseData.items && Array.isArray(responseData.items)) {
-
       return {
         assets: responseData.items,
         pagination: {
           total: responseData.total || 0,
           page: responseData.page || 1,
           limit: responseData.limit || 25,
-          totalPages: responseData.totalPages || 1
-        }
+          totalPages: responseData.totalPages || 1,
+        },
       };
     }
-    
+
     // Case 3: Paginated response with results array
     if (responseData.results && Array.isArray(responseData.results)) {
       return {
@@ -173,11 +179,11 @@ export const assetApi = {
           total: responseData.total || 0,
           page: responseData.page || 1,
           limit: responseData.limit || 25,
-          totalPages: responseData.totalPages || 1
-        }
+          totalPages: responseData.totalPages || 1,
+        },
       };
     }
-    
+
     // Case 4: Direct array response
     if (Array.isArray(responseData)) {
       return {
@@ -186,11 +192,11 @@ export const assetApi = {
           total: responseData.length,
           page: 1,
           limit: responseData.length || 25,
-          totalPages: 1
-        }
+          totalPages: 1,
+        },
       };
     }
-    
+
     // Case 5: Object with assets property
     if (responseData.assets && Array.isArray(responseData.assets)) {
       return {
@@ -199,11 +205,11 @@ export const assetApi = {
           total: responseData.total || responseData.assets.length,
           page: responseData.page || 1,
           limit: responseData.limit || responseData.assets.length || 25,
-          totalPages: responseData.totalPages || 1
-        }
+          totalPages: responseData.totalPages || 1,
+        },
       };
     }
-    
+
     // Fallback: Try to find any array in the response
     const possibleArrays = Object.values(responseData).filter(Array.isArray);
     if (possibleArrays.length > 0) {
@@ -213,11 +219,11 @@ export const assetApi = {
           total: responseData.total || possibleArrays[0].length,
           page: responseData.page || 1,
           limit: responseData.limit || possibleArrays[0].length || 25,
-          totalPages: responseData.totalPages || 1
-        }
+          totalPages: responseData.totalPages || 1,
+        },
       };
     }
-    
+
     // Final fallback
     return {
       assets: [],
@@ -225,8 +231,8 @@ export const assetApi = {
         total: 0,
         page: 1,
         limit: 25,
-        totalPages: 1
-      }
+        totalPages: 1,
+      },
     };
   },
 
@@ -250,7 +256,11 @@ export const assetApi = {
     return response.data;
   },
 
-  updateAssetStatus: async (id: string, status: string, assetData: { name: string; category: string; purchaseDate: string }) => {
+  updateAssetStatus: async (
+    id: string,
+    status: string,
+    assetData: { name: string; category: string; purchaseDate: string }
+  ) => {
     // Update asset with new status using PUT endpoint
     const response = await axiosInstance.put(`/assets/${id}`, {
       name: assetData.name,
@@ -262,19 +272,25 @@ export const assetApi = {
   },
 
   // Asset Requests operations
-  getAllAssetRequests: async (filters?: { requester?: string; tenant?: string; page?: number; limit?: number }) => {
+  getAllAssetRequests: async (filters?: {
+    requester?: string;
+    tenant?: string;
+    page?: number;
+    limit?: number;
+  }) => {
     const params = new URLSearchParams();
     if (filters?.requester) params.append('requester', filters.requester);
     if (filters?.tenant) params.append('tenant', filters.tenant);
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
-    
-    const response = await axiosInstance.get(`/asset-requests?${params.toString()}`);
-    
-    
+
+    const response = await axiosInstance.get(
+      `/asset-requests?${params.toString()}`
+    );
+
     // Debug: Log individual request statuses
     const responseData = response.data;
-    
+
     // Case 1: Paginated response with data array
     if (responseData.data && Array.isArray(responseData.data)) {
       return {
@@ -282,22 +298,21 @@ export const assetApi = {
         total: responseData.total || 0,
         page: responseData.page || 1,
         limit: responseData.limit || 25,
-        totalPages: responseData.totalPages || 1
+        totalPages: responseData.totalPages || 1,
       };
     }
-    
+
     // Case 2: Paginated response with items array
     if (responseData.items && Array.isArray(responseData.items)) {
-
       return {
         items: responseData.items,
         total: responseData.total || 0,
         page: responseData.page || 1,
         limit: responseData.limit || 25,
-        totalPages: responseData.totalPages || 1
+        totalPages: responseData.totalPages || 1,
       };
     }
-    
+
     // Case 3: Paginated response with results array
     if (responseData.results && Array.isArray(responseData.results)) {
       return {
@@ -305,10 +320,10 @@ export const assetApi = {
         total: responseData.total || 0,
         page: responseData.page || 1,
         limit: responseData.limit || 25,
-        totalPages: responseData.totalPages || 1
+        totalPages: responseData.totalPages || 1,
       };
     }
-    
+
     // Case 4: Direct array response
     if (Array.isArray(responseData)) {
       return {
@@ -316,21 +331,24 @@ export const assetApi = {
         total: responseData.length,
         page: 1,
         limit: responseData.length || 25,
-        totalPages: 1
+        totalPages: 1,
       };
     }
-    
+
     // Case 5: Object with assetRequests property
-    if (responseData.assetRequests && Array.isArray(responseData.assetRequests)) {
+    if (
+      responseData.assetRequests &&
+      Array.isArray(responseData.assetRequests)
+    ) {
       return {
         items: responseData.assetRequests,
         total: responseData.total || responseData.assetRequests.length,
         page: responseData.page || 1,
         limit: responseData.limit || responseData.assetRequests.length || 25,
-        totalPages: responseData.totalPages || 1
+        totalPages: responseData.totalPages || 1,
       };
     }
-    
+
     // Fallback: Try to find any array in the response
     const possibleArrays = Object.values(responseData).filter(Array.isArray);
     if (possibleArrays.length > 0) {
@@ -339,20 +357,23 @@ export const assetApi = {
         total: responseData.total || possibleArrays[0].length,
         page: responseData.page || 1,
         limit: responseData.limit || possibleArrays[0].length || 25,
-        totalPages: responseData.totalPages || 1
+        totalPages: responseData.totalPages || 1,
       };
     }
-    
+
     return {
       items: [],
       total: 0,
       page: 1,
       limit: 25,
-      totalPages: 1
+      totalPages: 1,
     };
   },
 
-  getAssetRequestById: async (id: string, filters?: { page?: number; limit?: number }) => {
+  getAssetRequestById: async (
+    id: string,
+    filters?: { page?: number; limit?: number }
+  ) => {
     // Get current user ID from localStorage
     const userStr = localStorage.getItem('user');
     let currentUserId = '';
@@ -364,14 +385,16 @@ export const assetApi = {
         console.error('Failed to parse user from localStorage:', error);
       }
     }
-    
+
     const params = new URLSearchParams();
     params.append('requestedBy', currentUserId);
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
-    
-    const response = await axiosInstance.get(`/asset-requests/?${params.toString()}`);
-    
+
+    const response = await axiosInstance.get(
+      `/asset-requests/?${params.toString()}`
+    );
+
     return response.data;
   },
 
@@ -380,25 +403,25 @@ export const assetApi = {
     return response.data;
   },
 
-  approveAssetRequest: async (id: string, data?: ApproveAssetRequestRequest) => {
+  approveAssetRequest: async (
+    id: string,
+    data?: ApproveAssetRequestRequest
+  ) => {
+    // Try with body payload first
     try {
-      
-      // Try with body payload first
-      const response = await axiosInstance.put(`/asset-requests/${id}/approve`, data || {});
+      const response = await axiosInstance.put(
+        `/asset-requests/${id}/approve`,
+        data || {}
+      );
       return response.data;
     } catch (bodyError: unknown) {
-      
       // If body approach fails and we have asset_id, try query parameter
       if (data?.asset_id) {
-        try {
-          const url = `/asset-requests/${id}/approve?id=${data.request_id}`;
-          const response = await axiosInstance.put(url, {});
-          return response.data;
-        } catch (queryError: unknown) {
-          throw queryError;
-        }
+        const url = `/asset-requests/${id}/approve?id=${data.request_id}`;
+        const response = await axiosInstance.put(url, {});
+        return response.data;
       }
-      
+
       // If both fail, throw the body error
       throw bodyError;
     }
@@ -415,13 +438,19 @@ export const assetApi = {
   },
 
   // Asset Subcategories CRUD operations
-  getAllAssetSubcategories: async (filters?: { category?: string; page?: number; limit?: number }) => {
+  getAllAssetSubcategories: async (filters?: {
+    category?: string;
+    page?: number;
+    limit?: number;
+  }) => {
     const params = new URLSearchParams();
     if (filters?.category) params.append('category', filters.category);
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
-    
-    const response = await axiosInstance.get(`/asset-subcategories?${params.toString()}`);
+
+    const response = await axiosInstance.get(
+      `/asset-subcategories?${params.toString()}`
+    );
     return response.data;
   },
 
@@ -435,8 +464,14 @@ export const assetApi = {
     return response.data;
   },
 
-  updateAssetSubcategory: async (id: string, data: UpdateAssetSubcategoryRequest) => {
-    const response = await axiosInstance.put(`/asset-subcategories/${id}`, data);
+  updateAssetSubcategory: async (
+    id: string,
+    data: UpdateAssetSubcategoryRequest
+  ) => {
+    const response = await axiosInstance.put(
+      `/asset-subcategories/${id}`,
+      data
+    );
     return response.data;
   },
 

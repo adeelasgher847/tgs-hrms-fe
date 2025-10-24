@@ -38,12 +38,12 @@ const BenefitReport = () => {
     totalEmployeesCovered: 0,
   });
 
-  const [benefitData, setBenefitData] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [benefitData, setBenefitData] = useState<unknown[]>([]);
+  const [filteredData, setFilteredData] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [designations, setDesignations] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<unknown[]>([]);
+  const [designations, setDesignations] = useState<unknown[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedDesignation, setSelectedDesignation] = useState('');
   const [page, setPage] = useState(1);
@@ -106,14 +106,26 @@ const BenefitReport = () => {
           page: 1,
         });
 
-        const flattened = response.flatMap((emp: any) =>
-          emp.benefits.map((b: any) => ({
-            department: emp.department || '-',
-            designation: emp.designation || '-',
-            employeeName: emp.employeeName || '-',
-            benefitType: b.type || '-',
-            status: b.statusOfAssignment || b.status || '-',
-          }))
+        const flattened = response.flatMap(
+          (emp: {
+            benefits: unknown[];
+            department?: string;
+            designation?: string;
+            employeeName?: string;
+          }) =>
+            emp.benefits.map(
+              (b: {
+                type?: string;
+                statusOfAssignment?: string;
+                status?: string;
+              }) => ({
+                department: emp.department || '-',
+                designation: emp.designation || '-',
+                employeeName: emp.employeeName || '-',
+                benefitType: b.type || '-',
+                status: b.statusOfAssignment || b.status || '-',
+              })
+            )
         );
 
         setBenefitData(flattened);
@@ -162,7 +174,7 @@ const BenefitReport = () => {
     page * ITEMS_PER_PAGE
   );
 
-  const csvEscape = (value: any) => {
+  const csvEscape = (value: unknown) => {
     if (value === null || value === undefined) return '';
     const s = String(value).replace(/"/g, '""');
     return `"${s}"`;
@@ -182,14 +194,21 @@ const BenefitReport = () => {
       'Status',
     ];
 
-    const rows = filteredData.map(row =>
-      [
-        csvEscape(row.department),
-        csvEscape(row.designation),
-        csvEscape(row.employeeName),
-        csvEscape(row.benefitType),
-        csvEscape(row.status),
-      ].join(',')
+    const rows = filteredData.map(
+      (row: {
+        department?: string;
+        designation?: string;
+        employeeName?: string;
+        benefitType?: string;
+        status?: string;
+      }) =>
+        [
+          csvEscape(row.department),
+          csvEscape(row.designation),
+          csvEscape(row.employeeName),
+          csvEscape(row.benefitType),
+          csvEscape(row.status),
+        ].join(',')
     );
 
     const csvContent = [csvHeader.join(','), ...rows].join('\n');
@@ -328,15 +347,26 @@ const BenefitReport = () => {
             </TableHead>
             <TableBody>
               {paginatedData.length > 0 ? (
-                paginatedData.map((row, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{row.department}</TableCell>
-                    <TableCell>{row.designation}</TableCell>
-                    <TableCell>{row.employeeName}</TableCell>
-                    <TableCell>{row.benefitType}</TableCell>
-                    <TableCell>{row.status}</TableCell>
-                  </TableRow>
-                ))
+                paginatedData.map(
+                  (
+                    row: {
+                      department?: string;
+                      designation?: string;
+                      employeeName?: string;
+                      benefitType?: string;
+                      status?: string;
+                    },
+                    index
+                  ) => (
+                    <TableRow key={index}>
+                      <TableCell>{row.department}</TableCell>
+                      <TableCell>{row.designation}</TableCell>
+                      <TableCell>{row.employeeName}</TableCell>
+                      <TableCell>{row.benefitType}</TableCell>
+                      <TableCell>{row.status}</TableCell>
+                    </TableRow>
+                  )
+                )
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} align='center'>

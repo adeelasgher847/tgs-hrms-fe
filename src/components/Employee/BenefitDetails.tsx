@@ -12,7 +12,6 @@ import {
   IconButton,
   Chip,
   Dialog,
-  Button,
   Pagination,
   CircularProgress,
 } from '@mui/material';
@@ -24,8 +23,8 @@ import BenefitCard from '../Benefits/BenefitCard';
 const ITEMS_PER_PAGE = 10;
 
 const BenefitDetails: React.FC = () => {
-  const [benefits, setBenefits] = useState<any[]>([]);
-  const [selectedBenefit, setSelectedBenefit] = useState<any | null>(null);
+  const [benefits, setBenefits] = useState<unknown[]>([]);
+  const [selectedBenefit, setSelectedBenefit] = useState<unknown | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
 
@@ -44,7 +43,7 @@ const BenefitDetails: React.FC = () => {
         console.log('Get Employee Benefits Response:', response);
 
         const employeeData = response.find(
-          (emp: any) => emp.employeeId === employeeId
+          (emp: { employeeId: string }) => emp.employeeId === employeeId
         );
 
         if (employeeData && Array.isArray(employeeData.benefits)) {
@@ -66,7 +65,7 @@ const BenefitDetails: React.FC = () => {
   const formatDate = (date: string) =>
     date ? new Date(date).toLocaleDateString() : '-';
 
-  const csvEscape = (value: any) => {
+  const csvEscape = (value: unknown) => {
     if (value === null || value === undefined) return '';
     const s = String(value).replace(/"/g, '""');
     return `"${s}"`;
@@ -85,14 +84,22 @@ const BenefitDetails: React.FC = () => {
       'End Date',
       'Status',
     ];
-    const rows = benefits.map(row =>
-      [
-        csvEscape(row.name),
-        csvEscape(row.type),
-        csvEscape(formatDate(row.startDate)),
-        csvEscape(formatDate(row.endDate)),
-        csvEscape(row.statusOfAssignment || row.status),
-      ].join(',')
+    const rows = benefits.map(
+      (row: {
+        name?: string;
+        type?: string;
+        startDate?: string;
+        endDate?: string;
+        statusOfAssignment?: string;
+        status?: string;
+      }) =>
+        [
+          csvEscape(row.name),
+          csvEscape(row.type),
+          csvEscape(formatDate(row.startDate || '')),
+          csvEscape(formatDate(row.endDate || '')),
+          csvEscape(row.statusOfAssignment || row.status),
+        ].join(',')
     );
     const csvContent = [csvHeader.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -178,35 +185,46 @@ const BenefitDetails: React.FC = () => {
 
             <TableBody>
               {paginatedBenefits.length > 0 ? (
-                paginatedBenefits.map(b => (
-                  <TableRow key={b.benefitAssignmentId || b.id}>
-                    <TableCell>{b.name || '-'}</TableCell>
-                    <TableCell>{b.type || '-'}</TableCell>
-                    <TableCell>{formatDate(b.startDate)}</TableCell>
-                    <TableCell>{formatDate(b.endDate)}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={b.statusOfAssignment || b.status || '-'}
-                        color={
-                          (b.statusOfAssignment || b.status) === 'active'
-                            ? 'success'
-                            : 'default'
-                        }
-                        size='small'
-                      />
-                    </TableCell>
-                    <TableCell align='center'>
-                      <Tooltip title='View Details'>
-                        <IconButton
-                          color='primary'
-                          onClick={() => setSelectedBenefit(b)}
-                        >
-                          <InfoIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
+                paginatedBenefits.map(
+                  (b: {
+                    benefitAssignmentId?: string;
+                    id?: string;
+                    name?: string;
+                    type?: string;
+                    startDate?: string;
+                    endDate?: string;
+                    statusOfAssignment?: string;
+                    status?: string;
+                  }) => (
+                    <TableRow key={b.benefitAssignmentId || b.id}>
+                      <TableCell>{b.name || '-'}</TableCell>
+                      <TableCell>{b.type || '-'}</TableCell>
+                      <TableCell>{formatDate(b.startDate || '')}</TableCell>
+                      <TableCell>{formatDate(b.endDate || '')}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={b.statusOfAssignment || b.status || '-'}
+                          color={
+                            (b.statusOfAssignment || b.status) === 'active'
+                              ? 'success'
+                              : 'default'
+                          }
+                          size='small'
+                        />
+                      </TableCell>
+                      <TableCell align='center'>
+                        <Tooltip title='View Details'>
+                          <IconButton
+                            color='primary'
+                            onClick={() => setSelectedBenefit(b)}
+                          >
+                            <InfoIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  )
+                )
               ) : (
                 <TableRow>
                   <TableCell colSpan={8} align='center'>
@@ -241,21 +259,34 @@ const BenefitDetails: React.FC = () => {
         </Typography>
       </Box>
 
-      <Dialog
-        open={!!selectedBenefit}
-        onClose={() => setSelectedBenefit(null)}
-      >
+      <Dialog open={!!selectedBenefit} onClose={() => setSelectedBenefit(null)}>
         {selectedBenefit && (
           <Box>
             <BenefitCard
-              name={selectedBenefit.name}
-              type={selectedBenefit.type}
-              eligibilityCriteria={selectedBenefit.eligibilityCriteria}
-              description={selectedBenefit.description}
-              startDate={formatDate(selectedBenefit.startDate)}
-              endDate={formatDate(selectedBenefit.endDate)}
+              name={(selectedBenefit as { name?: string }).name || ''}
+              type={(selectedBenefit as { type?: string }).type || ''}
+              eligibilityCriteria={
+                (selectedBenefit as { eligibilityCriteria?: string })
+                  .eligibilityCriteria || ''
+              }
+              description={
+                (selectedBenefit as { description?: string }).description
+              }
+              startDate={formatDate(
+                (selectedBenefit as { startDate?: string }).startDate || ''
+              )}
+              endDate={formatDate(
+                (selectedBenefit as { endDate?: string }).endDate || ''
+              )}
               status={
-                selectedBenefit.statusOfAssignment || selectedBenefit.status
+                (
+                  selectedBenefit as {
+                    statusOfAssignment?: string;
+                    status?: string;
+                  }
+                ).statusOfAssignment ||
+                (selectedBenefit as { status?: string }).status ||
+                ''
               }
             />
           </Box>

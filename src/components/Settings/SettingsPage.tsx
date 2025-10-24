@@ -23,7 +23,6 @@ import LanguageIcon from '@mui/icons-material/Language';
 import {
   Edit,
   Save,
-  Cancel,
   Close,
   CameraAlt,
   BusinessCenter,
@@ -49,7 +48,7 @@ const SettingsPage: React.FC = () => {
   });
   const [modalCompanyLogo, setModalCompanyLogo] = useState<string | null>(null);
   const [modalLogoLoading, setModalLogoLoading] = useState(false);
-  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoUploading] = useState(false);
   const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const [, setError] = useState<string | null>(null);

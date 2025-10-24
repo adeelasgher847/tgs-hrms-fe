@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -62,7 +62,7 @@ const BenefitList: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBenefit, setSelectedBenefit] = useState<Benefit | null>(null);
 
-  const fetchBenefits = async () => {
+  const fetchBenefits = useCallback(async () => {
     setLoading(true);
     try {
       const resp = await benefitsApi.getBenefits(page);
@@ -78,11 +78,11 @@ const BenefitList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
     fetchBenefits();
-  }, [page]);
+  }, [page, fetchBenefits]);
 
   const handleSaveBenefit = async (data: BenefitFormValues) => {
     try {
@@ -108,7 +108,7 @@ const BenefitList: React.FC = () => {
       setModalOpen(false);
       setEditingBenefit(null);
       fetchBenefits();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving benefit:', error);
       setToastSeverity('error');
       setToastMessage('Failed to save benefit.');
@@ -136,11 +136,12 @@ const BenefitList: React.FC = () => {
       } else {
         throw new Error('Delete failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting benefit:', error);
       setToastSeverity('error');
       setToastMessage(
-        error.response?.data?.message || 'Failed to delete benefit.'
+        (error as { response?: { data?: { message?: string } } }).response?.data
+          ?.message || 'Failed to delete benefit.'
       );
       setShowToast(true);
     } finally {
@@ -150,7 +151,7 @@ const BenefitList: React.FC = () => {
     }
   };
 
-  const csvEscape = (value: any) => {
+  const csvEscape = (value: unknown) => {
     if (value === null || value === undefined) return '';
     const s = String(value).replace(/"/g, '""');
     return `"${s}"`;

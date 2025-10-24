@@ -12,7 +12,6 @@ interface CompanyContextType {
   companyName: string;
   companyLogo: string | null;
   refreshCompanyDetails: () => Promise<void>;
-  updateCompanyDetails: (details: CompanyDetails) => void;
 }
 // eslint-disable-next-line react-refresh/only-export-components
 export const CompanyContext = createContext<CompanyContextType | undefined>(
@@ -38,13 +37,9 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
       console.error('Error fetching company details:', err);
     }
   }, []);
-  const updateCompanyDetails = useCallback((details: CompanyDetails) => {
-    setCompanyDetails(details);
-  }, []);
   useEffect(() => {
     refreshCompanyDetails();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refreshCompanyDetails]);
   const companyName = useMemo(
     () => companyDetails?.company_name || 'HRMS',
     [companyDetails]
@@ -55,15 +50,8 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
       companyName,
       companyLogo,
       refreshCompanyDetails,
-      updateCompanyDetails,
     }),
-    [
-      companyDetails,
-      companyName,
-      companyLogo,
-      refreshCompanyDetails,
-      updateCompanyDetails,
-    ]
+    [companyDetails, companyName, companyLogo, refreshCompanyDetails]
   );
   return (
     <CompanyContext.Provider value={contextValue}>

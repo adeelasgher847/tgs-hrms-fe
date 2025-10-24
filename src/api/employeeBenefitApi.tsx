@@ -53,10 +53,11 @@ const employeeBenefitApi = {
       const response = await axiosInstance.post('/employee-benefits', data);
       console.log('Assign Benefit Response:', response.data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         'Assign Benefit API Error:',
-        error.response?.data || error.message
+        (error as { response?: { data?: unknown }; message?: string }).response
+          ?.data || (error as { message?: string }).message
       );
       throw error;
     }
@@ -88,15 +89,18 @@ const employeeBenefitApi = {
 
       console.warn('Unexpected response structure:', response.data);
       return [];
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      if (
+        (error as { response?: { status?: number } }).response?.status === 404
+      ) {
         console.warn('No benefits found for logged-in employee.');
         return [];
       }
 
       console.error(
         'Get Employee Benefits API Error:',
-        error.response?.data || error.message
+        (error as { response?: { data?: unknown }; message?: string }).response
+          ?.data || (error as { message?: string }).message
       );
       throw error;
     }
@@ -118,10 +122,11 @@ const employeeBenefitApi = {
         response.data
       );
       return [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         'Get Employees with Benefits API Error:',
-        error.response?.data || error.message
+        (error as { response?: { data?: unknown }; message?: string }).response
+          ?.data || (error as { message?: string }).message
       );
       throw error;
     }
@@ -150,10 +155,11 @@ const employeeBenefitApi = {
 
       console.warn('Unexpected filtered response:', response.data);
       return [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         'Get Filtered Employee Benefits API Error:',
-        error.response?.data || error.message
+        (error as { response?: { data?: unknown }; message?: string }).response
+          ?.data || (error as { message?: string }).message
       );
       throw error;
     }
@@ -166,10 +172,11 @@ const employeeBenefitApi = {
       );
       console.log('Cancel Employee Benefit Response:', response.data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         'Cancel Employee Benefit API Error:',
-        error.response?.data || error.message
+        (error as { response?: { data?: unknown }; message?: string }).response
+          ?.data || (error as { message?: string }).message
       );
       throw error;
     }
