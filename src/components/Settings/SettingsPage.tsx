@@ -18,6 +18,8 @@ import { useIsDarkMode } from '../../theme';
 import { useCompany } from '../../context/CompanyContext';
 import { useUser } from '../../hooks/useUser';
 import companyApi from '../../api/companyApi';
+import BusinessIcon from '@mui/icons-material/Business';
+import LanguageIcon from '@mui/icons-material/Language';
 import {
   Edit,
   Save,
@@ -25,26 +27,22 @@ import {
   Close,
   CameraAlt,
   BusinessCenter,
-  Business,
-  Language,
-//   Delete as DeleteIcon,
 } from '@mui/icons-material';
 
 const SettingsPage: React.FC = () => {
   const theme = useTheme();
   const darkMode = useIsDarkMode();
   const { user } = useUser();
-
   const {
-    companyDetails,
+    companyDetails: contextCompanyDetails,
     companyName,
     companyLogo,
-    setCompanyDetails,
-    setCompanyLogo,
+    refreshCompanyDetails,
+    loading: contextLoading,
   } = useCompany();
 
   const [companyModalOpen, setCompanyModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
   const [editFormData, setEditFormData] = useState({
     company_name: '',
     domain: '',
@@ -52,103 +50,90 @@ const SettingsPage: React.FC = () => {
   const [modalCompanyLogo, setModalCompanyLogo] = useState<string | null>(null);
   const [modalLogoLoading, setModalLogoLoading] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const [, setError] = useState<string | null>(null);
 
   const isModalOpenRef = useRef(false);
 
-  /** 🟢 Fetch company details initially */
-  useEffect(() => {
-    const fetchCompanyDetails = async () => {
-      try {
-        setLoading(true);
-        const details = await companyApi.getCompanyDetails();
-        setCompanyDetails(details);
-
-        if (details?.tenant_id) {
-          const logoUrl = await companyApi.getCompanyLogo(details.tenant_id);
-          setCompanyLogo(logoUrl);
-        }
-      } catch (err) {
-        console.error('Failed to fetch company details:', err);
-        setError('Failed to fetch company details');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCompanyDetails();
-  }, [setCompanyDetails, setCompanyLogo]);
-
-  /** Open edit modal */
-  const handleEditCompanyDetails = useCallback(() => {
-    if (!user || !companyDetails) return;
+  const handleEditCompanyDetails = useCallback(async () => {
+    if (!user) return;
 
     setCompanyModalOpen(true);
     setIsEditing(true);
     isModalOpenRef.current = true;
 
-    setModalLogoLoading(true);
-    setEditFormData({
-      company_name: companyDetails.company_name,
-      domain: companyDetails.domain,
-    });
-    setModalCompanyLogo(companyDetails.logo_url || companyLogo);
-    setModalLogoLoading(false);
-    isModalOpenRef.current = false;
-  }, [companyDetails, companyLogo, user]);
+    try {
+      setModalLogoLoading(true);
 
-  /** Close modal */
+      if (contextCompanyDetails) {
+        setEditFormData({
+          company_name: contextCompanyDetails.company_name,
+          domain: contextCompanyDetails.domain,
+        });
+        setModalCompanyLogo(contextCompanyDetails.logo_url || companyLogo);
+      }
+    } catch (err) {
+      console.error('Failed to initialize modal:', err);
+      setError('Failed to load company details');
+    } finally {
+      setModalLogoLoading(false);
+      isModalOpenRef.current = false;
+    }
+  }, [contextCompanyDetails, companyLogo, user]);
+
   const handleCloseCompanyModal = useCallback(() => {
     setCompanyModalOpen(false);
     setIsEditing(false);
     setModalCompanyLogo(null);
   }, []);
 
-  /** Cancel editing */
-  const handleCancelEdit = useCallback(() => {
-    setIsEditing(false);
-    if (companyDetails) {
-      setEditFormData({
-        company_name: companyDetails.company_name,
-        domain: companyDetails.domain,
-      });
-      setModalCompanyLogo(companyDetails.logo_url || companyLogo);
-    }
-  }, [companyDetails, companyLogo]);
-
-  /** Update form fields */
   const handleFormChange = useCallback((field: string, value: string) => {
-    setEditFormData(prev => ({ ...prev, [field]: value }));
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
   }, []);
 
-  /** Save updated details */
   const handleSaveCompany = useCallback(async () => {
-    if (!companyDetails) return;
+    if (!contextCompanyDetails) return;
 
     setEditLoading(true);
     try {
+      // If a new logo was selected, upload it first
+      if (selectedLogoFile) {
+        await companyApi.uploadCompanyLogo(selectedLogoFile);
+      }
+
+      // Then update the company details
       await companyApi.updateCompanyDetails({
         company_name: editFormData.company_name,
         domain: editFormData.domain,
       });
-      setCompanyDetails(updatedDetails);
-      setError(null);
+
+      await refreshCompanyDetails();
+
       setIsEditing(false);
       setCompanyModalOpen(false);
+      setSelectedLogoFile(null); // clear after saving
+      setError(null);
     } catch (err) {
       console.error('Failed to update company details:', err);
       setError('Failed to update company details');
     } finally {
       setEditLoading(false);
     }
-  }, [editFormData, companyDetails, setCompanyDetails]);
+  }, [
+    editFormData,
+    selectedLogoFile,
+    contextCompanyDetails,
+    refreshCompanyDetails,
+  ]);
 
-  /** Upload new logo */
   const handleLogoUpload = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
+    (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
-      if (!file || !user || !companyDetails?.tenant_id) return;
+      if (!file) return;
 
       if (!file.type.startsWith('image/')) {
         setError('Please select an image file');
@@ -160,42 +145,30 @@ const SettingsPage: React.FC = () => {
         return;
       }
 
-      setLogoUploading(true);
-      try {
-        await companyApi.uploadCompanyLogo(file);
-        const logoUrl = await companyApi.getCompanyLogo(
-          companyDetails.tenant_id
-        );
-        setCompanyLogo(logoUrl);
-        setModalCompanyLogo(logoUrl);
-        setError(null);
-      } catch (err) {
-        console.error('Logo upload error:', err);
-        setError('Failed to upload logo');
-      } finally {
-        setLogoUploading(false);
-      }
+      // Preview only
+      const previewUrl = URL.createObjectURL(file);
+      setModalCompanyLogo(previewUrl);
+      setSelectedLogoFile(file);
     },
-    [companyDetails?.tenant_id, user, setCompanyLogo]
+    []
   );
 
-  /** Delete logo */
-  const handleDeleteLogo = useCallback(async () => {
-    if (!companyDetails?.tenant_id) return;
-    try {
-      setLogoUploading(true);
-      await companyApi.deleteCompanyLogo(companyDetails.tenant_id);
-      setCompanyLogo(null);
-      setModalCompanyLogo(null);
-    } catch (err) {
-      console.error('Failed to delete company logo:', err);
-      setError('Failed to delete company logo');
-    } finally {
-      setLogoUploading(false);
-    }
-  }, [companyDetails?.tenant_id, setCompanyLogo]);
+  // const _handleDeleteLogo = useCallback(async () => {
+  //   if (!contextCompanyDetails?.tenant_id) return;
 
-  /** Sync logo in modal */
+  //   try {
+  //     setLogoUploading(true);
+  //     await companyApi.deleteCompanyLogo(contextCompanyDetails.tenant_id);
+  //     setModalCompanyLogo(null);
+  //     await refreshCompanyDetails();
+  //   } catch (err) {
+  //     console.error('Failed to delete company logo:', err);
+  //     setError('Failed to delete company logo');
+  //   } finally {
+  //     setLogoUploading(false);
+  //   }
+  // }, [contextCompanyDetails?.tenant_id, refreshCompanyDetails]);
+
   useEffect(() => {
     if (companyLogo && companyModalOpen && !logoUploading) {
       setModalCompanyLogo(companyLogo);
@@ -240,7 +213,7 @@ const SettingsPage: React.FC = () => {
         </Button>
       </Box>
 
-      {/* Company Info */}
+      {/* Company Info Card */}
       <Paper
         sx={{
           p: 4,
@@ -249,7 +222,7 @@ const SettingsPage: React.FC = () => {
           boxShadow: 'none',
         }}
       >
-        {loading ? (
+        {contextLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress />
           </Box>
@@ -285,21 +258,21 @@ const SettingsPage: React.FC = () => {
                     src={companyLogo}
                     alt='Company Logo'
                     loading='lazy'
-                    sx={{
+                    style={{
                       width: '100%',
                       height: '100%',
                       objectFit: 'cover',
                     }}
                   />
                 ) : (
-                  <Business
+                  <BusinessIcon
                     sx={{ fontSize: 70, color: darkMode ? '#666' : '#999' }}
                   />
                 )}
               </Box>
             </Box>
 
-            {/* Name */}
+            {/* Company Name */}
             <Box
               sx={{
                 display: 'flex',
@@ -321,7 +294,7 @@ const SettingsPage: React.FC = () => {
                   mr: 3,
                 }}
               >
-                <Business
+                <BusinessIcon
                   sx={{ fontSize: 28, color: darkMode ? '#666' : '#999' }}
                 />
               </Box>
@@ -351,7 +324,7 @@ const SettingsPage: React.FC = () => {
               </Box>
             </Box>
 
-            {/* Domain */}
+            {/* Company Domain */}
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Box
                 sx={{
@@ -365,7 +338,7 @@ const SettingsPage: React.FC = () => {
                   mr: 3,
                 }}
               >
-                <Language
+                <LanguageIcon
                   sx={{ fontSize: 28, color: darkMode ? '#666' : '#999' }}
                 />
               </Box>
@@ -390,7 +363,7 @@ const SettingsPage: React.FC = () => {
                     fontWeight: 500,
                   }}
                 >
-                  {companyDetails?.domain || 'Not specified'}
+                  {contextCompanyDetails?.domain || 'Not specified'}
                 </Typography>
               </Box>
             </Box>
@@ -398,17 +371,14 @@ const SettingsPage: React.FC = () => {
         )}
       </Paper>
 
-      {/* Modal */}
+      {/* Company Details Modal */}
       <Dialog
         open={companyModalOpen}
         onClose={handleCloseCompanyModal}
         maxWidth='sm'
         fullWidth
         PaperProps={{
-          sx: {
-            borderRadius: 1,
-            bgcolor: darkMode ? '#1e1e1e' : '#fff',
-          },
+          sx: { borderRadius: 1, bgcolor: darkMode ? '#1e1e1e' : '#fff' },
         }}
       >
         <DialogTitle
@@ -418,159 +388,178 @@ const SettingsPage: React.FC = () => {
             justifyContent: 'space-between',
             color: darkMode ? '#fff' : '#000',
             borderBottom: `1px solid ${theme.palette.divider}`,
+            borderRadius: 0,
             pb: 2,
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BusinessCenter />
-            Company Details
+            <BusinessCenter /> Company Details
           </Box>
-          <IconButton onClick={handleCloseCompanyModal} size='small'>
-            <Close />
-          </IconButton>
+          {!isEditing && (
+            <IconButton
+              onClick={handleCloseCompanyModal}
+              size='small'
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              <Close />
+            </IconButton>
+          )}
         </DialogTitle>
-
         <DialogContent sx={{ pt: 3 }}>
           {modalLogoLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress />
             </Box>
-          ) : companyDetails ? (
+          ) : contextCompanyDetails ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Logo upload/edit */}
               <Box
                 sx={{
                   display: 'flex',
-                  justifyContent: 'center',
+                  flexDirection: 'column',
                   alignItems: 'center',
-                  my: 3,
-                  position: 'relative',
+                  mb: 2,
+                  mt: 2,
                 }}
               >
-                <Box
-                  sx={{
-                    position: 'relative',
-                    width: 150,
-                    height: 150,
-                    '&:hover .logo-overlay': {
-                      opacity: 1,
-                      visibility: 'visible',
-                    },
-                    '&:hover .delete-icon': {
-                      opacity: 1,
-                      visibility: 'visible',
-                    },
-                  }}
-                >
+                {logoUploading ? (
+                  <CircularProgress size={60} />
+                ) : (
                   <Box
                     sx={{
-                      width: '100%',
-                      height: '100%',
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      border: `2px solid ${theme.palette.divider}`,
                       position: 'relative',
                       cursor: isEditing ? 'pointer' : 'default',
+                      '&:hover .camera-overlay': { opacity: isEditing ? 1 : 0 },
+                      '&:hover .delete-icon': {
+                        opacity: isEditing && modalCompanyLogo ? 1 : 0,
+                      },
+                      '&:hover .avatar': {
+                        filter: isEditing ? 'brightness(0.7)' : 'none',
+                      },
                     }}
                   >
-                    {modalCompanyLogo ? (
-                      <Box
-                        component='img'
-                        src={modalCompanyLogo}
-                        alt='Company Logo'
-                        sx={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          width: '100%',
-                          height: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: theme.palette.action.hover,
-                          color: theme.palette.text.secondary,
-                          fontSize: 48,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {companyName.charAt(0)}
-                      </Box>
-                    )}
-
-                    {isEditing && (
-                      <Box
-                        className='logo-overlay'
-                        sx={{
-                          position: 'absolute',
-                          inset: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: 'rgba(0, 0, 0, 0.45)',
-                          opacity: 0,
-                          visibility: 'hidden',
-                          transition: 'all 0.3s ease',
-                        }}
-                      >
-                        <label htmlFor='logo-upload'>
-                          <IconButton
-                            component='span'
-                            sx={{
-                              color: '#fff',
-                              backgroundColor: 'rgba(255,255,255,0.25)',
-                              '&:hover': {
-                                backgroundColor: 'rgba(255,255,255,0.4)',
-                              },
-                            }}
-                          >
-                            <CameraAlt />
-                          </IconButton>
-                        </label>
-                      </Box>
-                    )}
-                  </Box>
-<!-- 
-                  {isEditing && modalCompanyLogo && (
-                    <IconButton
-                      onClick={handleDeleteLogo}
-                      className='delete-icon'
+                    <Avatar
+                      sx={{
+                        width: 150,
+                        height: 150,
+                        border: `2px solid ${theme.palette.divider}`,
+                        fontSize: '48px',
+                        fontWeight: 'bold',
+                        backgroundColor: theme.palette.primary.main,
+                        color: 'white',
+                        transition: 'filter 0.3s ease',
+                      }}
+                    >
+                      {modalCompanyLogo ? (
+                        <img
+                          src={modalCompanyLogo}
+                          alt='Company Logo'
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
+                      ) : (
+                        contextCompanyDetails.company_name
+                          .charAt(0)
+                          .toUpperCase()
+                      )}
+                    </Avatar>
+                    <Box
+                      className='camera-overlay'
                       sx={{
                         position: 'absolute',
                         top: 0,
+                        left: 0,
                         right: 0,
-                        backgroundColor: 'rgba(255, 0, 0, 0.6)',
-                        color: '#fff',
+                        bottom: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        borderRadius: '50%',
                         opacity: 0,
-                        visibility: 'hidden',
-                        transition: 'all 0.3s ease',
-                        '&:hover': { backgroundColor: 'rgba(255, 0, 0, 0.8)' },
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                        transition: 'opacity 0.3s ease',
+                        cursor: 'pointer',
                       }}
-                      disabled={logoUploading}
                     >
-                      <DeleteIcon fontSize='small' />
-                    </IconButton>
-                  )} -->
-                </Box>
+                      <CameraAlt sx={{ color: 'white', fontSize: 40 }} />
+                    </Box>
 
-                {/* Hidden File Input */}
-                <input
-                  accept='image/*'
-                  id='logo-upload'
-                  type='file'
-                  style={{ display: 'none' }}
-                  onChange={handleLogoUpload}
-                  disabled={logoUploading || !isEditing}
-                />
+                    {/* {isEditing && modalCompanyLogo && (
+                      <IconButton
+                        onClick={handleDeleteLogo}
+                        className='delete-icon'
+                        sx={{
+                          position: 'absolute',
+                          top: 6,
+                          right: 6,
+                          backgroundColor: 'rgba(0,0,0,0.6)',
+                          color: '#ff6b6b',
+                          opacity: 0,
+                          transition: 'opacity 0.3s ease',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            color: '#ff1744',
+                          },
+                        }}
+                        size='small'
+                      >
+                        <DeleteIcon fontSize='small' />
+                      </IconButton>
+                    )} */}
+
+                    <input
+                      accept='image/*'
+                      style={{ display: 'none' }}
+                      id='logo-upload'
+                      type='file'
+                      onChange={handleLogoUpload}
+                      disabled={logoUploading || !isEditing}
+                    />
+                    {isEditing && (
+                      <label
+                        htmlFor='logo-upload'
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          cursor: 'pointer',
+                          borderRadius: '50%',
+                        }}
+                      />
+                    )}
+                  </Box>
+                )}
+                {logoUploading && (
+                  <Typography
+                    variant='caption'
+                    sx={{ mt: 1, color: theme.palette.text.secondary }}
+                  >
+                    Uploading logo...
+                  </Typography>
+                )}
               </Box>
 
               {/* Company Name */}
               <Box>
-                <Typography variant='subtitle2' sx={{ mb: 0.5 }}>
+                <Typography
+                  variant='subtitle2'
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    mb: 0.5,
+                    fontWeight: 500,
+                  }}
+                >
                   Company Name
                 </Typography>
                 {isEditing ? (
@@ -581,15 +570,33 @@ const SettingsPage: React.FC = () => {
                     }
                     fullWidth
                     size='small'
+                    variant='outlined'
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+                      },
+                    }}
                   />
                 ) : (
-                  <Typography>{companyDetails.company_name}</Typography>
+                  <Typography
+                    variant='body1'
+                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 500 }}
+                  >
+                    {contextCompanyDetails.company_name}
+                  </Typography>
                 )}
               </Box>
 
               {/* Domain */}
               <Box>
-                <Typography variant='subtitle2' sx={{ mb: 0.5 }}>
+                <Typography
+                  variant='subtitle2'
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    mb: 0.5,
+                    fontWeight: 500,
+                  }}
+                >
                   Domain
                 </Typography>
                 {isEditing ? (
@@ -598,9 +605,20 @@ const SettingsPage: React.FC = () => {
                     onChange={e => handleFormChange('domain', e.target.value)}
                     fullWidth
                     size='small'
+                    variant='outlined'
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+                      },
+                    }}
                   />
                 ) : (
-                  <Typography>{companyDetails.domain}</Typography>
+                  <Typography
+                    variant='body1'
+                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 500 }}
+                  >
+                    {contextCompanyDetails.domain}
+                  </Typography>
                 )}
               </Box>
             </Box>
@@ -610,38 +628,20 @@ const SettingsPage: React.FC = () => {
             </Typography>
           )}
         </DialogContent>
-
         <DialogActions sx={{ p: 3, pt: 1, justifyContent: 'flex-end' }}>
-          {isEditing ? (
-            <>
-              {/* <Button
-                onClick={handleCancelEdit}
-                variant='outlined'
-                startIcon={<Cancel />}
-                disabled={editLoading}
-              >
-                Cancel
-              </Button> */}
-              <Button
-                onClick={handleSaveCompany}
-                variant='contained'
-                startIcon={
-                  editLoading ? <CircularProgress size={16} /> : <Save />
-                }
-                disabled={editLoading}
-              >
-                {editLoading ? 'Saving...' : 'Save'}
-              </Button>
-            </>
-          ) : (
+          <Box>
             <Button
-              onClick={handleEditCompanyDetails}
-              variant='outlined'
-              startIcon={<Edit />}
+              onClick={handleSaveCompany}
+              variant='contained'
+              startIcon={
+                editLoading ? <CircularProgress size={16} /> : <Save />
+              }
+              disabled={editLoading}
+              sx={{ textTransform: 'none', fontWeight: 500 }}
             >
-              Edit
+              {editLoading ? 'Updating...' : 'Update'}
             </Button>
-          )}
+          </Box>
         </DialogActions>
       </Dialog>
     </Box>

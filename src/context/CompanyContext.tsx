@@ -3,24 +3,21 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  useEffect,
   type ReactNode,
 } from 'react';
-import { type CompanyDetails } from '../api/companyApi';
-
+import companyApi, { type CompanyDetails } from '../api/companyApi';
 interface CompanyContextType {
   companyDetails: CompanyDetails | null;
   companyName: string;
   companyLogo: string | null;
-  setCompanyDetails: (details: CompanyDetails | null) => void;
-  setCompanyLogo: (logoUrl: string | null) => void;
-  clearCompanyData: () => void;
+  refreshCompanyDetails: () => Promise<void>;
+  updateCompanyDetails: (details: CompanyDetails) => void;
 }
-
 // eslint-disable-next-line react-refresh/only-export-components
 export const CompanyContext = createContext<CompanyContextType | undefined>(
   undefined
 );
-
 export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
@@ -28,12 +25,10 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
     null
   );
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-
   const refreshCompanyDetails = useCallback(async () => {
     try {
       const details = await companyApi.getCompanyDetails();
       setCompanyDetails(details);
-
       const tenantId = details.tenant_id;
       if (tenantId) {
         const logoUrl = await companyApi.getCompanyLogo(tenantId);
@@ -43,47 +38,39 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
       console.error('Error fetching company details:', err);
     }
   }, []);
-
   const updateCompanyDetails = useCallback((details: CompanyDetails) => {
     setCompanyDetails(details);
   }, []);
-
   useEffect(() => {
     refreshCompanyDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   const companyName = useMemo(
     () => companyDetails?.company_name || 'HRMS',
     [companyDetails]
   );
-
   const contextValue = useMemo(
     () => ({
       companyDetails,
       companyName,
       companyLogo,
-      setCompanyDetails,
-      setCompanyLogo,
-      clearCompanyData,
+      refreshCompanyDetails,
+      updateCompanyDetails,
     }),
     [
       companyDetails,
       companyName,
       companyLogo,
-      setCompanyDetails,
-      setCompanyLogo,
-      clearCompanyData,
+      refreshCompanyDetails,
+      updateCompanyDetails,
     ]
   );
-
   return (
     <CompanyContext.Provider value={contextValue}>
       {children}
     </CompanyContext.Provider>
   );
 };
-
 // eslint-disable-next-line react-refresh/only-export-components
 export const useCompany = (): CompanyContextType => {
   const context = React.useContext(CompanyContext);
