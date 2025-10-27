@@ -18,6 +18,23 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          mui: ['@mui/material', '@mui/icons-material'],
+          router: ['react-router-dom'],
+          charts: ['recharts', 'apexcharts', 'react-apexcharts'],
+          forms: ['react-hook-form', '@hookform/resolvers', 'yup'],
+          utils: ['axios', 'date-fns', 'uuid']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000,
+    target: 'esnext',
+    minify: 'esbuild',
+  },
   // 🔊 Dev server on LAN IP & stable HMR
   server: {
     host: true,
