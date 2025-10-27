@@ -7,7 +7,6 @@ interface BenefitCardProps {
   eligibilityCriteria: string;
   description?: string;
   status: string;
-  createdAt?: string;
   onCancel?: () => void;
 }
 
@@ -17,7 +16,6 @@ const BenefitCard: React.FC<BenefitCardProps> = ({
   eligibilityCriteria,
   description,
   status,
-  createdAt,
   onCancel,
 }) => {
   const getStatusColor = () => {

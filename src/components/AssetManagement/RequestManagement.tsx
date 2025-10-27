@@ -58,7 +58,7 @@ import {
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import { Snackbar, Alert } from '@mui/material';
-import { assetCategories } from '../../data/assetCategories.ts';
+import { assetCategories } from '../../Data/assetCategories';
 
 // Normalize status to ensure it matches expected values
 const normalizeRequestStatus = (
@@ -176,7 +176,7 @@ const RequestManagement: React.FC = () => {
   });
 
   const selectedAction = watch('action');
-  const _selectedCategoryId = selectedRequest?.category.id;
+  // const _selectedCategoryId = selectedRequest?.category.id;
 
   // Fetch data from API
   React.useEffect(() => {
