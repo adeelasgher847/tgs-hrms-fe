@@ -235,7 +235,16 @@ const LeaveRequestPage = () => {
         position='static'
         sx={{ borderRadius: 2, backgroundColor: '#3c3572' }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
+        <Toolbar
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' }, 
+            alignItems: { xs: 'center', sm: 'center' }, 
+            justifyContent: 'space-between',
+            textAlign: { xs: 'center', sm: 'left' }, 
+            gap: { xs: 1, sm: 0 },
+          }}
+        >
           <Box>
             <Typography variant='h6' fontWeight={700}>
               Leave Management System
@@ -248,7 +257,17 @@ const LeaveRequestPage = () => {
           </Box>
 
           {['employee', 'manager'].includes(role) && (
-            <Stack direction='row' spacing={2}>
+            <Stack
+              direction='row'
+              spacing={2}
+              sx={{
+                my: { xs: 1, sm: 0 }, 
+                gap: 1,
+                justifyContent: { xs: 'center', sm: 'flex-end' },
+                width: { xs: '100%', sm: 'auto' },
+                flexWrap: 'wrap', 
+              }}
+            >
               <Button
                 startIcon={<AssignmentIcon />}
                 variant={activeTab === 'apply' ? 'contained' : 'outlined'}
