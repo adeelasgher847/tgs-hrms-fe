@@ -1,246 +1,471 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Benefit, BenefitFilters, EmployeeBenefitAssignment } from '../../types/benefits';
-import { createBenefit, deactivateBenefit, listBenefits, updateBenefit, listAllBenefitAssignments } from '../../api/benefits';
-import { Button, Card, CardContent, CircularProgress, FormControl, InputLabel, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, Box } from '@mui/material';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  TableContainer,
+  CircularProgress,
+  FormControl,
+  Select,
+  MenuItem,
+  Button,
+  Tooltip,
+  IconButton,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Pagination,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import { Delete as DeleteIcon } from '@mui/icons-material';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import BenefitFormModal from './BenefitFormModal';
-import { toast } from 'react-toastify';
-import { getEmployeeById, getEmployeeName } from '../../data/employees.ts';
-export default function BenefitList() {
-  const [items, setItems] = useState<Benefit[]>([]);
-  const [assignments, setAssignments] = useState<EmployeeBenefitAssignment[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('all');
-  const [type, setType] = useState<'all' | Benefit['type']>('all');
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<Benefit | null>(null);
+import type { BenefitFormValues } from './BenefitFormModal';
+import benefitsApi from '../../api/benefitApi';
 
-  const filters: BenefitFilters = useMemo(() => ({ search, status, type }), [search, status, type]);
+const ITEMS_PER_PAGE = 10;
 
-  const loadData = useCallback(async () => {
+interface Benefit {
+  id: string;
+  name: string;
+  type: string;
+  description: string;
+  eligibilityCriteria: string;
+  status: string;
+}
+
+const BenefitList: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+  const [benefits, setBenefits] = useState<Benefit[]>([]);
+  const [page, setPage] = useState(1);
+  const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingBenefit, setEditingBenefit] = useState<Benefit | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>(
+    'success'
+  );
+  const [types, setTypes] = useState<string[]>([]);
+  const [statuses, setStatuses] = useState<string[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedBenefit, setSelectedBenefit] = useState<Benefit | null>(null);
+
+  const fetchBenefits = useCallback(async () => {
     setLoading(true);
-    setError(null);
-    
     try {
-      // Load both benefits and assignments in parallel
-      const [benefitsRes, assignmentsRes] = await Promise.all([
-        listBenefits(filters),
-        listAllBenefitAssignments()
-      ]);
-      setItems(benefitsRes.items);
-      setAssignments(assignmentsRes);
-    } catch (e: unknown) {
-      setError((e as Error)?.message || 'Failed to load benefits');
+      const resp = await benefitsApi.getBenefits(page);
+      const items = Array.isArray(resp) ? resp : resp.items || [];
+      setBenefits(items);
+      setTypes(Array.from(new Set(items.map(b => b.type))));
+      setStatuses(Array.from(new Set(items.map(b => b.status))));
+    } catch (err) {
+      console.error('Error fetching benefits:', err);
+      setBenefits([]);
+      setTypes([]);
+      setStatuses([]);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [page]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    fetchBenefits();
+  }, [page, fetchBenefits]);
 
-  // Listen for benefit assignment events to refresh data
-  useEffect(() => {
-    const handleBenefitsAssigned = () => {
-      loadData();
-    };
-
-    window.addEventListener('benefitsAssigned', handleBenefitsAssigned);
-    
-    return () => {
-      window.removeEventListener('benefitsAssigned', handleBenefitsAssigned);
-    };
-  }, [loadData]);
-
-  // const handleDeactivate = async (id: string) => {
-  //   setLoading(true);
-  //   try {
-  //     await deactivateBenefit(id);
-  //     await loadData();
-  //     toast.success('Benefit deactivated');
-  //   } catch (e: unknown) {
-  //     const msg = (e as Error)?.message || 'Failed to deactivate';
-  //     setError(msg);
-  //     toast.error(msg);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  const handleToggleActive = async (b: Benefit) => {
-    setLoading(true);
+  const handleSaveBenefit = async (data: BenefitFormValues) => {
     try {
-      if (b.status === 'active') {
-        await deactivateBenefit(b.id);
-        toast.success('Benefit deactivated');
+      setLoading(true);
+      const payload = {
+        name: data.name,
+        description: data.description,
+        type: data.type,
+        eligibilityCriteria: data.eligibilityCriteria,
+        status: data.status.toLowerCase(),
+      };
+
+      if (editingBenefit) {
+        await benefitsApi.updateBenefit(editingBenefit.id, payload);
+        setToastMessage('Benefit updated successfully!');
       } else {
-        await updateBenefit(b.id, { status: 'active' });
-        toast.success('Benefit activated');
+        await benefitsApi.createBenefit(payload);
+        setToastMessage('Benefit created successfully!');
       }
-      await loadData();
-    } catch (e: unknown) {
-      toast.error((e as Error)?.message || 'Failed to update status');
+
+      setToastSeverity('success');
+      setShowToast(true);
+      setModalOpen(false);
+      setEditingBenefit(null);
+      fetchBenefits();
+    } catch (error: unknown) {
+      console.error('Error saving benefit:', error);
+      setToastSeverity('error');
+      setToastMessage('Failed to save benefit.');
+      setShowToast(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const openCreate = () => {
-    setEditing(null);
-    setFormOpen(true);
+  const handleOpenDeleteDialog = (benefit: Benefit) => {
+    setSelectedBenefit(benefit);
+    setDeleteDialogOpen(true);
   };
 
-  const openEdit = (benefit: Benefit) => {
-    setEditing(benefit);
-    setFormOpen(true);
-  };
-
-  const handleSubmit = async (data: Omit<Benefit, 'id'>) => {
+  const handleConfirmDelete = async () => {
+    if (!selectedBenefit) return;
     try {
-      if (editing) {
-        await updateBenefit(editing.id, data);
-        toast.success('Benefit updated');
+      setLoading(true);
+      const res = await benefitsApi.deleteBenefit(selectedBenefit.id);
+      if (res.deleted) {
+        setToastMessage('Benefit deleted successfully!');
+        setToastSeverity('success');
+        setShowToast(true);
+        fetchBenefits();
       } else {
-        await createBenefit(data);
-        toast.success('Benefit created');
+        throw new Error('Delete failed');
       }
-      await loadData();
-    } catch (e: unknown) {
-      toast.error((e as Error)?.message || 'Operation failed');
+    } catch (error: unknown) {
+      console.error('Error deleting benefit:', error);
+      setToastSeverity('error');
+      setToastMessage(
+        (error as { response?: { data?: { message?: string } } }).response?.data
+          ?.message || 'Failed to delete benefit.'
+      );
+      setShowToast(true);
+    } finally {
+      setLoading(false);
+      setDeleteDialogOpen(false);
+      setSelectedBenefit(null);
     }
   };
 
-  // Helper function to get assigned employees for a benefit
-  const getAssignedEmployees = (benefitId: string) => {
-    return assignments
-      .filter(assignment => assignment.benefitId === benefitId && assignment.status === 'active')
-      .map(assignment => ({
-        employeeId: assignment.employeeId,
-        employeeName: getEmployeeName(assignment.employeeId),
-        startDate: assignment.startDate
-      }));
+  const csvEscape = (value: unknown) => {
+    if (value === null || value === undefined) return '';
+    const s = String(value).replace(/"/g, '""');
+    return `"${s}"`;
+  };
+
+  const handleDownload = () => {
+    if (benefits.length === 0) {
+      alert('No data to download.');
+      return;
+    }
+
+    const csvHeader = [
+      'Benefit Name',
+      'Type',
+      'Description',
+      'Eligibility Criteria',
+      'Status',
+    ];
+    const rows = benefits.map(row =>
+      [
+        csvEscape(row.name),
+        csvEscape(row.type),
+        csvEscape(row.description),
+        csvEscape(row.eligibilityCriteria),
+        csvEscape(row.status),
+      ].join(',')
+    );
+    const csvContent = [csvHeader.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.setAttribute('download', `BenefitsList_Page${page}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredBenefits = benefits.filter(b => {
+    const typeMatch = filterType === 'all' || b.type === filterType;
+    const statusMatch = filterStatus === 'all' || b.status === filterStatus;
+    return typeMatch && statusMatch;
+  });
+
+  const totalRecords = filteredBenefits.length;
+  const totalFilteredPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
+  const paginatedBenefits = filteredBenefits.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
   };
 
   return (
-    <Stack spacing={2}>
-      <Typography variant="h5">Benefits</Typography>
+    <Box>
+      <Box display='flex' alignItems='center' gap={1} mb={2}>
+        <Typography variant='h4' fontWeight={600}>
+          Benefit Management
+        </Typography>
+      </Box>
 
-      <Card>
-        <CardContent>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }} justifyContent="space-between">
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
-              <TextField label="Search" value={search} onChange={(e) => setSearch(e.target.value)} size="small" />
-              <FormControl size="small" sx={{ minWidth: 160 }}>
-                <InputLabel>Status</InputLabel>
-                <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value as 'all' | 'active' | 'inactive')}>
-                  <MenuItem value="all">All</MenuItem>
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="inactive">Inactive</MenuItem>
-                </Select>
-              </FormControl>
-              <FormControl size="small" sx={{ minWidth: 180 }}>
-                <InputLabel>Type</InputLabel>
-                <Select label="Type" value={type} onChange={(e) => setType(e.target.value as 'all' | Benefit['type'])}>
-                  <MenuItem value="all">All</MenuItem>
-                  <MenuItem value="health">Health</MenuItem>
-                  <MenuItem value="dental">Dental</MenuItem>
-                  <MenuItem value="vision">Vision</MenuItem>
-                  <MenuItem value="life">Life</MenuItem>
-                  <MenuItem value="retirement">Retirement</MenuItem>
-                  <MenuItem value="other">Other</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
-            <Button variant="contained" onClick={openCreate}>Create</Button>
-          </Stack>
-        </CardContent>
-      </Card>
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        flexWrap='wrap'
+        gap={2}
+      >
+        <Box display='flex' flexWrap='wrap' gap={2}>
+          <FormControl size='small' sx={{ minWidth: 160, maxWidth: 220 }}>
+            <Select
+              value={filterType}
+              onChange={e => {
+                setFilterType(e.target.value);
+                setPage(1);
+              }}
+            >
+              <MenuItem value='all'>All Types</MenuItem>
+              {types.map(type => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-      <Card>
-        <CardContent>
-          {loading ? (
-            <Stack alignItems="center" py={4}><CircularProgress /></Stack>
-          ) : error ? (
-            <Typography color="error">{error}</Typography>
-          ) : (
-            <>
-              <Box sx={{ overflowX: 'auto', width: '100%' }}>
-                <Table size="small" sx={{ minWidth: 800 }}>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Name</TableCell>
-                      <TableCell>Type</TableCell>
-                      <TableCell>Description</TableCell>
-                      <TableCell>Eligibility</TableCell>
-                      <TableCell>Assigned Employees</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell align="right">Actions</TableCell>
+          <FormControl size='small' sx={{ minWidth: 160, maxWidth: 220 }}>
+            <Select
+              value={filterStatus}
+              onChange={e => {
+                setFilterStatus(e.target.value);
+                setPage(1);
+              }}
+            >
+              <MenuItem value='all'>All Status</MenuItem>
+              {statuses.map(status => (
+                <MenuItem key={status} value={status}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Box display='flex' gap={1} flexWrap='wrap'>
+          <Button
+            variant='contained'
+            startIcon={<AddIcon />}
+            color='primary'
+            onClick={() => {
+              setEditingBenefit(null);
+              setModalOpen(true);
+            }}
+          >
+            Create
+          </Button>
+
+          <Tooltip title='Export Benefit List'>
+            <IconButton
+              color='primary'
+              onClick={handleDownload}
+              sx={{
+                backgroundColor: 'primary.main',
+                borderRadius: '6px',
+                padding: '6px',
+                color: 'white',
+                '&:hover': { backgroundColor: 'primary.dark' },
+              }}
+            >
+              <FileDownloadIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
+
+      {loading ? (
+        <Box
+          display='flex'
+          justifyContent='center'
+          alignItems='center'
+          minHeight='200px'
+        >
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Paper sx={{ mt: 2 }}>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    <b>Benefit Name</b>
+                  </TableCell>
+                  <TableCell>
+                    <b>Type</b>
+                  </TableCell>
+                  <TableCell>
+                    <b>Description</b>
+                  </TableCell>
+                  <TableCell>
+                    <b>Eligibility</b>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <b>Status</b>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <b>Actions</b>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedBenefits.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align='center'>
+                      No benefits found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedBenefits.map(b => (
+                    <TableRow key={b.id}>
+                      <TableCell>{b.name}</TableCell>
+                      <TableCell>{b.type}</TableCell>
+                      <TableCell>{b.description}</TableCell>
+                      <TableCell>{b.eligibilityCriteria}</TableCell>
+                      <TableCell align='center'>
+                        <Typography
+                          sx={{
+                            fontWeight: 500,
+                            backgroundColor:
+                              b.status === 'active' ? '#206d23ff' : '#9e9e9e',
+                            px: 1.2,
+                            py: 0.3,
+                            borderRadius: 2,
+                            color: 'white',
+                            textTransform: 'capitalize',
+                            display: 'inline-block',
+                            minWidth: 70,
+                            textAlign: 'center',
+                          }}
+                        >
+                          {b.status}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align='center'>
+                        <Box display='flex' justifyContent='center' gap={1}>
+                          <Tooltip title='Edit'>
+                            <IconButton
+                              color='primary'
+                              size='small'
+                              onClick={() => {
+                                setEditingBenefit(b);
+                                setModalOpen(true);
+                              }}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title='Delete'>
+                            <IconButton
+                              color='error'
+                              size='small'
+                              onClick={() => handleOpenDeleteDialog(b)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
                     </TableRow>
-                  </TableHead>
-                <TableBody>
-                  {items.map((b) => {
-                    const assignedEmployees = getAssignedEmployees(b.id);
-                    return (
-                      <TableRow key={b.id} hover>
-                        <TableCell>{b.name}</TableCell>
-                        <TableCell>{b.type}</TableCell>
-                        <TableCell>{b.description}</TableCell>
-                        <TableCell>{b.eligibility}</TableCell>
-                        <TableCell>
-                          {assignedEmployees.length > 0 ? (
-                            <Stack spacing={1}>
-                              {assignedEmployees.map((emp) => {
-                                const employee = getEmployeeById(emp.employeeId);
-                                return (
-                                  <Box key={emp.employeeId}>
-                                    <Typography variant="body2" fontWeight="medium">
-                                      {emp.employeeName}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      {employee?.designation} • {employee?.department}
-                                    </Typography>
-                                  </Box>
-                                );
-                              })}
-                            </Stack>
-                          ) : (
-                            <Typography variant="body2" color="text.secondary">
-                              No assignments
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>{b.status}</TableCell>
-                        <TableCell align="right">
-                          <Stack direction="row" spacing={1} justifyContent="flex-end">
-                            <Button size="small" variant="outlined" onClick={() => openEdit(b)}>Edit</Button>
-                            {b.status === 'active' ? (
-                              <Button size="small" color="warning" onClick={() => handleToggleActive(b)}>Deactivate</Button>
-                            ) : (
-                              <Button size="small" color="success" onClick={() => handleToggleActive(b)}>Activate</Button>
-                            )}
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-              </Box>
-            </>
-          )}
-        </CardContent>
-      </Card>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
+
+      {totalFilteredPages > 1 && (
+        <Box display='flex' justifyContent='center' alignItems='center' py={2}>
+          <Pagination
+            count={totalFilteredPages}
+            page={page}
+            onChange={handlePageChange}
+            color='primary'
+          />
+        </Box>
+      )}
+
+      <Box textAlign='center' my={2}>
+        <Typography variant='body2' color='text.secondary'>
+          Showing{' '}
+          {totalRecords === 0
+            ? 0
+            : Math.min((page - 1) * ITEMS_PER_PAGE + 1, totalRecords)}
+          –{Math.min(page * ITEMS_PER_PAGE, totalRecords)} of {totalRecords}{' '}
+          records
+        </Typography>
+      </Box>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Delete Benefit</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {`Are you sure you want to delete the benefit "${
+              selectedBenefit?.name || ''
+            }"? This action cannot be undone.`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color='primary'>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color='error'
+            variant='contained'
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <BenefitFormModal
-        open={formOpen}
-        initial={editing || undefined}
-        onClose={() => setFormOpen(false)}
-        onSubmit={handleSubmit}
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingBenefit(null);
+        }}
+        onSubmit={handleSaveBenefit}
+        benefit={editingBenefit || undefined}
       />
-    </Stack>
+
+      <Snackbar
+        open={showToast}
+        autoHideDuration={3000}
+        onClose={() => setShowToast(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          severity={toastSeverity}
+          variant='filled'
+          onClose={() => setShowToast(false)}
+        >
+          {toastMessage}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
-}
+};
 
-
+export default BenefitList;

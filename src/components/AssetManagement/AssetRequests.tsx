@@ -42,7 +42,7 @@ import { assetApi, type AssetRequest as ApiAssetRequest } from '../../api/assetA
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
-import { assetCategories } from '../../data/assetCategories.ts';
+import { type AssetSubcategory } from '../../api/assetApi';
 
 // Get current user from localStorage or auth context
 const getCurrentUserId = () => {
@@ -116,6 +116,9 @@ const AssetRequests: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [subcategories, setSubcategories] = useState<AssetSubcategory[]>([]);
+  const [loadingData, setLoadingData] = useState(false);
   
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -154,6 +157,32 @@ const AssetRequests: React.FC = () => {
     }
   }, [watchedCategory, setValue]);
 
+  // Fetch categories and subcategories from backend
+  React.useEffect(() => {
+    const fetchCategoriesAndSubcategories = async () => {
+      try {
+        setLoadingData(true);
+        const [categoriesData, subcategoriesData] = await Promise.all([
+          assetApi.getAssetSubcategoriesByCategory(),
+          assetApi.getAllAssetSubcategories()
+        ]);
+        
+        
+        // Extract unique categories
+        setCategories(categoriesData);
+        
+        // Store all subcategories
+        setSubcategories(subcategoriesData.items || subcategoriesData);
+      } catch (error) {
+        console.error('❌ AssetRequests - Failed to fetch categories and subcategories:', error);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    fetchCategoriesAndSubcategories();
+  }, []);
+
   // Get current user ID on component mount
   React.useEffect(() => {
     const userId = getCurrentUserId();
@@ -176,22 +205,6 @@ const AssetRequests: React.FC = () => {
         // Transform API requests to component format
         const transformedRequests: AssetRequest[] = (apiResponse.items || []).map((apiRequest: ApiAssetRequest) => {
           // Debug logging to understand the API response
-          console.log('API Request status:', apiRequest.status, 'for request:', apiRequest.id);
-          
-          // Try to find matching category from our comprehensive list
-          let matchingCategory = assetCategories.find(cat => 
-            cat.name.toLowerCase() === apiRequest.asset_category.toLowerCase() ||
-            cat.subcategories?.some(sub => sub.toLowerCase() === apiRequest.asset_category.toLowerCase())
-          );
-          
-          // If no direct match, try to match subcategory format (e.g., "Mobility / Transport - Fuel Card")
-          if (!matchingCategory && apiRequest.asset_category.includes(' - ')) {
-            const [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
-            matchingCategory = assetCategories.find(cat => 
-              cat.name.toLowerCase() === mainCategoryName.toLowerCase() &&
-              cat.subcategories?.some(sub => sub.toLowerCase() === subcategoryName.toLowerCase())
-            );
-          }
           
           // Parse the original request category to extract main category and subcategory
           let mainCategoryName = apiRequest.asset_category;
@@ -208,16 +221,7 @@ const AssetRequests: React.FC = () => {
               (apiRequest.requestedByUser ? 
                 apiRequest.requestedByUser.name : 
                 `User ${apiRequest.requested_by}`),
-            category: matchingCategory ? {
-              id: matchingCategory.id,
-              name: matchingCategory.name,
-              nameAr: matchingCategory.nameAr,
-              description: matchingCategory.description,
-              color: matchingCategory.color,
-              subcategories: matchingCategory.subcategories,
-              // Add the specific item requested
-              requestedItem: subcategoryName || apiRequest.asset_category
-            } : { 
+            category: { 
               id: apiRequest.asset_category, 
               name: mainCategoryName, 
               nameAr: apiRequest.asset_category, 
@@ -285,15 +289,18 @@ const AssetRequests: React.FC = () => {
   const handleSubmitRequest = async (data: { category: string; subcategory?: string; remarks?: string }) => {
     setLoading(true);
     try {
-      // Combine category and subcategory if subcategory is selected
-      const categoryName = data.subcategory && data.subcategory.trim() 
-        ? `${data.category} - ${data.subcategory}` 
-        : data.category;
-        
+      // Find the selected subcategory to get its ID
+      const selectedSubcategory = subcategories.find(sub => 
+        sub.category === data.category && sub.name === data.subcategory
+      );
+      
+      // Send only main category name, not combined with subcategory
       const requestData = {
-        assetCategory: categoryName,
+        assetCategory: data.category, // Only main category name
+        subcategoryId: selectedSubcategory?.id || undefined,
         remarks: data.remarks || '',
       };
+
 
       const newApiRequest = await assetApi.createAssetRequest(requestData);
       
@@ -302,7 +309,14 @@ const AssetRequests: React.FC = () => {
         id: newApiRequest.id,
         employeeId: newApiRequest.requested_by,
         employeeName: `Employee ${newApiRequest.requested_by}`,
-        category: { id: newApiRequest.asset_category, name: newApiRequest.asset_category, nameAr: newApiRequest.asset_category, description: '' },
+        category: { 
+          id: newApiRequest.asset_category, 
+          name: data.category, 
+          nameAr: newApiRequest.asset_category, 
+          description: '',
+          color: '#757575',
+          requestedItem: data.subcategory || data.category
+        },
         remarks: newApiRequest.remarks,
         status: newApiRequest.status,
         requestedDate: newApiRequest.requested_date,
@@ -317,7 +331,7 @@ const AssetRequests: React.FC = () => {
       setRequests(prev => [newRequest, ...prev]);
       
       // Show success toast
-      showSuccessToast(`Asset request for "${categoryName}" has been submitted successfully`);
+      showSuccessToast(`Asset request for "${data.category}" has been submitted successfully`);
       
       setIsRequestModalOpen(false);
       setSelectedCategory('');
@@ -687,16 +701,11 @@ const AssetRequests: React.FC = () => {
                             },
                           }}
                         >
-                          {assetCategories.map((category) => (
-                            <MenuItem key={category.id} value={category.name}>
-                              <Box>
-                                <Typography variant="body1" fontWeight={500}>
-                                  {category.name}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {category.description}
-                                </Typography>
-                              </Box>
+                          {categories.map((category) => (
+                            <MenuItem key={category} value={category}>
+                              <Typography variant="body1" fontWeight={500}>
+                                {category}
+                              </Typography>
                             </MenuItem>
                           ))}
                         </Select>
@@ -716,7 +725,7 @@ const AssetRequests: React.FC = () => {
                 </Box>
 
                 {/* Subcategory selection - only show if a category with subcategories is selected */}
-                {selectedCategory && assetCategories.find(cat => cat.name === selectedCategory)?.subcategories && (
+                {selectedCategory && subcategories.filter(sub => sub.category === selectedCategory).length > 0 && (
                   <Box>
                     <Controller
                       name="subcategory"
@@ -727,7 +736,7 @@ const AssetRequests: React.FC = () => {
                           <Select
                             {...field}
                             label="Specific Item (Optional)"
-                            disabled={loading}
+                            disabled={loading || loadingData}
                             MenuProps={{
                               PaperProps: {
                                 style: {
@@ -739,11 +748,18 @@ const AssetRequests: React.FC = () => {
                             <MenuItem value="">
                               <em>None - General Request</em>
                             </MenuItem>
-                            {assetCategories
-                              .find(cat => cat.name === selectedCategory)
-                              ?.subcategories?.map((subcategory) => (
-                                <MenuItem key={subcategory} value={subcategory}>
-                                  {subcategory}
+                            {subcategories
+                              .filter(sub => sub.category === selectedCategory)
+                              .map((subcategory) => (
+                                <MenuItem key={subcategory.id} value={subcategory.name}>
+                                  <Box>
+                                    <Typography variant="body2">{subcategory.name}</Typography>
+                                    {subcategory.description && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        {subcategory.description}
+                                      </Typography>
+                                    )}
+                                  </Box>
                                 </MenuItem>
                               ))}
                           </Select>

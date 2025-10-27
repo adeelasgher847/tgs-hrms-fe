@@ -65,6 +65,7 @@ export const isMenuVisibleForRole = (
       'attendance',
       'benefits',
       'leave-analytics',
+      'report',
     ],
     'network-admin': [
       'dashboard',
@@ -75,7 +76,7 @@ export const isMenuVisibleForRole = (
       'attendance',
       'benefits',
     ],
-    'hr-admin': ['attendance', 'benefits', 'leave-analytics'],
+    'hr-admin': ['attendance', 'teams', 'benefits', 'leave-analytics'],
     admin: [
       'dashboard',
       'department',
@@ -83,9 +84,9 @@ export const isMenuVisibleForRole = (
       'teams',
       'assets',
       'attendance',
-      'benefits',
+      'report',
     ],
-    manager: ['teams', 'attendance', 'assets', 'benefits', 'leave-analytics'],
+    manager: ['teams', 'attendance', 'assets', 'benefits', 'report', 'leave-analytics'],
     employee: ['attendance', 'assets', 'benefits', 'leave-analytics',],
     user: ['attendance', 'assets', 'benefits'],
     unknown: ['benefits'], // Temporarily allow benefits for unknown roles
@@ -103,6 +104,7 @@ export const isMenuVisibleForRole = (
     if (label.includes('attendance')) return 'attendance';
     if (label.includes('leaveanalytics') || label.includes('leaveanalytics'))
       return 'leave-analytics';
+    if (label.includes('report')) return 'report';
     // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
     return 'misc';
   })();
@@ -154,6 +156,26 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (parent.includes('attendance')) {
+      // hide only Reports for network-admin, but keep Attendance and Attendance Table visible
+      if (sub.includes('reports')) {
+        visible = false;
+      }
+    }
+    if (parent.includes('benefits')) {
+      if (!sub.includes('benefits report')) {
+        visible = false;
+      }
+    }
+  }
+
+  // HR-admin: hide Attendance -> Reports and Leave Request
+  if (r === 'hr-admin') {
+    if (parent.includes('attendance')) {
+      if (sub.includes('reports') || sub.includes('leave request')) {
+        visible = false;
+      }
+    }
   }
 
   // --- Admin rules ---
@@ -193,12 +215,8 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
-  }
-
-  // Network Admin: For Assets menu - only see Asset Inventory and Management (not Asset Requests)
-  if (r === 'network-admin') {
-    if (parent.includes('assets')) {
-      if (sub.includes('asset requests')) {
+    if (parent.includes('benefits')) {
+      if (!sub.includes('benefit details')) {
         visible = false;
       }
     }
@@ -217,6 +235,11 @@ export const isSubMenuVisibleForRole = (
   if (r === 'hr-admin') {
     if (parent.includes('assets')) {
       visible = false;
+    }
+    if (parent.includes('benefits')) {
+      if (sub.includes('benefits report') || sub.includes('benefit details')) {
+        visible = false;
+      }
     }
   }
 
@@ -312,10 +335,7 @@ export const isDashboardPathAllowedForRole = (
       'attendance-summary',
       // Settings
       'settings',
-      // Benefits
-      'benefits',
-      'benefits/reporting',
-      'my-benefits',
+      'benefit-report',
     ]),
     'hr-admin': new Set([
       '', // Allow main dashboard
@@ -333,6 +353,8 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'leaves',
       'Reports',
+      'benefits-list',
+      'employee-benefit',
     ]),
     admin: new Set([
       '',
@@ -392,11 +414,7 @@ export const isDashboardPathAllowedForRole = (
       'assets/requests',
       // Settings
       'settings',
-      // Benefits
-      'benefits',
-      'benefits/assign',
-      'benefits/reporting',
-      'my-benefits',
+      'benefit-details',
     ]),
     user: new Set([
       'AttendanceCheck',
