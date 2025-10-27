@@ -128,6 +128,7 @@ class SignupApiService {
       const response = await axiosInstance.get(
         `/subscription-plans/prices-by-plans?${params.toString()}`
       );
+      console.log("Get stripe prices by plans id response: ", response)
       return response.data;
     } catch (error: unknown) {
       console.error(

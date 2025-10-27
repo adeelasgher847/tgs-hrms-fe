@@ -23,7 +23,6 @@ import LanguageIcon from '@mui/icons-material/Language';
 import {
   Edit,
   Save,
-  Cancel,
   Close,
   CameraAlt,
   BusinessCenter,
@@ -42,14 +41,15 @@ const SettingsPage: React.FC = () => {
   } = useCompany();
 
   const [companyModalOpen, setCompanyModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
   const [editFormData, setEditFormData] = useState({
     company_name: '',
     domain: '',
   });
   const [modalCompanyLogo, setModalCompanyLogo] = useState<string | null>(null);
   const [modalLogoLoading, setModalLogoLoading] = useState(false);
-  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoUploading] = useState(false);
+  const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const [, setError] = useState<string | null>(null);
 
@@ -87,21 +87,6 @@ const SettingsPage: React.FC = () => {
     setModalCompanyLogo(null);
   }, []);
 
-  const handleEditCompany = useCallback(() => {
-    setIsEditing(true);
-  }, []);
-
-  const handleCancelEdit = useCallback(() => {
-    setIsEditing(false);
-    if (contextCompanyDetails) {
-      setEditFormData({
-        company_name: contextCompanyDetails.company_name,
-        domain: contextCompanyDetails.domain,
-      });
-      setModalCompanyLogo(contextCompanyDetails.logo_url || companyLogo);
-    }
-  }, [contextCompanyDetails, companyLogo]);
-
   const handleFormChange = useCallback((field: string, value: string) => {
     setEditFormData(prev => ({
       ...prev,
@@ -114,6 +99,12 @@ const SettingsPage: React.FC = () => {
 
     setEditLoading(true);
     try {
+      // If a new logo was selected, upload it first
+      if (selectedLogoFile) {
+        await companyApi.uploadCompanyLogo(selectedLogoFile);
+      }
+
+      // Then update the company details
       await companyApi.updateCompanyDetails({
         company_name: editFormData.company_name,
         domain: editFormData.domain,
@@ -123,6 +114,7 @@ const SettingsPage: React.FC = () => {
 
       setIsEditing(false);
       setCompanyModalOpen(false);
+      setSelectedLogoFile(null); // clear after saving
       setError(null);
     } catch (err) {
       console.error('Failed to update company details:', err);
@@ -130,17 +122,17 @@ const SettingsPage: React.FC = () => {
     } finally {
       setEditLoading(false);
     }
-  }, [editFormData, contextCompanyDetails, refreshCompanyDetails]);
+  }, [
+    editFormData,
+    selectedLogoFile,
+    contextCompanyDetails,
+    refreshCompanyDetails,
+  ]);
 
   const handleLogoUpload = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
+    (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (!file) return;
-
-      if (!user || !contextCompanyDetails?.tenant_id) {
-        setError('Please login to upload company logo');
-        return;
-      }
 
       if (!file.type.startsWith('image/')) {
         setError('Please select an image file');
@@ -152,27 +144,12 @@ const SettingsPage: React.FC = () => {
         return;
       }
 
-      setLogoUploading(true);
-      try {
-        await companyApi.uploadCompanyLogo(file);
-
-        if (contextCompanyDetails?.tenant_id) {
-          const logoUrl = await companyApi.getCompanyLogo(
-            contextCompanyDetails.tenant_id
-          );
-          setModalCompanyLogo(logoUrl);
-        }
-
-        await refreshCompanyDetails();
-        setError(null);
-      } catch (err) {
-        console.error('Logo upload error:', err);
-        setError('Failed to upload logo');
-      } finally {
-        setLogoUploading(false);
-      }
+      // Preview only
+      const previewUrl = URL.createObjectURL(file);
+      setModalCompanyLogo(previewUrl);
+      setSelectedLogoFile(file);
     },
-    [contextCompanyDetails?.tenant_id, refreshCompanyDetails, user]
+    []
   );
 
   // const _handleDeleteLogo = useCallback(async () => {
@@ -650,54 +627,19 @@ const SettingsPage: React.FC = () => {
             </Typography>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 1, justifyContent: 'space-between' }}>
+        <DialogActions sx={{ p: 3, pt: 1, justifyContent: 'flex-end' }}>
           <Box>
-            {isEditing && (
-              <Button
-                onClick={handleCancelEdit}
-                variant='outlined'
-                startIcon={<Cancel />}
-                disabled={editLoading}
-                sx={{ textTransform: 'none', fontWeight: 500 }}
-              >
-                Cancel
-              </Button>
-            )}
-          </Box>
-          <Box>
-            {isEditing ? (
-              <Button
-                onClick={handleSaveCompany}
-                variant='contained'
-                startIcon={
-                  editLoading ? <CircularProgress size={16} /> : <Save />
-                }
-                disabled={editLoading}
-                sx={{ textTransform: 'none', fontWeight: 500 }}
-              >
-                {editLoading ? 'Saving...' : 'Save'}
-              </Button>
-            ) : (
-              <Button
-                onClick={handleEditCompany}
-                variant='outlined'
-                startIcon={<Edit />}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 500,
-                  px: 2,
-                  py: 0.5,
-                  borderColor: theme.palette.primary.main,
-                  color: theme.palette.primary.main,
-                  '&:hover': {
-                    borderColor: theme.palette.primary.dark,
-                    backgroundColor: theme.palette.primary.light + '20',
-                  },
-                }}
-              >
-                Edit
-              </Button>
-            )}
+            <Button
+              onClick={handleSaveCompany}
+              variant='contained'
+              startIcon={
+                editLoading ? <CircularProgress size={16} /> : <Save />
+              }
+              disabled={editLoading}
+              sx={{ textTransform: 'none', fontWeight: 500 }}
+            >
+              {editLoading ? 'Updating...' : 'Update'}
+            </Button>
           </Box>
         </DialogActions>
       </Dialog>
