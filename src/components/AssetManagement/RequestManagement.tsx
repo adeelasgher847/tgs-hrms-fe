@@ -22,7 +22,6 @@ import {
   Select,
   MenuItem,
   Chip,
-  Alert,
   Tabs,
   Tab,
   InputAdornment,
@@ -58,7 +57,7 @@ import {
   type PaginatedResponse,
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
-import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
+import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../Data/assetCategories';
 
 // Normalize status to ensure it matches expected values
@@ -129,6 +128,19 @@ const RequestManagement: React.FC = () => {
   );
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'warning' | 'info';
+  }>({ open: false, message: '', severity: 'success' });
+
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [tabValue, setTabValue] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -170,8 +182,11 @@ const RequestManagement: React.FC = () => {
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        setInitialLoading(true);
-
+        // Only show initial loading on first load, not on pagination
+        if (pagination.page === 1) {
+          setInitialLoading(true);
+        }
+        
         // Fetch asset requests with pagination
         const apiResponse: PaginatedResponse<ApiAssetRequest> =
           await assetApi.getAllAssetRequests({
@@ -200,70 +215,71 @@ const RequestManagement: React.FC = () => {
                 )
             );
 
-            // If no direct match, try to match subcategory format (e.g., "Mobility / Transport - Fuel Card")
-            if (
-              !matchingCategory &&
-              apiRequest.asset_category.includes(' - ')
-            ) {
-              const [mainCategoryName, subcategoryName] =
-                apiRequest.asset_category.split(' - ');
-              matchingCategory = assetCategories.find(
-                cat =>
-                  cat.name.toLowerCase() === mainCategoryName.toLowerCase() &&
-                  cat.subcategories?.some(
-                    sub => sub.toLowerCase() === subcategoryName.toLowerCase()
-                  )
-              );
+          // Use asset_category as main category name (no need to split)
+          let mainCategoryName = apiRequest.asset_category;
+          let subcategoryName = '';
+          
+          // Check if API response has subcategory information in different possible fields
+          if ((apiRequest as any).subcategory_name) {
+            subcategoryName = (apiRequest as any).subcategory_name;
+          } else if ((apiRequest as any).subcategory) {
+            // Handle case where subcategory is an object
+            const subcategory = (apiRequest as any).subcategory;
+            if (typeof subcategory === 'object' && subcategory !== null) {
+              // Try different possible property names for the subcategory name
+              subcategoryName = subcategory.name || 
+                               subcategory.title || 
+                               subcategory.subcategory_name || 
+                               subcategory.subcategoryName ||
+                               subcategory.display_name ||
+                               subcategory.label ||
+                               (subcategory as any).name ||
+                               JSON.stringify(subcategory);
+            } else {
+              subcategoryName = subcategory;
             }
-
-            // Use asset_category as main category name (no need to split)
-            const mainCategoryName = apiRequest.asset_category;
-            const subcategoryName = '';
-
-            return {
-              id: apiRequest.id,
-              employeeId: apiRequest.requested_by,
-              employeeName:
-                apiRequest.requestedByName || `User ${apiRequest.requested_by}`,
-              category: matchingCategory
-                ? {
-                    id: matchingCategory.id,
-                    name: matchingCategory.name,
-                    nameAr: matchingCategory.nameAr,
-                    description: matchingCategory.description,
-                    color: matchingCategory.color,
-                    subcategories: matchingCategory.subcategories,
-                    // Add the specific item requested
-                    requestedItem: subcategoryName || apiRequest.asset_category,
-                  }
-                : {
-                    id: apiRequest.asset_category,
-                    name: mainCategoryName,
-                    nameAr: apiRequest.asset_category,
-                    description: '',
-                    color: '#757575',
-                    requestedItem: subcategoryName || apiRequest.asset_category,
-                  },
-              subcategoryId:
-                (apiRequest as { subcategory_id?: string }).subcategory_id ||
-                undefined,
-              remarks: apiRequest.remarks,
-              status: normalizeRequestStatus(apiRequest.status),
-              requestedDate: apiRequest.requested_date,
-              processedDate: apiRequest.approved_date || undefined,
-              processedBy: apiRequest.approved_by || undefined,
-              processedByName:
-                apiRequest.approvedByName ||
-                (apiRequest.approved_by
-                  ? `User ${apiRequest.approved_by}`
-                  : undefined),
-              rejectionReason: undefined, // Not provided by API
-              assignedAssetId: undefined, // Not provided by API
-              assignedAssetName: undefined, // Not provided by API
-            };
+          } else if ((apiRequest as any).subcategoryId && (apiRequest as any).subcategoryName) {
+            subcategoryName = (apiRequest as any).subcategoryName;
+          } else if (apiRequest.asset_category.includes(' - ')) {
+            [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
+          } else if (apiRequest.asset_category.includes(' / ')) {
+            [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' / ');
           }
-        );
 
+          return {
+            id: apiRequest.id,
+            employeeId: apiRequest.requested_by,
+            employeeName: apiRequest.requestedByName || `User ${apiRequest.requested_by}`,
+            category: matchingCategory ? {
+              id: matchingCategory.id,
+              name: matchingCategory.name,
+              nameAr: matchingCategory.nameAr,
+              description: matchingCategory.description,
+              color: matchingCategory.color,
+              subcategories: matchingCategory.subcategories,
+              // Add the specific item requested
+              requestedItem: subcategoryName || undefined
+            } : { 
+              id: apiRequest.asset_category, 
+              name: mainCategoryName, 
+              nameAr: apiRequest.asset_category, 
+              description: '',
+              color: '#757575',
+              requestedItem: subcategoryName || undefined
+            },
+            subcategoryId: (apiRequest as any).subcategory_id || undefined,
+            remarks: apiRequest.remarks,
+            status: normalizeRequestStatus(apiRequest.status),
+            requestedDate: apiRequest.requested_date,
+            processedDate: apiRequest.approved_date || undefined,
+            processedBy: apiRequest.approved_by || undefined,
+            processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
+            rejectionReason: (apiRequest as any).rejection_reason && (apiRequest as any).rejection_reason !== null ? (apiRequest as any).rejection_reason : undefined,
+            assignedAssetId: undefined, // Not provided by API
+            assignedAssetName: undefined, // Not provided by API
+          };
+        });
+        
         setRequests(transformedRequests);
 
         // Fetch assets for assignment
@@ -318,9 +334,12 @@ const RequestManagement: React.FC = () => {
         setAssets(transformedAssets);
       } catch (error) {
         console.error('Failed to fetch data:', error);
-        showErrorToast('Failed to load data');
+        showSnackbar('Failed to load data', 'error');
       } finally {
-        setInitialLoading(false);
+        // Only set initial loading to false on first page
+        if (pagination.page === 1) {
+          setInitialLoading(false);
+        }
       }
     };
 
@@ -522,27 +541,79 @@ const RequestManagement: React.FC = () => {
         }
 
         try {
-          await assetApi.approveAssetRequest(selectedRequest.id, payload);
-
-          // Show success message with asset assignment details
-          showSuccessToast(
-            `Asset "${selectedAsset.name}" has been assigned to ${selectedRequest.employeeName} successfully!`
+          const approvalResponse = await assetApi.approveAssetRequest(selectedRequest.id, payload);
+          
+          // Update local state immediately with approval details
+          setRequests(prevRequests => 
+            prevRequests.map(request => 
+              request.id === selectedRequest.id 
+                ? { 
+                    ...request, 
+                    status: 'approved' as const,
+                    assignedAssetId: data.assignedAssetId as string,
+                    assignedAssetName: selectedAsset.name,
+                    processedDate: new Date().toISOString().split('T')[0],
+                    processedBy: 'current-user', // You might want to get this from auth context
+                    processedByName: 'Current User' // You might want to get this from auth context
+                  }
+                : request
+            )
           );
+          
+          // Show success message with asset assignment details
+          showSnackbar(`Asset "${selectedAsset.name}" has been assigned to ${selectedRequest.employeeName} successfully!`, 'success');
+          
+          // Close modal and return early for approval - no need to refresh from API
+          setIsProcessModalOpen(false);
+          setLoading(false);
+          return;
         } catch (approvalError: unknown) {
           console.error('❌ Approval failed:', approvalError);
-          throw approvalError;
+          showSnackbar('Failed to approve request', 'error');
+          setLoading(false);
+          return;
         }
       } else if (data.action === 'reject') {
-        await assetApi.rejectAssetRequest(selectedRequest.id);
+        try {
+          await assetApi.rejectAssetRequest(selectedRequest.id, data.rejectionReason as string);
+          
+          // Update local state immediately with rejection reason
+          setRequests(prevRequests => 
+            prevRequests.map(request => 
+              request.id === selectedRequest.id 
+                ? { 
+                    ...request, 
+                    status: 'rejected' as const,
+                    rejectionReason: data.rejectionReason as string,
+                    processedDate: new Date().toISOString().split('T')[0],
+                    processedBy: 'current-user', // You might want to get this from auth context
+                    processedByName: 'Current User' // You might want to get this from auth context
+                  }
+                : request
+            )
+          );
+          
+          showSnackbar(`Request from ${selectedRequest.employeeName} has been rejected successfully`, 'success');
+          
+          // Close modal and return early for rejection - no need to refresh from API
+          setIsProcessModalOpen(false);
+          setLoading(false);
+          return;
+        } catch (rejectError) {
+          console.error('❌ Rejection failed:', rejectError);
+          showSnackbar('Failed to reject request', 'error');
+          setLoading(false);
+          return;
+        }
       }
 
-      // Refresh data from API
-      const apiResponse: PaginatedResponse<ApiAssetRequest> =
-        await assetApi.getAllAssetRequests({
-          page: pagination.page,
-          limit: pagination.limit,
-        });
-
+      // Refresh data from API (only for approval/assignment actions)
+      const apiResponse: PaginatedResponse<ApiAssetRequest> = await assetApi.getAllAssetRequests({
+        page: pagination.page,
+        limit: pagination.limit,
+      });
+      
+      
       // Refresh assets to reflect assignment status
       const apiAssetsResponse = await assetApi.getAllAssets();
       const transformedAssets: Asset[] = apiAssetsResponse.assets.map(
@@ -671,12 +742,11 @@ const RequestManagement: React.FC = () => {
         totalPages: apiResponse.totalPages || 1,
       }));
 
-      showSuccessToast(`Request ${data.action}ed successfully`);
       setIsProcessModalOpen(false);
       setSelectedRequest(null);
     } catch (error) {
       console.error('Failed to process request:', error);
-      showErrorToast('Failed to process request');
+      showSnackbar('Failed to process request', 'error');
     } finally {
       setLoading(false);
     }
@@ -770,16 +840,8 @@ const RequestManagement: React.FC = () => {
         )}
       </TableCell>
       <TableCell>
-        {request.assignedAssetName && (
-          <Chip
-            label={request.assignedAssetName}
-            size='small'
-            color='success'
-            variant='outlined'
-          />
-        )}
-        {request.rejectionReason && (
-          <Typography variant='caption' color='error'>
+        {request.rejectionReason && request.rejectionReason !== null && request.rejectionReason.trim() !== '' && (
+          <Typography variant="body2" color="text.primary">
             {request.rejectionReason}
           </Typography>
         )}
@@ -805,14 +867,6 @@ const RequestManagement: React.FC = () => {
                 <AssignmentIcon fontSize='small' />
               </ListItemIcon>
               <ListItemText>Process Request</ListItemText>
-            </MenuItem>
-          )}
-          {request.status === 'approved' && !request.assignedAssetName && (
-            <MenuItem onClick={() => handleProcessRequest(request)}>
-              <ListItemIcon>
-                <AssignmentIcon fontSize='small' />
-              </ListItemIcon>
-              <ListItemText>Assign Asset</ListItemText>
             </MenuItem>
           )}
         </Menu>
@@ -932,12 +986,22 @@ const RequestManagement: React.FC = () => {
                   <TableCell>Status</TableCell>
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Remarks</TableCell>
-                  <TableCell>Assignment/Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell>Rejection Reason</TableCell>
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {getFilteredRequestsByTab().map(renderRequestRow)}
+                {getFilteredRequestsByTab().length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No records found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  getFilteredRequestsByTab().map(renderRequestRow)
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -952,12 +1016,22 @@ const RequestManagement: React.FC = () => {
                   <TableCell>Status</TableCell>
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Remarks</TableCell>
-                  <TableCell>Assignment/Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell>Rejection Reason</TableCell>
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {getFilteredRequestsByTab('pending').map(renderRequestRow)}
+                {getFilteredRequestsByTab('pending').length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No records found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  getFilteredRequestsByTab('pending').map(renderRequestRow)
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -972,12 +1046,22 @@ const RequestManagement: React.FC = () => {
                   <TableCell>Status</TableCell>
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Remarks</TableCell>
-                  <TableCell>Assignment/Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell>Rejection Reason</TableCell>
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {getFilteredRequestsByTab('approved').map(renderRequestRow)}
+                {getFilteredRequestsByTab('approved').length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No records found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  getFilteredRequestsByTab('approved').map(renderRequestRow)
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -992,12 +1076,22 @@ const RequestManagement: React.FC = () => {
                   <TableCell>Status</TableCell>
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Remarks</TableCell>
-                  <TableCell>Assignment/Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell>Rejection Reason</TableCell>
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {getFilteredRequestsByTab('rejected').map(renderRequestRow)}
+                {getFilteredRequestsByTab('rejected').length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No records found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  getFilteredRequestsByTab('rejected').map(renderRequestRow)
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -1384,11 +1478,10 @@ const RequestManagement: React.FC = () => {
                             </Typography>
                           </Alert>
                         )}
-                        {selectedRequest.rejectionReason && (
-                          <Alert severity='error' sx={{ mt: 1 }}>
-                            <Typography variant='body2'>
-                              <strong>Rejection Reason:</strong>{' '}
-                              {selectedRequest.rejectionReason}
+                        {selectedRequest.rejectionReason && selectedRequest.rejectionReason !== null && selectedRequest.rejectionReason.trim() !== '' && (
+                          <Alert severity="error" sx={{ mt: 1 }}>
+                            <Typography variant="body2">
+                              <strong>Rejection Reason:</strong> {selectedRequest.rejectionReason}
                             </Typography>
                           </Alert>
                         )}
@@ -1410,6 +1503,22 @@ const RequestManagement: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
