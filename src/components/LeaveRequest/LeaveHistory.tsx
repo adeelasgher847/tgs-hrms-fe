@@ -12,34 +12,30 @@ import {
   Box,
   TextField,
   MenuItem,
+  Button,
+  Pagination,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import UndoIcon from '@mui/icons-material/Undo';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import type { Leave } from '../../type/levetypes';
 
-const typeColor: Record<
-  string,
-  'success' | 'error' | 'info' | 'warning' | 'default'
-> = {
-  Vacation: 'success',
-  Emergency: 'error',
-  Sick: 'info',
-  Casual: 'warning',
-  Other: 'default',
-};
+const ITEMS_PER_PAGE = 10;
 
 const statusConfig: Record<
   string,
   {
     color: 'success' | 'error' | 'warning' | 'default';
-    icon: React.ReactElement;
+    icon: React.ReactElement | null;
   }
 > = {
   pending: {
     color: 'warning',
-    // icon: <AccessTimeIcon fontSize='small' sx={{ mr: 0.5 }} />,
+    icon: <AccessTimeIcon fontSize='small' sx={{ mr: 0.5 }} />,
   },
   approved: {
     color: 'success',
@@ -55,40 +51,160 @@ const statusConfig: Record<
   },
 };
 
-const LeaveHistory = ({
-  leaves,
-  isAdmin,
-  onAction,
-  onWithdraw,
-  title = 'My Leaves',
-  showNames = false,
-}: {
+const formatDate = (dateString?: string) => {
+  if (!dateString) return 'N/A';
+  try {
+    return new Date(dateString).toISOString().split('T')[0];
+  } catch {
+    return 'N/A';
+  }
+};
+
+interface LeaveHistoryProps {
   leaves: Leave[];
   isAdmin: boolean;
-  onAction: (id: string, action: 'approved' | 'rejected') => void;
+  isManager?: boolean;
+  currentUserId?: string;
+  onAction?: (id: string, action: 'approved' | 'rejected') => void;
   onWithdraw?: (id: string) => void;
   title?: string;
   showNames?: boolean;
+  viewMode?: 'you' | 'team';
+  currentPage?: number;
+  totalPages?: number;
+  totalItems?: number;
+  onPageChange?: (page: number) => void;
+}
+
+const LeaveHistory: React.FC<LeaveHistoryProps> = ({
+  leaves,
+  isAdmin,
+  isManager = false,
+  currentUserId,
+  onAction,
+  onWithdraw,
+  title = 'Leave History',
+  showNames = false,
+  viewMode = 'you',
+  currentPage: serverCurrentPage = 1,
+  totalPages: serverTotalPages = 1,
+  totalItems: serverTotalItems = 0,
+  onPageChange,
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
+  const [page, setPage] = useState(1);
 
-  // Filtered leaves list
+  const hideNameColumn = isManager && viewMode === 'you';
+  const hideDropdown = isManager && viewMode === 'you';
+
+  const employeeNames = useMemo(() => {
+    const names = new Set<string>();
+    leaves.forEach(l => {
+      const empId =
+        l.employee?.id || l.employee_id || l.user_id || l.employeeId;
+      const name = l.employee?.first_name || l.name;
+      if (empId && name && empId !== currentUserId) names.add(name);
+    });
+    return Array.from(names);
+  }, [leaves, currentUserId]);
+
   const filteredLeaves = useMemo(() => {
-    if (!selectedEmployee) return leaves;
-    return leaves.filter(leave => leave.name === selectedEmployee);
-  }, [selectedEmployee, leaves]);
+    if (isManager && viewMode === 'you') {
+      return leaves.filter(
+        l =>
+          l.employee?.id === currentUserId ||
+          l.employee_id === currentUserId ||
+          l.user_id === currentUserId ||
+          l.employeeId === currentUserId
+      );
+    }
+
+    if (selectedEmployee === '') return leaves;
+
+    return leaves.filter(
+      leave =>
+        leave.employee?.first_name === selectedEmployee ||
+        leave.name === selectedEmployee
+    );
+  }, [selectedEmployee, leaves, isManager, viewMode, currentUserId]);
+
+  const useServerPagination = !!onPageChange && serverTotalPages > 0;
+  const currentPage = useServerPagination ? serverCurrentPage : page;
+  const totalPages = useServerPagination
+    ? serverTotalPages
+    : Math.max(1, Math.ceil(filteredLeaves.length / ITEMS_PER_PAGE));
+  const totalItems = useServerPagination
+    ? serverTotalItems
+    : filteredLeaves.length;
+
+  const paginatedLeaves = useServerPagination
+    ? filteredLeaves
+    : filteredLeaves.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  const handlePageChange = (newPage: number) => {
+    if (useServerPagination && onPageChange) {
+      onPageChange(newPage);
+    } else {
+      setPage(newPage);
+    }
+  };
+
+  const handleDownloadCSV = () => {
+    if (filteredLeaves.length === 0) return;
+
+    const headers = [
+      'Name',
+      'Type',
+      'From',
+      'To',
+      'Applied',
+      'Reason',
+      'Status',
+      'Remarks',
+    ];
+
+    const escapeCSV = (value: any) => {
+      if (value == null) return '';
+      const str = String(value).replace(/"/g, '""'); // escape double quotes
+      return `"${str}"`; // wrap in quotes
+    };
+
+    const rows = filteredLeaves.map(leave => [
+      escapeCSV(leave.employee?.first_name || leave.name || 'N/A'),
+      escapeCSV(leave.leaveType?.name || leave.type || 'Unknown'),
+      escapeCSV(formatDate(leave.startDate)),
+      escapeCSV(formatDate(leave.endDate)),
+      escapeCSV(formatDate(leave.createdAt)),
+      escapeCSV(leave.reason || 'N/A'),
+      escapeCSV(leave.status || 'Unknown'),
+      escapeCSV(leave.remarks || ''),
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join(
+      '\n'
+    );
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'leave-history.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (!Array.isArray(leaves)) {
     return (
       <Box>
-        <Typography>Error: Invalid leaves data</Typography>
+        <Typography color='error'>Error: Invalid leaves data</Typography>
       </Box>
     );
   }
 
   return (
     <Box>
-      {/* Title + Dropdown filter */}
+      {/* Header */}
       <Box
         sx={{
           display: 'flex',
@@ -104,32 +220,46 @@ const LeaveHistory = ({
           </Typography>
         </Box>
 
-        {/* Show dropdown only for Admin */}
-        {isAdmin && (
-          <TextField
-            select
-            size='small'
-            value={selectedEmployee}
-            onChange={e => setSelectedEmployee(e.target.value)}
-            sx={{ minWidth: 200 }}
-            SelectProps={{
-              displayEmpty: true,
-              renderValue: value => {
-                if (value === '') {
-                  return 'All Employee';
-                }
-                return value;
-              },
-            }}
-          >
-            <MenuItem value=''>All Employee</MenuItem>
-            {[...new Set(leaves.map(l => l.name))].map(name => (
-              <MenuItem key={name} value={name}>
-                {name}
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {!hideDropdown && (isAdmin || isManager) && (
+            <TextField
+              select
+              size='small'
+              value={selectedEmployee}
+              onChange={e => setSelectedEmployee(e.target.value)}
+              sx={{ minWidth: 200 }}
+              SelectProps={{
+                displayEmpty: true,
+                renderValue: value => (value === '' ? 'All Employees' : value),
+              }}
+            >
+              <MenuItem value=''>All Employees</MenuItem>
+              {employeeNames.map(name => (
+                <MenuItem key={name} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+
+          <Tooltip title='Export All Leave History'>
+            <IconButton
+              color='primary'
+              onClick={handleDownloadCSV}
+              sx={{
+                backgroundColor: 'primary.main',
+                borderRadius: '6px',
+                padding: '6px',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: 'primary.dark',
+                },
+              }}
+            >
+              <FileDownloadIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       {filteredLeaves.length === 0 ? (
@@ -138,128 +268,180 @@ const LeaveHistory = ({
             No Leave History Found
           </Typography>
           <Typography variant='body2' color='textSecondary'>
-            {title === 'My Leaves'
+            {isManager && viewMode === 'you'
               ? "You haven't applied for any leaves yet."
-              : 'No leave requests found.'}
+              : 'No leave requests available.'}
           </Typography>
         </Box>
       ) : (
-        <TableContainer
-          component={Paper}
-          elevation={0}
-          sx={{ borderRadius: 0 }}
-        >
-          <Table>
-            <TableHead>
-              <TableRow>
-                {(isAdmin || showNames) && <TableCell>Name</TableCell>}
-                <TableCell>Type</TableCell>
-                <TableCell>From</TableCell>
-                <TableCell>To</TableCell>
-                <TableCell>Applied</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Reason</TableCell>
-                {isAdmin && <TableCell>Actions</TableCell>}
-                {!isAdmin && onWithdraw && <TableCell>Actions</TableCell>}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredLeaves.map((leave, _index) => {
-                if (!leave || typeof leave !== 'object') {
-                  return null;
-                }
+        <Paper elevation={1}>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  {!hideNameColumn && (isAdmin || isManager || showNames) && (
+                    <TableCell>Name</TableCell>
+                  )}
+                  <TableCell>Type</TableCell>
+                  <TableCell>From</TableCell>
+                  <TableCell>To</TableCell>
+                  <TableCell>Applied</TableCell>
+                  <TableCell>Reason</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Actions / Remarks</TableCell>
+                </TableRow>
+              </TableHead>
 
-                return (
-                  <TableRow key={leave.id || _index}>
-                    {(isAdmin || showNames) && (
-                      <TableCell>{leave.name || 'N/A'}</TableCell>
+              <TableBody>
+                {paginatedLeaves.map((leave, index) => (
+                  <TableRow key={leave.id || index}>
+                    {!hideNameColumn && (isAdmin || isManager || showNames) && (
+                      <TableCell>
+                        {leave.employee?.first_name || leave.name || 'N/A'}
+                      </TableCell>
                     )}
                     <TableCell>
+                      {leave.leaveType?.name || leave.type || 'Unknown'}
+                    </TableCell>
+                    <TableCell>{formatDate(leave.startDate)}</TableCell>
+                    <TableCell>{formatDate(leave.endDate)}</TableCell>
+                    <TableCell>{formatDate(leave.createdAt)}</TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontSize: 14 }}>
+                        {leave.reason || 'N/A'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
                       <Chip
-                        label={leave.type || 'Unknown'}
-                        color={typeColor[leave.type] || 'default'}
-                        sx={{
-                          fontSize: 15,
-                          px: 1,
-                          py: 1,
-                          width: '100%',
-                        }}
+                        icon={statusConfig[leave.status]?.icon}
+                        label={
+                          leave.status
+                            ? leave.status.charAt(0).toUpperCase() +
+                              leave.status.slice(1)
+                            : 'Unknown'
+                        }
+                        color={statusConfig[leave.status]?.color}
+                        sx={{ fontSize: 15, width: '100%' }}
                       />
                     </TableCell>
-                    <TableCell>{leave.fromDate || 'N/A'}</TableCell>
-                    <TableCell>{leave.toDate || 'N/A'}</TableCell>
-                    <TableCell>{leave.applied || 'N/A'}</TableCell>
                     <TableCell>
-                      <Chip
-                      icon={statusConfig[leave.status]?.icon}
-                        label={
-    leave.status
-      ? leave.status.charAt(0).toUpperCase() + leave.status.slice(1)
-      : 'Unknown'
-  }
-  color={statusConfig[leave.status]?.color}
-  sx={{
-    fontSize: 15,
-    px: 1,
-    py: 1,
-    width: '100%',
-  }}
-/>
-
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: 14 }}>{leave.reason || 'N/A'}</Typography>
-                      {leave.status === 'rejected' && leave.secondaryReason && (
-                        <Typography
-                          variant='body2'
-                          color='error'
-                          sx={{ mt: 0.5, fontSize: 14 }}
-                        >
-                          {leave.secondaryReason}
-                        </Typography>
-                      )}
-                    </TableCell>
-                    {isAdmin && leave.status === 'pending' && (
-                      <TableCell>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          <Chip
-                            label='Approve'
-                            color='success'
-                            clickable
-                            onClick={() => onAction(leave.id, 'approved')}
-                            sx={{ width: '100%' }}
-                          />
-                          <Chip
-                            label='Reject'
-                            color='error'
-                            clickable
-                            onClick={() => onAction(leave.id, 'rejected')}
-                            sx={{ width: '100%' }}
-                          />
-                        </Box>
-                      </TableCell>
-                    )}
-                    {isAdmin && leave.status !== 'pending' && <TableCell />}
-                    {!isAdmin && onWithdraw && (
-                      <TableCell>
-                        {leave.status === 'pending' && (
-                          <Chip
-                            label='Withdraw'
-                            color='warning'
-                            clickable
-                            onClick={() => onWithdraw(leave.id)}
-                            sx={{ width: '100%' }}
-                          />
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1,
+                        }}
+                      >
+                        {leave.status === 'rejected' && leave.remarks && (
+                          <Typography
+                            variant='body2'
+                            sx={{
+                              mt: 0.5,
+                              fontSize: 13,
+                              p: 0.5,
+                              borderRadius: 1,
+                            }}
+                          >
+                            {leave.remarks}
+                          </Typography>
                         )}
-                      </TableCell>
-                    )}
+
+                        {isAdmin && leave.status === 'pending' && onAction && (
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Chip
+                              label='Approve'
+                              color='success'
+                              clickable
+                              onClick={() => onAction(leave.id, 'approved')}
+                            />
+                            <Chip
+                              label='Reject'
+                              color='error'
+                              clickable
+                              onClick={() => onAction(leave.id, 'rejected')}
+                            />
+                          </Box>
+                        )}
+
+                        {isManager &&
+                          viewMode === 'you' &&
+                          onWithdraw &&
+                          leave.status === 'pending' && (
+                            <Chip
+                              label='Withdraw'
+                              color='warning'
+                              clickable
+                              onClick={() => onWithdraw(leave.id)}
+                            />
+                          )}
+
+                        {!isAdmin &&
+                          !isManager &&
+                          onWithdraw &&
+                          leave.status === 'pending' && (
+                            <Chip
+                              label='Withdraw'
+                              color='warning'
+                              clickable
+                              onClick={() => onWithdraw(leave.id)}
+                            />
+                          )}
+                      </Box>
+                    </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       )}
+
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          mt: 3,
+        }}
+      >
+        {totalPages > 1 && (
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, newPage) => handlePageChange(newPage)}
+            color='primary'
+            sx={{ mb: 1 }}
+          />
+        )}
+
+        <Typography
+          variant='body2'
+          color='text.secondary'
+          sx={{
+            textAlign: 'center',
+            width: 'fit-content',
+            mx: 'auto',
+          }}
+        >
+          Showing{' '}
+          {totalItems === 0
+            ? 0
+            : useServerPagination
+              ? Math.min((currentPage - 1) * 10 + 1, totalItems)
+              : Math.min(
+                  (page - 1) * ITEMS_PER_PAGE + 1,
+                  filteredLeaves.length
+                )}
+          –
+          {useServerPagination
+            ? Math.min(currentPage * 10, totalItems)
+            : Math.min(page * ITEMS_PER_PAGE, filteredLeaves.length)}{' '}
+          of {totalItems} records
+        </Typography>
+      </Box>
     </Box>
   );
 };

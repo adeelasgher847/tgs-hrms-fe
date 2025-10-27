@@ -110,9 +110,16 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: 'Attendance', path: 'AttendanceCheck' },
       { label: 'Daily Attendance', path: 'AttendanceTable' },
-      { label: 'Reports', path: 'Reports' },
       { label: 'Report', path: 'attendance-summary' },
       { label: 'Leave Request', path: 'leaves' },
+    ],
+  },
+  {
+    label: 'Leave Analytics',
+    icon: <Receipt />, 
+    subItems: [
+      { label: 'Reports', path: 'Reports' },
+
     ],
   },
   {
@@ -183,7 +190,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
 
   const filteredMenuItems = useMemo(() => {
     const userRole = typeof role === 'string' ? role : (role as unknown)?.name;
-    
+
     const filtered = menuItems
       .filter(item => {
         const isVisible = isMenuVisibleForRole(item.label, userRole);
@@ -192,12 +199,14 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
       .map(item => ({
         ...item,
         subItems: item.subItems.filter(sub => {
-          const isSubVisible = isSubMenuVisibleForRole(item.label, sub.label, userRole);
+          const isSubVisible = isSubMenuVisibleForRole(
+            item.label,
+            sub.label,
+            userRole
+          );
 
           return isSubVisible;
         }),
-
-
       }));
     return filtered;
   }, [role]);
@@ -327,7 +336,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
               }}
-              title={companyName || 'HRMS'}
+              title={companyName || 'Trans Global Services'}
             >
               {companyName.length > 15
                 ? companyName.slice(0, 18) + '...'
