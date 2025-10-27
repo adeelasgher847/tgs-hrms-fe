@@ -15,6 +15,7 @@ import {
   CircularProgress,
   Tooltip,
   IconButton,
+  Pagination,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { leaveReportApi, type EmployeeReport } from '../../api/leaveReportApi';
@@ -60,11 +61,16 @@ function TabPanel({
   );
 }
 
+const ITEMS_PER_PAGE = 10;
+
 const Reports: React.FC = () => {
   const [tab, setTab] = useState(0);
   const [teamSummary, setTeamSummary] = useState<TeamMemberSummary[]>([]);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
   const [allLeaveReports, setAllLeaveReports] = useState<EmployeeReport[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<{
@@ -169,6 +175,23 @@ const Reports: React.FC = () => {
     }
   };
 
+  const fetchAllLeaveReports = async (pageNum: number) => {
+    try {
+      setLoading(true);
+      const data = await leaveReportApi.getAllLeaveReports(pageNum);
+      setAllLeaveReports(data.employeeReports || []);
+      setTotalPages(data.totalPages || 1);
+      setTotalRecords(data.total || 0);
+      setPage(data.page || 1);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching reports:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!userInfo || !userInfo.userId) {
       setLoading(false);
@@ -180,15 +203,12 @@ const Reports: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        if (userInfo.isHrAdmin || userInfo.isSystemAdmin) {
-          const data = await leaveReportApi.getAllLeaveReports();
-          console.log('Parsed data:', data);
-          console.log('Employee reports:', data.employeeReports);
-          setAllLeaveReports(data.employeeReports || []);
+        if (isAdminView) {
+          await fetchAllLeaveReports(page);
         } else if (tab === 0) {
           const data = await leaveReportApi.getLeaveBalance();
           setLeaveBalance(data.balances || []);
-        } else if (userInfo.isManager && tab === 1) {
+        } else if (isManager && tab === 1) {
           const now = new Date();
           const data = await leaveReportApi.getTeamLeaveSummary(
             now.getMonth() + 1,
@@ -202,18 +222,17 @@ const Reports: React.FC = () => {
         setLoading(false);
       }
     };
+
     fetchData();
-  }, [tab, userInfo]);
+  }, [tab, userInfo, page]);
 
   if (!userInfo) {
     return (
       <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: 400,
-        }}
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight={400}
       >
         <CircularProgress />
       </Box>
@@ -223,12 +242,10 @@ const Reports: React.FC = () => {
   if (!userId) {
     return (
       <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: 400,
-        }}
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight={400}
       >
         <Typography color='error'>User not found. Please re-login.</Typography>
       </Box>
@@ -238,12 +255,10 @@ const Reports: React.FC = () => {
   if (loading) {
     return (
       <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '60vh',
-        }}
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight='60vh'
       >
         <CircularProgress />
       </Box>
@@ -253,14 +268,12 @@ const Reports: React.FC = () => {
   return (
     <Box>
       <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-          flexWrap: 'wrap',
-          gap: 1,
-        }}
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        mb={3}
+        flexWrap='wrap'
+        gap={1}
       >
         <Typography variant='h4' fontWeight={600}>
           Leave Reports
@@ -374,6 +387,38 @@ const Reports: React.FC = () => {
               </TableBody>
             </Table>
           </TableContainer>
+
+          {totalPages > 1 && (
+            <Box
+              display='flex'
+              flexDirection='column'
+              alignItems='center'
+              justifyContent='center'
+              mt={3}
+              gap={1}
+            >
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_, value) => setPage(value)}
+                color='primary'
+                shape='rounded'
+                size='small'
+                sx={{
+                  '& .MuiPaginationItem-root': {
+                    borderRadius: '50%',
+                    minWidth: 32,
+                    height: 32,
+                  },
+                }}
+              />
+              <Typography variant='body2' color='text.secondary'>
+                Showing {(page - 1) * ITEMS_PER_PAGE + 1}–
+                {Math.min(page * ITEMS_PER_PAGE, totalRecords)} of{' '}
+                {totalRecords} records
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
 
@@ -391,7 +436,6 @@ const Reports: React.FC = () => {
               <Tab label='Team Leave Summary' />
             </Tabs>
           )}
-
           <TabPanel value={tab} index={0}>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
               {leaveBalance.map((item, idx) => (
@@ -414,7 +458,6 @@ const Reports: React.FC = () => {
                 </Card>
               ))}
             </Box>
-
             <TableContainer component={Card}>
               <Table>
                 <TableHead>

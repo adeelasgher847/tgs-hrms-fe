@@ -76,7 +76,7 @@ const getUserFromLocalStorage = () => {
   try {
     const user = localStorage.getItem('user');
     const parsed = user ? JSON.parse(user) : null;
-    
+
     if (!parsed) {
       return {
         userId: null,
@@ -91,7 +91,8 @@ const getUserFromLocalStorage = () => {
     const roleLower = roleName.toLowerCase();
 
     const isHrAdmin = roleLower === 'hr-admin' || roleLower === 'hr_admin';
-    const isSystemAdmin = roleLower === 'system-admin' || roleLower === 'system_admin';
+    const isSystemAdmin =
+      roleLower === 'system-admin' || roleLower === 'system_admin';
 
     return {
       userId: parsed?.id,
@@ -120,7 +121,6 @@ export const leaveReportApi = {
     const response = await axiosInstance.get('/reports/leave-summary', {
       params: { userId, page },
     });
-    console.log('Leave Summary Response:', response.data);
     return response.data;
   },
 
@@ -134,12 +134,9 @@ export const leaveReportApi = {
       month,
       year,
     });
-
     const response = await axiosInstance.get('/reports/team-leave-summary', {
       params: { managerId, month, year },
     });
-
-    console.log('Team Leave Summary Response:', response.data);
     return response.data;
   },
 
@@ -148,7 +145,6 @@ export const leaveReportApi = {
     const response = await axiosInstance.get('/reports/leave-balance', {
       params: { employeeId: userId },
     });
-    console.log('Leave Balance Response:', response.data);
     return response.data;
   },
 
@@ -185,50 +181,43 @@ export const leaveReportApi = {
     return response.data;
   },
 
-  getAllLeaveReports: async (): Promise<AllLeaveReportsResponse> => {
-    console.log('Sending All Leave Reports Request...');
-    const response = await axiosInstance.get('/reports/all-leave-reports');
-    console.log('All Leave Reports Response:', response.data);
-    
-    if (response.data) {
-      if (response.data.employeeReports && Array.isArray(response.data.employeeReports)) {
-        const employeeReports = response.data.employeeReports;
-        const total = response.data.total || employeeReports.length;
-        
-        return {
-          employeeReports,
-          total,
-          page: response.data.page || 1,
-          limit: response.data.limit || 10,
-          totalPages: response.data.totalPages || Math.ceil(total / 10),
-        };
-      }
-      if (Array.isArray(response.data)) {
-        return {
-          employeeReports: response.data,
-          total: response.data.length,
-          page: 1,
-          limit: 10,
-          totalPages: 1,
-        };
-      }
-      if (Array.isArray(response.data.items)) {
-        return {
-          employeeReports: response.data.items,
-          total: response.data.total || response.data.items.length,
-          page: response.data.page || 1,
-          limit: response.data.limit || 10,
-          totalPages: response.data.totalPages || Math.ceil((response.data.total || response.data.items.length) / 10),
-        };
-      }
+  getAllLeaveReports: async (
+    page: number = 1
+  ): Promise<AllLeaveReportsResponse> => {
+    const response = await axiosInstance.get(
+      `/reports/all-leave-reports?page=${page}`
+    );
+    const data = response.data;
+    if (!data) {
+      throw new Error('No response data received');
     }
-    
-    return {
-      employeeReports: [],
-      total: 0,
-      page: 1,
-      limit: 10,
-      totalPages: 1,
-    };
+    if (Array.isArray(data.employeeReports)) {
+      return {
+        employeeReports: data.employeeReports,
+        total: data.total || data.employeeReports.length,
+        page: data.page || page,
+        limit: data.limit || 10,
+        totalPages: data.totalPages || 1,
+      };
+    }
+    if (Array.isArray(data.items)) {
+      return {
+        employeeReports: data.items,
+        total: data.total || data.items.length,
+        page: data.page || page,
+        limit: data.limit || 10,
+        totalPages: data.totalPages || 1,
+      };
+    }
+    if (Array.isArray(data)) {
+      return {
+        employeeReports: data,
+        total: data.length,
+        page,
+        limit: 10,
+        totalPages: 1,
+      };
+    }
+    throw new Error('Unexpected response structure for all leave reports');
   },
 };

@@ -63,7 +63,7 @@ export const isMenuVisibleForRole = (
       'teams',
       'assets',
       'attendance',
-      'benefits',
+      // 'benefits',
       'leave-analytics',
       'report',
     ],
@@ -86,7 +86,7 @@ export const isMenuVisibleForRole = (
       'attendance',
       'report',
     ],
-    manager: ['teams', 'attendance', 'assets', 'benefits', 'report', 'leave-analytics'],
+    manager: ['teams', 'attendance', 'assets', 'report', 'leave-analytics'],
     employee: ['attendance', 'assets', 'benefits', 'leave-analytics',],
     user: ['attendance', 'assets', 'benefits'],
     unknown: ['benefits'], // Temporarily allow benefits for unknown roles

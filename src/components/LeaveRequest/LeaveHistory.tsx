@@ -14,11 +14,14 @@ import {
   MenuItem,
   Button,
   Pagination,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import UndoIcon from '@mui/icons-material/Undo';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import type { Leave } from '../../type/levetypes';
 
 const ITEMS_PER_PAGE = 10;
@@ -89,7 +92,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   onPageChange,
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
-  const [page, setPage] = useState(1); 
+  const [page, setPage] = useState(1);
 
   const hideNameColumn = isManager && viewMode === 'you';
   const hideDropdown = isManager && viewMode === 'you';
@@ -135,8 +138,8 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     : filteredLeaves.length;
 
   const paginatedLeaves = useServerPagination
-    ? filteredLeaves 
-    : filteredLeaves.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE); 
+    ? filteredLeaves
+    : filteredLeaves.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const handlePageChange = (newPage: number) => {
     if (useServerPagination && onPageChange) {
@@ -146,8 +149,50 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     }
   };
 
-  const handleNext = () => handlePageChange(currentPage + 1);
-  const handlePrev = () => handlePageChange(currentPage - 1);
+  const handleDownloadCSV = () => {
+    if (filteredLeaves.length === 0) return;
+
+    const headers = [
+      'Name',
+      'Type',
+      'From',
+      'To',
+      'Applied',
+      'Reason',
+      'Status',
+      'Remarks',
+    ];
+
+    const escapeCSV = (value: any) => {
+      if (value == null) return '';
+      const str = String(value).replace(/"/g, '""'); // escape double quotes
+      return `"${str}"`; // wrap in quotes
+    };
+
+    const rows = filteredLeaves.map(leave => [
+      escapeCSV(leave.employee?.first_name || leave.name || 'N/A'),
+      escapeCSV(leave.leaveType?.name || leave.type || 'Unknown'),
+      escapeCSV(formatDate(leave.startDate)),
+      escapeCSV(formatDate(leave.endDate)),
+      escapeCSV(formatDate(leave.createdAt)),
+      escapeCSV(leave.reason || 'N/A'),
+      escapeCSV(leave.status || 'Unknown'),
+      escapeCSV(leave.remarks || ''),
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join(
+      '\n'
+    );
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'leave-history.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (!Array.isArray(leaves)) {
     return (
@@ -175,26 +220,46 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
 
-        {!hideDropdown && (isAdmin || isManager) && (
-          <TextField
-            select
-            size='small'
-            value={selectedEmployee}
-            onChange={e => setSelectedEmployee(e.target.value)}
-            sx={{ minWidth: 200 }}
-            SelectProps={{
-              displayEmpty: true,
-              renderValue: value => (value === '' ? 'All Employees' : value),
-            }}
-          >
-            <MenuItem value=''>All Employees</MenuItem>
-            {employeeNames.map(name => (
-              <MenuItem key={name} value={name}>
-                {name}
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {!hideDropdown && (isAdmin || isManager) && (
+            <TextField
+              select
+              size='small'
+              value={selectedEmployee}
+              onChange={e => setSelectedEmployee(e.target.value)}
+              sx={{ minWidth: 200 }}
+              SelectProps={{
+                displayEmpty: true,
+                renderValue: value => (value === '' ? 'All Employees' : value),
+              }}
+            >
+              <MenuItem value=''>All Employees</MenuItem>
+              {employeeNames.map(name => (
+                <MenuItem key={name} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+
+          <Tooltip title='Export All Leave History'>
+            <IconButton
+              color='primary'
+              onClick={handleDownloadCSV}
+              sx={{
+                backgroundColor: 'primary.main',
+                borderRadius: '6px',
+                padding: '6px',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: 'primary.dark',
+                },
+              }}
+            >
+              <FileDownloadIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       {filteredLeaves.length === 0 ? (
@@ -331,18 +396,36 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         </Paper>
       )}
 
-      {totalPages > 1 && (
-        <Box display='flex' justifyContent='center' my={2}>
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          mt: 3,
+        }}
+      >
+        {totalPages > 1 && (
           <Pagination
             count={totalPages}
             page={currentPage}
             onChange={(_, newPage) => handlePageChange(newPage)}
             color='primary'
+            sx={{ mb: 1 }}
           />
-        </Box>
-      )}
-      <Box textAlign='center' mb={2}>
-        <Typography variant='body2' color='text.secondary'>
+        )}
+
+        <Typography
+          variant='body2'
+          color='text.secondary'
+          sx={{
+            textAlign: 'center',
+            width: 'fit-content',
+            mx: 'auto',
+          }}
+        >
           Showing{' '}
           {totalItems === 0
             ? 0
