@@ -54,7 +54,6 @@ export const isMenuVisibleForRole = (
   const r = normalizeRole(role);
   const label = (menuLabel || '').toLowerCase().replace(/\s+/g, '').trim();
 
-
   const allowedByRole: Record<NormalizedRole, string[]> = {
     'system-admin': [
       'dashboard',
@@ -64,6 +63,8 @@ export const isMenuVisibleForRole = (
       'teams',
       'assets',
       'attendance',
+      // 'benefits',
+      'leave-analytics',
       'report',
     ],
     'network-admin': [
@@ -73,10 +74,9 @@ export const isMenuVisibleForRole = (
       'teams',
       'assets',
       'attendance',
-      'report',
       'benefits',
     ],
-    'hr-admin': ['attendance', 'teams', 'benefits'],
+    'hr-admin': ['attendance', 'teams', 'benefits', 'leave-analytics'],
     admin: [
       'dashboard',
       'department',
@@ -86,10 +86,10 @@ export const isMenuVisibleForRole = (
       'attendance',
       'report',
     ],
-    manager: ['teams', 'attendance', 'assets', 'report'],
-    employee: ['attendance', 'assets', 'benefits'],
-    user: ['attendance', 'assets'],
-    unknown: [],
+    manager: ['teams', 'attendance', 'assets', 'report', 'leave-analytics'],
+    employee: ['attendance', 'assets', 'benefits', 'leave-analytics',],
+    user: ['attendance', 'assets', 'benefits'],
+    unknown: ['benefits'], // Temporarily allow benefits for unknown roles
   };
 
   // map synonyms from current sidebar to requirement naming
@@ -102,8 +102,9 @@ export const isMenuVisibleForRole = (
     if (label.includes('asset')) return 'assets';
     if (label.includes('benefit')) return 'benefits';
     if (label.includes('attendance')) return 'attendance';
+    if (label.includes('leaveanalytics') || label.includes('leaveanalytics'))
+      return 'leave-analytics';
     if (label.includes('report')) return 'report';
-    if (label.includes('benefits')) return 'benefits';
     // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
     return 'misc';
   })();
@@ -134,12 +135,6 @@ export const isSubMenuVisibleForRole = (
         sub.includes('policies') ||
         sub.includes('holidays')
       ) {
-        visible = false;
-      }
-    }
-    if (parent.includes('attendance')) {
-      // hide Reports for system-admin
-      if (sub.includes('reports')) {
         visible = false;
       }
     }
@@ -194,42 +189,23 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
-    if (parent.includes('attendance') && sub === 'reports') {
-      visible = false;
-    }
-  }
-
-  // --- Manager rules ---
-  if (r === 'manager') {
-    // manager sees only attendance summary (Report), not Reports
-    if (parent.includes('attendance') && sub === 'reports') {
-      visible = false;
-    }
   }
 
   // --- Employee/User rules ---
   if (r === 'employee' || r === 'user') {
     if (parent.includes('attendance')) {
       // Hide both Reports and Report for employees/users
-      if (sub === 'reports' || sub === 'report') {
+      if ( sub === 'report') {
         visible = false;
       }
     }
   }
 
-  // --- Manager rules ---
-  if (r === 'manager') {
-    // manager sees only attendance summary (Report), not Reports
-    if (parent.includes('attendance') && sub === 'reports') {
-      visible = false;
-    }
-  }
-
   // --- Employee/User rules ---
   if (r === 'employee' || r === 'user') {
     if (parent.includes('attendance')) {
       // Hide both Reports and Report for employees/users
-      if (sub === 'reports' || sub === 'report') {
+      if (sub === 'report') {
         visible = false;
       }
     }
@@ -375,6 +351,8 @@ export const isDashboardPathAllowedForRole = (
       'benefits/reporting',
       'my-benefits',
       'teams',
+      'leaves',
+      'Reports',
       'benefits-list',
       'employee-benefit',
     ]),
@@ -409,7 +387,7 @@ export const isDashboardPathAllowedForRole = (
     manager: new Set([
       'AttendanceCheck',
       'AttendanceTable',
-      // 'Reports',
+      'Reports',
       'AttendanceCheck/TimesheetLayout',
       'teams',
       'leaves',
@@ -428,7 +406,7 @@ export const isDashboardPathAllowedForRole = (
     employee: new Set([
       'AttendanceCheck',
       'AttendanceTable',
-      // 'Reports',
+      'Reports',
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',

@@ -1,25 +1,26 @@
 import axiosInstance from './axiosInstance';
 
-// Types
 export interface CreateLeaveRequest {
-  fromDate: string;
-  toDate: string;
+  leaveTypeId: string;
+  startDate: string;
+  endDate: string;
   reason: string;
-  type: string;
 }
 
 export interface LeaveResponse {
   id: string;
-  userId?: string;
-  user_id?: string;
-  from_date: string;
-  to_date: string;
+  employeeId?: string;
+  leaveTypeId?: string;
+  startDate: string;
+  endDate: string;
+  totalDays?: number;
   reason: string;
-  type: string;
-  status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
-  applied?: string; // Applied date
-  created_at?: string;
-  updated_at?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'withdrawn' | 'cancelled';
+  approvedBy?: string;
+  tenantId?: string;
+  createdAt?: string;
+  approvedAt?: string | null;
+  remarks?: string | null;
 }
 
 export interface LeaveWithUser extends LeaveResponse {
@@ -36,26 +37,20 @@ export interface UpdateLeaveStatusRequest {
   status: 'approved' | 'rejected';
 }
 
-// API Methods
 export const leaveApi = {
-  // Create Leave Request
   createLeave: async (data: CreateLeaveRequest): Promise<LeaveResponse> => {
-    // Transform data to match API expectations (from_date, to_date)
-    const apiData = {
-      from_date: data.fromDate,
-      to_date: data.toDate,
-      reason: data.reason,
-      type: data.type,
-    };
-
-    const response = await axiosInstance.post('/leaves', apiData);
-    return response.data;
+    try {
+      const response = await axiosInstance.post('/leaves', data);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to create leave:', error);
+      throw error;
+    }
   },
 
-  // Get Leaves for User with pagination
   getUserLeaves: async (
     userId?: string,
-    page: number = 1
+    page = 1
   ): Promise<{
     items: LeaveResponse[];
     total: number;
@@ -63,34 +58,31 @@ export const leaveApi = {
     limit: number;
     totalPages: number;
   }> => {
-    const params = userId ? { userId, page } : { page };
-    const response = await axiosInstance.get('/leaves', { params });
+    try {
+      const params = userId ? { userId, page } : { page };
+      const response = await axiosInstance.get('/leaves', { params });
+      console.log('User leaves response:', response);
+      const data = response.data;
 
-    // Handle both paginated and non-paginated responses
-    if (response.data && response.data.items) {
-      return response.data;
-    } else if (Array.isArray(response.data)) {
-      return {
-        items: response.data,
-        total: response.data.length,
-        page: 1,
-        limit: 25,
-        totalPages: 1,
-      };
-    } else {
-      return {
-        items: [],
-        total: 0,
-        page: 1,
-        limit: 25,
-        totalPages: 1,
-      };
+      if (data && data.items) return data;
+      if (Array.isArray(data)) {
+        return {
+          items: data,
+          total: data.length,
+          page: 1,
+          limit: 25,
+          totalPages: 1,
+        };
+      }
+      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
+    } catch (error) {
+      console.error('Failed to fetch user leaves:', error);
+      throw error;
     }
   },
 
-  // Get All Leaves (Admin Only) with pagination
   getAllLeaves: async (
-    page: number = 1
+    page = 1
   ): Promise<{
     items: LeaveWithUser[];
     total: number;
@@ -98,80 +90,102 @@ export const leaveApi = {
     limit: number;
     totalPages: number;
   }> => {
-    const response = await axiosInstance.get('/leaves/all', {
-      params: { page },
-    });
+    try {
+      const response = await axiosInstance.get('/leaves/all', { params: { page } });
+      console.log('All leaves response:', response);
+      const data = response.data;
 
-    // Handle both paginated and non-paginated responses
-    if (response.data && response.data.items) {
-      return response.data;
-    } else if (Array.isArray(response.data)) {
-      return {
-        items: response.data,
-        total: response.data.length,
-        page: 1,
-        limit: 25,
-        totalPages: 1,
-      };
-    } else {
-      return {
-        items: [],
-        total: 0,
-        page: 1,
-        limit: 25,
-        totalPages: 1,
-      };
+      if (data && data.items) return data;
+      if (Array.isArray(data)) {
+        return {
+          items: data,
+          total: data.length,
+          page: 1,
+          limit: 25,
+          totalPages: 1,
+        };
+      }
+      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
+    } catch (error) {
+      console.error('Failed to fetch all leaves:', error);
+      throw error;
     }
   },
 
-  // Update Leave Status (Admin Only)
+  getTeamLeaves: async (
+    page = 1
+  ): Promise<{
+    items: LeaveWithUser[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> => {
+    try {
+      const response = await axiosInstance.get('/leaves/team', { params: { page } });
+      console.log('Team leaves response:', response);
+      const data = response.data;
+
+      if (data && data.items) return data;
+      if (Array.isArray(data)) {
+        return {
+          items: data,
+          total: data.length,
+          page: 1,
+          limit: 25,
+          totalPages: 1,
+        };
+      }
+      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
+    } catch (error) {
+      console.error('Failed to fetch team leaves:', error);
+      throw error;
+    }
+  },
+
   updateLeaveStatus: async (
     id: string,
     status: 'approved' | 'rejected'
   ): Promise<LeaveResponse> => {
-    const response = await axiosInstance.patch(`/leaves/${id}`, { status });
-    return response.data;
-  },
-
-  // Withdraw Leave Request (User can withdraw their own pending requests)
-  withdrawLeave: async (id: string): Promise<LeaveResponse> => {
-    const response = await axiosInstance.patch(`/leaves/${id}/withdraw`);
-    return response.data;
-  },
-
-  // Get Team Leaves (Manager Only) with pagination
-  getTeamLeaves: async (
-    page: number = 1
-  ): Promise<{
-    items: LeaveWithUser[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> => {
-    const response = await axiosInstance.get('/leaves/team', {
-      params: { page },
-    });
-
-    // Handle both paginated and non-paginated responses
-    if (response.data && response.data.items) {
+    try {
+      const response = await axiosInstance.patch(`/leaves/${id}`, { status });
       return response.data;
-    } else if (Array.isArray(response.data)) {
-      return {
-        items: response.data,
-        total: response.data.length,
-        page: 1,
-        limit: 25,
-        totalPages: 1,
-      };
-    } else {
-      return {
-        items: [],
-        total: 0,
-        page: 1,
-        limit: 25,
-        totalPages: 1,
-      };
+    } catch (error) {
+      console.error(`Failed to update leave ${id} status:`, error);
+      throw error;
+    }
+  },
+
+  cancelLeave: async (id: string): Promise<LeaveResponse> => {
+    try {
+      const response = await axiosInstance.patch(`/leaves/${id}/withdraw`);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to cancel leave ${id}:`, error);
+      throw error;
+    }
+  },
+
+  approveLeave: async (id: string): Promise<LeaveResponse> => {
+    try {
+      const response = await axiosInstance.put(`/leaves/${id}/approve`);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to approve leave ${id}:`, error);
+      throw error;
+    }
+  },
+
+  rejectLeave: async (
+    id: string,
+    data?: { remarks?: string }
+  ): Promise<LeaveResponse> => {
+    try {
+      const response = await axiosInstance.put(`/leaves/${id}/reject`, data);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to reject leave ${id}:`, error);
+      throw error;
     }
   },
 };
