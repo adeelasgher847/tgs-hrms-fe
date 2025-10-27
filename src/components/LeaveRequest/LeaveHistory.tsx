@@ -67,6 +67,10 @@ interface LeaveHistoryProps {
   title?: string;
   showNames?: boolean;
   viewMode?: 'you' | 'team';
+  currentPage?: number;
+  totalPages?: number;
+  totalItems?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const LeaveHistory: React.FC<LeaveHistoryProps> = ({
@@ -79,9 +83,13 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   title = 'Leave History',
   showNames = false,
   viewMode = 'you',
+  currentPage: serverCurrentPage = 1,
+  totalPages: serverTotalPages = 1,
+  totalItems: serverTotalItems = 0,
+  onPageChange,
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(1); 
 
   const hideNameColumn = isManager && viewMode === 'you';
   const hideDropdown = isManager && viewMode === 'you';
@@ -117,18 +125,29 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     );
   }, [selectedEmployee, leaves, isManager, viewMode, currentUserId]);
 
-  // Pagination Logic
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredLeaves.length / ITEMS_PER_PAGE)
-  );
-  const paginatedLeaves = filteredLeaves.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
-  );
+  const useServerPagination = !!onPageChange && serverTotalPages > 0;
+  const currentPage = useServerPagination ? serverCurrentPage : page;
+  const totalPages = useServerPagination
+    ? serverTotalPages
+    : Math.max(1, Math.ceil(filteredLeaves.length / ITEMS_PER_PAGE));
+  const totalItems = useServerPagination
+    ? serverTotalItems
+    : filteredLeaves.length;
 
-  const handleNext = () => setPage(prev => Math.min(prev + 1, totalPages));
-  const handlePrev = () => setPage(prev => Math.max(prev - 1, 1));
+  const paginatedLeaves = useServerPagination
+    ? filteredLeaves 
+    : filteredLeaves.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE); 
+
+  const handlePageChange = (newPage: number) => {
+    if (useServerPagination && onPageChange) {
+      onPageChange(newPage);
+    } else {
+      setPage(newPage);
+    }
+  };
+
+  const handleNext = () => handlePageChange(currentPage + 1);
+  const handlePrev = () => handlePageChange(currentPage - 1);
 
   if (!Array.isArray(leaves)) {
     return (
@@ -312,22 +331,32 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         </Paper>
       )}
 
-      <Box display='flex' justifyContent='center' my={2}>
-        <Pagination
-          count={totalPages}
-          page={page}
-          onChange={(_, newPage) => setPage(newPage)}
-          color='primary'
-        />
-      </Box>
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' my={2}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, newPage) => handlePageChange(newPage)}
+            color='primary'
+          />
+        </Box>
+      )}
       <Box textAlign='center' mb={2}>
         <Typography variant='body2' color='text.secondary'>
           Showing{' '}
-          {filteredLeaves.length === 0
+          {totalItems === 0
             ? 0
-            : Math.min((page - 1) * ITEMS_PER_PAGE + 1, filteredLeaves.length)}
-          –{Math.min(page * ITEMS_PER_PAGE, filteredLeaves.length)} of{' '}
-          {filteredLeaves.length} records
+            : useServerPagination
+              ? Math.min((currentPage - 1) * 10 + 1, totalItems)
+              : Math.min(
+                  (page - 1) * ITEMS_PER_PAGE + 1,
+                  filteredLeaves.length
+                )}
+          –
+          {useServerPagination
+            ? Math.min(currentPage * 10, totalItems)
+            : Math.min(page * ITEMS_PER_PAGE, filteredLeaves.length)}{' '}
+          of {totalItems} records
         </Typography>
       </Box>
     </Box>

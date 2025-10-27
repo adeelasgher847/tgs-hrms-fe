@@ -17,7 +17,7 @@ import {
   IconButton,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { leaveReportApi } from '../../api/leaveReportApi';
+import { leaveReportApi, type EmployeeReport } from '../../api/leaveReportApi';
 
 const cardStyle = {
   flex: '1 1 calc(33.33% - 16px)',
@@ -44,24 +44,6 @@ interface LeaveBalance {
   carryForward: boolean;
 }
 
-interface EmployeeReport {
-  employeeId: string;
-  employeeName: string;
-  department: string;
-  designation: string;
-  leaveSummary: {
-    leaveTypeName: string;
-    maxDaysPerYear: number;
-    totalDays: number;
-    remainingDays: number;
-  }[];
-  totals: {
-    approvedRequests: number;
-    pendingRequests: number;
-    rejectedRequests: number;
-  };
-}
-
 function TabPanel({
   children,
   value,
@@ -85,76 +67,46 @@ const Reports: React.FC = () => {
   const [allLeaveReports, setAllLeaveReports] = useState<EmployeeReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<{
+    userId: string | null;
+    isManager: boolean;
+    isHrAdmin: boolean;
+    isSystemAdmin: boolean;
+  } | null>(null);
 
-  const { userId, isManager, isHrAdmin } = leaveReportApi.getUserInfo();
+  useEffect(() => {
+    try {
+      const info = leaveReportApi.getUserInfo();
+      setUserInfo(info);
+    } catch (err) {
+      console.error('Error loading user info:', err);
+      setError('Failed to load user information');
+      setUserInfo({
+        userId: null,
+        isManager: false,
+        isHrAdmin: false,
+        isSystemAdmin: false,
+      });
+    }
+  }, []);
 
-  if (!userId) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: 400,
-        }}
-      >
-        <Typography color='error'>User not found. Please re-login.</Typography>
-      </Box>
-    );
-  }
+  const { userId, isManager, isHrAdmin, isSystemAdmin } = userInfo || {
+    userId: null,
+    isManager: false,
+    isHrAdmin: false,
+    isSystemAdmin: false,
+  };
+
+  const isAdminView = isHrAdmin || isSystemAdmin;
 
   const handleTabChange = (_: any, newValue: number) => setTab(newValue);
-
-  const fetchLeaveBalance = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await leaveReportApi.getLeaveBalance();
-      setLeaveBalance(data.balances || []);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTeamLeaveSummary = async () => {
-    try {
-      if (!isManager) return;
-      setLoading(true);
-      setError(null);
-      const now = new Date();
-      const data = await leaveReportApi.getTeamLeaveSummary(
-        now.getMonth() + 1,
-        now.getFullYear()
-      );
-      setTeamSummary(data.teamMembers || []);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAllLeaveReports = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await leaveReportApi.getAllLeaveReports();
-      setAllLeaveReports(data.employeeReports || []);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleExport = async () => {
     try {
       let blob;
       const now = new Date();
 
-      if (isHrAdmin) {
+      if (isAdminView) {
         const headers = [
           'Employee Name',
           'Department',
@@ -218,13 +170,70 @@ const Reports: React.FC = () => {
   };
 
   useEffect(() => {
+    if (!userInfo || !userInfo.userId) {
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
-      if (isHrAdmin) await fetchAllLeaveReports();
-      else if (tab === 0) await fetchLeaveBalance();
-      else if (isManager && tab === 1) await fetchTeamLeaveSummary();
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (userInfo.isHrAdmin || userInfo.isSystemAdmin) {
+          const data = await leaveReportApi.getAllLeaveReports();
+          console.log('Parsed data:', data);
+          console.log('Employee reports:', data.employeeReports);
+          setAllLeaveReports(data.employeeReports || []);
+        } else if (tab === 0) {
+          const data = await leaveReportApi.getLeaveBalance();
+          setLeaveBalance(data.balances || []);
+        } else if (userInfo.isManager && tab === 1) {
+          const now = new Date();
+          const data = await leaveReportApi.getTeamLeaveSummary(
+            now.getMonth() + 1,
+            now.getFullYear()
+          );
+          setTeamSummary(data.teamMembers || []);
+        }
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
-  }, [tab, isHrAdmin, isManager]);
+  }, [tab, userInfo]);
+
+  if (!userInfo) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: 400,
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: 400,
+        }}
+      >
+        <Typography color='error'>User not found. Please re-login.</Typography>
+      </Box>
+    );
+  }
 
   if (loading) {
     return (
@@ -272,7 +281,7 @@ const Reports: React.FC = () => {
         </Tooltip>
       </Box>
 
-      {isHrAdmin && (
+      {isAdminView && (
         <Box>
           {error && <Typography color='error'>{error}</Typography>}
           <TableContainer
@@ -315,31 +324,52 @@ const Reports: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {allLeaveReports.flatMap(emp =>
-                  emp.leaveSummary.map((summary, index) => (
-                    <TableRow key={`${emp.employeeId}-${index}`}>
-                      <TableCell>{emp.employeeName}</TableCell>
-                      <TableCell>{emp.department}</TableCell>
-                      <TableCell>{emp.designation}</TableCell>
-                      <TableCell>{summary.leaveTypeName}</TableCell>
-                      <TableCell align='center'>
-                        {summary.maxDaysPerYear}
-                      </TableCell>
-                      <TableCell align='center'>{summary.totalDays}</TableCell>
-                      <TableCell align='center'>
-                        {summary.remainingDays}
-                      </TableCell>
-                      <TableCell align='center'>
-                        {emp.totals.approvedRequests}
-                      </TableCell>
-                      <TableCell align='center'>
-                        {emp.totals.pendingRequests}
-                      </TableCell>
-                      <TableCell align='center'>
-                        {emp.totals.rejectedRequests}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                {allLeaveReports.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={11} align='center'>
+                      No leave reports found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  allLeaveReports.flatMap(emp =>
+                    emp.leaveSummary && emp.leaveSummary.length > 0 ? (
+                      emp.leaveSummary.map((summary, index) => (
+                        <TableRow key={`${emp.employeeId}-${index}`}>
+                          <TableCell>{emp.employeeName}</TableCell>
+                          <TableCell>{emp.department}</TableCell>
+                          <TableCell>{emp.designation}</TableCell>
+                          <TableCell>{summary.leaveTypeName}</TableCell>
+                          <TableCell align='center'>
+                            {summary.maxDaysPerYear}
+                          </TableCell>
+                          <TableCell align='center'>
+                            {summary.totalDays}
+                          </TableCell>
+                          <TableCell align='center'>
+                            {summary.remainingDays}
+                          </TableCell>
+                          <TableCell align='center'>
+                            {emp.totals?.approvedRequests || 0}
+                          </TableCell>
+                          <TableCell align='center'>
+                            {emp.totals?.pendingRequests || 0}
+                          </TableCell>
+                          <TableCell align='center'>
+                            {emp.totals?.rejectedRequests || 0}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow key={`${emp.employeeId}-no-leaves`}>
+                        <TableCell>{emp.employeeName}</TableCell>
+                        <TableCell>{emp.department}</TableCell>
+                        <TableCell>{emp.designation}</TableCell>
+                        <TableCell colSpan={8} align='center'>
+                          No leave data available
+                        </TableCell>
+                      </TableRow>
+                    )
+                  )
                 )}
               </TableBody>
             </Table>
@@ -347,7 +377,7 @@ const Reports: React.FC = () => {
         </Box>
       )}
 
-      {!isHrAdmin && (
+      {!isAdminView && (
         <>
           {isManager && (
             <Tabs

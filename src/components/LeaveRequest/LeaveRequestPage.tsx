@@ -36,6 +36,9 @@ const LeaveRequestPage = () => {
   });
   const [activeTab, setActiveTab] = useState<'apply' | 'history'>('history');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<'approved' | 'rejected' | null>(
@@ -57,14 +60,13 @@ const LeaveRequestPage = () => {
         }
       );
       const data = await response.json();
-      setLeaveTypes(data.items || []);
+      setLeaveTypes(data?.items || []);
     } catch (err) {
       console.error('Error loading leave types:', err);
     }
   }, []);
 
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
-
 
   const loadLeaves = useCallback(async () => {
     try {
@@ -74,14 +76,14 @@ const LeaveRequestPage = () => {
       if (
         ['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role)
       ) {
-        res = await leaveApi.getAllLeaves();
+        res = await leaveApi.getAllLeaves(currentPage);
       } else if (role === 'manager') {
         res =
           viewMode === 'you'
-            ? await leaveApi.getUserLeaves(currentUser?.id)
-            : await leaveApi.getTeamLeaves();
+            ? await leaveApi.getUserLeaves(currentUser?.id, currentPage)
+            : await leaveApi.getTeamLeaves(currentPage);
       } else {
-        res = await leaveApi.getUserLeaves(currentUser?.id);
+        res = await leaveApi.getUserLeaves(currentUser?.id, currentPage);
       }
 
       const leavesData: Leave[] = res.items.map((leave: any) => ({
@@ -107,13 +109,16 @@ const LeaveRequestPage = () => {
       }));
 
       setLeaves(Array.from(new Map(leavesData.map(l => [l.id, l])).values()));
+
+      setTotalPages(res.totalPages || 1);
+      setTotalItems(res.total || 0);
+      setCurrentPage(res.page || currentPage);
     } catch (err) {
       console.error('Error loading leaves:', err);
     } finally {
       setLoading(false);
     }
-  }, [currentUser, role, viewMode]);
-
+  }, [currentUser, role, viewMode, currentPage]);
 
   const handleApply = async (data: CreateLeaveRequest) => {
     try {
@@ -132,7 +137,7 @@ const LeaveRequestPage = () => {
       });
     }
   };
-t
+
   const handleConfirm = async (reason?: string) => {
     if (!selectedId || !actionType) return;
 
@@ -201,8 +206,15 @@ t
 
   useEffect(() => {
     fetchLeaveTypes();
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [viewMode]);
+
+  useEffect(() => {
     loadLeaves();
-  }, [viewMode]); 
+  }, [currentPage, viewMode, role]);
 
   if (loading)
     return (
@@ -274,10 +286,9 @@ t
       <Box sx={{ py: 3 }}>
         {['employee', 'manager'].includes(role) ? (
           activeTab === 'apply' ? (
-            <LeaveForm onSubmit={handleApply} leaveTypes={leaveTypes} />
+            <LeaveForm onSubmit={handleApply} />
           ) : (
             <>
-
               {role === 'manager' && (
                 <Box sx={{ mb: 2, textAlign: 'right' }}>
                   <Button
@@ -323,8 +334,12 @@ t
                 isAdmin={false}
                 isManager={role === 'manager'}
                 currentUserId={currentUser?.id}
-                viewMode={viewMode} // 👈 added
+                viewMode={viewMode}
                 onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                onPageChange={setCurrentPage}
               />
             </>
           )
@@ -334,6 +349,10 @@ t
             isAdmin={['hr-admin', 'system-admin'].includes(role)}
             isManager={false}
             onAction={handleAction}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
           />
         )}
       </Box>

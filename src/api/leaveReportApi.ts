@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import { getRoleName } from '../utils/roleUtils';
 
 export interface LeaveSummaryItem {
   type: string;
@@ -45,15 +46,70 @@ export interface LeaveBalanceResponse {
   balances: LeaveBalanceItem[];
 }
 
-const getUserFromLocalStorage = () => {
-  const user = localStorage.getItem('user');
-  const parsed = user ? JSON.parse(user) : null;
-  return {
-    userId: parsed?.id,
-    role: parsed?.role?.toLowerCase() || 'unknown',
-    isManager: parsed?.role?.toLowerCase() === 'manager',
-    isHrAdmin: parsed?.role?.toLowerCase() === 'hr-admin',
+export interface AllLeaveReportsResponse {
+  employeeReports: EmployeeReport[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export interface EmployeeReport {
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  designation: string;
+  leaveSummary: {
+    leaveTypeName: string;
+    maxDaysPerYear: number;
+    totalDays: number;
+    remainingDays: number;
+  }[];
+  totals: {
+    approvedRequests: number;
+    pendingRequests: number;
+    rejectedRequests: number;
   };
+}
+
+const getUserFromLocalStorage = () => {
+  try {
+    const user = localStorage.getItem('user');
+    const parsed = user ? JSON.parse(user) : null;
+    
+    if (!parsed) {
+      return {
+        userId: null,
+        role: 'unknown',
+        isManager: false,
+        isHrAdmin: false,
+        isSystemAdmin: false,
+      };
+    }
+
+    const roleName = getRoleName(parsed.role);
+    const roleLower = roleName.toLowerCase();
+
+    const isHrAdmin = roleLower === 'hr-admin' || roleLower === 'hr_admin';
+    const isSystemAdmin = roleLower === 'system-admin' || roleLower === 'system_admin';
+
+    return {
+      userId: parsed?.id,
+      role: roleLower,
+      isManager: roleLower === 'manager',
+      isHrAdmin,
+      isSystemAdmin,
+    };
+  } catch (error) {
+    console.error('Error getting user from localStorage:', error);
+    return {
+      userId: null,
+      role: 'unknown',
+      isManager: false,
+      isHrAdmin: false,
+      isSystemAdmin: false,
+    };
+  }
 };
 
 export const leaveReportApi = {
@@ -129,10 +185,50 @@ export const leaveReportApi = {
     return response.data;
   },
 
-  getAllLeaveReports: async (): Promise<any> => {
+  getAllLeaveReports: async (): Promise<AllLeaveReportsResponse> => {
     console.log('Sending All Leave Reports Request...');
     const response = await axiosInstance.get('/reports/all-leave-reports');
     console.log('All Leave Reports Response:', response.data);
-    return response.data;
+    
+    if (response.data) {
+      if (response.data.employeeReports && Array.isArray(response.data.employeeReports)) {
+        const employeeReports = response.data.employeeReports;
+        const total = response.data.total || employeeReports.length;
+        
+        return {
+          employeeReports,
+          total,
+          page: response.data.page || 1,
+          limit: response.data.limit || 10,
+          totalPages: response.data.totalPages || Math.ceil(total / 10),
+        };
+      }
+      if (Array.isArray(response.data)) {
+        return {
+          employeeReports: response.data,
+          total: response.data.length,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+        };
+      }
+      if (Array.isArray(response.data.items)) {
+        return {
+          employeeReports: response.data.items,
+          total: response.data.total || response.data.items.length,
+          page: response.data.page || 1,
+          limit: response.data.limit || 10,
+          totalPages: response.data.totalPages || Math.ceil((response.data.total || response.data.items.length) / 10),
+        };
+      }
+    }
+    
+    return {
+      employeeReports: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+    };
   },
 };
