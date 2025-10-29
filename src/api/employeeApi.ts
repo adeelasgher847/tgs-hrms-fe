@@ -16,6 +16,7 @@ export interface GenderPercentage {
 // Normalized Employee shape used in UI (matches EmployeeManager expectations)
 export interface BackendEmployee {
   id: string;
+  user_id?: string; // User ID for fetching profile pictures
   name: string;
   firstName?: string;
   lastName?: string;
@@ -26,6 +27,10 @@ export interface BackendEmployee {
   departmentId: string;
   designationId: string;
   status?: string;
+  cnic_number?: string;
+  profile_picture?: string;
+  cnic_picture?: string;
+  cnic_back_picture?: string;
   department: {
     id: string;
     name: string;
@@ -91,6 +96,10 @@ export interface EmployeeDto {
   role_name?: string; // Role name for employee creation
   role_id?: string; // Role ID (optional)
   team_id?: string; // Team ID (optional)
+  cnicNumber?: string; // CNIC Number
+  profilePicture?: File | null; // Profile Picture
+  cnicFrontPicture?: File | null; // CNIC Front Picture
+  cnicBackPicture?: File | null; // CNIC Back Picture
 }
 
 export interface EmployeeUpdateDto {
@@ -103,6 +112,10 @@ export interface EmployeeUpdateDto {
   role_id?: string;
   role_name?: string;
   gender?: string; // <-- Optionally add gender for updates
+  cnicNumber?: string; // CNIC Number
+  profilePicture?: File | null; // Profile Picture
+  cnicFrontPicture?: File | null; // CNIC Front Picture
+  cnicBackPicture?: File | null; // CNIC Back Picture
 }
 
 type EmployeeFilters = {
@@ -118,6 +131,7 @@ type RawUser = {
   first_name: string;
   last_name: string;
   tenant_id: string;
+  profile_pic?: string;
 };
 
 type RawDepartment = {
@@ -194,6 +208,7 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
   if (user && designation) {
     return {
       id: data.id as string,
+      user_id: (data.user_id as string) || user?.id, // Preserve user_id for profile picture fetching
       name: user
         ? `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim()
         : '',
@@ -206,6 +221,10 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
       departmentId: designation?.department_id ?? '',
       designationId: data.designation_id as string,
       status: data.invite_status as string,
+      cnic_number: data.cnic_number as string,
+      profile_picture: (user?.profile_pic as string) || (data.profile_picture as string),
+      cnic_picture: data.cnic_picture as string,
+      cnic_back_picture: data.cnic_back_picture as string,
       department: department
         ? {
             id: department.id,
@@ -236,6 +255,7 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
 
   return {
     id: (data.id as string) || `fallback-${Date.now()}`,
+    user_id: (data.user_id as string) || (user?.id as string),
     name: (data.name as string) || (data.title as string) || 'Unknown Employee',
     firstName: (data.first_name as string) || 'Unknown',
     lastName: (data.last_name as string) || 'Employee',
@@ -244,6 +264,10 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
     departmentId: (data.department_id as string) || '',
     designationId: (data.designation_id as string) || (data.id as string) || '',
     status: data.invite_status as string,
+    cnic_number: data.cnic_number as string,
+    profile_picture: data.profile_picture as string,
+    cnic_picture: data.cnic_picture as string,
+    cnic_back_picture: data.cnic_back_picture as string,
     department: null,
     designation: null,
     tenantId: (data.tenant_id as string) || '',
@@ -383,21 +407,51 @@ class EmployeeApiService {
 
   async createEmployee(employeeData: EmployeeDto): Promise<BackendEmployee> {
     try {
-      const payload = {
-        first_name: employeeData.first_name,
-        last_name: employeeData.last_name,
-        email: employeeData.email,
-        phone: employeeData.phone,
-        password: employeeData.password,
-        designation_id: employeeData.designationId,
-        gender: employeeData.gender,
-        role_name: employeeData.role_name,
-        role_id: employeeData.role_id,
-        team_id: employeeData.team_id,
-      };
+      // Create FormData for multipart/form-data submission
+      const formData = new FormData();
+      
+      // Add text fields
+      formData.append('first_name', employeeData.first_name);
+      formData.append('last_name', employeeData.last_name);
+      formData.append('email', employeeData.email);
+      formData.append('phone', employeeData.phone);
+      if (employeeData.password) {
+        formData.append('password', employeeData.password);
+      }
+      formData.append('designation_id', employeeData.designationId);
+      formData.append('gender', employeeData.gender);
+      if (employeeData.role_name) {
+        formData.append('role_name', employeeData.role_name);
+      }
+      if (employeeData.role_id) {
+        formData.append('role_id', employeeData.role_id);
+      }
+      if (employeeData.team_id) {
+        formData.append('team_id', employeeData.team_id);
+      }
+      if (employeeData.cnicNumber) {
+        formData.append('cnic_number', employeeData.cnicNumber);
+      }
+      
+      // Add image files if they exist
+      if (employeeData.profilePicture) {
+        formData.append('profile_picture', employeeData.profilePicture, employeeData.profilePicture.name);
+      }
+      if (employeeData.cnicFrontPicture) {
+        formData.append('cnic_picture', employeeData.cnicFrontPicture, employeeData.cnicFrontPicture.name);
+      }
+      if (employeeData.cnicBackPicture) {
+        formData.append('cnic_back_picture', employeeData.cnicBackPicture, employeeData.cnicBackPicture.name);
+      }
+
       const response = await axiosInstance.post<RawEmployee>(
         this.baseUrl,
-        payload
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       );
       return normalizeEmployee(response.data);
     } catch (error) {
@@ -412,42 +466,102 @@ class EmployeeApiService {
 
   // Create a new manager employee
   async createManager(employeeData: EmployeeDto): Promise<BackendEmployee> {
-    const payload = {
-      first_name: employeeData.first_name,
-      last_name: employeeData.last_name,
-      email: employeeData.email,
-      phone: employeeData.phone,
-      password: employeeData.password,
-      designation_id: employeeData.designationId,
-      gender: employeeData.gender,
-      role_name: employeeData.role_name,
-      role_id: employeeData.role_id,
-      team_id: employeeData.team_id,
-    };
+    // Create FormData for multipart/form-data submission
+    const formData = new FormData();
+    
+    // Add text fields
+    formData.append('first_name', employeeData.first_name);
+    formData.append('last_name', employeeData.last_name);
+    formData.append('email', employeeData.email);
+    formData.append('phone', employeeData.phone);
+    if (employeeData.password) {
+      formData.append('password', employeeData.password);
+    }
+    formData.append('designation_id', employeeData.designationId);
+    formData.append('gender', employeeData.gender);
+    if (employeeData.role_name) {
+      formData.append('role_name', employeeData.role_name);
+    }
+    if (employeeData.role_id) {
+      formData.append('role_id', employeeData.role_id);
+    }
+    if (employeeData.team_id) {
+      formData.append('team_id', employeeData.team_id);
+    }
+    if (employeeData.cnicNumber) {
+      formData.append('cnic_number', employeeData.cnicNumber);
+    }
+    
+    // Add image files if they exist
+    if (employeeData.profilePicture) {
+      formData.append('profile_picture', employeeData.profilePicture, employeeData.profilePicture.name);
+    }
+    if (employeeData.cnicFrontPicture) {
+      formData.append('cnic_picture', employeeData.cnicFrontPicture, employeeData.cnicFrontPicture.name);
+    }
+    if (employeeData.cnicBackPicture) {
+      formData.append('cnic_back_picture', employeeData.cnicBackPicture, employeeData.cnicBackPicture.name);
+    }
+
     const response = await axiosInstance.post<RawEmployee>(
       `${this.baseUrl}/manager`,
-      payload
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
     );
     return normalizeEmployee(response.data);
   }
 
   // Create a new HR admin employee
   async createHrAdmin(employeeData: EmployeeDto): Promise<BackendEmployee> {
-    const payload = {
-      first_name: employeeData.first_name,
-      last_name: employeeData.last_name,
-      email: employeeData.email,
-      phone: employeeData.phone,
-      password: employeeData.password,
-      designation_id: employeeData.designationId,
-      gender: employeeData.gender,
-      role_name: employeeData.role_name,
-      role_id: employeeData.role_id,
-      team_id: employeeData.team_id,
-    };
+    // Create FormData for multipart/form-data submission
+    const formData = new FormData();
+    
+    // Add text fields
+    formData.append('first_name', employeeData.first_name);
+    formData.append('last_name', employeeData.last_name);
+    formData.append('email', employeeData.email);
+    formData.append('phone', employeeData.phone);
+    if (employeeData.password) {
+      formData.append('password', employeeData.password);
+    }
+    formData.append('designation_id', employeeData.designationId);
+    formData.append('gender', employeeData.gender);
+    if (employeeData.role_name) {
+      formData.append('role_name', employeeData.role_name);
+    }
+    if (employeeData.role_id) {
+      formData.append('role_id', employeeData.role_id);
+    }
+    if (employeeData.team_id) {
+      formData.append('team_id', employeeData.team_id);
+    }
+    if (employeeData.cnicNumber) {
+      formData.append('cnic_number', employeeData.cnicNumber);
+    }
+    
+    // Add image files if they exist
+    if (employeeData.profilePicture) {
+      formData.append('profile_picture', employeeData.profilePicture, employeeData.profilePicture.name);
+    }
+    if (employeeData.cnicFrontPicture) {
+      formData.append('cnic_picture', employeeData.cnicFrontPicture, employeeData.cnicFrontPicture.name);
+    }
+    if (employeeData.cnicBackPicture) {
+      formData.append('cnic_back_picture', employeeData.cnicBackPicture, employeeData.cnicBackPicture.name);
+    }
+
     const response = await axiosInstance.post<RawEmployee>(
       `${this.baseUrl}/hr-admin`,
-      payload
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
     );
     return normalizeEmployee(response.data);
   }
@@ -457,34 +571,50 @@ class EmployeeApiService {
     updates: EmployeeUpdateDto & { role_name?: string }
   ): Promise<BackendEmployee> {
     try {
-      const payload: Record<string, string | number | boolean> = {};
+      // Create FormData for multipart/form-data submission
+      const formData = new FormData();
 
       if (updates.first_name !== undefined)
-        payload.first_name = updates.first_name;
+        formData.append('first_name', updates.first_name);
       if (updates.last_name !== undefined)
-        payload.last_name = updates.last_name;
-      if (updates.email !== undefined) payload.email = updates.email;
-      if (updates.phone !== undefined) payload.phone = updates.phone;
+        formData.append('last_name', updates.last_name);
+      if (updates.email !== undefined) formData.append('email', updates.email);
+      if (updates.phone !== undefined) formData.append('phone', updates.phone);
       if (updates.password && updates.password.trim() !== '')
-        payload.password = updates.password;
-      if (updates.gender !== undefined) payload.gender = updates.gender;
+        formData.append('password', updates.password);
+      if (updates.gender !== undefined) formData.append('gender', updates.gender);
 
       if (updates.role_name && updates.role_name.trim() !== '') {
-        payload.role_name = updates.role_name;
+        formData.append('role_name', updates.role_name);
       }
 
       if (updates.designationId && updates.designationId.trim() !== '') {
-        payload.designation_id = updates.designationId;
+        formData.append('designation_id', updates.designationId);
       }
 
-      console.log('Payload before PUT:', payload);
+      if (updates.cnicNumber !== undefined) formData.append('cnic_number', updates.cnicNumber);
+      
+      // Add image files if they exist
+      if (updates.profilePicture !== undefined && updates.profilePicture !== null) {
+        formData.append('profile_picture', updates.profilePicture, updates.profilePicture.name);
+      }
+      if (updates.cnicFrontPicture !== undefined && updates.cnicFrontPicture !== null) {
+        formData.append('cnic_picture', updates.cnicFrontPicture, updates.cnicFrontPicture.name);
+      }
+      if (updates.cnicBackPicture !== undefined && updates.cnicBackPicture !== null) {
+        formData.append('cnic_back_picture', updates.cnicBackPicture, updates.cnicBackPicture.name);
+      }
 
       const response = await axiosInstance.put<RawEmployee>(
         `${this.baseUrl}/${id}`,
-        payload
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       );
 
-      console.log('Update response data:', response.data);
       return normalizeEmployee(response.data);
     } catch (error) {
       const errorResult = handleApiError(error, {
@@ -537,6 +667,93 @@ class EmployeeApiService {
         isGlobal: false,
       });
       throw new Error(errorResult.message);
+    }
+  }
+
+  // Get employee profile picture - uses user_id if available, otherwise falls back to employee endpoint
+  async getEmployeeProfilePicture(employeeId: string, userId?: string): Promise<string> {
+    try {
+      // Try user endpoint first if userId is provided (profile pictures are stored under users)
+      if (userId) {
+        try {
+          const url = `/users/${userId}/profile-picture`;
+          const response = await axiosInstance.get(url, {
+            responseType: 'blob',
+          });
+          
+          // Convert blob to data URL
+          const blob = response.data;
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch (userError) {
+          // If user endpoint fails, try employee endpoint as fallback
+          console.warn(`User endpoint failed, trying employee endpoint:`, userError);
+        }
+      }
+      
+      // Fallback to employee endpoint
+      const url = `${this.baseUrl}/${employeeId}/profile-picture`;
+      const response = await axiosInstance.get(url, {
+        responseType: 'blob',
+      });
+      
+      // Convert blob to data URL
+      const blob = response.data;
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error(`Failed to load profile picture for employee ${employeeId}:`, error);
+      return '';
+    }
+  }
+
+  // Get employee CNIC picture
+  async getEmployeeCnicPicture(employeeId: string): Promise<string> {
+    try {
+      const url = `${this.baseUrl}/${employeeId}/cnic-picture`;
+      
+      const response = await axiosInstance.get(url, {
+        responseType: 'blob',
+      });
+      
+      // Convert blob to data URL
+      const blob = response.data;
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error(`Failed to load CNIC picture for employee ${employeeId}:`, error);
+      return '';
+    }
+  }
+
+  // Get employee CNIC back picture
+  async getEmployeeCnicBackPicture(employeeId: string): Promise<string> {
+    try {
+      const url = `${this.baseUrl}/${employeeId}/cnic-back-picture`;
+      
+      const response = await axiosInstance.get(url, {
+        responseType: 'blob',
+      });
+      
+      // Convert blob to data URL
+      const blob = response.data;
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error(`Failed to load CNIC back picture for employee ${employeeId}:`, error);
+      return '';
     }
   }
 }
