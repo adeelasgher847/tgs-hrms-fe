@@ -1,93 +1,195 @@
-import { useEffect } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import React, { useEffect } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Box,
+  Typography,
+} from '@mui/material';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { Benefit } from '../../types/benefits';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
 
-const schema = yup.object({
-  name: yup.string().required('Name is required'),
-  type: yup.mixed<Benefit['type']>().oneOf(['health', 'dental', 'vision', 'life', 'retirement', 'other']).required(),
-  description: yup.string().required('Description is required'),
-  eligibility: yup.string().required('Eligibility is required'),
-  status: yup.mixed<Benefit['status']>().oneOf(['active', 'inactive']).required(),
-});
-
-export interface BenefitFormModalProps {
-  open: boolean;
-  initial?: Partial<Benefit> | null;
-  onClose: () => void;
-  onSubmit: (data: Omit<Benefit, 'id'>) => Promise<void> | void;
+export interface BenefitFormValues {
+  name: string;
+  type: string;
+  description: string;
+  eligibilityCriteria: string;
+  status: string;
 }
 
-export default function BenefitFormModal({ open, initial, onClose, onSubmit }: BenefitFormModalProps) {
-  const { handleSubmit, control, reset } = useForm<Omit<Benefit, 'id'>>({
+interface BenefitFormModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (data: BenefitFormValues) => void;
+  benefit?: BenefitFormValues | null;
+}
+
+const schema = yup.object({
+  name: yup.string().required('Benefit name is required'),
+  type: yup.string().required('Benefit type is required'),
+  description: yup.string().required('Description is required'),
+  eligibilityCriteria: yup.string().required('Eligibility is required'),
+  status: yup.string().required('Status is required'),
+});
+
+const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
+  open,
+  onClose,
+  onSubmit,
+  benefit,
+}) => {
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<BenefitFormValues>({
     resolver: yupResolver(schema),
     defaultValues: {
       name: '',
-      type: 'health',
+      type: '',
       description: '',
-      eligibility: '',
-      status: 'active',
+      eligibilityCriteria: '',
+      status: '',
     },
   });
 
   useEffect(() => {
-    if (open) {
+    if (benefit) reset(benefit);
+    else
       reset({
-        name: initial?.name || '',
-        type: (initial?.type as Benefit['type']) || 'health',
-        description: initial?.description || '',
-        eligibility: initial?.eligibility || '',
-        status: (initial?.status as Benefit['status']) || 'active',
+        name: '',
+        type: '',
+        description: '',
+        eligibilityCriteria: '',
+        status: '',
       });
-    }
-  }, [open, initial, reset]);
+  }, [benefit, reset]);
+
+  const handleFormSubmit = (data: BenefitFormValues) => {
+    onSubmit(data);
+  };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{initial?.id ? 'Edit Benefit' : 'Create Benefit'}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} mt={1}>
-          <Controller name="name" control={control} render={({ field, fieldState }) => (
-            <TextField label="Name" {...field} error={!!fieldState.error} helperText={fieldState.error?.message} />
-          )} />
-          <Controller name="type" control={control} render={({ field, fieldState }) => (
-            <FormControl>
-              <InputLabel>Type</InputLabel>
-              <Select label="Type" {...field} error={!!fieldState.error}>
-                <MenuItem value="health">Health</MenuItem>
-                <MenuItem value="dental">Dental</MenuItem>
-                <MenuItem value="vision">Vision</MenuItem>
-                <MenuItem value="life">Life</MenuItem>
-                <MenuItem value="retirement">Retirement</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </Select>
-            </FormControl>
-          )} />
-          <Controller name="description" control={control} render={({ field, fieldState }) => (
-            <TextField label="Description" multiline minRows={3} {...field} error={!!fieldState.error} helperText={fieldState.error?.message} />
-          )} />
-          <Controller name="eligibility" control={control} render={({ field, fieldState }) => (
-            <TextField label="Eligibility" {...field} error={!!fieldState.error} helperText={fieldState.error?.message} />
-          )} />
-          <Controller name="status" control={control} render={({ field, fieldState }) => (
-            <FormControl>
-              <InputLabel>Status</InputLabel>
-              <Select label="Status" {...field} error={!!fieldState.error}>
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-              </Select>
-            </FormControl>
-          )} />
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleSubmit(async (data) => { await onSubmit(data); onClose(); })}>Save</Button>
-      </DialogActions>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth='sm'
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 2 } }}
+    >
+      <DialogTitle>
+        <Typography variant='h6' fontWeight={600}>
+          {benefit ? 'Edit Benefit' : 'Create Benefit'}
+        </Typography>
+      </DialogTitle>
+
+      <form onSubmit={handleSubmit(handleFormSubmit)}>
+        <DialogContent sx={{ px: 2, maxHeight: '60vh', overflowY: 'visible' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', gap: 3 }}>
+              <Controller
+                name='name'
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label='Benefit Name'
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                name='type'
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label='Benefit Type'
+                    placeholder='Health, Allowance, Voucher...'
+                    error={!!errors.type}
+                    helperText={errors.type?.message}
+                  />
+                )}
+              />
+            </Box>
+
+            <Controller
+              name='description'
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label='Description'
+                  multiline
+                  rows={2}
+                  error={!!errors.description}
+                  helperText={errors.description?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name='eligibilityCriteria'
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label='Eligibility'
+                  placeholder='e.g., All Employees / Full-time / etc.'
+                  error={!!errors.eligibilityCriteria}
+                  helperText={errors.eligibilityCriteria?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name='status'
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label='Status'
+                  placeholder='Active / Inactive'
+                  error={!!errors.status}
+                  helperText={errors.status?.message}
+                />
+              )}
+            />
+          </Box>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            position: 'sticky',
+            bottom: 0,
+            backgroundColor: 'background.paper',
+            px: 2,
+            py: 2,
+            gap: 1,
+          }}
+        >
+          <Button onClick={onClose} variant='outlined'>
+            Cancel
+          </Button>
+          <Button type='submit' variant='contained'>
+            {benefit ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </form>
     </Dialog>
   );
-}
+};
 
-
+export default BenefitFormModal;

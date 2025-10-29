@@ -110,15 +110,17 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
   };
 
   // Load available employees when dialog opens
+
   useEffect(() => {
     const loadAvailableEmployees = async () => {
       if (showAddMemberDialog) {
         try {
           setLoadingEmployees(true);
           const response = await teamApiService.getAvailableEmployees(1);
+          console.log('🔍 Available employees (frontend):', response);
           setAvailableEmployees(response.items || []);
-        } catch {
-          setAvailableEmployees([]);
+        } catch (error) {
+          console.error('❌ Error loading available employees:', error);
         } finally {
           setLoadingEmployees(false);
         }
@@ -333,18 +335,31 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
             onChange={e => setSelectedEmployeeId(e.target.value)}
             disabled={loadingEmployees}
             sx={{ mt: 2 }}
+            SelectProps={{
+              MenuProps: {
+                PaperProps: {
+                  sx: {
+                    maxHeight: 300, // prevent long lists from overflowing
+                    mt: 1, // adds margin below textfield
+                    borderRadius: 2,
+                  },
+                },
+                disableScrollLock: true, // prevents dialog scroll issues
+                container: document.body, // ensures proper z-index
+              },
+            }}
           >
             <MenuItem value='' disabled>
               {loadingEmployees ? 'Loading employees...' : lang.selectEmployee}
             </MenuItem>
-            {availableEmployees
-              .filter(emp => emp?.user?.first_name && emp?.user?.last_name)
-              .map(employee => (
-                <MenuItem key={employee.id} value={employee.id}>
-                  {employee.user?.first_name} {employee.user?.last_name} -{' '}
-                  {employee.designation?.title || 'N/A'}
-                </MenuItem>
-              ))}
+            {availableEmployees.map(employee => (
+              <MenuItem key={employee.id} value={employee.id}>
+                {employee.user
+                  ? `${employee.user.first_name || ''} ${employee.user.last_name || ''}`
+                  : 'Unknown User'}{' '}
+                - {employee.designation?.title || 'N/A'}
+              </MenuItem>
+            ))}
           </TextField>
         </DialogContent>
         <DialogActions>

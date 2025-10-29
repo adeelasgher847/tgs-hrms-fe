@@ -7,7 +7,6 @@ import {
   Select,
   MenuItem,
 } from '@mui/material';
-import { type SelectChangeEvent } from '@mui/material/Select';
 import {
   PieChart,
   Pie,
@@ -17,7 +16,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-// Sample leave summary data by user/department
+type SelectChangeEvent = React.ChangeEvent<{ value: unknown }>;
+
 const mockData: Record<string, { name: string; value: number }[]> = {
   Ali: [
     { name: 'Sick Leave', value: 4 },
@@ -41,29 +41,30 @@ const mockData: Record<string, { name: string; value: number }[]> = {
   ],
 };
 
-// Pie colors
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658'];
 
 const LeaveSummaryChart: React.FC = () => {
   const [selected, setSelected] = useState('Ali');
 
-  const handleChange = (event: SelectChangeEvent) => {
-    setSelected(event.target.value);
-  };
+  const handleChange = (event: SelectChangeEvent) =>
+    setSelected(event.target.value as string);
 
   const chartData = mockData[selected] || [];
 
   return (
     <Box mt={4}>
-      {/* Dropdown Filter */}
       <Box width={{ xs: '100%', sm: '50%' }} mb={3}>
         <FormControl fullWidth size='small'>
-          <InputLabel id='select-label'>User / Department</InputLabel>
+          <InputLabel
+            id='select-label'
+            sx={{ top: '-6px' }} 
+          >
+            User / Department
+          </InputLabel>
           <Select
             labelId='select-label'
             value={selected}
             onChange={handleChange}
-            displayEmpty
           >
             <MenuItem value='Ali'>Ali</MenuItem>
             <MenuItem value='Sara'>Sara</MenuItem>
@@ -73,48 +74,30 @@ const LeaveSummaryChart: React.FC = () => {
         </FormControl>
       </Box>
 
-      {/* Chart Title */}
-      {selected && (
-        <Typography variant='h6' gutterBottom>
-          Leave Summary – {selected}
-        </Typography>
-      )}
+      <Typography variant='h6' gutterBottom>
+        Leave Summary – {selected}
+      </Typography>
 
-      {/* Pie Chart */}
-      {selected && (
-        <Box
-          height={300}
-          sx={{
-            '& svg, & path': {
-              outline: 'none',
-              border: 'none',
-            },
-          }}
-        >
-          <ResponsiveContainer width='100%' height='100%'>
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx='50%'
-                cy='50%'
-                outerRadius={80}
-                fill='#8884d8'
-                dataKey='value'
-                label
-              >
-                {chartData.map((_entry, _index) => (
-                  <Cell
-                    key={`cell-${_index}`}
-                    fill={COLORS[_index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </Box>
-      )}
+      <Box height={300}>
+        <ResponsiveContainer width='100%' height='100%'>
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx='50%'
+              cy='50%'
+              outerRadius={80}
+              dataKey='value'
+              label
+            >
+              {chartData.map((_entry, i) => (
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </Box>
     </Box>
   );
 };

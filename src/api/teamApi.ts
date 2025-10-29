@@ -130,7 +130,7 @@ class TeamApiService {
         teams.items.map(async team => {
           if (!team.teamMembers) {
             try {
-              const membersResponse = await this.getTeamMembers(team.id, 1);
+              const membersResponse = await this.MembersgetTeam(team.id, 1);
               return {
                 ...team,
                 teamMembers: membersResponse.items || [],
@@ -173,10 +173,7 @@ class TeamApiService {
     const updatedTeam = response.data;
 
     // If manager is changing, update team membership
-    if (
-      teamData.manager_id &&
-      teamData.manager_id !== currentTeam.manager_id
-    ) {
+    if (teamData.manager_id && teamData.manager_id !== currentTeam.manager_id) {
       try {
         // Remove old manager from team if they exist
         if (currentTeam.manager_id) {
@@ -231,20 +228,19 @@ class TeamApiService {
     }
   }
 
-  // Get available employees for team assignment
-  async getAvailableEmployees(
-    page: number = 1,
-    search?: string
+  // 🔹 Get members of a specific team
+  async getTeamMembers(
+    teamId: string,
+    page: number = 1
   ): Promise<PaginatedResponse<TeamMember>> {
     try {
-      const params = new URLSearchParams({ page: page.toString() });
-      if (search) params.append('search', search);
-
       const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(
-        `${this.baseUrl}/available-employees?${params}`
+        `${this.baseUrl}/${teamId}/members?page=${page}`
       );
+      console.log(`📦 Team Members for Team ${teamId}:`, response.data);
       return response.data;
-    } catch {
+    } catch (error) {
+      console.error(`❌ Error fetching team members for ${teamId}:`, error);
       return {
         items: [],
         total: 0,
@@ -255,17 +251,34 @@ class TeamApiService {
     }
   }
 
-  // Get team members for specific team
-  async getTeamMembers(
-    teamId: string,
-    page: number = 1
+  async getAvailableEmployees(
+    page: number = 1,
+    search?: string
   ): Promise<PaginatedResponse<TeamMember>> {
     try {
+      const params = new URLSearchParams({ page: page.toString() });
+      if (search) params.append('search', search);
+
       const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(
-        `${this.baseUrl}/${teamId}/members?page=${page}`
+        `${this.baseUrl}/employee-pool?${params}`
       );
+
+      console.group('🟢 Employee Pool API Response');
+      console.log(
+        '✅ Full API URL:',
+        `${this.baseUrl}/employee-pool?${params}`
+      );
+      console.log('📦 Status:', response.status);
+      console.log('📬 Data:', response.data);
+      console.groupEnd();
+
       return response.data;
-    } catch {
+    } catch (error: any) {
+      console.group('🔴 Employee Pool API Error');
+      console.error('❌ Error Message:', error.message);
+      console.error('❌ Full Error:', error);
+      console.groupEnd();
+
       return {
         items: [],
         total: 0,
@@ -296,11 +309,13 @@ class TeamApiService {
   // Get all team members across all teams (Admin only)
   async getAllTeamMembers(
     page: number = 1
-  ): Promise<PaginatedResponse<TeamMember & { team?: { id: string; name: string } }>> {
+  ): Promise<
+    PaginatedResponse<TeamMember & { team?: { id: string; name: string } }>
+  > {
     try {
-      const response = await axiosInstance.get<PaginatedResponse<TeamMember & { team?: { id: string; name: string } }>>(
-        `${this.baseUrl}/all-members?page=${page}`
-      );
+      const response = await axiosInstance.get<
+        PaginatedResponse<TeamMember & { team?: { id: string; name: string } }>
+      >(`${this.baseUrl}/all-members?page=${page}`);
       return response.data;
     } catch {
       return {
