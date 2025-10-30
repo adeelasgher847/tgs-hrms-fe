@@ -59,7 +59,7 @@ const menuItems: MenuItem[] = [
   {
     label: 'Dashboard',
     icon: <Dashboard />,
-    subItems: [{ label: 'HR Dashboard', path: '' }],
+    subItems: [{ label: 'Dashboard', path: '' }],
   },
   {
     label: 'Projects',
@@ -88,7 +88,10 @@ const menuItems: MenuItem[] = [
   {
     label: 'Employees',
     icon: <Group />,
-    subItems: [{ label: 'Employee List', path: 'EmployeeManager' }],
+    subItems: [
+      { label: 'Employee List', path: 'EmployeeManager' },
+      { label: 'Tenant Employees', path: 'TenantEmployees' },
+    ],
   },
   {
     label: 'Teams',
@@ -183,7 +186,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
 
   const filteredMenuItems = useMemo(() => {
     const userRole = typeof role === 'string' ? role : (role as unknown)?.name;
-    
+
     const filtered = menuItems
       .filter(item => {
         const isVisible = isMenuVisibleForRole(item.label, userRole);
@@ -192,12 +195,14 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
       .map(item => ({
         ...item,
         subItems: item.subItems.filter(sub => {
-          const isSubVisible = isSubMenuVisibleForRole(item.label, sub.label, userRole);
+          const isSubVisible = isSubMenuVisibleForRole(
+            item.label,
+            sub.label,
+            userRole
+          );
 
           return isSubVisible;
         }),
-
-
       }));
     return filtered;
   }, [role]);

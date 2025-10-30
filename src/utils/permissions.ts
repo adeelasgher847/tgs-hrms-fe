@@ -54,7 +54,6 @@ export const isMenuVisibleForRole = (
   const r = normalizeRole(role);
   const label = (menuLabel || '').toLowerCase().replace(/\s+/g, '').trim();
 
-
   const allowedByRole: Record<NormalizedRole, string[]> = {
     'system-admin': [
       'dashboard',
@@ -152,6 +151,11 @@ export const isSubMenuVisibleForRole = (
 
   // Network-admin: same as admin - hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
   if (r === 'network-admin') {
+    if (parent.includes('employees')) {
+      if (!sub.includes('tenant employees')) {
+        visible = false;
+      }
+    }
     if (parent.includes('department')) {
       if (
         sub.includes('user list') ||
@@ -176,6 +180,11 @@ export const isSubMenuVisibleForRole = (
 
   // HR-admin: hide Attendance -> Reports and Leave Request
   if (r === 'hr-admin') {
+    if (parent.includes('employees')) {
+      if (!sub.includes('tenant employees')) {
+        visible = false;
+      }
+    }
     if (parent.includes('attendance')) {
       if (sub.includes('reports') || sub.includes('leave request')) {
         visible = false;
@@ -185,6 +194,11 @@ export const isSubMenuVisibleForRole = (
 
   // --- Admin rules ---
   if (r === 'admin') {
+    if (parent.includes('employees')) {
+      if (!sub.includes('tenant employees')) {
+        visible = false;
+      }
+    }
     if (parent.includes('department')) {
       if (
         sub.includes('user list') ||
@@ -201,24 +215,11 @@ export const isSubMenuVisibleForRole = (
 
   // --- Manager rules ---
   if (r === 'manager') {
-    // manager sees only attendance summary (Report), not Reports
-    if (parent.includes('attendance') && sub === 'reports') {
-      visible = false;
-    }
-  }
-
-  // --- Employee/User rules ---
-  if (r === 'employee' || r === 'user') {
-    if (parent.includes('attendance')) {
-      // Hide both Reports and Report for employees/users
-      if (sub === 'reports' || sub === 'report') {
+    if (parent.includes('employees')) {
+      if (!sub.includes('tenant employees')) {
         visible = false;
       }
     }
-  }
-
-  // --- Manager rules ---
-  if (r === 'manager') {
     // manager sees only attendance summary (Report), not Reports
     if (parent.includes('attendance') && sub === 'reports') {
       visible = false;
@@ -227,6 +228,11 @@ export const isSubMenuVisibleForRole = (
 
   // --- Employee/User rules ---
   if (r === 'employee' || r === 'user') {
+    if (parent.includes('employees')) {
+      if (!sub.includes('tenant employees')) {
+        visible = false;
+      }
+    }
     if (parent.includes('attendance')) {
       // Hide both Reports and Report for employees/users
       if (sub === 'reports' || sub === 'report') {
@@ -250,6 +256,11 @@ export const isSubMenuVisibleForRole = (
   if (r === 'system-admin') {
     if (parent.includes('assets')) {
       if (sub.includes('asset requests')) {
+        visible = false;
+      }
+    }
+    if (parent.includes('employees')) {
+      if (sub.includes('employee list')) {
         visible = false;
       }
     }
@@ -336,6 +347,7 @@ export const isDashboardPathAllowedForRole = (
       'benefits/assign',
       'benefits/reporting',
       'my-benefits',
+      'TenantEmployees',
     ]),
     'network-admin': new Set([
       '',
