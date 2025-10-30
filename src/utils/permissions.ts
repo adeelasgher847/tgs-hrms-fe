@@ -66,6 +66,7 @@ export const isMenuVisibleForRole = (
       // 'benefits',
       'leave-analytics',
       'report',
+      'audit-logs',
     ],
     'network-admin': [
       'dashboard',
@@ -105,6 +106,7 @@ export const isMenuVisibleForRole = (
     if (label.includes('leaveanalytics') || label.includes('leaveanalytics'))
       return 'leave-analytics';
     if (label.includes('report')) return 'report';
+    if (label.includes('auditlogs') || label.includes('audit-logs')) return 'audit-logs';
     // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
     return 'misc';
   })();
@@ -298,6 +300,7 @@ export const isDashboardPathAllowedForRole = (
       'attendance-summary',
       'AttendanceCheck/TimesheetLayout',
       'AttendanceCheck/TimesheetLayout',
+      'CrossTenantLeaveManagement',
       // Teams
       'teams',
       // Assets - System admin sees Inventory and Management only
@@ -312,6 +315,8 @@ export const isDashboardPathAllowedForRole = (
       'benefits/assign',
       'benefits/reporting',
       'my-benefits',
+      'cross-tenant-leaves',
+      'audit-logs',
     ]),
     'network-admin': new Set([
       '',

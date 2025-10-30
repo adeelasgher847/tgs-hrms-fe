@@ -42,89 +42,113 @@ import BenefitList from './components/Benefits/BenefitList';
 import EmployeeBenefits from './components/Benefits/EmployeeBenefits';
 import BenefitDetails from './components/Employee/BenefitDetails';
 import BenefitReport from './components/Benefits/BenefitReport';
+import CrossTenantLeaveManagement from './components/LeaveRequest/CrossTenantLeaveManagement';
+import AuditLogs from './components/AuditLogs/AuditLogs';
 
 function App() {
   return (
     <LanguageProvider>
       <UserProvider>
         <ProfilePictureProvider>
-            <Router>
-              <Routes>
-                <Route path='/' element={<Login />} />
-                <Route path='/forget' element={<Forget />} />
-                <Route path='/reset-password' element={<ResetPassword />} />
-                <Route path='/confirm-password' element={<ConfirmPassword />} />
-                <Route path='/Signup' element={<Signup />} />
-                <Route
-                  path='/signup/company-details'
-                  element={<CompanyDetails />}
-                />
-                <Route path='/signup/select-plan' element={<SelectPlan />} />
-                <Route
-                  path='/signup/confirm-payment'
-                  element={<ConfirmPayment />}
-                />
-                <Route path='/signup/success' element={<SignupSuccess />} />
+          <Router>
+            <Routes>
+              {/* Auth & Signup Routes */}
+              <Route path='/' element={<Login />} />
+              <Route path='/forget' element={<Forget />} />
+              <Route path='/reset-password' element={<ResetPassword />} />
+              <Route path='/confirm-password' element={<ConfirmPassword />} />
+              <Route path='/signup' element={<Signup />} />
+              <Route
+                path='/signup/company-details'
+                element={<CompanyDetails />}
+              />
+              <Route path='/signup/select-plan' element={<SelectPlan />} />
+              <Route
+                path='/signup/confirm-payment'
+                element={<ConfirmPayment />}
+              />
+              <Route path='/signup/success' element={<SignupSuccess />} />
 
-                <Route
-                  path='/dashboard/*'
-                  element={
-                     <CompanyProvider>
+              {/* Dashboard & App Layout */}
+              <Route
+                path='/dashboard/*'
+                element={
+                  <CompanyProvider>
                     <ThemeProvider>
                       <Layout />
                     </ThemeProvider>
-                    </CompanyProvider>
-                  }
-                >
-                  <Route index element={<Dashboard />} />
-                  <Route path='tenant' element={<TenantPage />} />
-                  <Route path='departments' element={<DepartmentList />} />
-                  <Route path='Designations' element={<DesignationManager />} />
-                  <Route path='EmployeeManager' element={<EmployeeManager />} />
-                  <Route path='UserList' element={<UserList />} />
-                  <Route
-                    path='UserProfile'
-                    element={<UserProfileComponent />}
-                  />
-                  <Route path='leaves' element={<LeaveRequestPage />} />
-                  <Route
-                    path='attendance-summary'
-                    element={<AttendanceSummaryReport />}
-                  />
-                  <Route
-                    path='EmployeeProfileView'
-                    element={<EmployeeProfileView />}
-                  />
-                  <Route path='AttendanceCheck' element={<AttendanceCheck />} />
-                  <Route path='AttendanceTable' element={<AttendanceTable />} />
-                  <Route path='Reports' element={<Reports />} />
-                  <Route path='policies' element={<PolicyList />} />
-                  <Route path='holidays' element={<HolidayList />} />
-                  <Route
-                    path='AttendanceCheck/TimesheetLayout'
-                    element={<TimesheetLayout />}
-                  />
-                  <Route path='teams' element={<TeamManager />} />
-                  <Route path='settings' element={<SettingsPage />} />
-                  <Route path='assets' element={<AssetInventory />} />
-                  <Route path='assets/inventory' element={<AssetInventory />} />
-                  <Route path='assets/requests' element={<AssetRequests />} />
-                  <Route
-                    path='assets/request-management'
-                    element={<RequestManagement />}
-                  />
-                  <Route path='benefits-list' element={<BenefitList />} />
-                  <Route
-                    path='employee-benefit'
-                    element={<EmployeeBenefits />}
-                  />
-                  <Route path='benefit-details' element={<BenefitDetails />} />
-                  <Route path='benefit-report' element={<BenefitReport />} />
-                </Route>
-                <Route path='/company-details' element={<CompanyDetails />} />
-                <Route path='*' element={<Error404 />} />
-              </Routes>
-            </Router>
+                  </CompanyProvider>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path='tenant' element={<TenantPage />} />
+                <Route path='departments' element={<DepartmentList />} />
+                <Route path='designations' element={<DesignationManager />} />
+                <Route path='employee-manager' element={<EmployeeManager />} />
+                <Route path='user-list' element={<UserList />} />
+                <Route path='user-profile' element={<UserProfileComponent />} />
+
+                {/* Leave Management */}
+                <Route path='leaves' element={<LeaveRequestPage />} />
+                <Route
+                  path='cross-tenant-leaves'
+                  element={<CrossTenantLeaveManagement />}
+                />
+
+                {/* ✅ Audit Logs */}
+                <Route path='audit-logs' element={<AuditLogs />} />
+
+                {/* Attendance */}
+                <Route
+                  path='attendance-summary'
+                  element={<AttendanceSummaryReport />}
+                />
+                <Route path='attendance-check' element={<AttendanceCheck />} />
+                <Route path='attendance-table' element={<AttendanceTable />} />
+                <Route path='reports' element={<Reports />} />
+
+                {/* HR & Settings */}
+                <Route path='policies' element={<PolicyList />} />
+                <Route path='holidays' element={<HolidayList />} />
+                <Route path='settings' element={<SettingsPage />} />
+
+                {/* Timesheet */}
+                <Route
+                  path='attendance-check/timesheet'
+                  element={<TimesheetLayout />}
+                />
+
+                {/* Teams & Assets */}
+                <Route path='teams' element={<TeamManager />} />
+                <Route path='assets' element={<AssetInventory />} />
+                <Route path='assets/inventory' element={<AssetInventory />} />
+                <Route path='assets/requests' element={<AssetRequests />} />
+                <Route
+                  path='assets/request-management'
+                  element={<RequestManagement />}
+                />
+
+                {/* Benefits */}
+                <Route path='benefits-list' element={<BenefitList />} />
+                <Route
+                  path='employee-benefits'
+                  element={<EmployeeBenefits />}
+                />
+                <Route path='benefit-details' element={<BenefitDetails />} />
+                <Route path='benefit-report' element={<BenefitReport />} />
+
+                {/* Employee */}
+                <Route
+                  path='employee-profile-view'
+                  element={<EmployeeProfileView />}
+                />
+              </Route>
+
+              {/* Other Pages */}
+              <Route path='/company-details' element={<CompanyDetails />} />
+              <Route path='*' element={<Error404 />} />
+            </Routes>
+          </Router>
           <NotificationToast />
         </ProfilePictureProvider>
       </UserProvider>
