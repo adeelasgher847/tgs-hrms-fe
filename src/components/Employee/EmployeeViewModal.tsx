@@ -16,9 +16,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import PrintIcon from '@mui/icons-material/Print';
 import { useOutletContext } from 'react-router-dom';
-import employeeApi from '../../api/employeeApi';
 
 interface Employee {
   id: string;
@@ -93,30 +91,30 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
   useEffect(() => {
     if (open && employee) {
       setLoadingImages(true);
-      
-      const loadImages = async () => {
-        try {
-          // Load all images in parallel using the new API functions
-          // Use user_id if available for profile picture (profile pictures are stored under users endpoint)
-          const [profileImg, cnicFrontImg, cnicBackImg] = await Promise.all([
-            employee.profile_picture || employee.user_id
-              ? employeeApi.getEmployeeProfilePicture(employee.id, employee.user_id)
-              : Promise.resolve(''),
-            employee.cnic_picture ? employeeApi.getEmployeeCnicPicture(employee.id) : Promise.resolve(''),
-            employee.cnic_back_picture ? employeeApi.getEmployeeCnicBackPicture(employee.id) : Promise.resolve(''),
-          ]);
 
-          setProfileImage(profileImg);
-          setCnicFrontImage(cnicFrontImg);
-          setCnicBackImage(cnicBackImg);
-        } catch (error) {
-          console.error('Error loading images:', error);
-        } finally {
-          setLoadingImages(false);
-        }
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const toAbsoluteUrl = (path?: string | null) => {
+        if (!path) return '';
+        const trimmed = path.trim();
+        const isAbsolute = /^https?:\/\//i.test(trimmed);
+        const base = API_BASE_URL.replace(/\/$/, '');
+        const url = isAbsolute ? trimmed : `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+        return `${url}?t=${Date.now()}`;
       };
 
-      loadImages();
+      try {
+        const profileUrl = toAbsoluteUrl(employee.profile_picture);
+        const cnicFrontUrl = toAbsoluteUrl(employee.cnic_picture);
+        const cnicBackUrl = toAbsoluteUrl(employee.cnic_back_picture);
+
+        setProfileImage(profileUrl);
+        setCnicFrontImage(cnicFrontUrl);
+        setCnicBackImage(cnicBackUrl);
+      } catch (error) {
+        console.error('Error resolving image URLs:', error);
+      } finally {
+        setLoadingImages(false);
+      }
     } else {
       // Reset images when modal closes
       setProfileImage('');
@@ -126,38 +124,7 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
     }
   }, [open, employee]);
 
-  const handlePrint = () => {
-    const printContent = document.getElementById('employee-print-content');
-    if (printContent) {
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(`
-          <html>
-            <head>
-              <title>Employee Details - ${employee?.name}</title>
-              <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                .header { text-align: center; margin-bottom: 30px; }
-                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-                .info-item { margin-bottom: 15px; }
-                .label { font-weight: bold; color: #333; }
-                .value { margin-top: 5px; }
-                .images { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
-                .image-container { text-align: center; }
-                .image-container img { max-width: 200px; max-height: 200px; border: 1px solid #ddd; }
-                .image-label { margin-top: 10px; font-weight: bold; }
-              </style>
-            </head>
-            <body>
-              ${printContent.innerHTML}
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
-        printWindow.print();
-      }
-    }
-  };
+  // Print functionality removed per request
 
   if (!employee) return null;
 
@@ -206,11 +173,11 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
               ) : profileImage ? (
                 <Avatar
                   src={profileImage}
-                  sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
+                  sx={{ width: 120, height: 120, mx: 'auto', mb: 2, border: '1px solid #000' }}
                 />
               ) : (
                 <Avatar
-                  sx={{ width: 120, height: 120, mx: 'auto', mb: 2, backgroundColor: darkMode ? '#555' : '#ccc' }}
+                  sx={{ width: 120, height: 120, mx: 'auto', mb: 2, backgroundColor: darkMode ? '#555' : '#ccc', border: '1px solid #000' }}
                 >
                   {employee.name.charAt(0).toUpperCase()}
                 </Avatar>
@@ -227,40 +194,42 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
                     {getLabel('Personal Information', 'المعلومات الشخصية')}
                   </Typography>
                   
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
-                      {getLabel('Name', 'الاسم')}:
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: textColor }}>
-                      {employee.name}
-                    </Typography>
-                  </Box>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
+                        {getLabel('Name', 'الاسم')}:
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: textColor }}>
+                        {employee.name}
+                      </Typography>
+                    </Box>
 
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
-                      {getLabel('Email', 'البريد الإلكتروني')}:
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: textColor }}>
-                      {employee.email}
-                    </Typography>
-                  </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
+                        {getLabel('Email', 'البريد الإلكتروني')}:
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: textColor }}>
+                        {employee.email}
+                      </Typography>
+                    </Box>
 
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
-                      {getLabel('Phone', 'رقم الهاتف')}:
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: textColor }}>
-                      {employee.phone}
-                    </Typography>
-                  </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
+                        {getLabel('Phone', 'رقم الهاتف')}:
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: textColor }}>
+                        {employee.phone}
+                      </Typography>
+                    </Box>
 
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
-                      {getLabel('CNIC Number', 'رقم الهوية')}:
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: textColor }}>
-                      {employee.cnic_number || 'N/A'}
-                    </Typography>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
+                        {getLabel('CNIC Number', 'رقم الهوية')}:
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: textColor }}>
+                        {employee.cnic_number || 'N/A'}
+                      </Typography>
+                    </Box>
                   </Box>
                 </CardContent>
               </Card>
@@ -273,40 +242,42 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
                     {getLabel('Work Information', 'معلومات العمل')}
                   </Typography>
                   
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
-                      {getLabel('Department', 'القسم')}:
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: textColor }}>
-                      {employee.department?.name || 'N/A'}
-                    </Typography>
-                  </Box>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
+                        {getLabel('Department', 'القسم')}:
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: textColor }}>
+                        {employee.department?.name || 'N/A'}
+                      </Typography>
+                    </Box>
 
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
-                      {getLabel('Designation', 'الوظيفة')}:
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: textColor }}>
-                      {employee.designation?.title || 'N/A'}
-                    </Typography>
-                  </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
+                        {getLabel('Designation', 'الوظيفة')}:
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: textColor }}>
+                        {employee.designation?.title || 'N/A'}
+                      </Typography>
+                    </Box>
 
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
-                      {getLabel('Role', 'الدور')}:
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: textColor }}>
-                      {employee.role_name || 'N/A'}
-                    </Typography>
-                  </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
+                        {getLabel('Role', 'الدور')}:
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: textColor }}>
+                        {employee.role_name || 'N/A'}
+                      </Typography>
+                    </Box>
 
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
-                      {getLabel('Status', 'الحالة')}:
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: textColor }}>
-                      {employee.status || 'N/A'}
-                    </Typography>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', color: textColor }}>
+                        {getLabel('Status', 'الحالة')}:
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: textColor }}>
+                        {employee.status || 'N/A'}
+                      </Typography>
+                    </Box>
                   </Box>
                 </CardContent>
               </Card>
@@ -316,9 +287,10 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
           {/* CNIC Images */}
           {(employee.cnic_picture || employee.cnic_back_picture) && (
             <Box sx={{ mt: 3 }}>
-              <Typography variant="h6" sx={{ color: textColor, mb: 2 }}>
+              <Typography variant="h6" sx={{ color: textColor}}>
                 {getLabel('CNIC Documents', 'وثائق الهوية')}
               </Typography>
+              <Divider sx={{ mb: 2 }} />
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
                 {employee.cnic_picture && (
                   <Box sx={{ flex: 1 }}>
@@ -409,21 +381,7 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
           )}
         </Box>
       </DialogContent>
-
-      <DialogActions sx={{ justifyContent: 'center', p: 3 }}>
-        <Button
-          onClick={handlePrint}
-          variant="contained"
-          startIcon={<PrintIcon />}
-          sx={{
-            backgroundColor: darkMode ? '#464b8a' : '#484c7f',
-            '&:hover': {
-              backgroundColor: darkMode ? '#464b8a' : '#5b56a0',
-            },
-          }}
-        >
-          {getLabel('Print', 'طباعة')}
-        </Button>
+      <DialogActions sx={{ justifyContent: 'flex-end', p: 3 }}>
         <Button
           onClick={onClose}
           variant="outlined"
