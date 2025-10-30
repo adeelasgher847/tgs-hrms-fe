@@ -32,6 +32,14 @@ const meta: Meta<typeof AttendanceTable> = {
       control: 'text',
       description: 'Current selected date',
     },
+    showDateControl: {
+      control: 'boolean',
+      description: 'Show date selector control',
+    },
+    showExportButton: {
+      control: 'boolean',
+      description: 'Show export button',
+    },
   },
 };
 
@@ -142,6 +150,8 @@ export const Default: Story = {
     loading: false,
     showEmployeeColumn: true,
     currentDate: '2024-01-15',
+    showDateControl: false,
+    showExportButton: false,
   },
 };
 
@@ -151,6 +161,8 @@ export const WithoutEmployeeColumn: Story = {
     loading: false,
     showEmployeeColumn: false,
     currentDate: '2024-01-15',
+    showDateControl: false,
+    showExportButton: false,
   },
 };
 
@@ -160,6 +172,8 @@ export const WithIncompleteRecords: Story = {
     loading: false,
     showEmployeeColumn: true,
     currentDate: '2024-01-15',
+    showDateControl: false,
+    showExportButton: false,
   },
 };
 
@@ -169,6 +183,8 @@ export const Loading: Story = {
     loading: true,
     showEmployeeColumn: true,
     currentDate: '2024-01-15',
+    showDateControl: false,
+    showExportButton: false,
   },
 };
 
@@ -178,5 +194,7 @@ export const Empty: Story = {
     loading: false,
     showEmployeeColumn: true,
     currentDate: '2024-01-15',
+    showDateControl: false,
+    showExportButton: false,
   },
 };

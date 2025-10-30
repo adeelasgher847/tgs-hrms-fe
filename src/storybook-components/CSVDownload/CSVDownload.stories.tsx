@@ -3,7 +3,7 @@ import CSVDownloadComponent from './CSVDownload';
 import { Box, Typography } from '@mui/material';
 
 const meta: Meta<typeof CSVDownloadComponent> = {
-  title: 'Material UI/CSV Download',
+  title: 'Components/CSV Download',
   component: CSVDownloadComponent,
   parameters: {
     layout: 'padded',

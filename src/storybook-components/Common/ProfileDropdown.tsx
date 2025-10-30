@@ -48,12 +48,10 @@ const ProfileDropdown: React.FC = () => {
   };
 
   const handleMenuItemClick = (action: string) => {
-    console.log(`${action} clicked`);
     handleMenuClose();
   };
 
   const handleLogout = () => {
-    console.log('Logout clicked');
     handleMenuClose();
   };
 

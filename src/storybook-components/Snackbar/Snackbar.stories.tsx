@@ -4,7 +4,7 @@ import { Box, Typography, Button } from '@mui/material';
 import { useState } from 'react';
 
 const meta: Meta<typeof SnackbarComponent> = {
-  title: 'Material UI/Snackbar',
+  title: 'Components/Snackbar',
   component: SnackbarComponent,
   parameters: {
     layout: 'fullscreen',

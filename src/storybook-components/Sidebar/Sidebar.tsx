@@ -509,7 +509,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
           </Typography>
           <Switch 
             checked={darkMode} 
-            onChange={() => console.log('Dark mode toggled')}
+            onChange={() => {}}
             size={responsive && isMobile ? 'small' : 'medium'}
           />
         </Box>

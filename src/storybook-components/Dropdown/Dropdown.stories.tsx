@@ -16,7 +16,7 @@ import {
 } from '@mui/icons-material';
 
 const meta: Meta<typeof Dropdown> = {
-  title: 'Material UI/Dropdown',
+  title: 'Components/Dropdown',
   component: Dropdown,
   parameters: {
     layout: 'padded',

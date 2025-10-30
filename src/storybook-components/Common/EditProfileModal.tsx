@@ -188,7 +188,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         profile_pic: previewImageUrl || user.profile_pic,
       };
 
-      console.log('Profile updated:', updatedUser);
       onProfileUpdated?.(updatedUser);
       onClose();
     } catch (err) {

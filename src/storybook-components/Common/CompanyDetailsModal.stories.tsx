@@ -70,7 +70,6 @@ const CompanyDetailsModalWrapper = (args: any) => {
           open={open}
           onClose={() => setOpen(false)}
           onCompanyUpdated={(updatedCompany) => {
-            console.log('Company updated:', updatedCompany);
             setOpen(false);
           }}
         />

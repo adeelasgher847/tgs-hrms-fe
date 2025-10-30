@@ -4,7 +4,7 @@ import { Box, Typography } from '@mui/material';
 import { useState } from 'react';
 
 const meta: Meta<typeof DateNavigationComponent> = {
-  title: 'Material UI/Date Navigation',
+  title: 'Components/Date Navigation',
   component: DateNavigationComponent,
   parameters: {
     layout: 'padded',
@@ -34,7 +34,7 @@ type Story = StoryObj<typeof DateNavigationComponent>;
 export const Default: Story = {
   args: {
     currentDate: '2024-01-15',
-    onDateChange: (date) => console.log('Date changed:', date),
+    onDateChange: () => {},
     disabled: false,
     responsive: false,
   },

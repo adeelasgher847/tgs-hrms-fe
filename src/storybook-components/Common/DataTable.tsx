@@ -101,7 +101,6 @@ const DataTable: React.FC<DataTableProps> = ({
   const handleEdit = () => {
     const item = data.find(d => d.id === selectedItemId);
     if (item) {
-      console.log('Edit item:', item);
       onEdit?.(item);
     }
     handleMenuClose();
@@ -110,7 +109,6 @@ const DataTable: React.FC<DataTableProps> = ({
   const handleDelete = () => {
     const item = data.find(d => d.id === selectedItemId);
     if (item) {
-      console.log('Delete item:', item);
       onDelete?.(item);
     }
     handleMenuClose();
@@ -119,7 +117,6 @@ const DataTable: React.FC<DataTableProps> = ({
   const handleView = () => {
     const item = data.find(d => d.id === selectedItemId);
     if (item) {
-      console.log('View item:', item);
       onView?.(item);
     }
     handleMenuClose();

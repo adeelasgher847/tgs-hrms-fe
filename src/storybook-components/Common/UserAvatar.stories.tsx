@@ -130,7 +130,7 @@ export const Clickable: Story = {
     user: mockUsers.johnDoe,
     size: 50,
     clickable: true,
-    onClick: () => console.log('Avatar clicked!'),
+    onClick: () => {},
   },
 };
 

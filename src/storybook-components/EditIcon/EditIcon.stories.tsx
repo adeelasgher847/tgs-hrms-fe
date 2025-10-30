@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import EditIconComponent from './EditIcon';
 
 const meta: Meta<typeof EditIconComponent> = {
-  title: 'Material UI/Edit Icon',
+  title: 'Components/Edit Icon',
   component: EditIconComponent,
   parameters: {
     layout: 'padded',

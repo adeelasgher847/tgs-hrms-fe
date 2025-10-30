@@ -4,7 +4,7 @@ import { Box, Typography, Switch, FormControlLabel } from '@mui/material';
 import { useState } from 'react';
 
 const meta: Meta<typeof SidebarComponent> = {
-  title: 'Material UI/Sidebar',
+  title: 'Components/Sidebar',
   component: SidebarComponent,
   parameters: {
     layout: 'fullscreen',
@@ -52,7 +52,6 @@ export const Default: Story = {
         <SidebarComponent
           {...args}
           darkMode={darkMode}
-          onMenuItemClick={() => console.log('Menu item clicked')}
         />
         <Box sx={{ flex: 1, p: 3, bgcolor: 'grey.50' }}>
           <Typography variant="h4" gutterBottom>

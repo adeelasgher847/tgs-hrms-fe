@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import DeleteIconComponent from './DeleteIcon';
 
 const meta: Meta<typeof DeleteIconComponent> = {
-  title: 'Material UI/Delete Icon',
+  title: 'Components/Delete Icon',
   component: DeleteIconComponent,
   parameters: {
     layout: 'padded',

@@ -125,7 +125,6 @@ const CompanyDetailsModal: React.FC<CompanyDetailsModalProps> = ({
         logo_url: modalCompanyLogo,
       };
 
-      console.log('Company updated:', updatedCompany);
       onCompanyUpdated?.(updatedCompany);
       setIsEditing(false);
       onClose();

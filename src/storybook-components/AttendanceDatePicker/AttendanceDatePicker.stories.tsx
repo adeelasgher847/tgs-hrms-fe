@@ -4,7 +4,7 @@ import { Box, Typography } from '@mui/material';
 import { useState } from 'react';
 
 const meta: Meta<typeof AttendanceDatePickerComponent> = {
-  title: 'Material UI/Attendance Date Picker',
+  title: 'Components/Attendance Date Picker',
   component: AttendanceDatePickerComponent,
   parameters: {
     layout: 'padded',
@@ -43,7 +43,7 @@ type Story = StoryObj<typeof AttendanceDatePickerComponent>;
 export const Default: Story = {
   args: {
     value: [],
-    onChange: (value) => console.log('Date changed:', value),
+    onChange: () => {},
     placeholder: 'Start Date - End Date',
     format: 'MM/DD/YYYY',
     range: true,
@@ -58,7 +58,7 @@ export const Default: Story = {
         <AttendanceDatePickerComponent
           {...args}
           value={dateValue}
-          onChange={setDateValue}
+          onChange={(value) => setDateValue(value as string[])}
         />
         <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
           Selected: {dateValue.length > 0 ? dateValue.join(' to ') : 'No date selected'}
@@ -72,7 +72,7 @@ export const Default: Story = {
 export const DarkMode: Story = {
   args: {
     value: [],
-    onChange: (value) => console.log('Date changed:', value),
+    onChange: () => {},
     placeholder: 'Start Date - End Date',
     format: 'MM/DD/YYYY',
     range: true,
@@ -90,7 +90,7 @@ export const DarkMode: Story = {
         <AttendanceDatePickerComponent
           {...args}
           value={dateValue}
-          onChange={setDateValue}
+          onChange={(value) => setDateValue(value as string[])}
         />
         <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'white' }}>
           Selected: {dateValue.length > 0 ? dateValue.join(' to ') : 'No date selected'}

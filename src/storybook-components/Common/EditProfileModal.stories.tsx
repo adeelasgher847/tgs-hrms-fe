@@ -73,7 +73,6 @@ const EditProfileModalWrapper = (args: any) => {
           open={open}
           onClose={() => setOpen(false)}
           onProfileUpdated={(updatedUser) => {
-            console.log('Profile updated:', updatedUser);
             setOpen(false);
           }}
         />

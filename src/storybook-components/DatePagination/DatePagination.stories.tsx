@@ -4,7 +4,7 @@ import { Box, Typography } from '@mui/material';
 import { useState } from 'react';
 
 const meta: Meta<typeof DateSelectionComponent> = {
-  title: 'Material UI/Date Selection & Pagination',
+  title: 'Components/Date Selection & Pagination',
   component: DateSelectionComponent,
   parameters: {
     layout: 'padded',
@@ -41,7 +41,7 @@ type Story = StoryObj<typeof DateSelectionComponent>;
 export const DateSelection: Story = {
   args: {
     value: '2024-01-15',
-    onChange: (date) => console.log('Date changed:', date),
+    onChange: () => {},
     label: 'Select Date',
     disabled: false,
     required: false,
@@ -66,7 +66,7 @@ export const DateSelection: Story = {
 export const DateSelectionWithError: Story = {
   args: {
     value: '2024-01-15',
-    onChange: (date) => console.log('Date changed:', date),
+    onChange: () => {},
     label: 'Select Date',
     error: true,
     helperText: 'Please select a valid date',
@@ -89,7 +89,7 @@ export const DateSelectionWithError: Story = {
 export const DateSelectionDisabled: Story = {
   args: {
     value: '2024-01-15',
-    onChange: (date) => console.log('Date changed:', date),
+    onChange: () => {},
     label: 'Select Date',
     disabled: true,
     responsive: false,

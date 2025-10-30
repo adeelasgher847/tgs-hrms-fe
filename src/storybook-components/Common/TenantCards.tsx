@@ -48,18 +48,18 @@ const TenantCards: React.FC<TenantCardsProps> = ({
   const [selectedTenant, setSelectedTenant] = useState<any>(null);
 
   const handleEdit = (tenant: any) => {
-    console.log('Edit tenant:', tenant);
     onEditTenant?.(tenant);
   };
 
   const handleDelete = (tenant: any) => {
-    setSelectedTenant(tenant);
-    setDeleteModalOpen(true);
+    // Do not open modal; keep icon only with no action
+    if (onDeleteTenant) {
+      onDeleteTenant(tenant);
+    }
   };
 
   const handleDeleteConfirm = () => {
     if (selectedTenant) {
-      console.log('Delete tenant:', selectedTenant);
       onDeleteTenant?.(selectedTenant);
     }
     setDeleteModalOpen(false);
@@ -72,7 +72,6 @@ const TenantCards: React.FC<TenantCardsProps> = ({
   };
 
   const handleCreate = () => {
-    console.log('Create new tenant');
     onCreateTenant?.();
   };
 

@@ -69,7 +69,6 @@ const DeleteTenantModalWrapper = (args: any) => {
           open={open}
           onClose={() => setOpen(false)}
           onConfirm={() => {
-            console.log('Delete confirmed for tenant:', args.tenantName);
             setOpen(false);
           }}
         />

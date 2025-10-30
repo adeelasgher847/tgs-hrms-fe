@@ -119,7 +119,6 @@ const AttendanceDatePickerComponent: React.FC<AttendanceDatePickerProps> = ({
   };
 
   const handleDateChange = (selectedDates: any) => {
-    console.log('Date change triggered:', selectedDates, 'Range:', range);
     
     if (range) {
       // For range selection
@@ -199,38 +198,12 @@ const AttendanceDatePickerComponent: React.FC<AttendanceDatePickerProps> = ({
         numberOfMonths={responsive && isMobile ? 1 : 2}
         weekNumber=""
         highlightToday={true}
-        highlightSelectedMonth={true}
-        highlightWeekends={true}
         weekDays={['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']}
         months={[
           'January', 'February', 'March', 'April', 'May', 'June',
           'July', 'August', 'September', 'October', 'November', 'December'
         ]}
         weekStartDayIndex={1} // Start week on Monday
-        arrowStyle={{
-          color: theme.palette.primary.main,
-        }}
-        headerStyle={{
-          backgroundColor: theme.palette.primary.main,
-          color: theme.palette.primary.contrastText,
-        }}
-        dayStyle={{
-          color: theme.palette.text.primary,
-        }}
-        selectedDayStyle={{
-          backgroundColor: theme.palette.primary.main,
-          color: theme.palette.primary.contrastText,
-        }}
-        todayStyle={{
-          backgroundColor: theme.palette.secondary.main,
-          color: theme.palette.secondary.contrastText,
-        }}
-        weekendStyle={{
-          color: theme.palette.error.main,
-        }}
-        otherMonthDayStyle={{
-          color: theme.palette.text.disabled,
-        }}
       />
     </Box>
   );

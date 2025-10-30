@@ -6,7 +6,7 @@ const meta: Meta<typeof EmployeesAvailability> = {
   title: 'Dashboard/EmployeesAvailability',
   component: EmployeesAvailability,
   parameters: {
-    layout: 'padded',
+    layout: 'centered',
     docs: {
       description: {
         component: 'Employees Availability component showing attendance and leave data with loading states and error handling.',
@@ -22,8 +22,10 @@ type Story = StoryObj<typeof EmployeesAvailability>;
 export const Default: Story = {
   render: () => (
     <StoryThemeWrapper>
-      <div style={{ width: '100%', maxWidth: 400, height: 'fit-content', minHeight: 250 }}>
-        <EmployeesAvailability />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 300 }}>
+        <div style={{ width: '100%', maxWidth: 400 }}>
+          <EmployeesAvailability />
+        </div>
       </div>
     </StoryThemeWrapper>
   ),
@@ -39,8 +41,10 @@ export const Default: Story = {
 export const Loading: Story = {
   render: () => (
     <StoryThemeWrapper>
-      <div style={{ width: '100%', maxWidth: 400, height: 'fit-content', minHeight: 250 }}>
-        <EmployeesAvailability />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 300 }}>
+        <div style={{ width: '100%', maxWidth: 400 }}>
+          <EmployeesAvailability />
+        </div>
       </div>
     </StoryThemeWrapper>
   ),
@@ -56,8 +60,10 @@ export const Loading: Story = {
 export const Mobile: Story = {
   render: () => (
     <StoryThemeWrapper>
-      <div style={{ width: '100%', maxWidth: 300, height: 'fit-content', minHeight: 200 }}>
-        <EmployeesAvailability />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 250 }}>
+        <div style={{ width: '100%', maxWidth: 300 }}>
+          <EmployeesAvailability />
+        </div>
       </div>
     </StoryThemeWrapper>
   ),

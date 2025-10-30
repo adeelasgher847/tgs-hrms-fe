@@ -81,6 +81,8 @@ interface AttendanceTableProps {
   onExport?: () => void;
   onDateChange?: (date: string) => void;
   currentDate?: string;
+  showDateControl?: boolean;
+  showExportButton?: boolean;
 }
 
 const AttendanceTable: React.FC<AttendanceTableProps> = ({
@@ -90,6 +92,8 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   onExport,
   onDateChange,
   currentDate = '2024-01-15',
+  showDateControl = true,
+  showExportButton = true,
 }) => {
   const [selectedDate, setSelectedDate] = useState(currentDate);
 
@@ -100,7 +104,6 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   };
 
   const handleExport = () => {
-    console.log('Export attendance data');
     onExport?.();
   };
 
@@ -126,42 +129,46 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
           Attendance Records
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <TextField
-            type="date"
-            value={selectedDate}
-            onChange={handleDateChange}
-            size="small"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: 'var(--bg-primary)',
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'var(--primary-color)',
+          {showDateControl && (
+            <TextField
+              type="date"
+              value={selectedDate}
+              onChange={handleDateChange}
+              size="small"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'var(--bg-primary)',
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'var(--primary-color)',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'var(--primary-color)',
+                  },
                 },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'var(--primary-color)',
+                '& .MuiInputLabel-root.Mui-focused': {
+                  color: 'var(--primary-color)',
                 },
-              },
-              '& .MuiInputLabel-root.Mui-focused': {
-                color: 'var(--primary-color)',
-              },
-            }}
-          />
-          <Button
-            variant="outlined"
-            startIcon={<FileDownloadIcon />}
-            onClick={handleExport}
-            sx={{
-              borderColor: 'var(--border-primary)',
-              color: 'var(--text-primary)',
-              fontFamily: 'var(--font-family-primary)',
-              '&:hover': {
-                borderColor: 'var(--primary-color)',
-                backgroundColor: 'var(--bg-hover)',
-              },
-            }}
-          >
-            Export
-          </Button>
+              }}
+            />
+          )}
+          {showExportButton && (
+            <Button
+              variant="outlined"
+              startIcon={<FileDownloadIcon />}
+              onClick={handleExport}
+              sx={{
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-family-primary)',
+                '&:hover': {
+                  borderColor: 'var(--primary-color)',
+                  backgroundColor: 'var(--bg-hover)',
+                },
+              }}
+            >
+              Export
+            </Button>
+          )}
         </Box>
       </Box>
 
