@@ -32,17 +32,13 @@ interface AttendanceSummaryItem {
   informedLeaves?: number;
 }
 
-const ITEMS_PER_PAGE = 10;
-
 const AttendanceSummaryReport: React.FC = () => {
   const { user, loading: userLoading } = useUser();
   const [summaryData, setSummaryData] = useState<AttendanceSummaryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<
     'thisMonth' | 'prevMonth' | '60days' | '90days'
   >('thisMonth');
-  const [, setTotalPages] = useState<number>(1);
 
   // Snackbar states
   const [openToast, setOpenToast] = useState(false);
@@ -101,7 +97,6 @@ const AttendanceSummaryReport: React.FC = () => {
         );
 
         let items: AttendanceSummaryItem[] = [];
-        let serverTotalPages: number | undefined;
 
         if (!resp) {
           items = [];
@@ -109,7 +104,6 @@ const AttendanceSummaryReport: React.FC = () => {
           items = resp as AttendanceSummaryItem[];
         } else if (Array.isArray((resp as Record<string, unknown>).items)) {
           items = (resp as Record<string, unknown>).items as AttendanceSummaryItem[];
-          serverTotalPages = (resp as Record<string, unknown>).totalPages as number;
         } else if (Array.isArray((resp as Record<string, unknown>).data)) {
           items = (resp as Record<string, unknown>).data as AttendanceSummaryItem[];
         } else {
@@ -117,23 +111,9 @@ const AttendanceSummaryReport: React.FC = () => {
         }
 
         setSummaryData(items);
-
-        if (typeof serverTotalPages === 'number' && serverTotalPages > 0) {
-          setTotalPages(serverTotalPages);
-        } else {
-          setTotalPages(Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE)));
-        }
-
-        setPage(prev => {
-          const computedCount =
-            serverTotalPages ??
-            Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
-          return Math.min(prev, computedCount);
-        });
       } catch (err) {
         console.error('Error fetching summary:', err);
         setSummaryData([]);
-        setTotalPages(1);
         showToast('Failed to fetch attendance summary.', 'error');
       } finally {
         setLoading(false);
@@ -141,15 +121,9 @@ const AttendanceSummaryReport: React.FC = () => {
     };
 
     fetchSummary();
-    setPage(1);
   }, [user, userLoading, filter, getDaysRange]);
 
   const safeData = Array.isArray(summaryData) ? summaryData : [];
-
-  const paginatedData = safeData.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
-  );
 
   const csvEscape = (value: unknown) => {
     if (value === null || value === undefined) return '';
@@ -226,7 +200,6 @@ const AttendanceSummaryReport: React.FC = () => {
             value={filter}
             onChange={e => {
               setFilter(e.target.value as 'thisMonth' | 'prevMonth' | '60days' | '90days');
-              setPage(1);
             }}
           >
             <MenuItem value='thisMonth'>This Month</MenuItem>
@@ -294,8 +267,8 @@ const AttendanceSummaryReport: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {paginatedData.length > 0 ? (
-                  paginatedData.map((row, idx) => (
+                {safeData.length > 0 ? (
+                  safeData.map((row, idx) => (
                     <TableRow key={idx}>
                       <TableCell>{row.employeeName ?? '--'}</TableCell>
                       <TableCell>{row.department ?? '--'}</TableCell>
@@ -330,12 +303,7 @@ const AttendanceSummaryReport: React.FC = () => {
       <Box textAlign='center' my={2} px={2}>
         <Box display='inline-block'>
           <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
-            Showing{' '}
-            {safeData.length === 0
-              ? 0
-              : Math.min((page - 1) * ITEMS_PER_PAGE + 1, safeData.length)}
-            –{Math.min(page * ITEMS_PER_PAGE, safeData.length)} of{' '}
-            {safeData.length} records
+            Total: {safeData.length} record{safeData.length !== 1 ? 's' : ''}
           </Typography>
         </Box>
       </Box>
