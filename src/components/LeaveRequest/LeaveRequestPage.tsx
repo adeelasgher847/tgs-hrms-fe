@@ -229,11 +229,11 @@ const LeaveRequestPage = () => {
     );
 
   return (
-    <Box sx={{ background: '#f7f7f7', minHeight: '100vh' }}>
+    <Box sx={{ minHeight: '100vh' }}>
       {/* Header */}
       <AppBar
         position='static'
-        sx={{ borderRadius: 2, backgroundColor: '#3c3572' }}
+        sx={{ borderRadius: 1, backgroundColor: '#3c3572' , boxShadow:'none' }}
       >
         <Toolbar
           sx={{
