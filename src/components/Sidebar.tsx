@@ -117,19 +117,10 @@ const menuItems: MenuItem[] = [
   {
     label: 'Leave Analytics',
     icon: <Receipt />,
-    subItems: [{ label: 'Reports', path: 'Reports' }],
-  },
-  {
-    label: 'Cross Tenant Leaves',
-    icon: <Receipt />,
     subItems: [
-      { label: 'Manage Cross Tenant Leaves', path: 'cross-tenant-leaves' },
+      { label: 'Reports', path: 'Reports' },
+      { label: 'cross-tenant-leaves', path: 'cross-tenant-leaves' },
     ],
-  },
-  {
-    label: 'Audit Logs',
-    icon: <Receipt />,
-    subItems: [{ label: 'View Logs', path: 'audit-logs' }],
   },
   {
     label: 'Benefits',

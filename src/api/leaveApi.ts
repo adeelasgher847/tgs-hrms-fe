@@ -158,7 +158,7 @@ export const leaveApi = {
 
   cancelLeave: async (id: string): Promise<LeaveResponse> => {
     try {
-      const response = await axiosInstance.patch(`/leaves/${id}/withdraw`);
+      const response = await axiosInstance.patch(`/leaves/${id}/cancel`);
       return response.data;
     } catch (error) {
       console.error(`Failed to cancel leave ${id}:`, error);

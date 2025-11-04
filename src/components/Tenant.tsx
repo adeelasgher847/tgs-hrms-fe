@@ -37,6 +37,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import EditIcon from '@mui/icons-material/Edit';
 import { useLanguage } from '../hooks/useLanguage';
 import {
   SystemTenantApi,
@@ -75,12 +76,14 @@ export const TenantPage: React.FC = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [formName, setFormName] = useState('');
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editTenantId, setEditTenantId] = useState<string | null>(null);
 
-  // ✅ Local pagination setup
+  
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // ✅ Fetch all tenants once
   const fetchTenants = async () => {
     try {
       setIsLoading(true);
@@ -102,7 +105,6 @@ export const TenantPage: React.FC = () => {
     fetchTenants();
   }, []);
 
-  // ✅ Filter tenants
   const filteredTenants = useMemo(() => {
     return tenants.filter(t => {
       if (statusFilter === 'deleted') return t.isDeleted;
@@ -112,14 +114,12 @@ export const TenantPage: React.FC = () => {
     });
   }, [tenants, statusFilter]);
 
-  // ✅ Client-side pagination
   const totalPages = Math.ceil(filteredTenants.length / itemsPerPage);
   const paginatedTenants = filteredTenants.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // ✅ Create Tenant
   const handleCreate = async () => {
     if (!formName.trim()) {
       setSnackbar({
@@ -145,7 +145,6 @@ export const TenantPage: React.FC = () => {
 
       let errorMessage = 'Failed to create tenant';
 
-      // ✅ Check if backend explicitly reports "already exists"
       if (
         err.response &&
         (err.response.status === 409 ||
@@ -161,8 +160,30 @@ export const TenantPage: React.FC = () => {
       });
     }
   };
+  const handleUpdate = async (
+    tenantId: string,
+    updatedData: { name: string }
+  ) => {
+    try {
+      const updatedTenant = await SystemTenantApi.update(tenantId, updatedData);
+      setTenants(prev =>
+        prev.map(t => (t.id === tenantId ? { ...t, ...updatedTenant } : t))
+      );
+      setSnackbar({
+        open: true,
+        message: 'Tenant updated successfully',
+        severity: 'success',
+      });
+    } catch (error) {
+      console.error('Failed to update tenant:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to update tenant',
+        severity: 'error',
+      });
+    }
+  };
 
-  // ✅ Toggle Status
   const toggleStatus = async (tenant: SystemTenant) => {
     try {
       const newStatus = tenant.status === 'active' ? 'suspended' : 'active';
@@ -188,7 +209,6 @@ export const TenantPage: React.FC = () => {
     }
   };
 
-  // ✅ Delete Tenant
   const handleDelete = async () => {
     if (!selectedTenant) return;
     try {
@@ -210,7 +230,6 @@ export const TenantPage: React.FC = () => {
     }
   };
 
-  // ✅ Restore Tenant
   const handleRestore = async (id: string) => {
     try {
       await SystemTenantApi.restore(id);
@@ -229,7 +248,6 @@ export const TenantPage: React.FC = () => {
     }
   };
 
-  // ✅ View Details
   const handleViewDetails = async (tenant: SystemTenant) => {
     try {
       const detail = await SystemTenantApi.getById(tenant.id);
@@ -335,6 +353,19 @@ export const TenantPage: React.FC = () => {
                               <VisibilityIcon />
                             </IconButton>
                           </Tooltip>
+                          <Tooltip title='Edit Tenant'>
+                            <IconButton
+                              color='primary'
+                              onClick={() => {
+                                setEditTenantId(t.id);
+                                setEditName(t.name);
+                                setIsEditOpen(true);
+                              }}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+
                           <Tooltip title='Delete'>
                             <IconButton
                               color='error'
@@ -376,7 +407,7 @@ export const TenantPage: React.FC = () => {
         </Paper>
       )}
 
-      {/* ✅ Client-side Pagination */}
+      {/*  Client-side Pagination */}
       {totalPages > 1 && (
         <Box display='flex' justifyContent='center' mt={2}>
           <Pagination
@@ -552,6 +583,52 @@ export const TenantPage: React.FC = () => {
           <Button onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
           <Button color='error' variant='contained' onClick={handleDelete}>
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Edit Tenant Modal */}
+      <Dialog
+        open={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        fullWidth
+        maxWidth='sm'
+      >
+        <DialogTitle>Edit Tenant</DialogTitle>
+        <DialogContent dividers>
+          <TextField
+            label='Tenant Name'
+            value={editName}
+            onChange={e => {
+              const value = e.target.value;
+              if (/^[A-Za-z\s]*$/.test(value)) {
+                setEditName(value);
+              }
+            }}
+            fullWidth
+            sx={{ mt: 2 }}
+            inputProps={{ maxLength: 50 }}
+            helperText='Only alphabets are allowed'
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsEditOpen(false)}>Cancel</Button>
+          <Button
+            variant='contained'
+            onClick={async () => {
+              if (!editTenantId || !editName.trim()) {
+                setSnackbar({
+                  open: true,
+                  message: 'Tenant name is required',
+                  severity: 'error',
+                });
+                return;
+              }
+              await handleUpdate(editTenantId, { name: editName.trim() });
+              setIsEditOpen(false);
+              setEditName('');
+            }}
+          >
+            Update
           </Button>
         </DialogActions>
       </Dialog>
