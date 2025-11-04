@@ -42,7 +42,7 @@ import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { Snackbar, Alert } from '@mui/material';
-import { assetCategories } from '../../data/assetCategories';
+import { assetCategories } from '../../Data/assetCategories';
 
 // Extended interface for API asset response that may include additional user information
 interface ApiAssetWithUser extends ApiAsset {
