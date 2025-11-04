@@ -106,7 +106,7 @@ const Reports: React.FC = () => {
 
   const isAdminView = isHrAdmin || isSystemAdmin;
 
-  const handleTabChange = (_: any, newValue: number) => setTab(newValue);
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => setTab(newValue);
 
   const handleExport = async () => {
     try {
@@ -185,9 +185,9 @@ const Reports: React.FC = () => {
       setTotalRecords(data.total || 0);
       setPage(data.page || 1);
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching reports:', err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Failed to fetch reports');
     } finally {
       setLoading(false);
     }
@@ -217,15 +217,15 @@ const Reports: React.FC = () => {
           );
           setTeamSummary(data.teamMembers || []);
         }
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch data');
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [tab, userInfo, page]);
+  }, [tab, userInfo, page, isAdminView, isManager]);
 
   if (!userInfo) {
     return (

@@ -44,6 +44,14 @@ import ConfirmationDialog from './ConfirmationDialog';
 import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../data/assetCategories';
 
+// Extended interface for API asset response that may include additional user information
+interface ApiAssetWithUser extends ApiAsset {
+  assignedToName?: string;
+  assignedByUser?: {
+    name: string;
+  };
+}
+
 const AssetInventory: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
@@ -87,13 +95,13 @@ const AssetInventory: React.FC = () => {
   ];
 
   // Helper function to get user name from API response or fallback
-  const getUserName = (apiAsset: ApiAsset): string => {
+  const getUserName = (apiAsset: ApiAssetWithUser): string => {
     // Check if the API response includes user name information
-    if ((apiAsset as any).assignedToName) {
-      return (apiAsset as any).assignedToName;
+    if (apiAsset.assignedToName) {
+      return apiAsset.assignedToName;
     }
-    if ((apiAsset as any).assignedByUser?.name) {
-      return (apiAsset as any).assignedByUser.name;
+    if (apiAsset.assignedByUser?.name) {
+      return apiAsset.assignedByUser.name;
     }
     // Fallback to user ID if no name is provided
     return apiAsset.assigned_to ? `User ${apiAsset.assigned_to}` : 'Unassigned';
@@ -121,7 +129,7 @@ const AssetInventory: React.FC = () => {
       }
         
         // Transform API assets to match component interface
-        const transformedAssets: Asset[] = apiAssets.map((apiAsset: ApiAsset) => {
+        const transformedAssets: Asset[] = apiAssets.map((apiAsset: ApiAssetWithUser) => {
           // Try to find matching category from our comprehensive list
           const matchingCategory = assetCategories.find(cat => 
             cat.name.toLowerCase() === apiAsset.category.toLowerCase() ||
