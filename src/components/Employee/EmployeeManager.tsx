@@ -25,6 +25,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useOutletContext } from 'react-router-dom';
 import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeList from './EmployeeList';
+import EmployeeViewModal from './EmployeeViewModal';
 import employeeApi from '../../api/employeeApi';
 import type { EmployeeDto } from '../../api/employeeApi';
 import {
@@ -39,6 +40,7 @@ import { extractErrorMessage } from '../../utils/errorHandler';
 import { exportCSV } from '../../api/exportApi';
 interface Employee {
   id: string;
+  user_id?: string; // User ID for fetching profile pictures
   name: string;
   firstName?: string;
   lastName?: string;
@@ -48,6 +50,10 @@ interface Employee {
   designationId: string;
   role_name?: string;
   status?: string;
+  cnic_number?: string;
+  profile_picture?: string;
+  cnic_picture?: string;
+  cnic_back_picture?: string;
   department: {
     id: string;
     name: string;
@@ -106,6 +112,10 @@ const EmployeeManager: React.FC = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingDeleteName, setPendingDeleteName] = useState<string>('');
+
+  // View modal state
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
 
   // Dark mode
   const bgColor = darkMode ? '#111' : '#fff';
@@ -175,6 +185,7 @@ const EmployeeManager: React.FC = () => {
         );
         const convertedEmployeesRetry: Employee[] = retry.items.map(emp => ({
           id: emp.id,
+          user_id: emp.user_id,
           name: emp.name,
           firstName: emp.firstName,
           lastName: emp.lastName,
@@ -182,7 +193,12 @@ const EmployeeManager: React.FC = () => {
           phone: emp.phone,
           departmentId: emp.departmentId,
           designationId: emp.designationId,
+          role_name: emp.role_name,
           status: emp.status,
+          cnic_number: emp.cnic_number,
+          profile_picture: emp.profile_picture,
+          cnic_picture: emp.cnic_picture,
+          cnic_back_picture: emp.cnic_back_picture,
           department: emp.department || {
             id: '',
             name: '',
@@ -213,6 +229,7 @@ const EmployeeManager: React.FC = () => {
       // Convert BackendEmployee to Employee
       const convertedEmployees: Employee[] = response.items.map(emp => ({
         id: emp.id,
+        user_id: emp.user_id,
         name: emp.name,
         firstName: emp.firstName,
         lastName: emp.lastName,
@@ -220,7 +237,12 @@ const EmployeeManager: React.FC = () => {
         phone: emp.phone,
         departmentId: emp.departmentId,
         designationId: emp.designationId,
+        role_name: emp.role_name,
         status: emp.status,
+        cnic_number: emp.cnic_number,
+        profile_picture: emp.profile_picture,
+        cnic_picture: emp.cnic_picture,
+        cnic_back_picture: emp.cnic_back_picture,
         department: emp.department || {
           id: '',
           name: '',
@@ -313,6 +335,7 @@ const EmployeeManager: React.FC = () => {
       // Convert BackendEmployee to Employee using the complete data
       const convertedEmployee: Employee = {
         id: completeEmployee.id,
+        user_id: completeEmployee.user_id,
         name: completeEmployee.name,
         firstName: completeEmployee.firstName,
         lastName: completeEmployee.lastName,
@@ -320,7 +343,12 @@ const EmployeeManager: React.FC = () => {
         phone: completeEmployee.phone,
         departmentId: completeEmployee.departmentId,
         designationId: completeEmployee.designationId,
+        role_name: completeEmployee.role_name,
         status: completeEmployee.status,
+        cnic_number: completeEmployee.cnic_number,
+        profile_picture: completeEmployee.profile_picture,
+        cnic_picture: completeEmployee.cnic_picture,
+        cnic_back_picture: completeEmployee.cnic_back_picture,
         department: completeEmployee.department
           ? {
               id: completeEmployee.department.id,
@@ -491,6 +519,10 @@ const EmployeeManager: React.FC = () => {
       password?: string;
       role_name?: string;
       team_id?: string;
+      cnicNumber?: string;
+      profilePicture?: File | null;
+      cnicFrontPicture?: File | null;
+      cnicBackPicture?: File | null;
     }
   ) => {
     if (!editing)
@@ -518,6 +550,10 @@ const EmployeeManager: React.FC = () => {
         password: updates.password,
         designationId: nextDesignationId,
         role_name: nextRoleName,
+        cnicNumber: updates.cnicNumber,
+        profilePicture: updates.profilePicture,
+        cnicFrontPicture: updates.cnicFrontPicture,
+        cnicBackPicture: updates.cnicBackPicture,
       });
 
       // Update the employee in the list without reloading
@@ -542,6 +578,7 @@ const EmployeeManager: React.FC = () => {
           emp.id === editing.id
             ? {
                 ...emp,
+                user_id: updatedEmployee.user_id || emp.user_id,
                 name: updatedEmployee.name,
                 firstName: updatedEmployee.firstName,
                 lastName: updatedEmployee.lastName,
@@ -549,7 +586,12 @@ const EmployeeManager: React.FC = () => {
                 phone: updatedEmployee.phone,
                 departmentId: newDepartmentId,
                 designationId: nextDesignationId,
+                role_name: updatedEmployee.role_name || emp.role_name,
                 status: updatedEmployee.status || emp.status,
+                cnic_number: updatedEmployee.cnic_number || emp.cnic_number,
+                profile_picture: updatedEmployee.profile_picture || emp.profile_picture,
+                cnic_picture: updatedEmployee.cnic_picture || emp.cnic_picture,
+                cnic_back_picture: updatedEmployee.cnic_back_picture || emp.cnic_back_picture,
                 department: emp.department
                   ? {
                       ...emp.department,
@@ -684,6 +726,11 @@ const EmployeeManager: React.FC = () => {
     }
   };
 
+  const handleViewEmployee = (employee: Employee) => {
+    setViewingEmployee(employee);
+    setViewModalOpen(true);
+  };
+
   // Server-driven filtering; render employees as-is
 
   const getLabel = (en: string, ar: string) => (direction === 'rtl' ? ar : en);
@@ -702,6 +749,17 @@ const EmployeeManager: React.FC = () => {
 
   const token = localStorage.getItem('token');
   const filters = { page: '1' };
+
+  // Build absolute media URL from backend path
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+  const toAbsoluteUrl = (path?: string | null) => {
+    if (!path) return '';
+    const trimmed = path.trim();
+    const isAbsolute = /^https?:\/\//i.test(trimmed);
+    const base = API_BASE_URL.replace(/\/$/, '');
+    const url = isAbsolute ? trimmed : `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+    return `${url}?t=${Date.now()}`;
+  };
 
   return (
     <Box>
@@ -872,6 +930,7 @@ const EmployeeManager: React.FC = () => {
           onDelete={requestDeleteEmployee}
           onEdit={handleEditOpen}
           onResendInvite={handleResendInvite}
+          onView={handleViewEmployee}
           loading={loading}
           departments={departments}
           designations={designations}
@@ -1028,6 +1087,10 @@ const EmployeeManager: React.FC = () => {
                     lastName: editing.lastName || '',
                     email: editing.email,
                     phone: editing.phone,
+                    cnicNumber: editing.cnic_number || ' ',
+                    profilePicture: toAbsoluteUrl(editing.profile_picture),
+                    cnicFrontPicture: toAbsoluteUrl(editing.cnic_picture),
+                    cnicBackPicture: toAbsoluteUrl(editing.cnic_back_picture),
                     role_name: editing.role_name || '',
                     designationId: editing.designationId,
                     departmentId: editing.departmentId,
@@ -1038,6 +1101,16 @@ const EmployeeManager: React.FC = () => {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Employee View Modal */}
+      <EmployeeViewModal
+        open={viewModalOpen}
+        onClose={() => {
+          setViewModalOpen(false);
+          setViewingEmployee(null);
+        }}
+        employee={viewingEmployee}
+      />
     </Box>
   );
 };

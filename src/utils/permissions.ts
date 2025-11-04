@@ -63,6 +63,8 @@ export const isMenuVisibleForRole = (
       'teams',
       'assets',
       'attendance',
+      // 'benefits',
+      'leave-analytics',
       'report',
       'audit logs',
       'performance',
@@ -74,10 +76,9 @@ export const isMenuVisibleForRole = (
       'teams',
       'assets',
       'attendance',
-      'report',
       'benefits',
     ],
-    'hr-admin': ['attendance', 'teams', 'benefits'],
+    'hr-admin': ['attendance', 'teams', 'benefits', 'leave-analytics'],
     admin: [
       'dashboard',
       'department',
@@ -87,10 +88,10 @@ export const isMenuVisibleForRole = (
       'attendance',
       'report',
     ],
-    manager: ['teams', 'attendance', 'assets', 'report'],
-    employee: ['attendance', 'assets', 'benefits'],
-    user: ['attendance', 'assets'],
-    unknown: [],
+    manager: ['teams', 'attendance', 'assets', 'report', 'leave-analytics'],
+    employee: ['attendance', 'assets', 'benefits', 'leave-analytics',],
+    user: ['attendance', 'assets', 'benefits'],
+    unknown: ['benefits'], // Temporarily allow benefits for unknown roles
   };
 
   // map synonyms from current sidebar to requirement naming
@@ -103,6 +104,8 @@ export const isMenuVisibleForRole = (
     if (label.includes('asset')) return 'assets';
     if (label.includes('benefit')) return 'benefits';
     if (label.includes('attendance')) return 'attendance';
+    if (label.includes('leaveanalytics') || label.includes('leaveanalytics'))
+      return 'leave-analytics';
     if (label.includes('report')) return 'report';
     if (label.includes('benefits')) return 'benefits';
     if (label.includes('auditlogs')) return 'audit logs';
@@ -137,12 +140,6 @@ export const isSubMenuVisibleForRole = (
         sub.includes('policies') ||
         sub.includes('holidays')
       ) {
-        visible = false;
-      }
-    }
-    if (parent.includes('attendance')) {
-      // hide Reports for system-admin
-      if (sub.includes('reports')) {
         visible = false;
       }
     }
@@ -193,7 +190,7 @@ export const isSubMenuVisibleForRole = (
       }
     }
     if (parent.includes('attendance')) {
-      if (sub.includes('reports') || sub.includes('leave request')) {
+      if (sub.includes('reports')) {
         visible = false;
       }
     }
@@ -251,7 +248,7 @@ export const isSubMenuVisibleForRole = (
     }
     if (parent.includes('attendance')) {
       // Hide both Reports and Report for employees/users
-      if (sub === 'reports' || sub === 'report') {
+      if (sub === 'report') {
         visible = false;
       }
     }
@@ -421,6 +418,8 @@ export const isDashboardPathAllowedForRole = (
       'benefits/reporting',
       'my-benefits',
       'teams',
+      'leaves',
+      'Reports',
       'benefits-list',
       'employee-benefit',
     ]),
@@ -455,7 +454,7 @@ export const isDashboardPathAllowedForRole = (
     manager: new Set([
       'AttendanceCheck',
       'AttendanceTable',
-      // 'Reports',
+      'Reports',
       'AttendanceCheck/TimesheetLayout',
       'teams',
       'leaves',
@@ -474,7 +473,7 @@ export const isDashboardPathAllowedForRole = (
     employee: new Set([
       'AttendanceCheck',
       'AttendanceTable',
-      // 'Reports',
+      'Reports',
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',

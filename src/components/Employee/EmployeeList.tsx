@@ -16,6 +16,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ReplayIcon from '@mui/icons-material/Replay';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useOutletContext } from 'react-router-dom';
 
 interface Employee {
@@ -28,6 +29,10 @@ interface Employee {
   departmentId: string;
   designationId: string;
   status?: string;
+  cnic_number?: string;
+  profile_picture?: string;
+  cnic_picture?: string;
+  cnic_back_picture?: string;
   department: {
     id: string;
     name: string;
@@ -54,6 +59,7 @@ interface EmployeeListProps {
   onDelete?: (id: string) => void;
   onEdit?: (employee: Employee) => void;
   onResendInvite?: (employee: Employee) => void;
+  onView?: (employee: Employee) => void;
   loading?: boolean;
   departments?: Record<string, string>;
   designations?: Record<string, string>;
@@ -69,6 +75,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   onDelete,
   onEdit,
   onResendInvite,
+  onView,
   loading,
   departments = {},
   designations = {},
@@ -111,10 +118,13 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
                 {direction === 'rtl' ? 'الوظيفة' : 'Designation'}
               </TableCell>
+              <TableCell sx={{ color: textColor, fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                {direction === 'rtl' ? 'رقم الهوية' : 'CNIC Number'}
+              </TableCell>
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
                 {direction === 'rtl' ? 'الحالة' : 'Status'}
               </TableCell>
-              {(onDelete || onEdit || onResendInvite) && (
+              {(onDelete || onEdit || onResendInvite || onView) && (
                 <TableCell
                   sx={{ color: textColor, fontWeight: 'bold', width: '120px' }}
                 >
@@ -126,7 +136,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           <TableBody>
             {loading && (
               <TableRow>
-                <TableCell colSpan={onDelete || onEdit || onResendInvite ? 7 : 6} align='center'>
+                <TableCell colSpan={onDelete || onEdit || onResendInvite || onView ? 8 : 7} align='center'>
                   <Box display='flex' justifyContent='center' py={4}>
                     <CircularProgress />
                   </Box>
@@ -135,7 +145,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             )}
             {!loading && employees.length === 0 && (
               <TableRow>
-                <TableCell colSpan={onDelete || onEdit || onResendInvite ? 7 : 6} align='center'>
+                <TableCell colSpan={onDelete || onEdit || onResendInvite || onView ? 8 : 7} align='center'>
                   <Box display='flex' justifyContent='center' py={4}>
                     <Typography variant='body1' color='textSecondary'>
                       {direction === 'rtl'
@@ -176,10 +186,13 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                       emp.designationId ||
                       '—'}
                   </TableCell>
+                  <TableCell sx={{ color: textColor, whiteSpace: 'nowrap' }}>
+                    {emp.cnic_number || '—'}
+                  </TableCell>
                   <TableCell sx={{ color: textColor }}>
                     {emp.status || 'N/A'}
                   </TableCell>
-                  {(onDelete || onEdit || onResendInvite) && (
+                  {(onDelete || onEdit || onResendInvite || onView) && (
                     <TableCell sx={{ textAlign: 'center' }}>
                       <Box
                         display='flex'
@@ -187,6 +200,31 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                         alignItems='center'
                         gap={1}
                       >
+                        {onView && (
+                          <Tooltip
+                            title={
+                              direction === 'rtl'
+                                ? 'عرض التفاصيل'
+                                : 'View Details'
+                            }
+                            placement='bottom'
+                          >
+                            <IconButton
+                              onClick={() => onView(emp)}
+                              disabled={loading}
+                              sx={{
+                                color: darkMode ? '#4caf50' : '#2e7d32',
+                                '&:hover': {
+                                  backgroundColor: darkMode
+                                    ? 'rgba(76,175,80,0.1)'
+                                    : 'rgba(46,125,50,0.1)',
+                                },
+                              }}
+                            >
+                              <VisibilityIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                         {onResendInvite && (
                           <Tooltip
                             title={

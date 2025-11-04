@@ -2,17 +2,29 @@ export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'withdrawn';
 
 export interface Leave {
   id: string;
-  userId?: string;
-  user_id?: string;
-  name?: string; // Employee name (for display)
-  fromDate: string; // This will be mapped from from_date
-  toDate: string; // This will be mapped from to_date
+  employeeId: string;
+  employee?: {
+    id: string;
+    first_name: string;
+    last_name?: string;
+    email: string;
+  };
+  leaveTypeId: string;
+  leaveType?: {
+    id: string;
+    name: string;
+    description?: string;
+    maxDaysPerYear?: number;
+    carryForward?: boolean;
+  };
   reason: string;
-  type: string;
+  remarks?: string;
+  startDate: string;
+  endDate: string;
+  totalDays?: number;
   status: LeaveStatus;
-  isAdminView?: boolean;
-  applied?: string; // Applied date for display
-  secondaryReason?: string; // For rejection reasons
-  created_at?: string;
-  updated_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  approvedAt?: string | null;
+  approvedBy?: string | null;
 }

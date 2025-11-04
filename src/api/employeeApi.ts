@@ -15,7 +15,7 @@ export interface GenderPercentage {
 
 export interface BackendEmployee {
   id: string;
-  user_id: string; 
+  user_id?: string; // User ID for fetching profile pictures
   name: string;
   firstName?: string;
   lastName?: string;
@@ -26,6 +26,10 @@ export interface BackendEmployee {
   departmentId: string;
   designationId: string;
   status?: string;
+  cnic_number?: string;
+  profile_picture?: string;
+  cnic_picture?: string;
+  cnic_back_picture?: string;
   department: {
     id: string;
     name: string;
@@ -81,12 +85,16 @@ export interface EmployeeDto {
   last_name: string;
   email: string;
   phone: string;
-  password?: string;
-  designationId: string;
-  gender: string;
-  role_name?: string;
-  role_id?: string;
-  team_id?: string;
+  password?: string; // Made optional since backend will generate temporary password
+  designationId: string; // UX carries department selection separately
+  gender: string; // <-- Add gender
+  role_name?: string; // Role name for employee creation
+  role_id?: string; // Role ID (optional)
+  team_id?: string; // Team ID (optional)
+  cnicNumber?: string; // CNIC Number
+  profilePicture?: File | null; // Profile Picture
+  cnicFrontPicture?: File | null; // CNIC Front Picture
+  cnicBackPicture?: File | null; // CNIC Back Picture
 }
 
 export interface EmployeeUpdateDto {
@@ -98,7 +106,11 @@ export interface EmployeeUpdateDto {
   designationId?: string;
   role_id?: string;
   role_name?: string;
-  gender?: string;
+  gender?: string; // <-- Optionally add gender for updates
+  cnicNumber?: string; // CNIC Number
+  profilePicture?: File | null; // Profile Picture
+  cnicFrontPicture?: File | null; // CNIC Front Picture
+  cnicBackPicture?: File | null; // CNIC Back Picture
 }
 
 type EmployeeFilters = {
@@ -113,6 +125,7 @@ type RawUser = {
   first_name: string;
   last_name: string;
   tenant_id: string;
+  profile_pic?: string;
 };
 
 type RawDepartment = {
@@ -195,17 +208,23 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
   if (user && designation) {
     return {
       id: data.id as string,
-      user_id: (data.user_id as string) || user.id,
-      name: `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim(),
-      firstName: user.first_name,
-      lastName: user.last_name,
-      email: user.email ?? '',
-      phone: user.phone ?? '',
+      user_id: (data.user_id as string) || user?.id, // Preserve user_id for profile picture fetching
+      name: user
+        ? `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim()
+        : '',
+      firstName: user?.first_name,
+      lastName: user?.last_name,
+      email: user?.email ?? '',
+      phone: user?.phone ?? '',
       role_id: roleId,
       role_name: roleName,
       departmentId: designation.department_id ?? '',
       designationId: data.designation_id as string,
       status: data.invite_status as string,
+      cnic_number: data.cnic_number as string,
+      profile_picture: (user?.profile_pic as string) || (data.profile_picture as string),
+      cnic_picture: data.cnic_picture as string,
+      cnic_back_picture: data.cnic_back_picture as string,
       department: department
         ? {
             id: department.id,
@@ -232,7 +251,7 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
 
   return {
     id: (data.id as string) || `fallback-${Date.now()}`,
-    user_id: (data.user_id as string) || '',
+    user_id: (data.user_id as string) || (user?.id as string),
     name: (data.name as string) || (data.title as string) || 'Unknown Employee',
     firstName: (data.first_name as string) || 'Unknown',
     lastName: (data.last_name as string) || 'Employee',
@@ -241,6 +260,10 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
     departmentId: (data.department_id as string) || '',
     designationId: (data.designation_id as string) || (data.id as string) || '',
     status: data.invite_status as string,
+    cnic_number: data.cnic_number as string,
+    profile_picture: data.profile_picture as string,
+    cnic_picture: data.cnic_picture as string,
+    cnic_back_picture: data.cnic_back_picture as string,
     department: null,
     designation: null,
     tenantId: (data.tenant_id as string) || '',
@@ -341,21 +364,51 @@ class EmployeeApiService {
 
   async createEmployee(employeeData: EmployeeDto): Promise<BackendEmployee> {
     try {
-      const payload = {
-        first_name: employeeData.first_name,
-        last_name: employeeData.last_name,
-        email: employeeData.email,
-        phone: employeeData.phone,
-        password: employeeData.password,
-        designation_id: employeeData.designationId,
-        gender: employeeData.gender,
-        role_name: employeeData.role_name,
-        role_id: employeeData.role_id,
-        team_id: employeeData.team_id,
-      };
+      // Create FormData for multipart/form-data submission
+      const formData = new FormData();
+      
+      // Add text fields
+      formData.append('first_name', employeeData.first_name);
+      formData.append('last_name', employeeData.last_name);
+      formData.append('email', employeeData.email);
+      formData.append('phone', employeeData.phone);
+      if (employeeData.password) {
+        formData.append('password', employeeData.password);
+      }
+      formData.append('designation_id', employeeData.designationId);
+      formData.append('gender', employeeData.gender);
+      if (employeeData.role_name) {
+        formData.append('role_name', employeeData.role_name);
+      }
+      if (employeeData.role_id) {
+        formData.append('role_id', employeeData.role_id);
+      }
+      if (employeeData.team_id) {
+        formData.append('team_id', employeeData.team_id);
+      }
+      if (employeeData.cnicNumber) {
+        formData.append('cnic_number', employeeData.cnicNumber);
+      }
+      
+      // Add image files if they exist
+      if (employeeData.profilePicture) {
+        formData.append('profile_picture', employeeData.profilePicture, employeeData.profilePicture.name);
+      }
+      if (employeeData.cnicFrontPicture) {
+        formData.append('cnic_picture', employeeData.cnicFrontPicture, employeeData.cnicFrontPicture.name);
+      }
+      if (employeeData.cnicBackPicture) {
+        formData.append('cnic_back_picture', employeeData.cnicBackPicture, employeeData.cnicBackPicture.name);
+      }
+
       const response = await axiosInstance.post<RawEmployee>(
         this.baseUrl,
-        payload
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       );
       return normalizeEmployee(response.data);
     } catch (error) {
@@ -368,24 +421,154 @@ class EmployeeApiService {
     }
   }
 
+  async createManager(employeeData: EmployeeDto): Promise<BackendEmployee> {
+    // Create FormData for multipart/form-data submission
+    const formData = new FormData();
+    
+    // Add text fields
+    formData.append('first_name', employeeData.first_name);
+    formData.append('last_name', employeeData.last_name);
+    formData.append('email', employeeData.email);
+    formData.append('phone', employeeData.phone);
+    if (employeeData.password) {
+      formData.append('password', employeeData.password);
+    }
+    formData.append('designation_id', employeeData.designationId);
+    formData.append('gender', employeeData.gender);
+    if (employeeData.role_name) {
+      formData.append('role_name', employeeData.role_name);
+    }
+    if (employeeData.role_id) {
+      formData.append('role_id', employeeData.role_id);
+    }
+    if (employeeData.team_id) {
+      formData.append('team_id', employeeData.team_id);
+    }
+    if (employeeData.cnicNumber) {
+      formData.append('cnic_number', employeeData.cnicNumber);
+    }
+    
+    // Add image files if they exist
+    if (employeeData.profilePicture) {
+      formData.append('profile_picture', employeeData.profilePicture, employeeData.profilePicture.name);
+    }
+    if (employeeData.cnicFrontPicture) {
+      formData.append('cnic_picture', employeeData.cnicFrontPicture, employeeData.cnicFrontPicture.name);
+    }
+    if (employeeData.cnicBackPicture) {
+      formData.append('cnic_back_picture', employeeData.cnicBackPicture, employeeData.cnicBackPicture.name);
+    }
+
+    const response = await axiosInstance.post<RawEmployee>(
+      `${this.baseUrl}/manager`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return normalizeEmployee(response.data);
+  }
+
+  // Create a new HR admin employee
+  async createHrAdmin(employeeData: EmployeeDto): Promise<BackendEmployee> {
+    // Create FormData for multipart/form-data submission
+    const formData = new FormData();
+    
+    // Add text fields
+    formData.append('first_name', employeeData.first_name);
+    formData.append('last_name', employeeData.last_name);
+    formData.append('email', employeeData.email);
+    formData.append('phone', employeeData.phone);
+    if (employeeData.password) {
+      formData.append('password', employeeData.password);
+    }
+    formData.append('designation_id', employeeData.designationId);
+    formData.append('gender', employeeData.gender);
+    if (employeeData.role_name) {
+      formData.append('role_name', employeeData.role_name);
+    }
+    if (employeeData.role_id) {
+      formData.append('role_id', employeeData.role_id);
+    }
+    if (employeeData.team_id) {
+      formData.append('team_id', employeeData.team_id);
+    }
+    if (employeeData.cnicNumber) {
+      formData.append('cnic_number', employeeData.cnicNumber);
+    }
+    
+    // Add image files if they exist
+    if (employeeData.profilePicture) {
+      formData.append('profile_picture', employeeData.profilePicture, employeeData.profilePicture.name);
+    }
+    if (employeeData.cnicFrontPicture) {
+      formData.append('cnic_picture', employeeData.cnicFrontPicture, employeeData.cnicFrontPicture.name);
+    }
+    if (employeeData.cnicBackPicture) {
+      formData.append('cnic_back_picture', employeeData.cnicBackPicture, employeeData.cnicBackPicture.name);
+    }
+
+    const response = await axiosInstance.post<RawEmployee>(
+      `${this.baseUrl}/hr-admin`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return normalizeEmployee(response.data);
+  }
+
   async updateEmployee(
     id: string,
     updates: EmployeeUpdateDto & { role_name?: string }
   ): Promise<BackendEmployee> {
     try {
-      const payload: Record<string, string> = {};
-      if (updates.first_name) payload.first_name = updates.first_name;
-      if (updates.last_name) payload.last_name = updates.last_name;
-      if (updates.email) payload.email = updates.email;
-      if (updates.phone) payload.phone = updates.phone;
-      if (updates.password) payload.password = updates.password;
-      if (updates.gender) payload.gender = updates.gender;
-      if (updates.role_name) payload.role_name = updates.role_name;
-      if (updates.designationId) payload.designation_id = updates.designationId;
+      // Create FormData for multipart/form-data submission
+      const formData = new FormData();
+
+      if (updates.first_name !== undefined)
+        formData.append('first_name', updates.first_name);
+      if (updates.last_name !== undefined)
+        formData.append('last_name', updates.last_name);
+      if (updates.email !== undefined) formData.append('email', updates.email);
+      if (updates.phone !== undefined) formData.append('phone', updates.phone);
+      if (updates.password && updates.password.trim() !== '')
+        formData.append('password', updates.password);
+      if (updates.gender !== undefined) formData.append('gender', updates.gender);
+
+      if (updates.role_name && updates.role_name.trim() !== '') {
+        formData.append('role_name', updates.role_name);
+      }
+
+      if (updates.designationId && updates.designationId.trim() !== '') {
+        formData.append('designation_id', updates.designationId);
+      }
+
+      if (updates.cnicNumber !== undefined) formData.append('cnic_number', updates.cnicNumber);
+      
+      // Add image files if they exist
+      if (updates.profilePicture !== undefined && updates.profilePicture !== null) {
+        formData.append('profile_picture', updates.profilePicture, updates.profilePicture.name);
+      }
+      if (updates.cnicFrontPicture !== undefined && updates.cnicFrontPicture !== null) {
+        formData.append('cnic_picture', updates.cnicFrontPicture, updates.cnicFrontPicture.name);
+      }
+      if (updates.cnicBackPicture !== undefined && updates.cnicBackPicture !== null) {
+        formData.append('cnic_back_picture', updates.cnicBackPicture, updates.cnicBackPicture.name);
+      }
 
       const response = await axiosInstance.put<RawEmployee>(
         `${this.baseUrl}/${id}`,
-        payload
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       );
       return normalizeEmployee(response.data);
     } catch (error) {
@@ -420,6 +603,8 @@ class EmployeeApiService {
     );
     return { success: true, message: response.data.message };
   }
+
+  // Image blob endpoints removed. Image paths should come directly from list/detail APIs.
 }
 
 export const getEmployeeJoiningReport = async (): Promise<

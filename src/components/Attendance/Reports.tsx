@@ -1,202 +1,705 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Tabs,
-  Tab,
-  Typography,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Card,
   CardContent,
+  Typography,
   Table,
+  TableBody,
+  TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TableCell,
-  TableBody,
+  Tabs,
+  Tab,
+  CircularProgress,
+  Tooltip,
+  IconButton,
+  Pagination,
 } from '@mui/material';
-import LeaveSummaryChart from './LeaveSummaryChart';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import { leaveReportApi, type EmployeeReport } from '../../api/leaveReportApi';
+import { useIsDarkMode } from '../../theme';
 
-const cardStyle = (theme: unknown) => ({
-  width: { xs: '100%', sm: '250px' },
-  flexShrink: 0,
+const getCardStyle = (darkMode: boolean) => ({
+  flex: '1 1 calc(33.33% - 16px)',
+  minWidth: '250px',
   boxShadow: 'none',
-  border: `1px solid ${theme.palette.card?.border || theme.palette.divider}`,
-  borderRadius: '0.375rem',
-  backgroundColor:
-    theme.palette.card?.background || theme.palette.background.paper,
+  borderRadius: '0.5rem',
+  backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
 });
-const Reports: React.FC = () => {
-  const [tab, setTab] = useState(0);
-  const [selectedMonth, setSelectedMonth] = useState('');
-  const [selectedUser, setSelectedUser] = useState('');
-  const direction = theme.direction;
 
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setTab(newValue);
+interface TeamMemberSummary {
+  name: string;
+  email: string;
+  department: string;
+  designation: string;
+  totalLeaveDays: number;
+}
+
+interface LeaveBalance {
+  leaveTypeName: string;
+  used: number;
+  remaining: number;
+  maxDaysPerYear: number;
+  carryForward: boolean;
+}
+
+function TabPanel({
+  children,
+  value,
+  index,
+}: {
+  children?: React.ReactNode;
+  value: number;
+  index: number;
+}) {
+  return (
+    <div hidden={value !== index}>
+      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+const ITEMS_PER_PAGE = 10;
+
+const Reports: React.FC = () => {
+  const darkMode = useIsDarkMode();
+  const [tab, setTab] = useState(0);
+  const [teamSummary, setTeamSummary] = useState<TeamMemberSummary[]>([]);
+  const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
+  const [allLeaveReports, setAllLeaveReports] = useState<EmployeeReport[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<{
+    userId: string | null;
+    isManager: boolean;
+    isHrAdmin: boolean;
+    isSystemAdmin: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const info = leaveReportApi.getUserInfo();
+      setUserInfo(info);
+    } catch (err) {
+      console.error('Error loading user info:', err);
+      setError('Failed to load user information');
+      setUserInfo({
+        userId: null,
+        isManager: false,
+        isHrAdmin: false,
+        isSystemAdmin: false,
+      });
+    }
+  }, []);
+
+  const { userId, isManager, isHrAdmin, isSystemAdmin } = userInfo || {
+    userId: null,
+    isManager: false,
+    isHrAdmin: false,
+    isSystemAdmin: false,
   };
 
-  const attendanceData = [
-    {
-      date: '01 Jan',
-      month: 'January',
-      userId: '1',
-      checkIn: '09:00 AM',
-      status: 'Present',
-      hours: 8,
-    },
-    {
-      date: '02 Jan',
-      month: 'January',
-      userId: '1',
-      checkIn: '-',
-      status: 'Absent',
-      hours: 0,
-    },
-    {
-      date: '01 Feb',
-      month: 'February',
-      userId: '2',
-      checkIn: '09:30 AM',
-      status: 'Present',
-      hours: 7,
-    },
-  ];
+  const isAdminView = isHrAdmin || isSystemAdmin;
 
-  const filteredData = attendanceData.filter(
-    item =>
-      (selectedMonth ? item.month === selectedMonth : true) &&
-      (selectedUser ? item.userId === selectedUser : true)
-  );
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => setTab(newValue);
 
-  const departmentData = [
-    { title: 'HR Department', count: 12 },
-    { title: 'Designers', count: 8 },
-    { title: 'Developers', count: 15 },
-  ];
+  const handleExport = async () => {
+    try {
+      let blob;
+      const now = new Date();
+
+      if (isAdminView) {
+        const headers = [
+          'Employee Name',
+          'Department',
+          'Designation',
+          'Leave Type',
+          'Max Days',
+          'Used',
+          'Remaining',
+          'Approved',
+          'Pending',
+          'Rejected',
+        ];
+
+        const rows = allLeaveReports.flatMap(emp =>
+          emp.leaveSummary.map(summary => [
+            emp.employeeName,
+            emp.department,
+            emp.designation,
+            summary.leaveTypeName,
+            summary.maxDaysPerYear,
+            summary.totalDays,
+            summary.remainingDays,
+            emp.totals.approvedRequests,
+            emp.totals.pendingRequests,
+            emp.totals.rejectedRequests,
+          ])
+        );
+
+        const csvContent = [
+          headers.join(','),
+          ...rows.map(row =>
+            row
+              .map(value =>
+                typeof value === 'string' && value.includes(',')
+                  ? `"${value}"`
+                  : (value ?? '')
+              )
+              .join(',')
+          ),
+        ].join('\n');
+
+        blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      } else {
+        if (tab === 0) blob = await leaveReportApi.exportLeaveBalanceCSV();
+        if (isManager && tab === 1)
+          blob = await leaveReportApi.exportTeamLeaveSummaryCSV(
+            now.getMonth() + 1,
+            now.getFullYear()
+          );
+      }
+
+      if (blob) {
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `Leave_Report_${now.toISOString().slice(0, 10)}.csv`;
+        link.click();
+      }
+    } catch (err) {
+      console.error('Export failed:', err);
+    }
+  };
+
+  const fetchAllLeaveReports = async (pageNum: number) => {
+    try {
+      setLoading(true);
+      const data = await leaveReportApi.getAllLeaveReports(pageNum);
+      setAllLeaveReports(data.employeeReports || []);
+      setTotalPages(data.totalPages || 1);
+      setTotalRecords(data.total || 0);
+      setPage(data.page || 1);
+      setError(null);
+    } catch (err: unknown) {
+      console.error('Error fetching reports:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch reports');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!userInfo || !userInfo.userId) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (isAdminView) {
+          await fetchAllLeaveReports(page);
+        } else if (tab === 0) {
+          const data = await leaveReportApi.getLeaveBalance();
+          setLeaveBalance(data.balances || []);
+        } else if (isManager && tab === 1) {
+          const now = new Date();
+          const data = await leaveReportApi.getTeamLeaveSummary(
+            now.getMonth() + 1,
+            now.getFullYear()
+          );
+          setTeamSummary(data.teamMembers || []);
+        }
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [tab, userInfo, page, isAdminView, isManager]);
+
+  if (!userInfo) {
+    return (
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight={400}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight={400}
+      >
+        <Typography color='error'>User not found. Please re-login.</Typography>
+      </Box>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight='60vh'
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
-      <Tabs
-        value={tab}
-        onChange={handleTabChange}
-        variant='scrollable'
-        scrollButtons='auto'
-        allowScrollButtonsMobile
-        sx={{ borderBottom: 1, borderColor: 'divider' }}
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        flexWrap='wrap'
+        gap={1}
+        mb={2}
       >
-        <Tab label='Attendance Summary' />
-        <Tab label='Leave Summary' />
-        <Tab label='Headcount Report' />
-      </Tabs>
-
-      {/* --- ATTENDANCE SUMMARY --- */}
-      {tab === 0 && (
-        <Box mt={4}>
-          <Box
-            display='flex'
-            flexDirection={{ xs: 'column', sm: 'row' }}
-            gap={2}
+        <Typography
+          variant='h4'
+          fontWeight={600}
+          sx={{ color: darkMode ? '#fff' : '#000' }}
+        >
+          Leave Reports
+        </Typography>
+        <Tooltip title='Export CSV'>
+          <IconButton
+            color='primary'
+            onClick={handleExport}
+            sx={{
+              backgroundColor: 'primary.main',
+              borderRadius: '6px',
+              color: 'white',
+              '&:hover': { backgroundColor: 'primary.dark' },
+            }}
           >
-            <FormControl fullWidth size='small'>
-              <InputLabel>{direction === 'rtl' ? 'شهر' : 'Month'}</InputLabel>
-              <Select
-                value={selectedMonth}
-                onChange={e => setSelectedMonth(e.target.value)}
-              >
-                <MenuItem value=''>
-                  {direction === 'rtl' ? 'تمام' : 'All'}
-                </MenuItem>
-                <MenuItem value='January'>January</MenuItem>
-                <MenuItem value='February'>February</MenuItem>
-                <MenuItem value='March'>March</MenuItem>
-              </Select>
-            </FormControl>
+            <FileDownloadIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
 
-            <FormControl fullWidth size='small'>
-              <InputLabel>{direction === 'rtl' ? 'صارف' : 'User'}</InputLabel>
-              <Select
-                value={selectedUser}
-                onChange={e => setSelectedUser(e.target.value)}
-              >
-                <MenuItem value=''>
-                  {direction === 'rtl' ? 'تمام' : 'All'}
-                </MenuItem>
-                <MenuItem value='1'>Ali</MenuItem>
-                <MenuItem value='2'>Sara</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-
-          <Box
-            mt={4}
-            sx={theme => ({
-              overflowX: 'auto',
-              bgcolor: theme.palette.background.paper,
-            })}
+      {isAdminView && (
+        <Box>
+          {error && <Typography color='error'>{error}</Typography>}
+          <TableContainer
+            component={Card}
+            sx={{
+              boxShadow: 'none',
+              backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+            }}
           >
-            <Table sx={{ minWidth: 600 }}>
-              <TableHead>
+            <Table>
+              <TableHead
+                sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5' }}
+              >
                 <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Check-in</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Total Hours</TableCell>
+                  <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                    <b>Employee Name</b>
+                  </TableCell>
+                  <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                    <b>Department</b>
+                  </TableCell>
+                  <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                    <b>Designation</b>
+                  </TableCell>
+                  <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                    <b>Leave Type</b>
+                  </TableCell>
+                  <TableCell
+                    align='center'
+                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                  >
+                    <b>Total</b>
+                  </TableCell>
+                  <TableCell
+                    align='center'
+                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                  >
+                    <b>Used</b>
+                  </TableCell>
+                  <TableCell
+                    align='center'
+                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                  >
+                    <b>Remaining</b>
+                  </TableCell>
+                  <TableCell
+                    align='center'
+                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                  >
+                    <b>Approved</b>
+                  </TableCell>
+                  <TableCell
+                    align='center'
+                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                  >
+                    <b>Pending</b>
+                  </TableCell>
+                  <TableCell
+                    align='center'
+                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                  >
+                    <b>Rejected</b>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredData.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} align='center'>
-                      No records found.
+                {allLeaveReports.length === 0 ? (
+                  <TableRow
+                    sx={{
+                      backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+                    }}
+                  >
+                    <TableCell
+                      colSpan={11}
+                      align='center'
+                      sx={{ color: darkMode ? '#ccc' : '#000' }}
+                    >
+                      No leave reports found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredData.map((row, _index) => (
-                    <TableRow key={_index}>
-                      <TableCell>{row.date}</TableCell>
-                      <TableCell>{row.checkIn}</TableCell>
-                      <TableCell>{row.status}</TableCell>
-                      <TableCell>{row.hours}</TableCell>
-                    </TableRow>
-                  ))
+                  allLeaveReports.flatMap(emp =>
+                    emp.leaveSummary && emp.leaveSummary.length > 0 ? (
+                      emp.leaveSummary.map((summary, index) => (
+                        <TableRow
+                          key={`${emp.employeeId}-${index}`}
+                          sx={{
+                            backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+                            '&:hover': {
+                              backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
+                            },
+                          }}
+                        >
+                          <TableCell
+                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                          >
+                            {emp.employeeName}
+                          </TableCell>
+                          <TableCell
+                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                          >
+                            {emp.department}
+                          </TableCell>
+                          <TableCell
+                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                          >
+                            {emp.designation}
+                          </TableCell>
+                          <TableCell
+                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                          >
+                            {summary.leaveTypeName}
+                          </TableCell>
+                          <TableCell
+                            align='center'
+                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                          >
+                            {summary.maxDaysPerYear}
+                          </TableCell>
+                          <TableCell
+                            align='center'
+                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                          >
+                            {summary.totalDays}
+                          </TableCell>
+                          <TableCell
+                            align='center'
+                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                          >
+                            {summary.remainingDays}
+                          </TableCell>
+                          <TableCell
+                            align='center'
+                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                          >
+                            {emp.totals?.approvedRequests || 0}
+                          </TableCell>
+                          <TableCell
+                            align='center'
+                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                          >
+                            {emp.totals?.pendingRequests || 0}
+                          </TableCell>
+                          <TableCell
+                            align='center'
+                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                          >
+                            {emp.totals?.rejectedRequests || 0}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow
+                        key={`${emp.employeeId}-no-leaves`}
+                        sx={{
+                          backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+                        }}
+                      >
+                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          {emp.employeeName}
+                        </TableCell>
+                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          {emp.department}
+                        </TableCell>
+                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          {emp.designation}
+                        </TableCell>
+                        <TableCell
+                          colSpan={8}
+                          align='center'
+                          sx={{ color: darkMode ? '#ccc' : '#000' }}
+                        >
+                          No leave data available
+                        </TableCell>
+                      </TableRow>
+                    )
+                  )
                 )}
               </TableBody>
             </Table>
-          </Box>
+          </TableContainer>
+
+          {totalPages > 1 && (
+            <Box
+              display='flex'
+              flexDirection='column'
+              alignItems='center'
+              justifyContent='center'
+              mt={3}
+              gap={1}
+            >
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_, value) => setPage(value)}
+                color='primary'
+                shape='rounded'
+                size='small'
+                sx={{
+                  '& .MuiPaginationItem-root': {
+                    borderRadius: '50%',
+                    minWidth: 32,
+                    height: 32,
+                  },
+                }}
+              />
+              <Typography
+                variant='body2'
+                sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+              >
+                Showing {(page - 1) * ITEMS_PER_PAGE + 1}–
+                {Math.min(page * ITEMS_PER_PAGE, totalRecords)} of{' '}
+                {totalRecords} records
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
 
-      {/* --- LEAVE SUMMARY --- */}
-      {tab === 1 && (
-        <Box mt={4}>
-          <LeaveSummaryChart />
-        </Box>
-      )}
+      {!isAdminView && (
+        <>
+          {isManager && (
+            <Tabs
+              value={tab}
+              onChange={handleTabChange}
+              variant='scrollable'
+              scrollButtons='auto'
+              sx={{ borderBottom: 1, borderColor: 'divider' }}
+            >
+              <Tab label='My Leave Summary' />
+              <Tab label='Team Leave Summary' />
+            </Tabs>
+          )}
+          <TabPanel value={tab} index={0}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+              {leaveBalance.map((item, idx) => (
+                <Card key={idx} sx={getCardStyle(darkMode)}>
+                  <CardContent>
+                    <Typography
+                      sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+                      gutterBottom
+                    >
+                      {item.leaveTypeName}
+                    </Typography>
+                    <Typography
+                      variant='h4'
+                      fontWeight={600}
+                      color='primary.main'
+                    >
+                      {item.remaining}
+                    </Typography>
+                    <Typography
+                      variant='body2'
+                      sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+                    >
+                      Used: {item.used} / {item.maxDaysPerYear}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+            <TableContainer
+              component={Card}
+              sx={{
+                boxShadow: 'none',
+                backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+              }}
+            >
+              <Table>
+                <TableHead>
+                  <TableRow
+                    sx={{
+                      backgroundColor: darkMode ? '#2a2a2a' : '#ffffff',
+                    }}
+                  >
+                    <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                      Leave Type
+                    </TableCell>
+                    <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                      Max Days
+                    </TableCell>
+                    <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                      Used
+                    </TableCell>
+                    <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                      Remaining
+                    </TableCell>
+                    <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                      Carry Forward
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {leaveBalance.map((item, idx) => (
+                    <TableRow
+                      key={idx}
+                      hover
+                      sx={{
+                        backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+                        '&:hover': {
+                          backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
+                        },
+                      }}
+                    >
+                      <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                        {item.leaveTypeName}
+                      </TableCell>
+                      <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                        {item.maxDaysPerYear}
+                      </TableCell>
+                      <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                        {item.used}
+                      </TableCell>
+                      <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                        {item.remaining}
+                      </TableCell>
+                      <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                        {item.carryForward ? 'Yes' : 'No'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </TabPanel>
 
-      {/* --- HEADCOUNT REPORT --- */}
-      {tab === 2 && (
-        <Box mt={4}>
-          <Typography variant='h6' mb={2}>
-            {direction === 'rtl' ? 'ملازمین کی رپورٹ' : 'Headcount Report'}
-          </Typography>
-          <Box
-            display='flex'
-            flexWrap='wrap'
-            gap={2}
-            justifyContent={{ xs: 'start', md: 'flex-start' }}
-          >
-            {departmentData.map((dept, _index) => (
-              <Card key={_index} sx={cardStyle}>
-                <CardContent>
-                  <Typography variant='subtitle1'>{dept.title}</Typography>
-                  <Typography variant='h4'>{dept.count}</Typography>
-                </CardContent>
-              </Card>
-            ))}
-          </Box>
-        </Box>
+          {isManager && (
+            <TabPanel value={tab} index={1}>
+              {!teamSummary.length && (
+                <Typography sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                  No team data found.
+                </Typography>
+              )}
+              {!!teamSummary.length && (
+                <TableContainer
+                  component={Card}
+                  sx={{
+                    boxShadow: 'none',
+                    backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+                  }}
+                >
+                  <Table>
+                    <TableHead>
+                      <TableRow
+                        sx={{
+                          backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
+                        }}
+                      >
+                        <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                          Employee
+                        </TableCell>
+                        <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                          Email
+                        </TableCell>
+                        <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                          Department
+                        </TableCell>
+                        <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                          Designation
+                        </TableCell>
+                        <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                          Total Leave Days
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {teamSummary.map((member, idx) => (
+                        <TableRow
+                          key={idx}
+                          hover
+                          sx={{
+                            backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+                            '&:hover': {
+                              backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
+                            },
+                          }}
+                        >
+                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                            {member.name}
+                          </TableCell>
+                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                            {member.email}
+                          </TableCell>
+                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                            {member.department}
+                          </TableCell>
+                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                            {member.designation}
+                          </TableCell>
+                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                            {member.totalLeaveDays}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </TabPanel>
+          )}
+        </>
       )}
     </Box>
   );

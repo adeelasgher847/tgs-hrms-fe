@@ -1,29 +1,62 @@
-import React, { useState } from 'react';
-import { Box, TextField, Button, MenuItem, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  TextField,
+  Button,
+  MenuItem,
+  Typography,
+  CircularProgress,
+} from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import type { CreateLeaveRequest } from '../../api/leaveApi';
+import { leaveApi } from '../../api/leaveApi';
+import axiosInstance from '../../api/axiosInstance';
 
-const leaveTypes = [
-  { value: 'Sick', label: 'Sick' },
-  { value: 'Casual', label: 'Casual' },
-  { value: 'Vacation', label: 'Vacation' },
-  { value: 'Emergency', label: 'Emergency' },
-  { value: 'Other', label: 'Other' },
-];
+interface LeaveType {
+  id: string;
+  name: string;
+  description?: string;
+}
 
-const LeaveForm = ({
-  onSubmit,
-}: {
-  onSubmit: (data: CreateLeaveRequest) => void;
-}) => {
-  const [fromDate, setFromDate] = useState<Date | null>(null);
-  const [toDate, setToDate] = useState<Date | null>(null);
+interface LeaveFormProps {
+  onSubmit?: (data: {
+    leaveTypeId: string;
+    startDate: string;
+    endDate: string;
+    reason: string;
+  }) => void;
+}
+
+const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
+  const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
+  const [loadingLeaveTypes, setLoadingLeaveTypes] = useState(true);
+
+  const [leaveTypeId, setLeaveTypeId] = useState('');
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [reason, setReason] = useState('');
-  const [type, setType] = useState('sick');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
-  // Get tomorrow's date (minimum selectable date)
+  useEffect(() => {
+    const fetchLeaveTypes = async () => {
+      try {
+        const response = await axiosInstance.get('/leave-types', {
+          params: { page: 1, limit: 50 },
+        });
+        setLeaveTypes(response.data.items || []);
+      } catch (error) {
+        console.error('Failed to load leave types:', error);
+        setMessage('Failed to load leave types.');
+      } finally {
+        setLoadingLeaveTypes(false);
+      }
+    };
+
+    fetchLeaveTypes();
+  }, []);
+
   const getTomorrow = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -31,38 +64,49 @@ const LeaveForm = ({
     return tomorrow;
   };
 
-  const handleFromDateChange = (newValue: Date | null) => {
-    setFromDate(newValue);
-
-    // Auto-adjust toDate if it's before the new fromDate
-    if (newValue && toDate && newValue > toDate) {
-      setToDate(newValue);
-    }
-  };
-
-  const handleToDateChange = (newValue: Date | null) => {
-    setToDate(newValue);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!fromDate || !toDate) {
+    if (!leaveTypeId.trim() || !startDate || !endDate || !reason.trim()) {
+      setMessage('Please fill in all required fields.');
       return;
     }
 
-    onSubmit({
-      fromDate: fromDate.toISOString().split('T')[0],
-      toDate: toDate.toISOString().split('T')[0],
-      reason,
-      type,
-    });
+    const payload = {
+      leaveTypeId,
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+      reason: reason.trim(),
+    };
 
-    // Clear form fields after successful submission
-    setFromDate(null);
-    setToDate(null);
-    setReason('');
-    setType('sick');
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const response = await leaveApi.createLeave(payload);
+      console.log('Leave created:', response);
+      setMessage('Leave request submitted successfully.');
+
+      onSubmit?.(payload);
+      setLeaveTypeId('');
+      setStartDate(null);
+      setEndDate(null);
+      setReason('');
+    } catch (error: unknown) {
+      console.error('Error creating leave:', error);
+
+      let errorMessage = 'Failed to submit leave request.';
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      }
+      
+      setMessage(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -74,7 +118,6 @@ const LeaveForm = ({
           backgroundColor: 'background.paper',
           p: 4,
           borderRadius: 2,
-          // boxShadow: 1,
           maxWidth: 600,
           mx: 'auto',
           display: 'flex',
@@ -86,10 +129,59 @@ const LeaveForm = ({
           Apply for Leave
         </Typography>
 
+        {message && (
+          <Typography
+            variant='body1'
+            sx={{
+              color: message.startsWith('✅') ? 'green' : 'error.main',
+              mb: 1,
+            }}
+          >
+            {message}
+          </Typography>
+        )}
+
+        {loadingLeaveTypes ? (
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            py={2}
+          >
+            <CircularProgress size={24} />
+            <Typography sx={{ ml: 2 }}>Loading leave types...</Typography>
+          </Box>
+        ) : (
+          <TextField
+            select
+            label='Leave Type'
+            value={leaveTypeId}
+            onChange={e => setLeaveTypeId(e.target.value)}
+            required
+            fullWidth
+          >
+            {leaveTypes.length > 0 ? (
+              leaveTypes.map(type => (
+                <MenuItem key={type.id} value={type.id}>
+                  {type.name}
+                </MenuItem>
+              ))
+            ) : (
+              <MenuItem disabled>No leave types available</MenuItem>
+            )}
+          </TextField>
+        )}
+
+        {/* Dates */}
         <DatePicker
-          label='From Date'
-          value={fromDate}
-          onChange={handleFromDateChange}
+          label='Start Date'
+          value={startDate}
+          onChange={newValue => {
+            setStartDate(newValue);
+            if (newValue && endDate && newValue > endDate) {
+              setEndDate(newValue);
+            }
+          }}
           minDate={getTomorrow()}
           slotProps={{
             textField: {
@@ -100,10 +192,10 @@ const LeaveForm = ({
         />
 
         <DatePicker
-          label='To Date'
-          value={toDate}
-          onChange={handleToDateChange}
-          minDate={fromDate || getTomorrow()}
+          label='End Date'
+          value={endDate}
+          onChange={newValue => setEndDate(newValue)}
+          minDate={startDate || getTomorrow()}
           slotProps={{
             textField: {
               fullWidth: true,
@@ -121,26 +213,13 @@ const LeaveForm = ({
           required
         />
 
-        <TextField
-          select
-          label='Type'
-          value={type}
-          onChange={e => setType(e.target.value)}
-        >
-          {leaveTypes.map(option => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </TextField>
-
         <Button
           type='submit'
           variant='contained'
           color='primary'
-          sx={{ mt: 2 }}
+          disabled={loading}
         >
-          Apply
+          {loading ? 'Submitting...' : 'Apply'}
         </Button>
       </Box>
     </LocalizationProvider>

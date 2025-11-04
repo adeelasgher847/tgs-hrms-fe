@@ -24,6 +24,15 @@ import UserAvatar from '../common/UserAvatar';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
 import { useLanguage } from '../../hooks/useLanguage';
+import { getUserRole, isAdmin } from '../../utils/auth';
+
+// Extended interface for admin team members with team info
+interface AdminTeamMember extends TeamMember {
+  team?: {
+    id: string;
+    name: string;
+  };
+}
 
 interface TeamMembersModalProps {
   open: boolean;
@@ -39,24 +48,35 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
   darkMode = false,
 }) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [adminTeamMembers, setAdminTeamMembers] = useState<AdminTeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { language } = useLanguage();
 
+  // Check if user is a manager
+  const checkIsManager = (): boolean => {
+    const userRole = getUserRole();
+    return userRole === 'manager' || userRole === 'Manager';
+  };
+
   const labels = {
     en: {
       title: 'Team Members',
+      allTeamMembers: 'All Team Members',
       noMembers: 'No team members found',
       addMember: 'Add Member',
       loading: 'Loading team members...',
       error: 'Failed to load team members',
+      team: 'Team',
     },
     ar: {
       title: 'أعضاء الفريق',
+      allTeamMembers: 'جميع أعضاء الفريق',
       noMembers: 'لا يوجد أعضاء في الفريق',
       addMember: 'إضافة عضو',
       loading: 'جاري تحميل الأعضاء...',
       error: 'فشل في تحميل الأعضاء',
+      team: 'الفريق',
     },
   };
 
@@ -68,11 +88,26 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
       try {
         setLoading(true);
         setError(null);
-        const response = await teamApiService.getMyTeamMembers(1);
-        setTeamMembers(response.items || []);
+        
+        if (checkIsManager()) {
+          // Load manager's team members
+          const response = await teamApiService.getMyTeamMembers(1);
+          setTeamMembers(response.items || []);
+          setAdminTeamMembers([]);
+        } else if (isAdmin()) {
+          // Load all team members across all teams for admin
+          const response = await teamApiService.getAllTeamMembers(1);
+          setAdminTeamMembers(response.items || []);
+          setTeamMembers([]);
+        } else {
+          // For other roles, don't load any team members
+          setTeamMembers([]);
+          setAdminTeamMembers([]);
+        }
       } catch {
         setError(lang.error);
         setTeamMembers([]);
+        setAdminTeamMembers([]);
       } finally {
         setLoading(false);
       }
@@ -114,7 +149,9 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <GroupIcon sx={{ color: darkMode ? '#ccc' : '#666' }} />
           <Typography variant='h6' sx={{ fontWeight: 600 }}>
-            {lang.title} ({teamMembers.length})
+            {isAdmin()
+              ? `${lang.allTeamMembers} (${adminTeamMembers.length})`
+              : `${lang.title} (${teamMembers.length})`}
           </Typography>
         </Box>
         <IconButton
@@ -140,7 +177,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
           <Box sx={{ p: 3 }}>
             <Alert severity='error'>{error}</Alert>
           </Box>
-        ) : teamMembers.length === 0 ? (
+        ) : (isAdmin() ? adminTeamMembers.length === 0 : teamMembers.length === 0) ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <GroupIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
             <Typography
@@ -164,106 +201,190 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
         ) : (
           <>
             <List sx={{ p: 0 }}>
-              {teamMembers
-                .filter(
-                  member => member?.user?.first_name && member?.user?.last_name
-                )
-                .map(member => (
-                  <React.Fragment key={member.id}>
-                    <ListItem
-                      sx={{
-                        borderBottom: `1px solid ${darkMode ? '#444' : '#f0f0f0'}`,
-                        '&:last-child': { borderBottom: 'none' },
-                      }}
-                    >
-                      <ListItemAvatar>
-                        <UserAvatar
-                          user={{
-                            id: member.user?.id,
-                            first_name: member.user?.first_name || '',
-                            last_name: member.user?.last_name || '',
-                            profile_pic: member.user?.profile_pic,
+              {isAdmin()
+                ? adminTeamMembers
+                    .filter(
+                      member =>
+                        member?.user?.first_name && member?.user?.last_name
+                    )
+                    .map(member => (
+                      <React.Fragment key={member.id}>
+                        <ListItem
+                          sx={{
+                            borderBottom: `1px solid ${darkMode ? '#444' : '#f0f0f0'}`,
+                            '&:last-child': { borderBottom: 'none' },
                           }}
-                          size={40}
-                          clickable={false}
-                        />
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Typography
-                            variant='subtitle1'
-                            sx={{
-                              fontWeight: 600,
-                              color: darkMode ? '#fff' : '#000',
-                            }}
-                          >
-                            {member.user?.first_name} {member.user?.last_name}
-                          </Typography>
-                        }
-                        secondary={
-                          <Box sx={{ mt: 0.5 }}>
-                            <Typography
-                              variant='body2'
-                              sx={{
-                                color: darkMode ? '#ccc' : '#666',
-                                mb: 0.5,
+                        >
+                          <ListItemAvatar>
+                            <UserAvatar
+                              user={{
+                                id: member.user?.id,
+                                first_name: member.user?.first_name || '',
+                                last_name: member.user?.last_name || '',
+                                profile_pic: member.user?.profile_pic,
                               }}
-                            >
-                              {member.user?.email}
-                            </Typography>
-                            <Box
-                              sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}
-                            >
-                              <Chip
-                                label={member.designation?.title || 'N/A'}
-                                size='small'
+                              size={40}
+                              clickable={false}
+                            />
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Typography
+                                variant='subtitle1'
                                 sx={{
-                                  backgroundColor: '#484c7f',
-                                  color: 'white',
-                                  fontSize: '0.7rem',
-                                  height: 20,
+                                  fontWeight: 600,
+                                  color: darkMode ? '#fff' : '#000',
                                 }}
-                              />
-                              <Chip
-                                label={member.department?.name || 'N/A'}
-                                size='small'
-                                variant='outlined'
+                              >
+                                {member.user?.first_name}{' '}
+                                {member.user?.last_name}
+                              </Typography>
+                            }
+                            secondary={
+                              <Box sx={{ mt: 0.5 }}>
+                                <Typography
+                                  variant='body2'
+                                  sx={{
+                                    color: darkMode ? '#ccc' : '#666',
+                                    mb: 0.5,
+                                  }}
+                                >
+                                  {member.user?.email}
+                                </Typography>
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    gap: 1,
+                                    flexWrap: 'wrap',
+                                  }}
+                                >
+                                  <Chip
+                                    label={member.designation?.title || 'N/A'}
+                                    size='small'
+                                    sx={{
+                                      backgroundColor: '#484c7f',
+                                      color: 'white',
+                                      fontSize: '0.7rem',
+                                      height: 20,
+                                    }}
+                                  />
+                                  <Chip
+                                    label={member.department?.name || 'N/A'}
+                                    size='small'
+                                    variant='outlined'
+                                    sx={{
+                                      borderColor: darkMode ? '#666' : '#ccc',
+                                      color: darkMode ? '#ccc' : '#666',
+                                      fontSize: '0.7rem',
+                                      height: 20,
+                                    }}
+                                  />
+                                  {member.team && (
+                                    <Chip
+                                      label={`${lang.team}: ${member.team.name}`}
+                                      size='small'
+                                      variant='outlined'
+                                      sx={{
+                                        borderColor: darkMode ? '#666' : '#ccc',
+                                        color: darkMode ? '#ccc' : '#666',
+                                        fontSize: '0.7rem',
+                                        height: 20,
+                                      }}
+                                    />
+                                  )}
+                                </Box>
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                      </React.Fragment>
+                    ))
+                : teamMembers
+                    .filter(
+                      member =>
+                        member?.user?.first_name && member?.user?.last_name
+                    )
+                    .map(member => (
+                      <React.Fragment key={member.id}>
+                        <ListItem
+                          sx={{
+                            borderBottom: `1px solid ${darkMode ? '#444' : '#f0f0f0'}`,
+                            '&:last-child': { borderBottom: 'none' },
+                          }}
+                        >
+                          <ListItemAvatar>
+                            <UserAvatar
+                              user={{
+                                id: member.user?.id,
+                                first_name: member.user?.first_name || '',
+                                last_name: member.user?.last_name || '',
+                                profile_pic: member.user?.profile_pic,
+                              }}
+                              size={40}
+                              clickable={false}
+                            />
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Typography
+                                variant='subtitle1'
                                 sx={{
-                                  borderColor: darkMode ? '#666' : '#ccc',
-                                  color: darkMode ? '#ccc' : '#666',
-                                  fontSize: '0.7rem',
-                                  height: 20,
+                                  fontWeight: 600,
+                                  color: darkMode ? '#fff' : '#000',
                                 }}
-                              />
-                            </Box>
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                  </React.Fragment>
-                ))}
+                              >
+                                {member.user?.first_name}{' '}
+                                {member.user?.last_name}
+                              </Typography>
+                            }
+                            secondary={
+                              <Box sx={{ mt: 0.5 }}>
+                                <Typography
+                                  variant='body2'
+                                  sx={{
+                                    color: darkMode ? '#ccc' : '#666',
+                                    mb: 0.5,
+                                  }}
+                                >
+                                  {member.user?.email}
+                                </Typography>
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    gap: 1,
+                                    flexWrap: 'wrap',
+                                  }}
+                                >
+                                  <Chip
+                                    label={member.designation?.title || 'N/A'}
+                                    size='small'
+                                    sx={{
+                                      backgroundColor: '#484c7f',
+                                      color: 'white',
+                                      fontSize: '0.7rem',
+                                      height: 20,
+                                    }}
+                                  />
+                                  <Chip
+                                    label={member.department?.name || 'N/A'}
+                                    size='small'
+                                    variant='outlined'
+                                    sx={{
+                                      borderColor: darkMode ? '#666' : '#ccc',
+                                      color: darkMode ? '#ccc' : '#666',
+                                      fontSize: '0.7rem',
+                                      height: 20,
+                                    }}
+                                  />
+                                </Box>
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                      </React.Fragment>
+                    ))}
             </List>
             <Divider sx={{ my: 1 }} />
-            {/* <Box sx={{ p: 2, textAlign: 'center' }}>
-              <IconButton
-                onClick={handleAddMember}
-                sx={{
-                  backgroundColor: '#484c7f',
-                  color: 'white',
-                  '&:hover': {
-                    backgroundColor: '#3a3f5f',
-                  },
-                }}
-              >
-                <AddIcon />
-              </IconButton>
-              <Typography
-                variant='body2'
-                sx={{ mt: 1, color: darkMode ? '#ccc' : '#666' }}
-              >
-                {lang.addMember}
-              </Typography>
-            </Box> */}
           </>
         )}
       </DialogContent>

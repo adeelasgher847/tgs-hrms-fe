@@ -116,9 +116,16 @@ const menuItems: MenuItem[] = [
     subItems: [
       { label: 'Attendance', path: 'AttendanceCheck' },
       { label: 'Daily Attendance', path: 'AttendanceTable' },
-      { label: 'Reports', path: 'Reports' },
       { label: 'Report', path: 'attendance-summary' },
       { label: 'Leave Request', path: 'leaves' },
+    ],
+  },
+  {
+    label: 'Leave Analytics',
+    icon: <Receipt />, 
+    subItems: [
+      { label: 'Reports', path: 'Reports' },
+
     ],
   },
   {
@@ -347,7 +354,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
               }}
-              title={companyName || 'HRMS'}
+              title={companyName || 'Trans Global Services'}
             >
               {companyName.length > 15
                 ? companyName.slice(0, 18) + '...'

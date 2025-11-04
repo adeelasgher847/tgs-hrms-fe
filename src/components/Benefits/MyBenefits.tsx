@@ -142,7 +142,7 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
             </Stack>
           ) : (
             <>
-              <Box sx={{ overflowX: 'auto', width: '100%' }}>
+              <Box sx={{ overflowX: 'auto', width: '100%'}}>
                 <Table size="small" sx={{ minWidth: 600 }}>
                   <TableHead>
                     <TableRow>
