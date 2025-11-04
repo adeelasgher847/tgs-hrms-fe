@@ -57,7 +57,7 @@ import {
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import { Snackbar, Alert } from '@mui/material';
-import { assetCategories } from '../../data/assetCategories';
+import { assetCategories } from '../../Data/assetCategories';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
