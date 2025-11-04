@@ -83,8 +83,8 @@ export interface MockUser {
 
 // Filter types
 export interface AssetFilters {
-  status?: AssetStatus[];
-  category?: string[];
+  status?: AssetStatus;
+  category?: string;
   assignedTo?: string[];
 }
 

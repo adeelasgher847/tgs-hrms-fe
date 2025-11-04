@@ -1,5 +1,6 @@
 import axiosInstance from './axiosInstance';
 import { getRoleName } from '../utils/roleUtils';
+import type { Leave } from '../type/levetypes';
 
 export interface LeaveSummaryItem {
   type: string;
@@ -18,7 +19,7 @@ export interface TeamMember {
   email: string;
   department: string;
   designation: string;
-  leaves: any[];
+  leaves: Leave[];
   totalLeaveDays: number;
 }
 

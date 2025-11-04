@@ -750,6 +750,17 @@ const EmployeeManager: React.FC = () => {
   const token = localStorage.getItem('token');
   const filters = { page: '1' };
 
+  // Build absolute media URL from backend path
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+  const toAbsoluteUrl = (path?: string | null) => {
+    if (!path) return '';
+    const trimmed = path.trim();
+    const isAbsolute = /^https?:\/\//i.test(trimmed);
+    const base = API_BASE_URL.replace(/\/$/, '');
+    const url = isAbsolute ? trimmed : `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+    return `${url}?t=${Date.now()}`;
+  };
+
   return (
     <Box>
       <Typography variant='h6' gutterBottom>
@@ -1076,6 +1087,10 @@ const EmployeeManager: React.FC = () => {
                     lastName: editing.lastName || '',
                     email: editing.email,
                     phone: editing.phone,
+                    cnicNumber: editing.cnic_number || ' ',
+                    profilePicture: toAbsoluteUrl(editing.profile_picture),
+                    cnicFrontPicture: toAbsoluteUrl(editing.cnic_picture),
+                    cnicBackPicture: toAbsoluteUrl(editing.cnic_back_picture),
                     role_name: editing.role_name || '',
                     designationId: editing.designationId,
                     departmentId: editing.departmentId,

@@ -144,7 +144,7 @@ const EmployeeProfileView: React.FC = () => {
     <Box py={2}>
       <Paper
         elevation={1}
-        sx={{ borderRadius: 3, p: 3, bgcolor: 'background.paper', mb: 4 }}
+        sx={{ borderRadius: 1, p: 3, bgcolor: 'background.paper', mb: 4,boxShadow:'none' }}
       >
         <Typography
           variant='h5'
@@ -196,7 +196,7 @@ const EmployeeProfileView: React.FC = () => {
       {/* Recent Attendance Table */}
       <Paper
         elevation={1}
-        sx={{ borderRadius: 3, p: 3, bgcolor: 'background.paper', mb: 4 }}
+        sx={{ borderRadius: 1, p: 3, bgcolor: 'background.paper', mb: 4,boxShadow:'none' }}
       >
         <Typography
           variant='h6'
@@ -247,7 +247,7 @@ const EmployeeProfileView: React.FC = () => {
       {/* Leave History Table */}
       <Paper
         elevation={1}
-        sx={{ borderRadius: 3, p: 3, bgcolor: 'background.paper' }}
+        sx={{ borderRadius: 1, p: 3, bgcolor: 'background.paper',boxShadow:'none' }}
       >
         <Typography
           variant='h6'
