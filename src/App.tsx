@@ -31,6 +31,7 @@ import TeamManager from './components/Teams/TeamManager';
 import AssetInventory from './components/AssetManagement/AssetInventory';
 import AssetRequests from './components/AssetManagement/AssetRequests';
 import RequestManagement from './components/AssetManagement/RequestManagement';
+import SystemAdminAssets from './components/AssetManagement/SystemAdminAssets';
 import NotificationToast from './components/AssetManagement/NotificationToast';
 import { LanguageProvider } from './context/LanguageContext';
 import { UserProvider } from './context/UserContext';
@@ -43,6 +44,8 @@ import EmployeeBenefits from './components/Benefits/EmployeeBenefits';
 import BenefitDetails from './components/Employee/BenefitDetails';
 import BenefitReport from './components/Benefits/BenefitReport';
 import TenantBasedEmployeeManager from './components/Employee/TenantBasedEmployeeManager';
+import AuditLogs from './components/Audits/AuditLogs';
+import PerformanceDashboard from './components/Performance/PerformanceManager';
 
 function App() {
   return (
@@ -115,10 +118,19 @@ function App() {
                   path='assets/request-management'
                   element={<RequestManagement />}
                 />
+                <Route
+                  path='assets/system-admin'
+                  element={<SystemAdminAssets />}
+                />
                 <Route path='benefits-list' element={<BenefitList />} />
                 <Route path='employee-benefit' element={<EmployeeBenefits />} />
                 <Route path='benefit-details' element={<BenefitDetails />} />
                 <Route path='benefit-report' element={<BenefitReport />} />
+                <Route
+                  path='performance-dashboard'
+                  element={<PerformanceDashboard />}
+                />
+                <Route path='audit-logs' element={<AuditLogs />} />
               </Route>
               <Route path='/company-details' element={<CompanyDetails />} />
               <Route path='*' element={<Error404 />} />

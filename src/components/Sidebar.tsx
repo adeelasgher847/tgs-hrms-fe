@@ -22,6 +22,8 @@ import {
   Widgets,
   Inventory,
   CardGiftcard,
+  History,
+  Insights,
 } from '@mui/icons-material';
 import dotted from './../assets/dashboardIcon/dotted-down.svg';
 import Clipboard from '../assets/dashboardIcon/Clipboard';
@@ -105,6 +107,7 @@ const menuItems: MenuItem[] = [
       { label: 'Asset Inventory', path: 'assets' },
       { label: 'Asset Requests', path: 'assets/requests' },
       { label: 'Management', path: 'assets/request-management' },
+      { label: 'System Assets Overview', path: 'assets/system-admin' },
     ],
   },
   {
@@ -129,6 +132,13 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
+    label: 'Performance',
+    icon: <Insights />,
+    subItems: [
+      { label: 'Employee Performance', path: 'performance-dashboard' },
+    ],
+  },
+  {
     label: 'Accounts',
     icon: <Receipt />,
     subItems: [
@@ -143,6 +153,11 @@ const menuItems: MenuItem[] = [
       { label: 'Payroll Summary', path: 'payroll-summary' },
       { label: 'Payslips', path: 'payslips' },
     ],
+  },
+  {
+    label: 'Audit Logs',
+    icon: <History />,
+    subItems: [{ label: 'Audit Logs', path: 'audit-logs' }],
   },
   {
     label: 'App',

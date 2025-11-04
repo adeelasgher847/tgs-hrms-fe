@@ -48,7 +48,6 @@ const TenantGrowthChart: React.FC = () => {
     new Date().getFullYear()
   );
   const [tenantGrowthData, setTenantGrowthData] = useState<TenantGrowth[]>([]);
-  const [loadingGrowth, setLoadingGrowth] = useState(false);
 
   const labels = {
     en: 'Tenant Growth Overview',
@@ -58,15 +57,16 @@ const TenantGrowthChart: React.FC = () => {
   useEffect(() => {
     const fetchTenants = async () => {
       try {
-        const data = await systemEmployeeApiService.getTenants(1, true);
+        const data = await systemEmployeeApiService.getAllTenants(true);
         const activeTenants = data.filter((t: Tenant) => !t.isDeleted);
         setTenants(activeTenants);
+
         if (activeTenants.length > 0) {
           const ibexTenant = activeTenants.find(t => t.name === 'Ibex Tech.');
           if (ibexTenant) {
             setSelectedTenant(ibexTenant.id);
           } else {
-            setSelectedTenant(activeTenants[0].id); 
+            setSelectedTenant(activeTenants[0].id);
           }
         }
       } catch (error) {
@@ -82,7 +82,6 @@ const TenantGrowthChart: React.FC = () => {
   useEffect(() => {
     const fetchTenantGrowth = async () => {
       if (!selectedTenant) return;
-      setLoadingGrowth(true);
       try {
         const data = await systemDashboardApiService.getTenantGrowth(
           selectedYear,
@@ -92,8 +91,6 @@ const TenantGrowthChart: React.FC = () => {
       } catch (error) {
         console.error('Error fetching tenant growth:', error);
         setTenantGrowthData([]);
-      } finally {
-        setLoadingGrowth(false);
       }
     };
 

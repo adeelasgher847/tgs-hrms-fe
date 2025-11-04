@@ -11,7 +11,6 @@ import {
   TableBody,
   Paper,
   CircularProgress,
-  Button,
   Pagination,
   Tooltip,
   IconButton,
@@ -335,10 +334,8 @@ const Dashboard: React.FC = () => {
                     <TableCell>Action</TableCell>
                     <TableCell>Entity</TableCell>
                     <TableCell>User Role</TableCell>
-                    <TableCell>Route</TableCell>
-                    <TableCell>Method</TableCell>
-                    <TableCell>IP</TableCell>
-                    <TableCell>Date</TableCell>
+                    <TableCell>Tenant Id</TableCell>
+                    <TableCell>Timestamp</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -360,9 +357,7 @@ const Dashboard: React.FC = () => {
                         <TableCell>{log.action}</TableCell>
                         <TableCell>{log.entityType}</TableCell>
                         <TableCell>{log.userRole || '-'}</TableCell>
-                        <TableCell>{log.route}</TableCell>
-                        <TableCell>{log.method}</TableCell>
-                        <TableCell>{log.ip}</TableCell>
+                        <TableCell>{log.tenantId}</TableCell>
                         <TableCell>
                           {new Date(log.createdAt).toLocaleString()}
                         </TableCell>
@@ -398,7 +393,6 @@ const Dashboard: React.FC = () => {
         </Box>
       ) : (
         <>
-          {/* Non-system-admin layout */}
           <Box
             sx={{
               display: 'flex',

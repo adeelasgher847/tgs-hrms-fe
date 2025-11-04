@@ -40,9 +40,9 @@ export type SystemEmployee = {
 
 export type SystemEmployeeDetails = SystemEmployee & {
   benefits: Benefit[];
-  kpis: any[];
-  promotions: any[];
-  performanceReviews: any[];
+  kpis: unknown[];
+  promotions: unknown[];
+  performanceReviews: unknown[];
 };
 
 export type EmployeeLeave = {
@@ -73,6 +73,28 @@ export type EmployeeAsset = {
   tenant_id: string;
   created_at: string;
 };
+
+export interface EmployeePerformance {
+  id: string;
+  employee_id: string;
+  kpi_id: string;
+  targetValue: number;
+  achievedValue: number;
+  score: number;
+  reviewCycle: string;
+  reviewedBy: string;
+  remarks: string;
+  tenant_id: string;
+  createdAt: string;
+  kpi: {
+    id: string;
+    title: string;
+    description: string;
+    weight: number;
+    category: string;
+    status: string;
+  };
+}
 
 export type GetEmployeesParams = {
   tenantId?: string;
@@ -107,8 +129,12 @@ class SystemEmployeeApiService {
     return res.data || [];
   }
 
-  async getSystemEmployeePerformance(id: string): Promise<any[]> {
-    const res = await axiosInstance.get<any[]>(`${BASE}/${id}/performance`);
+  async getSystemEmployeePerformance(
+    id: string
+  ): Promise<EmployeePerformance[]> {
+    const res = await axiosInstance.get<EmployeePerformance[]>(
+      `${BASE}/${id}/performance`
+    );
     console.log('Get system employee performance api response: ', res);
     return res.data || [];
   }
@@ -130,6 +156,28 @@ class SystemEmployeeApiService {
     });
     console.log('Get tenants API response:', res);
     return res.data || [];
+  }
+
+  async getAllTenants(includeDeleted = true): Promise<SystemEmployee[]> {
+    let page = 1;
+    const perPage = 25;
+    let allTenants: SystemEmployee[] = [];
+    let hasMoreData = true;
+
+    while (hasMoreData) {
+      const res = await axiosInstance.get<SystemEmployee[]>('/system/tenants', {
+        params: { page, includeDeleted },
+      });
+      const tenants = res.data ?? [];
+      allTenants = [...allTenants, ...tenants];
+
+      if (tenants.length < perPage) {
+        hasMoreData = false;
+      } else {
+        page++;
+      }
+    }
+    return allTenants;
   }
 }
 

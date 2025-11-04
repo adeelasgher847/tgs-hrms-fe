@@ -13,22 +13,29 @@ interface KpiCardProps {
   value: number | string;
   icon: React.ReactNode;
   color?: string;
+  contentFontSize?: string | number; // New prop for customizing value font size
+  tenantId?: string; // Optional prop for tenant-based filtering
 }
 
-const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon, color }) => {
+const KpiCard: React.FC<KpiCardProps> = ({
+  title,
+  value,
+  icon,
+  color,
+  contentFontSize = '2rem', // Default size for value font
+}) => {
   const theme = useTheme();
 
   return (
     <Card
       sx={{
-        borderRadius: 1,
-        // boxShadow: theme.shadows[2],
+        borderRadius: 2,
         backgroundColor: theme.palette.background.paper,
         height: '100%',
-        width: '100%',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
+        boxShadow: theme.shadows[1],
       }}
     >
       <CardContent
@@ -36,7 +43,7 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon, color }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          p: { xs: 2.5, sm: 3, md: 4 },
+          p: 3,
           width: '100%',
         }}
       >
@@ -48,7 +55,6 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon, color }) => {
               color: theme.palette.text.secondary,
               mb: 0.5,
               fontWeight: 500,
-              fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
             }}
           >
             {title}
@@ -58,7 +64,7 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon, color }) => {
             sx={{
               color: theme.palette.text.primary,
               fontWeight: 700,
-              fontSize: { xs: '1.6rem', sm: '2rem', md: '2.2rem' },
+              fontSize: contentFontSize, // Dynamically applied
             }}
           >
             {value}
@@ -68,12 +74,12 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon, color }) => {
         {/* Right side: Icon */}
         <Avatar
           sx={{
-            backgroundColor: color || theme.palette.primary.main,
+            bgcolor: color || theme.palette.primary.main,
             color: theme.palette.getContrastText(
               color || theme.palette.primary.main
             ),
-            width: { xs: 52, sm: 60, md: 68 },
-            height: { xs: 52, sm: 60, md: 68 },
+            width: 60,
+            height: 60,
             ml: 2,
             flexShrink: 0,
           }}

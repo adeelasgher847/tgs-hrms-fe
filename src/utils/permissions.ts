@@ -64,6 +64,8 @@ export const isMenuVisibleForRole = (
       'assets',
       'attendance',
       'report',
+      'audit logs',
+      'performance',
     ],
     'network-admin': [
       'dashboard',
@@ -103,6 +105,8 @@ export const isMenuVisibleForRole = (
     if (label.includes('attendance')) return 'attendance';
     if (label.includes('report')) return 'report';
     if (label.includes('benefits')) return 'benefits';
+    if (label.includes('auditlogs')) return 'audit logs';
+    if (label.includes('performance')) return 'performance';
     // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
     return 'misc';
   })();
@@ -152,7 +156,7 @@ export const isSubMenuVisibleForRole = (
   // Network-admin: same as admin - hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
   if (r === 'network-admin') {
     if (parent.includes('employees')) {
-      if (!sub.includes('tenant employees')) {
+      if (sub.includes('tenant employees')) {
         visible = false;
       }
     }
@@ -176,12 +180,15 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (parent.includes('audit logs')) {
+      visible = false;
+    }
   }
 
   // HR-admin: hide Attendance -> Reports and Leave Request
   if (r === 'hr-admin') {
     if (parent.includes('employees')) {
-      if (!sub.includes('tenant employees')) {
+      if (sub.includes('tenant employees')) {
         visible = false;
       }
     }
@@ -190,12 +197,15 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (parent.includes('audit logs')) {
+      visible = false;
+    }
   }
 
   // --- Admin rules ---
   if (r === 'admin') {
     if (parent.includes('employees')) {
-      if (!sub.includes('tenant employees')) {
+      if (sub.includes('tenant employees')) {
         visible = false;
       }
     }
@@ -211,12 +221,15 @@ export const isSubMenuVisibleForRole = (
     if (parent.includes('attendance') && sub === 'reports') {
       visible = false;
     }
+    if (parent.includes('audit logs')) {
+      visible = false;
+    }
   }
 
   // --- Manager rules ---
   if (r === 'manager') {
     if (parent.includes('employees')) {
-      if (!sub.includes('tenant employees')) {
+      if (sub.includes('tenant employees')) {
         visible = false;
       }
     }
@@ -224,12 +237,15 @@ export const isSubMenuVisibleForRole = (
     if (parent.includes('attendance') && sub === 'reports') {
       visible = false;
     }
+    if (parent.includes('audit logs')) {
+      visible = false;
+    }
   }
 
   // --- Employee/User rules ---
   if (r === 'employee' || r === 'user') {
     if (parent.includes('employees')) {
-      if (!sub.includes('tenant employees')) {
+      if (sub.includes('tenant employees')) {
         visible = false;
       }
     }
@@ -250,19 +266,36 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (parent.includes('audit logs')) {
+      visible = false;
+    }
   }
 
-  // System Admin: For Assets menu - only see Asset Inventory and Management (not Asset Requests)
+  // System Admin: For Assets menu - only see System Assets Overview (hide all other asset pages)
   if (r === 'system-admin') {
     if (parent.includes('assets')) {
-      if (sub.includes('asset requests')) {
+      // Hide all asset submenus except System Assets Overview
+      if (
+        sub.includes('asset inventory') ||
+        sub.includes('asset requests') ||
+        sub.includes('management')
+      ) {
         visible = false;
+      }
+      // Only system-admin sees System Assets Overview
+      if (sub.includes('system assets overview')) {
+        visible = true;
       }
     }
     if (parent.includes('employees')) {
       if (sub.includes('employee list')) {
         visible = false;
       }
+    }
+  } else {
+    // Hide System Assets Overview for non-system-admin roles
+    if (parent.includes('assets') && sub.includes('system assets overview')) {
+      visible = false;
     }
   }
 
@@ -335,9 +368,8 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck/TimesheetLayout',
       // Teams
       'teams',
-      // Assets - System admin sees Inventory and Management only
-      'assets',
-      'assets/request-management',
+      // Assets - System admin only sees System Assets Overview
+      'assets/system-admin',
       // Employee profile view
       'EmployeeProfileView',
       // Settings
@@ -348,6 +380,8 @@ export const isDashboardPathAllowedForRole = (
       'benefits/reporting',
       'my-benefits',
       'TenantEmployees',
+      'audit-logs',
+      'performance-dashboard',
     ]),
     'network-admin': new Set([
       '',

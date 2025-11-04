@@ -7,9 +7,9 @@ export interface ActiveEmployeesPerTenant {
 }
 
 export interface RecentLogMeta {
-  body?: Record<string, any>;
-  query?: Record<string, any>;
-  params?: Record<string, any>;
+  body?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+  params?: Record<string, unknown>;
 }
 
 export interface RecentLog {
@@ -67,7 +67,7 @@ class SystemDashboardApiService {
       const response = await axiosInstance.get<RecentLog[]>(this.logsUrl, {
         params: { page },
       });
-      console.log("Get system logs response", response);
+      console.log('Get system logs response', response);
       return response.data;
     } catch (error) {
       console.error('Failed to fetch system logs:', error);

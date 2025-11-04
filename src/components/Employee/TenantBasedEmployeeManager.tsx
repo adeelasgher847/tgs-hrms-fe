@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -13,41 +13,56 @@ import {
   MenuItem,
   IconButton,
   CircularProgress,
-  Pagination,
   Button,
   Stack,
   Tooltip,
   useMediaQuery,
-  Card,
-  CardContent,
+  Pagination,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useTheme } from '@mui/material/styles';
-import systemEmployeeApiService from '../../api/systemEmployeeApi';
-import { designationApiService } from '../../api/designationApi';
-import { departmentApiService } from '../../api/departmentApi';
-import EmployeeProfileViewSystem from './EmployeeProfileView';
+import systemEmployeeApiService, {
+  type SystemEmployee,
+} from '../../api/systemEmployeeApi';
+import {
+  designationApiService,
+  type BackendDesignation,
+} from '../../api/designationApi';
+import {
+  departmentApiService,
+  type BackendDepartment,
+} from '../../api/departmentApi';
+import SystemEmployeeProfileView from './SystemEmployeeProfileView';
+
+type EmployeeWithTenantName = SystemEmployee & {
+  tenantName: string;
+};
 
 const TenantBasedEmployeeManager: React.FC = () => {
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [designations, setDesignations] = useState<any[]>([]);
-  const [tenants, setTenants] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<EmployeeWithTenantName[]>([]);
+  const [departments, setDepartments] = useState<BackendDepartment[]>([]);
+  const [designations, setDesignations] = useState<BackendDesignation[]>([]);
+  const [tenants, setTenants] = useState<SystemEmployee[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     tenantId: '',
     departmentId: '',
     designationId: '',
   });
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0,
-  });
-  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const itemsPerPage = 10;
+
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+  const [openProfile, setOpenProfile] = useState(false);
+
+  const handleOpenProfile = (id: string) => {
+    setSelectedEmployee(id);
+    setOpenProfile(true);
+  };
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const darkMode = theme.palette.mode === 'dark';
@@ -56,8 +71,9 @@ const TenantBasedEmployeeManager: React.FC = () => {
     try {
       const [deptRes, tenantRes] = await Promise.all([
         departmentApiService.getAllDepartments(),
-        systemEmployeeApiService.getTenants(pagination.page, true), 
+        systemEmployeeApiService.getAllTenants(true),
       ]);
+
       setDepartments(deptRes || []);
       setTenants(tenantRes || []);
     } catch (err) {
@@ -79,41 +95,39 @@ const TenantBasedEmployeeManager: React.FC = () => {
     }
   };
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
         tenantId: filters.tenantId || undefined,
         departmentId: filters.departmentId || undefined,
         designationId: filters.designationId || undefined,
-        page: pagination.page,
-        limit: pagination.limit,
       };
 
       const res = await systemEmployeeApiService.getSystemEmployees(params);
+      const employeesData = Array.isArray(res) ? res : [];
 
-      const employeesData = Array.isArray(res) ? res : res.data || [];
-
-      const updatedEmployees = employeesData.map((emp: any) => {
-        const matchedTenant = tenants.find((t: any) => t.id === emp.tenantId);
-        return {
-          ...emp,
-          tenantName: matchedTenant ? matchedTenant.name : 'Unknown Tenant',
-        };
-      });
+      const updatedEmployees = employeesData.map(
+        (emp: SystemEmployee): EmployeeWithTenantName => {
+          const matchedTenant = tenants.find(
+            (t: SystemEmployee) => t.id === emp.tenantId
+          );
+          return {
+            ...emp,
+            tenantName: matchedTenant ? matchedTenant.name : 'Unknown Tenant',
+          };
+        }
+      );
 
       setEmployees(updatedEmployees);
-      setPagination(prev => ({
-        ...prev,
-        total: updatedEmployees.length,
-        totalPages: Math.ceil(updatedEmployees.length / prev.limit),
-      }));
+      setTotalRecords(updatedEmployees.length);
+      setTotalPages(Math.ceil(updatedEmployees.length / itemsPerPage));
     } catch (err) {
       console.error('Error fetching system employees:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, tenants]);
 
   useEffect(() => {
     fetchFiltersData();
@@ -129,25 +143,20 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
   useEffect(() => {
     if (tenants.length > 0) fetchEmployees();
-  }, [filters, pagination.page, tenants]);
+  }, [fetchEmployees, tenants]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     if (key === 'departmentId') {
       setFilters(prev => ({ ...prev, departmentId: value, designationId: '' }));
     }
+    setCurrentPage(1);
   };
 
   const handleClearFilters = () => {
     setFilters({ tenantId: '', departmentId: '', designationId: '' });
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setCurrentPage(1);
   };
-
-  const handlePageChange = (_: any, value: number) =>
-    setPagination(prev => ({ ...prev, page: value }));
-
-  const handleView = (employee: any) => setSelectedEmployee(employee);
-  const handleCloseView = () => setSelectedEmployee(null);
 
   const csvEscape = (value: string | null | undefined): string => {
     if (!value) return '';
@@ -186,7 +195,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.setAttribute('download', `EmployeeList_Page${pagination.page}.csv`);
+    a.setAttribute('download', `EmployeeList_Page${currentPage}.csv`);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -204,6 +213,11 @@ const TenantBasedEmployeeManager: React.FC = () => {
         '& .MuiInputLabel-root': { color: '#ccc' },
       }
     : {};
+
+  const paginatedEmployees = employees.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <Box>
@@ -307,7 +321,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
       <Paper sx={{ mt: 3 }}>
         <TableContainer>
-          <Table>
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
@@ -322,12 +336,12 @@ const TenantBasedEmployeeManager: React.FC = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} align='center'>
+                  <TableCell colSpan={7} align='center'>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : employees.length ? (
-                employees.map(emp => (
+                paginatedEmployees.map(emp => (
                   <TableRow key={emp.id}>
                     <TableCell>{emp.name}</TableCell>
                     <TableCell>{emp.tenantName}</TableCell>
@@ -338,7 +352,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
                       {new Date(emp.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell align='center'>
-                      <IconButton onClick={() => handleView(emp)}>
+                      <IconButton onClick={() => handleOpenProfile(emp.id)}>
                         <VisibilityIcon />
                       </IconButton>
                     </TableCell>
@@ -346,7 +360,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} align='center'>
+                  <TableCell colSpan={7} align='center'>
                     No employees found
                   </TableCell>
                 </TableRow>
@@ -356,40 +370,34 @@ const TenantBasedEmployeeManager: React.FC = () => {
         </TableContainer>
       </Paper>
 
-      {pagination.totalPages > 1 && (
-        <Card sx={{ mt: 2 }}>
-          <CardContent>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: 2,
-              }}
-            >
-              <Typography variant='body2' color='text.secondary'>
-                Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
-                of {pagination.total} employees
-              </Typography>
-              <Pagination
-                count={pagination.totalPages}
-                page={pagination.page}
-                onChange={handlePageChange}
-                color='primary'
-                disabled={loading}
-              />
-            </Box>
-          </CardContent>
-        </Card>
+      {openProfile && selectedEmployee && (
+        <SystemEmployeeProfileView
+          open={openProfile}
+          onClose={() => setOpenProfile(false)}
+          employeeId={selectedEmployee}
+        />
       )}
 
-      {selectedEmployee && (
-        <EmployeeProfileViewSystem
-          employeeId={selectedEmployee.id} 
-          onClose={handleCloseView}
-        />
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' mt={2} mb={1}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color='primary'
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+
+      {totalRecords > 0 && (
+        <Box display='flex' justifyContent='center' mb={2}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {currentPage} of {totalPages} ({totalRecords} total
+            records)
+          </Typography>
+        </Box>
       )}
     </Box>
   );
