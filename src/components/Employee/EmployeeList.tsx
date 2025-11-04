@@ -118,7 +118,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
                 {direction === 'rtl' ? 'الوظيفة' : 'Designation'}
               </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+              <TableCell sx={{ color: textColor, fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                 {direction === 'rtl' ? 'رقم الهوية' : 'CNIC Number'}
               </TableCell>
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
@@ -186,7 +186,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                       emp.designationId ||
                       '—'}
                   </TableCell>
-                  <TableCell sx={{ color: textColor }}>
+                  <TableCell sx={{ color: textColor, whiteSpace: 'nowrap' }}>
                     {emp.cnic_number || '—'}
                   </TableCell>
                   <TableCell sx={{ color: textColor }}>

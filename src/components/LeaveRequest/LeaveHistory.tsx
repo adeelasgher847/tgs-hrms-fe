@@ -209,8 +209,10 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         sx={{
           display: 'flex',
           alignItems: 'center',
-          mb: 2,
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 2,
+          mb: 2,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -220,7 +222,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 ,}}>
           {!hideDropdown && (isAdmin || isManager) && (
             <TextField
               select
@@ -274,7 +276,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
       ) : (
-        <Paper elevation={1}>
+        <Paper elevation={1} sx={{boxShadow:'none'}}>
           <TableContainer>
             <Table>
               <TableHead>

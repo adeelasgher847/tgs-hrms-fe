@@ -42,7 +42,7 @@ import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { Snackbar, Alert } from '@mui/material';
-import { assetCategories } from '../../Data/assetCategories';
+import { assetCategories } from '../../data/assetCategories';
 
 const AssetInventory: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);

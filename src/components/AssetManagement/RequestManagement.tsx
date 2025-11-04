@@ -282,10 +282,32 @@ const RequestManagement: React.FC = () => {
         
         setRequests(transformedRequests);
 
-        // Fetch assets for assignment
-        const apiAssetsResponse = await assetApi.getAllAssets();
+        // Fetch assets for assignment - fetch all assets with high limit to get all pages
+        // This ensures all available assets are shown in the Assign Asset dropdown
+        let allAssets: any[] = [];
+        let currentPage = 1;
+        let hasMorePages = true;
+        const maxPages = 50; // Safety limit to prevent infinite loops
+        
+        while (hasMorePages && currentPage <= maxPages) {
+          const apiAssetsResponse = await assetApi.getAllAssets({
+            page: currentPage,
+            limit: 100, // Use a high limit to fetch more assets per page
+          });
+          
+          if (apiAssetsResponse.assets && apiAssetsResponse.assets.length > 0) {
+            allAssets = [...allAssets, ...apiAssetsResponse.assets];
+            
+            // Check if there are more pages
+            const totalPages = apiAssetsResponse.pagination?.totalPages || 1;
+            hasMorePages = currentPage < totalPages;
+            currentPage++;
+          } else {
+            hasMorePages = false;
+          }
+        }
 
-        const transformedAssets: Asset[] = apiAssetsResponse.assets.map(
+        const transformedAssets: Asset[] = allAssets.map(
           (apiAsset: Record<string, unknown>) => {
             // Try to find matching category from our comprehensive list
             const matchingCategory = assetCategories.find(
@@ -614,9 +636,31 @@ const RequestManagement: React.FC = () => {
       });
       
       
-      // Refresh assets to reflect assignment status
-      const apiAssetsResponse = await assetApi.getAllAssets();
-      const transformedAssets: Asset[] = apiAssetsResponse.assets.map(
+      // Refresh assets to reflect assignment status - fetch all assets with pagination
+      let allAssets: any[] = [];
+      let currentPage = 1;
+      let hasMorePages = true;
+      const maxPages = 50; // Safety limit to prevent infinite loops
+      
+      while (hasMorePages && currentPage <= maxPages) {
+        const apiAssetsResponse = await assetApi.getAllAssets({
+          page: currentPage,
+          limit: 100, // Use a high limit to fetch more assets per page
+        });
+        
+        if (apiAssetsResponse.assets && apiAssetsResponse.assets.length > 0) {
+          allAssets = [...allAssets, ...apiAssetsResponse.assets];
+          
+          // Check if there are more pages
+          const totalPages = apiAssetsResponse.pagination?.totalPages || 1;
+          hasMorePages = currentPage < totalPages;
+          currentPage++;
+        } else {
+          hasMorePages = false;
+        }
+      }
+      
+      const transformedAssets: Asset[] = allAssets.map(
         (apiAsset: Record<string, unknown>) => {
           // Try to find matching category from our comprehensive list
           const matchingCategory = assetCategories.find(
