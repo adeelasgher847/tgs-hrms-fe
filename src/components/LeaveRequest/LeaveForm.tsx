@@ -92,12 +92,18 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
       setStartDate(null);
       setEndDate(null);
       setReason('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating leave:', error);
 
-      setMessage(
-        error.response?.data?.message || 'Failed to submit leave request.'
-      );
+      let errorMessage = 'Failed to submit leave request.';
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      }
+      
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }

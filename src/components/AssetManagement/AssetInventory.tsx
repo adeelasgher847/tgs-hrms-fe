@@ -44,6 +44,14 @@ import ConfirmationDialog from './ConfirmationDialog';
 import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../data/assetCategories';
 
+// Extended interface for API asset response that may include additional user information
+interface ApiAssetWithUser extends ApiAsset {
+  assignedToName?: string;
+  assignedByUser?: {
+    name: string;
+  };
+}
+
 const AssetInventory: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
@@ -62,6 +70,8 @@ const AssetInventory: React.FC = () => {
     message: string;
     severity: 'success' | 'error' | 'warning' | 'info';
   }>({ open: false, message: '', severity: 'success' });
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
 
   const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
     setSnackbar({ open: true, message, severity });
@@ -85,13 +95,13 @@ const AssetInventory: React.FC = () => {
   ];
 
   // Helper function to get user name from API response or fallback
-  const getUserName = (apiAsset: ApiAsset): string => {
+  const getUserName = (apiAsset: ApiAssetWithUser): string => {
     // Check if the API response includes user name information
-    if ((apiAsset as any).assignedToName) {
-      return (apiAsset as any).assignedToName;
+    if (apiAsset.assignedToName) {
+      return apiAsset.assignedToName;
     }
-    if ((apiAsset as any).assignedByUser?.name) {
-      return (apiAsset as any).assignedByUser.name;
+    if (apiAsset.assignedByUser?.name) {
+      return apiAsset.assignedByUser.name;
     }
     // Fallback to user ID if no name is provided
     return apiAsset.assigned_to ? `User ${apiAsset.assigned_to}` : 'Unassigned';
@@ -119,7 +129,7 @@ const AssetInventory: React.FC = () => {
       }
         
         // Transform API assets to match component interface
-        const transformedAssets: Asset[] = apiAssets.map((apiAsset: ApiAsset) => {
+        const transformedAssets: Asset[] = apiAssets.map((apiAsset: ApiAssetWithUser) => {
           // Try to find matching category from our comprehensive list
           const matchingCategory = assetCategories.find(cat => 
             cat.name.toLowerCase() === apiAsset.category.toLowerCase() ||
@@ -199,13 +209,13 @@ const AssetInventory: React.FC = () => {
     }
 
     // Status filter
-    if (filters.status && filters.status.length > 0) {
-      filtered = filtered.filter(asset => filters.status!.includes(asset.status));
+    if (filters.status) {
+      filtered = filtered.filter(asset => asset.status === filters.status);
     }
 
     // Category filter
-    if (filters.category && filters.category.length > 0) {
-      filtered = filtered.filter(asset => filters.category!.includes(asset.category.name));
+    if (filters.category) {
+      filtered = filtered.filter(asset => asset.category.name === filters.category);
     }
 
     setFilteredAssets(filtered);
@@ -480,11 +490,21 @@ const AssetInventory: React.FC = () => {
               <FormControl fullWidth size="small">
                 <InputLabel>Status</InputLabel>
                 <Select
-                  multiple
-                  value={filters.status || []}
-                  onChange={(e) => setFilters((prev: AssetFilters) => ({ ...prev, status: e.target.value as AssetStatus[] }))}
+                  open={statusDropdownOpen}
+                  onOpen={() => setStatusDropdownOpen(true)}
+                  onClose={() => setStatusDropdownOpen(false)}
+                  value={filters.status || ''}
+                  onChange={(e) => {
+                    const value = e.target.value as string;
+                    setFilters((prev: AssetFilters) => ({ 
+                      ...prev, 
+                      status: value === '' ? undefined : value as AssetStatus 
+                    }));
+                    setStatusDropdownOpen(false);
+                  }}
                   label="Status"
                 >
+                  <MenuItem value="">All</MenuItem>
                   <MenuItem value="available">Available</MenuItem>
                   <MenuItem value="assigned">Assigned</MenuItem>
                   <MenuItem value="under_maintenance">Under Maintenance</MenuItem>
@@ -496,11 +516,21 @@ const AssetInventory: React.FC = () => {
               <FormControl fullWidth size="small">
                 <InputLabel>Category</InputLabel>
                 <Select
-                  multiple
-                  value={filters.category || []}
-                  onChange={(e) => setFilters((prev: AssetFilters) => ({ ...prev, category: e.target.value as string[] }))}
+                  open={categoryDropdownOpen}
+                  onOpen={() => setCategoryDropdownOpen(true)}
+                  onClose={() => setCategoryDropdownOpen(false)}
+                  value={filters.category || ''}
+                  onChange={(e) => {
+                    const value = e.target.value as string;
+                    setFilters((prev: AssetFilters) => ({ 
+                      ...prev, 
+                      category: value === '' ? undefined : value 
+                    }));
+                    setCategoryDropdownOpen(false);
+                  }}
                   label="Category"
                 >
+                  <MenuItem value="">All</MenuItem>
                   {assetCategories.map((category) => (
                     <MenuItem key={category.id} value={category.name}>
                       <Typography variant="body2">{category.name}</Typography>
