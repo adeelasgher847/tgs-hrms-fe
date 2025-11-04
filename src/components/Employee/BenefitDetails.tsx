@@ -158,7 +158,7 @@ const BenefitDetails: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Paper sx={{ mt: 2, overflowX: 'auto' }}>
+        <Paper sx={{ mt: 2, overflowX: 'auto',boxShadow:'none' }}>
           <Table>
             <TableHead>
               <TableRow>

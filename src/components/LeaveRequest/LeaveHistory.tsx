@@ -12,7 +12,6 @@ import {
   Box,
   TextField,
   MenuItem,
-  Button,
   Pagination,
   IconButton,
   Tooltip,
@@ -30,7 +29,7 @@ const statusConfig: Record<
   string,
   {
     color: 'success' | 'error' | 'warning' | 'default';
-    icon: React.ReactElement | null;
+    icon: React.ReactElement | undefined;
   }
 > = {
   pending: {
@@ -100,9 +99,8 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   const employeeNames = useMemo(() => {
     const names = new Set<string>();
     leaves.forEach(l => {
-      const empId =
-        l.employee?.id || l.employee_id || l.user_id || l.employeeId;
-      const name = l.employee?.first_name || l.name;
+      const empId = l.employee?.id || l.employeeId;
+      const name = l.employee?.first_name;
       if (empId && name && empId !== currentUserId) names.add(name);
     });
     return Array.from(names);
@@ -113,8 +111,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
       return leaves.filter(
         l =>
           l.employee?.id === currentUserId ||
-          l.employee_id === currentUserId ||
-          l.user_id === currentUserId ||
           l.employeeId === currentUserId
       );
     }
@@ -122,9 +118,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     if (selectedEmployee === '') return leaves;
 
     return leaves.filter(
-      leave =>
-        leave.employee?.first_name === selectedEmployee ||
-        leave.name === selectedEmployee
+      leave => leave.employee?.first_name === selectedEmployee
     );
   }, [selectedEmployee, leaves, isManager, viewMode, currentUserId]);
 
@@ -163,15 +157,15 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
       'Remarks',
     ];
 
-    const escapeCSV = (value: any) => {
+    const escapeCSV = (value: unknown): string => {
       if (value == null) return '';
       const str = String(value).replace(/"/g, '""'); // escape double quotes
       return `"${str}"`; // wrap in quotes
     };
 
     const rows = filteredLeaves.map(leave => [
-      escapeCSV(leave.employee?.first_name || leave.name || 'N/A'),
-      escapeCSV(leave.leaveType?.name || leave.type || 'Unknown'),
+      escapeCSV(leave.employee?.first_name || 'N/A'),
+      escapeCSV(leave.leaveType?.name || 'Unknown'),
       escapeCSV(formatDate(leave.startDate)),
       escapeCSV(formatDate(leave.endDate)),
       escapeCSV(formatDate(leave.createdAt)),
@@ -209,8 +203,10 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         sx={{
           display: 'flex',
           alignItems: 'center',
-          mb: 2,
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 2,
+          mb: 2,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -220,7 +216,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 ,}}>
           {!hideDropdown && (isAdmin || isManager) && (
             <TextField
               select
@@ -230,7 +226,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               sx={{ minWidth: 200 }}
               SelectProps={{
                 displayEmpty: true,
-                renderValue: value => (value === '' ? 'All Employees' : value),
+                renderValue: (value: unknown) => (value === '' ? 'All Employees' : String(value)),
               }}
             >
               <MenuItem value=''>All Employees</MenuItem>
@@ -274,7 +270,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
       ) : (
-        <Paper elevation={1}>
+        <Paper elevation={1} sx={{boxShadow:'none'}}>
           <TableContainer>
             <Table>
               <TableHead>
@@ -297,11 +293,11 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                   <TableRow key={leave.id || index}>
                     {!hideNameColumn && (isAdmin || isManager || showNames) && (
                       <TableCell>
-                        {leave.employee?.first_name || leave.name || 'N/A'}
+                        {leave.employee?.first_name || 'N/A'}
                       </TableCell>
                     )}
                     <TableCell>
-                      {leave.leaveType?.name || leave.type || 'Unknown'}
+                      {leave.leaveType?.name || 'Unknown'}
                     </TableCell>
                     <TableCell>{formatDate(leave.startDate)}</TableCell>
                     <TableCell>{formatDate(leave.endDate)}</TableCell>
