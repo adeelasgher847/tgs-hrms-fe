@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -19,6 +19,7 @@ import {
   Alert,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import { useLocation } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
 import attendanceSummaryApi from '../../api/reportApi';
 
@@ -33,13 +34,13 @@ interface AttendanceSummaryItem {
 }
 
 const AttendanceSummaryReport: React.FC = () => {
+  const location = useLocation();
   const { user, loading: userLoading } = useUser();
   const [summaryData, setSummaryData] = useState<AttendanceSummaryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<
     'thisMonth' | 'prevMonth' | '60days' | '90days'
   >('thisMonth');
-
   // Snackbar states
   const [openToast, setOpenToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -47,14 +48,17 @@ const AttendanceSummaryReport: React.FC = () => {
     'success' | 'error' | 'warning' | 'info'
   >('success');
 
-  const showToast = (
-    message: string,
-    severity: 'success' | 'error' | 'warning' | 'info' = 'info'
-  ) => {
-    setToastMessage(message);
-    setToastSeverity(severity);
-    setOpenToast(true);
-  };
+  const showToast = useCallback(
+    (
+      message: string,
+      severity: 'success' | 'error' | 'warning' | 'info' = 'info'
+    ) => {
+      setToastMessage(message);
+      setToastSeverity(severity);
+      setOpenToast(true);
+    },
+    []
+  );
 
   const getDaysRange = React.useCallback(() => {
     switch (filter) {
@@ -79,20 +83,26 @@ const AttendanceSummaryReport: React.FC = () => {
   }, [filter]);
 
   useEffect(() => {
-    const fetchSummary = async () => {
-      if (userLoading) return;
-      if (!user?.tenant) {
-        console.warn('Missing tenantId — cannot fetch report.');
-        setSummaryData([]);
-        setLoading(false);
-        return;
-      }
+    // Wait for user loading to complete
+    if (userLoading) {
+      return;
+    }
 
+    // Get tenant ID - if not available, clear data and return
+    const tenantId = user?.tenant;
+    if (!tenantId) {
+      setSummaryData([]);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch data when tenant is available
+    const fetchSummary = async () => {
       setLoading(true);
       try {
         const days = getDaysRange();
         const resp = await attendanceSummaryApi.getAttendanceSummary(
-          user.tenant,
+          tenantId,
           days
         );
 
@@ -103,9 +113,11 @@ const AttendanceSummaryReport: React.FC = () => {
         } else if (Array.isArray(resp)) {
           items = resp as AttendanceSummaryItem[];
         } else if (Array.isArray((resp as Record<string, unknown>).items)) {
-          items = (resp as Record<string, unknown>).items as AttendanceSummaryItem[];
+          items = (resp as Record<string, unknown>)
+            .items as AttendanceSummaryItem[];
         } else if (Array.isArray((resp as Record<string, unknown>).data)) {
-          items = (resp as Record<string, unknown>).data as AttendanceSummaryItem[];
+          items = (resp as Record<string, unknown>)
+            .data as AttendanceSummaryItem[];
         } else {
           items = [];
         }
@@ -121,7 +133,14 @@ const AttendanceSummaryReport: React.FC = () => {
     };
 
     fetchSummary();
-  }, [user, userLoading, filter, getDaysRange]);
+  }, [
+    user?.tenant,
+    userLoading,
+    filter,
+    getDaysRange,
+    showToast,
+    location.pathname,
+  ]);
 
   const safeData = Array.isArray(summaryData) ? summaryData : [];
 
@@ -199,7 +218,13 @@ const AttendanceSummaryReport: React.FC = () => {
           <Select
             value={filter}
             onChange={e => {
-              setFilter(e.target.value as 'thisMonth' | 'prevMonth' | '60days' | '90days');
+              setFilter(
+                e.target.value as
+                  | 'thisMonth'
+                  | 'prevMonth'
+                  | '60days'
+                  | '90days'
+              );
             }}
           >
             <MenuItem value='thisMonth'>This Month</MenuItem>

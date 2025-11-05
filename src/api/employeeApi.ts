@@ -13,7 +13,6 @@ export interface GenderPercentage {
   total: number;
 }
 
-// Normalized Employee shape used in UI (matches EmployeeManager expectations)
 export interface BackendEmployee {
   id: string;
   user_id?: string; // User ID for fetching profile pictures
@@ -52,18 +51,17 @@ export interface BackendEmployee {
   updatedAt: string;
 }
 
-// New profile endpoint types (EmployeeProfileService)
 export interface EmployeeProfileAttendanceSummaryItem {
-  date: string; // YYYY-MM-DD
-  checkIn: string | null; // ISO string
-  checkOut: string | null; // ISO string
-  workedHours: number; // decimal hours
+  date: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  workedHours: number;
 }
 
 export interface EmployeeProfileLeaveHistoryItem {
   id: string;
-  fromDate: string; // YYYY-MM-DD
-  toDate: string; // YYYY-MM-DD
+  fromDate: string;
+  toDate: string;
   reason: string;
   type: string;
   status: string;
@@ -81,9 +79,6 @@ export interface EmployeeFullProfile {
   attendanceSummary: EmployeeProfileAttendanceSummaryItem[];
   leaveHistory: EmployeeProfileLeaveHistoryItem[];
 }
-
-// Create/Update DTO interface
-// DTOs aligned with backend
 
 export interface EmployeeDto {
   first_name: string;
@@ -123,7 +118,6 @@ type EmployeeFilters = {
   designationId?: string;
 };
 
-// Backend raw entity shapes
 type RawUser = {
   id: string;
   email: string;
@@ -161,35 +155,42 @@ type RawEmployee = {
   updated_at?: string;
   user?: RawUser;
   designation?: RawDesignation;
+  role_id?: string;
+  role_name?: string;
 };
 
 function normalizeEmployee(raw: unknown): BackendEmployee {
-  // Type assertion for flexible data handling
   const data = raw as Record<string, unknown>;
-
-  // Handle different data structures
   const user = data?.user as RawUser | undefined;
   const designation = data?.designation as RawDesignation | undefined;
   const department = designation?.department;
-  const roleId =
-    (data.role_id as string) || (user && (user as Record<string, unknown>).role_id as string) || '';
-  const roleName = (data.role_name as string) || (user && (user as Record<string, unknown>).role_name as string) || '';
 
-  // If the data looks like a designation (has title), create a mock employee structure
+  const roleId =
+    (data.role_id as string) ||
+    (user && ((user as Record<string, unknown>).role_id as string)) ||
+    '';
+  const roleName =
+    (data.role_name as string) ||
+    (user && ((user as Record<string, unknown>).role_name as string)) ||
+    '';
+
   if (data.title && !data.user) {
     return {
       id: (data.id as string) || `mock-${Date.now()}`,
+      user_id: (data.user_id as string) || '',
       name: `Employee ${data.title as string}`,
       firstName: 'Employee',
       lastName: data.title as string,
-      email: `employee.${(data.title as string).toLowerCase().replace(/\s+/g, '.')}@company.com`,
+      email: `employee.${(data.title as string)
+        .toLowerCase()
+        .replace(/\s+/g, '.')}@company.com`,
       phone: '+1234567890',
       departmentId: (data.department_id as string) || '',
       designationId: (data.id as string) || '',
       status: data.invite_status as string,
       role_id: roleId,
       role_name: roleName,
-      department: null, // Will be populated by department mapping
+      department: null,
       designation: {
         id: data.id as string,
         title: data.title as string,
@@ -204,7 +205,6 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
     };
   }
 
-  // Handle full employee data structure
   if (user && designation) {
     return {
       id: data.id as string,
@@ -218,7 +218,7 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
       phone: user?.phone ?? '',
       role_id: roleId,
       role_name: roleName,
-      departmentId: designation?.department_id ?? '',
+      departmentId: designation.department_id ?? '',
       designationId: data.designation_id as string,
       status: data.invite_status as string,
       cnic_number: data.cnic_number as string,
@@ -235,23 +235,19 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
             updatedAt: department.updated_at ?? department.created_at,
           }
         : null,
-      designation: designation
-        ? {
-            id: designation.id,
-            title: designation.title,
-            tenantId: user?.tenant_id ?? '',
-            departmentId: designation.department_id,
-            createdAt: designation.created_at,
-            updatedAt: designation.updated_at ?? designation.created_at,
-          }
-        : null,
-      tenantId: user?.tenant_id ?? '',
+      designation: {
+        id: designation.id,
+        title: designation.title,
+        tenantId: user.tenant_id ?? '',
+        departmentId: designation.department_id,
+        createdAt: designation.created_at,
+        updatedAt: designation.updated_at ?? designation.created_at,
+      },
+      tenantId: user.tenant_id ?? '',
       createdAt: data.created_at as string,
       updatedAt: (data.updated_at as string) ?? (data.created_at as string),
     };
   }
-
-  // Fallback for unknown structure
 
   return {
     id: (data.id as string) || `fallback-${Date.now()}`,
@@ -279,19 +275,9 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
   };
 }
 
-export interface EmployeeJoiningReport {
-  month: number;
-  year: number;
-  total: number;
-}
-
 class EmployeeApiService {
   private baseUrl = '/employees';
 
-  // Debug: Check if we're hitting the right endpoint
-  constructor() {}
-
-  // Get all employees with pagination
   async getAllEmployees(
     filters: EmployeeFilters = {},
     page: number = 1
@@ -303,84 +289,42 @@ class EmployeeApiService {
     totalPages: number;
   }> {
     try {
-      // Build query parameters including page
       const params = new URLSearchParams();
       params.append('page', page.toString());
 
-      // Add filters
-      if (filters.departmentId) {
+      if (filters.departmentId)
         params.append('department_id', filters.departmentId);
-      }
-      if (filters.designationId) {
+      if (filters.designationId)
         params.append('designation_id', filters.designationId);
-      }
 
       const url = `${this.baseUrl}?${params.toString()}`;
-
       const response = await axiosInstance.get(url);
-      if (
-        response.data &&
-        response.data.items &&
-        Array.isArray(response.data.items)
-      ) {
-        const normalizedItems = response.data.items
-          .map((item: unknown) => {
-            try {
-              return normalizeEmployee(item);
-            } catch {
-              return null;
-            }
-          })
-          .filter(
-            (item: BackendEmployee | null): item is BackendEmployee =>
-              item !== null
-          );
 
-        return {
-          items: normalizedItems,
-          total: response.data.total || 0,
-          page: response.data.page || page,
-          limit: response.data.limit || 25,
-          totalPages: response.data.totalPages || 1,
-        };
-      } else if (Array.isArray(response.data)) {
-        const normalizedItems = response.data
-          .map((item: unknown) => {
-            try {
-              return normalizeEmployee(item);
-            } catch {
-              return null;
-            }
-          })
-          .filter(
-            (item: BackendEmployee | null): item is BackendEmployee =>
-              item !== null
-          );
+      const itemsArray = Array.isArray(response.data.items)
+        ? response.data.items
+        : Array.isArray(response.data)
+          ? response.data
+          : [];
 
-        return {
-          items: normalizedItems,
-          total: normalizedItems.length,
-          page: 1,
-          limit: 25,
-          totalPages: 1,
-        };
-      } else {
-        return {
-          items: [],
-          total: 0,
-          page: 1,
-          limit: 25,
-          totalPages: 1,
-        };
-      }
-    } catch {
+      const normalizedItems = itemsArray
+        .map((item: unknown) => {
+          try {
+            return normalizeEmployee(item);
+          } catch {
+            return null;
+          }
+        })
+        .filter((e): e is BackendEmployee => e !== null);
+
       return {
-        items: [],
-        total: 0,
-        page: 1,
-        limit: 25,
-        totalPages: 1,
+        items: normalizedItems,
+        total: response.data.total || normalizedItems.length,
+        page: response.data.page || page,
+        limit: response.data.limit || 25,
+        totalPages: response.data.totalPages || 1,
       };
+    } catch {
+      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
     }
   }
 
@@ -391,14 +335,10 @@ class EmployeeApiService {
       let hasMore = true;
 
       while (hasMore) {
-        const response = await this.getAllEmployees({}, currentPage);
-        allEmployees = [...allEmployees, ...response.items];
-
-        if (currentPage >= response.totalPages) {
-          hasMore = false;
-        } else {
-          currentPage++;
-        }
+        const res = await this.getAllEmployees({}, currentPage);
+        allEmployees = [...allEmployees, ...res.items];
+        hasMore = currentPage < res.totalPages;
+        currentPage++;
       }
 
       return allEmployees;
@@ -472,12 +412,12 @@ class EmployeeApiService {
       );
       return normalizeEmployee(response.data);
     } catch (error) {
-      const errorResult = handleApiError(error, {
+      const err = handleApiError(error, {
         operation: 'create',
         resource: 'employee',
         isGlobal: false,
       });
-      throw new Error(errorResult.message);
+      throw new Error(err.message);
     }
   }
 
@@ -630,36 +570,24 @@ class EmployeeApiService {
           },
         }
       );
-
       return normalizeEmployee(response.data);
     } catch (error) {
-      const errorResult = handleApiError(error, {
+      const err = handleApiError(error, {
         operation: 'update',
         resource: 'employee',
         isGlobal: false,
       });
-      throw new Error(errorResult.message);
+      throw new Error(err.message);
     }
   }
 
   async deleteEmployee(id: string): Promise<{ deleted: true; id: string }> {
-    try {
-      const response = await axiosInstance.delete<{
-        deleted: true;
-        id: string;
-      }>(`${this.baseUrl}/${id}`);
-      return response.data;
-    } catch (error) {
-      const errorResult = handleApiError(error, {
-        operation: 'delete',
-        resource: 'employee',
-        isGlobal: false,
-      });
-      throw new Error(errorResult.message);
-    }
+    const response = await axiosInstance.delete<{ deleted: true; id: string }>(
+      `${this.baseUrl}/${id}`
+    );
+    return response.data;
   }
 
-  // Get gender percentage for dashboard
   async getGenderPercentage(): Promise<GenderPercentage> {
     const response = await axiosInstance.get<GenderPercentage>(
       `${this.baseUrl}/gender-percentage`
@@ -667,29 +595,18 @@ class EmployeeApiService {
     return response.data;
   }
 
-  // Resend invite to employee
   async resendInvite(
     id: string
   ): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await axiosInstance.post<{ message: string }>(
-        `${this.baseUrl}/${id}/refresh-invite-status`
-      );
-      return { success: true, message: response.data.message };
-    } catch (error) {
-      const errorResult = handleApiError(error, {
-        operation: 'update',
-        resource: 'employee',
-        isGlobal: false,
-      });
-      throw new Error(errorResult.message);
-    }
+    const response = await axiosInstance.post<{ message: string }>(
+      `${this.baseUrl}/${id}/refresh-invite-status`
+    );
+    return { success: true, message: response.data.message };
   }
 
   // Image blob endpoints removed. Image paths should come directly from list/detail APIs.
 }
 
-// Get employee joining report
 export const getEmployeeJoiningReport = async (): Promise<
   EmployeeJoiningReport[]
 > => {
@@ -697,30 +614,20 @@ export const getEmployeeJoiningReport = async (): Promise<
   return response.data;
 };
 
-// Get attendance this month
 export const getAttendanceThisMonth = async (): Promise<{
   status?: string;
   data?: { total_attendance: number };
-  message?: string;
-  totalAttendance?: number;
 }> => {
   const response = await axiosInstance.get('/employees/attendance-this-month');
   return response.data;
 };
 
-// Get leaves this month
 export const getLeavesThisMonth = async (): Promise<{
   status?: string;
   data?: { total_leaves: number };
-  message?: string;
-  totalLeaves?: number;
 }> => {
-  try {
-    const response = await axiosInstance.get('/employees/leaves-this-month');
-    return response.data;
-  } catch {
-    throw new Error('Failed to fetch leaves this month');
-  }
+  const response = await axiosInstance.get('/employees/leaves-this-month');
+  return response.data;
 };
 
 const employeeApi = new EmployeeApiService();
