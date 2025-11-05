@@ -150,6 +150,12 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (parent.includes('attendance')) {
+      // hide only Reports for network-admin, but keep Attendance and Attendance Table visible
+      if (sub.includes('leave request')) {
+        visible = false;
+      }
+    }
   }
 
   // Show new "Report" only for admin + manager
@@ -303,7 +309,6 @@ export const isDashboardPathAllowedForRole = (
       'Designations',
       'EmployeeManager',
       'UserProfile',
-      'leaves',
       'AttendanceCheck',
       'AttendanceTable',
       // 'Reports',
