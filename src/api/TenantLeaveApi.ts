@@ -61,7 +61,7 @@ export const TenantLeaveApi = {
         params: {
           page,
           includeDeleted: includeDeleted.toString(),
-          limit: 1000, 
+          limit: 1000,
         },
       });
 
@@ -69,7 +69,7 @@ export const TenantLeaveApi = {
         return [];
       }
 
-      return data.map((tenant: any) => ({
+      return data.map((tenant: TenantListItem) => ({
         id: tenant.id,
         name: tenant.name,
         status: tenant.status,
@@ -78,7 +78,7 @@ export const TenantLeaveApi = {
         updated_at: tenant.updated_at,
         deleted_at: tenant.deleted_at,
       }));
-    } catch (error: any) {
+    } catch {
       return [];
     }
   },
@@ -92,7 +92,7 @@ export const TenantLeaveApi = {
     totalPages: number;
   }> => {
     try {
-      const params: Record<string, any> = {
+      const params: Record<string, string | number> = {
         page: filters.page ?? 1,
         limit: filters.limit ?? 10,
       };
@@ -135,10 +135,13 @@ export const TenantLeaveApi = {
         leavesData.totalPages ?? Math.ceil(total / (limit || 1));
 
       return { items: enrichedItems, total, page, limit, totalPages };
-    } catch (error: any) {
-      throw new Error(
-        error.response?.data?.message || 'Failed to fetch system leaves'
-      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error && 'response' in error
+          ? (error as { response?: { data?: { message?: string } } }).response
+              ?.data?.message
+          : undefined;
+      throw new Error(errorMessage || 'Failed to fetch system leaves');
     }
   },
 
@@ -151,7 +154,7 @@ export const TenantLeaveApi = {
     } = {}
   ): Promise<SystemLeaveSummary[]> => {
     try {
-      const params: Record<string, any> = {};
+      const params: Record<string, string> = {};
       if (filters.tenantId) params.tenantId = filters.tenantId;
       if (filters.status) params.status = filters.status;
       if (filters.startDate) params.startDate = filters.startDate;
@@ -174,7 +177,7 @@ export const TenantLeaveApi = {
         pendingCount: Number(item.pendingCount ?? 0),
         cancelledCount: Number(item.cancelledCount ?? 0),
       }));
-    } catch (error: any) {
+    } catch {
       return [];
     }
   },
@@ -187,14 +190,14 @@ export const TenantLeaveApi = {
 
       if (!Array.isArray(data)) return [];
 
-      return data.map((dept: any) => ({
+      return data.map((dept: Department) => ({
         id: dept.id,
         name: dept.name,
         description: dept.description,
         tenant_id: dept.tenant_id,
         created_at: dept.created_at,
       }));
-    } catch (error: any) {
+    } catch {
       return [];
     }
   },

@@ -65,6 +65,8 @@ const LeaveRequestPage = () => {
 
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
 
+  const currentUserId = currentUser?.id;
+
   const loadLeaves = useCallback(async () => {
     try {
       setLoading(true);
@@ -77,10 +79,10 @@ const LeaveRequestPage = () => {
       } else if (role === 'manager') {
         res =
           viewMode === 'you'
-            ? await leaveApi.getUserLeaves(currentUser?.id, currentPage)
+            ? await leaveApi.getUserLeaves(currentUserId, currentPage)
             : await leaveApi.getTeamLeaves(currentPage);
       } else {
-        res = await leaveApi.getUserLeaves(currentUser?.id, currentPage);
+        res = await leaveApi.getUserLeaves(currentUserId, currentPage);
       }
 
       // Type for API leave response
@@ -165,7 +167,7 @@ const LeaveRequestPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentUser, role, viewMode, currentPage]);
+  }, [currentUserId, role, viewMode, currentPage]);
 
   const getErrorMessage = (error: unknown): string => {
     if (error && typeof error === 'object' && 'response' in error) {
@@ -266,7 +268,7 @@ const LeaveRequestPage = () => {
 
   useEffect(() => {
     fetchLeaveTypes();
-  }, []);
+  }, [fetchLeaveTypes]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -274,7 +276,8 @@ const LeaveRequestPage = () => {
 
   useEffect(() => {
     loadLeaves();
-  }, [currentPage, viewMode, role, currentUser?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, viewMode, role, currentUserId]);
 
   if (loading)
     return (

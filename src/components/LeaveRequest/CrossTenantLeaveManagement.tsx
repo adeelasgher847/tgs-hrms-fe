@@ -25,9 +25,14 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { Dayjs } from 'dayjs';
 import Chart from 'react-apexcharts';
 import { TenantLeaveApi } from '../../api/TenantLeaveApi';
-import type { SystemLeaveFilters } from '../../api/TenantLeaveApi';
-import { SystemTenantApi } from '../../api/systemTenantApi';
+import type {
+  SystemLeaveFilters,
+  SystemLeaveResponse,
+  SystemLeaveSummary,
+} from '../../api/TenantLeaveApi';
+import { SystemTenantApi, type SystemTenant } from '../../api/systemTenantApi';
 import axiosInstance from '../../api/axiosInstance';
+import type { Department } from '../../api/TenantLeaveApi';
 
 const CrossTenantLeaveManagement: React.FC = () => {
   const [filters, setFilters] = useState<{
@@ -44,10 +49,10 @@ const CrossTenantLeaveManagement: React.FC = () => {
     endDate: null,
   });
 
-  const [tenants, setTenants] = useState<any[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [leaves, setLeaves] = useState<any[]>([]);
-  const [summary, setSummary] = useState<any[]>([]);
+  const [tenants, setTenants] = useState<SystemTenant[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [leaves, setLeaves] = useState<SystemLeaveResponse[]>([]);
+  const [summary, setSummary] = useState<SystemLeaveSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -61,7 +66,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const isInitialTenantSet = useRef(false);
   const isInitialLoad = useRef(true);
 
-  const handleFilterChange = (field: string, value: any) => {
+  const handleFilterChange = (field: string, value: string | Dayjs | null) => {
     setFilters(prev => ({ ...prev, [field]: value }));
     setCurrentPage(1);
   };
@@ -91,7 +96,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
           }));
         }
       }
-    } catch (error) {
+    } catch {
       setSnackbar({
         open: true,
         message: 'Failed to load tenant list',
@@ -104,7 +109,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
     try {
       const { data } = await axiosInstance.get('/departments');
       setDepartments(Array.isArray(data) ? data : []);
-    } catch (error) {
+    } catch {
       setSnackbar({
         open: true,
         message: 'Failed to load departments',
@@ -173,7 +178,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
       }));
 
       setSummary(mapped);
-    } catch (error) {
+    } catch {
       setSnackbar({
         open: true,
         message: 'Failed to load summary',
@@ -211,16 +216,11 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
       const response = await TenantLeaveApi.getSystemLeaves(apiFilters);
 
-      const mappedLeaves = response.items.map((leave: any) => ({
+      const mappedLeaves = response.items.map((leave: SystemLeaveResponse) => ({
         ...leave,
-        tenantName:
-          leave.tenantName ||
-          leave.tenant?.name ||
-          leave.tenant?.tenantName ||
-          'Unknown Tenant',
-        employeeName:
-          leave.employeeName || leave.employee?.name || 'Unknown Employee',
-        leaveType: leave.leaveType || leave.leaveType?.name || 'N/A',
+        tenantName: leave.tenantName || 'Unknown Tenant',
+        employeeName: leave.employeeName || 'Unknown Employee',
+        leaveType: leave.leaveType || 'N/A',
       }));
 
       setLeaves(mappedLeaves);
@@ -232,7 +232,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
       if (isInitialLoad.current) {
         isInitialLoad.current = false;
       }
-    } catch (error) {
+    } catch {
       setSnackbar({
         open: true,
         message: 'Failed to load leave data',
@@ -280,7 +280,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const handleCloseSnackbar = () =>
     setSnackbar(prev => ({ ...prev, open: false }));
 
-  const handlePageChange = (_: any, page: number) => setCurrentPage(page);
+  const handlePageChange = (_: unknown, page: number) => setCurrentPage(page);
 
   const chartOptions: ApexCharts.ApexOptions = {
     chart: {
