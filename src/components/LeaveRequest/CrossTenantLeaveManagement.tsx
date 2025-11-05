@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -58,6 +58,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10;
+  const isInitialTenantSet = useRef(false);
+  const isInitialLoad = useRef(true);
 
   const handleFilterChange = (field: string, value: any) => {
     setFilters(prev => ({ ...prev, [field]: value }));
@@ -74,7 +76,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
       setTenants(activeTenants);
 
-      if (activeTenants.length > 0) {
+      if (activeTenants.length > 0 && !isInitialTenantSet.current) {
         const ibexTech = activeTenants.find(t =>
           t.name.toLowerCase().includes('ibex')
         );
@@ -82,6 +84,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         const defaultTenant = ibexTech || activeTenants[0];
 
         if (defaultTenant) {
+          isInitialTenantSet.current = true;
           setFilters(prev => ({
             ...prev,
             tenantId: defaultTenant.id,
@@ -181,7 +184,10 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   const fetchLeaves = useCallback(async () => {
     try {
-      setLoading(true);
+      // Don't show loading on initial load when default tenant is set
+      if (!isInitialLoad.current) {
+        setLoading(true);
+      }
       const apiFilters: SystemLeaveFilters = {
         tenantId: filters.tenantId || undefined,
         status:
@@ -221,14 +227,25 @@ const CrossTenantLeaveManagement: React.FC = () => {
       setTotalPages(
         response.totalPages || Math.ceil(response.total / itemsPerPage)
       );
+
+      // Mark initial load as complete
+      if (isInitialLoad.current) {
+        isInitialLoad.current = false;
+      }
     } catch (error) {
       setSnackbar({
         open: true,
         message: 'Failed to load leave data',
         severity: 'error',
       });
+      // Mark initial load as complete even on error
+      if (isInitialLoad.current) {
+        isInitialLoad.current = false;
+      }
     } finally {
-      setLoading(false);
+      if (!isInitialLoad.current) {
+        setLoading(false);
+      }
     }
   }, [filters, currentPage]);
 
@@ -238,12 +255,27 @@ const CrossTenantLeaveManagement: React.FC = () => {
   }, [fetchTenants, fetchDepartments]);
 
   useEffect(() => {
-    fetchSummary();
-  }, [fetchSummary]);
+    // Only fetch summary if tenantId is set (either default or user-selected)
+    if (filters.tenantId) {
+      fetchSummary();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.tenantId, filters.status, filters.startDate, filters.endDate]);
 
   useEffect(() => {
-    fetchLeaves();
-  }, [fetchLeaves]);
+    // Only fetch leaves if tenantId is set (either default or user-selected)
+    if (filters.tenantId) {
+      fetchLeaves();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    filters.tenantId,
+    filters.status,
+    filters.startDate,
+    filters.endDate,
+    filters.departmentId,
+    currentPage,
+  ]);
 
   const handleCloseSnackbar = () =>
     setSnackbar(prev => ({ ...prev, open: false }));
