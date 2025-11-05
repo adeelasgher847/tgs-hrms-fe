@@ -161,9 +161,6 @@ const TenantGrowthChart: React.FC = () => {
   return (
     <Box
       sx={{
-        mt: 1,
-        p: 2,
-        mb: 1,
         border: `1px solid ${borderColor}`,
         borderRadius: '0.375rem',
         backgroundColor: bgColor,
