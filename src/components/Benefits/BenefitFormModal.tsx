@@ -46,9 +46,11 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    watch,
+    formState: { errors, isValid },
   } = useForm<BenefitFormValues>({
     resolver: yupResolver(schema),
+    mode: 'onChange', // Validate on change to enable/disable button
     defaultValues: {
       name: '',
       type: '',
@@ -57,6 +59,16 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
       status: '',
     },
   });
+
+  // Watch all form values to check if they're filled
+  const watchedValues = watch();
+  const isFormValid =
+    watchedValues.name?.trim() &&
+    watchedValues.type?.trim() &&
+    watchedValues.description?.trim() &&
+    watchedValues.eligibilityCriteria?.trim() &&
+    watchedValues.status?.trim() &&
+    isValid;
 
   useEffect(() => {
     if (benefit) reset(benefit);
@@ -183,7 +195,7 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
           <Button onClick={onClose} variant='outlined'>
             Cancel
           </Button>
-          <Button type='submit' variant='contained'>
+          <Button type='submit' variant='contained' disabled={!isFormValid}>
             {benefit ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
