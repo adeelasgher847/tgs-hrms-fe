@@ -67,7 +67,6 @@ class SystemDashboardApiService {
       const response = await axiosInstance.get<RecentLog[]>(this.logsUrl, {
         params: { page },
       });
-      console.log('Get system logs response', response);
       return response.data;
     } catch (error) {
       console.error('Failed to fetch system logs:', error);

@@ -33,7 +33,6 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { useTheme } from '../theme/hooks';
 import { useCompany } from '../context/CompanyContext';
-import companyApi from '../api/companyApi';
 import {
   isMenuVisibleForRole,
   isSubMenuVisibleForRole,
@@ -122,11 +121,8 @@ const menuItems: MenuItem[] = [
   },
   {
     label: 'Leave Analytics',
-    icon: <Receipt />, 
-    subItems: [
-      { label: 'Reports', path: 'Reports' },
-
-    ],
+    icon: <Receipt />,
+    subItems: [{ label: 'Reports', path: 'Reports' }],
   },
   {
     label: 'Benefits',
@@ -198,13 +194,15 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   const { toggleTheme } = useTheme();
   const location = useLocation();
   const { user } = useUser();
-  const { companyDetails, companyLogo, setCompanyDetails, setCompanyLogo } =
-    useCompany();
+  const {
+    companyDetails,
+    companyLogo,
+    companyName: contextCompanyName,
+  } = useCompany();
   const role = user?.role;
 
   const [openItem, setOpenItem] = useState<string>('');
   const [activeSubItem, setActiveSubItem] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
 
   const filteredMenuItems = useMemo(() => {
     const userRole = typeof role === 'string' ? role : (role as unknown)?.name;
@@ -228,29 +226,6 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
       }));
     return filtered;
   }, [role]);
-
-  useEffect(() => {
-    const fetchCompanyData = async () => {
-      try {
-        setLoading(true);
-        const details = await companyApi.getCompanyDetails();
-        setCompanyDetails(details);
-
-        if (details.tenant_id) {
-          const logoUrl = await companyApi.getCompanyLogo(details.tenant_id);
-          setCompanyLogo(logoUrl);
-        } else {
-          setCompanyLogo(null);
-        }
-      } catch (err) {
-        console.error('Error fetching company info:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCompanyData();
-  }, [setCompanyDetails, setCompanyLogo]);
 
   useEffect(() => {
     let currentPath = location.pathname.replace('/dashboard/', '');
@@ -284,7 +259,8 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
     onMenuItemClick?.();
   };
 
-  const companyName = companyDetails?.company_name || 'Trans Global Services';
+  const companyName = contextCompanyName || 'Trans Global Services';
+  const loading = !companyDetails;
 
   return (
     <Box
@@ -319,7 +295,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
               flexShrink: 0,
             }}
           >
-            {loading ? (
+            {loading && !companyLogo ? (
               <Skeleton
                 variant='circular'
                 width='100%'
