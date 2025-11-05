@@ -43,6 +43,7 @@ import BenefitList from './components/Benefits/BenefitList';
 import EmployeeBenefits from './components/Benefits/EmployeeBenefits';
 import BenefitDetails from './components/Employee/BenefitDetails';
 import BenefitReport from './components/Benefits/BenefitReport';
+import CrossTenantLeaveManagement from './components/LeaveRequest/CrossTenantLeaveManagement';
 import TenantBasedEmployeeManager from './components/Employee/TenantBasedEmployeeManager';
 import AuditLogs from './components/Audits/AuditLogs';
 import PerformanceDashboard from './components/Performance/PerformanceManager';
@@ -88,6 +89,7 @@ function App() {
                 <Route path='UserList' element={<UserList />} />
                 <Route path='UserProfile' element={<UserProfileComponent />} />
                 <Route path='leaves' element={<LeaveRequestPage />} />
+                <Route path='cross-tenant-leaves' element={<CrossTenantLeaveManagement />} />
                 <Route
                   path='attendance-summary'
                   element={<AttendanceSummaryReport />}
@@ -126,6 +128,7 @@ function App() {
                 <Route path='employee-benefit' element={<EmployeeBenefits />} />
                 <Route path='benefit-details' element={<BenefitDetails />} />
                 <Route path='benefit-report' element={<BenefitReport />} />
+                
                 <Route
                   path='performance-dashboard'
                   element={<PerformanceDashboard />}
@@ -142,5 +145,4 @@ function App() {
     </LanguageProvider>
   );
 }
-
 export default App;

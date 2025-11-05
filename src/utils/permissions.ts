@@ -24,18 +24,17 @@ export const normalizeRole = (role?: string): NormalizedRole => {
   return r as NormalizedRole;
 };
 
-// Role -> default route under /dashboard
 export const getDefaultDashboardRoute = (role?: string): string => {
   const r = normalizeRole(role);
   switch (r) {
     case 'system-admin':
-      return '/dashboard'; // System admin dashboard
+      return '/dashboard';
     case 'network-admin':
-      return '/dashboard'; // Network admin dashboard
+      return '/dashboard';
     case 'hr-admin':
-      return '/dashboard/AttendanceCheck'; // HR admin dashboard
+      return '/dashboard/AttendanceCheck';
     case 'admin':
-      return '/dashboard'; // HR dashboard (_index)
+      return '/dashboard';
     case 'manager':
       return '/dashboard/teams';
     case 'employee':
@@ -46,7 +45,6 @@ export const getDefaultDashboardRoute = (role?: string): string => {
   }
 };
 
-// Top-level menu visibility by label
 export const isMenuVisibleForRole = (
   menuLabel: string,
   role?: string
@@ -89,12 +87,11 @@ export const isMenuVisibleForRole = (
       'report',
     ],
     manager: ['teams', 'attendance', 'assets', 'report', 'leave-analytics'],
-    employee: ['attendance', 'assets', 'benefits', 'leave-analytics',],
+    employee: ['attendance', 'assets', 'benefits', 'leave-analytics'],
     user: ['attendance', 'assets', 'benefits'],
-    unknown: ['benefits'], // Temporarily allow benefits for unknown roles
+    unknown: ['benefits'],
   };
 
-  // map synonyms from current sidebar to requirement naming
   const normalizedMenuKey = (() => {
     if (label.includes('dashboard')) return 'dashboard';
     if (label.includes('tenant')) return 'tenant';
@@ -118,7 +115,6 @@ export const isMenuVisibleForRole = (
   return allowed.includes(normalizedMenuKey);
 };
 
-// Submenu visibility helper per parent menu and sub label
 export const isSubMenuVisibleForRole = (
   parentMenuLabel: string,
   subLabel: string,
@@ -128,10 +124,7 @@ export const isSubMenuVisibleForRole = (
   const parent = parentMenuLabel.trim().toLowerCase();
   const sub = subLabel.trim().toLowerCase();
 
-  // Default visible unless explicitly restricted
   let visible = true;
-
-  // System-admin: hide Department -> (User List, Policies, Holidays); Attendance -> Reports
 
   if (r === 'system-admin') {
     if (parent.includes('department')) {
@@ -143,14 +136,26 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+
+    if (
+      parent.includes('leave analytics') ||
+      parent.includes('leave-analytics')
+    ) {
+      if (sub.includes('report')) {
+        visible = false;
+      }
+    }
+    if (parent.includes('attendance')) {
+      if (sub.includes('leave request')) {
+        visible = false;
+      }
+    }
   }
 
-  // Show new "Report" only for admin + manager
   if (sub === 'report') {
     visible = r === 'admin' || r === 'manager';
   }
 
-  // Network-admin: same as admin - hide Department -> (User List, Policies, Holidays); Attendance -> Reports only
   if (r === 'network-admin') {
     if (parent.includes('employees')) {
       if (sub.includes('tenant employees')) {
@@ -167,7 +172,6 @@ export const isSubMenuVisibleForRole = (
       }
     }
     if (parent.includes('attendance')) {
-      // hide only Reports for network-admin, but keep Attendance and Attendance Table visible
       if (sub.includes('reports')) {
         visible = false;
       }
@@ -182,7 +186,6 @@ export const isSubMenuVisibleForRole = (
     }
   }
 
-  // HR-admin: hide Attendance -> Reports and Leave Request
   if (r === 'hr-admin') {
     if (parent.includes('employees')) {
       if (sub.includes('tenant employees')) {
@@ -199,7 +202,6 @@ export const isSubMenuVisibleForRole = (
     }
   }
 
-  // --- Admin rules ---
   if (r === 'admin') {
     if (parent.includes('employees')) {
       if (sub.includes('tenant employees')) {
@@ -222,7 +224,7 @@ export const isSubMenuVisibleForRole = (
       visible = false;
     }
   }
-
+  
   // --- Manager rules ---
   if (r === 'manager') {
     if (parent.includes('employees')) {
@@ -239,7 +241,6 @@ export const isSubMenuVisibleForRole = (
     }
   }
 
-  // --- Employee/User rules ---
   if (r === 'employee' || r === 'user') {
     if (parent.includes('employees')) {
       if (sub.includes('tenant employees')) {
@@ -247,12 +248,10 @@ export const isSubMenuVisibleForRole = (
       }
     }
     if (parent.includes('attendance')) {
-      // Hide both Reports and Report for employees/users
       if (sub === 'report') {
         visible = false;
       }
     }
-    // For Assets menu - employees only see Asset Requests
     if (parent.includes('assets')) {
       if (sub.includes('asset inventory') || sub.includes('management')) {
         visible = false;
@@ -263,6 +262,15 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (
+      parent.includes('leave analytics') ||
+      parent.includes('leave-analytics')
+    ) {
+      if (sub.includes('cross-tenant-leaves')) {
+        visible = false;
+      }
+    }
+
     if (parent.includes('audit logs')) {
       visible = false;
     }
@@ -296,7 +304,6 @@ export const isSubMenuVisibleForRole = (
     }
   }
 
-  // HR Admin: hide all asset submenus
   if (r === 'hr-admin') {
     if (parent.includes('assets')) {
       visible = false;
@@ -308,7 +315,6 @@ export const isSubMenuVisibleForRole = (
     }
   }
 
-  // Admin: For Assets menu - only see Asset Inventory and Management (not Asset Requests)
   if (r === 'admin') {
     if (parent.includes('assets')) {
       if (sub.includes('asset requests')) {
@@ -317,7 +323,6 @@ export const isSubMenuVisibleForRole = (
     }
   }
 
-  // Manager: For Assets menu - only see Asset Requests
   if (r === 'manager') {
     if (parent.includes('assets')) {
       if (sub.includes('asset inventory') || sub.includes('management')) {
@@ -329,7 +334,6 @@ export const isSubMenuVisibleForRole = (
   return visible;
 };
 
-// Allowed paths under /dashboard per role
 export const isDashboardPathAllowedForRole = (
   pathAfterDashboard: string,
   role?: string
@@ -337,7 +341,6 @@ export const isDashboardPathAllowedForRole = (
   const r = normalizeRole(role);
   const p = (pathAfterDashboard || '').replace(/^\/+|\/+$/g, '');
 
-  // Index /dashboard
   if (p === '') {
     return (
       r === 'admin' ||
@@ -356,13 +359,13 @@ export const isDashboardPathAllowedForRole = (
       'Designations',
       'EmployeeManager',
       'UserProfile',
-      'leaves',
       'AttendanceCheck',
       'AttendanceTable',
-      'Reports',
+      // 'Reports',
       'attendance-summary',
       'AttendanceCheck/TimesheetLayout',
       'AttendanceCheck/TimesheetLayout',
+      'CrossTenantLeaveManagement',
       // Teams
       'teams',
       // Assets - System admin only sees System Assets Overview
@@ -376,6 +379,8 @@ export const isDashboardPathAllowedForRole = (
       'benefits/assign',
       'benefits/reporting',
       'my-benefits',
+      'cross-tenant-leaves',
+      'audit-logs',
       'TenantEmployees',
       'audit-logs',
       'performance-dashboard',

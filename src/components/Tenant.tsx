@@ -1,15 +1,10 @@
-import { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
   Button,
-  Fab,
   useMediaQuery,
   Paper,
-  Divider,
-  Card,
-  CardContent,
-  CardActions,
   IconButton,
   Snackbar,
   Alert,
@@ -19,591 +14,636 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Switch,
+  Tooltip,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  Chip,
+  Card,
+  Pagination,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Business as BusinessIcon,
-  Warning as WarningIcon,
-} from '@mui/icons-material';
-import companyApi from '../api/companyApi';
-import type { BackendCompany, CompanyDto } from '../api/companyApi';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import { useOutletContext } from 'react-router-dom';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import RestoreIcon from '@mui/icons-material/Restore';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import EditIcon from '@mui/icons-material/Edit';
 import { useLanguage } from '../hooks/useLanguage';
-import edit from '../assets/dashboardIcon/edit.svg';
-import deleteIcon from '../assets/dashboardIcon/ui-delete.svg';
+import {
+  SystemTenantApi,
+  type SystemTenant,
+  type SystemTenantDetail,
+} from '../api/systemTenantApi';
 
-const labels = {
-  en: {
-    title: 'Tenants',
-    create: 'Create Tenant',
-    createFirst: 'Create First Tenant',
-    noTenants: 'No Tenants Found',
-    description: 'Get started by creating your first tenant',
-    name: 'Tenant Name',
-    save: 'Save',
-    cancel: 'Cancel',
-    edit: 'Edit',
-    delete: 'Delete',
-    confirmDelete: 'Confirm Delete?',
-  },
-  ar: {
-    title: 'المستأجرون',
-    create: 'إنشاء مستأجر',
-    createFirst: 'إنشاء أول مستأجر',
-    noTenants: 'لا يوجد مستأجرون',
-    description: 'ابدأ بإنشاء أول مستأجر لإدارتهم',
-    name: 'اسم المستأجر',
-    save: 'حفظ',
-    cancel: 'إلغاء',
-    edit: 'تعديل',
-    delete: 'حذف',
-    confirmDelete: 'هل أنت متأكد أنك تريد حذف هذا المستأجر؟',
-  },
-};
-
-export const TenantPage = () => {
+export const TenantPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { darkMode } = useOutletContext<{ darkMode: boolean }>() || {
     darkMode: false,
   };
-  const { language } = useLanguage();
-  const isRtl = language === 'ar';
-  const lang = labels[language];
+  const { language } = useLanguage?.() ?? { language: 'en' };
 
-  const bgPaper = darkMode ? '#1b1b1b' : '#fff';
-  const textPrimary = darkMode ? '#e0e0e0' : theme.palette.text.primary;
-  const textSecond = darkMode ? '#9a9a9a' : theme.palette.text.secondary;
-  const dividerCol = darkMode ? '#333' : '#ccc';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
-  const cardBg = darkMode ? '#111' : '#fff';
-  const cardText = darkMode ? '#ccc' : '#000';
-  const cardBorder = darkMode ? '#333' : '#f0f0f0';
-
-  const [companies, setCompanies] = useState<BackendCompany[]>([]);
+  const [tenants, setTenants] = useState<SystemTenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedTenant, setSelectedTenant] = useState<BackendCompany | null>(
-    null
-  );
-  const [formName, setFormName] = useState('');
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error';
-  }>({
+  const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
-    severity: 'success',
+    severity: 'success' as 'success' | 'error',
   });
 
-  // Fetch companies on mount
-  useEffect(() => {
-    const fetchCompanies = async () => {
-      setIsLoading(true);
-      try {
-        const data = await companyApi.getAllCompanies();
+  const [statusFilter, setStatusFilter] = useState<
+    'All' | 'active' | 'suspended' | 'deleted'
+  >('All');
 
-        setCompanies(data);
-      } catch {
-        setCompanies([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchCompanies();
+  const [selectedTenant, setSelectedTenant] = useState<SystemTenant | null>(
+    null
+  );
+  const [tenantDetail, setTenantDetail] = useState<SystemTenantDetail | null>(
+    null
+  );
+
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [formName, setFormName] = useState('');
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editTenantId, setEditTenantId] = useState<string | null>(null);
+
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const fetchTenants = async () => {
+    try {
+      setIsLoading(true);
+      const res = await SystemTenantApi.getAll({ includeDeleted: true });
+      setTenants(res.data);
+    } catch (err) {
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to fetch tenants',
+        severity: 'error',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTenants();
   }, []);
 
-  // Create company
-  const handleCreateCompany = async () => {
-    if (!formName.trim()) return;
-    const newCompany: CompanyDto = { name: formName };
-    try {
-      const created = await companyApi.createCompany(newCompany);
-      setCompanies(prev => [created, ...prev]);
+  const filteredTenants = useMemo(() => {
+    return tenants.filter(t => {
+      if (statusFilter === 'deleted') return t.isDeleted;
+      if (statusFilter === 'active' || statusFilter === 'suspended')
+        return !t.isDeleted && t.status === statusFilter;
+      return true;
+    });
+  }, [tenants, statusFilter]);
 
-      setIsFormModalOpen(false);
-      setFormName('');
+  const totalPages = Math.ceil(filteredTenants.length / itemsPerPage);
+  const paginatedTenants = filteredTenants.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleCreate = async () => {
+    if (!formName.trim()) {
       setSnackbar({
         open: true,
-        message: 'Company created successfully!',
+        message: 'Tenant name is required',
+        severity: 'error',
+      });
+      return;
+    }
+
+    try {
+      await SystemTenantApi.create({ name: formName.trim() });
+      fetchTenants();
+      setSnackbar({
+        open: true,
+        message: 'Tenant created successfully',
         severity: 'success',
       });
-    } catch (error: unknown) {
-      const errorResponse = error as {
-        response?: { data?: { message?: string } };
-      };
+      setIsFormOpen(false);
+      setFormName('');
+    } catch (err: any) {
+      console.error('Error creating tenant:', err);
+
+      let errorMessage = 'Failed to create tenant';
+
+      if (
+        err.response &&
+        (err.response.status === 409 ||
+          err.response.data?.message?.toLowerCase().includes('already'))
+      ) {
+        errorMessage = 'Tenant already exists';
+      }
+
       setSnackbar({
         open: true,
-        message:
-          errorResponse?.response?.data?.message || 'Failed to create company.',
+        message: errorMessage,
         severity: 'error',
       });
     }
   };
-
-  // Edit company
-  const handleEditCompany = async () => {
-    if (!selectedTenant || !formName.trim()) return;
+  const handleUpdate = async (
+    tenantId: string,
+    updatedData: { name: string }
+  ) => {
     try {
-      await companyApi.updateCompany(selectedTenant.id, {
-        name: formName,
-      });
-      setCompanies(prev =>
-        prev.map(c =>
-          c.id === selectedTenant.id ? { ...c, name: formName } : c
-        )
+      const updatedTenant = await SystemTenantApi.update(tenantId, updatedData);
+      setTenants(prev =>
+        prev.map(t => (t.id === tenantId ? { ...t, ...updatedTenant } : t))
       );
-      setSelectedTenant(null);
-      setIsFormModalOpen(false);
-      setFormName('');
       setSnackbar({
         open: true,
-        message: 'Company successfully!',
+        message: 'Tenant updated successfully',
         severity: 'success',
       });
-    } catch (error: unknown) {
-      const errorResponse = error as {
-        response?: { data?: { message?: string } };
-      };
+    } catch (error) {
+      console.error('Failed to update tenant:', error);
       setSnackbar({
         open: true,
-        message:
-          errorResponse?.response?.data?.message || 'Failed to update company.',
+        message: 'Failed to update tenant',
         severity: 'error',
       });
     }
   };
 
-  // Delete company
-  const handleDeleteCompany = async () => {
+  const toggleStatus = async (tenant: SystemTenant) => {
+    try {
+      const newStatus = tenant.status === 'active' ? 'suspended' : 'active';
+      const updatedTenant = await SystemTenantApi.updateStatus(
+        tenant.id,
+        newStatus
+      );
+      setTenants(prev =>
+        prev.map(t => (t.id === updatedTenant.id ? updatedTenant : t))
+      );
+      setSnackbar({
+        open: true,
+        message: `Tenant "${tenant.name}" status changed to "${updatedTenant.status}"`,
+        severity: 'success',
+      });
+    } catch (err) {
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to update status',
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleDelete = async () => {
     if (!selectedTenant) return;
     try {
-      await companyApi.deleteCompany(selectedTenant.id);
-      setCompanies(prev => prev.filter(c => c.id !== selectedTenant.id));
-      setSelectedTenant(null);
-      setIsDeleteModalOpen(false);
+      await SystemTenantApi.remove(selectedTenant.id);
+      fetchTenants();
       setSnackbar({
         open: true,
-        message: 'Company deleted successfully!',
+        message: 'Tenant deleted successfully',
         severity: 'success',
       });
-    } catch (error: unknown) {
-      const errorResponse = error as {
-        response?: { data?: { message?: string } };
-      };
+    } catch {
       setSnackbar({
         open: true,
-        message:
-          errorResponse?.response?.data?.message || 'Failed to delete company.',
+        message: 'Failed to delete tenant',
+        severity: 'error',
+      });
+    } finally {
+      setIsDeleteOpen(false);
+    }
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await SystemTenantApi.restore(id);
+      fetchTenants();
+      setSnackbar({
+        open: true,
+        message: 'Tenant restored successfully',
+        severity: 'success',
+      });
+    } catch {
+      setSnackbar({
+        open: true,
+        message: 'Failed to restore tenant',
         severity: 'error',
       });
     }
   };
 
-  const openCreateModal = () => {
-    setSelectedTenant(null);
-    setFormName('');
-    setIsFormModalOpen(true);
+  const handleViewDetails = async (tenant: SystemTenant) => {
+    try {
+      const detail = await SystemTenantApi.getById(tenant.id);
+      setTenantDetail(detail);
+      setIsDetailOpen(true);
+    } catch {
+      setSnackbar({
+        open: true,
+        message: 'Failed to load tenant details',
+        severity: 'error',
+      });
+    }
   };
-
-  const openEditModal = (company: BackendCompany) => {
-    setSelectedTenant(company);
-    setFormName(company.name);
-    setIsFormModalOpen(true);
-  };
-
-  // Localized delete message including tenant name
-  const deleteMessage = selectedTenant
-    ? language === 'ar'
-      ? `هل أنت متأكد أنك تريد حذف المستأجر "${selectedTenant.name}"؟ لا يمكن التراجع عن هذا الإجراء.`
-      : `Are you sure you want to delete the tenant "${selectedTenant.name}"? This action cannot be undone.`
-    : lang.confirmDelete;
 
   return (
-    <Box
-      sx={{
-        flexGrow: 1,
-        minHeight: '100vh',
-        color: textPrimary,
-        boxSizing: 'border-box',
-        direction: isRtl ? 'rtl' : 'ltr',
-      }}
-    >
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
       {/* Header */}
-      <Paper
-        elevation={0}
-        sx={{
-          mb: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 2,
-          backgroundColor: 'unset',
-          color: textColor,
-          boxShadow: 'none',
-        }}
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems={isMobile ? 'stretch' : 'center'}
+        flexDirection={isMobile ? 'column' : 'row'}
+        gap={2}
+        mb={3}
       >
-        <Typography
-          variant='h4'
-          fontWeight={700}
-          sx={{ py: 1.5, textAlign: isRtl ? 'right' : 'left' }}
-        >
-          {lang.title}
+        <Typography variant='h5' fontWeight={700}>
+          Tenant Management
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {!isMobile && (
-            <Button
-              variant='contained'
-              startIcon={<AddIcon />}
-              onClick={openCreateModal}
-              sx={{
-                borderRadius: '0.375rem',
-                textTransform: 'none',
-                fontWeight: 600,
-                bgcolor: darkMode ? '#484c7f' : '#45407A',
-                boxShadow: 'none',
-                '&:hover': {
-                  bgcolor: darkMode ? '#726df0' : '#5b56a0',
-                  boxShadow: 'none',
-                },
-              }}
+
+        <Box display='flex' flexWrap='wrap' gap={2}>
+          <FormControl size='small' sx={{ minWidth: 140 }}>
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={statusFilter}
+              label='Status'
+              onChange={(e: SelectChangeEvent) =>
+                setStatusFilter(e.target.value as any)
+              }
             >
-              {lang.create}
-            </Button>
-          )}
-        </Box>
-      </Paper>
-      <Divider sx={{ mb: 4, borderColor: dividerCol }} />
-      {/* Content */}
-      {isLoading ? (
-        <Paper
-          sx={{
-            p: 4,
-            textAlign: 'center',
-            bgcolor: bgPaper,
-            color: textPrimary,
-            boxShadow: 'none',
-          }}
-        >
-          <Box
-            display='flex'
-            justifyContent='center'
-            alignItems='center'
-            height={200}
-          >
-            <CircularProgress />
-          </Box>
-        </Paper>
-      ) : companies.length === 0 ? (
-        <Paper
-          sx={{
-            p: 4,
-            textAlign: 'center',
-            bgcolor: bgPaper,
-            color: textPrimary,
-            boxShadow: 'none',
-          }}
-        >
-          <BusinessIcon sx={{ fontSize: 64, color: textSecond, mb: 2 }} />
-          <Typography variant='h6' color={textSecond} gutterBottom>
-            {lang.noTenants}
-          </Typography>
-          <Typography variant='body2' color={textSecond} sx={{ mb: 3 }}>
-            {lang.description}
-          </Typography>
+              <MenuItem value='All'>All</MenuItem>
+              <MenuItem value='active'>Active</MenuItem>
+              <MenuItem value='suspended'>Suspended</MenuItem>
+              <MenuItem value='deleted'>Deleted</MenuItem>
+            </Select>
+          </FormControl>
           <Button
             variant='contained'
             startIcon={<AddIcon />}
-            onClick={openCreateModal}
-            sx={{ boxShadow: 'none', '&:hover': { boxShadow: 'none' } }}
+            onClick={() => setIsFormOpen(true)}
           >
-            {lang.createFirst}
+            Create Tenant
           </Button>
-        </Paper>
+        </Box>
+      </Box>
+
+      {/* Table */}
+      {isLoading ? (
+        <Box display='flex' justifyContent='center' alignItems='center' mt={6}>
+          <CircularProgress />
+        </Box>
       ) : (
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 2,
-            justifyContent: 'flex-start',
-          }}
-        >
-          {companies.map(c => (
-            <Box
-              key={c.id}
-              sx={{
-                width: {
-                  xs: '100%',
-                  sm: 'calc(50% - 12px)',
-                  md: 'calc(50% - 12px)',
-                },
-              }}
-            >
-              <Card
-                sx={{
-                  height: '100%',
-                  display: 'flex',
-                  px: 2,
-                  flexDirection: 'column',
-                  transition: 'all 0.3s ease',
-                  backgroundColor: cardBg,
-                  color: cardText,
-                  border: `1px solid ${cardBorder}`,
-                  boxShadow: 'unset',
-                  direction: isRtl ? 'rtl' : 'ltr',
-                }}
-              >
-                <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography
-                      variant='h6'
-                      component='h2'
-                      sx={{
-                        fontWeight: 600,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        maxWidth: '100%',
-                        color: cardText,
-                        textAlign: isRtl ? 'right' : 'left',
-                      }}
-                    >
-                      {c.name}
+        <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    <strong>Name</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Status</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Created</strong>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <strong>Actions</strong>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedTenants.map(t => (
+                  <TableRow key={t.id} hover>
+                    <TableCell>{t.name}</TableCell>
+                    <TableCell>
+                      {!t.isDeleted && (
+                        <Switch
+                          checked={t.status === 'active'}
+                          onChange={() => toggleStatus(t)}
+                          color='primary'
+                        />
+                      )}
+                      {t.isDeleted ? 'Deleted' : t.status}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(t.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell align='center'>
+                      {!t.isDeleted ? (
+                        <>
+                          <Tooltip title='View Details'>
+                            <IconButton onClick={() => handleViewDetails(t)}>
+                              <VisibilityIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title='Edit Tenant'>
+                            <IconButton
+                              color='primary'
+                              onClick={() => {
+                                setEditTenantId(t.id);
+                                setEditName(t.name);
+                                setIsEditOpen(true);
+                              }}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+
+                          <Tooltip title='Delete'>
+                            <IconButton
+                              color='error'
+                              onClick={() => {
+                                setSelectedTenant(t);
+                                setIsDeleteOpen(true);
+                              }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      ) : (
+                        <Tooltip title='Restore Tenant'>
+                          <IconButton
+                            color='success'
+                            onClick={() => handleRestore(t.id)}
+                          >
+                            <RestoreIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+
+                {paginatedTenants.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} align='center'>
+                      <Alert severity='info' sx={{ my: 2, borderRadius: 2 }}>
+                        No tenants found.
+                      </Alert>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
+
+      {/*  Client-side Pagination */}
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' mt={2}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color='primary'
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+      {filteredTenants.length > 0 && (
+        <Box display='flex' justifyContent='center' mt={1}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {currentPage} of {totalPages} ({filteredTenants.length}{' '}
+            total records)
+          </Typography>
+        </Box>
+      )}
+
+      {/* Detail Modal (Updated) */}
+      <Dialog
+        open={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        maxWidth='md'
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          Tenant Details
+        </DialogTitle>
+        <DialogContent>
+          {tenantDetail ? (
+            <Box sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                {/* Basic Info */}
+                <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
+                  <Card variant='outlined' sx={{ p: 2, height: '100%' }}>
+                    <Typography variant='h6' gutterBottom color='primary'>
+                      Basic Information
                     </Typography>
-                  </Box>
-                </CardContent>
-                <CardActions
-                  sx={{ justifyContent: 'flex-start', px: 2, pb: 2 }}
-                >
-                  <Box display='flex' width={100}>
-                    <IconButton
-                      onClick={() => openEditModal(c)}
-                      color='success'
-                      size='small'
-                      sx={{
-                        border: `1px solid ${cardBorder}`,
-                        borderTopLeftRadius: isRtl ? 0 : '5px',
-                        borderBottomLeftRadius: isRtl ? 0 : '5px',
-                        borderTopRightRadius: isRtl ? '5px' : 0,
-                        borderBottomRightRadius: isRtl ? '5px' : 0,
-                        '&:hover': {
-                          backgroundColor: 'orange',
-                          color: 'white',
-                        },
-                      }}
+                    <Box
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
                     >
-                      <img
-                        src={edit}
-                        alt='Edit'
-                        style={{
-                          width: 15,
-                          height: 15,
-                          filter:
-                            'invert(48%) sepia(59%) saturate(528%) hue-rotate(85deg) brightness(90%) contrast(91%)',
-                        }}
-                      />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => {
-                        setSelectedTenant(c);
-                        setIsDeleteModalOpen(true);
-                      }}
-                      color='error'
-                      size='small'
-                      sx={{
-                        border: `1px solid ${cardBorder}`,
-                        borderTopLeftRadius: isRtl ? '5px' : 0,
-                        borderBottomLeftRadius: isRtl ? '5px' : 0,
-                        borderTopRightRadius: isRtl ? 0 : '5px',
-                        borderBottomRightRadius: isRtl ? 0 : '5px',
-                        '&:hover': {
-                          backgroundColor: 'orange',
-                          color: 'white',
-                        },
-                      }}
+                      <Typography variant='body2'>
+                        <strong>Name:</strong> {tenantDetail.name}
+                      </Typography>
+                      <Typography
+                        variant='body2'
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      >
+                        <strong>Status:</strong>
+                        <Chip
+                          label={tenantDetail.status}
+                          color={
+                            tenantDetail.status === 'active'
+                              ? 'success'
+                              : tenantDetail.status === 'suspended'
+                                ? 'warning'
+                                : 'error'
+                          }
+                          size='small'
+                        />
+                      </Typography>
+                    </Box>
+                  </Card>
+                </Box>
+
+                {/* Counts */}
+                <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
+                  <Card variant='outlined' sx={{ p: 2, height: '100%' }}>
+                    <Typography variant='h6' gutterBottom color='primary'>
+                      Summary
+                    </Typography>
+                    <Box
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
                     >
-                      <img
-                        src={deleteIcon}
-                        alt='Delete'
-                        style={{
-                          width: 15,
-                          height: 15,
-                          filter:
-                            'invert(28%) sepia(97%) saturate(1404%) hue-rotate(329deg) brightness(95%) contrast(96%)',
-                        }}
-                      />
-                    </IconButton>
+                      <Typography variant='body2'>
+                        <strong>Departments:</strong>{' '}
+                        {tenantDetail.departmentCount}
+                      </Typography>
+                      <Typography variant='body2'>
+                        <strong>Employees:</strong> {tenantDetail.employeeCount}
+                      </Typography>
+                    </Box>
+                  </Card>
+                </Box>
+
+                {/* Departments List */}
+                {tenantDetail.departments.length > 0 && (
+                  <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
+                    <Card variant='outlined' sx={{ p: 2 }}>
+                      <Typography variant='h6' gutterBottom color='primary'>
+                        Departments
+                      </Typography>
+                      <ul style={{ paddingLeft: 20 }}>
+                        {tenantDetail.departments.map(dep => (
+                          <li key={dep.id}>{dep.name}</li>
+                        ))}
+                      </ul>
+                    </Card>
                   </Box>
-                </CardActions>
-              </Card>
+                )}
+              </Box>
             </Box>
-          ))}
-        </Box>
-      )}
-      {/* FAB (mobile) */}
-      {isMobile && (
-        <Fab
-          color='primary'
-          onClick={openCreateModal}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: isRtl ? 'auto' : 24,
-            left: isRtl ? 24 : 'auto',
-            boxShadow: 'none',
-          }}
-        >
-          <AddIcon />
-        </Fab>
-      )}
-      {/* Form Modal */}
-      {isFormModalOpen && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            bgcolor: 'rgba(0,0,0,0.3)',
-            zIndex: 1300,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Paper
-            sx={{ p: 4, minWidth: 320, bgcolor: bgPaper, color: textPrimary }}
+          ) : (
+            <Box display='flex' justifyContent='center' mt={2}>
+              <CircularProgress />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setIsDetailOpen(false)}
+            variant='contained'
+            sx={{ minWidth: 80 }}
           >
-            <Typography
-              variant='h6'
-              mb={2}
-              sx={{ textAlign: isRtl ? 'right' : 'left' }}
-            >
-              {selectedTenant ? lang.edit : lang.create}
-            </Typography>
-            <input
-              type='text'
-              value={formName}
-              onChange={e => setFormName(e.target.value)}
-              placeholder={lang.name}
-              style={{
-                width: '100%',
-                padding: 8,
-                marginBottom: 16,
-                fontSize: 16,
-                background: bgPaper,
-                color: textPrimary,
-                border: `1px solid ${dividerCol}`,
-                direction: isRtl ? 'rtl' : 'ltr',
-              }}
-            />
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 2,
-                flexDirection: isRtl ? 'row-reverse' : 'row',
-              }}
-            >
-              <Button
-                onClick={() => {
-                  setIsFormModalOpen(false);
-                  setSelectedTenant(null);
-                  setFormName('');
-                }}
-                sx={{ color: textPrimary }}
-              >
-                {lang.cancel}
-              </Button>
-              <Button
-                variant='contained'
-                onClick={
-                  selectedTenant ? handleEditCompany : handleCreateCompany
-                }
-                disabled={!formName.trim()}
-                sx={{
-                  bgcolor: darkMode ? '#484c7f' : '#45407A',
-                  '&:hover': { bgcolor: darkMode ? '#726df0' : '#5b56a0' },
-                }}
-              >
-                {lang.save}
-              </Button>
-            </Box>
-          </Paper>
-        </Box>
-      )}
-      {/* Delete Modal */}
-      {isDeleteModalOpen && selectedTenant && (
-        <Dialog
-          open={isDeleteModalOpen}
-          onClose={() => {
-            setIsDeleteModalOpen(false);
-            setSelectedTenant(null);
-          }}
-          maxWidth='sm'
-          fullWidth
-          PaperProps={{
-            sx: {
-              direction: isRtl ? 'rtl' : 'ltr',
-              backgroundColor: darkMode ? '#111' : '#fff',
-              color: textPrimary,
-              border: `1px solid ${dividerCol}`,
-            },
-          }}
-        >
-          <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
-            {lang.confirmDelete}
-          </DialogTitle>
-          <DialogContent>
-            <Box sx={{ textAlign: 'center' }}>
-              <WarningIcon
-                sx={{ fontSize: 64, color: 'warning.main', mb: 2 }}
-              />
-              <Typography variant='body1' sx={{ mb: 2, lineHeight: 1.6 }}>
-                {deleteMessage}
-              </Typography>
-            </Box>
-          </DialogContent>
-          <DialogActions sx={{ justifyContent: 'center', p: 3, pt: 1 }}>
-            <Button
-              onClick={() => {
-                setIsDeleteModalOpen(false);
-                setSelectedTenant(null);
-              }}
-              variant='outlined'
-              sx={{ color: textPrimary, borderColor: dividerCol }}
-            >
-              {lang.cancel}
-            </Button>
-            <Button
-              variant='contained'
-              color='error'
-              onClick={handleDeleteCompany}
-            >
-              {lang.delete}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create Modal */}
+      <Dialog
+        open={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        fullWidth
+        maxWidth='sm'
+      >
+        <DialogTitle>Create Tenant</DialogTitle>
+        <DialogContent dividers>
+          <TextField
+            label='Tenant Name'
+            value={formName}
+            onChange={e => {
+              // Allow only alphabets and spaces
+              const value = e.target.value;
+              if (/^[A-Za-z\s]*$/.test(value)) {
+                setFormName(value);
+              }
+            }}
+            fullWidth
+            sx={{ mt: 2 }}
+            inputProps={{
+              maxLength: 50, // optional: limit length
+            }}
+            helperText='Only alphabets are allowed'
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsFormOpen(false)}>Cancel</Button>
+          <Button variant='contained' onClick={handleCreate}>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog
+        open={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        fullWidth
+        maxWidth='xs'
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent dividers>
+          <Typography>
+            Are you sure you want to delete{' '}
+            <strong>{selectedTenant?.name}</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+          <Button color='error' variant='contained' onClick={handleDelete}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Edit Tenant Modal */}
+      <Dialog
+        open={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        fullWidth
+        maxWidth='sm'
+      >
+        <DialogTitle>Edit Tenant</DialogTitle>
+        <DialogContent dividers>
+          <TextField
+            label='Tenant Name'
+            value={editName}
+            onChange={e => {
+              const value = e.target.value;
+              if (/^[A-Za-z\s]*$/.test(value)) {
+                setEditName(value);
+              }
+            }}
+            fullWidth
+            sx={{ mt: 2 }}
+            inputProps={{ maxLength: 50 }}
+            helperText='Only alphabets are allowed'
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsEditOpen(false)}>Cancel</Button>
+          <Button
+            variant='contained'
+            onClick={async () => {
+              if (!editTenantId || !editName.trim()) {
+                setSnackbar({
+                  open: true,
+                  message: 'Tenant name is required',
+                  severity: 'error',
+                });
+                return;
+              }
+              await handleUpdate(editTenantId, { name: editName.trim() });
+              setIsEditOpen(false);
+              setEditName('');
+            }}
+          >
+            Update
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={6000}
+        autoHideDuration={4000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
     </Box>
   );
 };
+
+export default TenantPage;

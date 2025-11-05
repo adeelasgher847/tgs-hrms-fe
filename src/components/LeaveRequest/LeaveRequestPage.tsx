@@ -113,31 +113,36 @@ const LeaveRequestPage = () => {
       }
 
       const leavesData: Leave[] = res.items.map((leave: ApiLeave) => {
-        const employeeId = leave.employeeId || leave.employee?.id || leave.user?.id || '';
+        const employeeId =
+          leave.employeeId || leave.employee?.id || leave.user?.id || '';
         const userId = leave.user?.id || leave.employee?.id || '';
-        
+
         return {
           id: leave.id,
           employeeId,
-          employee: leave.employee ? {
-            id: leave.employee.id || userId,
-            first_name: leave.employee.first_name || 'You',
-            last_name: leave.employee.last_name,
-            email: leave.employee.email || '',
-          } : {
-            id: userId,
-            first_name: leave.user?.first_name || 'You',
-            last_name: leave.user?.last_name,
-            email: leave.user?.email || '',
-          },
+          employee: leave.employee
+            ? {
+                id: leave.employee.id || userId,
+                first_name: leave.employee.first_name || 'You',
+                last_name: leave.employee.last_name,
+                email: leave.employee.email || '',
+              }
+            : {
+                id: userId,
+                first_name: leave.user?.first_name || 'You',
+                last_name: leave.user?.last_name,
+                email: leave.user?.email || '',
+              },
           leaveTypeId: leave.leaveTypeId || '',
-          leaveType: leave.leaveType ? {
-            id: '',
-            name: leave.leaveType.name || 'Unknown',
-          } : {
-            id: '',
-            name: 'Unknown',
-          },
+          leaveType: leave.leaveType
+            ? {
+                id: '',
+                name: leave.leaveType.name || 'Unknown',
+              }
+            : {
+                id: '',
+                name: 'Unknown',
+              },
           reason: leave.reason || '',
           remarks: leave.remarks || undefined,
           startDate: leave.startDate || '',
@@ -152,7 +157,9 @@ const LeaveRequestPage = () => {
 
       setTotalPages(res.totalPages || 1);
       setTotalItems(res.total || 0);
-      setCurrentPage(res.page || currentPage);
+      if (res.page && res.page !== currentPage) {
+        setCurrentPage(res.page);
+      }
     } catch (err) {
       console.error('Error loading leaves:', err);
     } finally {
@@ -162,7 +169,9 @@ const LeaveRequestPage = () => {
 
   const getErrorMessage = (error: unknown): string => {
     if (error && typeof error === 'object' && 'response' in error) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
       if (axiosError.response?.data?.message) {
         return axiosError.response.data.message;
       }
@@ -257,7 +266,7 @@ const LeaveRequestPage = () => {
 
   useEffect(() => {
     fetchLeaveTypes();
-  }, [fetchLeaveTypes]);
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -265,7 +274,7 @@ const LeaveRequestPage = () => {
 
   useEffect(() => {
     loadLeaves();
-  }, [currentPage, viewMode, role, loadLeaves]);
+  }, [currentPage, viewMode, role, currentUser?.id]);
 
   if (loading)
     return (
@@ -284,15 +293,15 @@ const LeaveRequestPage = () => {
       {/* Header */}
       <AppBar
         position='static'
-        sx={{ borderRadius: 1, backgroundColor: '#3c3572' , boxShadow:'none' }}
+        sx={{ borderRadius: 1, backgroundColor: '#3c3572', boxShadow: 'none' }}
       >
         <Toolbar
           sx={{
             display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' }, 
-            alignItems: { xs: 'center', sm: 'center' }, 
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'center', sm: 'center' },
             justifyContent: 'space-between',
-            textAlign: { xs: 'center', sm: 'left' }, 
+            textAlign: { xs: 'center', sm: 'left' },
             gap: { xs: 1, sm: 0 },
           }}
         >
@@ -312,11 +321,11 @@ const LeaveRequestPage = () => {
               direction='row'
               spacing={2}
               sx={{
-                my: { xs: 1, sm: 0 }, 
+                my: { xs: 1, sm: 0 },
                 gap: 1,
                 justifyContent: { xs: 'center', sm: 'flex-end' },
                 width: { xs: '100%', sm: 'auto' },
-                flexWrap: 'wrap', 
+                flexWrap: 'wrap',
               }}
             >
               <Button

@@ -122,7 +122,10 @@ const menuItems: MenuItem[] = [
   {
     label: 'Leave Analytics',
     icon: <Receipt />,
-    subItems: [{ label: 'Reports', path: 'Reports' }],
+    subItems: [
+      { label: 'Reports', path: 'Reports' },
+      { label: 'cross-tenant-leaves', path: 'cross-tenant-leaves' },
+    ],
   },
   {
     label: 'Benefits',
@@ -389,7 +392,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                     <ListItemButton
                       onClick={() =>
                         setOpenItem(isParentActive ? '' : item.label)
-                      }
+                       }
                       sx={{
                         color: isParentActive ? 'orange' : 'white',
                         pl: 1,
@@ -418,7 +421,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                       )}
                     </ListItemButton>
 
-                    <Collapse in={isParentActive} timeout='auto' unmountOnExit>
+                   <Collapse in={isParentActive} timeout='auto' unmountOnExit>
                       <List component='div' disablePadding>
                         {item.subItems?.map(sub => (
                           <ListItemButton
