@@ -27,7 +27,6 @@ import HistoryIcon from '@mui/icons-material/History';
 
 const LeaveRequestPage = () => {
   const [leaves, setLeaves] = useState<Leave[]>([]);
-  const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -53,14 +52,12 @@ const LeaveRequestPage = () => {
 
   const fetchLeaveTypes = useCallback(async () => {
     try {
-      const response = await fetch(
+      await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/leave-types?page=1&limit=50`,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         }
       );
-      const data = await response.json();
-      setLeaveTypes(data?.items || []);
     } catch (err) {
       console.error('Error loading leave types:', err);
     }
@@ -86,33 +83,83 @@ const LeaveRequestPage = () => {
         res = await leaveApi.getUserLeaves(currentUser?.id, currentPage);
       }
 
-      const leavesData: Leave[] = res.items.map((leave: any) => ({
-        id: leave.id,
-        employeeId: leave.employeeId,
-        employee: leave.employee || {
-          id: leave.user?.id,
-          first_name: leave.user?.first_name || 'You',
-          last_name: leave.user?.last_name || '',
-          email: leave.user?.email || '',
-        },
-        leaveTypeId: leave.leaveTypeId,
-        leaveType: leave.leaveType || {
-          name: leave.leaveType?.name || 'Unknown',
-        },
-        reason: leave.reason,
-        remarks: leave.remarks || '',
-        startDate: leave.startDate,
-        endDate: leave.endDate,
-        status: leave.status,
-        createdAt: leave.createdAt,
-        updatedAt: leave.updatedAt,
-      }));
+      // Type for API leave response
+      interface ApiLeave {
+        id: string;
+        employeeId?: string;
+        employee?: {
+          id?: string;
+          first_name?: string;
+          last_name?: string;
+          email?: string;
+        };
+        user?: {
+          id?: string;
+          first_name?: string;
+          last_name?: string;
+          email?: string;
+        };
+        leaveTypeId?: string;
+        leaveType?: {
+          name?: string;
+        };
+        reason?: string;
+        remarks?: string | null;
+        startDate?: string;
+        endDate?: string;
+        status?: string;
+        createdAt?: string;
+        updatedAt?: string;
+      }
+
+      const leavesData: Leave[] = res.items.map((leave: ApiLeave) => {
+        const employeeId =
+          leave.employeeId || leave.employee?.id || leave.user?.id || '';
+        const userId = leave.user?.id || leave.employee?.id || '';
+
+        return {
+          id: leave.id,
+          employeeId,
+          employee: leave.employee
+            ? {
+                id: leave.employee.id || userId,
+                first_name: leave.employee.first_name || 'You',
+                last_name: leave.employee.last_name,
+                email: leave.employee.email || '',
+              }
+            : {
+                id: userId,
+                first_name: leave.user?.first_name || 'You',
+                last_name: leave.user?.last_name,
+                email: leave.user?.email || '',
+              },
+          leaveTypeId: leave.leaveTypeId || '',
+          leaveType: leave.leaveType
+            ? {
+                id: '',
+                name: leave.leaveType.name || 'Unknown',
+              }
+            : {
+                id: '',
+                name: 'Unknown',
+              },
+          reason: leave.reason || '',
+          remarks: leave.remarks || undefined,
+          startDate: leave.startDate || '',
+          endDate: leave.endDate || '',
+          status: (leave.status as Leave['status']) || 'pending',
+          createdAt: leave.createdAt,
+          updatedAt: leave.updatedAt,
+        };
+      });
 
       setLeaves(Array.from(new Map(leavesData.map(l => [l.id, l])).values()));
 
       setTotalPages(res.totalPages || 1);
       setTotalItems(res.total || 0);
-      setCurrentPage(res.page || currentPage);
+      if (res.page && res.page !== currentPage) {
+        setCurrentPage(res.page);
+      }
     } catch (err) {
       console.error('Error loading leaves:', err);
     } finally {
@@ -120,7 +167,20 @@ const LeaveRequestPage = () => {
     }
   }, [currentUser, role, viewMode, currentPage]);
 
-  const handleApply = async (data: CreateLeaveRequest) => {
+  const getErrorMessage = (error: unknown): string => {
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      if (axiosError.response?.data?.message) {
+        return axiosError.response.data.message;
+      }
+    }
+    return '';
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleApply = async (_data: CreateLeaveRequest) => {
     try {
       setSnackbar({
         open: true,
@@ -129,10 +189,10 @@ const LeaveRequestPage = () => {
       });
       await loadLeaves();
       setActiveTab('history');
-    } catch (error: any) {
+    } catch (error: unknown) {
       setSnackbar({
         open: true,
-        message: error?.response?.data?.message || 'Failed to apply leave',
+        message: getErrorMessage(error) || 'Failed to apply leave',
         severity: 'error',
       });
     }
@@ -158,10 +218,10 @@ const LeaveRequestPage = () => {
       });
 
       await loadLeaves();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setSnackbar({
         open: true,
-        message: error?.response?.data?.message || 'Action failed',
+        message: getErrorMessage(error) || 'Action failed',
         severity: 'error',
       });
     } finally {
@@ -181,10 +241,10 @@ const LeaveRequestPage = () => {
         severity: 'success',
       });
       await loadLeaves();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setSnackbar({
         open: true,
-        message: error?.response?.data?.message || 'Failed to withdraw leave',
+        message: getErrorMessage(error) || 'Failed to withdraw leave',
         severity: 'error',
       });
     } finally {
@@ -214,7 +274,7 @@ const LeaveRequestPage = () => {
 
   useEffect(() => {
     loadLeaves();
-  }, [currentPage, viewMode, role]);
+  }, [currentPage, viewMode, role, currentUser?.id]);
 
   if (loading)
     return (
@@ -229,19 +289,19 @@ const LeaveRequestPage = () => {
     );
 
   return (
-    <Box sx={{ background: '#f7f7f7', minHeight: '100vh' }}>
+    <Box sx={{ minHeight: '100vh' }}>
       {/* Header */}
       <AppBar
         position='static'
-        sx={{ borderRadius: 2, backgroundColor: '#3c3572' }}
+        sx={{ borderRadius: 1, backgroundColor: '#3c3572', boxShadow: 'none' }}
       >
         <Toolbar
           sx={{
             display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' }, 
-            alignItems: { xs: 'center', sm: 'center' }, 
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'center', sm: 'center' },
             justifyContent: 'space-between',
-            textAlign: { xs: 'center', sm: 'left' }, 
+            textAlign: { xs: 'center', sm: 'left' },
             gap: { xs: 1, sm: 0 },
           }}
         >
@@ -261,11 +321,11 @@ const LeaveRequestPage = () => {
               direction='row'
               spacing={2}
               sx={{
-                my: { xs: 1, sm: 0 }, 
+                my: { xs: 1, sm: 0 },
                 gap: 1,
                 justifyContent: { xs: 'center', sm: 'flex-end' },
                 width: { xs: '100%', sm: 'auto' },
-                flexWrap: 'wrap', 
+                flexWrap: 'wrap',
               }}
             >
               <Button

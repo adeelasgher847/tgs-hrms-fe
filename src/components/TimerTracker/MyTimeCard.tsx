@@ -275,16 +275,17 @@ const MyTimerCard: React.FC = () => {
       <Card
         sx={{
           background: darkMode ? '#1e1e1e' : '#ffffff',
-          borderRadius: 2,
+          borderRadius: 1,
           position: 'relative',
           flex: 1,
           height: '100%',
           boxShadow: 'unset',
           color: darkMode ? '#ffffff' : '#000000',
           overflow: 'hidden',
+          border:'none'
         }}
       >
-        <CardContent sx={{ p: 3, boxShadow: 'none', border: 'none' }}>
+        <CardContent sx={{ p: 3, boxShadow: 'none'}}>
           {/* Main Timer Display - Centered */}
           {/* Session Progress - Top Left */}
           <Box

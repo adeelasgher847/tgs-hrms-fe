@@ -130,7 +130,7 @@ class TeamApiService {
         teams.items.map(async team => {
           if (!team.teamMembers) {
             try {
-              const membersResponse = await this.MembersgetTeam(team.id, 1);
+              const membersResponse = await this.getTeamMembers(team.id, 1);
               return {
                 ...team,
                 teamMembers: membersResponse.items || [],
@@ -273,10 +273,10 @@ class TeamApiService {
       console.groupEnd();
 
       return response.data;
-    } catch (error: any) {
-      console.group('🔴 Employee Pool API Error');
-      console.error('❌ Error Message:', error.message);
-      console.error('❌ Full Error:', error);
+    } catch (error: unknown) {
+      console.group('Employee Pool API Error');
+      console.error('Error Message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Full Error:', error);
       console.groupEnd();
 
       return {

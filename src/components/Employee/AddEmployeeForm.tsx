@@ -498,15 +498,17 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       }
     }
     
-    // Picture validation
-    if (!values.profilePicture) {
-      newErrors.profilePicture = label('Profile picture is required', 'الصورة الشخصية مطلوبة');
-    }
-    if (!values.cnicFrontPicture) {
-      newErrors.cnicFrontPicture = label('CNIC front picture is required', 'صورة الهوية الأمامية مطلوبة');
-    }
-    if (!values.cnicBackPicture) {
-      newErrors.cnicBackPicture = label('CNIC back picture is required', 'صورة الهوية الخلفية مطلوبة');
+    // Picture validation only when creating new employee
+    if (!initialData) {
+      if (!values.profilePicture) {
+        newErrors.profilePicture = label('Profile picture is required', 'الصورة الشخصية مطلوبة');
+      }
+      if (!values.cnicFrontPicture) {
+        newErrors.cnicFrontPicture = label('CNIC front picture is required', 'صورة الهوية الأمامية مطلوبة');
+      }
+      if (!values.cnicBackPicture) {
+        newErrors.cnicBackPicture = label('CNIC back picture is required', 'صورة الهوية الخلفية مطلوبة');
+      }
     }
     
     // Only require gender when creating new employee, not when editing
@@ -569,10 +571,12 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     if (!initialData && !values.gender) return false;
     if (!initialData && !values.role) return false;
     
-    // Check if all pictures are uploaded
-    if (!values.profilePicture) return false;
-    if (!values.cnicFrontPicture) return false;
-    if (!values.cnicBackPicture) return false;
+    // Require pictures only for create; for edit they are optional
+    if (!initialData) {
+      if (!values.profilePicture) return false;
+      if (!values.cnicFrontPicture) return false;
+      if (!values.cnicBackPicture) return false;
+    }
     
     return true;
   };
@@ -974,16 +978,16 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
           />
         </Box>
 
-        {/* Image Previews - Show when images are uploaded */}
-        {(values.profilePicture || values.cnicFrontPicture || values.cnicBackPicture) && (
+        {/* Image Previews - Show uploaded or existing (when editing) */}
+        {(values.profilePicture || values.cnicFrontPicture || values.cnicBackPicture || initialData?.profilePicture || initialData?.cnicFrontPicture || initialData?.cnicBackPicture) && (
           <Box flex='1 1 100%' sx={{ mt: 2 }}>
             <Box display='flex' flexWrap='wrap' gap={2} justifyContent='center'>
               {/* Profile Picture Preview */}
-              {values.profilePicture && (
+              {(values.profilePicture || initialData?.profilePicture) && (
                 <Box sx={{ textAlign: 'center' }}>
                   <Box
                     component="img"
-                    src={URL.createObjectURL(values.profilePicture)}
+                    src={values.profilePicture ? URL.createObjectURL(values.profilePicture) : (initialData?.profilePicture || '')}
                     alt="Profile Preview"
                     sx={{
                       width: 150,
@@ -1001,7 +1005,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                       },
                     }}
                     onClick={() => handleImagePreviewClick(
-                      URL.createObjectURL(values.profilePicture!),
+                      values.profilePicture ? URL.createObjectURL(values.profilePicture) : (initialData?.profilePicture || ''),
                       label('Profile Picture', 'الصورة الشخصية')
                     )}
                   />
@@ -1012,11 +1016,11 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
               )}
 
               {/* CNIC Front Picture Preview */}
-              {values.cnicFrontPicture && (
+              {(values.cnicFrontPicture || initialData?.cnicFrontPicture) && (
                 <Box sx={{ textAlign: 'center' }}>
                   <Box
                     component="img"
-                    src={URL.createObjectURL(values.cnicFrontPicture)}
+                    src={values.cnicFrontPicture ? URL.createObjectURL(values.cnicFrontPicture) : (initialData?.cnicFrontPicture || '')}
                     alt="CNIC Front Preview"
                     sx={{
                       width: 150,
@@ -1034,7 +1038,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                       },
                     }}
                     onClick={() => handleImagePreviewClick(
-                      URL.createObjectURL(values.cnicFrontPicture!),
+                      values.cnicFrontPicture ? URL.createObjectURL(values.cnicFrontPicture) : (initialData?.cnicFrontPicture || ''),
                       label('CNIC Front Side', 'الوجه الأمامي للهوية')
                     )}
                   />
@@ -1045,11 +1049,11 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
               )}
 
               {/* CNIC Back Picture Preview */}
-              {values.cnicBackPicture && (
+              {(values.cnicBackPicture || initialData?.cnicBackPicture) && (
                 <Box sx={{ textAlign: 'center' }}>
                   <Box
                     component="img"
-                    src={URL.createObjectURL(values.cnicBackPicture)}
+                    src={values.cnicBackPicture ? URL.createObjectURL(values.cnicBackPicture) : (initialData?.cnicBackPicture || '')}
                     alt="CNIC Back Preview"
                     sx={{
                       width: 150,
@@ -1067,7 +1071,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                       },
                     }}
                     onClick={() => handleImagePreviewClick(
-                      URL.createObjectURL(values.cnicBackPicture!),
+                      values.cnicBackPicture ? URL.createObjectURL(values.cnicBackPicture) : (initialData?.cnicBackPicture || ''),
                       label('CNIC Back Side', 'الوجه الخلفي للهوية')
                     )}
                   />

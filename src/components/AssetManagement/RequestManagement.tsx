@@ -21,7 +21,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Chip,
   Tabs,
   Tab,
   InputAdornment,
@@ -59,6 +58,23 @@ import {
 import StatusChip from './StatusChip';
 import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../Data/assetCategories';
+
+// Extended interface for API asset request response that may include additional fields
+interface ApiAssetRequestExtended extends ApiAssetRequest {
+  subcategory_name?: string;
+  subcategory?: string | {
+    name?: string;
+    title?: string;
+    subcategory_name?: string;
+    subcategoryName?: string;
+    display_name?: string;
+    label?: string;
+  };
+  subcategoryId?: string;
+  subcategoryName?: string;
+  subcategory_id?: string;
+  rejection_reason?: string | null;
+}
 
 // Normalize status to ensure it matches expected values
 const normalizeRequestStatus = (
@@ -202,9 +218,9 @@ const RequestManagement: React.FC = () => {
         }));
 
         const transformedRequests: AssetRequest[] = apiResponse.items.map(
-          (apiRequest: ApiAssetRequest) => {
+          (apiRequest: ApiAssetRequestExtended) => {
             // Try to find matching category from our comprehensive list
-            let matchingCategory = assetCategories.find(
+            const matchingCategory = assetCategories.find(
               cat =>
                 cat.name.toLowerCase() ===
                   apiRequest.asset_category.toLowerCase() ||
@@ -220,11 +236,11 @@ const RequestManagement: React.FC = () => {
           let subcategoryName = '';
           
           // Check if API response has subcategory information in different possible fields
-          if ((apiRequest as any).subcategory_name) {
-            subcategoryName = (apiRequest as any).subcategory_name;
-          } else if ((apiRequest as any).subcategory) {
+          if (apiRequest.subcategory_name) {
+            subcategoryName = apiRequest.subcategory_name;
+          } else if (apiRequest.subcategory) {
             // Handle case where subcategory is an object
-            const subcategory = (apiRequest as any).subcategory;
+            const subcategory = apiRequest.subcategory;
             if (typeof subcategory === 'object' && subcategory !== null) {
               // Try different possible property names for the subcategory name
               subcategoryName = subcategory.name || 
@@ -233,13 +249,12 @@ const RequestManagement: React.FC = () => {
                                subcategory.subcategoryName ||
                                subcategory.display_name ||
                                subcategory.label ||
-                               (subcategory as any).name ||
                                JSON.stringify(subcategory);
             } else {
               subcategoryName = subcategory;
             }
-          } else if ((apiRequest as any).subcategoryId && (apiRequest as any).subcategoryName) {
-            subcategoryName = (apiRequest as any).subcategoryName;
+          } else if (apiRequest.subcategoryId && apiRequest.subcategoryName) {
+            subcategoryName = apiRequest.subcategoryName;
           } else if (apiRequest.asset_category.includes(' - ')) {
             [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
           } else if (apiRequest.asset_category.includes(' / ')) {
@@ -267,14 +282,14 @@ const RequestManagement: React.FC = () => {
               color: '#757575',
               requestedItem: subcategoryName || undefined
             },
-            subcategoryId: (apiRequest as any).subcategory_id || undefined,
+            subcategoryId: apiRequest.subcategory_id || undefined,
             remarks: apiRequest.remarks,
             status: normalizeRequestStatus(apiRequest.status),
             requestedDate: apiRequest.requested_date,
             processedDate: apiRequest.approved_date || undefined,
             processedBy: apiRequest.approved_by || undefined,
             processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
-            rejectionReason: (apiRequest as any).rejection_reason && (apiRequest as any).rejection_reason !== null ? (apiRequest as any).rejection_reason : undefined,
+            rejectionReason: apiRequest.rejection_reason && apiRequest.rejection_reason !== null ? apiRequest.rejection_reason : undefined,
             assignedAssetId: undefined, // Not provided by API
             assignedAssetName: undefined, // Not provided by API
           };
@@ -282,10 +297,32 @@ const RequestManagement: React.FC = () => {
         
         setRequests(transformedRequests);
 
-        // Fetch assets for assignment
-        const apiAssetsResponse = await assetApi.getAllAssets();
+        // Fetch assets for assignment - fetch all assets with high limit to get all pages
+        // This ensures all available assets are shown in the Assign Asset dropdown
+        let allAssets: Record<string, unknown>[] = [];
+        let currentPage = 1;
+        let hasMorePages = true;
+        const maxPages = 50; // Safety limit to prevent infinite loops
+        
+        while (hasMorePages && currentPage <= maxPages) {
+          const apiAssetsResponse = await assetApi.getAllAssets({
+            page: currentPage,
+            limit: 100, // Use a high limit to fetch more assets per page
+          });
+          
+          if (apiAssetsResponse.assets && apiAssetsResponse.assets.length > 0) {
+            allAssets = [...allAssets, ...apiAssetsResponse.assets];
+            
+            // Check if there are more pages
+            const totalPages = apiAssetsResponse.pagination?.totalPages || 1;
+            hasMorePages = currentPage < totalPages;
+            currentPage++;
+          } else {
+            hasMorePages = false;
+          }
+        }
 
-        const transformedAssets: Asset[] = apiAssetsResponse.assets.map(
+        const transformedAssets: Asset[] = allAssets.map(
           (apiAsset: Record<string, unknown>) => {
             // Try to find matching category from our comprehensive list
             const matchingCategory = assetCategories.find(
@@ -300,8 +337,8 @@ const RequestManagement: React.FC = () => {
             );
 
             return {
-              id: apiAsset.id,
-              name: apiAsset.name,
+              id: apiAsset.id as string,
+              name: apiAsset.name as string,
               category: matchingCategory
                 ? {
                     id: matchingCategory.id,
@@ -312,21 +349,21 @@ const RequestManagement: React.FC = () => {
                     subcategories: matchingCategory.subcategories,
                   }
                 : {
-                    id: apiAsset.category,
-                    name: apiAsset.category,
-                    nameAr: apiAsset.category,
+                    id: apiAsset.category as string,
+                    name: apiAsset.category as string,
+                    nameAr: apiAsset.category as string,
                     description: '',
                     color: '#757575',
                   },
-              status: apiAsset.status,
-              assignedTo: apiAsset.assigned_to,
+              status: apiAsset.status as AssetStatus,
+              assignedTo: apiAsset.assigned_to as string | undefined,
               assignedToName: undefined,
               serialNumber: '',
-              purchaseDate: apiAsset.purchase_date,
+              purchaseDate: apiAsset.purchase_date as string,
               location: '',
               description: '',
-              createdAt: apiAsset.created_at,
-              updatedAt: apiAsset.created_at,
+              createdAt: apiAsset.created_at as string,
+              updatedAt: apiAsset.created_at as string,
             };
           }
         );
@@ -541,7 +578,7 @@ const RequestManagement: React.FC = () => {
         }
 
         try {
-          const approvalResponse = await assetApi.approveAssetRequest(selectedRequest.id, payload);
+          await assetApi.approveAssetRequest(selectedRequest.id, payload);
           
           // Update local state immediately with approval details
           setRequests(prevRequests => 
@@ -614,9 +651,31 @@ const RequestManagement: React.FC = () => {
       });
       
       
-      // Refresh assets to reflect assignment status
-      const apiAssetsResponse = await assetApi.getAllAssets();
-      const transformedAssets: Asset[] = apiAssetsResponse.assets.map(
+      // Refresh assets to reflect assignment status - fetch all assets with pagination
+      let allAssets: Record<string, unknown>[] = [];
+      let currentPage = 1;
+      let hasMorePages = true;
+      const maxPages = 50; // Safety limit to prevent infinite loops
+      
+      while (hasMorePages && currentPage <= maxPages) {
+        const apiAssetsResponse = await assetApi.getAllAssets({
+          page: currentPage,
+          limit: 100, // Use a high limit to fetch more assets per page
+        });
+        
+        if (apiAssetsResponse.assets && apiAssetsResponse.assets.length > 0) {
+          allAssets = [...allAssets, ...apiAssetsResponse.assets];
+          
+          // Check if there are more pages
+          const totalPages = apiAssetsResponse.pagination?.totalPages || 1;
+          hasMorePages = currentPage < totalPages;
+          currentPage++;
+        } else {
+          hasMorePages = false;
+        }
+      }
+      
+      const transformedAssets: Asset[] = allAssets.map(
         (apiAsset: Record<string, unknown>) => {
           // Try to find matching category from our comprehensive list
           const matchingCategory = assetCategories.find(
@@ -631,8 +690,8 @@ const RequestManagement: React.FC = () => {
           );
 
           return {
-            id: apiAsset.id,
-            name: apiAsset.name,
+            id: apiAsset.id as string,
+            name: apiAsset.name as string,
             category: matchingCategory
               ? {
                   id: matchingCategory.id,
@@ -651,11 +710,14 @@ const RequestManagement: React.FC = () => {
                   subcategories: [],
                 },
             status: apiAsset.status as AssetStatus,
-            assignedTo: (apiAsset.assigned_to as string) || null,
-            assignedToName: (apiAsset.assigned_to_name as string) || null,
+            assignedTo: (apiAsset.assigned_to as string) || undefined,
+            assignedToName: (apiAsset.assigned_to_name as string) || undefined,
+            serialNumber: '',
             purchaseDate: apiAsset.purchase_date as string,
-            tenantId: apiAsset.tenant_id as string,
+            location: '',
+            description: '',
             createdAt: apiAsset.created_at as string,
+            updatedAt: apiAsset.updated_at as string || apiAsset.created_at as string,
           };
         }
       );

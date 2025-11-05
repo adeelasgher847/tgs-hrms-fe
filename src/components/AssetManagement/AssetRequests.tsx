@@ -44,6 +44,22 @@ import ConfirmationDialog from './ConfirmationDialog';
 import { Snackbar, Alert } from '@mui/material';
 import { type AssetSubcategory } from '../../api/assetApi';
 
+// Extended interface for API asset request response that may include additional fields
+interface ApiAssetRequestExtended extends ApiAssetRequest {
+  subcategory_name?: string;
+  subcategory?: string | {
+    name?: string;
+    title?: string;
+    subcategory_name?: string;
+    subcategoryName?: string;
+    display_name?: string;
+    label?: string;
+  };
+  subcategoryId?: string;
+  subcategoryName?: string;
+  rejection_reason?: string | null;
+}
+
 // Get current user from localStorage or auth context
 const getCurrentUserId = () => {
   const userStr = localStorage.getItem('user');
@@ -220,18 +236,18 @@ const AssetRequests: React.FC = () => {
         
         
         // Transform API requests to component format
-        const transformedRequests: AssetRequest[] = (apiResponse.items || []).map((apiRequest: ApiAssetRequest) => {
+        const transformedRequests: AssetRequest[] = (apiResponse.items || []).map((apiRequest: ApiAssetRequestExtended) => {
           
           // Parse the original request category to extract main category and subcategory
           let mainCategoryName = apiRequest.asset_category;
           let subcategoryName = '';
           
           // Check if API response has subcategory information in different possible fields
-          if ((apiRequest as any).subcategory_name) {
-            subcategoryName = (apiRequest as any).subcategory_name;
-          } else if ((apiRequest as any).subcategory) {
+          if (apiRequest.subcategory_name) {
+            subcategoryName = apiRequest.subcategory_name;
+          } else if (apiRequest.subcategory) {
             // Handle case where subcategory is an object
-            const subcategory = (apiRequest as any).subcategory;
+            const subcategory = apiRequest.subcategory;
             if (typeof subcategory === 'object' && subcategory !== null) {
               // Try different possible property names for the subcategory name
               subcategoryName = subcategory.name || 
@@ -240,13 +256,12 @@ const AssetRequests: React.FC = () => {
                                subcategory.subcategoryName ||
                                subcategory.display_name ||
                                subcategory.label ||
-                               (subcategory as any).name ||
                                JSON.stringify(subcategory);
             } else {
               subcategoryName = subcategory;
             }
-          } else if ((apiRequest as any).subcategoryId && (apiRequest as any).subcategoryName) {
-            subcategoryName = (apiRequest as any).subcategoryName;
+          } else if (apiRequest.subcategoryId && apiRequest.subcategoryName) {
+            subcategoryName = apiRequest.subcategoryName;
           } else if (apiRequest.asset_category.includes(' - ')) {
             [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
           } else if (apiRequest.asset_category.includes(' / ')) {
@@ -281,7 +296,7 @@ const AssetRequests: React.FC = () => {
             (apiRequest.approvedByUser ? 
               apiRequest.approvedByUser.name : 
               apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
-          rejectionReason: (apiRequest as any).rejection_reason && (apiRequest as any).rejection_reason !== null ? (apiRequest as any).rejection_reason : undefined,
+          rejectionReason: apiRequest.rejection_reason && apiRequest.rejection_reason !== null ? apiRequest.rejection_reason : undefined,
           assignedAssetId: undefined,
           assignedAssetName: undefined,
           };
