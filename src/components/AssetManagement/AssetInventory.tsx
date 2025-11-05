@@ -54,7 +54,10 @@ interface ApiAssetWithUser extends ApiAsset {
 
 const AssetInventory: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [allAssetsForStats, setAllAssetsForStats] = useState<Asset[]>([]); // Store all assets for statistics
+  const [statsLoading, setStatsLoading] = useState(true); // Track if stats are being loaded
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
+  const initialLoadRef = React.useRef(false); // Track if initial load has been done
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<AssetFilters>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -95,7 +98,7 @@ const AssetInventory: React.FC = () => {
   ];
 
   // Helper function to get user name from API response or fallback
-  const getUserName = (apiAsset: ApiAssetWithUser): string => {
+  const getUserName = React.useCallback((apiAsset: ApiAssetWithUser): string => {
     // Check if the API response includes user name information
     if (apiAsset.assignedToName) {
       return apiAsset.assignedToName;
@@ -105,13 +108,99 @@ const AssetInventory: React.FC = () => {
     }
     // Fallback to user ID if no name is provided
     return apiAsset.assigned_to ? `User ${apiAsset.assigned_to}` : 'Unassigned';
-  };
+  }, []);
+
+  // Helper function to transform API assets
+  const transformApiAssets = React.useCallback((apiAssets: ApiAssetWithUser[]): Asset[] => {
+    return apiAssets.map((apiAsset: ApiAssetWithUser) => {
+      // Try to find matching category from our comprehensive list
+      const matchingCategory = assetCategories.find(cat => 
+        cat.name.toLowerCase() === apiAsset.category.toLowerCase() ||
+        cat.subcategories?.some(sub => sub.toLowerCase() === apiAsset.category.toLowerCase())
+      );
+      
+      return {
+        id: apiAsset.id,
+        name: apiAsset.name,
+        category: matchingCategory ? {
+          id: matchingCategory.id,
+          name: matchingCategory.name,
+          nameAr: matchingCategory.nameAr,
+          description: matchingCategory.description,
+          color: matchingCategory.color,
+          subcategories: matchingCategory.subcategories
+        } : { 
+          id: apiAsset.category, 
+          name: apiAsset.category, 
+          nameAr: apiAsset.category, 
+          description: '',
+          color: '#757575'
+        },
+        status: apiAsset.status,
+        assignedTo: apiAsset.assigned_to || undefined,
+        assignedToName: apiAsset.assigned_to ? getUserName(apiAsset) : undefined,
+        serialNumber: '', // Not provided by API
+        purchaseDate: apiAsset.purchase_date,
+        location: '', // Not provided by API
+        description: '', // Not provided by API
+        createdAt: apiAsset.created_at,
+        updatedAt: apiAsset.created_at,
+        subcategoryId: apiAsset.subcategoryId || undefined,
+      };
+    });
+  }, [getUserName]);
+
+  // Fetch all assets for statistics (without pagination)
+  const fetchAllAssetsForStats = React.useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      // Fetch all assets by looping through all pages
+      let allApiAssets: ApiAssetWithUser[] = [];
+      let currentPage = 1;
+      let hasMorePages = true;
+      const limit = 1000; // Use a high limit per page
+      
+      while (hasMorePages) {
+        const response = await assetApi.getAllAssets({ page: currentPage, limit });
+        const apiAssets = response.assets || [];
+        const paginationInfo = response.pagination;
+        
+        if (apiAssets && apiAssets.length > 0) {
+          allApiAssets = [...allApiAssets, ...apiAssets];
+        }
+        
+        // Check if there are more pages
+        if (paginationInfo && currentPage < paginationInfo.totalPages) {
+          currentPage++;
+        } else {
+          hasMorePages = false;
+        }
+        
+        // Safety check to prevent infinite loops
+        if (currentPage > 100) {
+          hasMorePages = false;
+        }
+      }
+      
+      if (allApiAssets.length > 0) {
+        const transformedAssets = transformApiAssets(allApiAssets);
+        setAllAssetsForStats(transformedAssets);
+      } else {
+        setAllAssetsForStats([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch all assets for statistics:', error);
+      // Don't show snackbar for this as it's a background operation
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [transformApiAssets]);
 
   // Fetch assets from API
-  const fetchAssets = React.useCallback(async (page: number = 1, limit: number = 25) => {
+  const fetchAssets = React.useCallback(async (page: number = 1, limit: number = 25, isInitialLoad: boolean = false) => {
     try {
-      // Only show initial loading on first load, not on pagination
-      if (page === 1) {
+      // Only show initial loading on very first load, not on pagination or when returning to page 1
+      if (isInitialLoad && page === 1) {
         setInitialLoading(true);
       }
       
@@ -119,7 +208,7 @@ const AssetInventory: React.FC = () => {
       
       const apiAssets = response.assets; // Extract assets from paginated response
       
-      // Update pagination state
+      // Update pagination state immediately - this gives us total count right away
       setPagination(response.pagination);
       
       // Check if we have assets
@@ -128,58 +217,31 @@ const AssetInventory: React.FC = () => {
         return;
       }
         
-        // Transform API assets to match component interface
-        const transformedAssets: Asset[] = apiAssets.map((apiAsset: ApiAssetWithUser) => {
-          // Try to find matching category from our comprehensive list
-          const matchingCategory = assetCategories.find(cat => 
-            cat.name.toLowerCase() === apiAsset.category.toLowerCase() ||
-            cat.subcategories?.some(sub => sub.toLowerCase() === apiAsset.category.toLowerCase())
-          );
-          
-          return {
-            id: apiAsset.id,
-            name: apiAsset.name,
-            category: matchingCategory ? {
-              id: matchingCategory.id,
-              name: matchingCategory.name,
-              nameAr: matchingCategory.nameAr,
-              description: matchingCategory.description,
-              color: matchingCategory.color,
-              subcategories: matchingCategory.subcategories
-            } : { 
-              id: apiAsset.category, 
-              name: apiAsset.category, 
-              nameAr: apiAsset.category, 
-              description: '',
-              color: '#757575'
-            },
-            status: apiAsset.status,
-            assignedTo: apiAsset.assigned_to,
-            assignedToName: apiAsset.assigned_to ? getUserName(apiAsset) : undefined,
-            serialNumber: '', // Not provided by API
-            purchaseDate: apiAsset.purchase_date,
-            location: '', // Not provided by API
-            description: '', // Not provided by API
-            createdAt: apiAsset.created_at,
-            updatedAt: apiAsset.created_at,
-          };
-        });
-        
-        setAssets(transformedAssets);
-        
+      // Transform API assets to match component interface
+      const transformedAssets = transformApiAssets(apiAssets);
+      
+      setAssets(transformedAssets);
         
       } catch (error) {
         console.error('Failed to fetch assets:', error);
         showSnackbar('Failed to load assets', 'error');
       } finally {
-        // Only set initial loading to false on first page
-        if (page === 1) {
+        // Only set initial loading to false on very first load
+        if (isInitialLoad && page === 1) {
           setInitialLoading(false);
         }
       }
-    }, []);
+    }, [transformApiAssets]);
 
+  // Initial load: fetch stats FIRST, then paginated assets
   useEffect(() => {
+    // Only run initial load once
+    if (initialLoadRef.current) {
+      return;
+    }
+    
+    initialLoadRef.current = true;
+    
     // Test API connection first
     const testConnection = async () => {
       try {
@@ -191,8 +253,28 @@ const AssetInventory: React.FC = () => {
     };
     
     testConnection();
-    fetchAssets(pagination.page, pagination.limit);
-  }, [pagination.page, pagination.limit, fetchAssets]);
+    
+    // Initialize data: fetch stats FIRST, then paginated assets
+    // This ensures correct counts (26) are shown immediately when page loads, not 25 initially
+    const initializeData = async () => {
+      // Fetch all assets for statistics FIRST to get accurate counts immediately
+      await fetchAllAssetsForStats();
+      // Then fetch paginated assets for the table (isInitialLoad = true)
+      await fetchAssets(pagination.page, pagination.limit, true);
+    };
+    
+    initializeData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on initial mount
+
+  // Handle page changes: only fetch paginated assets, not stats
+  // Note: handlePageChange already calls fetchAssets, so this useEffect is not needed
+  // Keeping it commented out to avoid double fetching
+  // useEffect(() => {
+  //   if (pagination.page > 0) {
+  //     fetchAssets(pagination.page, pagination.limit);
+  //   }
+  // }, [pagination.page, pagination.limit, fetchAssets]);
 
   // Filter and search logic
   useMemo(() => {
@@ -266,8 +348,10 @@ const AssetInventory: React.FC = () => {
         
         // Assets will be refreshed from API
         showSnackbar('Asset updated successfully', 'success');
-        // Refresh the current page
-        fetchAssets(pagination.page, pagination.limit);
+        // Refresh the current page (not initial load)
+        fetchAssets(pagination.page, pagination.limit, false);
+        // Refresh all assets for statistics
+        fetchAllAssetsForStats();
       } else {
         // Create new asset
         const createData = {
@@ -283,8 +367,10 @@ const AssetInventory: React.FC = () => {
         
         // Assets will be refreshed from API
         showSnackbar('Asset created successfully', 'success');
-        // Refresh the current page
-        fetchAssets(pagination.page, pagination.limit);
+        // Refresh the current page (not initial load)
+        fetchAssets(pagination.page, pagination.limit, false);
+        // Refresh all assets for statistics
+        fetchAllAssetsForStats();
       }
 
       setIsModalOpen(false);
@@ -308,6 +394,8 @@ const AssetInventory: React.FC = () => {
       setAssetToDelete(null);
       // Refresh the current page
       fetchAssets(pagination.page, pagination.limit);
+      // Refresh all assets for statistics
+      fetchAllAssetsForStats();
     } catch (error) {
       console.error('Failed to delete asset:', error);
       showSnackbar('Failed to delete asset', 'error');
@@ -329,6 +417,8 @@ const AssetInventory: React.FC = () => {
       setAnchorEl(null);
       // Refresh the current page
       fetchAssets(pagination.page, pagination.limit);
+      // Refresh all assets for statistics
+      fetchAllAssetsForStats();
     } catch (error) {
       console.error('Failed to update asset status:', error);
       showSnackbar('Failed to update asset status', 'error');
@@ -350,6 +440,8 @@ const AssetInventory: React.FC = () => {
       setAnchorEl(null);
       // Refresh the current page
       fetchAssets(pagination.page, pagination.limit);
+      // Refresh all assets for statistics
+      fetchAllAssetsForStats();
     } catch (error) {
       console.error('Failed to update asset status:', error);
       showSnackbar('Failed to update asset status', 'error');
@@ -359,19 +451,37 @@ const AssetInventory: React.FC = () => {
   };
 
   const getStatusCounts = () => {
+    // Always use pagination.total for total count (available immediately from first API call)
+    // For status counts, ONLY use allAssetsForStats once it's loaded
+    // Don't show incorrect counts from current page assets
+    // This ensures we show correct counts immediately when page loads
+    if (allAssetsForStats.length > 0) {
+      // Use allAssetsForStats for accurate counts across all pages
+      return {
+        total: pagination.total || allAssetsForStats.length,
+        available: allAssetsForStats.filter(a => a.status === 'available').length,
+        assigned: allAssetsForStats.filter(a => a.status === 'assigned').length,
+        underMaintenance: allAssetsForStats.filter(a => a.status === 'under_maintenance').length,
+        retired: allAssetsForStats.filter(a => a.status === 'retired').length,
+      };
+    }
+    
+    // If allAssetsForStats is not loaded yet, show total from pagination but show 0 for status counts
+    // This prevents showing incorrect counts (like 25 when it should be 26)
     return {
-      total: assets.length,
-      available: assets.filter(a => a.status === 'available').length,
-      assigned: assets.filter(a => a.status === 'assigned').length,
-      underMaintenance: assets.filter(a => a.status === 'under_maintenance').length,
-      retired: assets.filter(a => a.status === 'retired').length,
+      total: pagination.total || 0,
+      available: 0,
+      assigned: 0,
+      underMaintenance: 0,
+      retired: 0,
     };
   };
 
   const statusCounts = getStatusCounts();
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
-    fetchAssets(page, pagination.limit);
+    // Page change is not initial load, so pass false
+    fetchAssets(page, pagination.limit, false);
   };
 
   if (initialLoading) {
