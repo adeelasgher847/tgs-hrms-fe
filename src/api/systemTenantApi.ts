@@ -31,6 +31,10 @@ export interface SystemTenantFilters {
 }
 
 export const SystemTenantApi = {
+  /**
+   * @param filters
+   * @returns { data, total, page, totalPages }
+   */
   getAll: async (
     filters: SystemTenantFilters = { page: 1, limit: 10 }
   ): Promise<{
@@ -73,6 +77,7 @@ export const SystemTenantApi = {
         totalPages,
       };
     } catch (error) {
+      console.error(' Failed to fetch tenants:', error);
       throw error;
     }
   },
@@ -83,6 +88,7 @@ export const SystemTenantApi = {
         await axiosInstance.get(`/system/tenants/${id}`);
       return response.data;
     } catch (error) {
+      console.error(` Failed to fetch tenant details (id=${id}):`, error);
       throw error;
     }
   },
@@ -93,8 +99,10 @@ export const SystemTenantApi = {
         '/system/tenants',
         data
       );
+      console.log(' Tenant created successfully:', response.data);
       return response.data;
     } catch (error) {
+      console.error(' Failed to create tenant:', error);
       throw error;
     }
   },
@@ -112,8 +120,13 @@ export const SystemTenantApi = {
           headers: { 'Content-Type': 'application/json' },
         }
       );
+      console.log(' System tenant status updated:', response.data);
       return response.data;
     } catch (error: any) {
+      console.error(
+        ` Failed to update status (id=${id}):`,
+        error.response?.data || error
+      );
       throw error;
     }
   },
@@ -122,8 +135,10 @@ export const SystemTenantApi = {
     try {
       const response: AxiosResponse<{ deleted: boolean; id: string }> =
         await axiosInstance.delete(`/system/tenants/${id}`);
+      console.log(' Tenant deleted:', response.data);
       return response.data;
     } catch (error) {
+      console.error(` Failed to delete tenant (id=${id}):`, error);
       throw error;
     }
   },
@@ -132,13 +147,14 @@ export const SystemTenantApi = {
     try {
       const response: AxiosResponse<{ restored: boolean; id: string }> =
         await axiosInstance.put(`/system/tenants/${id}/restore`);
+      console.log(' Tenant restored successfully:', response.data);
       return response.data;
     } catch (error) {
+      console.error(` Failed to restore tenant (id=${id}):`, error);
       throw error;
     }
   },
 
- 
   update: async (
     id: string,
     data: { name?: string; status?: 'active' | 'suspended' }
@@ -150,8 +166,10 @@ export const SystemTenantApi = {
         data: SystemTenant;
       }> = await axiosInstance.put(`/tenants/${id}`, data);
 
+      console.log(' Tenant updated successfully:', response.data);
       return response.data.data;
     } catch (error) {
+      console.error(` Failed to update tenant (id=${id}):`, error);
       throw error;
     }
   },

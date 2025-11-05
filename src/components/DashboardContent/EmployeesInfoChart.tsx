@@ -91,7 +91,7 @@ export default function EmployeesInfoChart() {
 
   // Translations
   const chartTitle = {
-    en: `Employees Info ${selectedYear ? `(${selectedYear})` : ''}`,
+    en: `Employee Growth ${selectedYear ? `(${selectedYear})` : ''}`,
     ar: `معلومات الموظفين ${selectedYear ? `(${selectedYear})` : ''}`,
   };
 
