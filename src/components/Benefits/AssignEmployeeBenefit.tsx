@@ -70,9 +70,11 @@ const AssignEmployeeBenefit: React.FC<{
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    watch,
+    formState: { errors, isValid },
   } = useForm<AssignEmployeeBenefitValues>({
     resolver: yupResolver(schema),
+    mode: 'onChange', // Validate on change to enable/disable button
     defaultValues: {
       employeeId: '',
       benefitIds: [],
@@ -80,6 +82,15 @@ const AssignEmployeeBenefit: React.FC<{
       endDate: '',
     },
   });
+
+  // Watch all form values to check if they're filled
+  const watchedValues = watch();
+  const isFormValid =
+    watchedValues.employeeId &&
+    watchedValues.benefitIds?.length > 0 &&
+    watchedValues.startDate &&
+    watchedValues.endDate &&
+    isValid;
 
   useEffect(() => {
     if (!open) return;
@@ -290,7 +301,11 @@ const AssignEmployeeBenefit: React.FC<{
               <Button onClick={onClose} variant='outlined'>
                 Cancel
               </Button>
-              <Button type='submit' variant='contained' disabled={loading}>
+              <Button
+                type='submit'
+                variant='contained'
+                disabled={loading || !isFormValid}
+              >
                 {loading ? 'Assigning...' : 'Assign'}
               </Button>
             </DialogActions>

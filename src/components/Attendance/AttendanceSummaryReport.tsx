@@ -19,8 +19,6 @@ import {
   Alert,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { useLocation } from 'react-router-dom';
-import { useUser } from '../../hooks/useUser';
 import attendanceSummaryApi from '../../api/reportApi';
 
 interface AttendanceSummaryItem {
@@ -34,8 +32,6 @@ interface AttendanceSummaryItem {
 }
 
 const AttendanceSummaryReport: React.FC = () => {
-  const location = useLocation();
-  const { user, loading: userLoading } = useUser();
   const [summaryData, setSummaryData] = useState<AttendanceSummaryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<
@@ -60,7 +56,8 @@ const AttendanceSummaryReport: React.FC = () => {
     []
   );
 
-  const getDaysRange = React.useCallback(() => {
+  // Calculate days range based on filter
+  const getDaysRange = () => {
     switch (filter) {
       case 'thisMonth':
         return new Date().getDate();
@@ -80,67 +77,84 @@ const AttendanceSummaryReport: React.FC = () => {
       default:
         return 30;
     }
-  }, [filter]);
+  };
 
-  useEffect(() => {
-    // Wait for user loading to complete
-    if (userLoading) {
-      return;
+  // Get tenant ID from localStorage - same pattern as other attendance pages
+  const getTenantId = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return null;
+    try {
+      const user = JSON.parse(userStr);
+      // localStorage has tenant_id (with underscore), not tenant
+      return user.tenant_id || user.tenant || null;
+    } catch {
+      return null;
     }
+  };
 
-    // Get tenant ID - if not available, clear data and return
-    const tenantId = user?.tenant;
+  // Fetch attendance summary - same pattern as AttendanceCheck and AttendanceTable
+  const fetchSummary = async () => {
+    const tenantId = getTenantId();
     if (!tenantId) {
+      console.log('Attendance report: No tenant ID available');
       setSummaryData([]);
       setLoading(false);
+      showToast('User tenant not found. Please log in again.', 'error');
       return;
     }
 
-    // Fetch data when tenant is available
-    const fetchSummary = async () => {
-      setLoading(true);
-      try {
-        const days = getDaysRange();
-        const resp = await attendanceSummaryApi.getAttendanceSummary(
-          tenantId,
-          days
-        );
+    setLoading(true);
+    try {
+      const days = getDaysRange();
+      console.log(
+        'Attendance report: Fetching summary for tenant:',
+        tenantId,
+        'days:',
+        days
+      );
+      const resp = await attendanceSummaryApi.getAttendanceSummary(
+        tenantId,
+        days
+      );
 
-        let items: AttendanceSummaryItem[] = [];
+      let items: AttendanceSummaryItem[] = [];
 
-        if (!resp) {
-          items = [];
-        } else if (Array.isArray(resp)) {
-          items = resp as AttendanceSummaryItem[];
-        } else if (Array.isArray((resp as Record<string, unknown>).items)) {
-          items = (resp as Record<string, unknown>)
-            .items as AttendanceSummaryItem[];
-        } else if (Array.isArray((resp as Record<string, unknown>).data)) {
-          items = (resp as Record<string, unknown>)
-            .data as AttendanceSummaryItem[];
-        } else {
-          items = [];
-        }
-
-        setSummaryData(items);
-      } catch (err) {
-        console.error('Error fetching summary:', err);
-        setSummaryData([]);
-        showToast('Failed to fetch attendance summary.', 'error');
-      } finally {
-        setLoading(false);
+      if (!resp) {
+        items = [];
+      } else if (Array.isArray(resp)) {
+        items = resp as AttendanceSummaryItem[];
+      } else if (Array.isArray((resp as Record<string, unknown>).items)) {
+        items = (resp as Record<string, unknown>)
+          .items as AttendanceSummaryItem[];
+      } else if (Array.isArray((resp as Record<string, unknown>).data)) {
+        items = (resp as Record<string, unknown>)
+          .data as AttendanceSummaryItem[];
+      } else {
+        items = [];
       }
-    };
 
+      console.log('Attendance report: Data received:', items.length, 'items');
+      setSummaryData(items);
+    } catch (err) {
+      console.error('Attendance report: Error fetching summary:', err);
+      setSummaryData([]);
+      showToast('Failed to fetch attendance summary.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load on mount - same pattern as AttendanceCheck and AttendanceTable
+  useEffect(() => {
     fetchSummary();
-  }, [
-    user?.tenant,
-    userLoading,
-    filter,
-    getDaysRange,
-    showToast,
-    location.pathname,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch when filter changes
+  useEffect(() => {
+    fetchSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
 
   const safeData = Array.isArray(summaryData) ? summaryData : [];
 
@@ -333,7 +347,6 @@ const AttendanceSummaryReport: React.FC = () => {
         </Box>
       </Box>
 
-      {/* ✅ Snackbar */}
       <Snackbar
         open={openToast}
         autoHideDuration={4000}

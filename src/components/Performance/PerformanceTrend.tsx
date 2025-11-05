@@ -15,8 +15,9 @@ import {
   TableCell,
   TableBody,
   Paper,
+  Box,
 } from '@mui/material';
-import GaugeChart from 'react-gauge-chart';
+import Chart from 'react-apexcharts';
 import {
   systemPerformanceApiService,
   type PerformanceRecord,
@@ -90,22 +91,117 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
     });
   }, [records, selectedEmployee, statusFilter, startDate, endDate]);
 
-  const overallScore =
-    records.length > 0
-      ? (records.reduce((sum, r) => sum + r.overallScore, 0) / records.length) *
-        20
-      : 0;
+  // Calculate gauge score based on selected employee or all employees
+  const gaugeScore = useMemo(() => {
+    // When employee is selected, calculate average of ALL that employee's records
+    // (ignoring status/date filters for gauge calculation)
+    if (selectedEmployee) {
+      const employeeRecords = records.filter(
+        record => record.employee_id === selectedEmployee
+      );
+      if (employeeRecords.length === 0) {
+        return 0;
+      }
+      const averageScore =
+        employeeRecords.reduce((sum, r) => sum + (r.overallScore || 0), 0) /
+        employeeRecords.length;
+      return averageScore * 20; // Convert to percentage (assuming 0-5 scale)
+    }
 
-  const filteredRecord = selectedEmployee
-    ? records.find(rec => rec.employee_id === selectedEmployee)
-    : null;
+    // When no employee selected, calculate average of all employees' records
+    if (records.length === 0) {
+      return 0;
+    }
+    const averageScore =
+      records.reduce((sum, r) => sum + (r.overallScore || 0), 0) /
+      records.length;
+    return averageScore * 20; // Convert to percentage (assuming 0-5 scale)
+  }, [records, selectedEmployee]);
 
-  const gaugeScore =
-    selectedEmployee && filteredRecord
-      ? filteredRecord.overallScore * 20
-      : selectedEmployee && !filteredRecord
-        ? 0
-        : overallScore;
+  // Memoize chart options to ensure proper updates
+  const chartOptions = useMemo(
+    () => ({
+      chart: {
+        type: 'radialBar' as const,
+        toolbar: { show: false },
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 800,
+        },
+      },
+      plotOptions: {
+        radialBar: {
+          startAngle: -90,
+          endAngle: 90,
+          hollow: {
+            margin: 0,
+            size: '70%',
+            background: theme.palette.mode === 'dark' ? '#1e1e1e' : '#fff',
+          },
+          track: {
+            background: theme.palette.mode === 'dark' ? '#333' : '#e0e0e0',
+            strokeWidth: '67%',
+            margin: 0,
+          },
+          dataLabels: {
+            show: true,
+            name: {
+              show: false,
+            },
+            value: {
+              offsetY: -10,
+              fontSize: '22px',
+              fontWeight: 600,
+              color: theme.palette.text.primary,
+              formatter: (val: number) => {
+                return `${val.toFixed(1)}%`;
+              },
+            },
+          },
+        },
+      },
+      fill: {
+        type: 'gradient' as const,
+        gradient: {
+          shade: 'dark' as const,
+          type: 'horizontal' as const,
+          shadeIntensity: 0.5,
+          gradientToColors:
+            gaugeScore >= 60
+              ? ['#4CAF50']
+              : gaugeScore >= 30
+                ? ['#FFC371']
+                : ['#FF5F6D'],
+          inverseColors: false,
+          opacityFrom: 1,
+          opacityTo: 1,
+          stops: [0, 100],
+        },
+      },
+      colors:
+        gaugeScore >= 60
+          ? ['#4CAF50']
+          : gaugeScore >= 30
+            ? ['#FFC371']
+            : ['#FF5F6D'],
+      stroke: {
+        lineCap: 'round' as const,
+      },
+      labels: [selectedEmployee ? 'Employee Score' : 'Overall Score'],
+    }),
+    [
+      gaugeScore,
+      selectedEmployee,
+      theme.palette.mode,
+      theme.palette.text.primary,
+    ]
+  );
+
+  const chartSeries = useMemo(
+    () => [Math.min(Math.max(gaugeScore, 0), 100)],
+    [gaugeScore]
+  );
 
   return (
     <Card>
@@ -170,19 +266,27 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
 
         <Grid container spacing={4}>
           <Grid item xs={12} md={4}>
-            <GaugeChart
-              id='overall-gauge'
-              nrOfLevels={20}
-              percent={gaugeScore / 100}
-              textColor={theme.palette.text.primary}
-              colors={['#FF5F6D', '#FFC371', '#4CAF50']}
-              arcWidth={0.3}
-            />
-            <Typography align='center' variant='h6' mt={2}>
-              {selectedEmployee
-                ? `Employee Score: ${gaugeScore.toFixed(1)}%`
-                : `Overall Score: ${gaugeScore.toFixed(1)}%`}
-            </Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Chart
+                key={`gauge-${gaugeScore}-${selectedEmployee || 'all'}`}
+                options={chartOptions}
+                series={chartSeries}
+                type='radialBar'
+                height={280}
+              />
+              <Typography align='center' variant='h6' mt={1}>
+                {selectedEmployee
+                  ? `Employee Score: ${gaugeScore.toFixed(1)}%`
+                  : `Overall Score: ${gaugeScore.toFixed(1)}%`}
+              </Typography>
+            </Box>
           </Grid>
 
           <Grid item xs={12} md={8}>
