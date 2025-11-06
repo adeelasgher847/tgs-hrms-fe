@@ -22,6 +22,8 @@ import {
   Widgets,
   Inventory,
   CardGiftcard,
+  History,
+  Insights,
 } from '@mui/icons-material';
 import dotted from './../assets/dashboardIcon/dotted-down.svg';
 import Clipboard from '../assets/dashboardIcon/Clipboard';
@@ -31,7 +33,6 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { useTheme } from '../theme/hooks';
 import { useCompany } from '../context/CompanyContext';
-import companyApi from '../api/companyApi';
 import {
   isMenuVisibleForRole,
   isSubMenuVisibleForRole,
@@ -59,7 +60,7 @@ const menuItems: MenuItem[] = [
   {
     label: 'Dashboard',
     icon: <Dashboard />,
-    subItems: [{ label: 'HR Dashboard', path: '' }],
+    subItems: [{ label: 'Dashboard', path: '' }],
   },
   {
     label: 'Projects',
@@ -88,7 +89,10 @@ const menuItems: MenuItem[] = [
   {
     label: 'Employees',
     icon: <Group />,
-    subItems: [{ label: 'Employee List', path: 'EmployeeManager' }],
+    subItems: [
+      { label: 'Employee List', path: 'EmployeeManager' },
+      { label: 'Tenant Employees', path: 'TenantEmployees' },
+    ],
   },
   {
     label: 'Teams',
@@ -102,6 +106,7 @@ const menuItems: MenuItem[] = [
       { label: 'Asset Inventory', path: 'assets' },
       { label: 'Asset Requests', path: 'assets/requests' },
       { label: 'Management', path: 'assets/request-management' },
+      { label: 'System Assets Overview', path: 'assets/system-admin' },
     ],
   },
   {
@@ -116,10 +121,10 @@ const menuItems: MenuItem[] = [
   },
   {
     label: 'Leave Analytics',
-    icon: <Receipt />, 
+    icon: <Receipt />,
     subItems: [
       { label: 'Reports', path: 'Reports' },
-
+      { label: 'cross-tenant-leaves', path: 'cross-tenant-leaves' },
     ],
   },
   {
@@ -130,6 +135,13 @@ const menuItems: MenuItem[] = [
       { label: 'Employee Benefits', path: 'employee-benefit' },
       { label: 'Benefit Details', path: 'benefit-details' },
       { label: 'Benefits Report', path: 'benefit-report' },
+    ],
+  },
+  {
+    label: 'Performance',
+    icon: <Insights />,
+    subItems: [
+      { label: 'Employee Performance', path: 'performance-dashboard' },
     ],
   },
   {
@@ -147,6 +159,11 @@ const menuItems: MenuItem[] = [
       { label: 'Payroll Summary', path: 'payroll-summary' },
       { label: 'Payslips', path: 'payslips' },
     ],
+  },
+  {
+    label: 'Audit Logs',
+    icon: <History />,
+    subItems: [{ label: 'Audit Logs', path: 'audit-logs' }],
   },
   {
     label: 'App',
@@ -180,13 +197,15 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   const { toggleTheme } = useTheme();
   const location = useLocation();
   const { user } = useUser();
-  const { companyDetails, companyLogo, setCompanyDetails, setCompanyLogo } =
-    useCompany();
+  const {
+    companyDetails,
+    companyLogo,
+    companyName: contextCompanyName,
+  } = useCompany();
   const role = user?.role;
 
   const [openItem, setOpenItem] = useState<string>('');
   const [activeSubItem, setActiveSubItem] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
 
   const filteredMenuItems = useMemo(() => {
     const userRole = typeof role === 'string' ? role : (role as unknown)?.name;
@@ -210,29 +229,6 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
       }));
     return filtered;
   }, [role]);
-
-  useEffect(() => {
-    const fetchCompanyData = async () => {
-      try {
-        setLoading(true);
-        const details = await companyApi.getCompanyDetails();
-        setCompanyDetails(details);
-
-        if (details.tenant_id) {
-          const logoUrl = await companyApi.getCompanyLogo(details.tenant_id);
-          setCompanyLogo(logoUrl);
-        } else {
-          setCompanyLogo(null);
-        }
-      } catch (err) {
-        console.error('Error fetching company info:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCompanyData();
-  }, [setCompanyDetails, setCompanyLogo]);
 
   useEffect(() => {
     let currentPath = location.pathname.replace('/dashboard/', '');
@@ -266,7 +262,8 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
     onMenuItemClick?.();
   };
 
-  const companyName = companyDetails?.company_name || 'Trans Global Services';
+  const companyName = contextCompanyName || 'Trans Global Services';
+  const loading = !companyDetails;
 
   return (
     <Box
@@ -301,7 +298,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
               flexShrink: 0,
             }}
           >
-            {loading ? (
+            {loading && !companyLogo ? (
               <Skeleton
                 variant='circular'
                 width='100%'
@@ -395,7 +392,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                     <ListItemButton
                       onClick={() =>
                         setOpenItem(isParentActive ? '' : item.label)
-                      }
+                       }
                       sx={{
                         color: isParentActive ? 'orange' : 'white',
                         pl: 1,
@@ -424,7 +421,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                       )}
                     </ListItemButton>
 
-                    <Collapse in={isParentActive} timeout='auto' unmountOnExit>
+                   <Collapse in={isParentActive} timeout='auto' unmountOnExit>
                       <List component='div' disablePadding>
                         {item.subItems?.map(sub => (
                           <ListItemButton

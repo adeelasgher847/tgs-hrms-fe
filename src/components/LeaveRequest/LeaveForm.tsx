@@ -39,6 +39,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  // ✅ Fetch leave types
   useEffect(() => {
     const fetchLeaveTypes = async () => {
       try {
@@ -57,6 +58,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
     fetchLeaveTypes();
   }, []);
 
+  // ✅ Get tomorrow (minimum selectable date)
   const getTomorrow = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -64,6 +66,15 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
     return tomorrow;
   };
 
+  // ✅ Format date locally (fixes one-day earlier bug)
+  const formatDateLocal = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // ✅ Submit form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -74,8 +85,8 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
 
     const payload = {
       leaveTypeId,
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0],
+      startDate: formatDateLocal(startDate),
+      endDate: formatDateLocal(endDate),
       reason: reason.trim(),
     };
 
@@ -133,7 +144,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
           <Typography
             variant='body1'
             sx={{
-              color: message.startsWith('✅') ? 'green' : 'error.main',
+              color: message.includes('successfully') ? 'green' : 'error.main',
               mb: 1,
             }}
           >
@@ -172,7 +183,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
           </TextField>
         )}
 
-        {/* Dates */}
+        {/* ✅ Start Date */}
         <DatePicker
           label='Start Date'
           value={startDate}
@@ -191,6 +202,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
           }}
         />
 
+        {/* ✅ End Date */}
         <DatePicker
           label='End Date'
           value={endDate}
@@ -204,6 +216,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
           }}
         />
 
+        {/* Reason Field */}
         <TextField
           label='Reason'
           multiline

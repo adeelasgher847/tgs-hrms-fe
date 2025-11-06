@@ -14,6 +14,7 @@ export interface Asset {
   description?: string;
   createdAt: string;
   updatedAt: string;
+  subcategoryId?: string;
 }
 
 export interface AssetCategory {

@@ -486,6 +486,75 @@ export const assetApi = {
     const response = await axiosInstance.get('/asset-subcategories/categories');
     return response.data;
   },
+
+  // System Admin Asset APIs
+  getSystemAssets: async (filters?: {
+    category?: string;
+    tenantId?: string;
+    assigned?: 'assigned' | 'unassigned';
+  }) => {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.tenantId) params.append('tenantId', filters.tenantId);
+    if (filters?.assigned) params.append('assigned', filters.assigned);
+
+    const response = await axiosInstance.get(
+      `/system/assets/?${params.toString()}`
+    );
+    return response.data;
+  },
+
+  getSystemAssetsSummary: async () => {
+    const response = await axiosInstance.get('/system/assets/summary/');
+    return response.data;
+  },
 };
+
+// System Admin Asset Types
+export interface SystemAsset {
+  id: string;
+  name: string;
+  category: string;
+  subcategory_id: string;
+  status: string;
+  assigned_to: string | null;
+  purchase_date: string;
+  tenant_id: string;
+  created_at: string;
+  assignedToUser?: {
+    id: string;
+    email: string;
+    phone: string;
+    first_name: string;
+    last_name: string;
+    profile_pic: string | null;
+    role_id: string;
+    gender: string;
+    tenant_id: string;
+    created_at: string;
+    updated_at: string;
+    first_login_time: string | null;
+  };
+  tenant: {
+    id: string;
+    name: string;
+    status: string;
+    isDeleted: boolean;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+  };
+}
+
+export interface SystemAssetSummary {
+  tenantId: string;
+  tenantName: string;
+  totalAssets: number;
+  assignedCount: number;
+  availableCount: number;
+  maintenanceCount: number;
+  retiredCount: number;
+  lostCount: number;
+}
 
 export default assetApi;

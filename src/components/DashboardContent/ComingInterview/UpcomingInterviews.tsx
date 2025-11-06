@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import InterviewItem from './InterviewItem';
-import { upcomingInterviews } from '../../../Data/upcomingInterviews';
+import { upcomingInterviews } from '../../../Data/upcomingInterviews.ts';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
 

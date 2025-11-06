@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -19,7 +19,6 @@ import {
   Alert,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { useUser } from '../../hooks/useUser';
 import attendanceSummaryApi from '../../api/reportApi';
 
 interface AttendanceSummaryItem {
@@ -33,13 +32,11 @@ interface AttendanceSummaryItem {
 }
 
 const AttendanceSummaryReport: React.FC = () => {
-  const { user, loading: userLoading } = useUser();
   const [summaryData, setSummaryData] = useState<AttendanceSummaryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<
     'thisMonth' | 'prevMonth' | '60days' | '90days'
   >('thisMonth');
-
   // Snackbar states
   const [openToast, setOpenToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -47,16 +44,20 @@ const AttendanceSummaryReport: React.FC = () => {
     'success' | 'error' | 'warning' | 'info'
   >('success');
 
-  const showToast = (
-    message: string,
-    severity: 'success' | 'error' | 'warning' | 'info' = 'info'
-  ) => {
-    setToastMessage(message);
-    setToastSeverity(severity);
-    setOpenToast(true);
-  };
+  const showToast = useCallback(
+    (
+      message: string,
+      severity: 'success' | 'error' | 'warning' | 'info' = 'info'
+    ) => {
+      setToastMessage(message);
+      setToastSeverity(severity);
+      setOpenToast(true);
+    },
+    []
+  );
 
-  const getDaysRange = React.useCallback(() => {
+  // Calculate days range based on filter
+  const getDaysRange = () => {
     switch (filter) {
       case 'thisMonth':
         return new Date().getDate();
@@ -76,52 +77,84 @@ const AttendanceSummaryReport: React.FC = () => {
       default:
         return 30;
     }
-  }, [filter]);
+  };
 
+  // Get tenant ID from localStorage - same pattern as other attendance pages
+  const getTenantId = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return null;
+    try {
+      const user = JSON.parse(userStr);
+      // localStorage has tenant_id (with underscore), not tenant
+      return user.tenant_id || user.tenant || null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Fetch attendance summary - same pattern as AttendanceCheck and AttendanceTable
+  const fetchSummary = async () => {
+    const tenantId = getTenantId();
+    if (!tenantId) {
+      console.log('Attendance report: No tenant ID available');
+      setSummaryData([]);
+      setLoading(false);
+      showToast('User tenant not found. Please log in again.', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const days = getDaysRange();
+      console.log(
+        'Attendance report: Fetching summary for tenant:',
+        tenantId,
+        'days:',
+        days
+      );
+      const resp = await attendanceSummaryApi.getAttendanceSummary(
+        tenantId,
+        days
+      );
+
+      let items: AttendanceSummaryItem[] = [];
+
+      if (!resp) {
+        items = [];
+      } else if (Array.isArray(resp)) {
+        items = resp as AttendanceSummaryItem[];
+      } else if (Array.isArray((resp as Record<string, unknown>).items)) {
+        items = (resp as Record<string, unknown>)
+          .items as AttendanceSummaryItem[];
+      } else if (Array.isArray((resp as Record<string, unknown>).data)) {
+        items = (resp as Record<string, unknown>)
+          .data as AttendanceSummaryItem[];
+      } else {
+        items = [];
+      }
+
+      console.log('Attendance report: Data received:', items.length, 'items');
+      setSummaryData(items);
+    } catch (err) {
+      console.error('Attendance report: Error fetching summary:', err);
+      setSummaryData([]);
+      showToast('Failed to fetch attendance summary.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load on mount - same pattern as AttendanceCheck and AttendanceTable
   useEffect(() => {
-    const fetchSummary = async () => {
-      if (userLoading) return;
-      if (!user?.tenant) {
-        console.warn('Missing tenantId — cannot fetch report.');
-        setSummaryData([]);
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const days = getDaysRange();
-        const resp = await attendanceSummaryApi.getAttendanceSummary(
-          user.tenant,
-          days
-        );
-
-        let items: AttendanceSummaryItem[] = [];
-
-        if (!resp) {
-          items = [];
-        } else if (Array.isArray(resp)) {
-          items = resp as AttendanceSummaryItem[];
-        } else if (Array.isArray((resp as Record<string, unknown>).items)) {
-          items = (resp as Record<string, unknown>).items as AttendanceSummaryItem[];
-        } else if (Array.isArray((resp as Record<string, unknown>).data)) {
-          items = (resp as Record<string, unknown>).data as AttendanceSummaryItem[];
-        } else {
-          items = [];
-        }
-
-        setSummaryData(items);
-      } catch (err) {
-        console.error('Error fetching summary:', err);
-        setSummaryData([]);
-        showToast('Failed to fetch attendance summary.', 'error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchSummary();
-  }, [user, userLoading, filter, getDaysRange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch when filter changes
+  useEffect(() => {
+    fetchSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
 
   const safeData = Array.isArray(summaryData) ? summaryData : [];
 
@@ -199,7 +232,13 @@ const AttendanceSummaryReport: React.FC = () => {
           <Select
             value={filter}
             onChange={e => {
-              setFilter(e.target.value as 'thisMonth' | 'prevMonth' | '60days' | '90days');
+              setFilter(
+                e.target.value as
+                  | 'thisMonth'
+                  | 'prevMonth'
+                  | '60days'
+                  | '90days'
+              );
             }}
           >
             <MenuItem value='thisMonth'>This Month</MenuItem>
@@ -308,7 +347,6 @@ const AttendanceSummaryReport: React.FC = () => {
         </Box>
       </Box>
 
-      {/* ✅ Snackbar */}
       <Snackbar
         open={openToast}
         autoHideDuration={4000}
