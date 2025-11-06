@@ -61,6 +61,21 @@ const AssetInventory: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [allAssetsForStats, setAllAssetsForStats] = useState<Asset[]>([]); // Store all assets for statistics
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
+  const [statusCounts, setStatusCounts] = useState<{
+    total: number;
+    available: number;
+    assigned: number;
+    retired: number;
+    under_maintenance: number;
+    pending: number;
+  }>({
+    total: 0,
+    available: 0,
+    assigned: 0,
+    retired: 0,
+    under_maintenance: 0,
+    pending: 0,
+  }); // Store counts from API response
   const initialLoadRef = React.useRef(false); // Track if initial load has been done
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<AssetFilters>({});
@@ -141,46 +156,40 @@ const AssetInventory: React.FC = () => {
   const transformApiAssets = React.useCallback(
     (apiAssets: ApiAssetWithUser[]): Asset[] => {
       return apiAssets.map((apiAsset: ApiAssetWithUser) => {
-        // Try to find matching category from our comprehensive list
-        const matchingCategory = assetCategories.find(
-          cat =>
-            cat.name.toLowerCase() === apiAsset.category.toLowerCase() ||
-            cat.subcategories?.some(
-              sub => sub.toLowerCase() === apiAsset.category.toLowerCase()
-            )
-        );
+        // Handle new API response structure where category is an object
+        const categoryObj = typeof apiAsset.category === 'object' 
+          ? apiAsset.category 
+          : { id: apiAsset.category_id || '', name: apiAsset.categoryName || apiAsset.category || '' };
+
+        // Handle subcategory - can be object or string
+        const subcategoryObj = apiAsset.subcategory 
+          ? (typeof apiAsset.subcategory === 'object' 
+              ? apiAsset.subcategory 
+              : { id: apiAsset.subcategory_id || '', name: apiAsset.subcategoryName || apiAsset.subcategory || '' })
+          : undefined;
 
         return {
           id: apiAsset.id,
           name: apiAsset.name,
-          category: matchingCategory
-            ? {
-                id: matchingCategory.id,
-                name: matchingCategory.name,
-                nameAr: matchingCategory.nameAr,
-                description: matchingCategory.description,
-                color: matchingCategory.color,
-                subcategories: matchingCategory.subcategories,
-              }
-            : {
-                id: apiAsset.category,
-                name: apiAsset.category,
-                nameAr: apiAsset.category,
-                description: '',
-                color: '#757575',
+          category: {
+            id: categoryObj.id || apiAsset.category_id || '',
+            name: categoryObj.name || apiAsset.categoryName || '',
+            nameAr: categoryObj.name || apiAsset.categoryName || '',
+            description: categoryObj.description || undefined,
+            color: undefined,
+            subcategories: undefined,
               },
           status: apiAsset.status,
           assignedTo: apiAsset.assigned_to || undefined,
-          assignedToName: apiAsset.assigned_to
-            ? getUserName(apiAsset)
-            : undefined,
+          assignedToName: apiAsset.assignedToName || (apiAsset.assignedToUser?.name) || (apiAsset.assigned_to ? getUserName(apiAsset) : undefined),
           serialNumber: '', // Not provided by API
           purchaseDate: apiAsset.purchase_date,
           location: '', // Not provided by API
           description: '', // Not provided by API
           createdAt: apiAsset.created_at,
           updatedAt: apiAsset.created_at,
-          subcategoryId: apiAsset.subcategoryId || undefined,
+          subcategoryId: subcategoryObj?.id || apiAsset.subcategory_id || undefined,
+          subcategoryName: subcategoryObj?.name || apiAsset.subcategoryName || undefined,
         };
       });
     },
@@ -252,6 +261,18 @@ const AssetInventory: React.FC = () => {
 
         // Update pagination state immediately - this gives us total count right away
         setPagination(response.pagination);
+
+        // Update counts from API response if available
+        if (response.counts) {
+          setStatusCounts({
+            total: response.counts.total || 0,
+            available: response.counts.available || 0,
+            assigned: response.counts.assigned || 0,
+            retired: response.counts.retired || 0,
+            under_maintenance: response.counts.under_maintenance || 0,
+            pending: response.counts.pending || 0,
+          });
+        }
 
         // Check if we have assets
         if (!apiAssets || apiAssets.length === 0) {
@@ -345,7 +366,7 @@ const AssetInventory: React.FC = () => {
     // Category filter
     if (filters.category) {
       filtered = filtered.filter(
-        asset => asset.category.name === filters.category
+        asset => asset.category?.name === filters.category || (asset as any).categoryName === filters.category
       );
     }
 
@@ -384,7 +405,7 @@ const AssetInventory: React.FC = () => {
 
   const handleAssetSubmit = async (data: {
     name: string;
-    category: string;
+    categoryId: string;
     subcategoryId?: string;
     purchaseDate: string;
     assignedTo?: string;
@@ -393,12 +414,21 @@ const AssetInventory: React.FC = () => {
     try {
       if (editingAsset) {
         // Update existing asset
-        const updateData = {
+        const updateData: {
+          name: string;
+          categoryId: string;
+          subcategoryId?: string;
+          purchaseDate: string;
+        } = {
           name: data.name,
-          category: data.category,
-          subcategoryId: data.subcategoryId,
+          categoryId: data.categoryId,
           purchaseDate: data.purchaseDate,
         };
+
+        // Only include subcategoryId if it's provided
+        if (data.subcategoryId && data.subcategoryId.trim() !== '') {
+          updateData.subcategoryId = data.subcategoryId;
+        }
 
         await assetApi.updateAsset(editingAsset.id, updateData);
 
@@ -412,14 +442,23 @@ const AssetInventory: React.FC = () => {
         fetchAllAssetsForStats();
       } else {
         // Create new asset
-        const createData = {
+        const createData: {
+          name: string;
+          categoryId: string;
+          subcategoryId?: string;
+          purchaseDate: string;
+        } = {
           name: data.name,
-          category: data.category,
-          subcategoryId: data.subcategoryId,
+          categoryId: data.categoryId,
           purchaseDate: data.purchaseDate,
         };
 
-        await assetApi.createAsset(createData);
+        // Only include subcategoryId if it's provided
+        if (data.subcategoryId && data.subcategoryId.trim() !== '') {
+          createData.subcategoryId = data.subcategoryId;
+        }
+
+        const response = await assetApi.createAsset(createData);
 
         // User name will be fetched in the refresh
 
@@ -432,9 +471,15 @@ const AssetInventory: React.FC = () => {
       }
 
       setIsModalOpen(false);
-    } catch (error) {
-      console.error('Failed to save asset:', error);
-      showSnackbar('Failed to save asset', 'error');
+    } catch (error: any) {
+      console.error('❌ Failed to save asset:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+      });
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to save asset';
+      showSnackbar(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
@@ -467,8 +512,8 @@ const AssetInventory: React.FC = () => {
     try {
       await assetApi.updateAssetStatus(asset.id, 'under_maintenance', {
         name: asset.name,
-        category: asset.category.name,
-        purchaseDate: asset.purchaseDate,
+        categoryId: asset.category?.id || (asset as any).category_id || asset.category?.name || '',
+        purchaseDate: asset.purchaseDate || (asset as any).purchase_date || '',
       });
 
       showSnackbar('Asset marked as under maintenance', 'success');
@@ -490,8 +535,8 @@ const AssetInventory: React.FC = () => {
     try {
       await assetApi.updateAssetStatus(asset.id, 'available', {
         name: asset.name,
-        category: asset.category.name,
-        purchaseDate: asset.purchaseDate,
+        categoryId: asset.category?.id || (asset as any).category_id || asset.category?.name || '',
+        purchaseDate: asset.purchaseDate || (asset as any).purchase_date || '',
       });
 
       showSnackbar('Asset marked as available', 'success');
@@ -508,27 +553,31 @@ const AssetInventory: React.FC = () => {
     }
   };
 
-  const getStatusCounts = () => {
-    // Always use pagination.total for total count (available immediately from first API call)
-    // For status counts, ONLY use allAssetsForStats once it's loaded
-    // Don't show incorrect counts from current page assets
-    // This ensures we show correct counts immediately when page loads
+  // Use counts from API response if available, otherwise calculate from allAssetsForStats
+  const displayCounts = useMemo(() => {
+    // If we have counts from API response, use them (most accurate)
+    if (statusCounts.total > 0 || statusCounts.available > 0 || statusCounts.assigned > 0 || statusCounts.retired > 0 || statusCounts.under_maintenance > 0) {
+      return {
+        total: statusCounts.total,
+        available: statusCounts.available,
+        assigned: statusCounts.assigned,
+        retired: statusCounts.retired,
+        underMaintenance: statusCounts.under_maintenance,
+      };
+    }
+
+    // Fallback: Calculate from allAssetsForStats if available
     if (allAssetsForStats.length > 0) {
-      // Use allAssetsForStats for accurate counts across all pages
       return {
         total: pagination.total || allAssetsForStats.length,
-        available: allAssetsForStats.filter(a => a.status === 'available')
-          .length,
+        available: allAssetsForStats.filter(a => a.status === 'available').length,
         assigned: allAssetsForStats.filter(a => a.status === 'assigned').length,
-        underMaintenance: allAssetsForStats.filter(
-          a => a.status === 'under_maintenance'
-        ).length,
+        underMaintenance: allAssetsForStats.filter(a => a.status === 'under_maintenance').length,
         retired: allAssetsForStats.filter(a => a.status === 'retired').length,
       };
     }
 
-    // If allAssetsForStats is not loaded yet, show total from pagination but show 0 for status counts
-    // This prevents showing incorrect counts (like 25 when it should be 26)
+    // If nothing is loaded yet, show total from pagination but show 0 for status counts
     return {
       total: pagination.total || 0,
       available: 0,
@@ -536,9 +585,7 @@ const AssetInventory: React.FC = () => {
       underMaintenance: 0,
       retired: 0,
     };
-  };
-
-  const statusCounts = getStatusCounts();
+  }, [statusCounts, allAssetsForStats, pagination.total]);
 
   const handlePageChange = (
     event: React.ChangeEvent<unknown>,
@@ -600,7 +647,7 @@ const AssetInventory: React.FC = () => {
                 Total Assets
               </Typography>
               <Typography variant='h4' fontWeight={600}>
-                {statusCounts.total}
+                {displayCounts.total}
               </Typography>
             </CardContent>
           </Card>
@@ -612,7 +659,7 @@ const AssetInventory: React.FC = () => {
                 Available
               </Typography>
               <Typography variant='h4' fontWeight={600} color='success.main'>
-                {statusCounts.available}
+                {displayCounts.available}
               </Typography>
             </CardContent>
           </Card>
@@ -624,7 +671,7 @@ const AssetInventory: React.FC = () => {
                 Assigned
               </Typography>
               <Typography variant='h4' fontWeight={600} color='info.main'>
-                {statusCounts.assigned}
+                {displayCounts.assigned}
               </Typography>
             </CardContent>
           </Card>
@@ -636,7 +683,7 @@ const AssetInventory: React.FC = () => {
                 Maintenance
               </Typography>
               <Typography variant='h4' fontWeight={600} color='warning.main'>
-                {statusCounts.underMaintenance}
+                {displayCounts.underMaintenance}
               </Typography>
             </CardContent>
           </Card>
@@ -648,7 +695,7 @@ const AssetInventory: React.FC = () => {
                 Retired
               </Typography>
               <Typography variant='h4' fontWeight={600} color='text.secondary'>
-                {statusCounts.retired}
+                {displayCounts.retired}
               </Typography>
             </CardContent>
           </Card>
@@ -792,9 +839,20 @@ const AssetInventory: React.FC = () => {
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant='body2'>
-                        {asset.category.name}
+                      <Box>
+                        <Typography variant='body2' fontWeight={500}>
+                          {asset.category?.name || (asset as any).categoryName || 'N/A'}
                       </Typography>
+                        {(asset as any).subcategoryName && (
+                          <Typography 
+                            variant='caption' 
+                            color='text.secondary'
+                            sx={{ display: 'block', mt: 0.5 }}
+                          >
+                            {(asset as any).subcategoryName}
+                          </Typography>
+                        )}
+                      </Box>
                     </TableCell>
                     <TableCell>
                       <StatusChip status={asset.status} type='asset' />

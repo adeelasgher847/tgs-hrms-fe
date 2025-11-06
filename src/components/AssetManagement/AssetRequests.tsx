@@ -49,7 +49,17 @@ import { type AssetSubcategory } from '../../api/assetApi';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
+  category_id?: string;
+  subcategory_id?: string | null;
   subcategory_name?: string;
+  category?:
+    | string
+    | {
+        id?: string;
+        name?: string;
+        description?: string | null;
+        icon?: string | null;
+      };
   subcategory?:
     | string
     | {
@@ -63,6 +73,8 @@ interface ApiAssetRequestExtended extends ApiAssetRequest {
   subcategoryId?: string;
   subcategoryName?: string;
   rejection_reason?: string | null;
+  // Legacy field for backward compatibility
+  asset_category?: string;
 }
 
 // Get current user from localStorage or auth context
@@ -107,7 +119,7 @@ const normalizeRequestStatus = (
 
 const schema = yup.object({
   category: yup.string().required('Category is required'),
-  subcategory: yup.string(),
+  subcategory: yup.string().required('Subcategory is required'),
   remarks: yup.string(),
 });
 
@@ -138,6 +150,20 @@ const AssetRequests: React.FC = () => {
   const [allRequestsForStats, setAllRequestsForStats] = useState<
     AssetRequest[]
   >([]); // Store all requests for statistics
+  const [statusCounts, setStatusCounts] = useState<{
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    cancelled: number;
+  }>({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    cancelled: 0,
+  }); // Store counts from API response
+  const [rawApiRequests, setRawApiRequests] = useState<ApiAssetRequestExtended[]>([]); // Store raw API requests for re-transformation
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [requestToCancel, setRequestToCancel] = useState<AssetRequest | null>(
@@ -148,8 +174,8 @@ const AssetRequests: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [tabValue, setTabValue] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; description?: string }>>([]);
   const [subcategories, setSubcategories] = useState<AssetSubcategory[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   const initialLoadRef = React.useRef(false); // Track if initial load has been done
@@ -195,81 +221,159 @@ const AssetRequests: React.FC = () => {
   });
 
   // Watch category changes to update subcategory options
-  const watchedCategory = watch('category');
+  const watchedCategoryId = watch('category');
 
   React.useEffect(() => {
-    if (watchedCategory) {
-      setSelectedCategory(watchedCategory);
+    if (watchedCategoryId) {
+      setSelectedCategoryId(watchedCategoryId);
       // Reset subcategory when category changes
       setValue('subcategory', '');
     } else {
-      setSelectedCategory('');
+      setSelectedCategoryId('');
+      setSubcategories([]);
     }
-  }, [watchedCategory, setValue]);
+  }, [watchedCategoryId, setValue]);
 
-  // Fetch categories and subcategories from backend
+  // Fetch categories from backend - load once on component mount for table display
   React.useEffect(() => {
-    const fetchCategoriesAndSubcategories = async () => {
+    const fetchCategories = async () => {
+      // If categories are already loaded, don't fetch again
+      if (categories.length > 0) return;
+      
       try {
         setLoadingData(true);
-        const [categoriesData, subcategoriesData] = await Promise.all([
-          assetApi.getAssetSubcategoriesByCategory(),
-          assetApi.getAllAssetSubcategories(),
-        ]);
+        const response = await assetApi.getAllAssetCategories();
+        
+        // Handle different response structures
+        let categoriesData: Array<{ id: string; name: string; description?: string }> = [];
+        if (Array.isArray(response)) {
+          categoriesData = response;
+        } else if (response.data && Array.isArray(response.data)) {
+          categoriesData = response.data;
+        } else if (response.items && Array.isArray(response.items)) {
+          categoriesData = response.items;
+        } else if (response.categories && Array.isArray(response.categories)) {
+          categoriesData = response.categories;
+        }
 
-        // Extract unique categories
         setCategories(categoriesData);
-
-        // Store all subcategories
-        setSubcategories(subcategoriesData.items || subcategoriesData);
       } catch (error) {
-        console.error(
-          '❌ AssetRequests - Failed to fetch categories and subcategories:',
-          error
-        );
+        console.error('❌ AssetRequests - Failed to fetch categories:', error);
       } finally {
         setLoadingData(false);
       }
     };
 
-    fetchCategoriesAndSubcategories();
-  }, []);
+    fetchCategories();
+  }, []); // Load once on mount
+
+  // Fetch subcategories when category is selected
+  React.useEffect(() => {
+    const fetchSubcategories = async () => {
+      if (!selectedCategoryId) {
+        setSubcategories([]);
+        return;
+      }
+
+      try {
+        setLoadingData(true);
+        const response = await assetApi.getAssetSubcategoriesByCategoryId(
+          selectedCategoryId
+        );
+
+        // Handle different response structures
+        let subcategoriesData: AssetSubcategory[] = [];
+        if (Array.isArray(response)) {
+          subcategoriesData = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          subcategoriesData = response.data;
+        } else if (response && response.items && Array.isArray(response.items)) {
+          subcategoriesData = response.items;
+        } else if (
+          response &&
+          response.subcategories &&
+          Array.isArray(response.subcategories)
+        ) {
+          subcategoriesData = response.subcategories;
+        }
+
+        // Filter subcategories by selected category ID
+        const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+        const filteredSubcategories = subcategoriesData.filter(sub => {
+          if (sub.category === selectedCategoryId) {
+            return true;
+          }
+          if (selectedCategory && sub.category === selectedCategory.name) {
+            return true;
+          }
+          if (sub.category && typeof sub.category === 'object' && 'id' in sub.category) {
+            return (sub.category as any).id === selectedCategoryId;
+          }
+          return false;
+        });
+
+        setSubcategories(filteredSubcategories);
+      } catch (error) {
+        console.error('❌ AssetRequests - Failed to fetch subcategories:', error);
+        setSubcategories([]);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    if (selectedCategoryId) {
+      fetchSubcategories();
+    }
+  }, [selectedCategoryId, categories]);
 
   // Helper function to transform API requests
   const transformApiRequests = React.useCallback(
     (apiRequests: ApiAssetRequestExtended[]): AssetRequest[] => {
       return apiRequests.map((apiRequest: ApiAssetRequestExtended) => {
-        // Parse the original request category to extract main category and subcategory
-        let mainCategoryName = apiRequest.asset_category;
-        let subcategoryName = '';
-
-        // Check if API response has subcategory information in different possible fields
-        if (apiRequest.subcategory_name) {
-          subcategoryName = apiRequest.subcategory_name;
-        } else if (apiRequest.subcategory) {
-          // Handle case where subcategory is an object
-          const subcategory = apiRequest.subcategory;
-          if (typeof subcategory === 'object' && subcategory !== null) {
-            // Try different possible property names for the subcategory name
-            subcategoryName =
-              subcategory.name ||
-              subcategory.title ||
-              subcategory.subcategory_name ||
-              subcategory.subcategoryName ||
-              subcategory.display_name ||
-              subcategory.label ||
-              JSON.stringify(subcategory);
-          } else {
-            subcategoryName = subcategory;
+        // Handle new API response structure with category_id and subcategory_id
+        const categoryId = apiRequest.category_id || apiRequest.asset_category || '';
+        const subcategoryId = apiRequest.subcategory_id || undefined;
+        
+        // Find category name - first try from API response category object
+        let categoryName = '';
+        if (apiRequest.category && typeof apiRequest.category === 'object' && apiRequest.category !== null) {
+          categoryName = apiRequest.category.name || '';
+        }
+        
+        // If not found in API response, try from categories list
+        if (!categoryName) {
+          const categoryObj = categories.find(cat => cat.id === categoryId);
+          categoryName = categoryObj?.name || '';
+        }
+        
+        // If still not found, fallback to ID (but log warning)
+        if (!categoryName && categoryId) {
+          if (categories.length === 0) {
+            console.warn('⚠️ Categories not loaded yet for category ID:', categoryId);
           }
-        } else if (apiRequest.subcategoryId && apiRequest.subcategoryName) {
+          categoryName = categoryId; // Fallback to ID if name not found
+        }
+
+        // Find subcategory name if subcategory_id exists
+        // First try to get from API response subcategory object
+        let subcategoryName = '';
+        if (apiRequest.subcategory) {
+          if (typeof apiRequest.subcategory === 'object' && apiRequest.subcategory !== null) {
+            subcategoryName = apiRequest.subcategory.name || apiRequest.subcategoryName || '';
+          } else {
+            subcategoryName = apiRequest.subcategory || '';
+          }
+        }
+        
+        // If not found in API response, try to find from subcategories list
+        if (!subcategoryName && subcategoryId) {
+          const subcategoryObj = subcategories.find(sub => sub.id === subcategoryId);
+          subcategoryName = subcategoryObj?.name || '';
+        }
+        
+        // Also check subcategoryName field directly
+        if (!subcategoryName && apiRequest.subcategoryName) {
           subcategoryName = apiRequest.subcategoryName;
-        } else if (apiRequest.asset_category.includes(' - ')) {
-          [mainCategoryName, subcategoryName] =
-            apiRequest.asset_category.split(' - ');
-        } else if (apiRequest.asset_category.includes(' / ')) {
-          [mainCategoryName, subcategoryName] =
-            apiRequest.asset_category.split(' / ');
         }
 
         return {
@@ -281,13 +385,15 @@ const AssetRequests: React.FC = () => {
               ? apiRequest.requestedByUser.name
               : `User ${apiRequest.requested_by}`),
           category: {
-            id: apiRequest.asset_category,
-            name: mainCategoryName,
-            nameAr: apiRequest.asset_category,
+            id: categoryId,
+            name: categoryName,
+            nameAr: categoryName,
             description: '',
             color: '#757575',
             requestedItem: subcategoryName || undefined,
           },
+          subcategoryId: subcategoryId || undefined,
+          subcategoryName: subcategoryName || undefined,
           remarks: apiRequest.remarks,
           status: normalizeRequestStatus(apiRequest.status),
           requestedDate: apiRequest.requested_date,
@@ -309,7 +415,7 @@ const AssetRequests: React.FC = () => {
         };
       });
     },
-    []
+    [categories, subcategories]
   );
 
   // Fetch all requests for statistics (without pagination)
@@ -353,6 +459,14 @@ const AssetRequests: React.FC = () => {
       }
 
       if (allApiRequests.length > 0) {
+        // Store raw API requests for re-transformation
+        setRawApiRequests(prev => {
+          // Merge with existing raw requests, avoiding duplicates
+          const existingIds = new Set(prev.map(r => r.id));
+          const newRequests = allApiRequests.filter(r => !existingIds.has(r.id));
+          return [...prev, ...newRequests];
+        });
+        
         const transformedRequests = transformApiRequests(allApiRequests);
         setAllRequestsForStats(transformedRequests);
       } else {
@@ -391,11 +505,12 @@ const AssetRequests: React.FC = () => {
           limit,
         });
 
-        // Transform API requests to component format
-        const transformedRequests = transformApiRequests(
-          apiResponse.items || []
-        );
+        // Store raw API requests for re-transformation when categories are loaded
+        const apiRequests = apiResponse.items || [];
+        setRawApiRequests(apiRequests);
 
+        // Transform API requests to component format
+        const transformedRequests = transformApiRequests(apiRequests);
         setRequests(transformedRequests);
 
         // Update pagination info from API response
@@ -404,6 +519,17 @@ const AssetRequests: React.FC = () => {
           total: apiResponse.total || 0,
           totalPages: apiResponse.totalPages || 1,
         }));
+
+        // Update counts from API response if available
+        if (apiResponse.counts) {
+          setStatusCounts({
+            total: apiResponse.counts.total || 0,
+            pending: apiResponse.counts.pending || 0,
+            approved: apiResponse.counts.approved || 0,
+            rejected: apiResponse.counts.rejected || 0,
+            cancelled: apiResponse.counts.cancelled || 0,
+          });
+        }
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
@@ -415,6 +541,15 @@ const AssetRequests: React.FC = () => {
     },
     [currentUserId, transformApiRequests]
   );
+
+  // Re-transform requests when categories are loaded to update category names
+  React.useEffect(() => {
+    if (categories.length > 0 && rawApiRequests.length > 0) {
+      // Re-transform raw API requests with updated categories
+      const transformedRequests = transformApiRequests(rawApiRequests);
+      setRequests(transformedRequests);
+    }
+  }, [categories, rawApiRequests, transformApiRequests]);
 
   // Initial load: fetch stats FIRST, then paginated requests
   React.useEffect(() => {
@@ -483,19 +618,25 @@ const AssetRequests: React.FC = () => {
   }) => {
     setLoading(true);
     try {
-      // Find the selected subcategory to get its ID
-      const selectedSubcategory = subcategories.find(
-        sub => sub.category === data.category && sub.name === data.subcategory
-      );
+      // Get category ID and subcategory ID
+      const categoryId = data.category; // This is already the category ID from dropdown
+      const subcategoryId = data.subcategory && data.subcategory.trim() !== '' 
+        ? data.subcategory 
+        : undefined;
 
-      // Send only main category name, not combined with subcategory
       const requestData = {
-        assetCategory: data.category, // Only main category name
-        subcategoryId: selectedSubcategory?.id || undefined,
+        categoryId: categoryId,
+        subcategoryId: subcategoryId,
         remarks: data.remarks || '',
       };
 
       const newApiRequest = await assetApi.createAssetRequest(requestData);
+
+      // Find category and subcategory names
+      const categoryObj = categories.find(cat => cat.id === categoryId);
+      const categoryName = categoryObj?.name || categoryId;
+      const subcategoryObj = subcategories.find(sub => sub.id === subcategoryId);
+      const subcategoryName = subcategoryObj?.name || '';
 
       // Transform and add to local state
       const newRequest: AssetRequest = {
@@ -503,13 +644,14 @@ const AssetRequests: React.FC = () => {
         employeeId: newApiRequest.requested_by,
         employeeName: `Employee ${newApiRequest.requested_by}`,
         category: {
-          id: newApiRequest.asset_category,
-          name: data.category,
-          nameAr: newApiRequest.asset_category,
+          id: categoryId,
+          name: categoryName,
+          nameAr: categoryName,
           description: '',
           color: '#757575',
-          requestedItem: data.subcategory || data.category,
+          requestedItem: subcategoryName || undefined,
         },
+        subcategoryId: subcategoryId || undefined,
         remarks: newApiRequest.remarks,
         status: newApiRequest.status,
         requestedDate: newApiRequest.requested_date,
@@ -530,12 +672,12 @@ const AssetRequests: React.FC = () => {
 
       // Show success snackbar
       showSnackbar(
-        `Asset request for "${data.category}" has been submitted successfully`,
+        `Asset request for "${categoryName}" has been submitted successfully`,
         'success'
       );
 
       setIsRequestModalOpen(false);
-      setSelectedCategory('');
+      setSelectedCategoryId('');
       reset();
     } catch (error) {
       console.error('Failed to submit request:', error);
@@ -555,7 +697,7 @@ const AssetRequests: React.FC = () => {
   };
 
   const handleOpenRequestModal = () => {
-    setSelectedCategory('');
+    setSelectedCategoryId('');
     setIsRequestModalOpen(true);
   };
 
@@ -609,34 +751,36 @@ const AssetRequests: React.FC = () => {
     }
   };
 
-  const getStatusCounts = () => {
-    // Always use pagination.total for total count (available immediately from first API call)
-    // For status counts, ONLY use allRequestsForStats once it's loaded
-    // Don't show incorrect counts from current page requests
-    // This ensures we show correct counts immediately when page loads
-    if (allRequestsForStats.length > 0) {
-      // Use allRequestsForStats for accurate counts across all pages
+  // Use counts from API response if available, otherwise calculate from allRequestsForStats
+  const displayCounts = useMemo(() => {
+    // If we have counts from API response, use them (most accurate)
+    if (statusCounts.total > 0 || statusCounts.pending > 0 || statusCounts.approved > 0 || statusCounts.rejected > 0) {
       return {
-        all: pagination.total || allRequestsForStats.length,
-        pending: allRequestsForStats.filter(r => r.status === 'pending').length,
-        approved: allRequestsForStats.filter(r => r.status === 'approved')
-          .length,
-        rejected: allRequestsForStats.filter(r => r.status === 'rejected')
-          .length,
+        all: statusCounts.total,
+        pending: statusCounts.pending,
+        approved: statusCounts.approved,
+        rejected: statusCounts.rejected,
       };
     }
 
-    // If allRequestsForStats is not loaded yet, show total from pagination but show 0 for status counts
-    // This prevents showing incorrect counts (like 25 when it should be 26)
+    // Fallback: Calculate from allRequestsForStats if available
+    if (allRequestsForStats.length > 0) {
+      return {
+        all: pagination.total || allRequestsForStats.length,
+        pending: allRequestsForStats.filter(r => r.status === 'pending').length,
+        approved: allRequestsForStats.filter(r => r.status === 'approved').length,
+        rejected: allRequestsForStats.filter(r => r.status === 'rejected').length,
+      };
+    }
+
+    // If nothing is loaded yet, show total from pagination but show 0 for status counts
     return {
       all: pagination.total || 0,
       pending: 0,
       approved: 0,
       rejected: 0,
     };
-  };
-
-  const statusCounts = getStatusCounts();
+  }, [statusCounts, allRequestsForStats, pagination.total]);
 
   if (initialLoading) {
     return (
@@ -659,21 +803,20 @@ const AssetRequests: React.FC = () => {
     <TableRow key={request.id} hover>
       <TableCell>
         <Box>
-          <Typography variant='body2' fontWeight={500}>
-            {request.category.name}
-          </Typography>
-          {(request.category as AssetCategory & { requestedItem?: string })
-            .requestedItem &&
-            (request.category as AssetCategory & { requestedItem?: string })
-              .requestedItem !== request.category.name && (
+          <Box>
+            <Typography variant='body2' fontWeight={500}>
+              {request.category.name}
+            </Typography>
+            {((request as any).subcategoryName || (request.category as AssetCategory & { requestedItem?: string }).requestedItem) && (
               <Typography
                 variant='caption'
-                color='primary.main'
-                sx={{ display: 'block', fontWeight: 500 }}
+                color='text.secondary'
+                sx={{ display: 'block', mt: 0.5 }}
               >
-                {`${(request.category as AssetCategory & { requestedItem?: string }).requestedItem}`}
+                {(request as any).subcategoryName || (request.category as AssetCategory & { requestedItem?: string }).requestedItem}
               </Typography>
             )}
+          </Box>
         </Box>
       </TableCell>
       <TableCell>
@@ -757,7 +900,7 @@ const AssetRequests: React.FC = () => {
                 Total Requests
               </Typography>
               <Typography variant='h4' fontWeight={600}>
-                {statusCounts.all}
+                {displayCounts.all}
               </Typography>
             </CardContent>
           </Card>
@@ -769,7 +912,7 @@ const AssetRequests: React.FC = () => {
                 Pending
               </Typography>
               <Typography variant='h4' fontWeight={600} color='warning.main'>
-                {statusCounts.pending}
+                {displayCounts.pending}
               </Typography>
             </CardContent>
           </Card>
@@ -781,7 +924,7 @@ const AssetRequests: React.FC = () => {
                 Approved
               </Typography>
               <Typography variant='h4' fontWeight={600} color='success.main'>
-                {statusCounts.approved}
+                {displayCounts.approved}
               </Typography>
             </CardContent>
           </Card>
@@ -793,7 +936,7 @@ const AssetRequests: React.FC = () => {
                 Rejected
               </Typography>
               <Typography variant='h4' fontWeight={600} color='error.main'>
-                {statusCounts.rejected}
+                {displayCounts.rejected}
               </Typography>
             </CardContent>
           </Card>
@@ -1017,7 +1160,11 @@ const AssetRequests: React.FC = () => {
                         <Select
                           {...field}
                           label='Asset Category'
-                          disabled={loading}
+                          disabled={loading || loadingData}
+                          onChange={e => {
+                            field.onChange(e);
+                            setValue('subcategory', ''); // Reset subcategory when category changes
+                          }}
                           MenuProps={{
                             PaperProps: {
                               style: {
@@ -1027,9 +1174,9 @@ const AssetRequests: React.FC = () => {
                           }}
                         >
                           {categories.map(category => (
-                            <MenuItem key={category} value={category}>
+                            <MenuItem key={category.id} value={category.id}>
                               <Typography variant='body1' fontWeight={500}>
-                                {category}
+                                {category.name}
                               </Typography>
                             </MenuItem>
                           ))}
@@ -1058,20 +1205,18 @@ const AssetRequests: React.FC = () => {
                 </Box>
 
                 {/* Subcategory selection - only show if a category with subcategories is selected */}
-                {selectedCategory &&
-                  subcategories.filter(sub => sub.category === selectedCategory)
-                    .length > 0 && (
+                {selectedCategoryId && subcategories.length > 0 && (
                     <Box>
                       <Controller
                         name='subcategory'
                         control={control}
                         render={({ field }) => (
                           <FormControl fullWidth>
-                            <InputLabel>Specific Item (Optional)</InputLabel>
+                            <InputLabel>Subcategory</InputLabel>
                             <Select
                               {...field}
-                              label='Specific Item (Optional)'
-                              disabled={loading || loadingData}
+                              label='Subcategory'
+                              disabled={loading || loadingData || !selectedCategoryId}
                               MenuProps={{
                                 PaperProps: {
                                   style: {
@@ -1080,17 +1225,10 @@ const AssetRequests: React.FC = () => {
                                 },
                               }}
                             >
-                              <MenuItem value=''>
-                                <em>None - General Request</em>
-                              </MenuItem>
-                              {subcategories
-                                .filter(
-                                  sub => sub.category === selectedCategory
-                                )
-                                .map(subcategory => (
+                              {subcategories.map(subcategory => (
                                   <MenuItem
                                     key={subcategory.id}
-                                    value={subcategory.name}
+                                    value={subcategory.id}
                                   >
                                     <Box>
                                       <Typography variant='body2'>
@@ -1108,13 +1246,6 @@ const AssetRequests: React.FC = () => {
                                   </MenuItem>
                                 ))}
                             </Select>
-                            <Typography
-                              variant='caption'
-                              color='text.secondary'
-                              sx={{ mt: 0.5, ml: 1.75 }}
-                            >
-                              Optionally specify the exact item you need
-                            </Typography>
                           </FormControl>
                         )}
                       />

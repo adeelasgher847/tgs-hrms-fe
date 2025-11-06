@@ -184,6 +184,16 @@ export const isSubMenuVisibleForRole = (
     if (parent.includes('audit logs')) {
       visible = false;
     }
+    if (parent.includes('assets')) {
+      if (sub.includes('asset requests')) {
+        visible = false;
+      }
+    }
+    if (parent.includes('attendance')) {
+      if (sub.includes('leave request')) {
+        visible = false;
+      }
+    }
   }
 
   if (r === 'hr-admin') {
@@ -393,7 +403,7 @@ export const isDashboardPathAllowedForRole = (
       'UserList',
       'UserProfile',
       // 'policies', 'holidays',
-      'leaves',
+      // 'leaves', // Hide Leave Request for network-admin
       // Attendance - Allow AttendanceCheck for network-admin
       'AttendanceCheck',
       'AttendanceTable',

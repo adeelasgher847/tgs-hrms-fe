@@ -319,7 +319,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
         </Tooltip>
       </Box>
 
-      <Paper sx={{ mt: 3 }}>
+      <Paper sx={{ mt: 3, boxShadow: 'none' }}>
         <TableContainer>
           <Table stickyHeader>
             <TableHead>
