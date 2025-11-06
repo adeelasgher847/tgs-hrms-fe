@@ -55,20 +55,32 @@ export const SystemTenantApi = {
         }
       );
 
+      interface ResponseData {
+        total?: number;
+        page?: number;
+        totalPages?: number;
+        data?: SystemTenant[];
+      }
+
+      const responseData = response.data as SystemTenant[] | ResponseData;
+
       const total =
         Number(response.headers['x-total-count']) ||
-        (response.data as any)?.total ||
+        (Array.isArray(responseData) ? undefined : responseData?.total) ||
         0;
 
-      const page = (response.data as any)?.page || filters.page || 1;
+      const page =
+        (Array.isArray(responseData) ? undefined : responseData?.page) ||
+        filters.page ||
+        1;
 
       const totalPages =
-        (response.data as any)?.totalPages ||
+        (Array.isArray(responseData) ? undefined : responseData?.totalPages) ||
         (total > 0 ? Math.ceil(total / (filters.limit ?? 10)) : 1);
 
-      const tenants = Array.isArray(response.data)
-        ? response.data
-        : (response.data as any)?.data || [];
+      const tenants = Array.isArray(responseData)
+        ? responseData
+        : responseData?.data || [];
 
       return {
         data: tenants,
@@ -122,11 +134,12 @@ export const SystemTenantApi = {
       );
       console.log(' System tenant status updated:', response.data);
       return response.data;
-    } catch (error: any) {
-      console.error(
-        ` Failed to update status (id=${id}):`,
-        error.response?.data || error
-      );
+    } catch (error) {
+      const errorData =
+        error && typeof error === 'object' && 'response' in error
+          ? (error as { response?: { data?: unknown } }).response?.data
+          : error;
+      console.error(` Failed to update status (id=${id}):`, errorData);
       throw error;
     }
   },

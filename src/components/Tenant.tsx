@@ -32,13 +32,11 @@ import {
   Pagination,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import { useOutletContext } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
-import { useLanguage } from '../hooks/useLanguage';
 import {
   SystemTenantApi,
   type SystemTenant,
@@ -48,10 +46,6 @@ import {
 export const TenantPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>() || {
-    darkMode: false,
-  };
-  const { language } = useLanguage?.() ?? { language: 'en' };
 
   const [tenants, setTenants] = useState<SystemTenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,7 +74,6 @@ export const TenantPage: React.FC = () => {
   const [editName, setEditName] = useState('');
   const [editTenantId, setEditTenantId] = useState<string | null>(null);
 
-  
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -140,17 +133,27 @@ export const TenantPage: React.FC = () => {
       });
       setIsFormOpen(false);
       setFormName('');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error creating tenant:', err);
 
       let errorMessage = 'Failed to create tenant';
 
       if (
-        err.response &&
-        (err.response.status === 409 ||
-          err.response.data?.message?.toLowerCase().includes('already'))
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        (err as { response?: { status?: number; data?: { message?: string } } })
+          .response
       ) {
-        errorMessage = 'Tenant already exists';
+        const response = (
+          err as { response: { status?: number; data?: { message?: string } } }
+        ).response;
+        if (
+          response.status === 409 ||
+          response.data?.message?.toLowerCase().includes('already')
+        ) {
+          errorMessage = 'Tenant already exists';
+        }
       }
 
       setSnackbar({
@@ -284,7 +287,9 @@ export const TenantPage: React.FC = () => {
               value={statusFilter}
               label='Status'
               onChange={(e: SelectChangeEvent) =>
-                setStatusFilter(e.target.value as any)
+                setStatusFilter(
+                  e.target.value as 'All' | 'active' | 'suspended' | 'deleted'
+                )
               }
             >
               <MenuItem value='All'>All</MenuItem>
@@ -295,10 +300,9 @@ export const TenantPage: React.FC = () => {
           </FormControl>
           <Button
             variant='contained'
-            startIcon={<AddIcon />}
             onClick={() => setIsFormOpen(true)}
           >
-            Create Tenant
+            <AddIcon />
           </Button>
         </Box>
       </Box>
