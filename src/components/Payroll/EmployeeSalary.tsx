@@ -23,7 +23,6 @@ import {
   Chip,
   CircularProgress,
   Alert,
-  Avatar,
   Stack,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -46,7 +45,6 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { type Dayjs } from 'dayjs';
 import employeeApi from '../../api/employeeApi';
-import type { BackendEmployee } from '../../api/employeeApi';
 
 interface EmployeeSalaryListItem {
   employee: {
@@ -84,7 +82,6 @@ const EmployeeSalaryPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState<EmployeeSalaryListItem[]>([]);
-  const [allEmployees, setAllEmployees] = useState<BackendEmployee[]>([]);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] =
@@ -151,15 +148,6 @@ const EmployeeSalaryPage: React.FC = () => {
     }
   }, [showUnassignedOnly]);
 
-  const loadAllEmployees = useCallback(async () => {
-    try {
-      const data = await employeeApi.getAllEmployees({}, 1);
-      setAllEmployees(data.items);
-    } catch (error) {
-      console.error('Failed to load employees:', error);
-    }
-  }, []);
-
   const loadMySalary = useCallback(async () => {
     try {
       setMySalaryLoading(true);
@@ -189,17 +177,10 @@ const EmployeeSalaryPage: React.FC = () => {
   useEffect(() => {
     if (isAdminRole) {
       loadAllEmployeeSalaries();
-      loadAllEmployees();
     } else if (isEmployeeRole) {
       loadMySalary();
     }
-  }, [
-    isAdminRole,
-    isEmployeeRole,
-    loadAllEmployeeSalaries,
-    loadAllEmployees,
-    loadMySalary,
-  ]);
+  }, [isAdminRole, isEmployeeRole, loadAllEmployeeSalaries, loadMySalary]);
 
   const handleViewSalary = async (employee: EmployeeSalaryListItem) => {
     setSelectedEmployee(employee);
@@ -932,12 +913,8 @@ const EmployeeSalaryPage: React.FC = () => {
                         </Box>
                       </Box>
                     </TableCell>
-                    <TableCell>
-                      {item.employee.department.name}
-                    </TableCell>
-                    <TableCell>
-                      {item.employee.designation.title}
-                    </TableCell>
+                    <TableCell>{item.employee.department.name}</TableCell>
+                    <TableCell>{item.employee.designation.title}</TableCell>
                     <TableCell
                       sx={{
                         color: darkMode ? '#fff' : '#000',
