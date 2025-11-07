@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, memo } from 'react';
 import {
   Box,
   Typography,
@@ -18,6 +18,9 @@ import {
   TableRow,
   TableCell,
   TableContainer,
+  Stack,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -26,22 +29,41 @@ import dayjs, { Dayjs } from 'dayjs';
 import Chart from 'react-apexcharts';
 import { TenantLeaveApi } from '../../api/TenantLeaveApi';
 import type {
+  Department as ApiDepartment,
   SystemLeaveFilters,
   SystemLeaveResponse,
   SystemLeaveSummary,
+  TenantDepartment,
 } from '../../api/TenantLeaveApi';
-import { SystemTenantApi, type SystemTenant } from '../../api/systemTenantApi';
-import axiosInstance from '../../api/axiosInstance';
-import type { Department } from '../../api/TenantLeaveApi';
+import { SystemTenantApi } from '../../api/systemTenantApi';
+import type { SystemTenant } from '../../api/systemTenantApi';
+
+type LeaveStatus =
+  | ''
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'withdrawn'
+  | 'cancelled';
+
+type FiltersState = {
+  tenantId: string;
+  departmentId: string;
+  status: LeaveStatus;
+  startDate: Dayjs | null;
+  endDate: Dayjs | null;
+};
+
+type SnackbarState = {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error';
+};
+
+type DepartmentOption = Pick<ApiDepartment, 'id' | 'name' | 'tenant_id'>;
 
 const CrossTenantLeaveManagement: React.FC = () => {
-  const [filters, setFilters] = useState<{
-    tenantId: string;
-    departmentId: string;
-    status: string;
-    startDate: Dayjs | null;
-    endDate: Dayjs | null;
-  }>({
+  const [filters, setFilters] = useState<FiltersState>({
     tenantId: '',
     departmentId: '',
     status: '',
@@ -50,14 +72,15 @@ const CrossTenantLeaveManagement: React.FC = () => {
   });
 
   const [tenants, setTenants] = useState<SystemTenant[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [leaves, setLeaves] = useState<SystemLeaveResponse[]>([]);
   const [summary, setSummary] = useState<SystemLeaveSummary[]>([]);
   const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({
+  const [tableLoading, setTableLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
     message: '',
-    severity: 'success' as 'success' | 'error',
+    severity: 'success',
   });
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -65,29 +88,50 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const itemsPerPage = 10;
   const isInitialTenantSet = useRef(false);
   const isInitialLoad = useRef(true);
+  const hasLoadedDataOnce = useRef(false);
+  const isInitialMount = useRef(true);
 
-  const handleFilterChange = (field: string, value: string | Dayjs | null) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
-    setCurrentPage(1);
-  };
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, []);
+
+  const handleFilterChange = useCallback(
+    <K extends keyof FiltersState>(field: K, value: FiltersState[K]) => {
+      setFilters(prev => {
+        if (field === 'tenantId') {
+          return {
+            ...prev,
+            tenantId: value as string,
+            departmentId: '',
+          };
+        }
+
+        return { ...prev, [field]: value };
+      });
+      setCurrentPage(1);
+    },
+    []
+  );
 
   const fetchTenants = useCallback(async () => {
     try {
       const allTenants = await SystemTenantApi.getAllTenants(false);
-
       const activeTenants = allTenants.filter(
         tenant => tenant.status === 'active' && !tenant.isDeleted
       );
-
       setTenants(activeTenants);
 
       if (activeTenants.length > 0 && !isInitialTenantSet.current) {
         const ibexTech = activeTenants.find(t =>
           t.name.toLowerCase().includes('ibex')
         );
-
         const defaultTenant = ibexTech || activeTenants[0];
-
         if (defaultTenant) {
           isInitialTenantSet.current = true;
           setFilters(prev => ({
@@ -105,16 +149,29 @@ const CrossTenantLeaveManagement: React.FC = () => {
     }
   }, []);
 
-  const fetchDepartments = useCallback(async () => {
+  const fetchDepartments = useCallback(async (tenantId: string | null) => {
+    if (!tenantId) return setDepartments([]);
     try {
-      const { data } = await axiosInstance.get('/departments');
-      setDepartments(Array.isArray(data) ? data : []);
+      const tenantDetails = await TenantLeaveApi.getTenantDetailsById(tenantId);
+      if (tenantDetails?.departments?.length) {
+        const departmentsFromTenant: TenantDepartment[] =
+          tenantDetails.departments ?? [];
+        const normalizedDepartments: DepartmentOption[] = departmentsFromTenant
+          .filter((dept): dept is TenantDepartment => Boolean(dept))
+          .map(dept => ({
+            id: dept.id ?? '',
+            name: dept.name ?? 'Unnamed Department',
+            tenant_id: tenantId,
+          }));
+        setDepartments(normalizedDepartments);
+      } else setDepartments([]);
     } catch {
       setSnackbar({
         open: true,
         message: 'Failed to load departments',
         severity: 'error',
       });
+      setDepartments([]);
     }
   }, []);
 
@@ -122,15 +179,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
     try {
       const summaryData = await TenantLeaveApi.getSystemLeaveSummary({
         tenantId: filters.tenantId || undefined,
-        status:
-          filters.status && filters.status !== ''
-            ? (filters.status as
-                | 'pending'
-                | 'approved'
-                | 'rejected'
-                | 'withdrawn'
-                | 'cancelled')
-            : undefined,
+        status: filters.status ? filters.status : undefined,
         startDate: filters.startDate
           ? dayjs(filters.startDate).format('YYYY-MM-DD')
           : undefined,
@@ -140,7 +189,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
       });
 
       let filteredData = summaryData;
-      if (filters.tenantId && filters.tenantId !== '') {
+      if (filters.tenantId) {
         filteredData = summaryData.filter(
           item => item.tenantId === filters.tenantId
         );
@@ -167,17 +216,17 @@ const CrossTenantLeaveManagement: React.FC = () => {
         (a.tenantName || '').localeCompare(b.tenantName || '')
       );
 
-      const mapped = sortedSummary.map(item => ({
-        tenantId: item.tenantId,
-        tenantName: item.tenantName || 'Unknown Tenant',
-        totalLeaves: item.totalLeaves || 0,
-        approved: item.approvedCount || 0,
-        rejected: item.rejectedCount || 0,
-        pending: item.pendingCount || 0,
-        cancelled: item.cancelledCount || 0,
-      }));
-
-      setSummary(mapped);
+      setSummary(
+        sortedSummary.map(item => ({
+          tenantId: item.tenantId,
+          tenantName: item.tenantName || 'Unknown Tenant',
+          totalLeaves: item.totalLeaves ?? 0,
+          approvedCount: item.approvedCount ?? 0,
+          rejectedCount: item.rejectedCount ?? 0,
+          pendingCount: item.pendingCount ?? 0,
+          cancelledCount: item.cancelledCount ?? 0,
+        }))
+      );
     } catch {
       setSnackbar({
         open: true,
@@ -185,25 +234,31 @@ const CrossTenantLeaveManagement: React.FC = () => {
         severity: 'error',
       });
     }
-  }, [filters, tenants]);
+  }, [
+    filters.tenantId,
+    filters.status,
+    filters.startDate,
+    filters.endDate,
+    tenants,
+  ]);
 
   const fetchLeaves = useCallback(async () => {
+    const shouldShowFullPageLoader =
+      isInitialMount.current &&
+      !hasLoadedDataOnce.current &&
+      !isInitialTenantSet.current;
+
     try {
-      // Don't show loading on initial load when default tenant is set
-      if (!isInitialLoad.current) {
+      if (shouldShowFullPageLoader) {
         setLoading(true);
+      } else {
+        setTableLoading(true);
       }
+
       const apiFilters: SystemLeaveFilters = {
         tenantId: filters.tenantId || undefined,
-        status:
-          filters.status && filters.status !== ''
-            ? (filters.status as
-                | 'pending'
-                | 'approved'
-                | 'rejected'
-                | 'withdrawn'
-                | 'cancelled')
-            : undefined,
+        departmentId: filters.departmentId || undefined,
+        status: filters.status ? filters.status : undefined,
         startDate: filters.startDate
           ? filters.startDate.format('YYYY-MM-DD')
           : undefined,
@@ -215,12 +270,10 @@ const CrossTenantLeaveManagement: React.FC = () => {
       };
 
       const response = await TenantLeaveApi.getSystemLeaves(apiFilters);
-
-      const mappedLeaves = response.items.map((leave: SystemLeaveResponse) => ({
+      const mappedLeaves: SystemLeaveResponse[] = response.items.map(leave => ({
         ...leave,
-        tenantName: leave.tenantName || 'Unknown Tenant',
-        employeeName: leave.employeeName || 'Unknown Employee',
-        leaveType: leave.leaveType || 'N/A',
+        tenantName: leave.tenantName ?? 'Unknown Tenant',
+        departmentName: leave.departmentName ?? 'N/A',
       }));
 
       setLeaves(mappedLeaves);
@@ -228,46 +281,23 @@ const CrossTenantLeaveManagement: React.FC = () => {
         response.totalPages || Math.ceil(response.total / itemsPerPage)
       );
 
-      // Mark initial load as complete
-      if (isInitialLoad.current) {
-        isInitialLoad.current = false;
-      }
+      hasLoadedDataOnce.current = true;
+      if (isInitialLoad.current) isInitialLoad.current = false;
+      if (isInitialMount.current) isInitialMount.current = false;
     } catch {
       setSnackbar({
         open: true,
         message: 'Failed to load leave data',
         severity: 'error',
       });
-      // Mark initial load as complete even on error
-      if (isInitialLoad.current) {
-        isInitialLoad.current = false;
-      }
+      if (isInitialLoad.current) isInitialLoad.current = false;
     } finally {
-      if (!isInitialLoad.current) {
+      if (shouldShowFullPageLoader) {
         setLoading(false);
+      } else {
+        setTableLoading(false);
       }
     }
-  }, [filters, currentPage]);
-
-  useEffect(() => {
-    fetchTenants();
-    fetchDepartments();
-  }, [fetchTenants, fetchDepartments]);
-
-  useEffect(() => {
-    // Only fetch summary if tenantId is set (either default or user-selected)
-    if (filters.tenantId) {
-      fetchSummary();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.tenantId, filters.status, filters.startDate, filters.endDate]);
-
-  useEffect(() => {
-    // Only fetch leaves if tenantId is set (either default or user-selected)
-    if (filters.tenantId) {
-      fetchLeaves();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     filters.tenantId,
     filters.status,
@@ -277,10 +307,42 @@ const CrossTenantLeaveManagement: React.FC = () => {
     currentPage,
   ]);
 
+  useEffect(() => {
+    fetchTenants();
+  }, [fetchTenants]);
+
+  useEffect(() => {
+    if (filters.tenantId) fetchDepartments(filters.tenantId);
+    else setDepartments([]);
+  }, [filters.tenantId, fetchDepartments]);
+
+  useEffect(() => {
+    if (filters.tenantId) fetchSummary();
+  }, [
+    filters.tenantId,
+    filters.status,
+    filters.startDate,
+    filters.endDate,
+    fetchSummary,
+  ]);
+
+  useEffect(() => {
+    if (filters.tenantId) fetchLeaves();
+  }, [
+    filters.tenantId,
+    filters.status,
+    filters.startDate,
+    filters.endDate,
+    filters.departmentId,
+    currentPage,
+    fetchLeaves,
+  ]);
+
   const handleCloseSnackbar = () =>
     setSnackbar(prev => ({ ...prev, open: false }));
 
-  const handlePageChange = (_: unknown, page: number) => setCurrentPage(page);
+  const handlePageChange = (_: React.ChangeEvent<unknown>, page: number) =>
+    setCurrentPage(page);
 
   const chartOptions: ApexCharts.ApexOptions = {
     chart: {
@@ -299,63 +361,213 @@ const CrossTenantLeaveManagement: React.FC = () => {
     },
     dataLabels: { enabled: false },
     stroke: { show: true, width: 1, colors: ['#fff'] },
-    xaxis: {
-      categories: summary.map(item => item.tenantName),
-      labels: {
-        rotate: -45,
-        hideOverlappingLabels: false,
-        style: { fontSize: '12px', colors: '#555' },
-      },
-      tickPlacement: 'on',
-    },
-    yaxis: {
-      labels: {
-        formatter: val => `${val}`,
-        style: { fontSize: '12px', colors: '#555' },
-      },
-    },
-    legend: {
-      position: 'top',
-      horizontalAlign: 'right',
-      labels: { colors: '#555' },
-    },
-    grid: {
-      borderColor: '#e0e0e0',
-      padding: { top: 20, left: 10, right: 10, bottom: 10 },
-    },
-    colors: filters.tenantId
-      ? ['#4E79A7', '#4CAF50', '#E15759', '#FFB300', '#9E9E9E']
-      : [
-          '#4E79A7',
-          '#F28E2B',
-          '#E15759',
-          '#76B7B2',
-          '#59A14F',
-          '#EDC948',
-          '#AF7AA1',
-          '#FF9DA7',
-          '#9C755F',
-          '#BAB0AC',
-        ],
-    tooltip: {
-      theme: 'light',
-      y: { formatter: (val: number) => `${val}` },
-    },
+    xaxis: { categories: summary.map(item => item.tenantName) },
+    yaxis: { labels: { formatter: val => `${val}` } },
+    legend: { position: 'top', horizontalAlign: 'right' },
   };
 
   const chartSeries = filters.tenantId
     ? [
-        { name: 'Approved', data: summary.map(s => s.approved) },
-        { name: 'Rejected', data: summary.map(s => s.rejected) },
-        { name: 'Pending', data: summary.map(s => s.pending) },
-        { name: 'Cancelled', data: summary.map(s => s.cancelled) },
+        { name: 'Approved', data: summary.map(s => s.approvedCount) },
+        { name: 'Rejected', data: summary.map(s => s.rejectedCount) },
+        { name: 'Pending', data: summary.map(s => s.pendingCount) },
+        { name: 'Cancelled', data: summary.map(s => s.cancelledCount) },
       ]
-    : [
-        {
-          name: 'Total Leaves',
-          data: summary.map(s => s.totalLeaves),
-        },
-      ];
+    : [{ name: 'Total Leaves', data: summary.map(s => s.totalLeaves) }];
+
+  const ChartSection = memo(() => (
+    <Paper sx={{ p: 3, mb: 3, overflowX: 'auto' }}>
+      <Typography variant='subtitle1' fontWeight={600} mb={2}>
+        Leave Summary
+      </Typography>
+      <Chart
+        options={chartOptions}
+        series={chartSeries}
+        type='bar'
+        height={400}
+      />
+    </Paper>
+  ));
+
+  const TableSection = memo(
+    ({
+      tableLoading,
+      filters,
+      leaves,
+      departments,
+      currentPage,
+      totalPages,
+      isMobile,
+      handleFilterChange,
+      handlePageChange,
+    }: {
+      tableLoading: boolean;
+      filters: {
+        tenantId: string;
+        departmentId: string;
+        status: LeaveStatus;
+        startDate: Dayjs | null;
+        endDate: Dayjs | null;
+      };
+      leaves: SystemLeaveResponse[];
+      departments: DepartmentOption[];
+      currentPage: number;
+      totalPages: number;
+      isMobile: boolean;
+      handleFilterChange: <K extends keyof FiltersState>(
+        field: K,
+        value: FiltersState[K]
+      ) => void;
+      handlePageChange: (
+        event: React.ChangeEvent<unknown>,
+        page: number
+      ) => void;
+    }) => (
+      <Paper sx={{ p: 3, position: 'relative' }}>
+        <Typography variant='subtitle1' fontWeight={600} mb={2}>
+          Leave Management Table
+        </Typography>
+        <Stack direction={isMobile ? 'column' : 'row'} spacing={2} mb={3}>
+          <FormControl sx={{ minWidth: 180 }} size='small'>
+            <InputLabel>Department</InputLabel>
+            <Select
+              label='Department'
+              value={filters.departmentId}
+              onChange={e =>
+                handleFilterChange(
+                  'departmentId',
+                  e.target.value as FiltersState['departmentId']
+                )
+              }
+            >
+              <MenuItem value=''>All</MenuItem>
+              {departments.map(dep => (
+                <MenuItem key={dep.id} value={dep.id}>
+                  {dep.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl sx={{ minWidth: 160 }} size='small'>
+            <InputLabel>Status</InputLabel>
+            <Select
+              label='Status'
+              value={filters.status}
+              onChange={e =>
+                handleFilterChange('status', e.target.value as LeaveStatus)
+              }
+            >
+              <MenuItem value=''>All</MenuItem>
+              <MenuItem value='pending'>Pending</MenuItem>
+              <MenuItem value='approved'>Approved</MenuItem>
+              <MenuItem value='rejected'>Rejected</MenuItem>
+              <MenuItem value='cancelled'>Cancelled</MenuItem>
+            </Select>
+          </FormControl>
+          <DatePicker
+            label='Start Date'
+            value={filters.startDate}
+            onChange={date =>
+              handleFilterChange('startDate', date as Dayjs | null)
+            }
+            slotProps={{ textField: { size: 'small' } }}
+          />
+          <DatePicker
+            label='End Date'
+            value={filters.endDate}
+            onChange={date =>
+              handleFilterChange('endDate', date as Dayjs | null)
+            }
+            slotProps={{ textField: { size: 'small' } }}
+          />
+        </Stack>
+        {tableLoading && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              zIndex: 1,
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        )}
+        <TableContainer>
+          <Table>
+            <TableHead sx={{ backgroundColor: '#f0f0f0' }}>
+              <TableRow>
+                <TableCell>Employee</TableCell>
+                <TableCell>Department</TableCell>
+                <TableCell>Leave Type</TableCell>
+                <TableCell>Start Date</TableCell>
+                <TableCell>End Date</TableCell>
+                <TableCell>Total Days</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Reason</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {leaves.length > 0 ? (
+                leaves.map(leave => (
+                  <TableRow key={leave.id}>
+                    <TableCell>{leave.employeeName}</TableCell>
+                    <TableCell>{leave.departmentName || '-'}</TableCell>
+                    <TableCell>{leave.leaveType}</TableCell>
+                    <TableCell>
+                      {dayjs(leave.startDate).format('YYYY-MM-DD')}
+                    </TableCell>
+                    <TableCell>
+                      {dayjs(leave.endDate).format('YYYY-MM-DD')}
+                    </TableCell>
+                    <TableCell>{leave.totalDays}</TableCell>
+                    <TableCell
+                      sx={{
+                        color:
+                          leave.status === 'approved'
+                            ? 'green'
+                            : leave.status === 'rejected'
+                              ? 'red'
+                              : '#ff9800',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {leave.status}
+                    </TableCell>
+                    <TableCell>{leave.reason}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} align='center'>
+                    No records found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        {totalPages > 1 && (
+          <Box display='flex' justifyContent='center' mt={3}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={handlePageChange}
+              color='primary'
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        )}
+      </Paper>
+    )
+  );
 
   if (loading)
     return (
@@ -371,169 +583,48 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Box sx={{ background: '#f7f7f7', minHeight: '100vh', p: 3 }}>
+      <Box
+        sx={{ background: '#f7f7f7', minHeight: '100vh', p: 3 }}
+        onKeyDown={handleKeyDown}
+      >
         <Paper sx={{ p: 3, mb: 3 }}>
           <Typography variant='h6' fontWeight={700} mb={2}>
             Tenant Leave Management
           </Typography>
           <Divider sx={{ mb: 2 }} />
-
-          {/* Filters */}
-          <Box display='flex' flexWrap='wrap' gap={2}>
-            <FormControl sx={{ minWidth: 160 }}>
+          <Stack
+            direction={isMobile ? 'column' : 'row'}
+            spacing={2}
+            flexWrap='wrap'
+          >
+            <FormControl sx={{ minWidth: 160 }} size='small'>
               <InputLabel>Tenant</InputLabel>
               <Select
                 label='Tenant'
                 value={filters.tenantId}
                 onChange={e => handleFilterChange('tenantId', e.target.value)}
               >
-                <MenuItem value=''>All</MenuItem>
-                {tenants.map(tenant => (
-                  <MenuItem key={tenant.id} value={tenant.id}>
-                    {tenant.name}
+                {tenants.map(t => (
+                  <MenuItem key={t.id} value={t.id}>
+                    {t.name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-
-            <FormControl sx={{ minWidth: 160 }}>
-              <InputLabel>Department</InputLabel>
-              <Select
-                label='Department'
-                value={filters.departmentId}
-                onChange={e =>
-                  handleFilterChange('departmentId', e.target.value)
-                }
-              >
-                <MenuItem value=''>All</MenuItem>
-                {departments.map(dep => (
-                  <MenuItem key={dep.id} value={dep.id}>
-                    {dep.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
+          </Stack>
         </Paper>
-
-        {/* Chart */}
-        <Paper sx={{ p: 3, mb: 3, overflowX: 'auto' }}>
-          <Typography variant='subtitle1' fontWeight={600} mb={2}>
-            Leave Summary
-          </Typography>
-          <Box sx={{ minWidth: summary.length * 60 }}>
-            <Chart
-              options={chartOptions}
-              series={chartSeries}
-              type='bar'
-              height={400}
-            />
-          </Box>
-        </Paper>
-
-        {/* Table */}
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant='subtitle1' fontWeight={600} mb={2}>
-            Leave Requests
-          </Typography>
-
-          {/* Filters */}
-          <Box display='flex' flexWrap='wrap' gap={2} mb={3}>
-            <FormControl sx={{ minWidth: 160 }}>
-              <InputLabel>Status</InputLabel>
-              <Select
-                label='Status'
-                value={filters.status}
-                onChange={e => handleFilterChange('status', e.target.value)}
-              >
-                <MenuItem value=''>All</MenuItem>
-                <MenuItem value='pending'>Pending</MenuItem>
-                <MenuItem value='approved'>Approved</MenuItem>
-                <MenuItem value='rejected'>Rejected</MenuItem>
-                <MenuItem value='cancelled'>Cancelled</MenuItem>
-              </Select>
-            </FormControl>
-
-            <DatePicker
-              label='Start Date'
-              value={filters.startDate}
-              onChange={newDate => handleFilterChange('startDate', newDate)}
-            />
-            <DatePicker
-              label='End Date'
-              value={filters.endDate}
-              onChange={newDate => handleFilterChange('endDate', newDate)}
-            />
-          </Box>
-
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead sx={{ backgroundColor: '#f0f0f0' }}>
-                <TableRow>
-                  <TableCell>Tenant</TableCell>
-                  <TableCell>Employee</TableCell>
-                  <TableCell>Leave Type</TableCell>
-                  <TableCell>Start Date</TableCell>
-                  <TableCell>End Date</TableCell>
-                  <TableCell>Total Days</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Reason</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {leaves.length > 0 ? (
-                  leaves.map(leave => (
-                    <TableRow key={leave.id}>
-                      <TableCell>{leave.tenantName}</TableCell>
-                      <TableCell>{leave.employeeName}</TableCell>
-                      <TableCell>{leave.leaveType}</TableCell>
-                      <TableCell>
-                        {dayjs(leave.startDate).format('YYYY-MM-DD')}
-                      </TableCell>
-                      <TableCell>
-                        {dayjs(leave.endDate).format('YYYY-MM-DD')}
-                      </TableCell>
-                      <TableCell>{leave.totalDays}</TableCell>
-                      <TableCell
-                        sx={{
-                          color:
-                            leave.status === 'approved'
-                              ? 'green'
-                              : leave.status === 'rejected'
-                                ? 'red'
-                                : '#ff9800',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {leave.status}
-                      </TableCell>
-                      <TableCell>{leave.reason}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={8} align='center'>
-                      No records found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {totalPages > 1 && (
-            <Box display='flex' justifyContent='center' mt={3}>
-              <Pagination
-                count={totalPages}
-                page={currentPage}
-                onChange={handlePageChange}
-                color='primary'
-                showFirstButton
-                showLastButton
-              />
-            </Box>
-          )}
-        </Paper>
+        <ChartSection />
+        <TableSection
+          tableLoading={tableLoading}
+          filters={filters}
+          leaves={leaves}
+          departments={departments}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          isMobile={isMobile}
+          handleFilterChange={handleFilterChange}
+          handlePageChange={handlePageChange}
+        />
 
         <Snackbar
           open={snackbar.open}
