@@ -32,26 +32,22 @@ import {
   Pagination,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import { useOutletContext } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
-import { useLanguage } from '../hooks/useLanguage';
 import {
   SystemTenantApi,
   type SystemTenant,
   type SystemTenantDetail,
 } from '../api/systemTenantApi';
 
+type StatusFilterOption = 'All' | 'active' | 'suspended' | 'deleted';
+
 export const TenantPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>() || {
-    darkMode: false,
-  };
-  const { language } = useLanguage?.() ?? { language: 'en' };
 
   const [tenants, setTenants] = useState<SystemTenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,9 +57,7 @@ export const TenantPage: React.FC = () => {
     severity: 'success' as 'success' | 'error',
   });
 
-  const [statusFilter, setStatusFilter] = useState<
-    'All' | 'active' | 'suspended' | 'deleted'
-  >('All');
+  const [statusFilter, setStatusFilter] = useState<StatusFilterOption>('All');
 
   const [selectedTenant, setSelectedTenant] = useState<SystemTenant | null>(
     null
@@ -140,16 +134,25 @@ export const TenantPage: React.FC = () => {
       });
       setIsFormOpen(false);
       setFormName('');
-    } catch (err: any) {
-      console.error('Error creating tenant:', err);
+    } catch (error) {
+      console.error('Error creating tenant:', error);
 
       let errorMessage = 'Failed to create tenant';
 
-      if (
-        err.response &&
-        (err.response.status === 409 ||
-          err.response.data?.message?.toLowerCase().includes('already'))
-      ) {
+      const maybeAxiosError = error as {
+        response?: {
+          status?: number;
+          data?: { message?: string };
+        };
+      };
+
+      const alreadyExists =
+        maybeAxiosError.response?.status === 409 ||
+        maybeAxiosError.response?.data?.message?.toLowerCase().includes(
+          'already'
+        );
+
+      if (alreadyExists) {
         errorMessage = 'Tenant already exists';
       }
 
@@ -283,9 +286,10 @@ export const TenantPage: React.FC = () => {
             <Select
               value={statusFilter}
               label='Status'
-              onChange={(e: SelectChangeEvent) =>
-                setStatusFilter(e.target.value as any)
-              }
+              onChange={(event: SelectChangeEvent<StatusFilterOption>) => {
+                const value = event.target.value as StatusFilterOption;
+                setStatusFilter(value);
+              }}
             >
               <MenuItem value='All'>All</MenuItem>
               <MenuItem value='active'>Active</MenuItem>

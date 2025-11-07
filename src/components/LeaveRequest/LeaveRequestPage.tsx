@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import LeaveForm from './LeaveForm';
 import LeaveHistory from './LeaveHistory';
 import LeaveApprovalDialog from './LeaveApprovalDialog';
@@ -27,7 +27,9 @@ import HistoryIcon from '@mui/icons-material/History';
 
 const LeaveRequestPage = () => {
   const [leaves, setLeaves] = useState<Leave[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
+  const hasLoadedOnceRef = useRef(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -66,8 +68,15 @@ const LeaveRequestPage = () => {
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
 
   const loadLeaves = useCallback(async () => {
+    const shouldShowFullPageLoader = !hasLoadedOnceRef.current;
+
     try {
-      setLoading(true);
+      if (shouldShowFullPageLoader) {
+        setInitialLoading(true);
+      } else {
+        setTableLoading(true);
+      }
+
       let res;
 
       if (
@@ -160,10 +169,15 @@ const LeaveRequestPage = () => {
       if (res.page && res.page !== currentPage) {
         setCurrentPage(res.page);
       }
+      hasLoadedOnceRef.current = true;
     } catch (err) {
       console.error('Error loading leaves:', err);
     } finally {
-      setLoading(false);
+      if (shouldShowFullPageLoader) {
+        setInitialLoading(false);
+      } else {
+        setTableLoading(false);
+      }
     }
   }, [currentUser, role, viewMode, currentPage]);
 
@@ -204,8 +218,24 @@ const LeaveRequestPage = () => {
     try {
       if (actionType === 'approved') {
         await leaveApi.approveLeave(selectedId);
+        setLeaves(prevLeaves =>
+          prevLeaves.map(leave =>
+            leave.id === selectedId ? { ...leave, status: 'approved' } : leave
+          )
+        );
       } else if (actionType === 'rejected') {
         await leaveApi.rejectLeave(selectedId, { remarks: reason });
+        setLeaves(prevLeaves =>
+          prevLeaves.map(leave =>
+            leave.id === selectedId
+              ? {
+                  ...leave,
+                  status: 'rejected',
+                  remarks: reason ?? leave.remarks,
+                }
+              : leave
+          )
+        );
       }
 
       setSnackbar({
@@ -216,8 +246,6 @@ const LeaveRequestPage = () => {
             : 'Leave rejected successfully!',
         severity: 'success',
       });
-
-      await loadLeaves();
     } catch (error: unknown) {
       setSnackbar({
         open: true,
@@ -240,7 +268,11 @@ const LeaveRequestPage = () => {
         message: 'Leave withdrawn successfully!',
         severity: 'success',
       });
-      await loadLeaves();
+      setLeaves(prevLeaves =>
+        prevLeaves.map(leave =>
+          leave.id === selectedId ? { ...leave, status: 'withdrawn' } : leave
+        )
+      );
     } catch (error: unknown) {
       setSnackbar({
         open: true,
@@ -276,7 +308,7 @@ const LeaveRequestPage = () => {
     loadLeaves();
   }, [currentPage, viewMode, role, currentUser?.id]);
 
-  if (loading)
+  if (initialLoading)
     return (
       <Box
         display='flex'
@@ -419,19 +451,21 @@ const LeaveRequestPage = () => {
                 totalPages={totalPages}
                 totalItems={totalItems}
                 onPageChange={setCurrentPage}
+                isLoading={tableLoading}
               />
             </>
           )
         ) : (
           <LeaveHistory
             leaves={leaves}
-            isAdmin={['hr-admin', 'system-admin'].includes(role)}
+            isAdmin={['hr-admin', 'system-admin', 'admin'].includes(role)}
             isManager={false}
             onAction={handleAction}
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
+            isLoading={tableLoading}
           />
         )}
       </Box>

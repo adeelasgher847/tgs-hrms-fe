@@ -15,6 +15,7 @@ import {
   Pagination,
   IconButton,
   Tooltip,
+  CircularProgress,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -73,6 +74,7 @@ interface LeaveHistoryProps {
   totalPages?: number;
   totalItems?: number;
   onPageChange?: (page: number) => void;
+  isLoading?: boolean;
 }
 
 const LeaveHistory: React.FC<LeaveHistoryProps> = ({
@@ -89,6 +91,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   totalPages: serverTotalPages = 1,
   totalItems: serverTotalItems = 0,
   onPageChange,
+  isLoading = false,
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [page, setPage] = useState(1);
@@ -258,7 +261,13 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         </Box>
       </Box>
 
-      {filteredLeaves.length === 0 ? (
+      {isLoading ? (
+        <Paper elevation={1} sx={{ boxShadow: 'none', py: 6 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <CircularProgress />
+          </Box>
+        </Paper>
+      ) : filteredLeaves.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant='h6' color='textSecondary' gutterBottom>
             No Leave History Found
@@ -270,7 +279,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
       ) : (
-        <Paper elevation={1} sx={{boxShadow:'none'}}>
+        <Paper elevation={1} sx={{ boxShadow: 'none' }}>
           <TableContainer>
             <Table>
               <TableHead>
@@ -313,7 +322,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                         label={
                           leave.status
                             ? leave.status.charAt(0).toUpperCase() +
-                              leave.status.slice(1)
+                                leave.status.slice(1)
                             : 'Unknown'
                         }
                         color={statusConfig[leave.status]?.color}

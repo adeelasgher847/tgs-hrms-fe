@@ -1,5 +1,5 @@
 import axiosInstance from './axiosInstance';
-import type { AxiosResponse } from 'axios';
+import type { AxiosError, AxiosResponse } from 'axios';
 
 export interface SystemTenant {
   id: string;
@@ -30,6 +30,13 @@ export interface SystemTenantFilters {
   includeDeleted?: boolean;
 }
 
+interface PaginatedSystemTenantsResponse {
+  data?: SystemTenant[];
+  total?: number;
+  page?: number;
+  totalPages?: number;
+}
+
 export const SystemTenantApi = {
   /**
    * @param filters
@@ -44,31 +51,38 @@ export const SystemTenantApi = {
     totalPages: number;
   }> => {
     try {
-      const response: AxiosResponse<SystemTenant[]> = await axiosInstance.get(
-        '/system/tenants',
-        {
-          params: {
-            page: filters.page ?? 1,
-            limit: filters.limit ?? 10,
-            includeDeleted: filters.includeDeleted ?? false,
-          },
-        }
-      );
+      const response: AxiosResponse<
+        PaginatedSystemTenantsResponse | SystemTenant[]
+      > = await axiosInstance.get('/system/tenants', {
+        params: {
+          page: filters.page ?? 1,
+          limit: filters.limit ?? 10,
+          includeDeleted: filters.includeDeleted ?? false,
+        },
+      });
 
-      const total =
-        Number(response.headers['x-total-count']) ||
-        (response.data as any)?.total ||
-        0;
+      const payload = response.data;
 
-      const page = (response.data as any)?.page || filters.page || 1;
+      const totalHeader = Number(response.headers['x-total-count']);
+      const total = !Number.isNaN(totalHeader)
+        ? totalHeader
+        : !Array.isArray(payload) && typeof payload?.total === 'number'
+          ? payload.total
+          : 0;
 
-      const totalPages =
-        (response.data as any)?.totalPages ||
-        (total > 0 ? Math.ceil(total / (filters.limit ?? 10)) : 1);
+      const page = !Array.isArray(payload) && typeof payload?.page === 'number'
+        ? payload.page
+        : filters.page ?? 1;
 
-      const tenants = Array.isArray(response.data)
-        ? response.data
-        : (response.data as any)?.data || [];
+      const totalPages = !Array.isArray(payload) && typeof payload?.totalPages === 'number'
+        ? payload.totalPages
+        : total > 0
+          ? Math.ceil(total / (filters.limit ?? 10))
+          : 1;
+
+      const tenants = Array.isArray(payload)
+        ? payload
+        : payload?.data ?? [];
 
       return {
         data: tenants,
@@ -122,10 +136,11 @@ export const SystemTenantApi = {
       );
       console.log(' System tenant status updated:', response.data);
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message?: string }>;
       console.error(
         ` Failed to update status (id=${id}):`,
-        error.response?.data || error
+        axiosError.response?.data ?? axiosError.message
       );
       throw error;
     }
