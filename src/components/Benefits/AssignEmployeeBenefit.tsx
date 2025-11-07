@@ -21,6 +21,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import type { AlertColor } from '@mui/material/Alert';
 
 import employeeApi from '../../api/employeeApi';
 import benefitsApi from '../../api/benefitApi';
@@ -62,7 +63,12 @@ const AssignEmployeeBenefit: React.FC<{
 }> = ({ open, onClose, onAssigned }) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
-  const [showToast, setShowToast] = useState(false);
+  const [assignedBenefitIds, setAssignedBenefitIds] = useState<string[]>([]);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    severity: AlertColor;
+    message: string;
+  }>({ open: false, severity: 'success', message: '' });
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
 
@@ -85,6 +91,7 @@ const AssignEmployeeBenefit: React.FC<{
 
   // Watch all form values to check if they're filled
   const watchedValues = watch();
+  const selectedEmployeeId = watch('employeeId');
   const isFormValid =
     watchedValues.employeeId &&
     watchedValues.benefitIds?.length > 0 &&
@@ -130,7 +137,73 @@ const AssignEmployeeBenefit: React.FC<{
     fetchData();
   }, [open]);
 
+  useEffect(() => {
+    if (!selectedEmployeeId) {
+      setAssignedBenefitIds([]);
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchAssignedBenefits = async () => {
+      try {
+        const response = await employeeBenefitApi.getFilteredEmployeeBenefits({
+          employeeId: selectedEmployeeId,
+          page: 1,
+        });
+
+        if (!isMounted) return;
+
+        const employeeRecord = response?.find(entry => {
+          if (!entry?.employeeId) return false;
+          if (entry.employeeId === selectedEmployeeId) return true;
+          return (
+            entry.employeeId.toLowerCase() === selectedEmployeeId.toLowerCase()
+          );
+        });
+
+        const benefitIds = employeeRecord?.benefits?.map(b => b.id) || [];
+        setAssignedBenefitIds(benefitIds);
+      } catch (error) {
+        console.error('Failed to load assigned benefits:', error);
+        if (isMounted) setAssignedBenefitIds([]);
+      }
+    };
+
+    fetchAssignedBenefits();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedEmployeeId]);
+
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
   const handleFormSubmit = async (data: AssignEmployeeBenefitValues) => {
+    const duplicateBenefitIds = data.benefitIds.filter(benefitId =>
+      assignedBenefitIds.includes(benefitId)
+    );
+
+    if (duplicateBenefitIds.length > 0) {
+      const duplicateBenefitNames = benefits
+        .filter(benefit => duplicateBenefitIds.includes(benefit.id))
+        .map(benefit => benefit.name)
+        .join(', ');
+
+      setSnackbar({
+        open: true,
+        severity: 'warning',
+        message: duplicateBenefitNames
+          ? `${duplicateBenefitNames} already assigned to this employee.`
+          : duplicateBenefitIds.length === 1
+            ? 'Selected benefit is already assigned to this employee.'
+            : 'Some selected benefits are already assigned to this employee.',
+      });
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -146,7 +219,11 @@ const AssignEmployeeBenefit: React.FC<{
 
       await Promise.all(assignments);
 
-      setShowToast(true);
+      setSnackbar({
+        open: true,
+        severity: 'success',
+        message: 'Benefits assigned successfully!',
+      });
       reset();
       onClose();
       onAssigned?.();
@@ -155,6 +232,29 @@ const AssignEmployeeBenefit: React.FC<{
         'Error assigning benefit:',
         (err as { response?: { data?: unknown } }).response?.data || err
       );
+
+      let errorMessage = 'Failed to assign benefits';
+      const responseData = (
+        err as {
+          response?: { data?: unknown };
+          message?: string;
+        }
+      ).response?.data;
+
+      if (responseData && typeof responseData === 'object') {
+        const message = (responseData as { message?: string }).message;
+        if (message) {
+          errorMessage = message;
+        }
+      } else if (err instanceof Error && err.message) {
+        errorMessage = err.message;
+      }
+
+      setSnackbar({
+        open: true,
+        severity: 'error',
+        message: errorMessage,
+      });
     } finally {
       setLoading(false);
     }
@@ -314,13 +414,17 @@ const AssignEmployeeBenefit: React.FC<{
       </Dialog>
 
       <Snackbar
-        open={showToast}
+        open={snackbar.open}
         autoHideDuration={3000}
-        onClose={() => setShowToast(false)}
+        onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert severity='success' variant='filled'>
-          Benefits assigned successfully!
+        <Alert
+          severity={snackbar.severity}
+          variant='filled'
+          onClose={handleSnackbarClose}
+        >
+          {snackbar.message}
         </Alert>
       </Snackbar>
     </>

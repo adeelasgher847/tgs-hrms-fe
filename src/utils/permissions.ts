@@ -76,7 +76,13 @@ export const isMenuVisibleForRole = (
       'attendance',
       'benefits',
     ],
-    'hr-admin': ['attendance', 'teams', 'benefits', 'leave-analytics'],
+    'hr-admin': [
+      'attendance',
+      'teams',
+      'benefits',
+      'leave-analytics',
+      'payroll',
+    ],
     admin: [
       'dashboard',
       'department',
@@ -85,6 +91,8 @@ export const isMenuVisibleForRole = (
       'assets',
       'attendance',
       'report',
+      'payroll',
+      'benefits',
     ],
     manager: ['teams', 'attendance', 'assets', 'report', 'leave-analytics'],
     employee: ['attendance', 'assets', 'benefits', 'leave-analytics'],
@@ -107,7 +115,7 @@ export const isMenuVisibleForRole = (
     if (label.includes('benefits')) return 'benefits';
     if (label.includes('auditlogs')) return 'audit logs';
     if (label.includes('performance')) return 'performance';
-    // Hide all miscellaneous sections for now (Projects, Accounts, Payroll, App, Other Pages, UI Components)
+    if (label.includes('payroll')) return 'payroll';
     return 'misc';
   })();
 
@@ -233,8 +241,13 @@ export const isSubMenuVisibleForRole = (
     if (parent.includes('audit logs')) {
       visible = false;
     }
+    if (parent.includes('benefits')) {
+      if (sub.includes('benefits report') || sub.includes('benefit details')) {
+        visible = false;
+      }
+    }
   }
-  
+
   // --- Manager rules ---
   if (r === 'manager') {
     if (parent.includes('employees')) {
@@ -285,6 +298,9 @@ export const isSubMenuVisibleForRole = (
       visible = false;
     }
   }
+  if (parent.includes('payroll') && !(r === 'hr-admin' || r === 'admin')) {
+    visible = false;
+  }
 
   // System Admin: For Assets menu - only see System Assets Overview (hide all other asset pages)
   if (r === 'system-admin') {
@@ -300,6 +316,15 @@ export const isSubMenuVisibleForRole = (
       // Only system-admin sees System Assets Overview
       if (sub.includes('system assets overview')) {
         visible = true;
+      }
+      if (parent.includes('payroll')) {
+        if (sub.includes('payroll-configuration')) {
+          visible = false;
+        }
+        // Manager can view employee salary
+        if (sub.includes('employee-salary')) {
+          visible = true;
+        }
       }
     }
     if (parent.includes('employees')) {
@@ -445,6 +470,8 @@ export const isDashboardPathAllowedForRole = (
       'Reports',
       'benefits-list',
       'employee-benefit',
+      'payroll-configuration',
+      'employee-salary',
     ]),
     admin: new Set([
       '',
@@ -473,6 +500,10 @@ export const isDashboardPathAllowedForRole = (
       'benefits/assign',
       'benefits/reporting',
       'my-benefits',
+      'payroll-configuration',
+      'employee-salary',
+      'benefits-list',
+      'employee-benefit',
     ]),
     manager: new Set([
       'AttendanceCheck',
