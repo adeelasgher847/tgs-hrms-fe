@@ -15,6 +15,7 @@ import {
   Pagination,
   IconButton,
   Tooltip,
+  CircularProgress,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -73,6 +74,7 @@ interface LeaveHistoryProps {
   totalPages?: number;
   totalItems?: number;
   onPageChange?: (page: number) => void;
+  onExportAll?: () => Promise<Leave[]>;
 }
 
 const LeaveHistory: React.FC<LeaveHistoryProps> = ({
@@ -89,6 +91,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   totalPages: serverTotalPages = 1,
   totalItems: serverTotalItems = 0,
   onPageChange,
+  onExportAll,
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [page, setPage] = useState(1);
@@ -143,8 +146,34 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     }
   };
 
-  const handleDownloadCSV = () => {
-    if (filteredLeaves.length === 0) return;
+  const [exporting, setExporting] = useState(false);
+
+  const handleDownloadCSV = async () => {
+    if (exporting) return;
+
+    let leavesToExport: Leave[] = [];
+
+    // If onExportAll is provided, fetch all leaves from all pages
+    if (onExportAll) {
+      try {
+        setExporting(true);
+        leavesToExport = await onExportAll();
+      } catch (error) {
+        console.error('Error fetching all leaves for export:', error);
+        // Fallback to current filtered leaves
+        leavesToExport = filteredLeaves;
+      } finally {
+        setExporting(false);
+      }
+    } else {
+      // Use filtered leaves if no export function provided
+      leavesToExport = filteredLeaves;
+    }
+
+    if (leavesToExport.length === 0) {
+      alert('No leave history to export');
+      return;
+    }
 
     const headers = [
       'Name',
@@ -163,7 +192,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
       return `"${str}"`; // wrap in quotes
     };
 
-    const rows = filteredLeaves.map(leave => [
+    const rows = leavesToExport.map(leave => [
       escapeCSV(leave.employee?.first_name || 'N/A'),
       escapeCSV(leave.leaveType?.name || 'Unknown'),
       escapeCSV(formatDate(leave.startDate)),
@@ -186,6 +215,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   if (!Array.isArray(leaves)) {
@@ -238,10 +268,11 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
             </TextField>
           )}
 
-          <Tooltip title='Export All Leave History'>
+          <Tooltip title={exporting ? 'Exporting...' : 'Export All Leave History'}>
             <IconButton
               color='primary'
               onClick={handleDownloadCSV}
+              disabled={exporting}
               sx={{
                 backgroundColor: 'primary.main',
                 borderRadius: '6px',
@@ -250,9 +281,16 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                 '&:hover': {
                   backgroundColor: 'primary.dark',
                 },
+                '&:disabled': {
+                  backgroundColor: 'primary.light',
+                },
               }}
             >
-              <FileDownloadIcon />
+              {exporting ? (
+                <CircularProgress size={20} sx={{ color: 'white' }} />
+              ) : (
+                <FileDownloadIcon />
+              )}
             </IconButton>
           </Tooltip>
         </Box>

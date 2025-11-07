@@ -73,6 +73,7 @@ const Reports: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingTab, setLoadingTab] = useState(false); // Separate loading for tab content
   const [error, setError] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<{
     userId: string | null;
@@ -201,7 +202,8 @@ const Reports: React.FC = () => {
 
     const fetchData = async () => {
       try {
-        setLoading(true);
+        // For tab changes, use tab-specific loading instead of full page loading
+        setLoadingTab(true);
         setError(null);
 
         if (isAdminView) {
@@ -220,7 +222,7 @@ const Reports: React.FC = () => {
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Failed to fetch data');
       } finally {
-        setLoading(false);
+        setLoadingTab(false);
       }
     };
 
@@ -533,8 +535,19 @@ const Reports: React.FC = () => {
             </Tabs>
           )}
           <TabPanel value={tab} index={0}>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-              {leaveBalance.map((item, idx) => (
+            {loadingTab ? (
+              <Box
+                display='flex'
+                justifyContent='center'
+                alignItems='center'
+                py={4}
+              >
+                <CircularProgress />
+              </Box>
+            ) : (
+              <>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+                  {leaveBalance.map((item, idx) => (
                 <Card key={idx} sx={getCardStyle(darkMode)}>
                   <CardContent>
                     <Typography
@@ -623,16 +636,29 @@ const Reports: React.FC = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+              </>
+            )}
           </TabPanel>
 
           {isManager && (
             <TabPanel value={tab} index={1}>
-              {!teamSummary.length && (
-                <Typography sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                  No team data found.
-                </Typography>
-              )}
-              {!!teamSummary.length && (
+              {loadingTab ? (
+                <Box
+                  display='flex'
+                  justifyContent='center'
+                  alignItems='center'
+                  py={4}
+                >
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <>
+                  {!teamSummary.length && (
+                    <Typography sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                      No team data found.
+                    </Typography>
+                  )}
+                  {!!teamSummary.length && (
                 <TableContainer
                   component={Card}
                   sx={{
@@ -696,6 +722,8 @@ const Reports: React.FC = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+                  )}
+                </>
               )}
             </TabPanel>
           )}
