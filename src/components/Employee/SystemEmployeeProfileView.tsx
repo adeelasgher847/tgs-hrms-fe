@@ -414,7 +414,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                             setOpenBenefitDialog(true);
                           }}
                         >
-                          View Details
+                          <VisibilityIcon />
                         </Button>
                       </Box>
                     </Paper>

@@ -121,7 +121,7 @@ export const TenantLeaveApi = {
         ? rawTenantsResponse
         : rawTenantsResponse?.items ?? [];
 
-      return tenantsArray.map(tenant => ({
+      return data.map((tenant: TenantListItem) => ({
         id: tenant.id,
         name: tenant.name,
         status: tenant.status,
@@ -130,8 +130,7 @@ export const TenantLeaveApi = {
         updated_at: tenant.updated_at ?? '',
         deleted_at: tenant.deleted_at ?? null,
       }));
-    } catch (error) {
-      console.error('Error fetching tenants:', error);
+    } catch {
       return [];
     }
   },
@@ -145,7 +144,7 @@ export const TenantLeaveApi = {
     totalPages: number;
   }> => {
     try {
-      const params: Record<string, string | number | undefined> = {
+      const params: Record<string, string | number> = {
         page: filters.page ?? 1,
         limit: filters.limit ?? 10,
       };
@@ -225,6 +224,12 @@ export const TenantLeaveApi = {
     } = {}
   ): Promise<SystemLeaveSummary[]> => {
     try {
+      const params: Record<string, string> = {};
+      if (filters.tenantId) params.tenantId = filters.tenantId;
+      if (filters.status) params.status = filters.status;
+      if (filters.startDate) params.startDate = filters.startDate;
+      if (filters.endDate) params.endDate = filters.endDate;
+
       const { data } = await axiosInstance.get('/system/leaves/summary', {
         params: filters,
       });
@@ -244,8 +249,7 @@ export const TenantLeaveApi = {
         pendingCount: Number(item.pendingCount ?? 0),
         cancelledCount: Number(item.cancelledCount ?? 0),
       }));
-    } catch (error) {
-      console.error('Error fetching summary:', error);
+    } catch {
       return [];
     }
   },
@@ -272,8 +276,7 @@ export const TenantLeaveApi = {
         tenant_id: dept.tenant_id,
         created_at: dept.created_at,
       }));
-    } catch (error) {
-      console.error('Error fetching departments:', error);
+    } catch {
       return [];
     }
   },

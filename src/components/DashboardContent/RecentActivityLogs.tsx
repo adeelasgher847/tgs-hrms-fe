@@ -55,7 +55,8 @@ const RecentActivityLogs: React.FC<RecentActivityLogsProps> = ({ logs }) => {
         borderRadius: 1,
         backgroundColor: bgColor,
         boxShadow: 'none',
-        height: 368,
+        height: 380,
+        width: '100%',
         display: 'flex',
         flexDirection: 'column',
       }}

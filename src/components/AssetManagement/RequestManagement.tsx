@@ -61,19 +61,50 @@ import { assetCategories } from '../../Data/assetCategories';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
-  subcategory_name?: string;
-  subcategory?: string | {
-    name?: string;
-    title?: string;
-    subcategory_name?: string;
-    subcategoryName?: string;
-    display_name?: string;
-    label?: string;
+  category_id?: string;
+  subcategory_id?: string | null;
+  category?: {
+    id: string;
+    name: string;
+    description?: string | null;
+    icon?: string | null;
   };
+  subcategory?: {
+    id: string;
+    name: string;
+    description?: string | null;
+  };
+  subcategory_name?: string;
+  subcategory?:
+    | string
+    | {
+        name?: string;
+        title?: string;
+        subcategory_name?: string;
+        subcategoryName?: string;
+        display_name?: string;
+        label?: string;
+      };
   subcategoryId?: string;
   subcategoryName?: string;
-  subcategory_id?: string;
   rejection_reason?: string | null;
+  requestedByName?: string;
+  requestedByUser?: {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+  };
+  approvedByName?: string;
+  approvedByUser?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  // Legacy field for backward compatibility
+  asset_category?: string;
 }
 
 // Normalize status to ensure it matches expected values
@@ -136,6 +167,9 @@ function TabPanel(props: TabPanelProps) {
 
 const RequestManagement: React.FC = () => {
   const [requests, setRequests] = useState<AssetRequest[]>([]);
+  const [allRequestsForStats, setAllRequestsForStats] = useState<
+    AssetRequest[]
+  >([]); // Store all requests for statistics
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -144,13 +178,17 @@ const RequestManagement: React.FC = () => {
   );
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const initialLoadRef = React.useRef(false); // Track if initial load has been done
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
     severity: 'success' | 'error' | 'warning' | 'info';
   }>({ open: false, message: '', severity: 'success' });
 
-  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+  const showSnackbar = (
+    message: string,
+    severity: 'success' | 'error' | 'warning' | 'info' = 'success'
+  ) => {
     setSnackbar({ open: true, message, severity });
   };
 
@@ -172,9 +210,6 @@ const RequestManagement: React.FC = () => {
     totalPages: 0,
   });
 
-  // Get all subcategories from comprehensive categories - keeping for future use
-  // const commonCategories = assetCategories.flatMap(cat => cat.subcategories || [cat.name]);
-
   const {
     control,
     handleSubmit,
@@ -192,109 +227,170 @@ const RequestManagement: React.FC = () => {
   });
 
   const selectedAction = watch('action');
-  // const _selectedCategoryId = selectedRequest?.category.id;
+
+  const transformApiRequests = React.useCallback(
+    (apiRequests: ApiAssetRequestExtended[]): AssetRequest[] => {
+      return apiRequests.map((apiRequest: ApiAssetRequestExtended) => {
+        // Handle new API response structure with category_id and category object
+        const categoryId = apiRequest.category_id || apiRequest.asset_category || '';
+        const subcategoryId = apiRequest.subcategory_id || undefined;
+        
+        // Get category name from API response category object
+        let mainCategoryName = '';
+        if (apiRequest.category && typeof apiRequest.category === 'object' && apiRequest.category !== null) {
+          mainCategoryName = apiRequest.category.name || categoryId;
+        } else if (apiRequest.asset_category) {
+          mainCategoryName = apiRequest.asset_category;
+        } else {
+          mainCategoryName = categoryId;
+        }
+
+        // Get subcategory name from API response subcategory object
+        let subcategoryName = '';
+        if (apiRequest.subcategory) {
+          if (typeof apiRequest.subcategory === 'object' && apiRequest.subcategory !== null) {
+            subcategoryName = apiRequest.subcategory.name || apiRequest.subcategoryName || '';
+          } else {
+            subcategoryName = apiRequest.subcategory || '';
+          }
+        } else if (apiRequest.subcategoryName) {
+          subcategoryName = apiRequest.subcategoryName;
+        } else if (apiRequest.subcategory_name) {
+          subcategoryName = apiRequest.subcategory_name;
+        }
+
+        // Get employee name from API response
+        let employeeName = '';
+        if (apiRequest.requestedByName) {
+          employeeName = apiRequest.requestedByName;
+        } else if (apiRequest.requestedByUser && apiRequest.requestedByUser.name) {
+          employeeName = apiRequest.requestedByUser.name;
+        } else if (apiRequest.requested_by) {
+          employeeName = `User ${apiRequest.requested_by}`;
+        }
+
+        return {
+          id: apiRequest.id,
+          employeeId: apiRequest.requested_by,
+          employeeName: employeeName,
+          category: {
+            id: categoryId,
+            name: mainCategoryName,
+            nameAr: mainCategoryName,
+            description: '',
+            color: '#757575',
+            requestedItem: subcategoryName || undefined,
+          },
+          subcategoryId: subcategoryId || undefined,
+          subcategoryName: subcategoryName || undefined,
+          remarks: apiRequest.remarks,
+          status: normalizeRequestStatus(apiRequest.status),
+          requestedDate: apiRequest.requested_date,
+          processedDate: apiRequest.approved_date || undefined,
+          processedBy: apiRequest.approved_by || undefined,
+          processedByName:
+            apiRequest.approvedByName ||
+            (apiRequest.approved_by
+              ? `User ${apiRequest.approved_by}`
+              : undefined),
+          rejectionReason:
+            apiRequest.rejection_reason && apiRequest.rejection_reason !== null
+              ? apiRequest.rejection_reason
+              : undefined,
+          assignedAssetId: undefined, // Not provided by API
+          assignedAssetName: undefined, // Not provided by API
+        };
+      });
+    },
+    []
+  );
+
+  // Fetch all requests for statistics (without pagination)
+  const fetchAllRequestsForStats = React.useCallback(async () => {
+    try {
+      // Fetch all requests by looping through all pages
+      let allApiRequests: ApiAssetRequestExtended[] = [];
+      let currentPage = 1;
+      let hasMorePages = true;
+      const limit = 1000; // Use a high limit per page
+
+      while (hasMorePages) {
+        const response: PaginatedResponse<ApiAssetRequest> =
+          await assetApi.getAllAssetRequests({
+            page: currentPage,
+            limit,
+          });
+
+        const apiRequests = response.items || [];
+        const paginationInfo = {
+          total: response.total || 0,
+          totalPages: response.totalPages || 1,
+        };
+
+        if (apiRequests && apiRequests.length > 0) {
+          allApiRequests = [
+            ...allApiRequests,
+            ...(apiRequests as ApiAssetRequestExtended[]),
+          ];
+        }
+
+        // Check if there are more pages
+        if (paginationInfo && currentPage < paginationInfo.totalPages) {
+          currentPage++;
+        } else {
+          hasMorePages = false;
+        }
+
+        // Safety check to prevent infinite loops
+        if (currentPage > 100) {
+          hasMorePages = false;
+        }
+      }
+
+      if (allApiRequests.length > 0) {
+        const transformedRequests = transformApiRequests(allApiRequests);
+        setAllRequestsForStats(transformedRequests);
+      } else {
+        setAllRequestsForStats([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch all requests for statistics:', error);
+      // Don't show snackbar for this as it's a background operation
+    }
+  }, [transformApiRequests]);
 
   // Fetch data from API
-  React.useEffect(() => {
-    const fetchData = async () => {
+  const fetchRequests = React.useCallback(
+    async (
+      page: number = 1,
+      limit: number = 25,
+      isInitialLoad: boolean = false
+    ) => {
       try {
-        // Only show initial loading on first load, not on pagination
-        if (pagination.page === 1) {
+        // Only show initial loading on very first load, not on pagination or when returning to page 1
+        if (isInitialLoad && page === 1) {
           setInitialLoading(true);
         }
-        
+
         // Fetch asset requests with pagination
         const apiResponse: PaginatedResponse<ApiAssetRequest> =
           await assetApi.getAllAssetRequests({
-            page: pagination.page,
-            limit: pagination.limit,
+            page,
+            limit,
           });
 
-        // Update pagination info from API response
+        // Update pagination info from API response immediately - this gives us total count right away
         setPagination(prev => ({
           ...prev,
           total: apiResponse.total || 0,
           totalPages: apiResponse.totalPages || 1,
         }));
 
-        const transformedRequests: AssetRequest[] = apiResponse.items.map(
-          (apiRequest: ApiAssetRequestExtended) => {
-            // Try to find matching category from our comprehensive list
-            const matchingCategory = assetCategories.find(
-              cat =>
-                cat.name.toLowerCase() ===
-                  apiRequest.asset_category.toLowerCase() ||
-                cat.subcategories?.some(
-                  sub =>
-                    sub.toLowerCase() ===
-                    apiRequest.asset_category.toLowerCase()
-                )
-            );
+        // Transform API requests to component format
+        const transformedRequests = transformApiRequests(
+          (apiResponse.items || []) as ApiAssetRequestExtended[]
+        );
 
-          // Use asset_category as main category name (no need to split)
-          let mainCategoryName = apiRequest.asset_category;
-          let subcategoryName = '';
-          
-          // Check if API response has subcategory information in different possible fields
-          if (apiRequest.subcategory_name) {
-            subcategoryName = apiRequest.subcategory_name;
-          } else if (apiRequest.subcategory) {
-            // Handle case where subcategory is an object
-            const subcategory = apiRequest.subcategory;
-            if (typeof subcategory === 'object' && subcategory !== null) {
-              // Try different possible property names for the subcategory name
-              subcategoryName = subcategory.name || 
-                               subcategory.title || 
-                               subcategory.subcategory_name || 
-                               subcategory.subcategoryName ||
-                               subcategory.display_name ||
-                               subcategory.label ||
-                               JSON.stringify(subcategory);
-            } else {
-              subcategoryName = subcategory;
-            }
-          } else if (apiRequest.subcategoryId && apiRequest.subcategoryName) {
-            subcategoryName = apiRequest.subcategoryName;
-          } else if (apiRequest.asset_category.includes(' - ')) {
-            [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' - ');
-          } else if (apiRequest.asset_category.includes(' / ')) {
-            [mainCategoryName, subcategoryName] = apiRequest.asset_category.split(' / ');
-          }
-
-          return {
-            id: apiRequest.id,
-            employeeId: apiRequest.requested_by,
-            employeeName: apiRequest.requestedByName || `User ${apiRequest.requested_by}`,
-            category: matchingCategory ? {
-              id: matchingCategory.id,
-              name: matchingCategory.name,
-              nameAr: matchingCategory.nameAr,
-              description: matchingCategory.description,
-              color: matchingCategory.color,
-              subcategories: matchingCategory.subcategories,
-              // Add the specific item requested
-              requestedItem: subcategoryName || undefined
-            } : { 
-              id: apiRequest.asset_category, 
-              name: mainCategoryName, 
-              nameAr: apiRequest.asset_category, 
-              description: '',
-              color: '#757575',
-              requestedItem: subcategoryName || undefined
-            },
-            subcategoryId: apiRequest.subcategory_id || undefined,
-            remarks: apiRequest.remarks,
-            status: normalizeRequestStatus(apiRequest.status),
-            requestedDate: apiRequest.requested_date,
-            processedDate: apiRequest.approved_date || undefined,
-            processedBy: apiRequest.approved_by || undefined,
-            processedByName: apiRequest.approvedByName || (apiRequest.approved_by ? `User ${apiRequest.approved_by}` : undefined),
-            rejectionReason: apiRequest.rejection_reason && apiRequest.rejection_reason !== null ? apiRequest.rejection_reason : undefined,
-            assignedAssetId: undefined, // Not provided by API
-            assignedAssetName: undefined, // Not provided by API
-          };
-        });
-        
         setRequests(transformedRequests);
 
         // Fetch assets for assignment - fetch all assets with high limit to get all pages
@@ -303,16 +399,16 @@ const RequestManagement: React.FC = () => {
         let currentPage = 1;
         let hasMorePages = true;
         const maxPages = 50; // Safety limit to prevent infinite loops
-        
+
         while (hasMorePages && currentPage <= maxPages) {
           const apiAssetsResponse = await assetApi.getAllAssets({
             page: currentPage,
             limit: 100, // Use a high limit to fetch more assets per page
           });
-          
+
           if (apiAssetsResponse.assets && apiAssetsResponse.assets.length > 0) {
             allAssets = [...allAssets, ...apiAssetsResponse.assets];
-            
+
             // Check if there are more pages
             const totalPages = apiAssetsResponse.pagination?.totalPages || 1;
             hasMorePages = currentPage < totalPages;
@@ -324,15 +420,33 @@ const RequestManagement: React.FC = () => {
 
         const transformedAssets: Asset[] = allAssets.map(
           (apiAsset: Record<string, unknown>) => {
+            // Extract category name from API response
+            // Category can be an object { id, name, ... } or a string
+            let categoryName = '';
+            let categoryId = '';
+            
+            if (apiAsset.category && typeof apiAsset.category === 'object' && apiAsset.category !== null) {
+              const categoryObj = apiAsset.category as { id?: string; name?: string };
+              categoryName = categoryObj.name || '';
+              categoryId = categoryObj.id || apiAsset.category_id as string || '';
+            } else if (apiAsset.categoryName) {
+              categoryName = apiAsset.categoryName as string;
+              categoryId = apiAsset.category_id as string || '';
+            } else if (typeof apiAsset.category === 'string') {
+              categoryName = apiAsset.category;
+              categoryId = apiAsset.category_id as string || apiAsset.category as string;
+            } else {
+              categoryName = apiAsset.categoryName as string || '';
+              categoryId = apiAsset.category_id as string || '';
+            }
+
             // Try to find matching category from our comprehensive list
             const matchingCategory = assetCategories.find(
               cat =>
-                cat.name.toLowerCase() ===
-                  (apiAsset.category as string).toLowerCase() ||
+                cat.name.toLowerCase() === categoryName.toLowerCase() ||
                 cat.subcategories?.some(
                   sub =>
-                    sub.toLowerCase() ===
-                    (apiAsset.category as string).toLowerCase()
+                    sub.toLowerCase() === categoryName.toLowerCase()
                 )
             );
 
@@ -349,9 +463,9 @@ const RequestManagement: React.FC = () => {
                     subcategories: matchingCategory.subcategories,
                   }
                 : {
-                    id: apiAsset.category as string,
-                    name: apiAsset.category as string,
-                    nameAr: apiAsset.category as string,
+                    id: categoryId,
+                    name: categoryName,
+                    nameAr: categoryName,
                     description: '',
                     color: '#757575',
                   },
@@ -364,24 +478,79 @@ const RequestManagement: React.FC = () => {
               description: '',
               createdAt: apiAsset.created_at as string,
               updatedAt: apiAsset.created_at as string,
+              subcategoryId: (apiAsset.subcategoryId ||
+                apiAsset.subcategory_id) as string | undefined,
             };
           }
         );
 
         setAssets(transformedAssets);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-        showSnackbar('Failed to load data', 'error');
+      } catch (error: any) {
+        console.error('❌ Failed to fetch data:', error);
+        console.error('❌ Error details:', {
+          message: error?.message,
+          response: error?.response?.data,
+          status: error?.response?.status,
+        });
+        
+        // Only show error toast if it's a real error (not 404 or empty results)
+        const status = error?.response?.status;
+        const errorMessage = error?.response?.data?.message || error?.message || '';
+        
+        // Don't show error for 404 (not found) or if it's just empty results
+        if (status !== 404 && status !== 200 && errorMessage) {
+          showSnackbar(errorMessage || 'Failed to load data', 'error');
+        } else {
+          // If it's 404 or empty results, just set empty state without showing error
+          setRequests([]);
+          setPagination(prev => ({
+            ...prev,
+            total: 0,
+            totalPages: 1,
+          }));
+        }
       } finally {
-        // Only set initial loading to false on first page
-        if (pagination.page === 1) {
+        // Only set initial loading to false on very first load
+        if (isInitialLoad && page === 1) {
           setInitialLoading(false);
         }
       }
+    },
+    [transformApiRequests]
+  );
+
+  // Initial load: fetch stats FIRST, then paginated requests
+  React.useEffect(() => {
+    // Only run initial load once
+    if (initialLoadRef.current) {
+      return;
+    }
+
+    initialLoadRef.current = true;
+
+    // Initialize data: fetch stats FIRST, then paginated requests
+    // This ensures correct counts are shown immediately when page loads
+    const initializeData = async () => {
+      // Fetch all requests for statistics FIRST to get accurate counts immediately
+      await fetchAllRequestsForStats();
+      // Then fetch paginated requests for the table (isInitialLoad = true)
+      await fetchRequests(pagination.page, pagination.limit, true);
     };
 
-    fetchData();
-  }, [pagination.page, pagination.limit]);
+    initializeData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on initial mount
+
+  // Handle page changes: only fetch paginated requests, not stats
+  React.useEffect(() => {
+    if (!initialLoadRef.current) return; // Don't fetch if initial load hasn't happened
+
+    // Only fetch paginated requests when page changes, not stats
+    // Stats are already loaded and don't need to be refreshed on page change
+    if (pagination.page > 0) {
+      fetchRequests(pagination.page, pagination.limit, false);
+    }
+  }, [pagination.page, pagination.limit, fetchRequests]);
 
   // Filter requests
   const filteredRequests = useMemo(() => {
@@ -408,6 +577,17 @@ const RequestManagement: React.FC = () => {
         return false;
       }
 
+      // If request has a subcategoryId, ONLY match assets with the exact same subcategoryId
+      if (selectedRequest.subcategoryId) {
+        // Exact subcategory ID match required
+        if (asset.subcategoryId === selectedRequest.subcategoryId) {
+          return true;
+        }
+        // If subcategoryId doesn't match, reject this asset
+        return false;
+      }
+
+      // If no subcategoryId in request, fall back to category name matching
       // Get the request category name
       const requestCategoryName = selectedRequest.category.name;
 
@@ -446,19 +626,6 @@ const RequestManagement: React.FC = () => {
 
       return false;
     });
-
-    // If no assets found, show all available assets for debugging
-    if (filtered.length === 0) {
-      const allAvailableAssets = assets.filter(
-        asset => asset.status === 'available'
-      );
-
-      // Temporary fallback: if no category match found, show all available assets
-      // This helps with debugging and ensures user can still assign assets
-      if (allAvailableAssets.length > 0) {
-        return allAvailableAssets;
-      }
-    }
 
     return filtered;
   }, [assets, selectedRequest]);
@@ -521,6 +688,7 @@ const RequestManagement: React.FC = () => {
               id: a.id,
               name: a.name,
               category: a.category.name,
+              subcategoryId: a.subcategoryId,
               status: a.status,
             })),
           });
@@ -529,109 +697,105 @@ const RequestManagement: React.FC = () => {
           );
         }
 
-        // Try with asset_id and employee_id
+        // Validate subcategory ID match if request has subcategoryId
+        if (selectedRequest.subcategoryId) {
+          if (selectedAsset.subcategoryId !== selectedRequest.subcategoryId) {
+            throw new Error(
+              `The selected asset does not match the requested subcategory. Requested subcategory ID: ${selectedRequest.subcategoryId}, Asset subcategory ID: ${selectedAsset.subcategoryId || 'none'}`
+            );
+          }
+        }
+
+        // Prepare payload for approval - use snake_case only
         const payload = {
           asset_id: data.assignedAssetId as string,
           employee_id: selectedRequest.employeeId,
           request_id: selectedRequest.id,
-          category: selectedRequest.category.name,
+          category_id: selectedRequest.category.id,
           subcategory_id: selectedRequest.subcategoryId || undefined,
         };
 
-        // Try to fetch the asset details from backend to verify it exists and is available
-        try {
-          const assetDetails = await assetApi.getAssetById(selectedAsset.id);
-
-          if (assetDetails.status !== 'available') {
-            console.error('Asset status mismatch:', {
-              frontendStatus: selectedAsset.status,
-              backendStatus: assetDetails.status,
-            });
-            throw new Error(
-              `Asset is not available in backend. Frontend status: ${selectedAsset.status}, Backend status: ${assetDetails.status}`
-            );
-          }
-
-          if (
-            assetDetails.category !== selectedRequest.category.name &&
-            !assetDetails.category.includes('Mobility') &&
-            !selectedRequest.category.name.includes('Mobility')
-          ) {
-            console.warn('Category mismatch detected:', {
-              requestCategory: selectedRequest.category.name,
-              assetCategory: assetDetails.category,
-            });
-          }
-        } catch (assetFetchError: unknown) {
-          console.error(
-            'Failed to fetch asset details from backend:',
-            assetFetchError
-          );
-          const errorMessage =
-            assetFetchError instanceof Error
-              ? assetFetchError.message
-              : 'Unknown error occurred';
-          console.error('Error details:', errorMessage);
-          throw new Error(
-            `Asset ${selectedAsset.id} not found in backend or not accessible: ${errorMessage}`
-          );
-        }
-
         try {
           await assetApi.approveAssetRequest(selectedRequest.id, payload);
-          
+
           // Update local state immediately with approval details
-          setRequests(prevRequests => 
-            prevRequests.map(request => 
-              request.id === selectedRequest.id 
-                ? { 
-                    ...request, 
+          setRequests(prevRequests =>
+            prevRequests.map(request =>
+              request.id === selectedRequest.id
+                ? {
+                    ...request,
                     status: 'approved' as const,
                     assignedAssetId: data.assignedAssetId as string,
                     assignedAssetName: selectedAsset.name,
                     processedDate: new Date().toISOString().split('T')[0],
                     processedBy: 'current-user', // You might want to get this from auth context
-                    processedByName: 'Current User' // You might want to get this from auth context
+                    processedByName: 'Current User', // You might want to get this from auth context
                   }
                 : request
             )
           );
-          
+
+          // Refresh all requests for statistics
+          fetchAllRequestsForStats();
+
           // Show success message with asset assignment details
-          showSnackbar(`Asset "${selectedAsset.name}" has been assigned to ${selectedRequest.employeeName} successfully!`, 'success');
-          
+          showSnackbar(
+            `Asset "${selectedAsset.name}" has been assigned to ${selectedRequest.employeeName} successfully!`,
+            'success'
+          );
+
           // Close modal and return early for approval - no need to refresh from API
           setIsProcessModalOpen(false);
           setLoading(false);
           return;
-        } catch (approvalError: unknown) {
+        } catch (approvalError: any) {
           console.error('❌ Approval failed:', approvalError);
-          showSnackbar('Failed to approve request', 'error');
+          console.error('❌ Error details:', {
+            message: approvalError?.message,
+            response: approvalError?.response?.data,
+            status: approvalError?.response?.status,
+            requestId: selectedRequest.id,
+            payload,
+          });
+          
+          const errorMessage = approvalError?.response?.data?.message || 
+                               approvalError?.message || 
+                               'Failed to approve request';
+          showSnackbar(errorMessage, 'error');
           setLoading(false);
           return;
         }
       } else if (data.action === 'reject') {
         try {
-          await assetApi.rejectAssetRequest(selectedRequest.id, data.rejectionReason as string);
-          
+          await assetApi.rejectAssetRequest(
+            selectedRequest.id,
+            data.rejectionReason as string
+          );
+
           // Update local state immediately with rejection reason
-          setRequests(prevRequests => 
-            prevRequests.map(request => 
-              request.id === selectedRequest.id 
-                ? { 
-                    ...request, 
+          setRequests(prevRequests =>
+            prevRequests.map(request =>
+              request.id === selectedRequest.id
+                ? {
+                    ...request,
                     status: 'rejected' as const,
                     rejectionReason: data.rejectionReason as string,
                     processedDate: new Date().toISOString().split('T')[0],
                     processedBy: 'current-user', // You might want to get this from auth context
-                    processedByName: 'Current User' // You might want to get this from auth context
+                    processedByName: 'Current User', // You might want to get this from auth context
                   }
                 : request
             )
           );
-          
-          showSnackbar(`Request from ${selectedRequest.employeeName} has been rejected successfully`, 'success');
-          
+
+          // Refresh all requests for statistics
+          fetchAllRequestsForStats();
+
+          showSnackbar(
+            `Request from ${selectedRequest.employeeName} has been rejected successfully`,
+            'success'
+          );
+
           // Close modal and return early for rejection - no need to refresh from API
           setIsProcessModalOpen(false);
           setLoading(false);
@@ -645,27 +809,27 @@ const RequestManagement: React.FC = () => {
       }
 
       // Refresh data from API (only for approval/assignment actions)
-      const apiResponse: PaginatedResponse<ApiAssetRequest> = await assetApi.getAllAssetRequests({
-        page: pagination.page,
-        limit: pagination.limit,
-      });
-      
-      
+      const apiResponse: PaginatedResponse<ApiAssetRequest> =
+        await assetApi.getAllAssetRequests({
+          page: pagination.page,
+          limit: pagination.limit,
+        });
+
       // Refresh assets to reflect assignment status - fetch all assets with pagination
       let allAssets: Record<string, unknown>[] = [];
       let currentPage = 1;
       let hasMorePages = true;
       const maxPages = 50; // Safety limit to prevent infinite loops
-      
+
       while (hasMorePages && currentPage <= maxPages) {
         const apiAssetsResponse = await assetApi.getAllAssets({
           page: currentPage,
           limit: 100, // Use a high limit to fetch more assets per page
         });
-        
+
         if (apiAssetsResponse.assets && apiAssetsResponse.assets.length > 0) {
           allAssets = [...allAssets, ...apiAssetsResponse.assets];
-          
+
           // Check if there are more pages
           const totalPages = apiAssetsResponse.pagination?.totalPages || 1;
           hasMorePages = currentPage < totalPages;
@@ -674,18 +838,36 @@ const RequestManagement: React.FC = () => {
           hasMorePages = false;
         }
       }
-      
+
       const transformedAssets: Asset[] = allAssets.map(
         (apiAsset: Record<string, unknown>) => {
+          // Extract category name from API response
+          // Category can be an object { id, name, ... } or a string
+          let categoryName = '';
+          let categoryId = '';
+          
+          if (apiAsset.category && typeof apiAsset.category === 'object' && apiAsset.category !== null) {
+            const categoryObj = apiAsset.category as { id?: string; name?: string };
+            categoryName = categoryObj.name || '';
+            categoryId = categoryObj.id || apiAsset.category_id as string || '';
+          } else if (apiAsset.categoryName) {
+            categoryName = apiAsset.categoryName as string;
+            categoryId = apiAsset.category_id as string || '';
+          } else if (typeof apiAsset.category === 'string') {
+            categoryName = apiAsset.category;
+            categoryId = apiAsset.category_id as string || apiAsset.category as string;
+          } else {
+            categoryName = apiAsset.categoryName as string || '';
+            categoryId = apiAsset.category_id as string || '';
+          }
+
           // Try to find matching category from our comprehensive list
           const matchingCategory = assetCategories.find(
             cat =>
-              cat.name.toLowerCase() ===
-                (apiAsset.category as string).toLowerCase() ||
+              cat.name.toLowerCase() === categoryName.toLowerCase() ||
               cat.subcategories?.some(
                 sub =>
-                  sub.toLowerCase() ===
-                  (apiAsset.category as string).toLowerCase()
+                  sub.toLowerCase() === categoryName.toLowerCase()
               )
           );
 
@@ -702,9 +884,9 @@ const RequestManagement: React.FC = () => {
                   subcategories: matchingCategory.subcategories,
                 }
               : {
-                  id: apiAsset.category as string,
-                  name: apiAsset.category as string,
-                  nameAr: apiAsset.category as string,
+                  id: categoryId,
+                  name: categoryName,
+                  nameAr: categoryName,
                   description: '',
                   color: '#757575',
                   subcategories: [],
@@ -717,7 +899,11 @@ const RequestManagement: React.FC = () => {
             location: '',
             description: '',
             createdAt: apiAsset.created_at as string,
-            updatedAt: apiAsset.updated_at as string || apiAsset.created_at as string,
+            updatedAt:
+              (apiAsset.updated_at as string) ||
+              (apiAsset.created_at as string),
+            subcategoryId: (apiAsset.subcategoryId ||
+              apiAsset.subcategory_id) as string | undefined,
           };
         }
       );
@@ -758,7 +944,9 @@ const RequestManagement: React.FC = () => {
             id: apiRequest.id,
             employeeId: apiRequest.requested_by,
             employeeName:
-              apiRequest.requestedByName || `User ${apiRequest.requested_by}`,
+              apiRequest.requestedByName || 
+              (apiRequest.requestedByUser?.name) || 
+              `User ${apiRequest.requested_by}`,
             category: matchingCategory
               ? {
                   id: matchingCategory.id,
@@ -818,15 +1006,34 @@ const RequestManagement: React.FC = () => {
     event: React.ChangeEvent<unknown>,
     page: number
   ) => {
+    // Page change is not initial load, so pass false
     setPagination(prev => ({ ...prev, page }));
   };
 
   const getStatusCounts = () => {
+    // Always use pagination.total for total count (available immediately from first API call)
+    // For status counts, ONLY use allRequestsForStats once it's loaded
+    // Don't show incorrect counts from current page requests
+    // This ensures we show correct counts immediately when page loads
+    if (allRequestsForStats.length > 0) {
+      // Use allRequestsForStats for accurate counts across all pages
+      return {
+        all: pagination.total || allRequestsForStats.length,
+        pending: allRequestsForStats.filter(r => r.status === 'pending').length,
+        approved: allRequestsForStats.filter(r => r.status === 'approved')
+          .length,
+        rejected: allRequestsForStats.filter(r => r.status === 'rejected')
+          .length,
+      };
+    }
+
+    // If allRequestsForStats is not loaded yet, show total from pagination but show 0 for status counts
+    // This prevents showing incorrect counts (like 25 when it should be 26)
     return {
-      all: requests.length,
-      pending: requests.filter(r => r.status === 'pending').length,
-      approved: requests.filter(r => r.status === 'approved').length,
-      rejected: requests.filter(r => r.status === 'rejected').length,
+      all: pagination.total || 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
     };
   };
 
@@ -860,21 +1067,20 @@ const RequestManagement: React.FC = () => {
             <Typography variant='body2' fontWeight={500}>
               {request.employeeName}
             </Typography>
-            <Typography variant='caption' color='text.secondary'>
-              {request.category.name}
-            </Typography>
-            {(request.category as AssetCategory & { requestedItem?: string })
-              .requestedItem &&
-              (request.category as AssetCategory & { requestedItem?: string })
-                .requestedItem !== request.category.name && (
+            <Box>
+              <Typography variant='caption' color='text.secondary'>
+                {request.category.name}
+              </Typography>
+              {((request as any).subcategoryName || (request.category as AssetCategory & { requestedItem?: string }).requestedItem) && (
                 <Typography
                   variant='caption'
-                  color='primary.main'
-                  sx={{ display: 'block', fontWeight: 500 }}
+                  color='text.secondary'
+                  sx={{ display: 'block', mt: 0.5 }}
                 >
-                  {`${(request.category as AssetCategory & { requestedItem?: string }).requestedItem}`}
+                  {(request as any).subcategoryName || (request.category as AssetCategory & { requestedItem?: string }).requestedItem}
                 </Typography>
               )}
+            </Box>
           </Box>
         </Box>
       </TableCell>
@@ -902,11 +1108,13 @@ const RequestManagement: React.FC = () => {
         )}
       </TableCell>
       <TableCell>
-        {request.rejectionReason && request.rejectionReason !== null && request.rejectionReason.trim() !== '' && (
-          <Typography variant="body2" color="text.primary">
-            {request.rejectionReason}
-          </Typography>
-        )}
+        {request.rejectionReason &&
+          request.rejectionReason !== null &&
+          request.rejectionReason.trim() !== '' && (
+            <Typography variant='body2' color='text.primary'>
+              {request.rejectionReason}
+            </Typography>
+          )}
       </TableCell>
       <TableCell align='right'>
         <IconButton onClick={e => handleMenuClick(e, request.id)} size='small'>
@@ -1049,14 +1257,14 @@ const RequestManagement: React.FC = () => {
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Remarks</TableCell>
                   <TableCell>Rejection Reason</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell align='right'>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {getFilteredRequestsByTab().length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                      <Typography variant="body2" color="text.secondary">
+                    <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+                      <Typography variant='body2' color='text.secondary'>
                         No records found
                       </Typography>
                     </TableCell>
@@ -1079,14 +1287,14 @@ const RequestManagement: React.FC = () => {
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Remarks</TableCell>
                   <TableCell>Rejection Reason</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell align='right'>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {getFilteredRequestsByTab('pending').length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                      <Typography variant="body2" color="text.secondary">
+                    <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+                      <Typography variant='body2' color='text.secondary'>
                         No records found
                       </Typography>
                     </TableCell>
@@ -1109,14 +1317,14 @@ const RequestManagement: React.FC = () => {
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Remarks</TableCell>
                   <TableCell>Rejection Reason</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell align='right'>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {getFilteredRequestsByTab('approved').length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                      <Typography variant="body2" color="text.secondary">
+                    <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+                      <Typography variant='body2' color='text.secondary'>
                         No records found
                       </Typography>
                     </TableCell>
@@ -1139,14 +1347,14 @@ const RequestManagement: React.FC = () => {
                   <TableCell>Requested Date</TableCell>
                   <TableCell>Remarks</TableCell>
                   <TableCell>Rejection Reason</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell align='right'>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {getFilteredRequestsByTab('rejected').length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                      <Typography variant="body2" color="text.secondary">
+                    <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+                      <Typography variant='body2' color='text.secondary'>
                         No records found
                       </Typography>
                     </TableCell>
@@ -1162,32 +1370,22 @@ const RequestManagement: React.FC = () => {
 
       {/* Pagination Controls */}
       {pagination.totalPages > 1 && (
-        <Card sx={{ mt: 2 }}>
-          <CardContent>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: 2,
-              }}
-            >
-              <Typography variant='body2' color='text.secondary'>
-                Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
-                of {pagination.total} requests
-              </Typography>
-              <Pagination
-                count={pagination.totalPages}
-                page={pagination.page}
-                onChange={handlePageChange}
-                color='primary'
-                disabled={initialLoading}
-              />
-            </Box>
-          </CardContent>
-        </Card>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            mt: 3,
+          }}
+        >
+          <Pagination
+            count={pagination.totalPages}
+            page={pagination.page}
+            onChange={handlePageChange}
+            color='primary'
+            disabled={initialLoading}
+          />
+        </Box>
       )}
 
       {/* Process Request Modal */}
@@ -1331,22 +1529,9 @@ const RequestManagement: React.FC = () => {
                       )}
                     />
                     {availableAssets.length === 0 && (
-                      <Alert severity='warning' sx={{ mt: 1 }}>
+                      <Alert severity='error' sx={{ mt: 1 }}>
                         <Typography variant='body2'>
-                          <strong>
-                            No available assets found for this category.
-                          </strong>
-                        </Typography>
-                        <Typography variant='body2' sx={{ mt: 0.5 }}>
-                          Please check if assets exist in the system and have
-                          "available" status. You may need to add assets or wait
-                          for assets to become available.
-                        </Typography>
-                        <Typography
-                          variant='caption'
-                          sx={{ mt: 1, display: 'block' }}
-                        >
-                          Request Category: {selectedRequest?.category.name}
+                          <strong>No available assets</strong>
                         </Typography>
                       </Alert>
                     )}
@@ -1540,13 +1725,16 @@ const RequestManagement: React.FC = () => {
                             </Typography>
                           </Alert>
                         )}
-                        {selectedRequest.rejectionReason && selectedRequest.rejectionReason !== null && selectedRequest.rejectionReason.trim() !== '' && (
-                          <Alert severity="error" sx={{ mt: 1 }}>
-                            <Typography variant="body2">
-                              <strong>Rejection Reason:</strong> {selectedRequest.rejectionReason}
-                            </Typography>
-                          </Alert>
-                        )}
+                        {selectedRequest.rejectionReason &&
+                          selectedRequest.rejectionReason !== null &&
+                          selectedRequest.rejectionReason.trim() !== '' && (
+                            <Alert severity='error' sx={{ mt: 1 }}>
+                              <Typography variant='body2'>
+                                <strong>Rejection Reason:</strong>{' '}
+                                {selectedRequest.rejectionReason}
+                              </Typography>
+                            </Alert>
+                          )}
                       </Box>
                     </Card>
                   </Box>

@@ -189,28 +189,20 @@ const SystemAdminAssets: React.FC = () => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-              lg: 'repeat(4, 1fr)',
-            },
+            gridTemplateColumns: 'repeat(3, 1fr)',
             gap: 3,
             mb: 3,
-            alignItems: 'stretch', // 🔑 Ensure cards stretch
           }}
         >
           {summary.map(tenantSummary => (
             <Card
               key={tenantSummary.tenantId}
               sx={{
-                display: 'flex', 
+                display: 'flex',
                 flexDirection: 'column',
-                '&:hover': {
-                  boxShadow: 4,
-                  transform: 'translateY(-2px)',
-                  transition: 'all 0.3s ease-in-out',
-                },
+                boxShadow: 'none',
+                border: '1px solid',
+                borderColor: 'divider',
               }}
             >
               <CardContent>

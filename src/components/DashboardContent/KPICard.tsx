@@ -32,6 +32,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
         borderRadius: 2,
         backgroundColor: theme.palette.background.paper,
         height: '100%',
+        width: '100%',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',

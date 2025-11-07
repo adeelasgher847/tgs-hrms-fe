@@ -26,10 +26,10 @@ import systemDashboardApiService, {
 import EmployeesInfoChart from './DashboardContent/EmployeesInfoChart';
 import AvailabilityCardsGrid from './DashboardContent/AvailabilityCard/AvailabilityCardsGrid';
 import GenderPercentageChart from './DashboardContent/GenderPercentageChart';
-import TopPerformersProps from './DashboardContent/TopPerformance/TopPerformersProps';
-import IconImageCardProps from './DashboardContent/TotalApplication/IconImageCardProps';
-import ApplicationStats from './DashboardContent/ApplicationStats/ApplicationStats';
-import UpcomingInterviews from './DashboardContent/ComingInterview/UpcomingInterviews';
+// import TopPerformersProps from './DashboardContent/TopPerformance/TopPerformersProps';
+// import IconImageCardProps from './DashboardContent/TotalApplication/IconImageCardProps';
+// import ApplicationStats from './DashboardContent/ApplicationStats/ApplicationStats';
+// import UpcomingInterviews from './DashboardContent/ComingInterview/UpcomingInterviews';
 import KPICard from './DashboardContent/KPICard';
 
 import ApartmentIcon from '@mui/icons-material/Apartment';
@@ -127,10 +127,17 @@ const Dashboard: React.FC = () => {
   );
 
   return (
-    <Box sx={{ minHeight: '100vh', color: theme.palette.text.primary }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        color: theme.palette.text.primary,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 3,
+      }}
+    >
       <Typography
         variant='h4'
-        mb={3}
         sx={{
           direction: language === 'ar' ? 'rtl' : 'ltr',
           color: darkMode ? '#8f8f8f' : '#000',
@@ -141,11 +148,17 @@ const Dashboard: React.FC = () => {
       </Typography>
 
       {isSysAdmin ? (
-        <Box sx={{ width: '100%' }}>
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+          }}
+        >
           <Paper
             elevation={3}
             sx={{
-              mt: 3,
               p: { xs: 2, sm: 3 },
               width: '100%',
               borderRadius: 2,
@@ -153,8 +166,8 @@ const Dashboard: React.FC = () => {
               boxShadow: 'none',
             }}
           >
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={6} lg={6} flexGrow={1}>
+            <Grid container spacing={3} sx={{ width: '100%' }}>
+              <Grid item xs={6} sm={6} md={6} lg={6} flexGrow={1}>
                 <KPICard
                   title='Total Tenants'
                   value={dashboardData?.totalTenants ?? 0}
@@ -162,7 +175,7 @@ const Dashboard: React.FC = () => {
                   color={theme.palette.primary.main}
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={6} lg={6} flexGrow={1}>
+              <Grid item xs={6} sm={6} md={6} lg={6} flexGrow={1}>
                 <KPICard
                   title='Active Tenants'
                   value={dashboardData?.activeTenants ?? 0}
@@ -170,18 +183,27 @@ const Dashboard: React.FC = () => {
                   color={theme.palette.success.main}
                 />
               </Grid>
-
-              <Grid item xs={12} flexGrow={1}>
-                <TenantGrowthChart />
-              </Grid>
             </Grid>
+          </Paper>
+
+          <Paper
+            elevation={3}
+            sx={{
+              p: { xs: 2, sm: 3 },
+              width: '100%',
+              borderRadius: 2,
+              backgroundColor: theme.palette.background.paper,
+              boxShadow: 'none',
+            }}
+          >
+            <TenantGrowthChart />
           </Paper>
 
           <Grid
             container
-            spacing={2}
+            spacing={3}
             sx={{
-              mt: 2,
+              width: '100%',
               flexWrap: { xs: 'wrap', md: 'nowrap' },
             }}
           >
@@ -189,8 +211,7 @@ const Dashboard: React.FC = () => {
               item
               xs={12}
               md={6}
-              flexGrow={1}
-              sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+              sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}
             >
               <Paper
                 elevation={3}
@@ -200,8 +221,10 @@ const Dashboard: React.FC = () => {
                   backgroundColor: theme.palette.background.paper,
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 2,
+                  gap: 3,
                   boxShadow: 'none',
+                  height: '100%',
+                  width: '100%',
                 }}
               >
                 <Box sx={{ flexShrink: 0 }}>
@@ -268,7 +291,7 @@ const Dashboard: React.FC = () => {
                   </Box>
                 </Box>
 
-                <Box sx={{ flexShrink: 0, mt: 1 }}>
+                <Box sx={{ flexShrink: 0 }}>
                   <EmployeesInfoChart />
                 </Box>
               </Paper>
@@ -278,8 +301,12 @@ const Dashboard: React.FC = () => {
               item
               xs={12}
               md={6}
-              flexGrow={1}
-              sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3,
+                width: '100%',
+              }}
             >
               <SystemUptimeCard
                 uptimeSeconds={dashboardData?.systemUptimeSeconds || 0}
@@ -291,7 +318,6 @@ const Dashboard: React.FC = () => {
           <Paper
             elevation={3}
             sx={{
-              mt: 2,
               p: { xs: 2, sm: 3 },
               borderRadius: 2,
               backgroundColor: theme.palette.background.paper,
@@ -420,18 +446,18 @@ const Dashboard: React.FC = () => {
               </Box>
             </Box>
 
-            <Box
+            {/* <Box
               sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}
             >
               <IconImageCardProps />
               <ApplicationStats />
               <UpcomingInterviews />
-            </Box>
+            </Box> */}
           </Box>
 
-          <Box mt={2}>
+          {/* <Box mt={2}>
             <TopPerformersProps />
-          </Box>
+          </Box> */}
         </>
       )}
     </Box>

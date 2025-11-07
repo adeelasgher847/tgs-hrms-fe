@@ -90,6 +90,7 @@ const SystemUptimeCard: React.FC<SystemUptimeCardProps> = ({
         backgroundColor: bgColor,
         textAlign: 'center',
         boxShadow: 'none',
+        width: '100%',
       }}
       elevation={3}
     >

@@ -74,7 +74,6 @@ export const TenantPage: React.FC = () => {
   const [editName, setEditName] = useState('');
   const [editTenantId, setEditTenantId] = useState<string | null>(null);
 
-  
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -266,7 +265,7 @@ export const TenantPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+    <Box>
       {/* Header */}
       <Box
         display='flex'
@@ -299,10 +298,9 @@ export const TenantPage: React.FC = () => {
           </FormControl>
           <Button
             variant='contained'
-            startIcon={<AddIcon />}
             onClick={() => setIsFormOpen(true)}
           >
-            Create Tenant
+            <AddIcon />
           </Button>
         </Box>
       </Box>
@@ -313,7 +311,7 @@ export const TenantPage: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        <Paper sx={{ borderRadius: 1, overflow: 'hidden' ,boxShadow: 'none' }}>
           <TableContainer>
             <Table>
               <TableHead>
