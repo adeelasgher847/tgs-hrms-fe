@@ -47,6 +47,8 @@ import CrossTenantLeaveManagement from './components/LeaveRequest/CrossTenantLea
 import TenantBasedEmployeeManager from './components/Employee/TenantBasedEmployeeManager';
 import AuditLogs from './components/Audits/AuditLogs';
 import PerformanceDashboard from './components/Performance/PerformanceManager';
+import PayrollConfiguration from './components/Payroll/PayrollConfiguration';
+import EmployeeSalaryPage from './components/Payroll/EmployeeSalary';
 
 function App() {
   return (
@@ -89,7 +91,10 @@ function App() {
                 <Route path='UserList' element={<UserList />} />
                 <Route path='UserProfile' element={<UserProfileComponent />} />
                 <Route path='leaves' element={<LeaveRequestPage />} />
-                <Route path='cross-tenant-leaves' element={<CrossTenantLeaveManagement />} />
+                <Route
+                  path='cross-tenant-leaves'
+                  element={<CrossTenantLeaveManagement />}
+                />
                 <Route
                   path='attendance-summary'
                   element={<AttendanceSummaryReport />}
@@ -128,12 +133,21 @@ function App() {
                 <Route path='employee-benefit' element={<EmployeeBenefits />} />
                 <Route path='benefit-details' element={<BenefitDetails />} />
                 <Route path='benefit-report' element={<BenefitReport />} />
-                
+
                 <Route
                   path='performance-dashboard'
                   element={<PerformanceDashboard />}
                 />
                 <Route path='audit-logs' element={<AuditLogs />} />
+
+                <Route
+                  path='payroll-configuration'
+                  element={<PayrollConfiguration />}
+                />
+                <Route
+                  path='employee-salary'
+                  element={<EmployeeSalaryPage />}
+                />
               </Route>
               <Route path='/company-details' element={<CompanyDetails />} />
               <Route path='*' element={<Error404 />} />
