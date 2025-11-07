@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import LeaveForm from './LeaveForm';
 import LeaveHistory from './LeaveHistory';
 import LeaveApprovalDialog from './LeaveApprovalDialog';
@@ -27,8 +27,9 @@ import HistoryIcon from '@mui/icons-material/History';
 
 const LeaveRequestPage = () => {
   const [leaves, setLeaves] = useState<Leave[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingViewMode, setLoadingViewMode] = useState(false); // Separate loading for view mode changes
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
+  const hasLoadedOnceRef = useRef(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -48,6 +49,7 @@ const LeaveRequestPage = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const currentUser = getCurrentUser();
+  const currentUserId = currentUser?.id ?? '';
   const role = normalizeRole(getUserRole());
   const userName = getUserName();
 
@@ -65,116 +67,125 @@ const LeaveRequestPage = () => {
   }, []);
 
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
+  const previousViewModeRef = useRef<'team' | 'you'>(viewMode);
 
-  const currentUserId = currentUser?.id;
+  const loadLeaves = useCallback(
+    async (skipFullPageLoader = false) => {
+      const shouldShowFullPageLoader =
+        !hasLoadedOnceRef.current && !skipFullPageLoader;
 
-  const loadLeaves = useCallback(async (isViewModeChange: boolean = false) => {
-    try {
-      // Use view mode specific loading for view mode changes
-      if (isViewModeChange) {
-        setLoadingViewMode(true);
-      } else {
-        setLoading(true);
+      try {
+        if (shouldShowFullPageLoader) {
+          setInitialLoading(true);
+        } else {
+          setTableLoading(true);
+        }
+
+        let res;
+
+        if (
+          ['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role)
+        ) {
+          res = await leaveApi.getAllLeaves(currentPage);
+        } else if (role === 'manager') {
+          res =
+            viewMode === 'you'
+              ? await leaveApi.getUserLeaves(currentUserId, currentPage)
+              : await leaveApi.getTeamLeaves(currentPage);
+        } else {
+          res = await leaveApi.getUserLeaves(currentUserId, currentPage);
+        }
+
+        // Type for API leave response
+        interface ApiLeave {
+          id: string;
+          employeeId?: string;
+          employee?: {
+            id?: string;
+            first_name?: string;
+            last_name?: string;
+            email?: string;
+          };
+          user?: {
+            id?: string;
+            first_name?: string;
+            last_name?: string;
+            email?: string;
+          };
+          leaveTypeId?: string;
+          leaveType?: {
+            name?: string;
+          };
+          reason?: string;
+          remarks?: string | null;
+          startDate?: string;
+          endDate?: string;
+          status?: string;
+          createdAt?: string;
+          updatedAt?: string;
+        }
+
+        const leavesData: Leave[] = res.items.map((leave: ApiLeave) => {
+          const employeeId =
+            leave.employeeId || leave.employee?.id || leave.user?.id || '';
+          const userId = leave.user?.id || leave.employee?.id || '';
+
+          return {
+            id: leave.id,
+            employeeId,
+            employee: leave.employee
+              ? {
+                  id: leave.employee.id || userId,
+                  first_name: leave.employee.first_name || 'You',
+                  last_name: leave.employee.last_name,
+                  email: leave.employee.email || '',
+                }
+              : {
+                  id: userId,
+                  first_name: leave.user?.first_name || 'You',
+                  last_name: leave.user?.last_name,
+                  email: leave.user?.email || '',
+                },
+            leaveTypeId: leave.leaveTypeId || '',
+            leaveType: leave.leaveType
+              ? {
+                  id: '',
+                  name: leave.leaveType.name || 'Unknown',
+                }
+              : {
+                  id: '',
+                  name: 'Unknown',
+                },
+            reason: leave.reason || '',
+            remarks: leave.remarks || undefined,
+            startDate: leave.startDate || '',
+            endDate: leave.endDate || '',
+            status: (leave.status as Leave['status']) || 'pending',
+            createdAt: leave.createdAt,
+            updatedAt: leave.updatedAt,
+          };
+        });
+
+        setLeaves(Array.from(new Map(leavesData.map(l => [l.id, l])).values()));
+
+        setTotalPages(res.totalPages || 1);
+        setTotalItems(res.total || 0);
+        if (res.page && res.page !== currentPage) {
+          setCurrentPage(res.page);
+        }
+        hasLoadedOnceRef.current = true;
+      } catch (err) {
+        console.error('Error loading leaves:', err);
+      } finally {
+        if (shouldShowFullPageLoader) {
+          setInitialLoading(false);
+        } else {
+          setTableLoading(false);
+        }
       }
-      let res;
-
-      if (
-        ['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role)
-      ) {
-        res = await leaveApi.getAllLeaves(currentPage);
-      } else if (role === 'manager') {
-        res =
-          viewMode === 'you'
-            ? await leaveApi.getUserLeaves(currentUserId, currentPage)
-            : await leaveApi.getTeamLeaves(currentPage);
-      } else {
-        res = await leaveApi.getUserLeaves(currentUserId, currentPage);
-      }
-
-      // Type for API leave response
-      interface ApiLeave {
-        id: string;
-        employeeId?: string;
-        employee?: {
-          id?: string;
-          first_name?: string;
-          last_name?: string;
-          email?: string;
-        };
-        user?: {
-          id?: string;
-          first_name?: string;
-          last_name?: string;
-          email?: string;
-        };
-        leaveTypeId?: string;
-        leaveType?: {
-          name?: string;
-        };
-        reason?: string;
-        remarks?: string | null;
-        startDate?: string;
-        endDate?: string;
-        status?: string;
-        createdAt?: string;
-        updatedAt?: string;
-      }
-
-      const leavesData: Leave[] = res.items.map((leave: ApiLeave) => {
-        const employeeId =
-          leave.employeeId || leave.employee?.id || leave.user?.id || '';
-        const userId = leave.user?.id || leave.employee?.id || '';
-
-        return {
-          id: leave.id,
-          employeeId,
-          employee: leave.employee
-            ? {
-                id: leave.employee.id || userId,
-                first_name: leave.employee.first_name || 'You',
-                last_name: leave.employee.last_name,
-                email: leave.employee.email || '',
-              }
-            : {
-                id: userId,
-                first_name: leave.user?.first_name || 'You',
-                last_name: leave.user?.last_name,
-                email: leave.user?.email || '',
-              },
-          leaveTypeId: leave.leaveTypeId || '',
-          leaveType: leave.leaveType
-            ? {
-                id: '',
-                name: leave.leaveType.name || 'Unknown',
-              }
-            : {
-                id: '',
-                name: 'Unknown',
-              },
-          reason: leave.reason || '',
-          remarks: leave.remarks || undefined,
-          startDate: leave.startDate || '',
-          endDate: leave.endDate || '',
-          status: (leave.status as Leave['status']) || 'pending',
-          createdAt: leave.createdAt,
-          updatedAt: leave.updatedAt,
-        };
-      });
-
-      setLeaves(Array.from(new Map(leavesData.map(l => [l.id, l])).values()));
-
-      setTotalPages(res.totalPages || 1);
-      setTotalItems(res.total || 0);
-      if (res.page && res.page !== currentPage) {
-        setCurrentPage(res.page);
-      }
-    } catch (err) {
-      console.error('Error loading leaves:', err);
-    } finally {
-      setLoading(false);
-      setLoadingViewMode(false);
-    }
-  }, [currentUserId, role, viewMode, currentPage]);
+    },
+    [currentUserId, role, viewMode, currentPage]
+  );
 
   const getErrorMessage = (error: unknown): string => {
     if (error && typeof error === 'object' && 'response' in error) {
@@ -213,8 +224,24 @@ const LeaveRequestPage = () => {
     try {
       if (actionType === 'approved') {
         await leaveApi.approveLeave(selectedId);
+        setLeaves(prevLeaves =>
+          prevLeaves.map(leave =>
+            leave.id === selectedId ? { ...leave, status: 'approved' } : leave
+          )
+        );
       } else if (actionType === 'rejected') {
         await leaveApi.rejectLeave(selectedId, { remarks: reason });
+        setLeaves(prevLeaves =>
+          prevLeaves.map(leave =>
+            leave.id === selectedId
+              ? {
+                  ...leave,
+                  status: 'rejected',
+                  remarks: reason ?? leave.remarks,
+                }
+              : leave
+          )
+        );
       }
 
       setSnackbar({
@@ -225,8 +252,6 @@ const LeaveRequestPage = () => {
             : 'Leave rejected successfully!',
         severity: 'success',
       });
-
-      await loadLeaves();
     } catch (error: unknown) {
       setSnackbar({
         open: true,
@@ -249,7 +274,11 @@ const LeaveRequestPage = () => {
         message: 'Leave withdrawn successfully!',
         severity: 'success',
       });
-      await loadLeaves();
+      setLeaves(prevLeaves =>
+        prevLeaves.map(leave =>
+          leave.id === selectedId ? { ...leave, status: 'withdrawn' } : leave
+        )
+      );
     } catch (error: unknown) {
       setSnackbar({
         open: true,
@@ -386,13 +415,14 @@ const LeaveRequestPage = () => {
   }, [viewMode]);
 
   useEffect(() => {
-    // Check if this is a view mode change (not initial load)
-    const isViewModeChange = leaves.length > 0;
-    loadLeaves(isViewModeChange);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, viewMode, role, currentUserId]);
+    const isViewModeChange = previousViewModeRef.current !== viewMode;
+    const shouldSkipFullPageLoader = isViewModeChange && leaves.length > 0;
 
-  if (loading)
+    loadLeaves(shouldSkipFullPageLoader);
+    previousViewModeRef.current = viewMode;
+  }, [currentPage, viewMode, role, currentUserId, loadLeaves, leaves.length]);
+
+  if (initialLoading)
     return (
       <Box
         display='flex'
@@ -524,30 +554,24 @@ const LeaveRequestPage = () => {
                 </Box>
               )}
 
-              {loadingViewMode ? (
-                <Box
-                  display='flex'
-                  justifyContent='center'
-                  alignItems='center'
-                  py={4}
-                >
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <LeaveHistory
-                  leaves={leaves}
-                  isAdmin={false}
-                  isManager={role === 'manager'}
-                  currentUserId={currentUser?.id}
-                  viewMode={viewMode}
-                  onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={totalItems}
-                  onPageChange={setCurrentPage}
-                  onExportAll={fetchAllLeavesForExport}
-                />
-              )}
+              <LeaveHistory
+                leaves={leaves}
+                isAdmin={false}
+                isManager={role === 'manager'}
+                currentUserId={currentUserId || undefined}
+                viewMode={viewMode}
+                onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                onPageChange={setCurrentPage}
+                isLoading={tableLoading}
+                onExportAll={
+                  ['manager'].includes(role)
+                    ? fetchAllLeavesForExport
+                    : undefined
+                }
+              />
             </>
           )
         ) : (
@@ -560,6 +584,7 @@ const LeaveRequestPage = () => {
             totalPages={totalPages}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
+            isLoading={tableLoading}
             onExportAll={fetchAllLeavesForExport}
           />
         )}

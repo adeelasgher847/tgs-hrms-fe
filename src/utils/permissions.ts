@@ -348,6 +348,14 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (
+      parent.includes('leave analytics') ||
+      parent.includes('leave-analytics')
+    ) {
+      if (sub.includes('cross-tenant-leaves')) {
+        visible = false;
+      }
+    }
   }
 
   if (r === 'admin') {

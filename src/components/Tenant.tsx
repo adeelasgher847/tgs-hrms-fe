@@ -43,6 +43,8 @@ import {
   type SystemTenantDetail,
 } from '../api/systemTenantApi';
 
+type StatusFilterOption = 'All' | 'active' | 'suspended' | 'deleted';
+
 export const TenantPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -55,9 +57,7 @@ export const TenantPage: React.FC = () => {
     severity: 'success' as 'success' | 'error',
   });
 
-  const [statusFilter, setStatusFilter] = useState<
-    'All' | 'active' | 'suspended' | 'deleted'
-  >('All');
+  const [statusFilter, setStatusFilter] = useState<StatusFilterOption>('All');
 
   const [selectedTenant, setSelectedTenant] = useState<SystemTenant | null>(
     null
@@ -133,27 +133,26 @@ export const TenantPage: React.FC = () => {
       });
       setIsFormOpen(false);
       setFormName('');
-    } catch (err) {
-      console.error('Error creating tenant:', err);
+    } catch (error) {
+      console.error('Error creating tenant:', error);
 
       let errorMessage = 'Failed to create tenant';
 
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        (err as { response?: { status?: number; data?: { message?: string } } })
-          .response
-      ) {
-        const response = (
-          err as { response: { status?: number; data?: { message?: string } } }
-        ).response;
-        if (
-          response.status === 409 ||
-          response.data?.message?.toLowerCase().includes('already')
-        ) {
-          errorMessage = 'Tenant already exists';
-        }
+      const maybeAxiosError = error as {
+        response?: {
+          status?: number;
+          data?: { message?: string };
+        };
+      };
+
+      const alreadyExists =
+        maybeAxiosError.response?.status === 409 ||
+        maybeAxiosError.response?.data?.message?.toLowerCase().includes(
+          'already'
+        );
+
+      if (alreadyExists) {
+        errorMessage = 'Tenant already exists';
       }
 
       setSnackbar({
@@ -286,11 +285,10 @@ export const TenantPage: React.FC = () => {
             <Select
               value={statusFilter}
               label='Status'
-              onChange={(e: SelectChangeEvent) =>
-                setStatusFilter(
-                  e.target.value as 'All' | 'active' | 'suspended' | 'deleted'
-                )
-              }
+              onChange={(event: SelectChangeEvent<StatusFilterOption>) => {
+                const value = event.target.value as StatusFilterOption;
+                setStatusFilter(value);
+              }}
             >
               <MenuItem value='All'>All</MenuItem>
               <MenuItem value='active'>Active</MenuItem>
