@@ -5,7 +5,7 @@ import { styled } from '@mui/material/styles';
 import { useLanguage } from '../hooks/useLanguage';
 import { useUser } from '../hooks/useUser';
 import { useProfilePicture } from '../context/ProfilePictureContext';
-import { getRoleDisplayName } from '../utils/roleUtils';
+import { getRoleDisplayName, isManager, isEmployee } from '../utils/roleUtils';
 
 import {
   AppBar,
@@ -444,17 +444,19 @@ const Navbar: React.FC<NavbarProps> = ({
         </Box>
         <Divider sx={{ mb: 1 }} />
 
-        <MenuItem
-          onClick={() => {
-            handleMenuClose();
-            navigate('/dashboard/EmployeeManager');
-          }}
-        >
-          <ListItemIcon>
-            <GroupOutlinedIcon fontSize='small' sx={{ color: textColor }} />
-          </ListItemIcon>
-          <Typography color={textColor}>{lang.members}</Typography>
-        </MenuItem>
+        {!isManager(user?.role) && !isEmployee(user?.role) && (
+          <MenuItem
+            onClick={() => {
+              handleMenuClose();
+              navigate('/dashboard/EmployeeManager');
+            }}
+          >
+            <ListItemIcon>
+              <GroupOutlinedIcon fontSize='small' sx={{ color: textColor }} />
+            </ListItemIcon>
+            <Typography color={textColor}>{lang.members}</Typography>
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
             handleMenuClose();

@@ -266,7 +266,7 @@ export const TenantPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+    <Box>
       {/* Header */}
       <Box
         display='flex'
@@ -313,7 +313,7 @@ export const TenantPage: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        <Paper sx={{ borderRadius: 1, overflow: 'hidden' ,boxShadow: 'none' }}>
           <TableContainer>
             <Table>
               <TableHead>

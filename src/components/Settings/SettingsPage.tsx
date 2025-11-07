@@ -17,6 +17,7 @@ import {
 import { useIsDarkMode } from '../../theme';
 import { useCompany } from '../../context/CompanyContext';
 import { useUser } from '../../hooks/useUser';
+import { isManager, isEmployee } from '../../utils/roleUtils';
 import companyApi from '../../api/companyApi';
 import BusinessIcon from '@mui/icons-material/Business';
 import LanguageIcon from '@mui/icons-material/Language';
@@ -191,25 +192,27 @@ const SettingsPage: React.FC = () => {
         >
           Company Information
         </Typography>
-        <Button
-          onClick={handleEditCompanyDetails}
-          variant='outlined'
-          startIcon={<Edit />}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 500,
-            px: 2,
-            py: 1,
-            borderColor: theme.palette.divider,
-            color: theme.palette.text.primary,
-            '&:hover': {
-              borderColor: theme.palette.primary.main,
-              backgroundColor: theme.palette.action.hover,
-            },
-          }}
-        >
-          Edit Company Details
-        </Button>
+        {!isManager(user?.role) && !isEmployee(user?.role) && (
+          <Button
+            onClick={handleEditCompanyDetails}
+            variant='outlined'
+            startIcon={<Edit />}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 500,
+              px: 2,
+              py: 1,
+              borderColor: theme.palette.divider,
+              color: theme.palette.text.primary,
+              '&:hover': {
+                borderColor: theme.palette.primary.main,
+                backgroundColor: theme.palette.action.hover,
+              },
+            }}
+          >
+            Edit Company Details
+          </Button>
+        )}
       </Box>
 
       {/* Company Info Card */}

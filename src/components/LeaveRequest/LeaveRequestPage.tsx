@@ -28,6 +28,7 @@ import HistoryIcon from '@mui/icons-material/History';
 const LeaveRequestPage = () => {
   const [leaves, setLeaves] = useState<Leave[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingViewMode, setLoadingViewMode] = useState(false); // Separate loading for view mode changes
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -67,9 +68,14 @@ const LeaveRequestPage = () => {
 
   const currentUserId = currentUser?.id;
 
-  const loadLeaves = useCallback(async () => {
+  const loadLeaves = useCallback(async (isViewModeChange: boolean = false) => {
     try {
-      setLoading(true);
+      // Use view mode specific loading for view mode changes
+      if (isViewModeChange) {
+        setLoadingViewMode(true);
+      } else {
+        setLoading(true);
+      }
       let res;
 
       if (
@@ -166,6 +172,7 @@ const LeaveRequestPage = () => {
       console.error('Error loading leaves:', err);
     } finally {
       setLoading(false);
+      setLoadingViewMode(false);
     }
   }, [currentUserId, role, viewMode, currentPage]);
 
@@ -266,6 +273,110 @@ const LeaveRequestPage = () => {
     setWithdrawDialogOpen(true);
   };
 
+  const fetchAllLeavesForExport = useCallback(async (): Promise<Leave[]> => {
+    try {
+      const allLeaves: Leave[] = [];
+      let currentPageNum = 1;
+      let totalPages = 1;
+
+      // Type for API leave response
+      interface ApiLeave {
+        id: string;
+        employeeId?: string;
+        employee?: {
+          id?: string;
+          first_name?: string;
+          last_name?: string;
+          email?: string;
+        };
+        user?: {
+          id?: string;
+          first_name?: string;
+          last_name?: string;
+          email?: string;
+        };
+        leaveTypeId?: string;
+        leaveType?: {
+          name?: string;
+        };
+        reason?: string;
+        remarks?: string | null;
+        startDate?: string;
+        endDate?: string;
+        status?: string;
+        createdAt?: string;
+        updatedAt?: string;
+      }
+
+      do {
+        let res;
+        if (
+          ['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role)
+        ) {
+          res = await leaveApi.getAllLeaves(currentPageNum);
+        } else if (role === 'manager') {
+          res =
+            viewMode === 'you'
+              ? await leaveApi.getUserLeaves(currentUserId, currentPageNum)
+              : await leaveApi.getTeamLeaves(currentPageNum);
+        } else {
+          res = await leaveApi.getUserLeaves(currentUserId, currentPageNum);
+        }
+
+        totalPages = res.totalPages || 1;
+
+        const leavesData: Leave[] = res.items.map((leave: ApiLeave) => {
+          const employeeId =
+            leave.employeeId || leave.employee?.id || leave.user?.id || '';
+          const userId = leave.user?.id || leave.employee?.id || '';
+
+          return {
+            id: leave.id,
+            employeeId,
+            employee: leave.employee
+              ? {
+                  id: leave.employee.id || userId,
+                  first_name: leave.employee.first_name || 'You',
+                  last_name: leave.employee.last_name,
+                  email: leave.employee.email || '',
+                }
+              : {
+                  id: userId,
+                  first_name: leave.user?.first_name || 'You',
+                  last_name: leave.user?.last_name,
+                  email: leave.user?.email || '',
+                },
+            leaveTypeId: leave.leaveTypeId || '',
+            leaveType: leave.leaveType
+              ? {
+                  id: '',
+                  name: leave.leaveType.name || 'Unknown',
+                }
+              : {
+                  id: '',
+                  name: 'Unknown',
+                },
+            reason: leave.reason || '',
+            remarks: leave.remarks || undefined,
+            startDate: leave.startDate || '',
+            endDate: leave.endDate || '',
+            status: (leave.status as Leave['status']) || 'pending',
+            createdAt: leave.createdAt,
+            updatedAt: leave.updatedAt,
+          };
+        });
+
+        allLeaves.push(...leavesData);
+        currentPageNum++;
+      } while (currentPageNum <= totalPages);
+
+      return Array.from(new Map(allLeaves.map(l => [l.id, l])).values());
+    } catch (error) {
+      console.error('Error fetching all leaves for export:', error);
+      throw error;
+    }
+  }, [currentUserId, role, viewMode]);
+
   useEffect(() => {
     fetchLeaveTypes();
   }, [fetchLeaveTypes]);
@@ -275,7 +386,9 @@ const LeaveRequestPage = () => {
   }, [viewMode]);
 
   useEffect(() => {
-    loadLeaves();
+    // Check if this is a view mode change (not initial load)
+    const isViewModeChange = leaves.length > 0;
+    loadLeaves(isViewModeChange);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, viewMode, role, currentUserId]);
 
@@ -302,7 +415,7 @@ const LeaveRequestPage = () => {
           sx={{
             display: 'flex',
             flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'center', sm: 'center' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
             justifyContent: 'space-between',
             textAlign: { xs: 'center', sm: 'left' },
             gap: { xs: 1, sm: 0 },
@@ -326,7 +439,7 @@ const LeaveRequestPage = () => {
               sx={{
                 my: { xs: 1, sm: 0 },
                 gap: 1,
-                justifyContent: { xs: 'center', sm: 'flex-end' },
+                justifyContent: { xs: 'flex-start', sm: 'flex-end' },
                 width: { xs: '100%', sm: 'auto' },
                 flexWrap: 'wrap',
               }}
@@ -411,30 +524,43 @@ const LeaveRequestPage = () => {
                 </Box>
               )}
 
-              <LeaveHistory
-                leaves={leaves}
-                isAdmin={false}
-                isManager={role === 'manager'}
-                currentUserId={currentUser?.id}
-                viewMode={viewMode}
-                onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                onPageChange={setCurrentPage}
-              />
+              {loadingViewMode ? (
+                <Box
+                  display='flex'
+                  justifyContent='center'
+                  alignItems='center'
+                  py={4}
+                >
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <LeaveHistory
+                  leaves={leaves}
+                  isAdmin={false}
+                  isManager={role === 'manager'}
+                  currentUserId={currentUser?.id}
+                  viewMode={viewMode}
+                  onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  onPageChange={setCurrentPage}
+                  onExportAll={fetchAllLeavesForExport}
+                />
+              )}
             </>
           )
         ) : (
           <LeaveHistory
             leaves={leaves}
-            isAdmin={['hr-admin', 'system-admin'].includes(role)}
+            isAdmin={['hr-admin', 'system-admin', 'admin'].includes(role)}
             isManager={false}
             onAction={handleAction}
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
+            onExportAll={fetchAllLeavesForExport}
           />
         )}
       </Box>
