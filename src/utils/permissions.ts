@@ -91,6 +91,7 @@ export const isMenuVisibleForRole = (
       'assets',
       'attendance',
       'report',
+      'leave-analytics',
       'payroll',
       'benefits',
     ],
@@ -289,7 +290,7 @@ export const isSubMenuVisibleForRole = (
       parent.includes('leave analytics') ||
       parent.includes('leave-analytics')
     ) {
-      if (sub.includes('cross-tenant-leaves')) {
+      if (sub.includes('Cross Tenant Leaves')) {
         visible = false;
       }
     }
@@ -352,7 +353,7 @@ export const isSubMenuVisibleForRole = (
       parent.includes('leave analytics') ||
       parent.includes('leave-analytics')
     ) {
-      if (sub.includes('cross-tenant-leaves')) {
+      if (sub.includes('Cross Tenant Leaves')) {
         visible = false;
       }
     }
@@ -361,6 +362,14 @@ export const isSubMenuVisibleForRole = (
   if (r === 'admin') {
     if (parent.includes('assets')) {
       if (sub.includes('asset requests')) {
+        visible = false;
+      }
+    }
+    if (
+      parent.includes('leave analytics') ||
+      parent.includes('leave-analytics')
+    ) {
+      if (sub.includes('reports')) {
         visible = false;
       }
     }
@@ -482,6 +491,8 @@ export const isDashboardPathAllowedForRole = (
       'UserProfile',
       // 'policies', 'holidays',
       'leaves',
+      'CrossTenantLeaveManagement',
+      'cross-tenant-leaves',
       // Attendance - Allow AttendanceCheck for admin
       'AttendanceCheck',
       'AttendanceTable',
