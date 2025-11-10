@@ -159,72 +159,34 @@ class SystemEmployeeApiService {
   }
 
   async getAllTenants(includeDeleted = true): Promise<SystemEmployee[]> {
-    let page = 1;
-    const perPage = 25;
-    let allTenants: SystemEmployee[] = [];
-    let hasMoreData = true;
-    const maxPages = 1000; // Safety limit to prevent infinite loops
-    let totalPages: number | undefined;
-
-    while (hasMoreData && page <= maxPages) {
-      try {
-        const res = await axiosInstance.get<
-          | SystemEmployee[]
-          | { items: SystemEmployee[]; total?: number; totalPages?: number }
-        >('/system/tenants', {
-          params: { page, includeDeleted },
-        });
-
-        // Handle both direct array response and paginated response structure
-        let tenants: SystemEmployee[] = [];
-        if (Array.isArray(res.data)) {
-          tenants = res.data;
-        } else if (
-          res.data &&
-          typeof res.data === 'object' &&
-          'items' in res.data
-        ) {
-          tenants = Array.isArray(res.data.items) ? res.data.items : [];
-          // Store pagination metadata if available
-          if (res.data.totalPages !== undefined) {
-            totalPages = res.data.totalPages;
+    try {
+      const res = await axiosInstance.get<
+        | SystemEmployee[]
+        | {
+            items?: SystemEmployee[];
+            data?: SystemEmployee[];
           }
-        }
+      >('/system/tenants', {
+        params: { includeDeleted },
+      });
 
-        // Add tenants to the collection
-        if (tenants.length > 0) {
-          allTenants = [...allTenants, ...tenants];
-        }
-
-        // Determine if we should continue fetching
-        // Stop if: empty page, less than perPage items, or reached totalPages
-        if (tenants.length === 0) {
-          hasMoreData = false;
-        } else if (totalPages !== undefined && page >= totalPages) {
-          hasMoreData = false;
-        } else if (tenants.length < perPage) {
-          hasMoreData = false;
-        } else {
-          page++;
-        }
-      } catch (error) {
-        console.error(`Error fetching tenants page ${page}:`, error);
-        // If there's an error, stop fetching to avoid infinite loops
-        hasMoreData = false;
-        break;
+      if (Array.isArray(res.data)) {
+        return res.data ?? [];
       }
-    }
 
-    if (page > maxPages) {
-      console.warn(
-        `Reached maximum page limit (${maxPages}) while fetching tenants. Total fetched: ${allTenants.length}`
-      );
-    }
+      if (res.data?.items && Array.isArray(res.data.items)) {
+        return res.data.items;
+      }
 
-    console.log(
-      `Fetched ${allTenants.length} tenants across ${page} page(s)${totalPages ? ` (total pages: ${totalPages})` : ''}`
-    );
-    return allTenants;
+      if (res.data?.data && Array.isArray(res.data.data)) {
+        return res.data.data;
+      }
+
+      return [];
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+      return [];
+    }
   }
 }
 
