@@ -156,8 +156,8 @@ const menuItems: MenuItem[] = [
     label: 'Payroll',
     icon: <Payments />,
     subItems: [
-      { label: 'Payroll Summary', path: 'payroll-summary' },
-      { label: 'Payslips', path: 'payslips' },
+      { label: 'Payroll Configuration', path: 'payroll-configuration' },
+      { label: 'Employee Salary', path: 'employee-salary' },
     ],
   },
   {
@@ -392,7 +392,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                     <ListItemButton
                       onClick={() =>
                         setOpenItem(isParentActive ? '' : item.label)
-                       }
+                      }
                       sx={{
                         color: isParentActive ? 'orange' : 'white',
                         pl: 1,
@@ -421,7 +421,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                       )}
                     </ListItemButton>
 
-                   <Collapse in={isParentActive} timeout='auto' unmountOnExit>
+                    <Collapse in={isParentActive} timeout='auto' unmountOnExit>
                       <List component='div' disablePadding>
                         {item.subItems?.map(sub => (
                           <ListItemButton
