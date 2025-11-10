@@ -124,7 +124,7 @@ const menuItems: MenuItem[] = [
     icon: <Receipt />,
     subItems: [
       { label: 'Reports', path: 'Reports' },
-      { label: 'cross-tenant-leaves', path: 'cross-tenant-leaves' },
+      { label: 'Cross Tenant Leaves', path: 'cross-tenant-leaves' },
     ],
   },
   {
