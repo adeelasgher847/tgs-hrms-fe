@@ -164,10 +164,10 @@ class SystemEmployeeApiService {
         | SystemEmployee[]
         | {
             items?: SystemEmployee[];
-            data?: SystemEmployee[];
+            data?: SystemEmployee[] | { items?: SystemEmployee[] };
           }
       >('/system/tenants', {
-        params: { includeDeleted },
+        params: { includeDeleted, page: 1, limit: 1000 },
       });
 
       if (Array.isArray(res.data)) {
@@ -178,8 +178,16 @@ class SystemEmployeeApiService {
         return res.data.items;
       }
 
-      if (res.data?.data && Array.isArray(res.data.data)) {
-        return res.data.data;
+      const dataField = res.data?.data;
+      if (Array.isArray(dataField)) {
+        return dataField;
+      }
+
+      if (dataField && typeof dataField === 'object' && 'items' in dataField) {
+        const maybeItems = (dataField as { items?: SystemEmployee[] }).items;
+        if (Array.isArray(maybeItems)) {
+          return maybeItems;
+        }
       }
 
       return [];

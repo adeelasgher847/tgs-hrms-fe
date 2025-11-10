@@ -194,10 +194,10 @@ export const SystemTenantApi = {
       | SystemTenant[]
       | {
           items?: SystemTenant[];
-          data?: SystemTenant[];
+          data?: SystemTenant[] | { items?: SystemTenant[] };
         }
     >('/system/tenants', {
-      params: { includeDeleted },
+      params: { includeDeleted, page: 1, limit: 1000 },
     });
 
     if (Array.isArray(res.data)) {
@@ -208,8 +208,16 @@ export const SystemTenantApi = {
       return res.data.items;
     }
 
-    if (res.data?.data && Array.isArray(res.data.data)) {
-      return res.data.data;
+    const dataField = res.data?.data;
+    if (Array.isArray(dataField)) {
+      return dataField;
+    }
+
+    if (dataField && typeof dataField === 'object' && 'items' in dataField) {
+      const maybeItems = (dataField as { items?: SystemTenant[] }).items;
+      if (Array.isArray(maybeItems)) {
+        return maybeItems;
+      }
     }
 
     return [];
