@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Card,
@@ -51,11 +51,19 @@ const TeamList: React.FC<TeamListProps> = ({
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
+  const [showEmployeePoolDialog, setShowEmployeePoolDialog] = useState(false);
+  const [employeePoolTeam, setEmployeePoolTeam] = useState<Team | null>(null);
+  const [preselectedPoolTeamId, setPreselectedPoolTeamId] = useState<
+    string | undefined
+  >(undefined);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [employeePoolCount, setEmployeePoolCount] = useState<number | null>(
+    null
+  );
   const { language } = useLanguage();
 
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token') || undefined;
   const filters = { page: '1' };
 
   const labels = {
@@ -118,6 +126,45 @@ const TeamList: React.FC<TeamListProps> = ({
     setSelectedTeam(team);
     setShowAddMemberDialog(true);
   };
+
+  const handleOpenEmployeePool = (team?: Team | null) => {
+    setEmployeePoolTeam(team ?? null);
+    setPreselectedPoolTeamId(team?.id ?? undefined);
+    setShowEmployeePoolDialog(true);
+  };
+
+  const handleCloseEmployeePool = () => {
+    setShowEmployeePoolDialog(false);
+    setEmployeePoolTeam(null);
+    setPreselectedPoolTeamId(undefined);
+  };
+
+  useEffect(() => {
+    const hasEmployeePool = teams.some(team => team.id === 'employee-pool');
+    if (!hasEmployeePool) {
+      setEmployeePoolCount(null);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadEmployeePoolCount = async () => {
+      try {
+        const response = await teamApiService.getAvailableEmployees(1, 1);
+        if (!isMounted) return;
+        setEmployeePoolCount(response.total || 0);
+      } catch {
+        if (!isMounted) return;
+        setEmployeePoolCount(0);
+      }
+    };
+
+    loadEmployeePoolCount();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [teams]);
 
   const handleEditTeam = (team: Team) => {
     setSelectedTeam(team);
@@ -267,223 +314,267 @@ const TeamList: React.FC<TeamListProps> = ({
             },
           }}
         >
-          {teams.map(team => (
-            <Card
-              key={team.id}
-              sx={{
-                backgroundColor: theme => theme.palette.background.paper,
-                height: { xs: 'auto', sm: 'auto', md: 'auto' },
-                minHeight: {
-                  xs: '200px',
-                  sm: '220px',
-                  md: '240px',
-                  lg: '260px',
-                },
-                display: 'flex',
-                flexDirection: 'column',
-                width: '100%',
-                borderRadius: 2,
-              }}
-            >
-              <CardContent
+          {teams.map(team => {
+            const isEmployeePoolTeam = team.id === 'employee-pool';
+            const memberCount = isEmployeePoolTeam
+              ? (employeePoolCount ?? 0)
+              : (team.teamMembers?.length ??
+                team.members?.length ??
+                team.memberCount ??
+                0);
+
+            return (
+              <Card
+                key={team.id}
                 sx={{
-                  flexGrow: 1,
-                  p: { xs: 2.5, sm: 3.5 },
+                  backgroundColor: theme => theme.palette.background.paper,
+                  height: { xs: 'auto', sm: 'auto', md: 'auto' },
+                  minHeight: {
+                    xs: '200px',
+                    sm: '220px',
+                    md: '240px',
+                    lg: '260px',
+                  },
                   display: 'flex',
                   flexDirection: 'column',
-                  height: '100%',
+                  width: '100%',
+                  borderRadius: 2,
                 }}
               >
-                {isAdmin() && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <Avatar
-                      sx={{
-                        backgroundColor: generateAvatarColor(team.name),
-                        mr: 2,
-                        width: { xs: 40, sm: 48 },
-                        height: { xs: 40, sm: 48 },
-                        flexShrink: 0,
-                      }}
-                    >
-                      <GroupIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                    </Avatar>
-                    <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
-                      <Typography
-                        variant='h6'
+                <CardContent
+                  sx={{
+                    flexGrow: 1,
+                    p: { xs: 2.5, sm: 3.5 },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                  }}
+                >
+                  {isAdmin() && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                      <Avatar
                         sx={{
-                          color: theme => theme.palette.text.primary,
-                          fontWeight: 600,
-                          fontSize: { xs: '1rem', sm: '1.25rem' },
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap', // Always keep in single line
-                          lineHeight: 1.2,
-                          minHeight: 'auto',
-                        }}
-                        title={team.name} // Show full name on hover
-                      >
-                        {team.name}
-                      </Typography>
-                      <Typography
-                        variant='body2'
-                        sx={{
-                          color: theme => theme.palette.text.secondary,
-                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap', // Always keep in single line
-                          lineHeight: 1.2,
-                          minHeight: 'auto',
-                        }}
-                        title={`${team.manager?.first_name} ${team.manager?.last_name}`} // Show full name on hover
-                      >
-                        {team.manager?.first_name} {team.manager?.last_name}
-                      </Typography>
-                    </Box>
-                    {!isHRAdmin() && (
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          gap: { xs: 0.5, sm: 1 },
+                          backgroundColor: generateAvatarColor(team.name),
+                          mr: 2,
+                          width: { xs: 40, sm: 48 },
+                          height: { xs: 40, sm: 48 },
                           flexShrink: 0,
                         }}
                       >
-                        <IconButton
-                          size='small'
-                          onClick={() => handleEditTeam(team)}
+                        <GroupIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
+                      </Avatar>
+                      <Box
+                        sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}
+                      >
+                        <Typography
+                          variant='h6'
                           sx={{
-                            color: theme => theme.palette.primary.main,
-                            padding: { xs: 0.5, sm: 1 },
+                            color: theme => theme.palette.text.primary,
+                            fontWeight: 600,
+                            fontSize: { xs: '1rem', sm: '1.25rem' },
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap', // Always keep in single line
+                            lineHeight: 1.2,
+                            minHeight: 'auto',
                           }}
+                          title={team.name} // Show full name on hover
                         >
-                          <EditIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
-                        </IconButton>
-                        <IconButton
-                          size='small'
-                          onClick={() => handleDeleteTeam(team)}
+                          {team.name}
+                        </Typography>
+                        <Typography
+                          variant='body2'
                           sx={{
-                            color: theme => theme.palette.error.main,
-                            padding: { xs: 0.5, sm: 1 },
+                            color: theme => theme.palette.text.secondary,
+                            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap', // Always keep in single line
+                            lineHeight: 1.2,
+                            minHeight: 'auto',
                           }}
+                          title={`${team.manager?.first_name} ${team.manager?.last_name}`} // Show full name on hover
                         >
-                          <DeleteIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
-                        </IconButton>
+                          {team.manager?.first_name} {team.manager?.last_name}
+                        </Typography>
                       </Box>
-                    )}
-                  </Box>
-                )}
+                      {!isHRAdmin() && (
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            gap: { xs: 0.5, sm: 1 },
+                            flexShrink: 0,
+                          }}
+                        >
+                          <IconButton
+                            size='small'
+                            onClick={() => handleEditTeam(team)}
+                            sx={{
+                              color: theme => theme.palette.primary.main,
+                              padding: { xs: 0.5, sm: 1 },
+                            }}
+                          >
+                            <EditIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                          </IconButton>
+                          <IconButton
+                            size='small'
+                            onClick={() => handleDeleteTeam(team)}
+                            sx={{
+                              color: theme => theme.palette.error.main,
+                              padding: { xs: 0.5, sm: 1 },
+                            }}
+                          >
+                            <DeleteIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                          </IconButton>
+                        </Box>
+                      )}
+                    </Box>
+                  )}
 
-                {team.description && (
-                  <Typography
-                    variant='body2'
-                    sx={{
-                      color: theme => theme.palette.text.secondary,
-                      mb: 3,
-                      lineHeight: 1.6,
-                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      minHeight: { xs: '3.6em', sm: '4.2em' },
-                    }}
-                  >
-                    {team.description}
-                  </Typography>
-                )}
-
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    mb: 3,
-                    flexWrap: 'wrap',
-                    gap: 1.5,
-                  }}
-                >
-                  <Chip
-                    label={`${team.teamMembers?.length || 0} ${lang.members}`}
-                    size='small'
-                    icon={<PersonIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
-                    sx={{
-                      backgroundColor: theme => theme.palette.primary.main,
-                      color: theme => theme.palette.primary.contrastText,
-                      fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                      height: { xs: 24, sm: 28 },
-                    }}
-                  />
-                  {!team.teamMembers && (
+                  {team.description && (
                     <Typography
-                      variant='caption'
+                      variant='body2'
                       sx={{
-                        color: theme => theme.palette.text.disabled,
-                        fontStyle: 'italic',
-                        fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                        color: theme => theme.palette.text.secondary,
+                        mb: 3,
+                        lineHeight: 1.6,
+                        fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        minHeight: { xs: '3.6em', sm: '4.2em' },
                       }}
                     >
-                      (Loading...)
+                      {team.description}
                     </Typography>
                   )}
-                </Box>
 
-                <Stack
-                  direction='row'
-                  spacing={1}
-                  sx={{
-                    mt: 'auto',
-                    pt: 2,
-                    borderTop: theme => `1px solid ${theme.palette.divider}`,
-                  }}
-                >
-                  <Button
-                    variant='outlined'
-                    size='small'
-                    startIcon={
-                      <GroupIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                    }
-                    onClick={() => handleViewMembers(team)}
+                  <Box
                     sx={{
-                      borderColor: theme => theme.palette.primary.main,
-                      color: theme => theme.palette.primary.main,
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                      py: { xs: 0.5, sm: 0.75 },
-                      px: { xs: 1, sm: 1.5 },
-                      '&:hover': {
-                        borderColor: theme => theme.palette.primary.dark,
-                        backgroundColor: theme => theme.palette.action.hover,
-                      },
+                      display: 'flex',
+                      alignItems: 'center',
+                      mb: 3,
+                      flexWrap: 'wrap',
+                      gap: 1.5,
                     }}
                   >
-                    {lang.viewMembers}
-                  </Button>
-                  {!isHRAdmin() && (
-                    <Button
-                      variant='outlined'
+                    <Chip
+                      label={`${memberCount} ${lang.members}`}
                       size='small'
-                      startIcon={
-                        <AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                      icon={
+                        <PersonIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
                       }
-                      onClick={() => handleAddMember(team)}
                       sx={{
-                        borderColor: theme => theme.palette.primary.main,
-                        color: theme => theme.palette.primary.main,
-                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                        py: { xs: 0.5, sm: 0.75 },
-                        px: { xs: 1, sm: 1.5 },
-                        '&:hover': {
-                          borderColor: theme => theme.palette.primary.dark,
-                          backgroundColor: theme => theme.palette.action.hover,
-                        },
+                        backgroundColor: theme => theme.palette.primary.main,
+                        color: theme => theme.palette.primary.contrastText,
+                        fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                        height: { xs: 24, sm: 28 },
                       }}
-                    >
-                      {lang.addMember}
-                    </Button>
-                  )}
-                </Stack>
-              </CardContent>
-            </Card>
-          ))}
+                    />
+                    {!team.teamMembers && (
+                      <Typography
+                        variant='caption'
+                        sx={{
+                          color: theme => theme.palette.text.disabled,
+                          fontStyle: 'italic',
+                          fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                        }}
+                      >
+                        (Loading...)
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Stack
+                    direction='row'
+                    spacing={1}
+                    sx={{
+                      mt: 'auto',
+                      pt: 2,
+                      borderTop: theme => `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    {isEmployeePoolTeam ? (
+                      <Button
+                        variant='outlined'
+                        size='small'
+                        startIcon={
+                          <GroupIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                        }
+                        onClick={() => handleOpenEmployeePool(team)}
+                        sx={{
+                          borderColor: theme => theme.palette.primary.main,
+                          color: theme => theme.palette.primary.main,
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          py: { xs: 0.5, sm: 0.75 },
+                          px: { xs: 1, sm: 1.5 },
+                          '&:hover': {
+                            borderColor: theme => theme.palette.primary.dark,
+                            backgroundColor: theme =>
+                              theme.palette.action.hover,
+                          },
+                        }}
+                      >
+                        {lang.viewMembers}
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          variant='outlined'
+                          size='small'
+                          startIcon={
+                            <GroupIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                          }
+                          onClick={() => handleViewMembers(team)}
+                          sx={{
+                            borderColor: theme => theme.palette.primary.main,
+                            color: theme => theme.palette.primary.main,
+                            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                            py: { xs: 0.5, sm: 0.75 },
+                            px: { xs: 1, sm: 1.5 },
+                            '&:hover': {
+                              borderColor: theme => theme.palette.primary.dark,
+                              backgroundColor: theme =>
+                                theme.palette.action.hover,
+                            },
+                          }}
+                        >
+                          {lang.viewMembers}
+                        </Button>
+                        {!isHRAdmin() && (
+                          <Button
+                            variant='outlined'
+                            size='small'
+                            startIcon={
+                              <AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                            }
+                            onClick={() => handleAddMember(team)}
+                            sx={{
+                              borderColor: theme => theme.palette.primary.main,
+                              color: theme => theme.palette.primary.main,
+                              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                              py: { xs: 0.5, sm: 0.75 },
+                              px: { xs: 1, sm: 1.5 },
+                              '&:hover': {
+                                borderColor: theme =>
+                                  theme.palette.primary.dark,
+                                backgroundColor: theme =>
+                                  theme.palette.action.hover,
+                              },
+                            }}
+                          >
+                            {lang.addMember}
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </Stack>
+                </CardContent>
+              </Card>
+            );
+          })}
         </Box>
 
         {/* Team Members Dialog */}
@@ -508,6 +599,33 @@ const TeamList: React.FC<TeamListProps> = ({
           </DialogActions>
         </Dialog>
 
+        {isAdmin() && (
+          <Dialog
+            open={showEmployeePoolDialog}
+            onClose={handleCloseEmployeePool}
+            maxWidth='lg'
+            fullWidth
+          >
+            <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+              {employeePoolTeam?.name
+                ? `${employeePoolTeam.name} - ${lang.viewMembers}`
+                : lang.viewMembers}
+            </DialogTitle>
+            <DialogContent>
+              <AvailableEmployees
+                darkMode={darkMode}
+                isEmployeePool
+                preselectedTeamId={preselectedPoolTeamId}
+                teamName={employeePoolTeam?.name}
+                teamDescription={employeePoolTeam?.description}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseEmployeePool}>{lang.cancel}</Button>
+            </DialogActions>
+          </Dialog>
+        )}
+
         {/* Add Member Dialog */}
         {!isHRAdmin() && (
           <Dialog
@@ -515,7 +633,6 @@ const TeamList: React.FC<TeamListProps> = ({
             onClose={() => setShowAddMemberDialog(false)}
             maxWidth='md'
             fullWidth
-            pa
           >
             <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
               {lang.addMember} - {selectedTeam?.name}
@@ -524,6 +641,8 @@ const TeamList: React.FC<TeamListProps> = ({
               <AvailableEmployees
                 darkMode={darkMode}
                 teamId={selectedTeam?.id}
+                teamName={selectedTeam?.name}
+                teamDescription={selectedTeam?.description}
               />
             </DialogContent>
             <DialogActions>

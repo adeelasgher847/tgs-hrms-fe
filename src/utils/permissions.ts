@@ -290,9 +290,7 @@ export const isSubMenuVisibleForRole = (
       parent.includes('leave analytics') ||
       parent.includes('leave-analytics')
     ) {
-      if (sub.includes('Cross Tenant Leaves')) {
-        visible = false;
-      }
+      visible = sub.includes('report');
     }
 
     if (parent.includes('audit logs')) {
@@ -353,7 +351,7 @@ export const isSubMenuVisibleForRole = (
       parent.includes('leave analytics') ||
       parent.includes('leave-analytics')
     ) {
-      if (sub.includes('Cross Tenant Leaves')) {
+      if (sub.includes('cross tenant leaves')) {
         visible = false;
       }
     }
