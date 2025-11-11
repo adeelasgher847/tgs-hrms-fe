@@ -263,6 +263,11 @@ export const isSubMenuVisibleForRole = (
     if (parent.includes('audit logs')) {
       visible = false;
     }
+    if (parent.includes('attendance')) {
+      if (sub.includes('report')) {
+        visible = false;
+      }
+    }
   }
 
   if (r === 'employee' || r === 'user') {
@@ -376,6 +381,14 @@ export const isSubMenuVisibleForRole = (
   if (r === 'manager') {
     if (parent.includes('assets')) {
       if (sub.includes('asset inventory') || sub.includes('management')) {
+        visible = false;
+      }
+    }
+     if (
+      parent.includes('leave analytics') ||
+      parent.includes('leave-analytics')
+    ) {
+      if (sub.includes('cross tenant leaves')) {
         visible = false;
       }
     }
