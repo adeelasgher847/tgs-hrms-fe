@@ -163,7 +163,7 @@ class SystemEmployeeApiService {
     const perPage = 25;
     let allTenants: SystemEmployee[] = [];
     let hasMoreData = true;
-    const maxPages = 1000; // Safety limit to prevent infinite loops
+    const maxPages = 1000;
     let totalPages: number | undefined;
 
     while (hasMoreData && page <= maxPages) {
@@ -175,7 +175,6 @@ class SystemEmployeeApiService {
           params: { page, includeDeleted },
         });
 
-        // Handle both direct array response and paginated response structure
         let tenants: SystemEmployee[] = [];
         if (Array.isArray(res.data)) {
           tenants = res.data;
@@ -185,19 +184,15 @@ class SystemEmployeeApiService {
           'items' in res.data
         ) {
           tenants = Array.isArray(res.data.items) ? res.data.items : [];
-          // Store pagination metadata if available
           if (res.data.totalPages !== undefined) {
             totalPages = res.data.totalPages;
           }
         }
 
-        // Add tenants to the collection
         if (tenants.length > 0) {
           allTenants = [...allTenants, ...tenants];
         }
 
-        // Determine if we should continue fetching
-        // Stop if: empty page, less than perPage items, or reached totalPages
         if (tenants.length === 0) {
           hasMoreData = false;
         } else if (totalPages !== undefined && page >= totalPages) {
@@ -209,7 +204,6 @@ class SystemEmployeeApiService {
         }
       } catch (error) {
         console.error(`Error fetching tenants page ${page}:`, error);
-        // If there's an error, stop fetching to avoid infinite loops
         hasMoreData = false;
         break;
       }

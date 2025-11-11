@@ -76,10 +76,6 @@ const EmployeeSalaryPage: React.FC = () => {
   const currentUser = getCurrentUser();
   const role = normalizeRole(getUserRole());
 
-  // Filter button styling variables (matching EmployeeManager)
-  const filterBtn = darkMode ? '#555' : '#484c7f';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
-
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState<EmployeeSalaryListItem[]>([]);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -96,7 +92,6 @@ const EmployeeSalaryPage: React.FC = () => {
   );
   const [mySalary, setMySalary] = useState<EmployeeSalary | null>(null);
   const [mySalaryLoading, setMySalaryLoading] = useState(false);
-  const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
 
   // Form state
   const [baseSalary, setBaseSalary] = useState<number>(0);
@@ -134,19 +129,14 @@ const EmployeeSalaryPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await payrollApi.getAllEmployeeSalaries();
-      // Filter to show only employees without salary if showUnassignedOnly is true
-      if (showUnassignedOnly) {
-        setEmployees(data.filter(item => item.salary === null));
-      } else {
-        setEmployees(data);
-      }
+      setEmployees(data);
     } catch (error) {
       console.error('Failed to load employee salaries:', error);
       snackbar.error('Failed to load employee salaries');
     } finally {
       setLoading(false);
     }
-  }, [showUnassignedOnly]);
+  }, []);
 
   const loadMySalary = useCallback(async () => {
     try {
@@ -800,30 +790,7 @@ const EmployeeSalaryPage: React.FC = () => {
         >
           Employee Salary Structure
         </Typography>
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 2,
-            alignItems: 'center',
-            borderRadius: 2,
-          }}
-        >
-          <Button
-            variant='outlined'
-            onClick={() => setShowUnassignedOnly(!showUnassignedOnly)}
-            sx={{
-              borderColor: filterBtn,
-              color: textColor,
-              '&:hover': {
-                borderColor: darkMode ? '#888' : '#999',
-                backgroundColor: darkMode
-                  ? 'rgba(255,255,255,0.08)'
-                  : 'rgba(0,0,0,0.04)',
-              },
-            }}
-          >
-            {showUnassignedOnly ? 'Show All' : 'Show Unassigned Only'}
-          </Button>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <Button
             variant='contained'
             startIcon={<AddIcon />}

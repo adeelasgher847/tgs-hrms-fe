@@ -157,7 +157,10 @@ const menuItems: MenuItem[] = [
     icon: <Payments />,
     subItems: [
       { label: 'Payroll Configuration', path: 'payroll-configuration' },
+      { label: 'Payroll Records', path: 'payroll-records' },
+      { label: 'Payroll Reports', path: 'payroll-reports' },
       { label: 'Employee Salary', path: 'employee-salary' },
+      { label: 'My Salary', path: 'my-salary' },
     ],
   },
   {
