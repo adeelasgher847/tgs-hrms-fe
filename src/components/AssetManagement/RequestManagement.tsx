@@ -58,6 +58,7 @@ import {
 import StatusChip from './StatusChip';
 import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../Data/assetCategories';
+import type { AxiosError } from 'axios';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
@@ -485,17 +486,19 @@ const RequestManagement: React.FC = () => {
         );
 
         setAssets(transformedAssets);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const axiosError = error as AxiosError<{ message?: string }> | undefined;
         console.error('❌ Failed to fetch data:', error);
         console.error('❌ Error details:', {
-          message: error?.message,
-          response: error?.response?.data,
-          status: error?.response?.status,
+          message: axiosError?.message,
+          response: axiosError?.response?.data,
+          status: axiosError?.response?.status,
         });
         
         // Only show error toast if it's a real error (not 404 or empty results)
-        const status = error?.response?.status;
-        const errorMessage = error?.response?.data?.message || error?.message || '';
+        const status = axiosError?.response?.status;
+        const errorMessage =
+          axiosError?.response?.data?.message || axiosError?.message || '';
         
         // Don't show error for 404 (not found) or if it's just empty results
         if (status !== 404 && status !== 200 && errorMessage) {
@@ -748,19 +751,21 @@ const RequestManagement: React.FC = () => {
           setIsProcessModalOpen(false);
           setLoading(false);
           return;
-        } catch (approvalError: any) {
+        } catch (approvalError: unknown) {
+          const axiosError = approvalError as AxiosError<{ message?: string }> | undefined;
           console.error('❌ Approval failed:', approvalError);
           console.error('❌ Error details:', {
-            message: approvalError?.message,
-            response: approvalError?.response?.data,
-            status: approvalError?.response?.status,
+            message: axiosError?.message,
+            response: axiosError?.response?.data,
+            status: axiosError?.response?.status,
             requestId: selectedRequest.id,
             payload,
           });
           
-          const errorMessage = approvalError?.response?.data?.message || 
-                               approvalError?.message || 
-                               'Failed to approve request';
+          const errorMessage =
+            axiosError?.response?.data?.message ||
+            axiosError?.message ||
+            'Failed to approve request';
           showSnackbar(errorMessage, 'error');
           setLoading(false);
           return;
@@ -1071,13 +1076,13 @@ const RequestManagement: React.FC = () => {
               <Typography variant='caption' color='text.secondary'>
                 {request.category.name}
               </Typography>
-              {((request as any).subcategoryName || (request.category as AssetCategory & { requestedItem?: string }).requestedItem) && (
+              {(request.subcategoryName || request.category.requestedItem) && (
                 <Typography
                   variant='caption'
                   color='text.secondary'
                   sx={{ display: 'block', mt: 0.5 }}
                 >
-                  {(request as any).subcategoryName || (request.category as AssetCategory & { requestedItem?: string }).requestedItem}
+                  {request.subcategoryName || request.category.requestedItem}
                 </Typography>
               )}
             </Box>

@@ -52,10 +52,10 @@ const RecentActivityLogs: React.FC<RecentActivityLogsProps> = ({ logs }) => {
     <Paper
       sx={{
         p: 3,
-        borderRadius: 1,
+        borderRadius: 2,
         backgroundColor: bgColor,
         boxShadow: 'none',
-        height: 380,
+        height: 420,
         width: '100%',
         display: 'flex',
         flexDirection: 'column',

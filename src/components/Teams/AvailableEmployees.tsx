@@ -25,25 +25,30 @@ import {
   MenuItem,
 } from '@mui/material';
 import UserAvatar from '../common/UserAvatar';
-import {
-  Add as AddIcon,
-  Person as PersonIcon,
-} from '@mui/icons-material';
+import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
-import employeeApi from '../../api/employeeApi';
 import type { TeamMember, Team } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
-import { isAdmin } from '../../utils/auth';
+
+type SelectedTeamInfo = Pick<Team, 'id' | 'name' | 'description'>;
 
 interface AvailableEmployeesProps {
   darkMode?: boolean;
   teamId?: string; // Optional team ID - if provided, skip team selection
+  teamName?: string;
+  teamDescription?: string;
+  isEmployeePool?: boolean;
+  preselectedTeamId?: string;
 }
 
 const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
   darkMode = false,
   teamId,
+  teamName,
+  teamDescription,
+  isEmployeePool = false,
+  preselectedTeamId,
 }) => {
   const [employees, setEmployees] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +65,9 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
   const [selectedEmployee, setSelectedEmployee] = useState<TeamMember | null>(
     null
   );
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<SelectedTeamInfo | null>(
+    null
+  );
   const { language } = useLanguage();
 
   const labels = {
@@ -101,80 +108,14 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
         setLoading(true);
         setError(null);
 
-        let response;
-        if (isAdmin()) {
-          // For admins, get all employees and filter out those already in teams
-          try {
-            const allEmployeesResponse = await employeeApi.getAllEmployees(
-              searchTerm ? { search: searchTerm } : {},
-              page + 1
-            );
+        const response = await teamApiService.getAvailableEmployees(
+          page + 1,
+          rowsPerPage,
+          searchTerm
+        );
 
-            // Convert BackendEmployee to TeamMember format
-            const allEmployees = allEmployeesResponse.items.map(emp => ({
-              id: emp.id,
-              user: {
-                id: emp.id,
-                first_name: emp.firstName || emp.name.split(' ')[0] || '',
-                last_name:
-                  emp.lastName || emp.name.split(' ').slice(1).join(' ') || '',
-                email: emp.email,
-                profile_pic: null,
-              },
-              designation: emp.designation,
-              department: emp.department,
-            }));
-
-            // Get all teams to find team members
-            const allTeamsResponse = await teamApiService.getAllTeams(1);
-            const allTeamMembers: TeamMember[] = [];
-
-            // Get members from each team
-            for (const team of allTeamsResponse.items) {
-              try {
-                const teamMembersResponse = await teamApiService.getTeamMembers(
-                  team.id,
-                  1
-                );
-                allTeamMembers.push(...teamMembersResponse.items);
-              } catch (error) {
-                console.warn(
-                  `Failed to get members for team ${team.id}:`,
-                  error
-                );
-              }
-            }
-
-            // Create a set of employee IDs who are already in teams
-            const assignedEmployeeIds = new Set(
-              allTeamMembers.map(member => member.id)
-            );
-
-            // Filter out employees who are already assigned to teams
-            const availableEmployees = allEmployees.filter(
-              emp => !assignedEmployeeIds.has(emp.id)
-            );
-
-            setEmployees(availableEmployees);
-            setTotal(availableEmployees.length);
-          } catch (error) {
-            console.error(
-              'Error loading available employees for admin:',
-              error
-            );
-            setError(lang.error);
-            setEmployees([]);
-            setTotal(0);
-          }
-        } else {
-          // For managers, use the existing available employees endpoint
-          response = await teamApiService.getAvailableEmployees(
-            page + 1,
-            searchTerm
-          );
-          setEmployees(response.items || []);
-          setTotal(response.total || 0);
-        }
+        setEmployees(response.items || []);
+        setTotal(response.total || 0);
       } catch {
         setError(lang.error);
         setEmployees([]);
@@ -186,6 +127,46 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
 
     loadEmployees();
   }, [page, rowsPerPage, searchTerm, lang.error]);
+
+  useEffect(() => {
+    if (!isEmployeePool) {
+      return;
+    }
+
+    if (preselectedTeamId) {
+      setSelectedTeamId(preselectedTeamId);
+    } else {
+      setSelectedTeamId('');
+    }
+  }, [isEmployeePool, preselectedTeamId]);
+
+  useEffect(() => {
+    if (!selectedTeamId) {
+      setSelectedTeam(null);
+      return;
+    }
+
+    const existingTeam = teams.find(team => team.id === selectedTeamId);
+    if (existingTeam) {
+      setSelectedTeam({
+        id: existingTeam.id,
+        name: existingTeam.name,
+        description: existingTeam.description,
+      });
+      return;
+    }
+
+    if (teamId && selectedTeamId === teamId && teamName) {
+      setSelectedTeam({
+        id: teamId,
+        name: teamName,
+        description: teamDescription ?? '',
+      });
+      return;
+    }
+
+    setSelectedTeam(null);
+  }, [selectedTeamId, teams, teamId, teamName, teamDescription]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -215,18 +196,56 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
       }
     };
 
-    if (showTeamDialog) {
+    if (showTeamDialog || isEmployeePool) {
       loadTeams();
     }
-  }, [showTeamDialog]);
+  }, [showTeamDialog, isEmployeePool]);
+
+  const handleTeamDropdownChange = (teamIdValue: string) => {
+    setSelectedTeamId(teamIdValue);
+    const team = teams.find(t => t.id === teamIdValue);
+    if (team) {
+      setSelectedTeam({
+        id: team.id,
+        name: team.name,
+        description: team.description,
+      });
+    }
+  };
 
   const handleAddToTeam = async (employee: TeamMember) => {
     setSelectedEmployee(employee);
     setSelectedEmployeeId(employee.id);
 
+    if (isEmployeePool) {
+      if (preselectedTeamId) {
+        setSelectedTeamId(preselectedTeamId);
+        const matchedTeam = teams.find(t => t.id === preselectedTeamId);
+        if (matchedTeam) {
+          setSelectedTeam({
+            id: matchedTeam.id,
+            name: matchedTeam.name,
+            description: matchedTeam.description,
+          });
+        }
+      } else {
+        setSelectedTeamId('');
+        setSelectedTeam(null);
+      }
+      setShowConfirmDialog(true);
+      return;
+    }
+
     if (teamId) {
       // If team ID is provided (admin case), skip team selection and go directly to confirmation
       setSelectedTeamId(teamId);
+      if (teamName) {
+        setSelectedTeam({
+          id: teamId,
+          name: teamName,
+          description: teamDescription ?? '',
+        });
+      }
       setShowConfirmDialog(true);
     } else {
       // If no team ID provided (manager case), show team selection dialog
@@ -243,7 +262,11 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
     // Find the selected team
     const team = teams.find(t => t.id === selectedTeamId);
     if (team) {
-      setSelectedTeam(team);
+      setSelectedTeam({
+        id: team.id,
+        name: team.name,
+        description: team.description,
+      });
       setShowConfirmDialog(true);
       setShowTeamDialog(false);
     }
@@ -256,16 +279,13 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
     }
 
     try {
-      // Call the actual API
       await teamApiService.addMemberToTeam(selectedTeamId, selectedEmployeeId);
 
-      // Remove the employee from the available list
       setEmployees(prev => prev.filter(emp => emp.id !== selectedEmployeeId));
-      setTotal(prev => prev - 1);
+      setTotal(prev => Math.max(prev - 1, 0));
 
-      // Close dialogs and reset
-      setShowConfirmDialog(false);
       setShowTeamDialog(false);
+      setShowConfirmDialog(false);
       setSelectedEmployeeId('');
       setSelectedTeamId('');
       setSelectedEmployee(null);
@@ -273,7 +293,6 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
 
       snackbar.success(lang.employeeAdded);
 
-      // Trigger auto-render for other components
       window.dispatchEvent(new CustomEvent('teamUpdated'));
     } catch {
       snackbar.error('Failed to add employee to team. Please try again.');
@@ -284,6 +303,17 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
     setShowTeamDialog(false);
     setSelectedEmployeeId('');
     setSelectedTeamId('');
+    if (!isEmployeePool) {
+      setSelectedTeam(null);
+    }
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setShowConfirmDialog(false);
+    setSelectedEmployeeId('');
+    setSelectedTeamId('');
+    setSelectedEmployee(null);
+    setSelectedTeam(null);
   };
 
   if (loading) {
@@ -304,7 +334,6 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
 
   return (
     <Box>
-
       {employees.length === 0 ? (
         <Box
           sx={{
@@ -323,7 +352,10 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
         <>
           <TableContainer
             component={Paper}
-            sx={{ backgroundColor: darkMode ? '#2d2d2d' : '#fff',boxShadow:"none" }}
+            sx={{
+              backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+              boxShadow: 'none',
+            }}
           >
             <Table>
               <TableHead>
@@ -493,7 +525,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
       {/* Confirmation Dialog */}
       <Dialog
         open={showConfirmDialog}
-        onClose={() => setShowConfirmDialog(false)}
+        onClose={handleCloseConfirmDialog}
         maxWidth='sm'
         fullWidth
         PaperProps={{
@@ -507,15 +539,14 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
           Confirm Add to Team
         </DialogTitle>
         <DialogContent>
-          {selectedEmployee && selectedTeam && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant='body1' sx={{ mb: 2 }}>
-                Are you sure you want to add{' '}
-                <strong>
-                  {selectedEmployee.user?.first_name}{' '}
-                  {selectedEmployee.user?.last_name}
-                </strong>{' '}
-                to team <strong>{selectedTeam.name}</strong>?
+          {selectedEmployee && (
+            <Box
+              sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}
+            >
+              <Typography variant='body1'>
+                {isEmployeePool
+                  ? `Select a team to assign ${selectedEmployee.user?.first_name} ${selectedEmployee.user?.last_name}.`
+                  : `Are you sure you want to add ${selectedEmployee.user?.first_name} ${selectedEmployee.user?.last_name} to team ${selectedTeam?.name ?? ''}?`}
               </Typography>
               <Box
                 sx={{
@@ -548,18 +579,53 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                   variant='body2'
                   sx={{ color: darkMode ? '#ccc' : '#666' }}
                 >
-                  <strong>Team:</strong> {selectedTeam.name} -{' '}
-                  {selectedTeam.description}
+                  <strong>Team:</strong>{' '}
+                  {selectedTeam
+                    ? `${selectedTeam.name}${
+                        selectedTeam.description
+                          ? ` - ${selectedTeam.description}`
+                          : ''
+                      }`
+                    : 'Not selected'}
                 </Typography>
               </Box>
+              {(isEmployeePool || !teamId) && (
+                <FormControl fullWidth>
+                  <InputLabel>Select Team</InputLabel>
+                  <Select
+                    value={selectedTeamId}
+                    label='Select Team'
+                    onChange={event =>
+                      handleTeamDropdownChange(event.target.value as string)
+                    }
+                    disabled={teams.length === 0 && !selectedTeamId}
+                  >
+                    <MenuItem value='' disabled>
+                      Select Team
+                    </MenuItem>
+                    {teams.length === 0 ? (
+                      <MenuItem value='' disabled>
+                        No teams available
+                      </MenuItem>
+                    ) : (
+                      teams.map(team => (
+                        <MenuItem key={team.id} value={team.id}>
+                          {team.name}
+                        </MenuItem>
+                      ))
+                    )}
+                  </Select>
+                </FormControl>
+              )}
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowConfirmDialog(false)}>Cancel</Button>
+          <Button onClick={handleCloseConfirmDialog}>Cancel</Button>
           <Button
             onClick={handleConfirmAddToTeamFinal}
             variant='contained'
+            disabled={!selectedTeamId}
             sx={{ backgroundColor: '#484c7f' }}
           >
             Add to Team

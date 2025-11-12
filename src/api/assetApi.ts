@@ -1,3 +1,4 @@
+import type { AxiosError } from 'axios';
 import axiosInstance from './axiosInstance';
 
 // Asset Management API Types
@@ -47,10 +48,12 @@ export interface UpdateAssetRequest {
 }
 
 // Asset Subcategory Types
+type AssetSubcategoryCategory = string | { id?: string; name?: string };
+
 export interface AssetSubcategory {
   id: string;
   name: string;
-  category: string;
+  category: AssetSubcategoryCategory;
   description?: string;
   tenant_id?: string;
   created_at?: string;
@@ -500,10 +503,11 @@ export const assetApi = {
         data || {}
       );
       return response.data;
-    } catch (bodyError: any) {
+    } catch (bodyError: unknown) {
+      const bodyAxiosError = bodyError as AxiosError | undefined;
       console.error('❌ Approval with body failed:', {
-        error: bodyError?.response?.data,
-        status: bodyError?.response?.status,
+        error: bodyAxiosError?.response?.data,
+        status: bodyAxiosError?.response?.status,
       });
       
       // If body approach fails, try with just asset_id in query or body
@@ -514,10 +518,11 @@ export const assetApi = {
           const url = `/asset-requests/${id}/approve?asset_id=${assetId}`;
           const response = await axiosInstance.put(url, {});
           return response.data;
-        } catch (queryError: any) {
+        } catch (queryError: unknown) {
+          const queryAxiosError = queryError as AxiosError | undefined;
           console.error('❌ Approval with query param failed:', {
-            error: queryError?.response?.data,
-            status: queryError?.response?.status,
+            error: queryAxiosError?.response?.data,
+            status: queryAxiosError?.response?.status,
           });
           
           // Try with minimal payload - just asset_id
@@ -527,7 +532,7 @@ export const assetApi = {
               { asset_id: assetId }
             );
             return response.data;
-          } catch (minimalError: any) {
+          } catch (minimalError: unknown) {
             console.error('❌ All approval attempts failed');
             throw minimalError;
           }
@@ -615,7 +620,7 @@ export const assetApi = {
         `/asset-subcategories?${params.toString()}`
       );
       return response.data;
-    } catch (error) {
+    } catch {
       // Fallback to category parameter if category_id doesn't work
       const response = await assetApi.getAllAssetSubcategories({
         category: categoryId,
