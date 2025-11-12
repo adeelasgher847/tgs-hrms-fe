@@ -30,7 +30,6 @@ import systemEmployeeApiService, {
   type Benefit,
 } from '../../api/systemEmployeeApi';
 import UserAvatar from '../common/UserAvatar';
-import employeeApi from '@/api/employeeApi';
 import KpiDetailCard from '../KPI/KPICardDetail';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
@@ -69,16 +68,10 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
           await systemEmployeeApiService.getSystemEmployeeById(employeeId);
         setProfile(profileRes);
 
-        const allEmployees =
-          await employeeApi.getAllEmployeesWithoutPagination();
-        const matchedEmployee = allEmployees.find(emp => emp.id === employeeId);
-        const userId = matchedEmployee?.user_id;
-
-        if (!userId) throw new Error('User ID not found for this employee');
-
+        // Note: All system employee API endpoints (leaves, assets, performance) use employee ID, not user ID
         const [leavesRes, assetsRes, performanceRes] = await Promise.all([
-          systemEmployeeApiService.getSystemEmployeeLeaves(userId),
-          systemEmployeeApiService.getSystemEmployeeAssets(userId),
+          systemEmployeeApiService.getSystemEmployeeLeaves(employeeId),
+          systemEmployeeApiService.getSystemEmployeeAssets(employeeId),
           systemEmployeeApiService.getSystemEmployeePerformance(employeeId),
         ]);
 
@@ -115,7 +108,10 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
           pr: 2,
         }}
       >
-        <Typography variant='h6' fontWeight={600} color='primary.main'>
+        <Typography
+          component='span'
+          sx={{ fontSize: '1.25rem', fontWeight: 600, color: 'primary.main' }}
+        >
           Employee Profile
         </Typography>
         <IconButton onClick={onClose} size='small'>

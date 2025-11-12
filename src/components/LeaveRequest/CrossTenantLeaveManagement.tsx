@@ -121,17 +121,16 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   const fetchTenants = useCallback(async () => {
     try {
-      const allTenants = await SystemTenantApi.getAllTenants(false);
-      const activeTenants = allTenants.filter(
-        tenant => tenant.status === 'active' && !tenant.isDeleted
-      );
-      setTenants(activeTenants);
+      // Fetch all tenants (including deleted) without pagination
+      const allTenants = await SystemTenantApi.getAllTenants(true);
+      // Show all tenants (no filtering)
+      setTenants(allTenants);
 
-      if (activeTenants.length > 0 && !isInitialTenantSet.current) {
-        const ibexTech = activeTenants.find(t =>
+      if (allTenants.length > 0 && !isInitialTenantSet.current) {
+        const ibexTech = allTenants.find(t =>
           t.name.toLowerCase().includes('ibex')
         );
-        const defaultTenant = ibexTech || activeTenants[0];
+        const defaultTenant = ibexTech || allTenants[0];
         if (defaultTenant) {
           isInitialTenantSet.current = true;
           setFilters(prev => ({

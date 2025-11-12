@@ -37,6 +37,25 @@ import SystemEmployeeProfileView from './SystemEmployeeProfileView';
 
 type EmployeeWithTenantName = SystemEmployee & {
   tenantName: string;
+  user?: {
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    profile_pic?: string | null;
+  };
+  designation?: {
+    id: string;
+    title: string;
+  };
+  department?: {
+    id: string;
+    name: string;
+  };
+  team?: {
+    id: string;
+    name: string;
+  };
 };
 
 const TenantBasedEmployeeManager: React.FC = () => {
@@ -56,11 +75,12 @@ const TenantBasedEmployeeManager: React.FC = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const itemsPerPage = 10;
 
-  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+  const [selectedEmployee, setSelectedEmployee] =
+    useState<EmployeeWithTenantName | null>(null);
   const [openProfile, setOpenProfile] = useState(false);
 
-  const handleOpenProfile = (id: string) => {
-    setSelectedEmployee(id);
+  const handleOpenProfile = (employee: EmployeeWithTenantName) => {
+    setSelectedEmployee(employee);
     setOpenProfile(true);
   };
   const theme = useTheme();
@@ -105,18 +125,55 @@ const TenantBasedEmployeeManager: React.FC = () => {
       };
 
       const res = await systemEmployeeApiService.getSystemEmployees(params);
-      const employeesData = Array.isArray(res) ? res : [];
+      // Handle both array and paginated response
+      const employeesData = Array.isArray(res)
+        ? res
+        : 'items' in res
+          ? res.items
+          : [];
+
+      console.log('Raw employees data from API:', employeesData);
+      console.log('First employee sample:', employeesData[0]);
 
       const updatedEmployees = employeesData.map(
         (emp: SystemEmployee): EmployeeWithTenantName => {
           const matchedTenant = tenants.find(
             (t: SystemEmployee) => t.id === emp.tenantId
           );
-          return {
+
+          // Log to see what we're getting
+          if (!emp.user) {
+            console.warn('Employee missing user object:', emp.id, emp);
+          }
+
+          // Preserve all fields from API including user, designation, department, team objects
+          const mapped = {
             ...emp,
+            // Map flat fields if they exist in nested objects
+            name:
+              emp.name ||
+              (emp.user
+                ? `${emp.user.first_name || ''} ${emp.user.last_name || ''}`.trim()
+                : ''),
+            email: emp.email || emp.user?.email || '',
+            departmentName: emp.departmentName || emp.department?.name || '',
+            designationTitle:
+              emp.designationTitle || emp.designation?.title || '',
             tenantName: matchedTenant ? matchedTenant.name : 'Unknown Tenant',
+            // Explicitly preserve the user object for accessing user.id later
+            user: emp.user || undefined,
+            designation: emp.designation || undefined,
+            department: emp.department || undefined,
+            team: emp.team || undefined,
           };
+
+          return mapped;
         }
+      );
+
+      console.log(
+        'Mapped employees with user objects:',
+        updatedEmployees.filter((e: EmployeeWithTenantName) => e.user)
       );
 
       setEmployees(updatedEmployees);
@@ -186,7 +243,9 @@ const TenantBasedEmployeeManager: React.FC = () => {
         csvEscape(emp.departmentName),
         csvEscape(emp.designationTitle),
         csvEscape(emp.status),
-        csvEscape(new Date(emp.createdAt).toLocaleDateString()),
+        csvEscape(
+          emp.createdAt ? new Date(emp.createdAt).toLocaleDateString() : 'N/A'
+        ),
       ].join(',')
     );
 
@@ -349,10 +408,12 @@ const TenantBasedEmployeeManager: React.FC = () => {
                     <TableCell>{emp.designationTitle}</TableCell>
                     <TableCell>{emp.status}</TableCell>
                     <TableCell>
-                      {new Date(emp.createdAt).toLocaleDateString()}
+                      {emp.createdAt
+                        ? new Date(emp.createdAt).toLocaleDateString()
+                        : 'N/A'}
                     </TableCell>
                     <TableCell align='center'>
-                      <IconButton onClick={() => handleOpenProfile(emp.id)}>
+                      <IconButton onClick={() => handleOpenProfile(emp)}>
                         <VisibilityIcon />
                       </IconButton>
                     </TableCell>
@@ -373,8 +434,12 @@ const TenantBasedEmployeeManager: React.FC = () => {
       {openProfile && selectedEmployee && (
         <SystemEmployeeProfileView
           open={openProfile}
-          onClose={() => setOpenProfile(false)}
-          employeeId={selectedEmployee}
+          onClose={() => {
+            setOpenProfile(false);
+            setSelectedEmployee(null);
+          }}
+          employeeId={selectedEmployee.id}
+          employeeData={selectedEmployee}
         />
       )}
 
