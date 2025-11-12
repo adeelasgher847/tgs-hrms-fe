@@ -116,7 +116,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
       if (showAddMemberDialog) {
         try {
           setLoadingEmployees(true);
-          const response = await teamApiService.getAvailableEmployees(1);
+          const response = await teamApiService.getAvailableEmployees(1, 25);
           console.log('🔍 Available employees (frontend):', response);
           setAvailableEmployees(response.items || []);
         } catch (error) {

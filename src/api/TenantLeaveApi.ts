@@ -117,11 +117,11 @@ export const TenantLeaveApi = {
       });
 
       const rawTenantsResponse = data as TenantsResponse;
-      const tenantsArray = Array.isArray(rawTenantsResponse)
+      const tenants = Array.isArray(rawTenantsResponse)
         ? rawTenantsResponse
         : rawTenantsResponse?.items ?? [];
 
-      return data.map((tenant: TenantListItem) => ({
+      return tenants.map((tenant: TenantListItem) => ({
         id: tenant.id,
         name: tenant.name,
         status: tenant.status,

@@ -67,6 +67,50 @@ const AssetModal: React.FC<AssetModalProps> = ({
   const [subcategories, setSubcategories] = useState<AssetSubcategory[]>([]);
   const [loadingData, setLoadingData] = useState(false);
 
+  type ExtendedAsset = Asset & {
+    category_id?: string;
+    subcategory_id?: string;
+    purchase_date?: string;
+    categoryName?: string;
+  };
+
+  const isCategoryObject = (
+    category: AssetSubcategory['category']
+  ): category is { id?: string; name?: string } =>
+    typeof category === 'object' && category !== null;
+
+  const resolveAssetCategoryId = (assetDetails: ExtendedAsset): string =>
+    assetDetails.category?.id ||
+    assetDetails.category_id ||
+    assetDetails.category?.name ||
+    '';
+
+  const resolveAssetSubcategoryId = (assetDetails: ExtendedAsset): string =>
+    assetDetails.subcategoryId || assetDetails.subcategory_id || '';
+
+  const resolveAssetPurchaseDate = (assetDetails: ExtendedAsset): string =>
+    assetDetails.purchaseDate ||
+    assetDetails.purchase_date ||
+    new Date().toISOString();
+
+  const toDateValue = (value: unknown): Date => {
+    if (value instanceof Date) {
+      return value;
+    }
+    if (
+      value &&
+      typeof value === 'object' &&
+      'toDate' in value &&
+      typeof (value as { toDate: () => Date }).toDate === 'function'
+    ) {
+      return (value as { toDate: () => Date }).toDate();
+    }
+    if (typeof value === 'string' || typeof value === 'number') {
+      return new Date(value);
+    }
+    return new Date();
+  };
+
   const {
     control,
     handleSubmit,
@@ -164,8 +208,8 @@ const AssetModal: React.FC<AssetModalProps> = ({
             return true;
           }
           // Also check if category is an object with id property
-          if (sub.category && typeof sub.category === 'object' && 'id' in sub.category) {
-            return (sub.category as any).id === selectedCategoryId;
+          if (isCategoryObject(sub.category)) {
+            return sub.category.id === selectedCategoryId;
           }
           return false;
         });
@@ -186,14 +230,15 @@ const AssetModal: React.FC<AssetModalProps> = ({
     } else if (!selectedCategoryId) {
       setSubcategories([]);
     }
-  }, [open, selectedCategoryId]);
+  }, [open, selectedCategoryId, categories]);
 
   useEffect(() => {
     if (asset) {
       // Handle both old and new API response structures
-      const categoryId = asset.category?.id || (asset as any).category_id || asset.category?.name || '';
-      const subcategoryId = asset.subcategoryId || (asset as any).subcategory_id || '';
-      const purchaseDate = asset.purchaseDate || (asset as any).purchase_date || new Date().toISOString();
+      const extendedAsset = asset as ExtendedAsset;
+      const categoryId = resolveAssetCategoryId(extendedAsset);
+      const subcategoryId = resolveAssetSubcategoryId(extendedAsset);
+      const purchaseDate = resolveAssetPurchaseDate(extendedAsset);
       
       reset({
         name: asset.name,
@@ -221,7 +266,13 @@ const AssetModal: React.FC<AssetModalProps> = ({
       setSelectedDate(new Date());
       setSelectedWarrantyDate(null);
     }
-  }, [asset, reset]);
+  }, [
+    asset,
+    reset,
+    resolveAssetCategoryId,
+    resolveAssetSubcategoryId,
+    resolveAssetPurchaseDate,
+  ]);
 
   const handleFormSubmit = (data: Record<string, unknown>) => {
     // Format date as YYYY-MM-DD
@@ -406,7 +457,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
                       value={selectedDate}
                       onChange={date => {
                         if (date) {
-                          const dateValue = date instanceof Date ? date : (date as any).toDate ? (date as any).toDate() : new Date(date as any);
+                          const dateValue = toDateValue(date);
                           setSelectedDate(dateValue);
                           setValue('purchaseDate', dateValue);
                         } else {

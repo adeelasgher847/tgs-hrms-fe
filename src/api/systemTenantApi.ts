@@ -190,26 +190,36 @@ export const SystemTenantApi = {
   },
 
   getAllTenants: async (includeDeleted = true): Promise<SystemTenant[]> => {
-    let page = 1;
-    const perPage = 25;
-    let allTenants: SystemTenant[] = [];
-    let hasMoreData = true;
+    const res = await axiosInstance.get<
+      | SystemTenant[]
+      | {
+          items?: SystemTenant[];
+          data?: SystemTenant[] | { items?: SystemTenant[] };
+        }
+    >('/system/tenants', {
+      params: { includeDeleted, page: 1, limit: 1000 },
+    });
 
-    while (hasMoreData) {
-      const res = await axiosInstance.get<SystemTenant[]>('/system/tenants', {
-        params: { page, includeDeleted },
-      });
+    if (Array.isArray(res.data)) {
+      return res.data ?? [];
+    }
 
-      const tenants = res.data ?? [];
-      allTenants = [...allTenants, ...tenants];
+    if (res.data?.items && Array.isArray(res.data.items)) {
+      return res.data.items;
+    }
 
-      if (tenants.length < perPage) {
-        hasMoreData = false;
-      } else {
-        page++;
+    const dataField = res.data?.data;
+    if (Array.isArray(dataField)) {
+      return dataField;
+    }
+
+    if (dataField && typeof dataField === 'object' && 'items' in dataField) {
+      const maybeItems = (dataField as { items?: SystemTenant[] }).items;
+      if (Array.isArray(maybeItems)) {
+        return maybeItems;
       }
     }
 
-    return allTenants;
+    return [];
   },
 };

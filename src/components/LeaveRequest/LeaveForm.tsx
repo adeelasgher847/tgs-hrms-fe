@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  TextField,
-  Button,
-  MenuItem,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
+import { Box, TextField, Button, MenuItem, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -108,12 +101,14 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
 
       let errorMessage = 'Failed to submit leave request.';
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { message?: string } } };
+        const axiosError = error as {
+          response?: { data?: { message?: string } };
+        };
         if (axiosError.response?.data?.message) {
           errorMessage = axiosError.response.data.message;
         }
       }
-      
+
       setMessage(errorMessage);
     } finally {
       setLoading(false);

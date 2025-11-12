@@ -37,7 +37,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { AssetRequest, AssetCategory } from '../../types/asset';
+import type { AssetRequest } from '../../types/asset';
 import {
   assetApi,
   type AssetRequest as ApiAssetRequest,
@@ -76,6 +76,11 @@ interface ApiAssetRequestExtended extends ApiAssetRequest {
   // Legacy field for backward compatibility
   asset_category?: string;
 }
+
+const isSubcategoryCategoryObject = (
+  category: AssetSubcategory['category']
+): category is { id?: string; name?: string } =>
+  typeof category === 'object' && category !== null;
 
 // Get current user from localStorage or auth context
 const getCurrentUserId = () => {
@@ -306,8 +311,8 @@ const AssetRequests: React.FC = () => {
           if (selectedCategory && sub.category === selectedCategory.name) {
             return true;
           }
-          if (sub.category && typeof sub.category === 'object' && 'id' in sub.category) {
-            return (sub.category as any).id === selectedCategoryId;
+          if (isSubcategoryCategoryObject(sub.category)) {
+            return sub.category.id === selectedCategoryId;
           }
           return false;
         });
@@ -324,7 +329,7 @@ const AssetRequests: React.FC = () => {
     if (selectedCategoryId) {
       fetchSubcategories();
     }
-  }, [selectedCategoryId, categories]);
+  }, [selectedCategoryId, categories, categories.length]);
 
   // Helper function to transform API requests
   const transformApiRequests = React.useCallback(
@@ -807,13 +812,13 @@ const AssetRequests: React.FC = () => {
             <Typography variant='body2' fontWeight={500}>
               {request.category.name}
             </Typography>
-            {((request as any).subcategoryName || (request.category as AssetCategory & { requestedItem?: string }).requestedItem) && (
+            {(request.subcategoryName || request.category.requestedItem) && (
               <Typography
                 variant='caption'
                 color='text.secondary'
                 sx={{ display: 'block', mt: 0.5 }}
               >
-                {(request as any).subcategoryName || (request.category as AssetCategory & { requestedItem?: string }).requestedItem}
+                {request.subcategoryName || request.category.requestedItem}
               </Typography>
             )}
           </Box>
