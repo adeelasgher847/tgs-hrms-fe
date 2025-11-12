@@ -79,7 +79,9 @@ export interface CreatePayrollConfigRequest {
   leaveDeductionPolicy: LeaveDeductionPolicy;
 }
 
-export type PayrollStatus = 'pending' | 'approved' | 'paid';
+// Backend accepts: pending, approved, paid, rejected
+// UI uses: unpaid, paid (where unpaid maps to pending/approved/rejected)
+export type PayrollStatus = 'pending' | 'approved' | 'paid' | 'rejected';
 
 export interface PayrollOtherItem {
   type: string;
@@ -226,7 +228,6 @@ export interface PayrollStatistics {
 }
 
 export const payrollApi = {
-  // Get payroll configuration
   getConfig: async (): Promise<PayrollConfig | null> => {
     try {
       const response =
@@ -246,7 +247,6 @@ export const payrollApi = {
     }
   },
 
-  // Create payroll configuration
   createConfig: async (
     data: CreatePayrollConfigRequest
   ): Promise<PayrollConfig> => {
@@ -262,7 +262,6 @@ export const payrollApi = {
     }
   },
 
-  // Update payroll configuration
   updateConfig: async (
     data: CreatePayrollConfigRequest
   ): Promise<PayrollConfig> => {
@@ -278,8 +277,6 @@ export const payrollApi = {
     }
   },
 
-  // Employee Salary APIs
-  // Create/Assign salary structure to employee
   createEmployeeSalary: async (data: {
     employee_id: string;
     baseSalary: number;
@@ -302,7 +299,6 @@ export const payrollApi = {
     }
   },
 
-  // Get employee salary structure
   getEmployeeSalary: async (employeeId: string): Promise<EmployeeSalary> => {
     try {
       const response = await axiosInstance.get<EmployeeSalary>(
@@ -315,7 +311,6 @@ export const payrollApi = {
     }
   },
 
-  // Update employee salary structure
   updateEmployeeSalary: async (
     employeeId: string,
     data: {
@@ -413,7 +408,6 @@ export const payrollApi = {
     }
   },
 
-  // Payroll processing APIs
   generatePayroll: async (params: {
     month: number;
     year: number;

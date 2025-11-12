@@ -43,6 +43,8 @@ export interface Team {
     profile_pic?: string | null;
   };
   teamMembers?: TeamMember[];
+  members?: TeamMember[];
+  memberCount?: number;
 }
 
 // Paginated interface
@@ -253,10 +255,14 @@ class TeamApiService {
 
   async getAvailableEmployees(
     page: number = 1,
+    limit: number = 10,
     search?: string
   ): Promise<PaginatedResponse<TeamMember>> {
     try {
-      const params = new URLSearchParams({ page: page.toString() });
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
       if (search) params.append('search', search);
 
       const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(
@@ -290,10 +296,20 @@ class TeamApiService {
   }
 
   // Add member to team
-  async addMemberToTeam(teamId: string, employeeId: string): Promise<void> {
-    await axiosInstance.post(`${this.baseUrl}/${teamId}/add-member`, {
+  async addMemberToTeam(
+    teamId: string,
+    employeeId: string,
+    companyId?: string
+  ): Promise<void> {
+    const payload: { employee_id: string; company_id?: string } = {
       employee_id: employeeId,
-    });
+    };
+
+    if (companyId) {
+      payload.company_id = companyId;
+    }
+
+    await axiosInstance.post(`${this.baseUrl}/${teamId}/add-member`, payload);
   }
 
   // Remove member from team

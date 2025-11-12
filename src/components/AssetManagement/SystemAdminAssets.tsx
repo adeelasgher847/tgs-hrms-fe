@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -47,6 +47,12 @@ interface AssetCategory {
   icon?: string | null;
 }
 
+// Extended SystemAsset with category_id and subcategory_id from API response
+interface ExtendedSystemAsset extends SystemAsset {
+  category_id?: string;
+  subcategory_id?: string;
+}
+
 const SystemAdminAssets: React.FC = () => {
   const [assets, setAssets] = useState<SystemAsset[]>([]);
   const [summary, setSummary] = useState<SystemAssetSummary[]>([]);
@@ -54,7 +60,6 @@ const SystemAdminAssets: React.FC = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categories, setCategories] = useState<AssetCategory[]>([]);
-  const [subcategories, setSubcategories] = useState<AssetSubcategory[]>([]);
   const [categoryMap, setCategoryMap] = useState<Map<string, string>>(
     new Map()
   );
@@ -95,7 +100,6 @@ const SystemAdminAssets: React.FC = () => {
         : data?.items && Array.isArray(data.items)
           ? data.items
           : [];
-      setSubcategories(subcategoriesList);
 
       // Create subcategory map
       const map = new Map<string, string>();
@@ -105,7 +109,6 @@ const SystemAdminAssets: React.FC = () => {
       setSubcategoryMap(map);
     } catch (error: unknown) {
       console.error('Error fetching subcategories:', error);
-      setSubcategories([]);
     }
   };
 
@@ -119,7 +122,7 @@ const SystemAdminAssets: React.FC = () => {
     }
   };
 
-  const fetchAssets = async () => {
+  const fetchAssets = useCallback(async () => {
     try {
       setLoading(true);
       const filters: {
@@ -150,7 +153,7 @@ const SystemAdminAssets: React.FC = () => {
       setLoading(false);
       setInitialLoading(false);
     }
-  };
+  }, [categoryFilter, tenantFilter, assignedFilter, categories]);
 
   useEffect(() => {
     fetchCategories();
@@ -160,12 +163,13 @@ const SystemAdminAssets: React.FC = () => {
 
   useEffect(() => {
     fetchAssets();
-  }, [categoryFilter, tenantFilter, assignedFilter]);
+  }, [fetchAssets]);
 
   const categoryNames = useMemo(() => {
     const cats = new Set<string>();
     assets.forEach(asset => {
-      const categoryId = (asset as any).category_id;
+      const extendedAsset = asset as ExtendedSystemAsset;
+      const categoryId = extendedAsset.category_id;
       if (categoryId && categoryMap.has(categoryId)) {
         cats.add(categoryMap.get(categoryId)!);
       }
@@ -193,11 +197,12 @@ const SystemAdminAssets: React.FC = () => {
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(asset => {
-        const categoryId = (asset as any).category_id;
+        const extendedAsset = asset as ExtendedSystemAsset;
+        const categoryId = extendedAsset.category_id;
         const categoryName = categoryId
           ? categoryMap.get(categoryId) || ''
           : '';
-        const subcategoryId = (asset as any).subcategory_id;
+        const subcategoryId = extendedAsset.subcategory_id;
         const subcategoryName = subcategoryId
           ? subcategoryMap.get(subcategoryId) || ''
           : '';
@@ -802,27 +807,33 @@ const SystemAdminAssets: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Box>
-                        <Chip
-                          label={
-                            (asset as any).category_id &&
-                            categoryMap.has((asset as any).category_id)
-                              ? categoryMap.get((asset as any).category_id)
-                              : 'N/A'
-                          }
-                          size='small'
-                        />
-                        {(asset as any).subcategory_id &&
-                          subcategoryMap.has((asset as any).subcategory_id) && (
-                            <Typography
-                              variant='caption'
-                              color='text.secondary'
-                              sx={{ ml: 1, display: 'block', mt: 0.5 }}
-                            >
-                              {subcategoryMap.get(
-                                (asset as any).subcategory_id
-                              )}
-                            </Typography>
-                          )}
+                        {(() => {
+                          const extendedAsset = asset as ExtendedSystemAsset;
+                          const categoryId = extendedAsset.category_id;
+                          const subcategoryId = extendedAsset.subcategory_id;
+                          return (
+                            <>
+                              <Chip
+                                label={
+                                  categoryId && categoryMap.has(categoryId)
+                                    ? categoryMap.get(categoryId)
+                                    : 'N/A'
+                                }
+                                size='small'
+                              />
+                              {subcategoryId &&
+                                subcategoryMap.has(subcategoryId) && (
+                                  <Typography
+                                    variant='caption'
+                                    color='text.secondary'
+                                    sx={{ ml: 1, display: 'block', mt: 0.5 }}
+                                  >
+                                    {subcategoryMap.get(subcategoryId)}
+                                  </Typography>
+                                )}
+                            </>
+                          );
+                        })()}
                       </Box>
                     </TableCell>
                     <TableCell

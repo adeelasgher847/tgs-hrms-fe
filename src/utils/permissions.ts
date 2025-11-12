@@ -277,6 +277,11 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (parent.includes('assets')) {
+      if (sub.includes('assets overview')) {
+        visible = false;
+      }
+    }
   }
 
   if (r === 'manager') {
@@ -291,6 +296,11 @@ export const isSubMenuVisibleForRole = (
     }
     if (parent.includes('audit logs')) {
       visible = false;
+    }
+    if (parent.includes('attendance')) {
+      if (sub.includes('report')) {
+        visible = false;
+      }
     }
   }
 
@@ -319,9 +329,7 @@ export const isSubMenuVisibleForRole = (
       parent.includes('leave analytics') ||
       parent.includes('leave-analytics')
     ) {
-      if (sub.includes('Cross Tenant Leaves')) {
-        visible = false;
-      }
+      visible = sub.includes('report');
     }
 
     if (parent.includes('audit logs')) {
@@ -401,6 +409,14 @@ export const isSubMenuVisibleForRole = (
   if (r === 'manager') {
     if (parent.includes('assets')) {
       if (sub.includes('asset inventory') || sub.includes('management')) {
+        visible = false;
+      }
+    }
+    if (
+      parent.includes('leave analytics') ||
+      parent.includes('leave-analytics')
+    ) {
+      if (sub.includes('cross tenant leaves')) {
         visible = false;
       }
     }

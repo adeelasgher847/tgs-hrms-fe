@@ -191,13 +191,64 @@ export const SystemTenantApi = {
 
   getAllTenants: async (includeDeleted = true): Promise<SystemTenant[]> => {
     try {
-      // API returns a direct array of tenants without pagination
-      const res = await axiosInstance.get<SystemTenant[]>('/system/tenants', {
+      // Try to fetch all tenants by using a very large limit or no pagination params
+      // First, try without pagination params
+      const res = await axiosInstance.get<
+        | SystemTenant[]
+        | { items: SystemTenant[]; total?: number; data?: SystemTenant[] }
+      >('/system/tenants', {
         params: { includeDeleted },
       });
 
-      // API response is always an array
-      const tenants = Array.isArray(res.data) ? res.data : [];
+      let tenants: SystemTenant[] = [];
+
+      // Handle different response structures
+      if (Array.isArray(res.data)) {
+        tenants = res.data;
+      } else if (res.data && typeof res.data === 'object') {
+        // Check if it's a paginated response
+        if ('items' in res.data && Array.isArray(res.data.items)) {
+          tenants = res.data.items;
+          // If there are more pages, fetch them
+          const total = res.data.total || res.data.items.length;
+          if (total > res.data.items.length) {
+            // Fetch remaining pages
+            let page = 2;
+            const perPage = res.data.items.length || 25;
+            while (tenants.length < total) {
+              const pageRes = await axiosInstance.get<
+                | SystemTenant[]
+                | { items: SystemTenant[]; data?: SystemTenant[] }
+              >('/system/tenants', {
+                params: { page, includeDeleted, limit: perPage },
+              });
+
+              let pageTenants: SystemTenant[] = [];
+              if (Array.isArray(pageRes.data)) {
+                pageTenants = pageRes.data;
+              } else if (pageRes.data && typeof pageRes.data === 'object') {
+                if (
+                  'items' in pageRes.data &&
+                  Array.isArray(pageRes.data.items)
+                ) {
+                  pageTenants = pageRes.data.items;
+                } else if (
+                  'data' in pageRes.data &&
+                  Array.isArray(pageRes.data.data)
+                ) {
+                  pageTenants = pageRes.data.data;
+                }
+              }
+
+              if (pageTenants.length === 0) break;
+              tenants = [...tenants, ...pageTenants];
+              page++;
+            }
+          }
+        } else if ('data' in res.data && Array.isArray(res.data.data)) {
+          tenants = res.data.data;
+        }
+      }
 
       console.log(`Fetched ${tenants.length} tenants`);
       return tenants;

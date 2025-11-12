@@ -51,6 +51,7 @@ const resolveEmployeeId = (): string | null => {
         return parsedTrimmed.length > 0 ? parsedTrimmed : null;
       }
     } catch {
+      // Ignore JSON parse errors, try string parsing instead
     }
 
     const trimmed = raw.replace(/^"|"$/g, '').trim();
@@ -78,7 +79,6 @@ const MySalary: React.FC = () => {
   const [detailRecord, setDetailRecord] = useState<PayrollRecord | null>(null);
   const [detailLoading, setDetailLoading] = useState<boolean>(false);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [employeeName, setEmployeeName] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
   const fetchPayslip = useCallback(async (recordId: string | null) => {
@@ -112,7 +112,6 @@ const MySalary: React.FC = () => {
       setSelectedRecordId(null);
       setHistory([]);
       setDetailRecord(null);
-      setEmployeeName('');
       setDialogOpen(false);
       return;
     }
@@ -120,9 +119,6 @@ const MySalary: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      if (user) {
-        setEmployeeName(`${user.first_name} ${user.last_name}`.trim());
-      }
 
       const historyRecords =
         await payrollApi.getPayrollHistory(employeeIdentifier);
@@ -152,7 +148,6 @@ const MySalary: React.FC = () => {
       setError('Failed to load salary information.');
       setHistory([]);
       setSelectedRecordId(null);
-      setEmployeeName('');
       setDetailRecord(null);
       setDetailError(null);
       setDetailLoading(false);
@@ -172,11 +167,6 @@ const MySalary: React.FC = () => {
         return;
       }
       setSelectedRecordId(record.id);
-      if (record.employee?.user?.first_name) {
-        setEmployeeName(
-          `${record.employee.user.first_name} ${record.employee.user.last_name ?? ''}`.trim()
-        );
-      }
       setDialogOpen(true);
       await fetchPayslip(record.id);
     },

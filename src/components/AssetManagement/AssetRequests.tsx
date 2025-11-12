@@ -37,7 +37,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type { AssetRequest, AssetCategory } from '../../types/asset';
+import type { AssetRequest } from '../../types/asset';
 import {
   assetApi,
   type AssetRequest as ApiAssetRequest,
@@ -76,6 +76,11 @@ interface ApiAssetRequestExtended extends ApiAssetRequest {
   // Legacy field for backward compatibility
   asset_category?: string;
 }
+
+const isSubcategoryCategoryObject = (
+  category: AssetSubcategory['category']
+): category is { id?: string; name?: string } =>
+  typeof category === 'object' && category !== null;
 
 // Get current user from localStorage or auth context
 const getCurrentUserId = () => {
@@ -163,7 +168,9 @@ const AssetRequests: React.FC = () => {
     rejected: 0,
     cancelled: 0,
   }); // Store counts from API response
-  const [rawApiRequests, setRawApiRequests] = useState<ApiAssetRequestExtended[]>([]); // Store raw API requests for re-transformation
+  const [rawApiRequests, setRawApiRequests] = useState<
+    ApiAssetRequestExtended[]
+  >([]); // Store raw API requests for re-transformation
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [requestToCancel, setRequestToCancel] = useState<AssetRequest | null>(
@@ -175,7 +182,9 @@ const AssetRequests: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
-  const [categories, setCategories] = useState<Array<{ id: string; name: string; description?: string }>>([]);
+  const [categories, setCategories] = useState<
+    Array<{ id: string; name: string; description?: string }>
+  >([]);
   const [subcategories, setSubcategories] = useState<AssetSubcategory[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   const initialLoadRef = React.useRef(false); // Track if initial load has been done
@@ -239,13 +248,17 @@ const AssetRequests: React.FC = () => {
     const fetchCategories = async () => {
       // If categories are already loaded, don't fetch again
       if (categories.length > 0) return;
-      
+
       try {
         setLoadingData(true);
         const response = await assetApi.getAllAssetCategories();
-        
+
         // Handle different response structures
-        let categoriesData: Array<{ id: string; name: string; description?: string }> = [];
+        let categoriesData: Array<{
+          id: string;
+          name: string;
+          description?: string;
+        }> = [];
         if (Array.isArray(response)) {
           categoriesData = response;
         } else if (response.data && Array.isArray(response.data)) {
@@ -265,6 +278,7 @@ const AssetRequests: React.FC = () => {
     };
 
     fetchCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Load once on mount
 
   // Fetch subcategories when category is selected
@@ -277,9 +291,8 @@ const AssetRequests: React.FC = () => {
 
       try {
         setLoadingData(true);
-        const response = await assetApi.getAssetSubcategoriesByCategoryId(
-          selectedCategoryId
-        );
+        const response =
+          await assetApi.getAssetSubcategoriesByCategoryId(selectedCategoryId);
 
         // Handle different response structures
         let subcategoriesData: AssetSubcategory[] = [];
@@ -287,7 +300,11 @@ const AssetRequests: React.FC = () => {
           subcategoriesData = response;
         } else if (response && response.data && Array.isArray(response.data)) {
           subcategoriesData = response.data;
-        } else if (response && response.items && Array.isArray(response.items)) {
+        } else if (
+          response &&
+          response.items &&
+          Array.isArray(response.items)
+        ) {
           subcategoriesData = response.items;
         } else if (
           response &&
@@ -298,7 +315,9 @@ const AssetRequests: React.FC = () => {
         }
 
         // Filter subcategories by selected category ID
-        const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+        const selectedCategory = categories.find(
+          cat => cat.id === selectedCategoryId
+        );
         const filteredSubcategories = subcategoriesData.filter(sub => {
           if (sub.category === selectedCategoryId) {
             return true;
@@ -306,15 +325,18 @@ const AssetRequests: React.FC = () => {
           if (selectedCategory && sub.category === selectedCategory.name) {
             return true;
           }
-          if (sub.category && typeof sub.category === 'object' && 'id' in sub.category) {
-            return (sub.category as any).id === selectedCategoryId;
+          if (isSubcategoryCategoryObject(sub.category)) {
+            return sub.category.id === selectedCategoryId;
           }
           return false;
         });
 
         setSubcategories(filteredSubcategories);
       } catch (error) {
-        console.error('❌ AssetRequests - Failed to fetch subcategories:', error);
+        console.error(
+          '❌ AssetRequests - Failed to fetch subcategories:',
+          error
+        );
         setSubcategories([]);
       } finally {
         setLoadingData(false);
@@ -324,32 +346,40 @@ const AssetRequests: React.FC = () => {
     if (selectedCategoryId) {
       fetchSubcategories();
     }
-  }, [selectedCategoryId, categories]);
+  }, [selectedCategoryId, categories, categories.length]);
 
   // Helper function to transform API requests
   const transformApiRequests = React.useCallback(
     (apiRequests: ApiAssetRequestExtended[]): AssetRequest[] => {
       return apiRequests.map((apiRequest: ApiAssetRequestExtended) => {
         // Handle new API response structure with category_id and subcategory_id
-        const categoryId = apiRequest.category_id || apiRequest.asset_category || '';
+        const categoryId =
+          apiRequest.category_id || apiRequest.asset_category || '';
         const subcategoryId = apiRequest.subcategory_id || undefined;
-        
+
         // Find category name - first try from API response category object
         let categoryName = '';
-        if (apiRequest.category && typeof apiRequest.category === 'object' && apiRequest.category !== null) {
+        if (
+          apiRequest.category &&
+          typeof apiRequest.category === 'object' &&
+          apiRequest.category !== null
+        ) {
           categoryName = apiRequest.category.name || '';
         }
-        
+
         // If not found in API response, try from categories list
         if (!categoryName) {
           const categoryObj = categories.find(cat => cat.id === categoryId);
           categoryName = categoryObj?.name || '';
         }
-        
+
         // If still not found, fallback to ID (but log warning)
         if (!categoryName && categoryId) {
           if (categories.length === 0) {
-            console.warn('⚠️ Categories not loaded yet for category ID:', categoryId);
+            console.warn(
+              '⚠️ Categories not loaded yet for category ID:',
+              categoryId
+            );
           }
           categoryName = categoryId; // Fallback to ID if name not found
         }
@@ -358,19 +388,25 @@ const AssetRequests: React.FC = () => {
         // First try to get from API response subcategory object
         let subcategoryName = '';
         if (apiRequest.subcategory) {
-          if (typeof apiRequest.subcategory === 'object' && apiRequest.subcategory !== null) {
-            subcategoryName = apiRequest.subcategory.name || apiRequest.subcategoryName || '';
+          if (
+            typeof apiRequest.subcategory === 'object' &&
+            apiRequest.subcategory !== null
+          ) {
+            subcategoryName =
+              apiRequest.subcategory.name || apiRequest.subcategoryName || '';
           } else {
             subcategoryName = apiRequest.subcategory || '';
           }
         }
-        
+
         // If not found in API response, try to find from subcategories list
         if (!subcategoryName && subcategoryId) {
-          const subcategoryObj = subcategories.find(sub => sub.id === subcategoryId);
+          const subcategoryObj = subcategories.find(
+            sub => sub.id === subcategoryId
+          );
           subcategoryName = subcategoryObj?.name || '';
         }
-        
+
         // Also check subcategoryName field directly
         if (!subcategoryName && apiRequest.subcategoryName) {
           subcategoryName = apiRequest.subcategoryName;
@@ -463,10 +499,12 @@ const AssetRequests: React.FC = () => {
         setRawApiRequests(prev => {
           // Merge with existing raw requests, avoiding duplicates
           const existingIds = new Set(prev.map(r => r.id));
-          const newRequests = allApiRequests.filter(r => !existingIds.has(r.id));
+          const newRequests = allApiRequests.filter(
+            r => !existingIds.has(r.id)
+          );
           return [...prev, ...newRequests];
         });
-        
+
         const transformedRequests = transformApiRequests(allApiRequests);
         setAllRequestsForStats(transformedRequests);
       } else {
@@ -620,9 +658,10 @@ const AssetRequests: React.FC = () => {
     try {
       // Get category ID and subcategory ID
       const categoryId = data.category; // This is already the category ID from dropdown
-      const subcategoryId = data.subcategory && data.subcategory.trim() !== '' 
-        ? data.subcategory 
-        : undefined;
+      const subcategoryId =
+        data.subcategory && data.subcategory.trim() !== ''
+          ? data.subcategory
+          : undefined;
 
       const requestData = {
         categoryId: categoryId,
@@ -635,7 +674,9 @@ const AssetRequests: React.FC = () => {
       // Find category and subcategory names
       const categoryObj = categories.find(cat => cat.id === categoryId);
       const categoryName = categoryObj?.name || categoryId;
-      const subcategoryObj = subcategories.find(sub => sub.id === subcategoryId);
+      const subcategoryObj = subcategories.find(
+        sub => sub.id === subcategoryId
+      );
       const subcategoryName = subcategoryObj?.name || '';
 
       // Transform and add to local state
@@ -754,7 +795,12 @@ const AssetRequests: React.FC = () => {
   // Use counts from API response if available, otherwise calculate from allRequestsForStats
   const displayCounts = useMemo(() => {
     // If we have counts from API response, use them (most accurate)
-    if (statusCounts.total > 0 || statusCounts.pending > 0 || statusCounts.approved > 0 || statusCounts.rejected > 0) {
+    if (
+      statusCounts.total > 0 ||
+      statusCounts.pending > 0 ||
+      statusCounts.approved > 0 ||
+      statusCounts.rejected > 0
+    ) {
       return {
         all: statusCounts.total,
         pending: statusCounts.pending,
@@ -768,8 +814,10 @@ const AssetRequests: React.FC = () => {
       return {
         all: pagination.total || allRequestsForStats.length,
         pending: allRequestsForStats.filter(r => r.status === 'pending').length,
-        approved: allRequestsForStats.filter(r => r.status === 'approved').length,
-        rejected: allRequestsForStats.filter(r => r.status === 'rejected').length,
+        approved: allRequestsForStats.filter(r => r.status === 'approved')
+          .length,
+        rejected: allRequestsForStats.filter(r => r.status === 'rejected')
+          .length,
       };
     }
 
@@ -807,13 +855,13 @@ const AssetRequests: React.FC = () => {
             <Typography variant='body2' fontWeight={500}>
               {request.category.name}
             </Typography>
-            {((request as any).subcategoryName || (request.category as AssetCategory & { requestedItem?: string }).requestedItem) && (
+            {(request.subcategoryName || request.category.requestedItem) && (
               <Typography
                 variant='caption'
                 color='text.secondary'
                 sx={{ display: 'block', mt: 0.5 }}
               >
-                {(request as any).subcategoryName || (request.category as AssetCategory & { requestedItem?: string }).requestedItem}
+                {request.subcategoryName || request.category.requestedItem}
               </Typography>
             )}
           </Box>
@@ -1206,51 +1254,53 @@ const AssetRequests: React.FC = () => {
 
                 {/* Subcategory selection - only show if a category with subcategories is selected */}
                 {selectedCategoryId && subcategories.length > 0 && (
-                    <Box>
-                      <Controller
-                        name='subcategory'
-                        control={control}
-                        render={({ field }) => (
-                          <FormControl fullWidth>
-                            <InputLabel>Subcategory</InputLabel>
-                            <Select
-                              {...field}
-                              label='Subcategory'
-                              disabled={loading || loadingData || !selectedCategoryId}
-                              MenuProps={{
-                                PaperProps: {
-                                  style: {
-                                    maxHeight: 300,
-                                  },
+                  <Box>
+                    <Controller
+                      name='subcategory'
+                      control={control}
+                      render={({ field }) => (
+                        <FormControl fullWidth>
+                          <InputLabel>Subcategory</InputLabel>
+                          <Select
+                            {...field}
+                            label='Subcategory'
+                            disabled={
+                              loading || loadingData || !selectedCategoryId
+                            }
+                            MenuProps={{
+                              PaperProps: {
+                                style: {
+                                  maxHeight: 300,
                                 },
-                              }}
-                            >
-                              {subcategories.map(subcategory => (
-                                  <MenuItem
-                                    key={subcategory.id}
-                                    value={subcategory.id}
-                                  >
-                                    <Box>
-                                      <Typography variant='body2'>
-                                        {subcategory.name}
-                                      </Typography>
-                                      {subcategory.description && (
-                                        <Typography
-                                          variant='caption'
-                                          color='text.secondary'
-                                        >
-                                          {subcategory.description}
-                                        </Typography>
-                                      )}
-                                    </Box>
-                                  </MenuItem>
-                                ))}
-                            </Select>
-                          </FormControl>
-                        )}
-                      />
-                    </Box>
-                  )}
+                              },
+                            }}
+                          >
+                            {subcategories.map(subcategory => (
+                              <MenuItem
+                                key={subcategory.id}
+                                value={subcategory.id}
+                              >
+                                <Box>
+                                  <Typography variant='body2'>
+                                    {subcategory.name}
+                                  </Typography>
+                                  {subcategory.description && (
+                                    <Typography
+                                      variant='caption'
+                                      color='text.secondary'
+                                    >
+                                      {subcategory.description}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      )}
+                    />
+                  </Box>
+                )}
 
                 <Box>
                   <Controller

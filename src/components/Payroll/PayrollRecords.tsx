@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import Grid from '@mui/material/Grid';
 import {
   Alert,
   Box,
@@ -60,7 +59,18 @@ const monthOptions = [
   { label: 'December', value: 12 },
 ];
 
-const statusOptions: PayrollStatus[] = ['pending', 'approved', 'paid'];
+type UIStatus = 'unpaid' | 'paid';
+const statusOptions: UIStatus[] = ['unpaid', 'paid'];
+
+const mapStatusToBackend = (uiStatus: UIStatus): PayrollStatus => {
+  if (uiStatus === 'paid') return 'paid';
+  return 'pending';
+};
+
+const mapStatusFromBackend = (backendStatus: string): UIStatus => {
+  if (backendStatus === 'paid') return 'paid';
+  return 'unpaid';
+};
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -83,7 +93,6 @@ const PayrollRecords: React.FC = () => {
   const effectiveDarkMode =
     typeof outletDarkMode === 'boolean' ? outletDarkMode : darkMode;
 
-  // Safely access user - handle case where user might not be loaded yet
   const userContext = useUser();
   const user = userContext?.user;
   const userRole = user?.role;
@@ -93,7 +102,6 @@ const PayrollRecords: React.FC = () => {
   const isTenantAdminUser = isAdmin(userRole);
   const canGeneratePayroll =
     isSystemAdminUser || isHrAdminUser || isTenantAdminUser;
-  const canUpdateStatus = canGeneratePayroll;
 
   const currentDate = dayjs();
   const [month, setMonth] = useState<number>(currentDate.month() + 1);
@@ -119,7 +127,7 @@ const PayrollRecords: React.FC = () => {
 
   const [statusDialogOpen, setStatusDialogOpen] = useState<boolean>(false);
   const [statusRecord, setStatusRecord] = useState<PayrollRecord | null>(null);
-  const [statusValue, setStatusValue] = useState<PayrollStatus>('pending');
+  const [statusValue, setStatusValue] = useState<'unpaid' | 'paid'>('unpaid');
   const [statusRemarks, setStatusRemarks] = useState<string>('');
   const [updatingStatus, setUpdatingStatus] = useState<boolean>(false);
 
@@ -259,7 +267,8 @@ const PayrollRecords: React.FC = () => {
 
   const openStatusDialog = (record: PayrollRecord) => {
     setStatusRecord(record);
-    setStatusValue(record.status);
+    // Map backend status to UI status
+    setStatusValue(mapStatusFromBackend(record.status));
     setStatusRemarks(record.remarks || '');
     setStatusDialogOpen(true);
   };
@@ -268,15 +277,17 @@ const PayrollRecords: React.FC = () => {
     setStatusDialogOpen(false);
     setStatusRecord(null);
     setStatusRemarks('');
-    setStatusValue('pending');
+    setStatusValue('unpaid');
   };
 
   const handleStatusUpdate = async () => {
     if (!statusRecord) return;
     try {
       setUpdatingStatus(true);
+      // Map UI status to backend status
+      const backendStatus = mapStatusToBackend(statusValue);
       const updated = await payrollApi.updatePayrollStatus(statusRecord.id, {
-        status: statusValue,
+        status: backendStatus,
         remarks: statusRemarks || undefined,
       });
       setRecords(prev =>
@@ -310,25 +321,6 @@ const PayrollRecords: React.FC = () => {
     });
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [records]);
-
-  const employeesForGeneration = useMemo(() => {
-    if (!records.length) {
-      return employees;
-    }
-    const existingEmployeeIds = new Set(
-      records
-        .filter(record => record.month === month && record.year === year)
-        .map(
-          record =>
-            record.employee?.id ||
-            record.employee_id ||
-            record.employee?.user?.id ||
-            ''
-        )
-        .filter(Boolean)
-    );
-    return employees.filter(emp => !existingEmployeeIds.has(emp.id));
-  }, [employees, records, month, year]);
 
   // Calculate available employees for the generate dialog (uses generateMonth/generateYear)
   const employeesForGenerateDialog = useMemo(() => {
@@ -365,11 +357,6 @@ const PayrollRecords: React.FC = () => {
       return id === employeeFilter;
     });
   }, [records, employeeFilter]);
-
-  const isGenerateFormValid = useMemo(
-    () => Boolean(generateMonth && generateYear),
-    [generateMonth, generateYear]
-  );
 
   const handleGenerate = useCallback(async () => {
     if (!generateMonth || !generateYear) {
@@ -538,12 +525,6 @@ const PayrollRecords: React.FC = () => {
             border: `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Typography
-            variant='h6'
-            sx={{ fontWeight: 600, mb: 2, color: textColor }}
-          >
-            Summary
-          </Typography>
           <Box
             sx={{
               display: 'grid',
@@ -709,20 +690,19 @@ const PayrollRecords: React.FC = () => {
                           justifyContent: 'center',
                           fontWeight: 600,
                           backgroundColor:
-                            record.status === 'paid'
+                            mapStatusFromBackend(record.status) === 'paid'
                               ? theme.palette.success.light
-                              : record.status === 'approved'
-                                ? theme.palette.info.light
-                                : theme.palette.warning.light,
+                              : theme.palette.error.light,
                           color:
-                            record.status === 'paid'
+                            mapStatusFromBackend(record.status) === 'paid'
                               ? theme.palette.success.contrastText
-                              : record.status === 'approved'
-                                ? theme.palette.info.contrastText
-                                : theme.palette.warning.contrastText,
+                              : theme.palette.error.contrastText,
                         }}
                       >
-                        {record.status}
+                        {mapStatusFromBackend(record.status)
+                          .charAt(0)
+                          .toUpperCase() +
+                          mapStatusFromBackend(record.status).slice(1)}
                       </Typography>
                     </TableCell>
                     <TableCell align='center'>
@@ -1027,14 +1007,17 @@ const PayrollRecords: React.FC = () => {
                             </TableCell>
                             <TableCell align='center'>
                               <Chip
-                                label={record.status}
+                                label={
+                                  mapStatusFromBackend(record.status)
+                                    .charAt(0)
+                                    .toUpperCase() +
+                                  mapStatusFromBackend(record.status).slice(1)
+                                }
                                 size='small'
                                 color={
-                                  record.status === 'paid'
+                                  mapStatusFromBackend(record.status) === 'paid'
                                     ? 'success'
-                                    : record.status === 'approved'
-                                      ? 'info'
-                                      : 'warning'
+                                    : 'error'
                                 }
                               />
                             </TableCell>
@@ -1098,7 +1081,7 @@ const PayrollRecords: React.FC = () => {
                 label='Status'
                 value={statusValue}
                 onChange={event =>
-                  setStatusValue(event.target.value as PayrollStatus)
+                  setStatusValue(event.target.value as 'unpaid' | 'paid')
                 }
               >
                 {statusOptions.map(option => (

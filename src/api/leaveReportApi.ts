@@ -234,13 +234,13 @@ export const leaveReportApi = {
     };
 
     if (Array.isArray(data.employeeReports)) {
-      const fixedReports = data.employeeReports.map((emp: any) => {
+      const fixedReports = data.employeeReports.map((emp: EmployeeReport) => {
         const leaveRecords: LeaveRecord[] = emp.leaveRecords || [];
-        const leaveSummary: any[] = emp.leaveSummary || [];
+        const leaveSummary: LeaveSummaryItem[] = emp.leaveSummary || [];
 
         // Create a map of leave type IDs to their summaries for quick lookup
-        const summaryMap = new Map<string, any>();
-        leaveSummary.forEach((summary: any) => {
+        const summaryMap = new Map<string, LeaveSummaryItem>();
+        leaveSummary.forEach((summary: LeaveSummaryItem) => {
           summaryMap.set(summary.leaveTypeId, {
             ...summary,
             approvedDays: summary.approvedDays ?? 0,
@@ -261,7 +261,7 @@ export const leaveReportApi = {
           }
         >();
 
-        leaveRecords.forEach((record: any) => {
+        leaveRecords.forEach((record: LeaveRecord) => {
           if (!record.startDate || !record.endDate) return;
 
           // Calculate days for this record
@@ -307,28 +307,32 @@ export const leaveReportApi = {
         });
 
         // Update leave summary with calculated values
-        const updatedLeaveSummary = leaveSummary.map((summary: any) => {
-          const stats = leaveTypeStats.get(summary.leaveTypeId);
-          const approvedDays = stats?.approvedDays ?? summary.approvedDays ?? 0;
-          const pendingDays = stats?.pendingDays ?? summary.pendingDays ?? 0;
-          const rejectedDays = stats?.rejectedDays ?? summary.rejectedDays ?? 0;
-          const totalDays = approvedDays + pendingDays + rejectedDays;
-          // Remaining days = maxDays - approvedDays (pending leaves don't reduce remaining balance)
-          const remainingDays = (summary.maxDaysPerYear ?? 0) - approvedDays;
+        const updatedLeaveSummary = leaveSummary.map(
+          (summary: LeaveSummaryItem) => {
+            const stats = leaveTypeStats.get(summary.leaveTypeId);
+            const approvedDays =
+              stats?.approvedDays ?? summary.approvedDays ?? 0;
+            const pendingDays = stats?.pendingDays ?? summary.pendingDays ?? 0;
+            const rejectedDays =
+              stats?.rejectedDays ?? summary.rejectedDays ?? 0;
+            const totalDays = approvedDays + pendingDays + rejectedDays;
+            // Remaining days = maxDays - approvedDays (pending leaves don't reduce remaining balance)
+            const remainingDays = (summary.maxDaysPerYear ?? 0) - approvedDays;
 
-          return {
-            ...summary,
-            approvedDays,
-            pendingDays,
-            rejectedDays,
-            totalDays,
-            remainingDays: Math.max(0, remainingDays),
-          };
-        });
+            return {
+              ...summary,
+              approvedDays,
+              pendingDays,
+              rejectedDays,
+              totalDays,
+              remainingDays: Math.max(0, remainingDays),
+            };
+          }
+        );
 
         // Calculate totals from leave records
         const validRecords = leaveRecords.filter(
-          (r: any) => r.startDate && r.endDate
+          (r: LeaveRecord) => r.startDate && r.endDate
         );
 
         let totalLeaveDays = 0;
@@ -338,7 +342,7 @@ export const leaveReportApi = {
         let pendingRequests = 0;
         let rejectedRequests = 0;
 
-        validRecords.forEach((record: any) => {
+        validRecords.forEach((record: LeaveRecord) => {
           let recordDays = record.totalDays;
           if (recordDays === null || recordDays === undefined) {
             recordDays = calculateDays(record.startDate, record.endDate);
@@ -391,7 +395,7 @@ export const leaveReportApi = {
         return {
           ...emp,
           leaveSummary: updatedLeaveSummary,
-          leaveRecords: leaveRecords.map((record: any) => ({
+          leaveRecords: leaveRecords.map((record: LeaveRecord) => ({
             ...record,
             totalDays:
               record.totalDays ??

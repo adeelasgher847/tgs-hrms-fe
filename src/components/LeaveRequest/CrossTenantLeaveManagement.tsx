@@ -121,8 +121,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   const fetchTenants = useCallback(async () => {
     try {
-      // Fetch all tenants without pagination
-      const allTenants = await SystemTenantApi.getAllTenants(false);
+      // Fetch all tenants (including deleted) without pagination
+      const allTenants = await SystemTenantApi.getAllTenants(true);
       // Show all tenants (no filtering)
       setTenants(allTenants);
 
