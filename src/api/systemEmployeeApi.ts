@@ -106,13 +106,39 @@ export type GetEmployeesParams = {
 
 const BASE = '/system/employees';
 
+type PaginatedSystemEmployeeResponse = {
+  items: SystemEmployee[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
 class SystemEmployeeApiService {
   async getSystemEmployees(
     params?: GetEmployeesParams
-  ): Promise<SystemEmployee[]> {
-    const res = await axiosInstance.get<SystemEmployee[]>(BASE, { params });
+  ): Promise<SystemEmployee[] | PaginatedSystemEmployeeResponse> {
+    const res = await axiosInstance.get<
+      SystemEmployee[] | PaginatedSystemEmployeeResponse
+    >(BASE, { params });
     console.log('Get system employee api response: ', res);
-    return res.data || [];
+
+    // Handle paginated response with items array
+    if (
+      res.data &&
+      typeof res.data === 'object' &&
+      'items' in res.data &&
+      Array.isArray(res.data.items)
+    ) {
+      return res.data;
+    }
+
+    // Handle direct array response
+    if (Array.isArray(res.data)) {
+      return res.data;
+    }
+
+    return [];
   }
 
   async getSystemEmployeeById(id: string): Promise<SystemEmployeeDetails> {

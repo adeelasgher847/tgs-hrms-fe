@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -21,6 +21,11 @@ import {
   Chip,
   Avatar,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -31,8 +36,22 @@ import {
   assetApi,
   type SystemAsset,
   type SystemAssetSummary,
+  type AssetSubcategory,
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
+
+interface AssetCategory {
+  id: string;
+  name: string;
+  description?: string | null;
+  icon?: string | null;
+}
+
+// Extended SystemAsset with category_id and subcategory_id from API response
+interface ExtendedSystemAsset extends SystemAsset {
+  category_id?: string;
+  subcategory_id?: string;
+}
 
 const SystemAdminAssets: React.FC = () => {
   const [assets, setAssets] = useState<SystemAsset[]>([]);
@@ -40,13 +59,59 @@ const SystemAdminAssets: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categories, setCategories] = useState<AssetCategory[]>([]);
+  const [categoryMap, setCategoryMap] = useState<Map<string, string>>(
+    new Map()
+  );
+  const [subcategoryMap, setSubcategoryMap] = useState<Map<string, string>>(
+    new Map()
+  );
+  const [viewMoreDialogOpen, setViewMoreDialogOpen] = useState(false);
 
   // Filters
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [tenantFilter, setTenantFilter] = useState<string>('');
   const [assignedFilter, setAssignedFilter] = useState<string>('');
 
-  // Fetch summary data
+  const fetchCategories = async () => {
+    try {
+      const data = await assetApi.getAllAssetCategories();
+      const categoriesList = Array.isArray(data) ? data : [];
+      setCategories(categoriesList);
+
+      // Create category map
+      const map = new Map<string, string>();
+      categoriesList.forEach((cat: AssetCategory) => {
+        map.set(cat.id, cat.name);
+      });
+      setCategoryMap(map);
+    } catch (error: unknown) {
+      console.error('Error fetching categories:', error);
+      setCategories([]);
+    }
+  };
+
+  const fetchSubcategories = async () => {
+    try {
+      // Fetch all subcategories
+      const data = await assetApi.getAllAssetSubcategories();
+      const subcategoriesList = Array.isArray(data)
+        ? data
+        : data?.items && Array.isArray(data.items)
+          ? data.items
+          : [];
+
+      // Create subcategory map
+      const map = new Map<string, string>();
+      subcategoriesList.forEach((subcat: AssetSubcategory) => {
+        map.set(subcat.id, subcat.name);
+      });
+      setSubcategoryMap(map);
+    } catch (error: unknown) {
+      console.error('Error fetching subcategories:', error);
+    }
+  };
+
   const fetchSummary = async () => {
     try {
       const data = await assetApi.getSystemAssetsSummary();
@@ -57,8 +122,7 @@ const SystemAdminAssets: React.FC = () => {
     }
   };
 
-  // Fetch assets data
-  const fetchAssets = async () => {
+  const fetchAssets = useCallback(async () => {
     try {
       setLoading(true);
       const filters: {
@@ -67,7 +131,14 @@ const SystemAdminAssets: React.FC = () => {
         assigned?: 'assigned' | 'unassigned';
       } = {};
 
-      if (categoryFilter) filters.category = categoryFilter;
+      // Convert category name to category ID for filtering
+      if (categoryFilter) {
+        // Find category ID from category name
+        const category = categories.find(cat => cat.name === categoryFilter);
+        if (category) {
+          filters.category = category.id;
+        }
+      }
       if (tenantFilter) filters.tenantId = tenantFilter;
       if (assignedFilter) {
         filters.assigned = assignedFilter as 'assigned' | 'unassigned';
@@ -82,25 +153,29 @@ const SystemAdminAssets: React.FC = () => {
       setLoading(false);
       setInitialLoading(false);
     }
-  };
+  }, [categoryFilter, tenantFilter, assignedFilter, categories]);
 
   useEffect(() => {
+    fetchCategories();
+    fetchSubcategories();
     fetchSummary();
   }, []);
 
   useEffect(() => {
     fetchAssets();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryFilter, tenantFilter, assignedFilter]);
+  }, [fetchAssets]);
 
-  // Get unique categories and tenants from assets
-  const categories = useMemo(() => {
+  const categoryNames = useMemo(() => {
     const cats = new Set<string>();
     assets.forEach(asset => {
-      if (asset.category) cats.add(asset.category);
+      const extendedAsset = asset as ExtendedSystemAsset;
+      const categoryId = extendedAsset.category_id;
+      if (categoryId && categoryMap.has(categoryId)) {
+        cats.add(categoryMap.get(categoryId)!);
+      }
     });
     return Array.from(cats).sort();
-  }, [assets]);
+  }, [assets, categoryMap]);
 
   const tenants = useMemo(() => {
     const tenantMap = new Map<string, string>();
@@ -115,22 +190,38 @@ const SystemAdminAssets: React.FC = () => {
     return Array.from(tenantMap.entries()).map(([id, name]) => ({ id, name }));
   }, [assets, summary]);
 
-  // Filter assets based on search term
   const filteredAssets = useMemo(() => {
-    if (!searchTerm) return assets;
+    let filtered = assets;
 
-    const search = searchTerm.toLowerCase();
-    return assets.filter(
-      asset =>
-        asset.name.toLowerCase().includes(search) ||
-        asset.category.toLowerCase().includes(search) ||
-        asset.tenant?.name.toLowerCase().includes(search) ||
-        (asset.assignedToUser &&
-          `${asset.assignedToUser.first_name} ${asset.assignedToUser.last_name}`
-            .toLowerCase()
-            .includes(search))
-    );
-  }, [assets, searchTerm]);
+    // Apply search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(asset => {
+        const extendedAsset = asset as ExtendedSystemAsset;
+        const categoryId = extendedAsset.category_id;
+        const categoryName = categoryId
+          ? categoryMap.get(categoryId) || ''
+          : '';
+        const subcategoryId = extendedAsset.subcategory_id;
+        const subcategoryName = subcategoryId
+          ? subcategoryMap.get(subcategoryId) || ''
+          : '';
+
+        return (
+          asset.name.toLowerCase().includes(search) ||
+          categoryName.toLowerCase().includes(search) ||
+          subcategoryName.toLowerCase().includes(search) ||
+          asset.tenant?.name.toLowerCase().includes(search) ||
+          (asset.assignedToUser &&
+            `${asset.assignedToUser.first_name} ${asset.assignedToUser.last_name}`
+              .toLowerCase()
+              .includes(search))
+        );
+      });
+    }
+
+    return filtered;
+  }, [assets, searchTerm, categoryMap, subcategoryMap]);
 
   const handleClearFilters = () => {
     setCategoryFilter('');
@@ -180,181 +271,367 @@ const SystemAdminAssets: React.FC = () => {
         }}
       >
         <Typography variant='h4' fontWeight={600}>
-          System Assets Overview
+          Assets Overview
         </Typography>
       </Box>
 
-      {/* Tenant Summary Cards */}
       {summary.length > 0 && (
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 3,
-            mb: 3,
-          }}
-        >
-          {summary.map(tenantSummary => (
-            <Card
-              key={tenantSummary.tenantId}
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: 'none',
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <CardContent>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 2,
-                    mb: 2,
-                    flexGrow: '1',
-                  }}
-                >
-                  <Avatar
+        <>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 3,
+              mb: 3,
+            }}
+          >
+            {summary.slice(0, 6).map(tenantSummary => (
+              <Card
+                key={tenantSummary.tenantId}
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxShadow: 'none',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <CardContent>
+                  <Box
                     sx={{
-                      bgcolor: 'primary.main',
-                      width: 48,
-                      height: 48,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      mb: 2,
+                      flexGrow: '1',
                     }}
                   >
-                    <BusinessIcon />
-                  </Avatar>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography
-                      variant='h6'
-                      fontWeight={600}
+                    <Avatar
                       sx={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
+                        bgcolor: 'primary.main',
+                        width: 48,
+                        height: 48,
                       }}
                     >
-                      {tenantSummary.tenantName}
-                    </Typography>
-                    <Typography variant='caption' color='text.secondary'>
-                      {tenantSummary.tenantId.slice(0, 8)}...
-                    </Typography>
+                      <BusinessIcon />
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        variant='h6'
+                        fontWeight={600}
+                        sx={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {tenantSummary.tenantName}
+                      </Typography>
+                      <Typography variant='caption' color='text.secondary'>
+                        {tenantSummary.tenantId.slice(0, 8)}...
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-                <Box
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1.5,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography variant='body2' color='text.secondary'>
+                        Total
+                      </Typography>
+                      <Typography variant='body2' fontWeight={600}>
+                        {tenantSummary.totalAssets}
+                      </Typography>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography variant='body2' color='text.secondary'>
+                        Assigned
+                      </Typography>
+                      <Chip
+                        label={tenantSummary.assignedCount}
+                        size='small'
+                        color='primary'
+                        sx={{ height: 22 }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography variant='body2' color='text.secondary'>
+                        Available
+                      </Typography>
+                      <Chip
+                        label={tenantSummary.availableCount}
+                        size='small'
+                        color='success'
+                        sx={{ height: 22 }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography variant='body2' color='text.secondary'>
+                        Maintenance
+                      </Typography>
+                      <Chip
+                        label={tenantSummary.maintenanceCount}
+                        size='small'
+                        color='warning'
+                        sx={{ height: 22 }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography variant='body2' color='text.secondary'>
+                        Retired
+                      </Typography>
+                      <Chip
+                        label={tenantSummary.retiredCount}
+                        size='small'
+                        color='default'
+                        sx={{ height: 22 }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography variant='body2' color='text.secondary'>
+                        Lost
+                      </Typography>
+                      <Chip
+                        label={tenantSummary.lostCount}
+                        size='small'
+                        color='error'
+                        sx={{ height: 22 }}
+                      />
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+          {summary.length > 6 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+              <Button
+                variant='outlined'
+                onClick={() => setViewMoreDialogOpen(true)}
+              >
+                View More ({summary.length - 6} more)
+              </Button>
+            </Box>
+          )}
+        </>
+      )}
+
+      {/* View More Dialog */}
+      <Dialog
+        open={viewMoreDialogOpen}
+        onClose={() => setViewMoreDialogOpen(false)}
+        maxWidth='lg'
+        fullWidth
+      >
+        <DialogTitle>All Tenants</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
+            {summary.map(tenantSummary => (
+              <Grid item xs={12} sm={6} md={4} key={tenantSummary.tenantId}>
+                <Card
                   sx={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 1.5,
+                    boxShadow: 'none',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    height: '100%',
                   }}
                 >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Typography variant='body2' color='text.secondary'>
-                      Total
-                    </Typography>
-                    <Typography variant='body2' fontWeight={600}>
-                      {tenantSummary.totalAssets}
-                    </Typography>
-                  </Box>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Typography variant='body2' color='text.secondary'>
-                      Assigned
-                    </Typography>
-                    <Chip
-                      label={tenantSummary.assignedCount}
-                      size='small'
-                      color='primary'
-                      sx={{ height: 22 }}
-                    />
-                  </Box>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Typography variant='body2' color='text.secondary'>
-                      Available
-                    </Typography>
-                    <Chip
-                      label={tenantSummary.availableCount}
-                      size='small'
-                      color='success'
-                      sx={{ height: 22 }}
-                    />
-                  </Box>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Typography variant='body2' color='text.secondary'>
-                      Maintenance
-                    </Typography>
-                    <Chip
-                      label={tenantSummary.maintenanceCount}
-                      size='small'
-                      color='warning'
-                      sx={{ height: 22 }}
-                    />
-                  </Box>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Typography variant='body2' color='text.secondary'>
-                      Retired
-                    </Typography>
-                    <Chip
-                      label={tenantSummary.retiredCount}
-                      size='small'
-                      color='default'
-                      sx={{ height: 22 }}
-                    />
-                  </Box>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Typography variant='body2' color='text.secondary'>
-                      Lost
-                    </Typography>
-                    <Chip
-                      label={tenantSummary.lostCount}
-                      size='small'
-                      color='error'
-                      sx={{ height: 22 }}
-                    />
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
-      )}
+                  <CardContent>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        mb: 2,
+                        flexGrow: '1',
+                      }}
+                    >
+                      <Avatar
+                        sx={{
+                          bgcolor: 'primary.main',
+                          width: 48,
+                          height: 48,
+                        }}
+                      >
+                        <BusinessIcon />
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          variant='h6'
+                          fontWeight={600}
+                          sx={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {tenantSummary.tenantName}
+                        </Typography>
+                        <Typography variant='caption' color='text.secondary'>
+                          {tenantSummary.tenantId.slice(0, 8)}...
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1.5,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography variant='body2' color='text.secondary'>
+                          Total
+                        </Typography>
+                        <Typography variant='body2' fontWeight={600}>
+                          {tenantSummary.totalAssets}
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography variant='body2' color='text.secondary'>
+                          Assigned
+                        </Typography>
+                        <Chip
+                          label={tenantSummary.assignedCount}
+                          size='small'
+                          color='primary'
+                          sx={{ height: 22 }}
+                        />
+                      </Box>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography variant='body2' color='text.secondary'>
+                          Available
+                        </Typography>
+                        <Chip
+                          label={tenantSummary.availableCount}
+                          size='small'
+                          color='success'
+                          sx={{ height: 22 }}
+                        />
+                      </Box>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography variant='body2' color='text.secondary'>
+                          Maintenance
+                        </Typography>
+                        <Chip
+                          label={tenantSummary.maintenanceCount}
+                          size='small'
+                          color='warning'
+                          sx={{ height: 22 }}
+                        />
+                      </Box>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography variant='body2' color='text.secondary'>
+                          Retired
+                        </Typography>
+                        <Chip
+                          label={tenantSummary.retiredCount}
+                          size='small'
+                          color='default'
+                          sx={{ height: 22 }}
+                        />
+                      </Box>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography variant='body2' color='text.secondary'>
+                          Lost
+                        </Typography>
+                        <Chip
+                          label={tenantSummary.lostCount}
+                          size='small'
+                          color='error'
+                          sx={{ height: 22 }}
+                        />
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewMoreDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
-      {/* Filters and Search - Matching AssetInventory style */}
       <Card sx={{ mb: 3 }}>
         <CardContent sx={{ py: 2 }}>
           <Box
@@ -391,7 +668,7 @@ const SystemAdminAssets: React.FC = () => {
                   label='Category'
                 >
                   <MenuItem value=''>All Categories</MenuItem>
-                  {categories.map(cat => (
+                  {categoryNames.map(cat => (
                     <MenuItem key={cat} value={cat}>
                       {cat}
                     </MenuItem>
@@ -444,7 +721,6 @@ const SystemAdminAssets: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Assets Table - Matching AssetInventory style */}
       <Card>
         <TableContainer>
           <Table>
@@ -530,7 +806,35 @@ const SystemAdminAssets: React.FC = () => {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Chip label={asset.category} size='small' />
+                      <Box>
+                        {(() => {
+                          const extendedAsset = asset as ExtendedSystemAsset;
+                          const categoryId = extendedAsset.category_id;
+                          const subcategoryId = extendedAsset.subcategory_id;
+                          return (
+                            <>
+                              <Chip
+                                label={
+                                  categoryId && categoryMap.has(categoryId)
+                                    ? categoryMap.get(categoryId)
+                                    : 'N/A'
+                                }
+                                size='small'
+                              />
+                              {subcategoryId &&
+                                subcategoryMap.has(subcategoryId) && (
+                                  <Typography
+                                    variant='caption'
+                                    color='text.secondary'
+                                    sx={{ ml: 1, display: 'block', mt: 0.5 }}
+                                  >
+                                    {subcategoryMap.get(subcategoryId)}
+                                  </Typography>
+                                )}
+                            </>
+                          );
+                        })()}
+                      </Box>
                     </TableCell>
                     <TableCell
                       sx={{
