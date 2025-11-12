@@ -475,7 +475,6 @@ const MySalary: React.FC = () => {
           ? '#121212'
           : theme.palette.background.default,
         minHeight: '100vh',
-        p: { xs: 2, md: 3 },
         color: effectiveDarkMode ? '#fff' : '#000',
       }}
     >

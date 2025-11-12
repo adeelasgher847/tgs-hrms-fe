@@ -152,36 +152,25 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
           </Typography>
         )}
 
-        {loadingLeaveTypes ? (
-          <Box
-            display='flex'
-            justifyContent='center'
-            alignItems='center'
-            py={2}
-          >
-            <CircularProgress size={24} />
-            <Typography sx={{ ml: 2 }}>Loading leave types...</Typography>
-          </Box>
-        ) : (
-          <TextField
-            select
-            label='Leave Type'
-            value={leaveTypeId}
-            onChange={e => setLeaveTypeId(e.target.value)}
-            required
-            fullWidth
-          >
-            {leaveTypes.length > 0 ? (
-              leaveTypes.map(type => (
-                <MenuItem key={type.id} value={type.id}>
-                  {type.name}
-                </MenuItem>
-              ))
-            ) : (
-              <MenuItem disabled>No leave types available</MenuItem>
-            )}
-          </TextField>
-        )}
+        <TextField
+          select
+          label='Leave Type'
+          value={leaveTypeId}
+          onChange={e => setLeaveTypeId(e.target.value)}
+          required
+          fullWidth
+          disabled={loadingLeaveTypes}
+        >
+          {leaveTypes.length > 0 ? (
+            leaveTypes.map(type => (
+              <MenuItem key={type.id} value={type.id}>
+                {type.name}
+              </MenuItem>
+            ))
+          ) : (
+            <MenuItem disabled>No leave types available</MenuItem>
+          )}
+        </TextField>
 
         {/* ✅ Start Date */}
         <DatePicker

@@ -1,5 +1,5 @@
 import axiosInstance from './axiosInstance';
-import type { AxiosResponse } from 'axios';
+import type { AxiosError, AxiosResponse } from 'axios';
 
 export interface SystemTenant {
   id: string;
@@ -30,6 +30,13 @@ export interface SystemTenantFilters {
   includeDeleted?: boolean;
 }
 
+interface PaginatedSystemTenantsResponse {
+  data?: SystemTenant[];
+  total?: number;
+  page?: number;
+  totalPages?: number;
+}
+
 export const SystemTenantApi = {
   /**
    * @param filters
@@ -44,43 +51,38 @@ export const SystemTenantApi = {
     totalPages: number;
   }> => {
     try {
-      const response: AxiosResponse<SystemTenant[]> = await axiosInstance.get(
-        '/system/tenants',
-        {
-          params: {
-            page: filters.page ?? 1,
-            limit: filters.limit ?? 10,
-            includeDeleted: filters.includeDeleted ?? false,
-          },
-        }
-      );
+      const response: AxiosResponse<
+        PaginatedSystemTenantsResponse | SystemTenant[]
+      > = await axiosInstance.get('/system/tenants', {
+        params: {
+          page: filters.page ?? 1,
+          limit: filters.limit ?? 10,
+          includeDeleted: filters.includeDeleted ?? false,
+        },
+      });
 
-      interface ResponseData {
-        total?: number;
-        page?: number;
-        totalPages?: number;
-        data?: SystemTenant[];
-      }
+      const payload = response.data;
 
-      const responseData = response.data as SystemTenant[] | ResponseData;
+      const totalHeader = Number(response.headers['x-total-count']);
+      const total = !Number.isNaN(totalHeader)
+        ? totalHeader
+        : !Array.isArray(payload) && typeof payload?.total === 'number'
+          ? payload.total
+          : 0;
 
-      const total =
-        Number(response.headers['x-total-count']) ||
-        (Array.isArray(responseData) ? undefined : responseData?.total) ||
-        0;
+      const page = !Array.isArray(payload) && typeof payload?.page === 'number'
+        ? payload.page
+        : filters.page ?? 1;
 
-      const page =
-        (Array.isArray(responseData) ? undefined : responseData?.page) ||
-        filters.page ||
-        1;
+      const totalPages = !Array.isArray(payload) && typeof payload?.totalPages === 'number'
+        ? payload.totalPages
+        : total > 0
+          ? Math.ceil(total / (filters.limit ?? 10))
+          : 1;
 
-      const totalPages =
-        (Array.isArray(responseData) ? undefined : responseData?.totalPages) ||
-        (total > 0 ? Math.ceil(total / (filters.limit ?? 10)) : 1);
-
-      const tenants = Array.isArray(responseData)
-        ? responseData
-        : responseData?.data || [];
+      const tenants = Array.isArray(payload)
+        ? payload
+        : payload?.data ?? [];
 
       return {
         data: tenants,
@@ -135,11 +137,11 @@ export const SystemTenantApi = {
       console.log(' System tenant status updated:', response.data);
       return response.data;
     } catch (error) {
-      const errorData =
-        error && typeof error === 'object' && 'response' in error
-          ? (error as { response?: { data?: unknown } }).response?.data
-          : error;
-      console.error(` Failed to update status (id=${id}):`, errorData);
+      const axiosError = error as AxiosError<{ message?: string }>;
+      console.error(
+        ` Failed to update status (id=${id}):`,
+        axiosError.response?.data ?? axiosError.message
+      );
       throw error;
     }
   },

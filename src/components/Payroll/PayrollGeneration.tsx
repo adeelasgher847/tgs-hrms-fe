@@ -168,13 +168,6 @@ const PayrollGeneration: React.FC = () => {
           <Typography variant='h4' sx={{ fontWeight: 600, color: textColor }}>
             Payroll Generation
           </Typography>
-          <Typography
-            variant='body2'
-            sx={{ color: effectiveDarkMode ? '#8f8f8f' : '#555', mt: 0.5 }}
-          >
-            Generate monthly payroll by combining attendance, leaves, bonuses,
-            and deductions.
-          </Typography>
         </Box>
       </Box>
 

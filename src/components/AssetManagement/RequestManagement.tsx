@@ -61,6 +61,19 @@ import { assetCategories } from '../../Data/assetCategories';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
+  category_id?: string;
+  subcategory_id?: string | null;
+  category?: {
+    id: string;
+    name: string;
+    description?: string | null;
+    icon?: string | null;
+  };
+  subcategory?: {
+    id: string;
+    name: string;
+    description?: string | null;
+  };
   subcategory_name?: string;
   subcategory?:
     | string
@@ -74,8 +87,24 @@ interface ApiAssetRequestExtended extends ApiAssetRequest {
       };
   subcategoryId?: string;
   subcategoryName?: string;
-  subcategory_id?: string;
   rejection_reason?: string | null;
+  requestedByName?: string;
+  requestedByUser?: {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+  };
+  approvedByName?: string;
+  approvedByUser?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  // Legacy field for backward compatibility
+  asset_category?: string;
 }
 
 // Normalize status to ensure it matches expected values
@@ -202,75 +231,58 @@ const RequestManagement: React.FC = () => {
   const transformApiRequests = React.useCallback(
     (apiRequests: ApiAssetRequestExtended[]): AssetRequest[] => {
       return apiRequests.map((apiRequest: ApiAssetRequestExtended) => {
-        // Try to find matching category from our comprehensive list
-        const matchingCategory = assetCategories.find(
-          cat =>
-            cat.name.toLowerCase() ===
-              apiRequest.asset_category.toLowerCase() ||
-            cat.subcategories?.some(
-              sub =>
-                sub.toLowerCase() === apiRequest.asset_category.toLowerCase()
-            )
-        );
+        // Handle new API response structure with category_id and category object
+        const categoryId = apiRequest.category_id || apiRequest.asset_category || '';
+        const subcategoryId = apiRequest.subcategory_id || undefined;
+        
+        // Get category name from API response category object
+        let mainCategoryName = '';
+        if (apiRequest.category && typeof apiRequest.category === 'object' && apiRequest.category !== null) {
+          mainCategoryName = apiRequest.category.name || categoryId;
+        } else if (apiRequest.asset_category) {
+          mainCategoryName = apiRequest.asset_category;
+        } else {
+          mainCategoryName = categoryId;
+        }
 
-        // Use asset_category as main category name (no need to split)
-        let mainCategoryName = apiRequest.asset_category;
+        // Get subcategory name from API response subcategory object
         let subcategoryName = '';
-
-        // Check if API response has subcategory information in different possible fields
-        if (apiRequest.subcategory_name) {
-          subcategoryName = apiRequest.subcategory_name;
-        } else if (apiRequest.subcategory) {
-          // Handle case where subcategory is an object
-          const subcategory = apiRequest.subcategory;
-          if (typeof subcategory === 'object' && subcategory !== null) {
-            // Try different possible property names for the subcategory name
-            subcategoryName =
-              subcategory.name ||
-              subcategory.title ||
-              subcategory.subcategory_name ||
-              subcategory.subcategoryName ||
-              subcategory.display_name ||
-              subcategory.label ||
-              JSON.stringify(subcategory);
+        if (apiRequest.subcategory) {
+          if (typeof apiRequest.subcategory === 'object' && apiRequest.subcategory !== null) {
+            subcategoryName = apiRequest.subcategory.name || apiRequest.subcategoryName || '';
           } else {
-            subcategoryName = subcategory;
+            subcategoryName = apiRequest.subcategory || '';
           }
-        } else if (apiRequest.subcategoryId && apiRequest.subcategoryName) {
+        } else if (apiRequest.subcategoryName) {
           subcategoryName = apiRequest.subcategoryName;
-        } else if (apiRequest.asset_category.includes(' - ')) {
-          [mainCategoryName, subcategoryName] =
-            apiRequest.asset_category.split(' - ');
-        } else if (apiRequest.asset_category.includes(' / ')) {
-          [mainCategoryName, subcategoryName] =
-            apiRequest.asset_category.split(' / ');
+        } else if (apiRequest.subcategory_name) {
+          subcategoryName = apiRequest.subcategory_name;
+        }
+
+        // Get employee name from API response
+        let employeeName = '';
+        if (apiRequest.requestedByName) {
+          employeeName = apiRequest.requestedByName;
+        } else if (apiRequest.requestedByUser && apiRequest.requestedByUser.name) {
+          employeeName = apiRequest.requestedByUser.name;
+        } else if (apiRequest.requested_by) {
+          employeeName = `User ${apiRequest.requested_by}`;
         }
 
         return {
           id: apiRequest.id,
           employeeId: apiRequest.requested_by,
-          employeeName:
-            apiRequest.requestedByName || `User ${apiRequest.requested_by}`,
-          category: matchingCategory
-            ? {
-                id: matchingCategory.id,
-                name: matchingCategory.name,
-                nameAr: matchingCategory.nameAr,
-                description: matchingCategory.description,
-                color: matchingCategory.color,
-                subcategories: matchingCategory.subcategories,
-                // Add the specific item requested
-                requestedItem: subcategoryName || undefined,
-              }
-            : {
-                id: apiRequest.asset_category,
-                name: mainCategoryName,
-                nameAr: apiRequest.asset_category,
-                description: '',
-                color: '#757575',
-                requestedItem: subcategoryName || undefined,
-              },
-          subcategoryId: apiRequest.subcategory_id || undefined,
+          employeeName: employeeName,
+          category: {
+            id: categoryId,
+            name: mainCategoryName,
+            nameAr: mainCategoryName,
+            description: '',
+            color: '#757575',
+            requestedItem: subcategoryName || undefined,
+          },
+          subcategoryId: subcategoryId || undefined,
+          subcategoryName: subcategoryName || undefined,
           remarks: apiRequest.remarks,
           status: normalizeRequestStatus(apiRequest.status),
           requestedDate: apiRequest.requested_date,
@@ -376,7 +388,7 @@ const RequestManagement: React.FC = () => {
 
         // Transform API requests to component format
         const transformedRequests = transformApiRequests(
-          apiResponse.items as ApiAssetRequestExtended[]
+          (apiResponse.items || []) as ApiAssetRequestExtended[]
         );
 
         setRequests(transformedRequests);
@@ -408,15 +420,33 @@ const RequestManagement: React.FC = () => {
 
         const transformedAssets: Asset[] = allAssets.map(
           (apiAsset: Record<string, unknown>) => {
+            // Extract category name from API response
+            // Category can be an object { id, name, ... } or a string
+            let categoryName = '';
+            let categoryId = '';
+            
+            if (apiAsset.category && typeof apiAsset.category === 'object' && apiAsset.category !== null) {
+              const categoryObj = apiAsset.category as { id?: string; name?: string };
+              categoryName = categoryObj.name || '';
+              categoryId = categoryObj.id || apiAsset.category_id as string || '';
+            } else if (apiAsset.categoryName) {
+              categoryName = apiAsset.categoryName as string;
+              categoryId = apiAsset.category_id as string || '';
+            } else if (typeof apiAsset.category === 'string') {
+              categoryName = apiAsset.category;
+              categoryId = apiAsset.category_id as string || apiAsset.category as string;
+            } else {
+              categoryName = apiAsset.categoryName as string || '';
+              categoryId = apiAsset.category_id as string || '';
+            }
+
             // Try to find matching category from our comprehensive list
             const matchingCategory = assetCategories.find(
               cat =>
-                cat.name.toLowerCase() ===
-                  (apiAsset.category as string).toLowerCase() ||
+                cat.name.toLowerCase() === categoryName.toLowerCase() ||
                 cat.subcategories?.some(
                   sub =>
-                    sub.toLowerCase() ===
-                    (apiAsset.category as string).toLowerCase()
+                    sub.toLowerCase() === categoryName.toLowerCase()
                 )
             );
 
@@ -433,9 +463,9 @@ const RequestManagement: React.FC = () => {
                     subcategories: matchingCategory.subcategories,
                   }
                 : {
-                    id: apiAsset.category as string,
-                    name: apiAsset.category as string,
-                    nameAr: apiAsset.category as string,
+                    id: categoryId,
+                    name: categoryName,
+                    nameAr: categoryName,
                     description: '',
                     color: '#757575',
                   },
@@ -455,9 +485,30 @@ const RequestManagement: React.FC = () => {
         );
 
         setAssets(transformedAssets);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-        showSnackbar('Failed to load data', 'error');
+      } catch (error: any) {
+        console.error('❌ Failed to fetch data:', error);
+        console.error('❌ Error details:', {
+          message: error?.message,
+          response: error?.response?.data,
+          status: error?.response?.status,
+        });
+        
+        // Only show error toast if it's a real error (not 404 or empty results)
+        const status = error?.response?.status;
+        const errorMessage = error?.response?.data?.message || error?.message || '';
+        
+        // Don't show error for 404 (not found) or if it's just empty results
+        if (status !== 404 && status !== 200 && errorMessage) {
+          showSnackbar(errorMessage || 'Failed to load data', 'error');
+        } else {
+          // If it's 404 or empty results, just set empty state without showing error
+          setRequests([]);
+          setPagination(prev => ({
+            ...prev,
+            total: 0,
+            totalPages: 1,
+          }));
+        }
       } finally {
         // Only set initial loading to false on very first load
         if (isInitialLoad && page === 1) {
@@ -655,64 +706,14 @@ const RequestManagement: React.FC = () => {
           }
         }
 
-        // Try with asset_id and employee_id
+        // Prepare payload for approval - use snake_case only
         const payload = {
           asset_id: data.assignedAssetId as string,
           employee_id: selectedRequest.employeeId,
           request_id: selectedRequest.id,
-          category: selectedRequest.category.name,
+          category_id: selectedRequest.category.id,
           subcategory_id: selectedRequest.subcategoryId || undefined,
         };
-
-        // Try to fetch the asset details from backend to verify it exists and is available
-        try {
-          const assetDetails = await assetApi.getAssetById(selectedAsset.id);
-
-          if (assetDetails.status !== 'available') {
-            console.error('Asset status mismatch:', {
-              frontendStatus: selectedAsset.status,
-              backendStatus: assetDetails.status,
-            });
-            throw new Error(
-              `Asset is not available in backend. Frontend status: ${selectedAsset.status}, Backend status: ${assetDetails.status}`
-            );
-          }
-
-          if (
-            assetDetails.category !== selectedRequest.category.name &&
-            !assetDetails.category.includes('Mobility') &&
-            !selectedRequest.category.name.includes('Mobility')
-          ) {
-            console.warn('Category mismatch detected:', {
-              requestCategory: selectedRequest.category.name,
-              assetCategory: assetDetails.category,
-            });
-          }
-
-          // Validate subcategory ID match if request has subcategoryId
-          if (selectedRequest.subcategoryId) {
-            const backendSubcategoryId =
-              assetDetails.subcategoryId || assetDetails.subcategory_id;
-            if (backendSubcategoryId !== selectedRequest.subcategoryId) {
-              throw new Error(
-                `The asset does not match the requested subcategory. Requested subcategory ID: ${selectedRequest.subcategoryId}, Asset subcategory ID: ${backendSubcategoryId || 'none'}`
-              );
-            }
-          }
-        } catch (assetFetchError: unknown) {
-          console.error(
-            'Failed to fetch asset details from backend:',
-            assetFetchError
-          );
-          const errorMessage =
-            assetFetchError instanceof Error
-              ? assetFetchError.message
-              : 'Unknown error occurred';
-          console.error('Error details:', errorMessage);
-          throw new Error(
-            `Asset ${selectedAsset.id} not found in backend or not accessible: ${errorMessage}`
-          );
-        }
 
         try {
           await assetApi.approveAssetRequest(selectedRequest.id, payload);
@@ -747,9 +748,20 @@ const RequestManagement: React.FC = () => {
           setIsProcessModalOpen(false);
           setLoading(false);
           return;
-        } catch (approvalError: unknown) {
+        } catch (approvalError: any) {
           console.error('❌ Approval failed:', approvalError);
-          showSnackbar('Failed to approve request', 'error');
+          console.error('❌ Error details:', {
+            message: approvalError?.message,
+            response: approvalError?.response?.data,
+            status: approvalError?.response?.status,
+            requestId: selectedRequest.id,
+            payload,
+          });
+          
+          const errorMessage = approvalError?.response?.data?.message || 
+                               approvalError?.message || 
+                               'Failed to approve request';
+          showSnackbar(errorMessage, 'error');
           setLoading(false);
           return;
         }
@@ -829,15 +841,33 @@ const RequestManagement: React.FC = () => {
 
       const transformedAssets: Asset[] = allAssets.map(
         (apiAsset: Record<string, unknown>) => {
+          // Extract category name from API response
+          // Category can be an object { id, name, ... } or a string
+          let categoryName = '';
+          let categoryId = '';
+          
+          if (apiAsset.category && typeof apiAsset.category === 'object' && apiAsset.category !== null) {
+            const categoryObj = apiAsset.category as { id?: string; name?: string };
+            categoryName = categoryObj.name || '';
+            categoryId = categoryObj.id || apiAsset.category_id as string || '';
+          } else if (apiAsset.categoryName) {
+            categoryName = apiAsset.categoryName as string;
+            categoryId = apiAsset.category_id as string || '';
+          } else if (typeof apiAsset.category === 'string') {
+            categoryName = apiAsset.category;
+            categoryId = apiAsset.category_id as string || apiAsset.category as string;
+          } else {
+            categoryName = apiAsset.categoryName as string || '';
+            categoryId = apiAsset.category_id as string || '';
+          }
+
           // Try to find matching category from our comprehensive list
           const matchingCategory = assetCategories.find(
             cat =>
-              cat.name.toLowerCase() ===
-                (apiAsset.category as string).toLowerCase() ||
+              cat.name.toLowerCase() === categoryName.toLowerCase() ||
               cat.subcategories?.some(
                 sub =>
-                  sub.toLowerCase() ===
-                  (apiAsset.category as string).toLowerCase()
+                  sub.toLowerCase() === categoryName.toLowerCase()
               )
           );
 
@@ -854,9 +884,9 @@ const RequestManagement: React.FC = () => {
                   subcategories: matchingCategory.subcategories,
                 }
               : {
-                  id: apiAsset.category as string,
-                  name: apiAsset.category as string,
-                  nameAr: apiAsset.category as string,
+                  id: categoryId,
+                  name: categoryName,
+                  nameAr: categoryName,
                   description: '',
                   color: '#757575',
                   subcategories: [],
@@ -914,7 +944,9 @@ const RequestManagement: React.FC = () => {
             id: apiRequest.id,
             employeeId: apiRequest.requested_by,
             employeeName:
-              apiRequest.requestedByName || `User ${apiRequest.requested_by}`,
+              apiRequest.requestedByName || 
+              (apiRequest.requestedByUser?.name) || 
+              `User ${apiRequest.requested_by}`,
             category: matchingCategory
               ? {
                   id: matchingCategory.id,
@@ -1035,21 +1067,20 @@ const RequestManagement: React.FC = () => {
             <Typography variant='body2' fontWeight={500}>
               {request.employeeName}
             </Typography>
-            <Typography variant='caption' color='text.secondary'>
-              {request.category.name}
-            </Typography>
-            {(request.category as AssetCategory & { requestedItem?: string })
-              .requestedItem &&
-              (request.category as AssetCategory & { requestedItem?: string })
-                .requestedItem !== request.category.name && (
+            <Box>
+              <Typography variant='caption' color='text.secondary'>
+                {request.category.name}
+              </Typography>
+              {((request as any).subcategoryName || (request.category as AssetCategory & { requestedItem?: string }).requestedItem) && (
                 <Typography
                   variant='caption'
-                  color='primary.main'
-                  sx={{ display: 'block', fontWeight: 500 }}
+                  color='text.secondary'
+                  sx={{ display: 'block', mt: 0.5 }}
                 >
-                  {`${(request.category as AssetCategory & { requestedItem?: string }).requestedItem}`}
+                  {(request as any).subcategoryName || (request.category as AssetCategory & { requestedItem?: string }).requestedItem}
                 </Typography>
               )}
+            </Box>
           </Box>
         </Box>
       </TableCell>

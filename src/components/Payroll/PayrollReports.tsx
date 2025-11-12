@@ -1,24 +1,24 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Box,
-  CircularProgress,
-  Grid,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, CircularProgress, Paper, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useOutletContext } from 'react-router-dom';
-import dayjs, { Dayjs } from 'dayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs from 'dayjs';
 import Chart from 'react-apexcharts';
 import type { ApexOptions } from 'apexcharts';
 import { payrollApi, type PayrollStatistics } from '../../api/payrollApi';
 import { useIsDarkMode } from '../../theme';
-import { useUser } from '../../hooks/useUser';
+import { snackbar } from '../../utils/snackbar';
+
+const formatCurrency = (value: number | string | undefined) => {
+  if (value === undefined || value === null) return '-';
+  const numberValue = typeof value === 'string' ? Number(value) : value;
+  if (Number.isNaN(numberValue)) return String(value);
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+  }).format(numberValue);
+};
 
 const PayrollReports: React.FC = () => {
   const theme = useTheme();
@@ -31,8 +31,6 @@ const PayrollReports: React.FC = () => {
 
   const [statistics, setStatistics] = useState<PayrollStatistics | null>(null);
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
-  const [statsStartDate, setStatsStartDate] = useState<Dayjs | null>(null);
-  const [statsEndDate, setStatsEndDate] = useState<Dayjs | null>(null);
 
   const bgColor = effectiveDarkMode
     ? '#121212'
@@ -43,12 +41,7 @@ const PayrollReports: React.FC = () => {
   const loadStatistics = useCallback(async () => {
     try {
       setStatsLoading(true);
-      const data = await payrollApi.getPayrollStatistics({
-        startDate: statsStartDate
-          ? statsStartDate.format('YYYY-MM-DD')
-          : undefined,
-        endDate: statsEndDate ? statsEndDate.format('YYYY-MM-DD') : undefined,
-      });
+      const data = await payrollApi.getPayrollStatistics({});
       setStatistics(data);
     } catch (error) {
       console.error('Failed to load payroll statistics:', error);
@@ -57,7 +50,7 @@ const PayrollReports: React.FC = () => {
     } finally {
       setStatsLoading(false);
     }
-  }, [statsStartDate, statsEndDate]);
+  }, []);
 
   useEffect(() => {
     loadStatistics();
@@ -146,10 +139,25 @@ const PayrollReports: React.FC = () => {
   const departmentOptions: ApexOptions = useMemo(() => {
     const categories =
       statistics?.departmentComparison.map(item => item.department) || [];
-    const seriesData =
+
+    const grossData =
+      statistics?.departmentComparison.map(
+        item => Number(item.totalGross) || 0
+      ) || [];
+    const deductionsData =
+      statistics?.departmentComparison.map(
+        item => Number(item.totalDeductions) || 0
+      ) || [];
+    const bonusesData =
+      statistics?.departmentComparison.map(
+        item => Number(item.totalBonuses) || 0
+      ) || [];
+    const netData =
       statistics?.departmentComparison.map(
         item => Number(item.totalNet) || 0
       ) || [];
+
+    const colors = ['#484c7f', '#f19828', '#f5558d', '#6dd3ff'];
 
     return {
       chart: {
@@ -171,25 +179,40 @@ const PayrollReports: React.FC = () => {
       yaxis: {
         labels: {
           style: { colors: effectiveDarkMode ? '#d0d0d0' : '#666' },
+          formatter: val => formatCurrency(val),
         },
       },
-      colors: ['#484c7f'],
+      colors,
       grid: {
         borderColor: effectiveDarkMode ? '#333' : '#e0e0e0',
       },
+      legend: {
+        position: 'top',
+        horizontalAlign: 'center',
+        labels: { colors: effectiveDarkMode ? '#d0d0d0' : '#333' },
+      },
       tooltip: {
         theme: effectiveDarkMode ? 'dark' : 'light',
-        x: {
-          formatter: val => String(val),
-        },
         y: {
           formatter: val => formatCurrency(val),
         },
       },
       series: [
         {
-          name: 'Net Salary',
-          data: seriesData,
+          name: 'Gross',
+          data: grossData,
+        },
+        {
+          name: 'Deductions',
+          data: deductionsData,
+        },
+        {
+          name: 'Bonuses',
+          data: bonusesData,
+        },
+        {
+          name: 'Net',
+          data: netData,
         },
       ],
     } as ApexOptions;
@@ -238,37 +261,6 @@ const PayrollReports: React.FC = () => {
           Statistics
         </Typography>
 
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <Stack
-            direction={{ xs: 'column', md: 'row' }}
-            spacing={2}
-            alignItems='flex-start'
-          >
-            <DatePicker
-              label='Start date'
-              value={statsStartDate}
-              onChange={value => setStatsStartDate(value)}
-              slotProps={{
-                textField: {
-                  size: 'small',
-                  sx: { minWidth: 180 },
-                },
-              }}
-            />
-            <DatePicker
-              label='End date'
-              value={statsEndDate}
-              onChange={value => setStatsEndDate(value)}
-              slotProps={{
-                textField: {
-                  size: 'small',
-                  sx: { minWidth: 180 },
-                },
-              }}
-            />
-          </Stack>
-        </LocalizationProvider>
-
         {statsLoading ? (
           <Box sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
             <CircularProgress />
@@ -280,77 +272,72 @@ const PayrollReports: React.FC = () => {
             </Alert>
           </Box>
         ) : (
-          <Grid container spacing={3} mt={1}>
-            <Grid item xs={12} md={7}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2,
-                  borderRadius: 2,
-                  border: `1px solid ${theme.palette.divider}`,
-                  backgroundColor: effectiveDarkMode ? '#121212' : '#fff',
-                }}
-              >
-                <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
-                  Monthly Trend
-                </Typography>
-                {statistics.monthlyTrend.length === 0 ? (
-                  <Box sx={{ py: 4 }}>
-                    <Alert
-                      severity='info'
-                      sx={{ backgroundColor: 'transparent' }}
-                    >
-                      No trend data available for the selected date range.
-                    </Alert>
-                  </Box>
-                ) : (
-                  <Chart
-                    options={trendOptions}
-                    series={
-                      (trendOptions.series as ApexOptions['series']) || []
-                    }
-                    type='line'
-                    height={320}
-                  />
-                )}
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={5}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2,
-                  borderRadius: 2,
-                  border: `1px solid ${theme.palette.divider}`,
-                  backgroundColor: effectiveDarkMode ? '#121212' : '#fff',
-                  height: '100%',
-                }}
-              >
-                <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
-                  Department Comparison
-                </Typography>
-                {statistics.departmentComparison.length === 0 ? (
-                  <Box sx={{ py: 4 }}>
-                    <Alert
-                      severity='info'
-                      sx={{ backgroundColor: 'transparent' }}
-                    >
-                      No department comparison data available.
-                    </Alert>
-                  </Box>
-                ) : (
-                  <Chart
-                    options={departmentOptions}
-                    series={
-                      (departmentOptions.series as ApexOptions['series']) || []
-                    }
-                    type='bar'
-                    height={320}
-                  />
-                )}
-              </Paper>
-            </Grid>
-          </Grid>
+          <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                border: `1px solid ${theme.palette.divider}`,
+                backgroundColor: effectiveDarkMode ? '#121212' : '#fff',
+                width: '100%',
+              }}
+            >
+              <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
+                Monthly Trend
+              </Typography>
+              {statistics.monthlyTrend.length === 0 ? (
+                <Box sx={{ py: 4 }}>
+                  <Alert
+                    severity='info'
+                    sx={{ backgroundColor: 'transparent' }}
+                  >
+                    No trend data available for the selected date range.
+                  </Alert>
+                </Box>
+              ) : (
+                <Chart
+                  options={trendOptions}
+                  series={(trendOptions.series as ApexOptions['series']) || []}
+                  type='line'
+                  height={320}
+                />
+              )}
+            </Paper>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                border: `1px solid ${theme.palette.divider}`,
+                backgroundColor: effectiveDarkMode ? '#121212' : '#fff',
+                width: '100%',
+              }}
+            >
+              <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
+                Department Comparison
+              </Typography>
+              {statistics.departmentComparison.length === 0 ? (
+                <Box sx={{ py: 4 }}>
+                  <Alert
+                    severity='info'
+                    sx={{ backgroundColor: 'transparent' }}
+                  >
+                    No department comparison data available.
+                  </Alert>
+                </Box>
+              ) : (
+                <Chart
+                  options={departmentOptions}
+                  series={
+                    (departmentOptions.series as ApexOptions['series']) || []
+                  }
+                  type='bar'
+                  height={320}
+                />
+              )}
+            </Paper>
+          </Box>
         )}
       </Paper>
     </Box>

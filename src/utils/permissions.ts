@@ -92,6 +92,7 @@ export const isMenuVisibleForRole = (
       'assets',
       'attendance',
       'report',
+      'leave-analytics',
       'payroll',
       'benefits',
     ],
@@ -212,6 +213,16 @@ export const isSubMenuVisibleForRole = (
     if (parent.includes('audit logs')) {
       visible = false;
     }
+    if (parent.includes('assets')) {
+      if (sub.includes('asset requests')) {
+        visible = false;
+      }
+    }
+    if (parent.includes('attendance')) {
+      if (sub.includes('leave request')) {
+        visible = false;
+      }
+    }
   }
 
   if (r === 'hr-admin') {
@@ -308,7 +319,7 @@ export const isSubMenuVisibleForRole = (
       parent.includes('leave analytics') ||
       parent.includes('leave-analytics')
     ) {
-      if (sub.includes('cross-tenant-leaves')) {
+      if (sub.includes('Cross Tenant Leaves')) {
         visible = false;
       }
     }
@@ -361,11 +372,27 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (
+      parent.includes('leave analytics') ||
+      parent.includes('leave-analytics')
+    ) {
+      if (sub.includes('Cross Tenant Leaves')) {
+        visible = false;
+      }
+    }
   }
 
   if (r === 'admin') {
     if (parent.includes('assets')) {
       if (sub.includes('asset requests')) {
+        visible = false;
+      }
+    }
+    if (
+      parent.includes('leave analytics') ||
+      parent.includes('leave-analytics')
+    ) {
+      if (sub.includes('reports')) {
         visible = false;
       }
     }
@@ -442,7 +469,7 @@ export const isDashboardPathAllowedForRole = (
       'UserList',
       'UserProfile',
       // 'policies', 'holidays',
-      'leaves',
+      // 'leaves', // Hide Leave Request for network-admin
       // Attendance - Allow AttendanceCheck for network-admin
       'AttendanceCheck',
       'AttendanceTable',
@@ -489,6 +516,8 @@ export const isDashboardPathAllowedForRole = (
       'UserProfile',
       // 'policies', 'holidays',
       'leaves',
+      'CrossTenantLeaveManagement',
+      'cross-tenant-leaves',
       // Attendance - Allow AttendanceCheck for admin
       'AttendanceCheck',
       'AttendanceTable',

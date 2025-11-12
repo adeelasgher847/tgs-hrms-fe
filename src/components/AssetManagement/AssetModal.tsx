@@ -22,12 +22,18 @@ import * as yup from 'yup';
 import type { Asset, MockUser } from '../../types/asset';
 import { assetApi, type AssetSubcategory } from '../../api/assetApi';
 
+interface AssetCategory {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 interface AssetModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: {
     name: string;
-    category: string;
+    categoryId: string;
     subcategoryId?: string;
     purchaseDate: string;
     assignedTo?: string;
@@ -41,7 +47,7 @@ interface AssetModalProps {
 const schema = yup.object({
   name: yup.string().required('Asset name is required'),
   category: yup.string().required('Category is required'),
-  subcategory: yup.string().required('Subcategory is required'),
+  subcategory: yup.string().nullable(), // Make subcategory optional
   purchaseDate: yup.date().required('Purchase date is required'),
   warrantyExpiry: yup.date().nullable(),
   assignedTo: yup.string().nullable(),
@@ -57,9 +63,9 @@ const AssetModal: React.FC<AssetModalProps> = ({
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [, setSelectedWarrantyDate] = useState<Date | null>(null);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<AssetCategory[]>([]);
   const [subcategories, setSubcategories] = useState<AssetSubcategory[]>([]);
-  const [, setLoadingData] = useState(false);
+  const [loadingData, setLoadingData] = useState(false);
 
   const {
     control,
@@ -80,55 +86,126 @@ const AssetModal: React.FC<AssetModalProps> = ({
     },
   });
 
-  const selectedCategory = watch('category');
+  const selectedCategoryId = watch('category');
 
-  // Fetch categories and subcategories from backend
+  // Fetch categories from backend
   useEffect(() => {
-    const fetchCategoriesAndSubcategories = async () => {
+    const fetchCategories = async () => {
       try {
         setLoadingData(true);
-        const [categoriesData, subcategoriesData] = await Promise.all([
-          assetApi.getAssetSubcategoriesByCategory(),
-          assetApi.getAllAssetSubcategories(),
-        ]);
+        const response = await assetApi.getAllAssetCategories();
+        
+        // Handle different response structures
+        let categoriesData: AssetCategory[] = [];
+        if (Array.isArray(response)) {
+          categoriesData = response;
+        } else if (response.data && Array.isArray(response.data)) {
+          categoriesData = response.data;
+        } else if (response.items && Array.isArray(response.items)) {
+          categoriesData = response.items;
+        } else if (response.categories && Array.isArray(response.categories)) {
+          categoriesData = response.categories;
+        }
 
-        // Extract unique categories
         setCategories(categoriesData);
-
-        // Store all subcategories
-        setSubcategories(subcategoriesData.items || subcategoriesData);
       } catch (error) {
-        console.error(
-          '❌ Failed to fetch categories and subcategories:',
-          error
-        );
+        console.error('❌ Failed to fetch categories:', error);
       } finally {
         setLoadingData(false);
       }
     };
 
     if (open) {
-      fetchCategoriesAndSubcategories();
+      fetchCategories();
     }
   }, [open]);
 
-  // Get available subcategories for selected category
-  const availableSubcategories = subcategories.filter(
-    sub => sub.category === selectedCategory
-  );
+  // Fetch subcategories when category is selected
+  useEffect(() => {
+    const fetchSubcategories = async () => {
+      if (!selectedCategoryId) {
+        setSubcategories([]);
+        return;
+      }
+
+      try {
+        setLoadingData(true);
+        const response = await assetApi.getAssetSubcategoriesByCategoryId(
+          selectedCategoryId
+        );
+
+        // Handle different response structures
+        let subcategoriesData: AssetSubcategory[] = [];
+        if (Array.isArray(response)) {
+          subcategoriesData = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          subcategoriesData = response.data;
+        } else if (response && response.items && Array.isArray(response.items)) {
+          subcategoriesData = response.items;
+        } else if (
+          response &&
+          response.subcategories &&
+          Array.isArray(response.subcategories)
+        ) {
+          subcategoriesData = response.subcategories;
+        }
+
+        // Filter subcategories by selected category ID (client-side filtering as backup)
+        // This ensures only subcategories for the selected category are shown
+        const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+        
+        const filteredSubcategories = subcategoriesData.filter(sub => {
+          // Check if subcategory.category matches the selected category ID
+          if (sub.category === selectedCategoryId) {
+            return true;
+          }
+          // Also check if it matches the category name (in case API returns names)
+          if (selectedCategory && sub.category === selectedCategory.name) {
+            return true;
+          }
+          // Also check if category is an object with id property
+          if (sub.category && typeof sub.category === 'object' && 'id' in sub.category) {
+            return (sub.category as any).id === selectedCategoryId;
+          }
+          return false;
+        });
+
+        
+        // Always use filtered subcategories to ensure only selected category's subcategories are shown
+        setSubcategories(filteredSubcategories);
+      } catch (error) {
+        console.error('❌ Failed to fetch subcategories:', error);
+        setSubcategories([]);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    if (open && selectedCategoryId) {
+      fetchSubcategories();
+    } else if (!selectedCategoryId) {
+      setSubcategories([]);
+    }
+  }, [open, selectedCategoryId]);
 
   useEffect(() => {
     if (asset) {
+      // Handle both old and new API response structures
+      const categoryId = asset.category?.id || (asset as any).category_id || asset.category?.name || '';
+      const subcategoryId = asset.subcategoryId || (asset as any).subcategory_id || '';
+      const purchaseDate = asset.purchaseDate || (asset as any).purchase_date || new Date().toISOString();
+      
       reset({
         name: asset.name,
-        category: asset.category.name,
-        purchaseDate: new Date(asset.purchaseDate),
+        category: categoryId,
+        subcategory: subcategoryId,
+        purchaseDate: new Date(purchaseDate),
         warrantyExpiry: asset.warrantyExpiry
           ? new Date(asset.warrantyExpiry)
           : null,
         assignedTo: asset.assignedTo || '',
       });
-      setSelectedDate(new Date(asset.purchaseDate));
+      setSelectedDate(new Date(purchaseDate));
       setSelectedWarrantyDate(
         asset.warrantyExpiry ? new Date(asset.warrantyExpiry) : null
       );
@@ -147,11 +224,25 @@ const AssetModal: React.FC<AssetModalProps> = ({
   }, [asset, reset]);
 
   const handleFormSubmit = (data: Record<string, unknown>) => {
+    // Format date as YYYY-MM-DD
+    const formatDate = (date: Date | null): string => {
+      if (!date) return '';
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    // Get subcategoryId - only include if it's not empty
+    const subcategoryId = data.subcategory && (data.subcategory as string).trim() !== '' 
+      ? (data.subcategory as string) 
+      : undefined;
+
     onSubmit({
       name: data.name as string,
-      category: data.category as string,
-      subcategoryId: data.subcategory as string,
-      purchaseDate: selectedDate?.toISOString() || '',
+      categoryId: data.category as string, // category field contains the category ID
+      subcategoryId: subcategoryId,
+      purchaseDate: formatDate(selectedDate),
       assignedTo: data.assignedTo as string,
     });
   };
@@ -214,16 +305,16 @@ const AssetModal: React.FC<AssetModalProps> = ({
                           <Select
                             {...field}
                             label='Category'
-                            disabled={loading}
+                            disabled={loading || loadingData}
                             onChange={e => {
                               field.onChange(e);
                               setValue('subcategory', ''); // Reset subcategory when category changes
                             }}
                           >
                             {categories.map(category => (
-                              <MenuItem key={category} value={category}>
+                              <MenuItem key={category.id} value={category.id}>
                                 <Typography variant='body2'>
-                                  {category}
+                                  {category.name}
                                 </Typography>
                               </MenuItem>
                             ))}
@@ -243,7 +334,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
                   </Box>
                 </Box>
 
-                {selectedCategory && availableSubcategories.length > 0 && (
+                {selectedCategoryId && (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                     <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
                       <Controller
@@ -255,28 +346,42 @@ const AssetModal: React.FC<AssetModalProps> = ({
                             <Select
                               {...field}
                               label='Subcategory'
-                              disabled={loading || !selectedCategory}
+                              disabled={loading || loadingData || !selectedCategoryId}
                             >
-                              {availableSubcategories.map(subcategory => (
-                                <MenuItem
-                                  key={subcategory.id}
-                                  value={subcategory.id}
-                                >
-                                  <Box>
-                                    <Typography variant='body2'>
-                                      {subcategory.name}
-                                    </Typography>
-                                    {subcategory.description && (
-                                      <Typography
-                                        variant='caption'
-                                        color='text.secondary'
-                                      >
-                                        {subcategory.description}
-                                      </Typography>
-                                    )}
-                                  </Box>
+                              {loadingData ? (
+                                <MenuItem disabled value=''>
+                                  <Typography variant='body2'>
+                                    Loading subcategories...
+                                  </Typography>
                                 </MenuItem>
-                              ))}
+                              ) : subcategories.length === 0 ? (
+                                <MenuItem disabled value=''>
+                                  <Typography variant='body2' color='text.secondary'>
+                                    No subcategories available
+                                  </Typography>
+                                </MenuItem>
+                              ) : (
+                                subcategories.map(subcategory => (
+                                  <MenuItem
+                                    key={subcategory.id}
+                                    value={subcategory.id}
+                                  >
+                                    <Box>
+                                      <Typography variant='body2'>
+                                        {subcategory.name}
+                                      </Typography>
+                                      {subcategory.description && (
+                                        <Typography
+                                          variant='caption'
+                                          color='text.secondary'
+                                        >
+                                          {subcategory.description}
+                                        </Typography>
+                                      )}
+                                    </Box>
+                                  </MenuItem>
+                                ))
+                              )}
                             </Select>
                             {errors.subcategory && (
                               <Typography
@@ -300,8 +405,14 @@ const AssetModal: React.FC<AssetModalProps> = ({
                       label='Purchase Date'
                       value={selectedDate}
                       onChange={date => {
-                        setSelectedDate(date);
-                        setValue('purchaseDate', date || new Date());
+                        if (date) {
+                          const dateValue = date instanceof Date ? date : (date as any).toDate ? (date as any).toDate() : new Date(date as any);
+                          setSelectedDate(dateValue);
+                          setValue('purchaseDate', dateValue);
+                        } else {
+                          setSelectedDate(null);
+                          setValue('purchaseDate', new Date());
+                        }
                       }}
                       disabled={loading}
                       slotProps={{

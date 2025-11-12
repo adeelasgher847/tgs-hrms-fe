@@ -41,6 +41,7 @@ import {
 import { snackbar } from '../../utils/snackbar';
 import { useIsDarkMode } from '../../theme';
 import dayjsPluginLocalizedFormat from 'dayjs/plugin/localizedFormat';
+import { isSystemAdmin, isHRAdmin, isAdmin } from '../../utils/roleUtils';
 
 dayjs.extend(dayjsPluginLocalizedFormat);
 
@@ -75,17 +76,23 @@ const formatCurrency = (value: number | string | undefined) => {
 const PayrollRecords: React.FC = () => {
   const theme = useTheme();
   const darkMode = useIsDarkMode();
-  const { darkMode: outletDarkMode } = useOutletContext<{
-    darkMode: boolean;
-  }>();
+
+  // Safely access outlet context with fallback
+  const outletContext = useOutletContext<{ darkMode?: boolean }>();
+  const outletDarkMode = outletContext?.darkMode;
   const effectiveDarkMode =
     typeof outletDarkMode === 'boolean' ? outletDarkMode : darkMode;
-  const { user } = useUser();
-  const role = (user?.role || '').toLowerCase();
-  const isSystemAdmin = role === 'system-admin';
-  const isHrAdmin = role === 'hr-admin';
-  const isTenantAdmin = role === 'admin';
-  const canGeneratePayroll = isSystemAdmin || isHrAdmin || isTenantAdmin;
+
+  // Safely access user - handle case where user might not be loaded yet
+  const userContext = useUser();
+  const user = userContext?.user;
+  const userRole = user?.role;
+
+  const isSystemAdminUser = isSystemAdmin(userRole);
+  const isHrAdminUser = isHRAdmin(userRole);
+  const isTenantAdminUser = isAdmin(userRole);
+  const canGeneratePayroll =
+    isSystemAdminUser || isHrAdminUser || isTenantAdminUser;
   const canUpdateStatus = canGeneratePayroll;
 
   const currentDate = dayjs();
@@ -150,10 +157,19 @@ const PayrollRecords: React.FC = () => {
   const loadEmployees = useCallback(async () => {
     try {
       const data = await payrollApi.getAllEmployeeSalaries();
+      // Ensure data is an array
+      if (!Array.isArray(data)) {
+        setEmployees([]);
+        return;
+      }
       const mapped = data
         .filter(
           item =>
-            item.salary && item.employee?.status?.toLowerCase() === 'active'
+            item.salary &&
+            item.employee?.status?.toLowerCase() === 'active' &&
+            item.employee?.id &&
+            item.employee?.user?.first_name &&
+            item.employee?.user?.last_name
         )
         .map(item => ({
           id: item.employee.id,
@@ -162,6 +178,7 @@ const PayrollRecords: React.FC = () => {
       setEmployees(mapped);
     } catch (error) {
       console.error('Failed to load employees:', error);
+      setEmployees([]);
     }
   }, []);
 
@@ -172,7 +189,8 @@ const PayrollRecords: React.FC = () => {
         month,
         year,
       });
-      setRecords(data);
+      // Ensure data is an array
+      setRecords(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to load payroll records:', error);
       snackbar.error('Failed to load payroll records');
@@ -215,9 +233,10 @@ const PayrollRecords: React.FC = () => {
     payrollApi
       .getPayrollHistory(employeeIdentifier)
       .then(history => {
-        const sorted = [...history].sort((a, b) =>
-          dayjs(`${b.year}-${b.month}-01`).valueOf() -
-          dayjs(`${a.year}-${a.month}-01`).valueOf()
+        const sorted = [...history].sort(
+          (a, b) =>
+            dayjs(`${b.year}-${b.month}-01`).valueOf() -
+            dayjs(`${a.year}-${a.month}-01`).valueOf()
         );
         setHistoryRecords(sorted);
       })
@@ -296,9 +315,9 @@ const PayrollRecords: React.FC = () => {
     if (!records.length) {
       return employees;
     }
-    const paidIds = new Set(
+    const existingEmployeeIds = new Set(
       records
-        .filter(record => record.status === 'paid')
+        .filter(record => record.month === month && record.year === year)
         .map(
           record =>
             record.employee?.id ||
@@ -308,8 +327,32 @@ const PayrollRecords: React.FC = () => {
         )
         .filter(Boolean)
     );
-    return employees.filter(emp => !paidIds.has(emp.id));
-  }, [employees, records]);
+    return employees.filter(emp => !existingEmployeeIds.has(emp.id));
+  }, [employees, records, month, year]);
+
+  // Calculate available employees for the generate dialog (uses generateMonth/generateYear)
+  const employeesForGenerateDialog = useMemo(() => {
+    if (!records.length) {
+      return employees;
+    }
+    // Filter out employees who already have payroll records for the generate dialog's month/year
+    const existingEmployeeIds = new Set(
+      records
+        .filter(
+          record =>
+            record.month === generateMonth && record.year === generateYear
+        )
+        .map(
+          record =>
+            record.employee?.id ||
+            record.employee_id ||
+            record.employee?.user?.id ||
+            ''
+        )
+        .filter(Boolean)
+    );
+    return employees.filter(emp => !existingEmployeeIds.has(emp.id));
+  }, [employees, records, generateMonth, generateYear]);
 
   const displayedRecords = useMemo(() => {
     if (!employeeFilter) return records;
@@ -333,6 +376,15 @@ const PayrollRecords: React.FC = () => {
       snackbar.error('Select both month and year to generate payroll');
       return;
     }
+
+    // Check if there are employees available to generate payroll for
+    if (employeesForGenerateDialog.length === 0) {
+      snackbar.error(
+        'No employees available for payroll generation. All employees already have payroll records for the selected period.'
+      );
+      return;
+    }
+
     try {
       setGenerating(true);
       const response = await payrollApi.generatePayroll({
@@ -340,21 +392,40 @@ const PayrollRecords: React.FC = () => {
         year: generateYear,
         employee_id: generateEmployeeId || undefined,
       });
-      if (response.length > 0) {
-        snackbar.success('Payroll generated successfully');
+
+      // Refresh records to get the updated list
+      const refreshedRecords = await payrollApi.getPayrollRecords({
+        month: generateMonth,
+        year: generateYear,
+      });
+
+      // Check if new records were actually created by comparing with previous records count
+      const previousRecordsCount = records.filter(
+        r => r.month === generateMonth && r.year === generateYear
+      ).length;
+      const newRecordsCount = refreshedRecords.filter(
+        r => r.month === generateMonth && r.year === generateYear
+      ).length;
+
+      if (newRecordsCount > previousRecordsCount) {
+        const generatedCount = newRecordsCount - previousRecordsCount;
+        snackbar.success(
+          `Payroll generated successfully for ${generatedCount} employee(s)`
+        );
+      } else if (response && response.length > 0) {
+        // Fallback: if API response has data, consider it successful
+        snackbar.success(
+          `Payroll generated successfully for ${response.length} employee(s)`
+        );
       } else {
         snackbar.info(
           'No payroll records were generated for the selected period'
         );
       }
-      const refreshedRecords = await payrollApi.getPayrollRecords({
-        month: generateMonth,
-        year: generateYear,
-      });
+
       setRecords(refreshedRecords);
       setMonth(generateMonth);
       setYear(generateYear);
-      setEmployeeFilter(generateEmployeeId);
       setGenerateDialogOpen(false);
       setGenerateEmployeeId('');
     } catch (error) {
@@ -363,7 +434,13 @@ const PayrollRecords: React.FC = () => {
     } finally {
       setGenerating(false);
     }
-  }, [generateMonth, generateYear, generateEmployeeId]);
+  }, [
+    generateMonth,
+    generateYear,
+    generateEmployeeId,
+    employeesForGenerateDialog,
+    records,
+  ]);
 
   const openGenerateDialog = useCallback(() => {
     setGenerateMonth(month);
@@ -436,50 +513,19 @@ const PayrollRecords: React.FC = () => {
             value={year}
             onChange={event => setYear(Number(event.target.value) || year)}
           />
-
-          <TextField
-            select
-            label='Employee'
-            size='small'
-            sx={{ minWidth: 220 }}
-            value={employeeFilter}
-            onChange={event => setEmployeeFilter(event.target.value)}
-          >
-            <MenuItem value=''>All employees</MenuItem>
-            {recordEmployees.length === 0 ? (
-              <MenuItem value='' disabled>
-                No employees for this period
-              </MenuItem>
-            ) : (
-              recordEmployees.map(emp => (
-                <MenuItem key={emp.id} value={emp.id}>
-                  {emp.name}
-                </MenuItem>
-              ))
-            )}
-          </TextField>
-
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 2,
-              flexWrap: 'wrap',
-              alignItems: 'center',
-            }}
-          >
-            {canGeneratePayroll && (
-              <Button
-                variant='contained'
-                startIcon={<GenerateIcon />}
-                onClick={openGenerateDialog}
-                disabled={generating}
-                sx={{ textTransform: 'none', fontWeight: 600 }}
-              >
-                Generate Payroll
-              </Button>
-            )}
-          </Box>
         </Stack>
+
+        {canGeneratePayroll && (
+          <Button
+            variant='contained'
+            startIcon={<GenerateIcon />}
+            onClick={openGenerateDialog}
+            disabled={generating}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            Generate Payroll
+          </Button>
+        )}
       </Box>
 
       {records.length > 0 && (
@@ -568,11 +614,42 @@ const PayrollRecords: React.FC = () => {
           border: `1px solid ${theme.palette.divider}`,
         }}
       >
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+          }}
+        >
+          <TextField
+            select
+            label='Employee'
+            size='small'
+            sx={{ minWidth: 220 }}
+            value={employeeFilter}
+            onChange={event => setEmployeeFilter(event.target.value)}
+          >
+            <MenuItem value=''>All employees</MenuItem>
+            {recordEmployees.length === 0 ? (
+              <MenuItem value='' disabled>
+                No employees for this period
+              </MenuItem>
+            ) : (
+              recordEmployees.map(emp => (
+                <MenuItem key={emp.id} value={emp.id}>
+                  {emp.name}
+                </MenuItem>
+              ))
+            )}
+          </TextField>
+        </Box>
         {loading ? (
           <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
             <CircularProgress />
           </Box>
-        ) : records.length === 0 ? (
+        ) : displayedRecords.length === 0 ? (
           <Box sx={{ p: 4 }}>
             <Alert severity='info' sx={{ backgroundColor: 'transparent' }}>
               No payroll records found.
@@ -593,7 +670,7 @@ const PayrollRecords: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {records.map(record => (
+                {displayedRecords.map(record => (
                   <TableRow key={record.id} hover>
                     <TableCell>
                       <Typography variant='subtitle2' sx={{ color: textColor }}>
@@ -918,7 +995,9 @@ const PayrollRecords: React.FC = () => {
                   Payroll History
                 </Typography>
                 {historyLoading ? (
-                  <Box sx={{ py: 3, display: 'flex', justifyContent: 'center' }}>
+                  <Box
+                    sx={{ py: 3, display: 'flex', justifyContent: 'center' }}
+                  >
                     <CircularProgress size={24} />
                   </Box>
                 ) : historyError ? (
@@ -1071,10 +1150,6 @@ const PayrollRecords: React.FC = () => {
         <DialogTitle>Generate Payroll</DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
-            <Typography variant='body2'>
-              Generate payroll for the selected month and year. You can
-              optionally filter by a specific employee.
-            </Typography>
             <TextField
               select
               label='Month'
@@ -1108,26 +1183,28 @@ const PayrollRecords: React.FC = () => {
               onChange={event => setGenerateEmployeeId(event.target.value)}
             >
               <MenuItem value=''>All employees</MenuItem>
-              {employeesForGeneration.length === 0 ? (
+              {employeesForGenerateDialog.length === 0 ? (
                 <MenuItem value='' disabled>
                   {employees.length === 0
                     ? 'No employees with salary configuration'
                     : 'All employees are already processed'}
                 </MenuItem>
               ) : (
-                employeesForGeneration.map(emp => (
+                employeesForGenerateDialog.map(emp => (
                   <MenuItem key={emp.id} value={emp.id}>
                     {emp.name}
                   </MenuItem>
                 ))
               )}
             </TextField>
-            {employeesForGeneration.length === 0 && employees.length > 0 && (
-              <Alert severity='info' sx={{ m: 0 }}>
-                All employees appear to have payroll generated for this period.
-                Generating again will recalculate for every configured employee.
-              </Alert>
-            )}
+            {employeesForGenerateDialog.length === 0 &&
+              employees.length > 0 && (
+                <Alert severity='warning' sx={{ m: 0 }}>
+                  All employees already have payroll records for the selected
+                  period ({generateMonth}/{generateYear}). No new payroll can be
+                  generated to avoid duplicates.
+                </Alert>
+              )}
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -1135,9 +1212,14 @@ const PayrollRecords: React.FC = () => {
           <Button
             onClick={handleGenerate}
             variant='contained'
-            disabled={generating}
+            disabled={generating || employeesForGenerateDialog.length === 0}
             startIcon={generating ? <CircularProgress size={16} /> : undefined}
             sx={{ textTransform: 'none' }}
+            title={
+              employeesForGenerateDialog.length === 0
+                ? 'No employees available for payroll generation'
+                : ''
+            }
           >
             {generating ? 'Generating...' : 'Generate Payroll'}
           </Button>

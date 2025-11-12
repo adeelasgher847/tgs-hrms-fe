@@ -43,6 +43,16 @@ import {
   type SystemTenantDetail,
 } from '../api/systemTenantApi';
 
+type StatusFilterOption = 'All' | 'active' | 'suspended' | 'deleted';
+
+const createEmptyTenantForm = () => ({
+  name: '',
+  domain: '',
+  logo: '',
+  adminName: '',
+  adminEmail: '',
+});
+
 export const TenantPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -55,9 +65,7 @@ export const TenantPage: React.FC = () => {
     severity: 'success' as 'success' | 'error',
   });
 
-  const [statusFilter, setStatusFilter] = useState<
-    'All' | 'active' | 'suspended' | 'deleted'
-  >('All');
+  const [statusFilter, setStatusFilter] = useState<StatusFilterOption>('All');
 
   const [selectedTenant, setSelectedTenant] = useState<SystemTenant | null>(
     null
@@ -69,7 +77,7 @@ export const TenantPage: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [formName, setFormName] = useState('');
+  const [tenantForm, setTenantForm] = useState(createEmptyTenantForm);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editTenantId, setEditTenantId] = useState<string | null>(null);
@@ -113,47 +121,86 @@ export const TenantPage: React.FC = () => {
     currentPage * itemsPerPage
   );
 
+  const closeCreateModal = () => {
+    setIsFormOpen(false);
+    setTenantForm(createEmptyTenantForm());
+  };
+
   const handleCreate = async () => {
-    if (!formName.trim()) {
+    const { name, domain, logo, adminName, adminEmail } = tenantForm;
+
+    const trimmedForm = {
+      name: name.trim(),
+      domain: domain.trim(),
+      logo: logo.trim(),
+      adminName: adminName.trim(),
+      adminEmail: adminEmail.trim(),
+    };
+
+    const hasEmptyFields = Object.values(trimmedForm).some(
+      value => value === ''
+    );
+    if (hasEmptyFields) {
       setSnackbar({
         open: true,
-        message: 'Tenant name is required',
+        message: 'All fields are required',
+        severity: 'error',
+      });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedForm.adminEmail)) {
+      setSnackbar({
+        open: true,
+        message: 'Please enter a valid admin email',
+        severity: 'error',
+      });
+      return;
+    }
+
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (
+      !nameRegex.test(trimmedForm.name) ||
+      !nameRegex.test(trimmedForm.adminName)
+    ) {
+      setSnackbar({
+        open: true,
+        message: 'Names can only contain letters and spaces',
         severity: 'error',
       });
       return;
     }
 
     try {
-      await SystemTenantApi.create({ name: formName.trim() });
+      await SystemTenantApi.create(trimmedForm);
       fetchTenants();
       setSnackbar({
         open: true,
         message: 'Tenant created successfully',
         severity: 'success',
       });
-      setIsFormOpen(false);
-      setFormName('');
-    } catch (err) {
-      console.error('Error creating tenant:', err);
+      closeCreateModal();
+    } catch (error) {
+      console.error('Error creating tenant:', error);
 
       let errorMessage = 'Failed to create tenant';
 
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        (err as { response?: { status?: number; data?: { message?: string } } })
-          .response
-      ) {
-        const response = (
-          err as { response: { status?: number; data?: { message?: string } } }
-        ).response;
-        if (
-          response.status === 409 ||
-          response.data?.message?.toLowerCase().includes('already')
-        ) {
-          errorMessage = 'Tenant already exists';
-        }
+      const maybeAxiosError = error as {
+        response?: {
+          status?: number;
+          data?: { message?: string };
+        };
+      };
+
+      const alreadyExists =
+        maybeAxiosError.response?.status === 409 ||
+        maybeAxiosError.response?.data?.message
+          ?.toLowerCase()
+          .includes('already');
+
+      if (alreadyExists) {
+        errorMessage = 'Tenant already exists';
       }
 
       setSnackbar({
@@ -266,7 +313,7 @@ export const TenantPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+    <Box>
       {/* Header */}
       <Box
         display='flex'
@@ -286,11 +333,10 @@ export const TenantPage: React.FC = () => {
             <Select
               value={statusFilter}
               label='Status'
-              onChange={(e: SelectChangeEvent) =>
-                setStatusFilter(
-                  e.target.value as 'All' | 'active' | 'suspended' | 'deleted'
-                )
-              }
+              onChange={(event: SelectChangeEvent<StatusFilterOption>) => {
+                const value = event.target.value as StatusFilterOption;
+                setStatusFilter(value);
+              }}
             >
               <MenuItem value='All'>All</MenuItem>
               <MenuItem value='active'>Active</MenuItem>
@@ -298,10 +344,7 @@ export const TenantPage: React.FC = () => {
               <MenuItem value='deleted'>Deleted</MenuItem>
             </Select>
           </FormControl>
-          <Button
-            variant='contained'
-            onClick={() => setIsFormOpen(true)}
-          >
+          <Button variant='contained' onClick={() => setIsFormOpen(true)}>
             <AddIcon />
           </Button>
         </Box>
@@ -313,7 +356,7 @@ export const TenantPage: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        <Paper sx={{ borderRadius: 1, overflow: 'hidden', boxShadow: 'none' }}>
           <TableContainer>
             <Table>
               <TableHead>
@@ -537,7 +580,7 @@ export const TenantPage: React.FC = () => {
       {/* Create Modal */}
       <Dialog
         open={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
+        onClose={closeCreateModal}
         fullWidth
         maxWidth='sm'
       >
@@ -545,24 +588,70 @@ export const TenantPage: React.FC = () => {
         <DialogContent dividers>
           <TextField
             label='Tenant Name'
-            value={formName}
+            value={tenantForm.name}
             onChange={e => {
-              // Allow only alphabets and spaces
               const value = e.target.value;
               if (/^[A-Za-z\s]*$/.test(value)) {
-                setFormName(value);
+                setTenantForm(prev => ({ ...prev, name: value }));
               }
             }}
             fullWidth
             sx={{ mt: 2 }}
             inputProps={{
-              maxLength: 50, // optional: limit length
+              maxLength: 50,
             }}
-            helperText='Only alphabets are allowed'
+            helperText='Only alphabets and spaces are allowed'
+          />
+          <TextField
+            label='Domain'
+            value={tenantForm.domain}
+            onChange={e =>
+              setTenantForm(prev => ({ ...prev, domain: e.target.value }))
+            }
+            fullWidth
+            sx={{ mt: 2 }}
+            placeholder='example.com'
+          />
+          <TextField
+            label='Logo URL'
+            value={tenantForm.logo}
+            onChange={e =>
+              setTenantForm(prev => ({ ...prev, logo: e.target.value }))
+            }
+            fullWidth
+            sx={{ mt: 2 }}
+            placeholder='https://example.com/logo.png'
+            type='url'
+          />
+          <TextField
+            label='Admin Name'
+            value={tenantForm.adminName}
+            onChange={e => {
+              const value = e.target.value;
+              if (/^[A-Za-z\s]*$/.test(value)) {
+                setTenantForm(prev => ({ ...prev, adminName: value }));
+              }
+            }}
+            fullWidth
+            sx={{ mt: 2 }}
+            inputProps={{
+              maxLength: 50,
+            }}
+            helperText='Only alphabets and spaces are allowed'
+          />
+          <TextField
+            label='Admin Email'
+            value={tenantForm.adminEmail}
+            onChange={e =>
+              setTenantForm(prev => ({ ...prev, adminEmail: e.target.value }))
+            }
+            fullWidth
+            sx={{ mt: 2 }}
+            type='email'
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsFormOpen(false)}>Cancel</Button>
+          <Button onClick={closeCreateModal}>Cancel</Button>
           <Button variant='contained' onClick={handleCreate}>
             Save
           </Button>

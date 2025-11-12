@@ -124,7 +124,7 @@ const menuItems: MenuItem[] = [
     icon: <Receipt />,
     subItems: [
       { label: 'Reports', path: 'Reports' },
-      { label: 'cross-tenant-leaves', path: 'cross-tenant-leaves' },
+      { label: 'Cross Tenant Leaves', path: 'cross-tenant-leaves' },
     ],
   },
   {
@@ -157,9 +157,9 @@ const menuItems: MenuItem[] = [
     icon: <Payments />,
     subItems: [
       { label: 'Payroll Configuration', path: 'payroll-configuration' },
+      { label: 'Employee Salary', path: 'employee-salary' },
       { label: 'Payroll Records', path: 'payroll-records' },
       { label: 'Payroll Reports', path: 'payroll-reports' },
-      { label: 'Employee Salary', path: 'employee-salary' },
       { label: 'My Salary', path: 'my-salary' },
     ],
   },
