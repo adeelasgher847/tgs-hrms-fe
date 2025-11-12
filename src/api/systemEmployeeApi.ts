@@ -159,66 +159,21 @@ class SystemEmployeeApiService {
   }
 
   async getAllTenants(includeDeleted = true): Promise<SystemEmployee[]> {
-    let page = 1;
-    const perPage = 25;
-    let allTenants: SystemEmployee[] = [];
-    let hasMoreData = true;
-    const maxPages = 1000;
-    let totalPages: number | undefined;
+    try {
+      // API returns a direct array of tenants without pagination
+      const res = await axiosInstance.get<SystemEmployee[]>('/system/tenants', {
+        params: { includeDeleted },
+      });
 
-    while (hasMoreData && page <= maxPages) {
-      try {
-        const res = await axiosInstance.get<
-          | SystemEmployee[]
-          | { items: SystemEmployee[]; total?: number; totalPages?: number }
-        >('/system/tenants', {
-          params: { page, includeDeleted },
-        });
+      // API response is always an array
+      const tenants = Array.isArray(res.data) ? res.data : [];
 
-        let tenants: SystemEmployee[] = [];
-        if (Array.isArray(res.data)) {
-          tenants = res.data;
-        } else if (
-          res.data &&
-          typeof res.data === 'object' &&
-          'items' in res.data
-        ) {
-          tenants = Array.isArray(res.data.items) ? res.data.items : [];
-          if (res.data.totalPages !== undefined) {
-            totalPages = res.data.totalPages;
-          }
-        }
-
-        if (tenants.length > 0) {
-          allTenants = [...allTenants, ...tenants];
-        }
-
-        if (tenants.length === 0) {
-          hasMoreData = false;
-        } else if (totalPages !== undefined && page >= totalPages) {
-          hasMoreData = false;
-        } else if (tenants.length < perPage) {
-          hasMoreData = false;
-        } else {
-          page++;
-        }
-      } catch (error) {
-        console.error(`Error fetching tenants page ${page}:`, error);
-        hasMoreData = false;
-        break;
-      }
+      console.log(`Fetched ${tenants.length} tenants`);
+      return tenants;
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+      return [];
     }
-
-    if (page > maxPages) {
-      console.warn(
-        `Reached maximum page limit (${maxPages}) while fetching tenants. Total fetched: ${allTenants.length}`
-      );
-    }
-
-    console.log(
-      `Fetched ${allTenants.length} tenants across ${page} page(s)${totalPages ? ` (total pages: ${totalPages})` : ''}`
-    );
-    return allTenants;
   }
 }
 

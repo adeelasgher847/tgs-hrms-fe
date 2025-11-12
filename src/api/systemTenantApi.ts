@@ -70,19 +70,19 @@ export const SystemTenantApi = {
           ? payload.total
           : 0;
 
-      const page = !Array.isArray(payload) && typeof payload?.page === 'number'
-        ? payload.page
-        : filters.page ?? 1;
+      const page =
+        !Array.isArray(payload) && typeof payload?.page === 'number'
+          ? payload.page
+          : (filters.page ?? 1);
 
-      const totalPages = !Array.isArray(payload) && typeof payload?.totalPages === 'number'
-        ? payload.totalPages
-        : total > 0
-          ? Math.ceil(total / (filters.limit ?? 10))
-          : 1;
+      const totalPages =
+        !Array.isArray(payload) && typeof payload?.totalPages === 'number'
+          ? payload.totalPages
+          : total > 0
+            ? Math.ceil(total / (filters.limit ?? 10))
+            : 1;
 
-      const tenants = Array.isArray(payload)
-        ? payload
-        : payload?.data ?? [];
+      const tenants = Array.isArray(payload) ? payload : (payload?.data ?? []);
 
       return {
         data: tenants,
@@ -190,26 +190,20 @@ export const SystemTenantApi = {
   },
 
   getAllTenants: async (includeDeleted = true): Promise<SystemTenant[]> => {
-    let page = 1;
-    const perPage = 25;
-    let allTenants: SystemTenant[] = [];
-    let hasMoreData = true;
-
-    while (hasMoreData) {
+    try {
+      // API returns a direct array of tenants without pagination
       const res = await axiosInstance.get<SystemTenant[]>('/system/tenants', {
-        params: { page, includeDeleted },
+        params: { includeDeleted },
       });
 
-      const tenants = res.data ?? [];
-      allTenants = [...allTenants, ...tenants];
+      // API response is always an array
+      const tenants = Array.isArray(res.data) ? res.data : [];
 
-      if (tenants.length < perPage) {
-        hasMoreData = false;
-      } else {
-        page++;
-      }
+      console.log(`Fetched ${tenants.length} tenants`);
+      return tenants;
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+      return [];
     }
-
-    return allTenants;
   },
 };

@@ -454,7 +454,6 @@ const PayrollRecords: React.FC = () => {
       sx={{
         backgroundColor: bgColor,
         minHeight: '100vh',
-        p: { xs: 2, md: 3 },
         color: textColor,
       }}
     >

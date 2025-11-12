@@ -223,7 +223,6 @@ const PayrollReports: React.FC = () => {
       sx={{
         backgroundColor: bgColor,
         minHeight: '100vh',
-        p: { xs: 2, md: 3 },
         color: textColor,
       }}
     >
@@ -254,13 +253,6 @@ const PayrollReports: React.FC = () => {
           border: `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Typography
-          variant='h6'
-          sx={{ fontWeight: 600, mb: 2, color: textColor }}
-        >
-          Statistics
-        </Typography>
-
         {statsLoading ? (
           <Box sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
             <CircularProgress />

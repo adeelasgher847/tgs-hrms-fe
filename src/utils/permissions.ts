@@ -376,7 +376,7 @@ export const isSubMenuVisibleForRole = (
       parent.includes('leave analytics') ||
       parent.includes('leave-analytics')
     ) {
-      if (sub.includes('Cross Tenant Leaves')) {
+      if (sub.includes('cross tenant leaves')) {
         visible = false;
       }
     }
