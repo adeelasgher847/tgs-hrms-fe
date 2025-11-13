@@ -214,7 +214,7 @@ export const isSubMenuVisibleForRole = (
       visible = false;
     }
     if (parent.includes('assets')) {
-      if (sub.includes('asset requests')) {
+      if (sub.includes('asset requests') || sub.includes('assets overview')) {
         visible = false;
       }
     }
@@ -302,6 +302,16 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (parent.includes('payroll')) {
+      if (!sub.includes('my salary')) {
+        visible = false;
+      }
+    }
+    if (parent.includes('assets')) {
+      if (sub.includes('assets overview')) {
+        visible = false;
+      }
+    }
   }
 
   if (r === 'employee' || r === 'user') {
@@ -338,6 +348,11 @@ export const isSubMenuVisibleForRole = (
 
     if (parent.includes('payroll')) {
       if (!sub.includes('my salary')) {
+        visible = false;
+      }
+    }
+    if (parent.includes('assets')) {
+      if (sub.includes('assets overview')) {
         visible = false;
       }
     }

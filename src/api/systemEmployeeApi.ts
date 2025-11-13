@@ -101,7 +101,7 @@ export type GetEmployeesParams = {
   departmentId?: string;
   designationId?: string;
   status?: string;
-  page?: number;
+  page?: number | null; // null to get all records for dropdowns
 };
 
 const BASE = '/system/employees';
@@ -118,9 +118,23 @@ class SystemEmployeeApiService {
   async getSystemEmployees(
     params?: GetEmployeesParams
   ): Promise<SystemEmployee[] | PaginatedSystemEmployeeResponse> {
+    // Build params object, excluding page if it's null (for dropdowns)
+    const requestParams: Record<string, unknown> = {};
+    if (params) {
+      Object.keys(params).forEach(key => {
+        const value = params[key as keyof GetEmployeesParams];
+        // Only include page parameter if it's not null (for dropdowns, pass null to get all records)
+        if (key === 'page' && value === null) {
+          return; // Skip page parameter when null
+        }
+        if (value !== undefined && value !== null) {
+          requestParams[key] = value;
+        }
+      });
+    }
     const res = await axiosInstance.get<
       SystemEmployee[] | PaginatedSystemEmployeeResponse
-    >(BASE, { params });
+    >(BASE, { params: requestParams });
     console.log('Get system employee api response: ', res);
 
     // Handle paginated response with items array

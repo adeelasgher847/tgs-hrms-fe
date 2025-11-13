@@ -132,7 +132,7 @@ const AssetInventory: React.FC = () => {
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
-    limit: 25,
+    limit: 25, // Backend returns 25 records per page
     totalPages: 1,
   });
 
@@ -298,8 +298,32 @@ const AssetInventory: React.FC = () => {
 
         const apiAssets = response.assets; // Extract assets from paginated response
 
-        // Update pagination state immediately - this gives us total count right away
-        setPagination(response.pagination);
+        // Backend returns 25 records per page (fixed page size)
+        // If we get 25 records, there might be more pages
+        // If we get less than 25, it's the last page
+        const hasMorePages = apiAssets.length === limit;
+
+        // Use backend pagination info if available, otherwise estimate
+        if (
+          response.pagination &&
+          response.pagination.total &&
+          response.pagination.totalPages
+        ) {
+          setPagination(response.pagination);
+        } else {
+          // Fallback: estimate based on current page and records received
+          const estimatedTotal = hasMorePages
+            ? page * limit
+            : (page - 1) * limit + apiAssets.length;
+          const estimatedTotalPages = hasMorePages ? page + 1 : page;
+
+          setPagination({
+            total: estimatedTotal,
+            page: page,
+            limit: limit,
+            totalPages: estimatedTotalPages,
+          });
+        }
 
         // Update counts from API response if available
         if (response.counts) {
@@ -998,6 +1022,16 @@ const AssetInventory: React.FC = () => {
             showFirstButton
             showLastButton
           />
+        </Box>
+      )}
+
+      {/* Pagination Info */}
+      {assets.length > 0 && (
+        <Box display='flex' justifyContent='center' mt={1}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {pagination.page} of {pagination.totalPages} (
+            {pagination.total} total records)
+          </Typography>
         </Box>
       )}
 

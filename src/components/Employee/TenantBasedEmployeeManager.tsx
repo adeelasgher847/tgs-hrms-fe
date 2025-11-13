@@ -73,7 +73,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 10;
+  const itemsPerPage = 25; // Backend returns 25 records per page
 
   const [selectedEmployee, setSelectedEmployee] =
     useState<EmployeeWithTenantName | null>(null);
@@ -107,8 +107,10 @@ const TenantBasedEmployeeManager: React.FC = () => {
       return;
     }
     try {
-      const res =
-        await designationApiService.getDesignationsByDepartment(departmentId);
+      const res = await designationApiService.getDesignationsByDepartment(
+        departmentId,
+        null
+      ); // Pass null to get all designations for dropdown
       setDesignations(res.items || []);
     } catch (err) {
       console.error('Error fetching designations by department:', err);
@@ -122,6 +124,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
         tenantId: filters.tenantId || undefined,
         departmentId: filters.departmentId || undefined,
         designationId: filters.designationId || undefined,
+        page: currentPage, // Pass page parameter to backend
       };
 
       const res = await systemEmployeeApiService.getSystemEmployees(params);
@@ -131,6 +134,13 @@ const TenantBasedEmployeeManager: React.FC = () => {
         : 'items' in res
           ? res.items
           : [];
+
+      // Get pagination info from response if available
+      const paginationInfo = Array.isArray(res)
+        ? null
+        : 'total' in res && 'totalPages' in res
+          ? res
+          : null;
 
       console.log('Raw employees data from API:', employeesData);
       console.log('First employee sample:', employeesData[0]);
@@ -177,14 +187,27 @@ const TenantBasedEmployeeManager: React.FC = () => {
       );
 
       setEmployees(updatedEmployees);
-      setTotalRecords(updatedEmployees.length);
-      setTotalPages(Math.ceil(updatedEmployees.length / itemsPerPage));
+
+      // Store pagination info if available from backend
+      if (paginationInfo) {
+        setTotalRecords(paginationInfo.total || updatedEmployees.length);
+        setTotalPages(paginationInfo.totalPages || 1);
+      } else {
+        // Fallback: estimate based on current page and records received
+        const hasMorePages = updatedEmployees.length === itemsPerPage;
+        setTotalRecords(
+          hasMorePages
+            ? currentPage * itemsPerPage
+            : (currentPage - 1) * itemsPerPage + updatedEmployees.length
+        );
+        setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
+      }
     } catch (err) {
       console.error('Error fetching system employees:', err);
     } finally {
       setLoading(false);
     }
-  }, [filters, tenants]);
+  }, [filters, tenants, currentPage]);
 
   useEffect(() => {
     fetchFiltersData();
@@ -200,7 +223,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
   useEffect(() => {
     if (tenants.length > 0) fetchEmployees();
-  }, [fetchEmployees, tenants]);
+  }, [fetchEmployees, tenants, currentPage]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -273,10 +296,18 @@ const TenantBasedEmployeeManager: React.FC = () => {
       }
     : {};
 
-  const paginatedEmployees = employees.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Backend returns 25 records per page (fixed page size)
+  // If we get 25 records, there might be more pages
+  // If we get less than 25, it's the last page
+  const hasMorePages = employees.length === itemsPerPage;
+  // Calculate estimated total records if not provided by backend
+  const estimatedTotalRecords =
+    totalRecords ||
+    (hasMorePages
+      ? currentPage * itemsPerPage
+      : (currentPage - 1) * itemsPerPage + employees.length);
+  const estimatedTotalPages =
+    totalPages || (hasMorePages ? currentPage + 1 : currentPage);
 
   return (
     <Box>
@@ -400,7 +431,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ) : employees.length ? (
-                paginatedEmployees.map(emp => (
+                employees.map(emp => (
                   <TableRow key={emp.id}>
                     <TableCell>{emp.name}</TableCell>
                     <TableCell>{emp.tenantName}</TableCell>
@@ -443,10 +474,10 @@ const TenantBasedEmployeeManager: React.FC = () => {
         />
       )}
 
-      {totalPages > 1 && (
+      {estimatedTotalPages > 1 && (
         <Box display='flex' justifyContent='center' mt={2} mb={1}>
           <Pagination
-            count={totalPages}
+            count={estimatedTotalPages}
             page={currentPage}
             onChange={(_, page) => setCurrentPage(page)}
             color='primary'
@@ -456,11 +487,11 @@ const TenantBasedEmployeeManager: React.FC = () => {
         </Box>
       )}
 
-      {totalRecords > 0 && (
+      {employees.length > 0 && (
         <Box display='flex' justifyContent='center' mb={2}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {totalPages} ({totalRecords} total
-            records)
+            Showing page {currentPage} of {estimatedTotalPages} (
+            {estimatedTotalRecords} total records)
           </Typography>
         </Box>
       )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -35,7 +35,7 @@ import employeeBenefitApi from '../../api/employeeBenefitApi';
 import benefitsApi from '../../api/benefitApi';
 import type { EmployeeWithBenefits } from '../../api/employeeBenefitApi';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 
 const EmployeeBenefits: React.FC = () => {
   const [openForm, setOpenForm] = useState(false);
@@ -51,25 +51,55 @@ const EmployeeBenefits: React.FC = () => {
     'all' | 'active' | 'expired' | 'cancelled'
   >('all');
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
 
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
-
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async (pageNum: number = 1) => {
     try {
       setLoading(true);
-      const data = await employeeBenefitApi.getEmployeesWithBenefits(1);
-      const filtered = data.filter(
+      const resp = await employeeBenefitApi.getEmployeesWithBenefits(pageNum);
+
+      // Handle both array and paginated response
+      const items = Array.isArray(resp) ? resp : resp.items || [];
+      const paginationInfo = Array.isArray(resp)
+        ? null
+        : 'total' in resp && 'totalPages' in resp
+          ? resp
+          : null;
+
+      const filtered = items.filter(
         emp => emp.benefits && emp.benefits.length > 0
       );
       setEmployees(filtered);
+
+      // Backend returns 25 records per page (fixed page size)
+      // If we get 25 records, there might be more pages
+      // If we get less than 25, it's the last page
+      const hasMorePages = items.length === ITEMS_PER_PAGE;
+
+      // Use backend pagination info if available, otherwise estimate
+      if (paginationInfo && paginationInfo.total && paginationInfo.totalPages) {
+        setTotalPages(paginationInfo.totalPages);
+        setTotalRecords(paginationInfo.total);
+      } else {
+        // Fallback: estimate based on current page and records received
+        setTotalPages(hasMorePages ? pageNum + 1 : pageNum);
+        setTotalRecords(
+          hasMorePages
+            ? pageNum * ITEMS_PER_PAGE
+            : (pageNum - 1) * ITEMS_PER_PAGE + items.length
+        );
+      }
     } catch (error) {
       console.error('Error fetching employee benefits:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchEmployees(page);
+  }, [page, fetchEmployees]);
 
   const handleBenefitClick = async (
     benefitId: string,
@@ -127,12 +157,10 @@ const EmployeeBenefits: React.FC = () => {
     }))
     .filter(emp => emp.benefits.length > 0);
 
-  const totalRecords = filteredEmployees.length;
-  const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
-  const paginatedEmployees = filteredEmployees.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
-  );
+  // Reset to page 1 when status filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [selectedStatus]);
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
@@ -297,8 +325,8 @@ const EmployeeBenefits: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {paginatedEmployees.length > 0 ? (
-                  paginatedEmployees.map(emp => (
+                {filteredEmployees.length > 0 ? (
+                  filteredEmployees.map(emp => (
                     <TableRow key={emp.employeeId}>
                       <TableCell>{emp.employeeName}</TableCell>
                       <TableCell>{emp.department}</TableCell>
@@ -352,20 +380,19 @@ const EmployeeBenefits: React.FC = () => {
             page={page}
             onChange={handlePageChange}
             color='primary'
+            showFirstButton
+            showLastButton
           />
         </Box>
       )}
 
-      <Box textAlign='center' my={2} px={2}>
-        <Typography variant='body2' color='text.secondary'>
-          Showing{' '}
-          {totalRecords === 0
-            ? 0
-            : Math.min((page - 1) * ITEMS_PER_PAGE + 1, totalRecords)}
-          –{Math.min(page * ITEMS_PER_PAGE, totalRecords)} of {totalRecords}{' '}
-          records
-        </Typography>
-      </Box>
+      {employees.length > 0 && (
+        <Box display='flex' justifyContent='center' my={1}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {page} of {totalPages} ({totalRecords} total records)
+          </Typography>
+        </Box>
+      )}
 
       <AssignEmployeeBenefit
         open={openForm}

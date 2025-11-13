@@ -44,11 +44,14 @@ class BenefitsApiService {
     }
   }
 
-  async getBenefits(page: number): Promise<BenefitResponse[]> {
+  async getBenefits(page: number | null = 1): Promise<BenefitResponse[]> {
     try {
-      const response = await axiosInstance.get(this.baseUrl, {
-        params: { page },
-      });
+      const params: Record<string, unknown> = {};
+      // Only add page parameter if it's not null (for dropdowns, pass null to get all records)
+      if (page !== null) {
+        params.page = page;
+      }
+      const response = await axiosInstance.get(this.baseUrl, { params });
       console.log('Get benefits response:', response);
       return response.data;
     } catch (error: unknown) {

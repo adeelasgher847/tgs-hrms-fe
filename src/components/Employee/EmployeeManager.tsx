@@ -97,6 +97,7 @@ const EmployeeManager: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 25; // Backend returns 25 records per page
 
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [designationFilter, setDesignationFilter] = useState('');
@@ -164,26 +165,71 @@ const EmployeeManager: React.FC = () => {
     }
   }, []);
 
-  const loadEmployees = useCallback(async (page: number = 1) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loadEmployees = useCallback(
+    async (page: number = 1) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const filters = {
-        departmentId: departmentFilter || undefined,
-        designationId: designationFilter || undefined,
-      };
+        const filters = {
+          departmentId: departmentFilter || undefined,
+          designationId: designationFilter || undefined,
+        };
 
-      const response = await employeeApi.getAllEmployees(filters, page);
+        const response = await employeeApi.getAllEmployees(filters, page);
 
-      // If requested page exceeds available totalPages (possible after filters), clamp and refetch
-      if (response.totalPages > 0 && page > response.totalPages) {
-        setCurrentPage(response.totalPages);
-        const retry = await employeeApi.getAllEmployees(
-          filters,
-          response.totalPages
-        );
-        const convertedEmployeesRetry: Employee[] = retry.items.map(emp => ({
+        // If requested page exceeds available totalPages (possible after filters), clamp and refetch
+        if (response.totalPages > 0 && page > response.totalPages) {
+          setCurrentPage(response.totalPages);
+          const retry = await employeeApi.getAllEmployees(
+            filters,
+            response.totalPages
+          );
+          const convertedEmployeesRetry: Employee[] = retry.items.map(emp => ({
+            id: emp.id,
+            user_id: emp.user_id,
+            name: emp.name,
+            firstName: emp.firstName,
+            lastName: emp.lastName,
+            email: emp.email,
+            phone: emp.phone,
+            departmentId: emp.departmentId,
+            designationId: emp.designationId,
+            role_name: emp.role_name,
+            status: emp.status,
+            cnic_number: emp.cnic_number,
+            profile_picture: emp.profile_picture,
+            cnic_picture: emp.cnic_picture,
+            cnic_back_picture: emp.cnic_back_picture,
+            department: emp.department || {
+              id: '',
+              name: '',
+              description: '',
+              tenantId: '',
+              createdAt: '',
+              updatedAt: '',
+            },
+            designation: emp.designation || {
+              id: '',
+              title: '',
+              tenantId: '',
+              departmentId: '',
+              createdAt: '',
+              updatedAt: '',
+            },
+            tenantId: emp.tenantId,
+            createdAt: emp.createdAt,
+            updatedAt: emp.updatedAt,
+          }));
+
+          setEmployees(convertedEmployeesRetry);
+          setTotalPages(retry.totalPages);
+          setTotalItems(retry.total);
+          return;
+        }
+
+        // Convert BackendEmployee to Employee
+        const convertedEmployees: Employee[] = response.items.map(emp => ({
           id: emp.id,
           user_id: emp.user_id,
           name: emp.name,
@@ -220,80 +266,57 @@ const EmployeeManager: React.FC = () => {
           updatedAt: emp.updatedAt,
         }));
 
-        setEmployees(convertedEmployeesRetry);
-        setTotalPages(retry.totalPages);
-        setTotalItems(retry.total);
-        return;
+        setEmployees(convertedEmployees);
+
+        // Backend returns 25 records per page (fixed page size)
+        // If we get 25 records, there might be more pages
+        // If we get less than 25, it's the last page
+        const hasMorePages = convertedEmployees.length === itemsPerPage;
+
+        // Use backend pagination info if available, otherwise estimate
+        if (response.totalPages && response.total) {
+          setCurrentPage(response.page);
+          setTotalPages(response.totalPages);
+          setTotalItems(response.total);
+        } else {
+          // Fallback: estimate based on current page and records received
+          setCurrentPage(response.page || page);
+          setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
+          setTotalItems(
+            hasMorePages
+              ? currentPage * itemsPerPage
+              : (currentPage - 1) * itemsPerPage + convertedEmployees.length
+          );
+        }
+      } catch (error: unknown) {
+        const errorResult = extractErrorMessage(error);
+        setError(errorResult.message);
+      } finally {
+        setLoading(false);
       }
-
-      // Convert BackendEmployee to Employee
-      const convertedEmployees: Employee[] = response.items.map(emp => ({
-        id: emp.id,
-        user_id: emp.user_id,
-        name: emp.name,
-        firstName: emp.firstName,
-        lastName: emp.lastName,
-        email: emp.email,
-        phone: emp.phone,
-        departmentId: emp.departmentId,
-        designationId: emp.designationId,
-        role_name: emp.role_name,
-        status: emp.status,
-        cnic_number: emp.cnic_number,
-        profile_picture: emp.profile_picture,
-        cnic_picture: emp.cnic_picture,
-        cnic_back_picture: emp.cnic_back_picture,
-        department: emp.department || {
-          id: '',
-          name: '',
-          description: '',
-          tenantId: '',
-          createdAt: '',
-          updatedAt: '',
-        },
-        designation: emp.designation || {
-          id: '',
-          title: '',
-          tenantId: '',
-          departmentId: '',
-          createdAt: '',
-          updatedAt: '',
-        },
-        tenantId: emp.tenantId,
-        createdAt: emp.createdAt,
-        updatedAt: emp.updatedAt,
-      }));
-
-      setEmployees(convertedEmployees);
-
-      // Update pagination state
-      setCurrentPage(response.page);
-      setTotalPages(response.totalPages);
-      setTotalItems(response.total);
-    } catch (error: unknown) {
-      const errorResult = extractErrorMessage(error);
-      setError(errorResult.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [departmentFilter, designationFilter]);
+    },
+    [departmentFilter, designationFilter]
+  );
 
   // Load employees on component mount
   useEffect(() => {
-    loadEmployees(1);
     loadDepartmentsAndDesignations();
-  }, [loadEmployees, loadDepartmentsAndDesignations]);
+  }, [loadDepartmentsAndDesignations]);
 
   // Re-fetch from backend when filters change, reset to first page
   useEffect(() => {
     setCurrentPage(1);
-    loadEmployees(1);
-  }, [departmentFilter, designationFilter, loadEmployees]);
+  }, [departmentFilter, designationFilter]);
+
+  // Load employees when page or filters change
+  useEffect(() => {
+    loadEmployees(currentPage);
+  }, [currentPage, departmentFilter, designationFilter, loadEmployees]);
 
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    loadEmployees(page);
+    // loadEmployees will be called automatically by useEffect when currentPage changes
   };
 
   const handleAddEmployee = async (
@@ -589,9 +612,11 @@ const EmployeeManager: React.FC = () => {
                 role_name: updatedEmployee.role_name || emp.role_name,
                 status: updatedEmployee.status || emp.status,
                 cnic_number: updatedEmployee.cnic_number || emp.cnic_number,
-                profile_picture: updatedEmployee.profile_picture || emp.profile_picture,
+                profile_picture:
+                  updatedEmployee.profile_picture || emp.profile_picture,
                 cnic_picture: updatedEmployee.cnic_picture || emp.cnic_picture,
-                cnic_back_picture: updatedEmployee.cnic_back_picture || emp.cnic_back_picture,
+                cnic_back_picture:
+                  updatedEmployee.cnic_back_picture || emp.cnic_back_picture,
                 department: emp.department
                   ? {
                       ...emp.department,
@@ -751,13 +776,16 @@ const EmployeeManager: React.FC = () => {
   const filters = { page: '1' };
 
   // Build absolute media URL from backend path
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
   const toAbsoluteUrl = (path?: string | null) => {
     if (!path) return '';
     const trimmed = path.trim();
     const isAbsolute = /^https?:\/\//i.test(trimmed);
     const base = API_BASE_URL.replace(/\/$/, '');
-    const url = isAbsolute ? trimmed : `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+    const url = isAbsolute
+      ? trimmed
+      : `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
     return `${url}?t=${Date.now()}`;
   };
 

@@ -85,7 +85,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 10;
+  const [totalRecords, setTotalRecords] = useState(0);
+  const itemsPerPage = 25; // Backend returns 25 records per page
   const isInitialTenantSet = useRef(false);
   const isInitialLoad = useRef(true);
   const hasLoadedDataOnce = useRef(false);
@@ -276,9 +277,25 @@ const CrossTenantLeaveManagement: React.FC = () => {
       }));
 
       setLeaves(mappedLeaves);
-      setTotalPages(
-        response.totalPages || Math.ceil(response.total / itemsPerPage)
-      );
+
+      // Backend returns 25 records per page (fixed page size)
+      // If we get 25 records, there might be more pages
+      // If we get less than 25, it's the last page
+      const hasMorePages = mappedLeaves.length === itemsPerPage;
+
+      // Use backend pagination info if available, otherwise estimate
+      if (response.totalPages && response.total) {
+        setTotalPages(response.totalPages);
+        setTotalRecords(response.total);
+      } else {
+        // Fallback: estimate based on current page and records received
+        setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
+        setTotalRecords(
+          hasMorePages
+            ? currentPage * itemsPerPage
+            : (currentPage - 1) * itemsPerPage + mappedLeaves.length
+        );
+      }
 
       hasLoadedDataOnce.current = true;
       if (isInitialLoad.current) isInitialLoad.current = false;
@@ -396,6 +413,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
       departments,
       currentPage,
       totalPages,
+      totalRecords,
       isMobile,
       handleFilterChange,
       handlePageChange,
@@ -412,6 +430,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
       departments: DepartmentOption[];
       currentPage: number;
       totalPages: number;
+      totalRecords: number;
       isMobile: boolean;
       handleFilterChange: <K extends keyof FiltersState>(
         field: K,
@@ -564,6 +583,14 @@ const CrossTenantLeaveManagement: React.FC = () => {
             />
           </Box>
         )}
+        {leaves.length > 0 && (
+          <Box display='flex' justifyContent='center' mt={1}>
+            <Typography variant='body2' color='textSecondary'>
+              Showing page {currentPage} of {totalPages} ({totalRecords} total
+              records)
+            </Typography>
+          </Box>
+        )}
       </Paper>
     )
   );
@@ -620,6 +647,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
           departments={departments}
           currentPage={currentPage}
           totalPages={totalPages}
+          totalRecords={totalRecords}
           isMobile={isMobile}
           handleFilterChange={handleFilterChange}
           handlePageChange={handlePageChange}

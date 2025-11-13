@@ -134,7 +134,8 @@ const EmployeeSalaryPage: React.FC = () => {
       const userId = currentUser?.id;
       if (!userId) return null;
 
-      const allEmps = await employeeApi.getAllEmployees({}, 1);
+      // Pass null to get all employees for dropdown
+      const allEmps = await employeeApi.getAllEmployees({}, null);
       const employee = allEmps.items.find(emp => emp.user_id === userId);
       return employee?.id || null;
     } catch (error) {

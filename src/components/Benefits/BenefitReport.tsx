@@ -83,7 +83,8 @@ const BenefitReport = () => {
         if (selectedDepartment) {
           const response =
             await designationApiService.getDesignationsByDepartment(
-              selectedDepartment
+              selectedDepartment,
+              null // Pass null to get all designations for dropdown
             );
           setDesignations(response.items || []);
         } else {

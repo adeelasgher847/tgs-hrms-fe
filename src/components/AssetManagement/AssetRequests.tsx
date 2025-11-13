@@ -208,7 +208,7 @@ const AssetRequests: React.FC = () => {
   // Pagination state
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 25,
+    limit: 25, // Backend returns 25 records per page
     total: 0,
     totalPages: 0,
   });
@@ -551,12 +551,31 @@ const AssetRequests: React.FC = () => {
         const transformedRequests = transformApiRequests(apiRequests);
         setRequests(transformedRequests);
 
-        // Update pagination info from API response
-        setPagination(prev => ({
-          ...prev,
-          total: apiResponse.total || 0,
-          totalPages: apiResponse.totalPages || 1,
-        }));
+        // Backend returns 25 records per page (fixed page size)
+        // If we get 25 records, there might be more pages
+        // If we get less than 25, it's the last page
+        const hasMorePages = (apiResponse.items || []).length === limit;
+
+        // Use backend pagination info if available, otherwise estimate
+        if (apiResponse.total && apiResponse.totalPages) {
+          setPagination(prev => ({
+            ...prev,
+            total: apiResponse.total || 0,
+            totalPages: apiResponse.totalPages || 1,
+          }));
+        } else {
+          // Fallback: estimate based on current page and records received
+          const estimatedTotal = hasMorePages
+            ? page * limit
+            : (page - 1) * limit + (apiResponse.items || []).length;
+          const estimatedTotalPages = hasMorePages ? page + 1 : page;
+
+          setPagination(prev => ({
+            ...prev,
+            total: estimatedTotal,
+            totalPages: estimatedTotalPages,
+          }));
+        }
 
         // Update counts from API response if available
         if (apiResponse.counts) {
@@ -1165,7 +1184,19 @@ const AssetRequests: React.FC = () => {
             onChange={handlePageChange}
             color='primary'
             disabled={initialLoading}
+            showFirstButton
+            showLastButton
           />
+        </Box>
+      )}
+
+      {/* Pagination Info */}
+      {requests.length > 0 && (
+        <Box display='flex' justifyContent='center' mt={1}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {pagination.page} of {pagination.totalPages} (
+            {pagination.total} total records)
+          </Typography>
         </Box>
       )}
 

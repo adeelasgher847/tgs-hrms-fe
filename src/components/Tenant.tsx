@@ -30,6 +30,7 @@ import {
   Chip,
   Card,
   Pagination,
+  Avatar,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
@@ -37,11 +38,14 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   SystemTenantApi,
   type SystemTenant,
   type SystemTenantDetail,
 } from '../api/systemTenantApi';
+import companyApi from '../api/companyApi';
 
 type StatusFilterOption = 'All' | 'active' | 'suspended' | 'deleted';
 
@@ -81,6 +85,11 @@ export const TenantPage: React.FC = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editTenantId, setEditTenantId] = useState<string | null>(null);
+
+  // Logo upload state
+  const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -124,23 +133,64 @@ export const TenantPage: React.FC = () => {
   const closeCreateModal = () => {
     setIsFormOpen(false);
     setTenantForm(createEmptyTenantForm());
+    setSelectedLogoFile(null);
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+    }
+    setLogoPreview(null);
+  };
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setSnackbar({
+        open: true,
+        message: 'Please select an image file',
+        severity: 'error',
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setSnackbar({
+        open: true,
+        message: 'File size should be less than 5MB',
+        severity: 'error',
+      });
+      return;
+    }
+
+    // Clean up previous preview if exists
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+    }
+
+    setSelectedLogoFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setLogoPreview(previewUrl);
+  };
+
+  const handleRemoveLogoFile = () => {
+    setSelectedLogoFile(null);
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+    }
+    setLogoPreview(null);
   };
 
   const handleCreate = async () => {
-    const { name, domain, logo, adminName, adminEmail } = tenantForm;
+    const { name, domain, adminName, adminEmail } = tenantForm;
+    let logoUrl = '';
 
-    const trimmedForm = {
-      name: name.trim(),
-      domain: domain.trim(),
-      logo: logo.trim(),
-      adminName: adminName.trim(),
-      adminEmail: adminEmail.trim(),
-    };
-
-    const hasEmptyFields = Object.values(trimmedForm).some(
-      value => value === ''
-    );
-    if (hasEmptyFields) {
+    // Validate required fields
+    if (
+      !name.trim() ||
+      !domain.trim() ||
+      !adminName.trim() ||
+      !adminEmail.trim()
+    ) {
       setSnackbar({
         open: true,
         message: 'All fields are required',
@@ -149,8 +199,10 @@ export const TenantPage: React.FC = () => {
       return;
     }
 
+    // Logo is optional - if provided, it will be uploaded
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedForm.adminEmail)) {
+    if (!emailRegex.test(adminEmail.trim())) {
       setSnackbar({
         open: true,
         message: 'Please enter a valid admin email',
@@ -160,10 +212,7 @@ export const TenantPage: React.FC = () => {
     }
 
     const nameRegex = /^[A-Za-z\s]+$/;
-    if (
-      !nameRegex.test(trimmedForm.name) ||
-      !nameRegex.test(trimmedForm.adminName)
-    ) {
+    if (!nameRegex.test(name.trim()) || !nameRegex.test(adminName.trim())) {
       setSnackbar({
         open: true,
         message: 'Names can only contain letters and spaces',
@@ -173,7 +222,27 @@ export const TenantPage: React.FC = () => {
     }
 
     try {
-      await SystemTenantApi.create(trimmedForm);
+      setUploadingLogo(true);
+
+      // Send logo file directly in the tenant creation request (FormData)
+      // The backend handles file upload in the same API call
+      const tenantData = {
+        name: name.trim(),
+        domain: domain.trim(),
+        logo: selectedLogoFile!, // Send File directly, backend will handle upload
+        adminName: adminName.trim(),
+        adminEmail: adminEmail.trim(),
+      };
+
+      console.log('Creating tenant with data:', {
+        name: tenantData.name,
+        domain: tenantData.domain,
+        logo: tenantData.logo?.name,
+        adminName: tenantData.adminName,
+        adminEmail: tenantData.adminEmail,
+      });
+
+      await SystemTenantApi.create(tenantData);
       fetchTenants();
       setSnackbar({
         open: true,
@@ -189,9 +258,24 @@ export const TenantPage: React.FC = () => {
       const maybeAxiosError = error as {
         response?: {
           status?: number;
-          data?: { message?: string };
+          data?: {
+            message?: string;
+            errors?: Array<{ field: string; message: string }>;
+          };
         };
       };
+
+      // Check for validation errors
+      if (maybeAxiosError.response?.data?.errors) {
+        const errors = maybeAxiosError.response.data.errors;
+        const errorMessages = errors
+          .map(e => `${e.field}: ${e.message}`)
+          .join(', ');
+        errorMessage = `Validation errors: ${errorMessages}`;
+        console.error('Validation errors:', errors);
+      } else if (maybeAxiosError.response?.data?.message) {
+        errorMessage = maybeAxiosError.response.data.message;
+      }
 
       const alreadyExists =
         maybeAxiosError.response?.status === 409 ||
@@ -208,6 +292,8 @@ export const TenantPage: React.FC = () => {
         message: errorMessage,
         severity: 'error',
       });
+    } finally {
+      setUploadingLogo(false);
     }
   };
   const handleUpdate = async (
@@ -612,17 +698,63 @@ export const TenantPage: React.FC = () => {
             sx={{ mt: 2 }}
             placeholder='example.com'
           />
-          <TextField
-            label='Logo URL'
-            value={tenantForm.logo}
-            onChange={e =>
-              setTenantForm(prev => ({ ...prev, logo: e.target.value }))
-            }
-            fullWidth
-            sx={{ mt: 2 }}
-            placeholder='https://example.com/logo.png'
-            type='url'
-          />
+
+          {/* Logo Upload Section */}
+          <Box sx={{ mt: 2 }}>
+            <input
+              accept='image/*'
+              style={{ display: 'none' }}
+              id='logo-upload-button'
+              type='file'
+              onChange={handleLogoFileChange}
+            />
+            <label htmlFor='logo-upload-button'>
+              <Button
+                variant='outlined'
+                component='span'
+                startIcon={<CloudUploadIcon />}
+                fullWidth
+                sx={{ mb: 2 }}
+              >
+                {selectedLogoFile ? 'Change Logo' : 'Upload Company Logo'}
+              </Button>
+            </label>
+            {logoPreview && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  mt: 2,
+                  p: 2,
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 1,
+                }}
+              >
+                <Avatar
+                  src={logoPreview}
+                  alt='Logo preview'
+                  sx={{ width: 80, height: 80 }}
+                  variant='rounded'
+                />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant='body2' fontWeight='bold'>
+                    {selectedLogoFile?.name}
+                  </Typography>
+                  <Typography variant='caption' color='text.secondary'>
+                    {(selectedLogoFile?.size || 0) / 1024} KB
+                  </Typography>
+                </Box>
+                <IconButton
+                  onClick={handleRemoveLogoFile}
+                  color='error'
+                  size='small'
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            )}
+          </Box>
           <TextField
             label='Admin Name'
             value={tenantForm.adminName}
@@ -651,9 +783,22 @@ export const TenantPage: React.FC = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeCreateModal}>Cancel</Button>
-          <Button variant='contained' onClick={handleCreate}>
-            Save
+          <Button onClick={closeCreateModal} disabled={uploadingLogo}>
+            Cancel
+          </Button>
+          <Button
+            variant='contained'
+            onClick={handleCreate}
+            disabled={uploadingLogo}
+          >
+            {uploadingLogo ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={16} />
+                Uploading...
+              </Box>
+            ) : (
+              'Save'
+            )}
           </Button>
         </DialogActions>
       </Dialog>

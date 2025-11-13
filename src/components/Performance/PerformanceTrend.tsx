@@ -50,6 +50,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
   const fetchEmployees = useCallback(async () => {
     const data = await systemEmployeeApiService.getSystemEmployees({
       tenantId,
+      page: null, // Pass null to get all employees for dropdown
     });
     setEmployees(data || []);
   }, [tenantId]);

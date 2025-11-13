@@ -114,9 +114,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   const filteredLeaves = useMemo(() => {
     if (isManager && viewMode === 'you') {
       return leaves.filter(
-        l =>
-          l.employee?.id === currentUserId ||
-          l.employeeId === currentUserId
+        l => l.employee?.id === currentUserId || l.employeeId === currentUserId
       );
     }
 
@@ -248,7 +246,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 ,}}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {!hideDropdown && (isAdmin || isManager) && (
             <TextField
               select
@@ -258,7 +256,8 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               sx={{ minWidth: 200 }}
               SelectProps={{
                 displayEmpty: true,
-                renderValue: (value: unknown) => (value === '' ? 'All Employees' : String(value)),
+                renderValue: (value: unknown) =>
+                  value === '' ? 'All Employees' : String(value),
               }}
             >
               <MenuItem value=''>All Employees</MenuItem>
@@ -270,7 +269,9 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
             </TextField>
           )}
 
-          <Tooltip title={exporting ? 'Exporting...' : 'Export All Leave History'}>
+          <Tooltip
+            title={exporting ? 'Exporting...' : 'Export All Leave History'}
+          >
             <IconButton
               color='primary'
               onClick={handleDownloadCSV}
@@ -342,9 +343,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                         {leave.employee?.first_name || 'N/A'}
                       </TableCell>
                     )}
-                    <TableCell>
-                      {leave.leaveType?.name || 'Unknown'}
-                    </TableCell>
+                    <TableCell>{leave.leaveType?.name || 'Unknown'}</TableCell>
                     <TableCell>{formatDate(leave.startDate)}</TableCell>
                     <TableCell>{formatDate(leave.endDate)}</TableCell>
                     <TableCell>{formatDate(leave.createdAt)}</TableCell>
@@ -359,7 +358,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                         label={
                           leave.status
                             ? leave.status.charAt(0).toUpperCase() +
-                                leave.status.slice(1)
+                              leave.status.slice(1)
                             : 'Unknown'
                         }
                         color={statusConfig[leave.status]?.color}
@@ -455,34 +454,27 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
             page={currentPage}
             onChange={(_, newPage) => handlePageChange(newPage)}
             color='primary'
+            showFirstButton
+            showLastButton
             sx={{ mb: 1 }}
           />
         )}
 
-        <Typography
-          variant='body2'
-          color='text.secondary'
-          sx={{
-            textAlign: 'center',
-            width: 'fit-content',
-            mx: 'auto',
-          }}
-        >
-          Showing{' '}
-          {totalItems === 0
-            ? 0
-            : useServerPagination
-              ? Math.min((currentPage - 1) * 10 + 1, totalItems)
-              : Math.min(
-                  (page - 1) * ITEMS_PER_PAGE + 1,
-                  filteredLeaves.length
-                )}
-          –
-          {useServerPagination
-            ? Math.min(currentPage * 10, totalItems)
-            : Math.min(page * ITEMS_PER_PAGE, filteredLeaves.length)}{' '}
-          of {totalItems} records
-        </Typography>
+        {filteredLeaves.length > 0 && (
+          <Typography
+            variant='body2'
+            color='text.secondary'
+            sx={{
+              textAlign: 'center',
+              width: 'fit-content',
+              mx: 'auto',
+            }}
+          >
+            {useServerPagination
+              ? `Showing page ${currentPage} of ${totalPages} (${totalItems} total records)`
+              : `Showing page ${page} of ${totalPages} (${totalItems} total records)`}
+          </Typography>
+        )}
       </Box>
     </Box>
   );

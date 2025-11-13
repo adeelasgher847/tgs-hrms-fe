@@ -107,14 +107,48 @@ export const SystemTenantApi = {
     }
   },
 
-  create: async (data: { name: string }): Promise<SystemTenant> => {
+  create: async (data: {
+    name: string;
+    domain?: string;
+    logo?: string | File;
+    adminName?: string;
+    adminEmail?: string;
+  }): Promise<SystemTenant> => {
     try {
-      const response: AxiosResponse<SystemTenant> = await axiosInstance.post(
-        '/system/tenants',
-        data
-      );
-      console.log(' Tenant created successfully:', response.data);
-      return response.data;
+      // If logo is a File, send as FormData, otherwise send as JSON
+      if (data.logo instanceof File) {
+        const formData = new FormData();
+        // Always append all required fields - backend expects all fields to be present
+        formData.append('name', String(data.name || ''));
+        formData.append('domain', String(data.domain || ''));
+        formData.append('logo', data.logo);
+        formData.append('adminName', String(data.adminName || ''));
+        formData.append('adminEmail', String(data.adminEmail || ''));
+
+        // Debug: Log FormData contents
+        console.log('Sending FormData with fields:', {
+          name: data.name,
+          domain: data.domain,
+          logo: data.logo.name,
+          adminName: data.adminName,
+          adminEmail: data.adminEmail,
+        });
+
+        // Don't set Content-Type header - let axios set it automatically with boundary
+        const response: AxiosResponse<SystemTenant> = await axiosInstance.post(
+          '/system/tenants',
+          formData
+        );
+        console.log(' Tenant created successfully:', response.data);
+        return response.data;
+      } else {
+        const response: AxiosResponse<SystemTenant> = await axiosInstance.post(
+          '/system/tenants',
+          data
+        );
+        console.log(' Tenant created successfully:', response.data);
+        return response.data;
+      }
     } catch (error) {
       console.error(' Failed to create tenant:', error);
       throw error;

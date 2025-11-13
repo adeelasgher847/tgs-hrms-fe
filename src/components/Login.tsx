@@ -266,6 +266,9 @@ const Login: React.FC = () => {
         permissions,
         employee,
         requiresPayment,
+        session_id, // Backend sends session_id (not signupSessionId) in login response
+        signupSessionId, // Keep for backward compatibility if present
+        company, // Company details from login response (for requiresPayment flow)
       } = res.data;
 
       const employeeId = employee?.id || null;
@@ -279,6 +282,20 @@ const Login: React.FC = () => {
         localStorage.setItem('employeeId', employeeId);
       } else {
         console.warn('No employeeId found in response');
+      }
+
+      // Store session_id from login response (for requiresPayment flow after tenant creation)
+      // Backend sends session_id in login response, which is used for company-details and payment
+      if (session_id) {
+        localStorage.setItem('signupSessionId', session_id); // Store as signupSessionId for consistency
+      } else if (signupSessionId) {
+        // Fallback for backward compatibility
+        localStorage.setItem('signupSessionId', signupSessionId);
+      }
+
+      // Store company details if present (needed for login flow when selecting plan)
+      if (company) {
+        localStorage.setItem('company', JSON.stringify(company));
       }
 
       try {

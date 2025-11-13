@@ -206,7 +206,7 @@ const RequestManagement: React.FC = () => {
   // Pagination state
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 25,
+    limit: 25, // Backend returns 25 records per page
     total: 0,
     totalPages: 0,
   });
@@ -233,12 +233,17 @@ const RequestManagement: React.FC = () => {
     (apiRequests: ApiAssetRequestExtended[]): AssetRequest[] => {
       return apiRequests.map((apiRequest: ApiAssetRequestExtended) => {
         // Handle new API response structure with category_id and category object
-        const categoryId = apiRequest.category_id || apiRequest.asset_category || '';
+        const categoryId =
+          apiRequest.category_id || apiRequest.asset_category || '';
         const subcategoryId = apiRequest.subcategory_id || undefined;
-        
+
         // Get category name from API response category object
         let mainCategoryName = '';
-        if (apiRequest.category && typeof apiRequest.category === 'object' && apiRequest.category !== null) {
+        if (
+          apiRequest.category &&
+          typeof apiRequest.category === 'object' &&
+          apiRequest.category !== null
+        ) {
           mainCategoryName = apiRequest.category.name || categoryId;
         } else if (apiRequest.asset_category) {
           mainCategoryName = apiRequest.asset_category;
@@ -249,8 +254,12 @@ const RequestManagement: React.FC = () => {
         // Get subcategory name from API response subcategory object
         let subcategoryName = '';
         if (apiRequest.subcategory) {
-          if (typeof apiRequest.subcategory === 'object' && apiRequest.subcategory !== null) {
-            subcategoryName = apiRequest.subcategory.name || apiRequest.subcategoryName || '';
+          if (
+            typeof apiRequest.subcategory === 'object' &&
+            apiRequest.subcategory !== null
+          ) {
+            subcategoryName =
+              apiRequest.subcategory.name || apiRequest.subcategoryName || '';
           } else {
             subcategoryName = apiRequest.subcategory || '';
           }
@@ -264,7 +273,10 @@ const RequestManagement: React.FC = () => {
         let employeeName = '';
         if (apiRequest.requestedByName) {
           employeeName = apiRequest.requestedByName;
-        } else if (apiRequest.requestedByUser && apiRequest.requestedByUser.name) {
+        } else if (
+          apiRequest.requestedByUser &&
+          apiRequest.requestedByUser.name
+        ) {
           employeeName = apiRequest.requestedByUser.name;
         } else if (apiRequest.requested_by) {
           employeeName = `User ${apiRequest.requested_by}`;
@@ -380,12 +392,31 @@ const RequestManagement: React.FC = () => {
             limit,
           });
 
-        // Update pagination info from API response immediately - this gives us total count right away
-        setPagination(prev => ({
-          ...prev,
-          total: apiResponse.total || 0,
-          totalPages: apiResponse.totalPages || 1,
-        }));
+        // Backend returns 25 records per page (fixed page size)
+        // If we get 25 records, there might be more pages
+        // If we get less than 25, it's the last page
+        const hasMorePages = (apiResponse.items || []).length === limit;
+
+        // Use backend pagination info if available, otherwise estimate
+        if (apiResponse.total && apiResponse.totalPages) {
+          setPagination(prev => ({
+            ...prev,
+            total: apiResponse.total || 0,
+            totalPages: apiResponse.totalPages || 1,
+          }));
+        } else {
+          // Fallback: estimate based on current page and records received
+          const estimatedTotal = hasMorePages
+            ? page * limit
+            : (page - 1) * limit + (apiResponse.items || []).length;
+          const estimatedTotalPages = hasMorePages ? page + 1 : page;
+
+          setPagination(prev => ({
+            ...prev,
+            total: estimatedTotal,
+            totalPages: estimatedTotalPages,
+          }));
+        }
 
         // Transform API requests to component format
         const transformedRequests = transformApiRequests(
@@ -397,13 +428,13 @@ const RequestManagement: React.FC = () => {
         // Fetch assets for assignment - fetch all assets with high limit to get all pages
         // This ensures all available assets are shown in the Assign Asset dropdown
         let allAssets: Record<string, unknown>[] = [];
-        let currentPage = 1;
-        let hasMorePages = true;
+        let assetCurrentPage = 1;
+        let assetsHasMorePages = true;
         const maxPages = 50; // Safety limit to prevent infinite loops
 
-        while (hasMorePages && currentPage <= maxPages) {
+        while (assetsHasMorePages && assetCurrentPage <= maxPages) {
           const apiAssetsResponse = await assetApi.getAllAssets({
-            page: currentPage,
+            page: assetCurrentPage,
             limit: 100, // Use a high limit to fetch more assets per page
           });
 
@@ -412,10 +443,10 @@ const RequestManagement: React.FC = () => {
 
             // Check if there are more pages
             const totalPages = apiAssetsResponse.pagination?.totalPages || 1;
-            hasMorePages = currentPage < totalPages;
-            currentPage++;
+            assetsHasMorePages = assetCurrentPage < totalPages;
+            assetCurrentPage++;
           } else {
-            hasMorePages = false;
+            assetsHasMorePages = false;
           }
         }
 
@@ -425,20 +456,30 @@ const RequestManagement: React.FC = () => {
             // Category can be an object { id, name, ... } or a string
             let categoryName = '';
             let categoryId = '';
-            
-            if (apiAsset.category && typeof apiAsset.category === 'object' && apiAsset.category !== null) {
-              const categoryObj = apiAsset.category as { id?: string; name?: string };
+
+            if (
+              apiAsset.category &&
+              typeof apiAsset.category === 'object' &&
+              apiAsset.category !== null
+            ) {
+              const categoryObj = apiAsset.category as {
+                id?: string;
+                name?: string;
+              };
               categoryName = categoryObj.name || '';
-              categoryId = categoryObj.id || apiAsset.category_id as string || '';
+              categoryId =
+                categoryObj.id || (apiAsset.category_id as string) || '';
             } else if (apiAsset.categoryName) {
               categoryName = apiAsset.categoryName as string;
-              categoryId = apiAsset.category_id as string || '';
+              categoryId = (apiAsset.category_id as string) || '';
             } else if (typeof apiAsset.category === 'string') {
               categoryName = apiAsset.category;
-              categoryId = apiAsset.category_id as string || apiAsset.category as string;
+              categoryId =
+                (apiAsset.category_id as string) ||
+                (apiAsset.category as string);
             } else {
-              categoryName = apiAsset.categoryName as string || '';
-              categoryId = apiAsset.category_id as string || '';
+              categoryName = (apiAsset.categoryName as string) || '';
+              categoryId = (apiAsset.category_id as string) || '';
             }
 
             // Try to find matching category from our comprehensive list
@@ -446,8 +487,7 @@ const RequestManagement: React.FC = () => {
               cat =>
                 cat.name.toLowerCase() === categoryName.toLowerCase() ||
                 cat.subcategories?.some(
-                  sub =>
-                    sub.toLowerCase() === categoryName.toLowerCase()
+                  sub => sub.toLowerCase() === categoryName.toLowerCase()
                 )
             );
 
@@ -487,19 +527,21 @@ const RequestManagement: React.FC = () => {
 
         setAssets(transformedAssets);
       } catch (error: unknown) {
-        const axiosError = error as AxiosError<{ message?: string }> | undefined;
+        const axiosError = error as
+          | AxiosError<{ message?: string }>
+          | undefined;
         console.error('❌ Failed to fetch data:', error);
         console.error('❌ Error details:', {
           message: axiosError?.message,
           response: axiosError?.response?.data,
           status: axiosError?.response?.status,
         });
-        
+
         // Only show error toast if it's a real error (not 404 or empty results)
         const status = axiosError?.response?.status;
         const errorMessage =
           axiosError?.response?.data?.message || axiosError?.message || '';
-        
+
         // Don't show error for 404 (not found) or if it's just empty results
         if (status !== 404 && status !== 200 && errorMessage) {
           showSnackbar(errorMessage || 'Failed to load data', 'error');
@@ -752,7 +794,9 @@ const RequestManagement: React.FC = () => {
           setLoading(false);
           return;
         } catch (approvalError: unknown) {
-          const axiosError = approvalError as AxiosError<{ message?: string }> | undefined;
+          const axiosError = approvalError as
+            | AxiosError<{ message?: string }>
+            | undefined;
           console.error('❌ Approval failed:', approvalError);
           console.error('❌ Error details:', {
             message: axiosError?.message,
@@ -761,7 +805,7 @@ const RequestManagement: React.FC = () => {
             requestId: selectedRequest.id,
             payload,
           });
-          
+
           const errorMessage =
             axiosError?.response?.data?.message ||
             axiosError?.message ||
@@ -822,13 +866,13 @@ const RequestManagement: React.FC = () => {
 
       // Refresh assets to reflect assignment status - fetch all assets with pagination
       let allAssets: Record<string, unknown>[] = [];
-      let currentPage = 1;
-      let hasMorePages = true;
+      let assetCurrentPage = 1;
+      let assetsHasMorePages = true;
       const maxPages = 50; // Safety limit to prevent infinite loops
 
-      while (hasMorePages && currentPage <= maxPages) {
+      while (assetsHasMorePages && assetCurrentPage <= maxPages) {
         const apiAssetsResponse = await assetApi.getAllAssets({
-          page: currentPage,
+          page: assetCurrentPage,
           limit: 100, // Use a high limit to fetch more assets per page
         });
 
@@ -837,10 +881,10 @@ const RequestManagement: React.FC = () => {
 
           // Check if there are more pages
           const totalPages = apiAssetsResponse.pagination?.totalPages || 1;
-          hasMorePages = currentPage < totalPages;
-          currentPage++;
+          assetsHasMorePages = assetCurrentPage < totalPages;
+          assetCurrentPage++;
         } else {
-          hasMorePages = false;
+          assetsHasMorePages = false;
         }
       }
 
@@ -850,20 +894,29 @@ const RequestManagement: React.FC = () => {
           // Category can be an object { id, name, ... } or a string
           let categoryName = '';
           let categoryId = '';
-          
-          if (apiAsset.category && typeof apiAsset.category === 'object' && apiAsset.category !== null) {
-            const categoryObj = apiAsset.category as { id?: string; name?: string };
+
+          if (
+            apiAsset.category &&
+            typeof apiAsset.category === 'object' &&
+            apiAsset.category !== null
+          ) {
+            const categoryObj = apiAsset.category as {
+              id?: string;
+              name?: string;
+            };
             categoryName = categoryObj.name || '';
-            categoryId = categoryObj.id || apiAsset.category_id as string || '';
+            categoryId =
+              categoryObj.id || (apiAsset.category_id as string) || '';
           } else if (apiAsset.categoryName) {
             categoryName = apiAsset.categoryName as string;
-            categoryId = apiAsset.category_id as string || '';
+            categoryId = (apiAsset.category_id as string) || '';
           } else if (typeof apiAsset.category === 'string') {
             categoryName = apiAsset.category;
-            categoryId = apiAsset.category_id as string || apiAsset.category as string;
+            categoryId =
+              (apiAsset.category_id as string) || (apiAsset.category as string);
           } else {
-            categoryName = apiAsset.categoryName as string || '';
-            categoryId = apiAsset.category_id as string || '';
+            categoryName = (apiAsset.categoryName as string) || '';
+            categoryId = (apiAsset.category_id as string) || '';
           }
 
           // Try to find matching category from our comprehensive list
@@ -871,8 +924,7 @@ const RequestManagement: React.FC = () => {
             cat =>
               cat.name.toLowerCase() === categoryName.toLowerCase() ||
               cat.subcategories?.some(
-                sub =>
-                  sub.toLowerCase() === categoryName.toLowerCase()
+                sub => sub.toLowerCase() === categoryName.toLowerCase()
               )
           );
 
@@ -949,8 +1001,8 @@ const RequestManagement: React.FC = () => {
             id: apiRequest.id,
             employeeId: apiRequest.requested_by,
             employeeName:
-              apiRequest.requestedByName || 
-              (apiRequest.requestedByUser?.name) || 
+              apiRequest.requestedByName ||
+              apiRequest.requestedByUser?.name ||
               `User ${apiRequest.requested_by}`,
             category: matchingCategory
               ? {
@@ -1389,7 +1441,19 @@ const RequestManagement: React.FC = () => {
             onChange={handlePageChange}
             color='primary'
             disabled={initialLoading}
+            showFirstButton
+            showLastButton
           />
+        </Box>
+      )}
+
+      {/* Pagination Info */}
+      {requests.length > 0 && (
+        <Box display='flex' justifyContent='center' mt={1}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {pagination.page} of {pagination.totalPages} (
+            {pagination.total} total records)
+          </Typography>
         </Box>
       )}
 
