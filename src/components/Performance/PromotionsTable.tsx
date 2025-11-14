@@ -15,12 +15,15 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Pagination,
+  CircularProgress,
 } from '@mui/material';
 import {
   systemPerformanceApiService,
   type PromotionRecord,
   type PromotionStats,
 } from '../../api/systemPerformanceApi';
+import systemEmployeeApiService from '../../api/systemEmployeeApi';
 
 interface PromotionsListProps {
   tenantId: string;
@@ -34,30 +37,113 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
     startDate: '',
     endDate: '',
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [employeeNames, setEmployeeNames] = useState<Record<string, string>>(
+    {}
+  );
+  const itemsPerPage = 25; // Backend returns 25 records per page
+
+  // Fetch employee names for all unique employee IDs
+  const fetchEmployeeNames = useCallback(async (employeeIds: string[]) => {
+    if (employeeIds.length === 0) return;
+
+    try {
+      // Fetch all employees using systemEmployeeApi (pass null for page to get all records)
+      const response = await systemEmployeeApiService.getSystemEmployees({
+        page: null, // Pass null to get all employees for matching
+      });
+
+      const employeesData = Array.isArray(response)
+        ? response
+        : 'items' in response
+          ? response.items
+          : [];
+
+      const namesMap: Record<string, string> = {};
+
+      employeesData.forEach((emp: { id: string; name?: string }) => {
+        if (emp.id && employeeIds.includes(emp.id)) {
+          const name = emp.name || '';
+          if (name) {
+            namesMap[emp.id] = name;
+          }
+        }
+      });
+
+      setEmployeeNames(prev => ({ ...prev, ...namesMap }));
+    } catch (error) {
+      console.error('Failed to fetch employee names:', error);
+    }
+  }, []);
 
   const fetchPromotions = useCallback(async () => {
-    // Build dynamic filter params
-    const params: {
-      tenantId: string;
-      status?: 'pending' | 'approved' | 'rejected';
-      startDate?: string;
-      endDate?: string;
-    } = { tenantId }; // Always include tenantId
+    setLoading(true);
+    try {
+      // Build dynamic filter params
+      const params: {
+        tenantId: string;
+        status?: 'pending' | 'approved' | 'rejected';
+        startDate?: string;
+        endDate?: string;
+        page?: number;
+      } = { tenantId, page: currentPage }; // Always include tenantId and page
 
-    if (
-      filters.status &&
-      ['pending', 'approved', 'rejected'].includes(filters.status)
-    ) {
-      params.status = filters.status as 'pending' | 'approved' | 'rejected';
+      if (
+        filters.status &&
+        ['pending', 'approved', 'rejected'].includes(filters.status)
+      ) {
+        params.status = filters.status as 'pending' | 'approved' | 'rejected';
+      }
+      if (filters.startDate) params.startDate = filters.startDate;
+      if (filters.endDate) params.endDate = filters.endDate;
+
+      const response = await systemPerformanceApiService.getPromotions(params);
+      setPromotions(response.promotions || []);
+      setStats(response.stats || []);
+
+      // Extract unique employee IDs and fetch their names
+      const employeeIds = [
+        ...new Set(
+          (response.promotions || []).map(p => p.employee_id).filter(Boolean)
+        ),
+      ];
+      if (employeeIds.length > 0) {
+        await fetchEmployeeNames(employeeIds);
+      }
+
+      // Handle pagination info
+      const hasMorePages = (response.promotions || []).length === itemsPerPage;
+
+      if (response.totalPages && response.total) {
+        setTotalPages(response.totalPages);
+        setTotalRecords(response.total);
+      } else {
+        // Fallback: estimate based on current page and records received
+        setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
+        setTotalRecords(
+          hasMorePages
+            ? currentPage * itemsPerPage
+            : (currentPage - 1) * itemsPerPage +
+                (response.promotions || []).length
+        );
+      }
+    } catch (error) {
+      console.error('Failed to fetch promotions:', error);
+    } finally {
+      setLoading(false);
     }
-    if (filters.startDate) params.startDate = filters.startDate;
-    if (filters.endDate) params.endDate = filters.endDate;
-
-    const { promotions, stats } =
-      await systemPerformanceApiService.getPromotions(params);
-    setPromotions(promotions);
-    setStats(stats);
-  }, [tenantId, filters.status, filters.startDate, filters.endDate]);
+  }, [
+    tenantId,
+    filters.status,
+    filters.startDate,
+    filters.endDate,
+    currentPage,
+    itemsPerPage,
+    fetchEmployeeNames,
+  ]);
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -73,8 +159,16 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.status, filters.startDate, filters.endDate]);
+
+  useEffect(() => {
     fetchPromotions();
   }, [fetchPromotions]);
+
+  const getEmployeeName = (employeeId: string): string => {
+    return employeeNames[employeeId] || employeeId || 'N/A';
+  };
 
   return (
     <Box>
@@ -115,7 +209,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
           onChange={e => setFilters(f => ({ ...f, endDate: e.target.value }))}
         />
 
-        <Button variant='contained' onClick={fetchPromotions}>
+        <Button variant='contained' onClick={() => setCurrentPage(1)}>
           Apply Filters
         </Button>
       </Box>
@@ -141,34 +235,72 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
       </Box>
 
       <Paper sx={{ p: 2 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Employee</TableCell>
-              <TableCell>Previous Designation</TableCell>
-              <TableCell>New Designation</TableCell>
-              <TableCell>Effective Date</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Tenant</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {promotions.map(p => (
-              <TableRow key={p.id}>
-                <TableCell>{p.employee?.user_id}</TableCell>
-                <TableCell>{p.previousDesignation}</TableCell>
-                <TableCell>{p.newDesignation}</TableCell>
-                <TableCell>
-                  {new Date(p.effectiveDate).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <Chip label={p.status} color={statusColor(p.status)} />
-                </TableCell>
-                <TableCell>{p.tenant?.name}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        {loading ? (
+          <Box display='flex' justifyContent='center' py={4}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Employee</TableCell>
+                  <TableCell>Previous Designation</TableCell>
+                  <TableCell>New Designation</TableCell>
+                  <TableCell>Effective Date</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Tenant</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {promotions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align='center'>
+                      No promotions found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  promotions.map(p => (
+                    <TableRow key={p.id}>
+                      <TableCell>{getEmployeeName(p.employee_id)}</TableCell>
+                      <TableCell>{p.previousDesignation}</TableCell>
+                      <TableCell>{p.newDesignation}</TableCell>
+                      <TableCell>
+                        {new Date(p.effectiveDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={p.status} color={statusColor(p.status)} />
+                      </TableCell>
+                      <TableCell>{p.tenant?.name}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+
+            {totalPages > 1 && (
+              <Box display='flex' justifyContent='center' mt={2}>
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={(_, page) => setCurrentPage(page)}
+                  color='primary'
+                  showFirstButton
+                  showLastButton
+                />
+              </Box>
+            )}
+
+            {promotions.length > 0 && (
+              <Box display='flex' justifyContent='center' mt={1}>
+                <Typography variant='body2' color='textSecondary'>
+                  Showing page {currentPage} of {totalPages} ({totalRecords}{' '}
+                  total records)
+                </Typography>
+              </Box>
+            )}
+          </>
+        )}
       </Paper>
     </Box>
   );

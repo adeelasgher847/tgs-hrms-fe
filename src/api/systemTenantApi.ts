@@ -43,7 +43,7 @@ export const SystemTenantApi = {
    * @returns { data, total, page, totalPages }
    */
   getAll: async (
-    filters: SystemTenantFilters = { page: 1, limit: 10 }
+    filters: SystemTenantFilters = { page: 1, limit: 25 }
   ): Promise<{
     data: SystemTenant[];
     total: number;
@@ -56,7 +56,7 @@ export const SystemTenantApi = {
       > = await axiosInstance.get('/system/tenants', {
         params: {
           page: filters.page ?? 1,
-          limit: filters.limit ?? 10,
+          limit: filters.limit ?? 25,
           includeDeleted: filters.includeDeleted ?? false,
         },
       });
@@ -79,7 +79,7 @@ export const SystemTenantApi = {
         !Array.isArray(payload) && typeof payload?.totalPages === 'number'
           ? payload.totalPages
           : total > 0
-            ? Math.ceil(total / (filters.limit ?? 10))
+            ? Math.ceil(total / (filters.limit ?? 25))
             : 1;
 
       const tenants = Array.isArray(payload) ? payload : (payload?.data ?? []);

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -92,43 +92,73 @@ export const TenantPage: React.FC = () => {
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const itemsPerPage = 25; // Backend returns 25 records per page
 
-  const fetchTenants = async () => {
-    try {
-      setIsLoading(true);
-      const res = await SystemTenantApi.getAll({ includeDeleted: true });
-      setTenants(res.data);
-    } catch (err) {
-      console.error(err);
-      setSnackbar({
-        open: true,
-        message: 'Failed to fetch tenants',
-        severity: 'error',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const fetchTenants = useCallback(
+    async (page: number = 1) => {
+      try {
+        setIsLoading(true);
+        const res = await SystemTenantApi.getAll({
+          page,
+          limit: itemsPerPage,
+          includeDeleted:
+            statusFilter === 'All' ? true : statusFilter === 'deleted',
+        });
+
+        // Apply client-side filtering for status (active/suspended)
+        let filtered = res.data;
+        if (statusFilter === 'active' || statusFilter === 'suspended') {
+          filtered = res.data.filter(
+            t => !t.isDeleted && t.status === statusFilter
+          );
+        } else if (statusFilter === 'deleted') {
+          filtered = res.data.filter(t => t.isDeleted);
+        }
+
+        setTenants(filtered);
+
+        // Backend returns 25 records per page (fixed page size)
+        // If we get 25 records, there might be more pages
+        // If we get less than 25, it's the last page
+        const hasMorePages = res.data.length === itemsPerPage;
+
+        // Use backend pagination info if available, otherwise estimate
+        if (res.totalPages && res.total) {
+          setTotalPages(res.totalPages);
+          setTotalRecords(res.total);
+        } else {
+          // Fallback: estimate based on current page and records received
+          setTotalPages(hasMorePages ? page + 1 : page);
+          setTotalRecords(
+            hasMorePages
+              ? page * itemsPerPage
+              : (page - 1) * itemsPerPage + res.data.length
+          );
+        }
+      } catch (err) {
+        console.error(err);
+        setSnackbar({
+          open: true,
+          message: 'Failed to fetch tenants',
+          severity: 'error',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [statusFilter, itemsPerPage]
+  );
 
   useEffect(() => {
-    fetchTenants();
-  }, []);
+    fetchTenants(currentPage);
+  }, [currentPage, fetchTenants]);
 
-  const filteredTenants = useMemo(() => {
-    return tenants.filter(t => {
-      if (statusFilter === 'deleted') return t.isDeleted;
-      if (statusFilter === 'active' || statusFilter === 'suspended')
-        return !t.isDeleted && t.status === statusFilter;
-      return true;
-    });
-  }, [tenants, statusFilter]);
-
-  const totalPages = Math.ceil(filteredTenants.length / itemsPerPage);
-  const paginatedTenants = filteredTenants.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter]);
 
   const closeCreateModal = () => {
     setIsFormOpen(false);
@@ -462,7 +492,7 @@ export const TenantPage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {paginatedTenants.map(t => (
+                {tenants.map(t => (
                   <TableRow key={t.id} hover>
                     <TableCell>{t.name}</TableCell>
                     <TableCell>
@@ -525,7 +555,7 @@ export const TenantPage: React.FC = () => {
                   </TableRow>
                 ))}
 
-                {paginatedTenants.length === 0 && (
+                {tenants.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} align='center'>
                       <Alert severity='info' sx={{ my: 2, borderRadius: 2 }}>
@@ -540,7 +570,7 @@ export const TenantPage: React.FC = () => {
         </Paper>
       )}
 
-      {/*  Client-side Pagination */}
+      {/* Server-side Pagination */}
       {totalPages > 1 && (
         <Box display='flex' justifyContent='center' mt={2}>
           <Pagination
@@ -553,11 +583,11 @@ export const TenantPage: React.FC = () => {
           />
         </Box>
       )}
-      {filteredTenants.length > 0 && (
+      {tenants.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {totalPages} ({filteredTenants.length}{' '}
-            total records)
+            Showing page {currentPage} of {totalPages} ({totalRecords} total
+            records)
           </Typography>
         </Box>
       )}

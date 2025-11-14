@@ -280,12 +280,13 @@ const EmployeeManager: React.FC = () => {
           setTotalItems(response.total);
         } else {
           // Fallback: estimate based on current page and records received
-          setCurrentPage(response.page || page);
-          setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
+          const actualPage = response.page || page;
+          setCurrentPage(actualPage);
+          setTotalPages(hasMorePages ? actualPage + 1 : actualPage);
           setTotalItems(
             hasMorePages
-              ? currentPage * itemsPerPage
-              : (currentPage - 1) * itemsPerPage + convertedEmployees.length
+              ? actualPage * itemsPerPage
+              : (actualPage - 1) * itemsPerPage + convertedEmployees.length
           );
         }
       } catch (error: unknown) {

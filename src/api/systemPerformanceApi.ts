@@ -114,14 +114,47 @@ class SystemPerformanceApiService {
       status?: 'pending' | 'approved' | 'rejected';
       startDate?: string;
       endDate?: string;
+      page?: number;
     } = {}
-  ): Promise<{ promotions: PromotionRecord[]; stats: PromotionStats[] }> {
+  ): Promise<{
+    promotions: PromotionRecord[];
+    stats: PromotionStats[];
+    total?: number;
+    page?: number;
+    totalPages?: number;
+  }> {
     try {
-      const response = await axiosInstance.get<{
-        promotions: PromotionRecord[];
-        stats: PromotionStats[];
-      }>(this.basePromotionsUrl, { params });
-      return response.data;
+      const response = await axiosInstance.get<
+        | {
+            promotions: PromotionRecord[];
+            stats: PromotionStats[];
+            total?: number;
+            page?: number;
+            totalPages?: number;
+          }
+        | {
+            items: PromotionRecord[];
+            stats: PromotionStats[];
+            total?: number;
+            page?: number;
+            totalPages?: number;
+          }
+      >(this.basePromotionsUrl, { params });
+
+      // Handle both response formats
+      if ('promotions' in response.data) {
+        return response.data;
+      } else if ('items' in response.data) {
+        return {
+          promotions: response.data.items,
+          stats: response.data.stats || [],
+          total: response.data.total,
+          page: response.data.page,
+          totalPages: response.data.totalPages,
+        };
+      }
+
+      return { promotions: [], stats: [] };
     } catch (error) {
       console.error('Failed to fetch promotions:', error);
       return { promotions: [], stats: [] };

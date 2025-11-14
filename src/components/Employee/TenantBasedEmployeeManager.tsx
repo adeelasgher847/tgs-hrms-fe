@@ -370,6 +370,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
             value={filters.designationId}
             onChange={e => handleFilterChange('designationId', e.target.value)}
             size='small'
+            disabled={!filters.departmentId} // Disable when no department is selected
             sx={{ width: isMobile ? '100%' : 190, ...darkInputStyles }}
           >
             <MenuItem value=''>All Designations</MenuItem>

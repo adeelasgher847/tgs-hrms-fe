@@ -294,6 +294,7 @@ class EmployeeApiService {
       // Only add page parameter if it's not null (for dropdowns, pass null to get all records)
       if (page !== null) {
         params.append('page', page.toString());
+        params.append('limit', '25'); // Backend returns 25 records per page
       }
 
       if (filters.departmentId)

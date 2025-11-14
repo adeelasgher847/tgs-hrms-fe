@@ -358,7 +358,6 @@ export const isSubMenuVisibleForRole = (
     }
   }
 
-  // System Admin: For Assets menu - only see System Assets Overview (hide all other asset pages)
   if (r === 'system-admin') {
     if (parent.includes('assets')) {
       // Hide all asset submenus except System Assets Overview
@@ -380,7 +379,6 @@ export const isSubMenuVisibleForRole = (
       }
     }
   } else {
-    // Hide System Assets Overview for non-system-admin roles
     if (parent.includes('assets') && sub.includes('system assets overview')) {
       visible = false;
     }
