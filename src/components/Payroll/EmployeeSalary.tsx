@@ -46,6 +46,21 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { type Dayjs } from 'dayjs';
 import employeeApi from '../../api/employeeApi';
 
+const monthOptions = [
+  { label: 'January', value: 1 },
+  { label: 'February', value: 2 },
+  { label: 'March', value: 3 },
+  { label: 'April', value: 4 },
+  { label: 'May', value: 5 },
+  { label: 'June', value: 6 },
+  { label: 'July', value: 7 },
+  { label: 'August', value: 8 },
+  { label: 'September', value: 9 },
+  { label: 'October', value: 10 },
+  { label: 'November', value: 11 },
+  { label: 'December', value: 12 },
+];
+
 interface EmployeeSalaryListItem {
   employee: {
     id: string;
@@ -76,10 +91,6 @@ const EmployeeSalaryPage: React.FC = () => {
   const currentUser = getCurrentUser();
   const role = normalizeRole(getUserRole());
 
-  // Filter button styling variables (matching EmployeeManager)
-  const filterBtn = darkMode ? '#555' : '#484c7f';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
-
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState<EmployeeSalaryListItem[]>([]);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -96,13 +107,15 @@ const EmployeeSalaryPage: React.FC = () => {
   );
   const [mySalary, setMySalary] = useState<EmployeeSalary | null>(null);
   const [mySalaryLoading, setMySalaryLoading] = useState(false);
-  const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
 
   // Form state
   const [baseSalary, setBaseSalary] = useState<number>(0);
   const [allowances, setAllowances] = useState<EmployeeSalaryAllowance[]>([]);
   const [deductions, setDeductions] = useState<EmployeeSalaryDeduction[]>([]);
-  const [effectiveDate, setEffectiveDate] = useState<Dayjs | null>(dayjs());
+  const [effectiveMonth, setEffectiveMonth] = useState<number>(
+    dayjs().month() + 1
+  );
+  const [effectiveYear, setEffectiveYear] = useState<number>(dayjs().year());
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [notes, setNotes] = useState<string>('');
@@ -134,19 +147,14 @@ const EmployeeSalaryPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await payrollApi.getAllEmployeeSalaries();
-      // Filter to show only employees without salary if showUnassignedOnly is true
-      if (showUnassignedOnly) {
-        setEmployees(data.filter(item => item.salary === null));
-      } else {
-        setEmployees(data);
-      }
+      setEmployees(data);
     } catch (error) {
       console.error('Failed to load employee salaries:', error);
       snackbar.error('Failed to load employee salaries');
     } finally {
       setLoading(false);
     }
-  }, [showUnassignedOnly]);
+  }, []);
 
   const loadMySalary = useCallback(async () => {
     try {
@@ -225,7 +233,8 @@ const EmployeeSalaryPage: React.FC = () => {
     setBaseSalary(0);
     setAllowances([]);
     setDeductions([]);
-    setEffectiveDate(dayjs());
+    setEffectiveMonth(dayjs().month() + 1);
+    setEffectiveYear(dayjs().year());
     setEndDate(null);
     setStatus('active');
     setNotes('');
@@ -244,7 +253,9 @@ const EmployeeSalaryPage: React.FC = () => {
     );
     setAllowances(employee.salary.allowances || []);
     setDeductions(employee.salary.deductions || []);
-    setEffectiveDate(dayjs(employee.salary.effectiveDate));
+    const effectiveDateObj = dayjs(employee.salary.effectiveDate);
+    setEffectiveMonth(effectiveDateObj.month() + 1);
+    setEffectiveYear(effectiveDateObj.year());
     setEndDate(employee.salary.endDate ? dayjs(employee.salary.endDate) : null);
     setStatus(employee.salary.status);
     setNotes(employee.salary.notes || '');
@@ -264,12 +275,16 @@ const EmployeeSalaryPage: React.FC = () => {
         return;
       }
 
+      // Create effective date as 1st of selected month/year
+      const effectiveDate = dayjs(
+        `${effectiveYear}-${effectiveMonth}-01`
+      ).format('YYYY-MM-DD');
+
       const salaryData = {
         baseSalary,
         allowances,
         deductions,
-        effectiveDate:
-          effectiveDate?.format('YYYY-MM-DD') || dayjs().format('YYYY-MM-DD'),
+        effectiveDate,
         endDate: endDate?.format('YYYY-MM-DD') || undefined,
         status,
         notes: notes || undefined,
@@ -361,7 +376,7 @@ const EmployeeSalaryPage: React.FC = () => {
     if (baseSalary <= 0) {
       return false;
     }
-    if (!effectiveDate) {
+    if (!effectiveMonth || !effectiveYear) {
       return false;
     }
     for (const allowance of allowances) {
@@ -390,7 +405,8 @@ const EmployeeSalaryPage: React.FC = () => {
     selectedEmployeeId,
     currentEmployeeId,
     baseSalary,
-    effectiveDate,
+    effectiveMonth,
+    effectiveYear,
     allowances,
     deductions,
   ]);
@@ -404,9 +420,12 @@ const EmployeeSalaryPage: React.FC = () => {
         : selectedSalary.baseSalary;
     if (currentBaseSalary !== baseSalary) return true;
 
+    const currentEffectiveDate = dayjs(
+      `${effectiveYear}-${effectiveMonth}-01`
+    ).format('YYYY-MM-DD');
     if (
       dayjs(selectedSalary.effectiveDate).format('YYYY-MM-DD') !==
-      effectiveDate?.format('YYYY-MM-DD')
+      currentEffectiveDate
     ) {
       return true;
     }
@@ -437,7 +456,8 @@ const EmployeeSalaryPage: React.FC = () => {
   }, [
     selectedSalary,
     baseSalary,
-    effectiveDate,
+    effectiveMonth,
+    effectiveYear,
     endDate,
     status,
     allowances,
@@ -800,30 +820,7 @@ const EmployeeSalaryPage: React.FC = () => {
         >
           Employee Salary Structure
         </Typography>
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 2,
-            alignItems: 'center',
-            borderRadius: 2,
-          }}
-        >
-          <Button
-            variant='outlined'
-            onClick={() => setShowUnassignedOnly(!showUnassignedOnly)}
-            sx={{
-              borderColor: filterBtn,
-              color: textColor,
-              '&:hover': {
-                borderColor: darkMode ? '#888' : '#999',
-                backgroundColor: darkMode
-                  ? 'rgba(255,255,255,0.08)'
-                  : 'rgba(0,0,0,0.04)',
-              },
-            }}
-          >
-            {showUnassignedOnly ? 'Show All' : 'Show Unassigned Only'}
-          </Button>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <Button
             variant='contained'
             startIcon={<AddIcon />}
@@ -965,11 +962,13 @@ const EmployeeSalaryPage: React.FC = () => {
                             variant='outlined'
                             onClick={() => {
                               setSelectedEmployee(item);
+                              setSelectedSalary(null);
                               setSelectedEmployeeId(item.employee.id);
                               setBaseSalary(0);
                               setAllowances([]);
                               setDeductions([]);
-                              setEffectiveDate(dayjs());
+                              setEffectiveMonth(dayjs().month() + 1);
+                              setEffectiveYear(dayjs().year());
                               setEndDate(null);
                               setStatus('active');
                               setNotes('');
@@ -1696,19 +1695,36 @@ const EmployeeSalaryPage: React.FC = () => {
               ))}
             </Box>
 
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DatePicker
-                label='Effective Date'
-                value={effectiveDate}
-                onChange={(newValue: unknown) => {
-                  if (newValue === null) {
-                    setEffectiveDate(null);
-                  } else if (dayjs.isDayjs(newValue)) {
-                    setEffectiveDate(newValue);
-                  } else {
-                    setEffectiveDate(dayjs(newValue as string | Date));
-                  }
-                }}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>
+                  Effective Month
+                </InputLabel>
+                <Select
+                  value={effectiveMonth}
+                  onChange={e => setEffectiveMonth(Number(e.target.value))}
+                  label='Effective Month'
+                  sx={{
+                    color: darkMode ? '#fff' : '#000',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: theme.palette.divider,
+                    },
+                  }}
+                >
+                  {monthOptions.map(option => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label='Effective Year'
+                type='number'
+                value={effectiveYear}
+                onChange={e =>
+                  setEffectiveYear(Number(e.target.value) || effectiveYear)
+                }
                 sx={{
                   width: '100%',
                   '& .MuiOutlinedInput-root': {
@@ -1719,6 +1735,14 @@ const EmployeeSalaryPage: React.FC = () => {
                   },
                 }}
               />
+            </Box>
+            <Typography
+              variant='caption'
+              sx={{ color: darkMode ? '#8f8f8f' : '#666', mt: -1, mb: 1 }}
+            >
+              Effective date will be set to the 1st of the selected month
+            </Typography>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
               <Box sx={{ mt: 2 }}>
                 <DatePicker
                   label='End Date (Optional)'

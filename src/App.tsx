@@ -49,6 +49,9 @@ import AuditLogs from './components/Audits/AuditLogs';
 import PerformanceDashboard from './components/Performance/PerformanceManager';
 import PayrollConfiguration from './components/Payroll/PayrollConfiguration';
 import EmployeeSalaryPage from './components/Payroll/EmployeeSalary';
+import PayrollRecords from './components/Payroll/PayrollRecords';
+import MySalary from './components/Payroll/MySalary';
+import PayrollReports from './components/Payroll/PayrollReports';
 
 function App() {
   return (
@@ -144,10 +147,13 @@ function App() {
                   path='payroll-configuration'
                   element={<PayrollConfiguration />}
                 />
+                <Route path='payroll-records' element={<PayrollRecords />} />
+                <Route path='payroll-reports' element={<PayrollReports />} />
                 <Route
                   path='employee-salary'
                   element={<EmployeeSalaryPage />}
                 />
+                <Route path='my-salary' element={<MySalary />} />
               </Route>
               <Route path='/company-details' element={<CompanyDetails />} />
               <Route path='*' element={<Error404 />} />

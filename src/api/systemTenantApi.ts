@@ -70,19 +70,19 @@ export const SystemTenantApi = {
           ? payload.total
           : 0;
 
-      const page = !Array.isArray(payload) && typeof payload?.page === 'number'
-        ? payload.page
-        : filters.page ?? 1;
+      const page =
+        !Array.isArray(payload) && typeof payload?.page === 'number'
+          ? payload.page
+          : (filters.page ?? 1);
 
-      const totalPages = !Array.isArray(payload) && typeof payload?.totalPages === 'number'
-        ? payload.totalPages
-        : total > 0
-          ? Math.ceil(total / (filters.limit ?? 10))
-          : 1;
+      const totalPages =
+        !Array.isArray(payload) && typeof payload?.totalPages === 'number'
+          ? payload.totalPages
+          : total > 0
+            ? Math.ceil(total / (filters.limit ?? 10))
+            : 1;
 
-      const tenants = Array.isArray(payload)
-        ? payload
-        : payload?.data ?? [];
+      const tenants = Array.isArray(payload) ? payload : (payload?.data ?? []);
 
       return {
         data: tenants,
@@ -190,36 +190,71 @@ export const SystemTenantApi = {
   },
 
   getAllTenants: async (includeDeleted = true): Promise<SystemTenant[]> => {
-    const res = await axiosInstance.get<
-      | SystemTenant[]
-      | {
-          items?: SystemTenant[];
-          data?: SystemTenant[] | { items?: SystemTenant[] };
+    try {
+      // Try to fetch all tenants by using a very large limit or no pagination params
+      // First, try without pagination params
+      const res = await axiosInstance.get<
+        | SystemTenant[]
+        | { items: SystemTenant[]; total?: number; data?: SystemTenant[] }
+      >('/system/tenants', {
+        params: { includeDeleted },
+      });
+
+      let tenants: SystemTenant[] = [];
+
+      // Handle different response structures
+      if (Array.isArray(res.data)) {
+        tenants = res.data;
+      } else if (res.data && typeof res.data === 'object') {
+        // Check if it's a paginated response
+        if ('items' in res.data && Array.isArray(res.data.items)) {
+          tenants = res.data.items;
+          // If there are more pages, fetch them
+          const total = res.data.total || res.data.items.length;
+          if (total > res.data.items.length) {
+            // Fetch remaining pages
+            let page = 2;
+            const perPage = res.data.items.length || 25;
+            while (tenants.length < total) {
+              const pageRes = await axiosInstance.get<
+                | SystemTenant[]
+                | { items: SystemTenant[]; data?: SystemTenant[] }
+              >('/system/tenants', {
+                params: { page, includeDeleted, limit: perPage },
+              });
+
+              let pageTenants: SystemTenant[] = [];
+              if (Array.isArray(pageRes.data)) {
+                pageTenants = pageRes.data;
+              } else if (pageRes.data && typeof pageRes.data === 'object') {
+                if (
+                  'items' in pageRes.data &&
+                  Array.isArray(pageRes.data.items)
+                ) {
+                  pageTenants = pageRes.data.items;
+                } else if (
+                  'data' in pageRes.data &&
+                  Array.isArray(pageRes.data.data)
+                ) {
+                  pageTenants = pageRes.data.data;
+                }
+              }
+
+              if (pageTenants.length === 0) break;
+              tenants = [...tenants, ...pageTenants];
+              page++;
+            }
+          }
+        } else if ('data' in res.data && Array.isArray(res.data.data)) {
+          tenants = res.data.data;
         }
-    >('/system/tenants', {
-      params: { includeDeleted, page: 1, limit: 1000 },
-    });
-
-    if (Array.isArray(res.data)) {
-      return res.data ?? [];
-    }
-
-    if (res.data?.items && Array.isArray(res.data.items)) {
-      return res.data.items;
-    }
-
-    const dataField = res.data?.data;
-    if (Array.isArray(dataField)) {
-      return dataField;
-    }
-
-    if (dataField && typeof dataField === 'object' && 'items' in dataField) {
-      const maybeItems = (dataField as { items?: SystemTenant[] }).items;
-      if (Array.isArray(maybeItems)) {
-        return maybeItems;
       }
-    }
 
-    return [];
+      console.log(`Fetched ${tenants.length} tenants`);
+      return tenants;
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+      return [];
+    }
   },
 };

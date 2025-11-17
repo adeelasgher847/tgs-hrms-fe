@@ -138,7 +138,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
       try {
         setLoadingData(true);
         const response = await assetApi.getAllAssetCategories();
-        
+
         // Handle different response structures
         let categoriesData: AssetCategory[] = [];
         if (Array.isArray(response)) {
@@ -174,9 +174,8 @@ const AssetModal: React.FC<AssetModalProps> = ({
 
       try {
         setLoadingData(true);
-        const response = await assetApi.getAssetSubcategoriesByCategoryId(
-          selectedCategoryId
-        );
+        const response =
+          await assetApi.getAssetSubcategoriesByCategoryId(selectedCategoryId);
 
         // Handle different response structures
         let subcategoriesData: AssetSubcategory[] = [];
@@ -184,7 +183,11 @@ const AssetModal: React.FC<AssetModalProps> = ({
           subcategoriesData = response;
         } else if (response && response.data && Array.isArray(response.data)) {
           subcategoriesData = response.data;
-        } else if (response && response.items && Array.isArray(response.items)) {
+        } else if (
+          response &&
+          response.items &&
+          Array.isArray(response.items)
+        ) {
           subcategoriesData = response.items;
         } else if (
           response &&
@@ -196,8 +199,10 @@ const AssetModal: React.FC<AssetModalProps> = ({
 
         // Filter subcategories by selected category ID (client-side filtering as backup)
         // This ensures only subcategories for the selected category are shown
-        const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
-        
+        const selectedCategory = categories.find(
+          cat => cat.id === selectedCategoryId
+        );
+
         const filteredSubcategories = subcategoriesData.filter(sub => {
           // Check if subcategory.category matches the selected category ID
           if (sub.category === selectedCategoryId) {
@@ -214,7 +219,6 @@ const AssetModal: React.FC<AssetModalProps> = ({
           return false;
         });
 
-        
         // Always use filtered subcategories to ensure only selected category's subcategories are shown
         setSubcategories(filteredSubcategories);
       } catch (error) {
@@ -233,13 +237,16 @@ const AssetModal: React.FC<AssetModalProps> = ({
   }, [open, selectedCategoryId, categories]);
 
   useEffect(() => {
+    // Only reset form when modal opens
+    if (!open) return;
+
     if (asset) {
       // Handle both old and new API response structures
       const extendedAsset = asset as ExtendedAsset;
       const categoryId = resolveAssetCategoryId(extendedAsset);
       const subcategoryId = resolveAssetSubcategoryId(extendedAsset);
       const purchaseDate = resolveAssetPurchaseDate(extendedAsset);
-      
+
       reset({
         name: asset.name,
         category: categoryId,
@@ -266,13 +273,8 @@ const AssetModal: React.FC<AssetModalProps> = ({
       setSelectedDate(new Date());
       setSelectedWarrantyDate(null);
     }
-  }, [
-    asset,
-    reset,
-    resolveAssetCategoryId,
-    resolveAssetSubcategoryId,
-    resolveAssetPurchaseDate,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, asset]);
 
   const handleFormSubmit = (data: Record<string, unknown>) => {
     // Format date as YYYY-MM-DD
@@ -285,9 +287,10 @@ const AssetModal: React.FC<AssetModalProps> = ({
     };
 
     // Get subcategoryId - only include if it's not empty
-    const subcategoryId = data.subcategory && (data.subcategory as string).trim() !== '' 
-      ? (data.subcategory as string) 
-      : undefined;
+    const subcategoryId =
+      data.subcategory && (data.subcategory as string).trim() !== ''
+        ? (data.subcategory as string)
+        : undefined;
 
     onSubmit({
       name: data.name as string,
@@ -397,7 +400,9 @@ const AssetModal: React.FC<AssetModalProps> = ({
                             <Select
                               {...field}
                               label='Subcategory'
-                              disabled={loading || loadingData || !selectedCategoryId}
+                              disabled={
+                                loading || loadingData || !selectedCategoryId
+                              }
                             >
                               {loadingData ? (
                                 <MenuItem disabled value=''>
@@ -407,7 +412,10 @@ const AssetModal: React.FC<AssetModalProps> = ({
                                 </MenuItem>
                               ) : subcategories.length === 0 ? (
                                 <MenuItem disabled value=''>
-                                  <Typography variant='body2' color='text.secondary'>
+                                  <Typography
+                                    variant='body2'
+                                    color='text.secondary'
+                                  >
                                     No subcategories available
                                   </Typography>
                                 </MenuItem>

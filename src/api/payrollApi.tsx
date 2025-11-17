@@ -79,8 +79,155 @@ export interface CreatePayrollConfigRequest {
   leaveDeductionPolicy: LeaveDeductionPolicy;
 }
 
+// Backend accepts: pending, approved, paid, rejected
+// UI uses: unpaid, paid (where unpaid maps to pending/approved/rejected)
+export type PayrollStatus = 'pending' | 'approved' | 'paid' | 'rejected';
+
+export interface PayrollOtherItem {
+  type: string;
+  amount: number;
+  description?: string | null;
+}
+
+export interface PayrollSalaryBreakdown {
+  baseSalary: number | string;
+  allowances?: PayrollOtherItem[];
+  totalAllowances?: number | string;
+}
+
+export interface PayrollDeductionsBreakdown {
+  tax?: number | string;
+  insurance?: number | string;
+  leaveDeductions?: number | string;
+  otherDeductions?: PayrollOtherItem[];
+}
+
+export interface PayrollBonusesBreakdown {
+  performanceBonus?: number | string;
+  overtimeBonus?: number | string;
+  otherBonuses?: PayrollOtherItem[];
+}
+
+export interface PayrollRecord {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  tenant_id: string;
+  employee_id: string;
+  employee?: {
+    id: string;
+    user_id: string;
+    designation_id: string;
+    status: string;
+    invite_status?: string;
+    team_id?: string | null;
+    cnic_number?: string | null;
+    profile_picture?: string | null;
+    cnic_picture?: string | null;
+    cnic_back_picture?: string | null;
+    created_at?: string;
+    user?: {
+      id: string;
+      email: string;
+      phone?: string;
+      first_name: string;
+      last_name: string;
+      profile_pic?: string | null;
+      role_id?: string;
+      gender?: string | null;
+      tenant_id?: string;
+      created_at?: string;
+      updated_at?: string;
+    };
+    department?: {
+      id?: string;
+      name?: string;
+    };
+    designation?: {
+      id?: string;
+      title?: string;
+    };
+  };
+  month: number;
+  year: number;
+  grossSalary: number | string;
+  salaryBreakdown?: PayrollSalaryBreakdown;
+  totalDeductions: number | string;
+  deductionsBreakdown?: PayrollDeductionsBreakdown;
+  bonuses?: number | string;
+  bonusesBreakdown?: PayrollBonusesBreakdown;
+  netSalary: number | string;
+  workingDays?: number;
+  daysPresent?: number;
+  daysAbsent?: number;
+  paidLeaves?: number;
+  unpaidLeaves?: number;
+  overtimeHours?: number | string;
+  generated_by?: string;
+  generatedBy?: {
+    id: string;
+    email: string;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+  };
+  status: PayrollStatus;
+  approved_by?: string | null;
+  approvedBy?: {
+    id?: string;
+    email?: string;
+    first_name?: string;
+    last_name?: string;
+  } | null;
+  approved_at?: string | null;
+  paid_at?: string | null;
+  remarks?: string | null;
+}
+
+export interface PayrollSummary {
+  month: number;
+  year: number;
+  totalGrossPayouts: number;
+  totalDeductions: number;
+  totalBonuses: number;
+  totalNetPayouts: number;
+  employeeCount: number;
+  departmentCosts?: Array<{
+    department: string;
+    grossSalary: number;
+    deductions: number;
+    bonuses: number;
+    netSalary: number;
+    employeeCount: number;
+  }>;
+}
+
+export interface PayrollMonthlyTrend {
+  month: number;
+  year: number;
+  totalGross: number;
+  totalDeductions: number;
+  totalBonuses: number;
+  totalNet: number;
+  employeeCount: number;
+}
+
+export interface PayrollDepartmentComparison {
+  department: string;
+  totalGross: number;
+  totalDeductions: number;
+  totalBonuses: number;
+  totalNet: number;
+  employeeCount: number;
+}
+
+export interface PayrollStatistics {
+  monthlyTrend: PayrollMonthlyTrend[];
+  departmentComparison: PayrollDepartmentComparison[];
+}
+
 export const payrollApi = {
-  // Get payroll configuration
   getConfig: async (): Promise<PayrollConfig | null> => {
     try {
       const response =
@@ -100,7 +247,6 @@ export const payrollApi = {
     }
   },
 
-  // Create payroll configuration
   createConfig: async (
     data: CreatePayrollConfigRequest
   ): Promise<PayrollConfig> => {
@@ -116,7 +262,6 @@ export const payrollApi = {
     }
   },
 
-  // Update payroll configuration
   updateConfig: async (
     data: CreatePayrollConfigRequest
   ): Promise<PayrollConfig> => {
@@ -132,8 +277,6 @@ export const payrollApi = {
     }
   },
 
-  // Employee Salary APIs
-  // Create/Assign salary structure to employee
   createEmployeeSalary: async (data: {
     employee_id: string;
     baseSalary: number;
@@ -156,7 +299,6 @@ export const payrollApi = {
     }
   },
 
-  // Get employee salary structure
   getEmployeeSalary: async (employeeId: string): Promise<EmployeeSalary> => {
     try {
       const response = await axiosInstance.get<EmployeeSalary>(
@@ -169,7 +311,6 @@ export const payrollApi = {
     }
   },
 
-  // Update employee salary structure
   updateEmployeeSalary: async (
     employeeId: string,
     data: {
@@ -209,7 +350,6 @@ export const payrollApi = {
     }
   },
 
-  // Get all employees with salary structures
   getAllEmployeeSalaries: async (): Promise<
     Array<{
       employee: {
@@ -264,6 +404,156 @@ export const payrollApi = {
       return response.data;
     } catch (error) {
       console.error('Failed to fetch all employee salaries:', error);
+      throw error;
+    }
+  },
+
+  generatePayroll: async (params: {
+    month: number;
+    year: number;
+    tenant_id?: string;
+    employee_id?: string;
+  }): Promise<PayrollRecord[]> => {
+    try {
+      const query: Record<string, string | number> = {
+        month: params.month,
+        year: params.year,
+      };
+      if (params.tenant_id) {
+        query.tenant_id = params.tenant_id;
+      }
+      if (params.employee_id) {
+        query.employee_id = params.employee_id;
+      }
+
+      const response = await axiosInstance.post<PayrollRecord[]>(
+        '/payroll/generate',
+        undefined,
+        {
+          params: query,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to generate payroll:', error);
+      throw error;
+    }
+  },
+
+  getPayrollRecords: async (params: {
+    month: number;
+    year: number;
+    tenant_id?: string;
+    employee_id?: string;
+  }): Promise<PayrollRecord[]> => {
+    try {
+      const query: Record<string, string | number> = {
+        month: params.month,
+        year: params.year,
+      };
+      if (params.tenant_id) {
+        query.tenant_id = params.tenant_id;
+      }
+      if (params.employee_id) {
+        query.employee_id = params.employee_id;
+      }
+
+      const response = await axiosInstance.get<PayrollRecord[]>('/payroll', {
+        params: query,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch payroll records:', error);
+      throw error;
+    }
+  },
+
+  getPayrollHistory: async (employeeId: string): Promise<PayrollRecord[]> => {
+    try {
+      const response = await axiosInstance.get<PayrollRecord[]>(
+        `/payroll/employee/${employeeId}/history`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch payroll history:', error);
+      throw error;
+    }
+  },
+
+  updatePayrollStatus: async (
+    id: string,
+    data: { status: PayrollStatus; remarks?: string }
+  ): Promise<PayrollRecord> => {
+    try {
+      const response = await axiosInstance.put<PayrollRecord>(
+        `/payroll/${id}/status`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to update payroll status:', error);
+      throw error;
+    }
+  },
+
+  getPayrollPayslip: async (id: string): Promise<PayrollRecord> => {
+    try {
+      const response = await axiosInstance.get<PayrollRecord>(
+        `/payroll/${id}/payslip`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch payroll payslip:', error);
+      throw error;
+    }
+  },
+
+  getPayrollSummary: async (params: {
+    month: number;
+    year: number;
+    tenantId?: string;
+  }): Promise<PayrollSummary> => {
+    try {
+      const response = await axiosInstance.get<PayrollSummary>(
+        '/payroll/summary',
+        {
+          params: {
+            month: params.month,
+            year: params.year,
+            tenant_id: params.tenantId,
+            tenantId: params.tenantId,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch payroll summary:', error);
+      throw error;
+    }
+  },
+
+  getPayrollStatistics: async (params: {
+    tenantId?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<PayrollStatistics> => {
+    try {
+      const response = await axiosInstance.get<PayrollStatistics>(
+        '/payroll/statistics',
+        {
+          params: {
+            tenant_id: params.tenantId,
+            tenantId: params.tenantId,
+            startDate: params.startDate,
+            start_date: params.startDate,
+            endDate: params.endDate,
+            end_date: params.endDate,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch payroll statistics:', error);
       throw error;
     }
   },

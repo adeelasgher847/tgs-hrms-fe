@@ -66,6 +66,7 @@ export const isMenuVisibleForRole = (
       'report',
       'audit logs',
       'performance',
+      'payroll',
     ],
     'network-admin': [
       'dashboard',
@@ -95,9 +96,22 @@ export const isMenuVisibleForRole = (
       'payroll',
       'benefits',
     ],
-    manager: ['teams', 'attendance', 'assets', 'report', 'leave-analytics'],
-    employee: ['attendance', 'assets', 'benefits', 'leave-analytics'],
-    user: ['attendance', 'assets', 'benefits'],
+    manager: [
+      'teams',
+      'attendance',
+      'assets',
+      'report',
+      'leave-analytics',
+      'payroll',
+    ],
+    employee: [
+      'attendance',
+      'assets',
+      'benefits',
+      'leave-analytics',
+      'payroll',
+    ],
+    user: ['attendance', 'assets', 'benefits', 'payroll'],
     unknown: ['benefits'],
   };
 
@@ -156,6 +170,12 @@ export const isSubMenuVisibleForRole = (
     }
     if (parent.includes('attendance')) {
       if (sub.includes('leave request')) {
+        visible = false;
+      }
+    }
+
+    if (parent.includes('payroll')) {
+      if (!sub.includes('payroll reports')) {
         visible = false;
       }
     }
@@ -219,6 +239,11 @@ export const isSubMenuVisibleForRole = (
     if (parent.includes('audit logs')) {
       visible = false;
     }
+    if (parent.includes('payroll')) {
+      if (sub.includes('payroll reports') || sub.includes('my salary')) {
+        visible = false;
+      }
+    }
   }
 
   if (r === 'admin') {
@@ -247,9 +272,18 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (parent.includes('payroll')) {
+      if (sub.includes('payroll reports') || sub.includes('my salary')) {
+        visible = false;
+      }
+    }
+    if (parent.includes('assets')) {
+      if (sub.includes('assets overview')) {
+        visible = false;
+      }
+    }
   }
 
-  // --- Manager rules ---
   if (r === 'manager') {
     if (parent.includes('employees')) {
       if (sub.includes('tenant employees')) {
@@ -301,9 +335,12 @@ export const isSubMenuVisibleForRole = (
     if (parent.includes('audit logs')) {
       visible = false;
     }
-  }
-  if (parent.includes('payroll') && !(r === 'hr-admin' || r === 'admin')) {
-    visible = false;
+
+    if (parent.includes('payroll')) {
+      if (!sub.includes('my salary')) {
+        visible = false;
+      }
+    }
   }
 
   // System Admin: For Assets menu - only see System Assets Overview (hide all other asset pages)
@@ -320,15 +357,6 @@ export const isSubMenuVisibleForRole = (
       // Only system-admin sees System Assets Overview
       if (sub.includes('system assets overview')) {
         visible = true;
-      }
-      if (parent.includes('payroll')) {
-        if (sub.includes('payroll-configuration')) {
-          visible = false;
-        }
-        // Manager can view employee salary
-        if (sub.includes('employee-salary')) {
-          visible = true;
-        }
       }
     }
     if (parent.includes('employees')) {
@@ -384,7 +412,7 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
-     if (
+    if (
       parent.includes('leave analytics') ||
       parent.includes('leave-analytics')
     ) {
@@ -447,6 +475,7 @@ export const isDashboardPathAllowedForRole = (
       'TenantEmployees',
       'audit-logs',
       'performance-dashboard',
+      'payroll-reports',
     ]),
     'network-admin': new Set([
       '',
@@ -491,6 +520,7 @@ export const isDashboardPathAllowedForRole = (
       'benefits-list',
       'employee-benefit',
       'payroll-configuration',
+      'payroll-records',
       'employee-salary',
     ]),
     admin: new Set([
@@ -522,10 +552,11 @@ export const isDashboardPathAllowedForRole = (
       'benefits/assign',
       'benefits/reporting',
       'my-benefits',
-      'payroll-configuration',
-      'employee-salary',
       'benefits-list',
       'employee-benefit',
+      'payroll-configuration',
+      'payroll-records',
+      'employee-salary',
     ]),
     manager: new Set([
       'AttendanceCheck',
@@ -545,6 +576,8 @@ export const isDashboardPathAllowedForRole = (
       'benefits/assign',
       'benefits/reporting',
       'my-benefits',
+      'employee-salary',
+      'my-salary',
     ]),
     employee: new Set([
       'AttendanceCheck',
@@ -558,6 +591,7 @@ export const isDashboardPathAllowedForRole = (
       // Settings
       'settings',
       'benefit-details',
+      'my-salary',
     ]),
     user: new Set([
       'AttendanceCheck',
@@ -575,6 +609,7 @@ export const isDashboardPathAllowedForRole = (
       'benefits/assign',
       'benefits/reporting',
       'my-benefits',
+      'my-salary',
     ]),
     unknown: new Set<string>(),
   };

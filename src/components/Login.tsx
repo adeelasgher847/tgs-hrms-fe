@@ -190,10 +190,13 @@ const Login: React.FC = () => {
         if (googleBtnRef.current) {
           googleBtnRef.current.innerHTML = '';
         }
-        (window as Record<string, unknown>).google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'outline',
-          size: 'large',
-        });
+        (window as Record<string, unknown>).google.accounts.id.renderButton(
+          googleBtnRef.current,
+          {
+            theme: 'outline',
+            size: 'large',
+          }
+        );
         googleButtonRenderedRef.current = true;
       }
 
@@ -256,8 +259,14 @@ const Login: React.FC = () => {
         }
       );
 
-      const { accessToken, refreshToken, user, permissions, employee } =
-        res.data;
+      const {
+        accessToken,
+        refreshToken,
+        user,
+        permissions,
+        employee,
+        requiresPayment,
+      } = res.data;
 
       const employeeId = employee?.id || null;
       
@@ -306,8 +315,12 @@ const Login: React.FC = () => {
 
       const role =
         typeof user?.role === 'string' ? user.role : user?.role?.name;
-      const target = getDefaultDashboardRoute(role);
-      navigate(target, { replace: true });
+      if (requiresPayment) {
+        navigate('/signup/select-plan', { replace: true });
+      } else {
+        const target = getDefaultDashboardRoute(role);
+        navigate(target, { replace: true });
+      }
     } catch (err: unknown) {
       console.error('Login API error:', err);
 
