@@ -51,15 +51,14 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
     fetchLeaveTypes();
   }, []);
 
-  // ✅ Get tomorrow (minimum selectable date)
-  const getTomorrow = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    return tomorrow;
+  // ✅ Allow same day leave
+  const getToday = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
   };
 
-  // ✅ Format date locally (fixes one-day earlier bug)
+  // Format date YYYY-MM-DD for backend
   const formatDateLocal = (date: Date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -67,7 +66,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
     return `${year}-${month}-${day}`;
   };
 
-  // ✅ Submit form
+  // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -167,7 +166,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
           )}
         </TextField>
 
-        {/* ✅ Start Date */}
+        {/* Start Date */}
         <DatePicker
           label='Start Date'
           value={startDate}
@@ -177,7 +176,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
               setEndDate(newValue);
             }
           }}
-          minDate={getTomorrow()}
+          minDate={getToday()}
           slotProps={{
             textField: {
               fullWidth: true,
@@ -186,12 +185,12 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
           }}
         />
 
-        {/* ✅ End Date */}
+        {/* End Date */}
         <DatePicker
           label='End Date'
           value={endDate}
           onChange={newValue => setEndDate(newValue)}
-          minDate={startDate || getTomorrow()}
+          minDate={startDate || getToday()}
           slotProps={{
             textField: {
               fullWidth: true,
@@ -200,7 +199,6 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
           }}
         />
 
-        {/* Reason Field */}
         <TextField
           label='Reason'
           multiline
