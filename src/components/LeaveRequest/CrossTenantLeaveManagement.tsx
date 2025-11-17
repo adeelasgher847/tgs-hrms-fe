@@ -171,9 +171,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
       const activeTenants = allTenants.filter(
         tenant => tenant.status === 'active' && !tenant.isDeleted
       );
-
-      // If user is not system-admin, filter to only show their tenant
-      // Match user profile tenant ID with SystemTenant.id
       let filteredTenants = activeTenants;
       if (!isSystemAdminUser && userTenantId) {
         // Strict matching: user.tenant (from profile) === SystemTenant.id
