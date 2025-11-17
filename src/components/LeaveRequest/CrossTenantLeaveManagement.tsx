@@ -37,6 +37,8 @@ import type {
 } from '../../api/TenantLeaveApi';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
+import { useUser } from '../../hooks/useUser';
+import { isSystemAdmin } from '../../utils/auth';
 
 type LeaveStatus =
   | ''
@@ -63,6 +65,45 @@ type SnackbarState = {
 type DepartmentOption = Pick<ApiDepartment, 'id' | 'name' | 'tenant_id'>;
 
 const CrossTenantLeaveManagement: React.FC = () => {
+  const { user } = useUser();
+  const isSystemAdminUser = isSystemAdmin();
+
+  // Get tenant ID from localStorage where it's stored from login response
+  // Login response stores tenant_id separately in localStorage with key 'tenant_id'
+  const getTenantIdFromStorage = useCallback((): string => {
+    // First priority: Get tenant_id directly from localStorage (stored from login response)
+    try {
+      const storedTenantId = localStorage.getItem('tenant_id');
+      if (storedTenantId) {
+        return String(storedTenantId).trim();
+      }
+    } catch (error) {
+      console.warn('Failed to get tenant_id from localStorage:', error);
+    }
+
+    // Fallback: Get from user object in localStorage (login response format)
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const userFromStorage = JSON.parse(userStr);
+        const tenantId = userFromStorage?.tenant_id || '';
+        if (tenantId) return String(tenantId).trim();
+      }
+    } catch (error) {
+      console.warn('Failed to get tenant_id from user object:', error);
+    }
+
+    // Last fallback: Get from user context
+    if (user) {
+      const tenantId = (user as any).tenant_id || (user as any).tenant || '';
+      if (tenantId) return String(tenantId).trim();
+    }
+
+    return '';
+  }, [user]);
+
+  const userTenantId = getTenantIdFromStorage();
+
   const [filters, setFilters] = useState<FiltersState>({
     tenantId: '',
     departmentId: '',
@@ -103,6 +144,11 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   const handleFilterChange = useCallback(
     <K extends keyof FiltersState>(field: K, value: FiltersState[K]) => {
+      // Admin (not system-admin) tenant change nahi kar sakta
+      if (field === 'tenantId' && !isSystemAdminUser) {
+        return; // Tenant change allow nahi karega
+      }
+
       setFilters(prev => {
         if (field === 'tenantId') {
           return {
@@ -116,7 +162,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
       });
       setCurrentPage(1);
     },
-    []
+    [isSystemAdminUser]
   );
 
   const fetchTenants = useCallback(async () => {
@@ -125,18 +171,61 @@ const CrossTenantLeaveManagement: React.FC = () => {
       const activeTenants = allTenants.filter(
         tenant => tenant.status === 'active' && !tenant.isDeleted
       );
-      setTenants(activeTenants);
 
-      if (activeTenants.length > 0 && !isInitialTenantSet.current) {
-        const ibexTech = activeTenants.find(t =>
-          t.name.toLowerCase().includes('ibex')
+      // If user is not system-admin, filter to only show their tenant
+      // Match user profile tenant ID with SystemTenant.id
+      let filteredTenants = activeTenants;
+      if (!isSystemAdminUser && userTenantId) {
+        // Strict matching: user.tenant (from profile) === SystemTenant.id
+        filteredTenants = activeTenants.filter(
+          tenant => String(tenant.id).trim() === userTenantId
         );
-        const defaultTenant = ibexTech || activeTenants[0];
+
+        // Validate that admin's tenant exists in the system
+        if (filteredTenants.length === 0) {
+          console.warn(
+            `Admin's tenant ID (${userTenantId}) not found in active tenants`
+          );
+          setSnackbar({
+            open: true,
+            message: 'Your tenant is not found or inactive',
+            severity: 'error',
+          });
+        }
+      }
+
+      setTenants(filteredTenants);
+
+      // Auto-select tenant based on user role
+      if (filteredTenants.length > 0 && !isInitialTenantSet.current) {
+        let defaultTenant: SystemTenant | undefined;
+
+        if (!isSystemAdminUser && userTenantId) {
+          // Admin: Find and auto-select tenant matching their tenant ID from profile
+          // Match user profile tenant ID (user.tenant) with SystemTenant.id
+          defaultTenant = filteredTenants.find(
+            t => String(t.id).trim() === userTenantId
+          );
+
+          if (!defaultTenant) {
+            console.error(
+              `Failed to match admin tenant ID: ${userTenantId} with any tenant`
+            );
+          }
+        } else {
+          // System Admin: Select default (ibex or first)
+          const ibexTech = filteredTenants.find(t =>
+            t.name.toLowerCase().includes('ibex')
+          );
+          defaultTenant = ibexTech || filteredTenants[0];
+        }
+
         if (defaultTenant) {
           isInitialTenantSet.current = true;
+          // Ensure we use the matched tenant's ID
           setFilters(prev => ({
             ...prev,
-            tenantId: defaultTenant.id,
+            tenantId: String(defaultTenant.id).trim(),
           }));
         }
       }
@@ -147,7 +236,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         severity: 'error',
       });
     }
-  }, []);
+  }, [isSystemAdminUser, userTenantId]);
 
   const fetchDepartments = useCallback(async (tenantId: string | null) => {
     if (!tenantId) return setDepartments([]);
@@ -177,8 +266,20 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   const fetchSummary = useCallback(async () => {
     try {
+      // Get tenant ID from logged-in admin's profile and match with tenant data
+      // For admin: use user.tenant (from profile) which matches SystemTenant.id
+      // For system-admin: use selected tenant from filters
+      let tenantIdToUse: string | undefined;
+      if (!isSystemAdminUser && userTenantId) {
+        // Admin: Use tenant ID from user profile (user.tenant === SystemTenant.id)
+        tenantIdToUse = userTenantId;
+      } else {
+        // System Admin: Use selected tenant ID from filters
+        tenantIdToUse = filters.tenantId || undefined;
+      }
+
       const summaryData = await TenantLeaveApi.getSystemLeaveSummary({
-        tenantId: filters.tenantId || undefined,
+        tenantId: tenantIdToUse,
         status: filters.status ? filters.status : undefined,
         startDate: filters.startDate
           ? dayjs(filters.startDate).format('YYYY-MM-DD')
@@ -189,13 +290,14 @@ const CrossTenantLeaveManagement: React.FC = () => {
       });
 
       let filteredData = summaryData;
-      if (filters.tenantId) {
+      // Filter by tenantIdToUse (user's tenant for admin, selected tenant for system-admin)
+      if (tenantIdToUse) {
         filteredData = summaryData.filter(
-          item => item.tenantId === filters.tenantId
+          item => item.tenantId === tenantIdToUse
         );
 
         if (filteredData.length === 0) {
-          const selectedTenant = tenants.find(t => t.id === filters.tenantId);
+          const selectedTenant = tenants.find(t => t.id === tenantIdToUse);
           if (selectedTenant) {
             filteredData = [
               {
@@ -240,6 +342,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
     filters.startDate,
     filters.endDate,
     tenants,
+    isSystemAdminUser,
+    userTenantId,
   ]);
 
   const fetchLeaves = useCallback(async () => {
@@ -255,8 +359,20 @@ const CrossTenantLeaveManagement: React.FC = () => {
         setTableLoading(true);
       }
 
+      // Get tenant ID from logged-in admin's profile and match with tenant data
+      // For admin: use user.tenant (from profile) which matches SystemTenant.id
+      // For system-admin: use selected tenant from filters
+      let tenantIdToUse: string | undefined;
+      if (!isSystemAdminUser && userTenantId) {
+        // Admin: Use tenant ID from user profile (user.tenant === SystemTenant.id)
+        tenantIdToUse = userTenantId;
+      } else {
+        // System Admin: Use selected tenant ID from filters
+        tenantIdToUse = filters.tenantId || undefined;
+      }
+
       const apiFilters: SystemLeaveFilters = {
-        tenantId: filters.tenantId || undefined,
+        tenantId: tenantIdToUse,
         departmentId: filters.departmentId || undefined,
         status: filters.status ? filters.status : undefined,
         startDate: filters.startDate
@@ -305,11 +421,30 @@ const CrossTenantLeaveManagement: React.FC = () => {
     filters.endDate,
     filters.departmentId,
     currentPage,
+    isSystemAdminUser,
+    userTenantId,
   ]);
 
   useEffect(() => {
     fetchTenants();
   }, [fetchTenants]);
+
+  // Admin ke liye tenant auto-set karo jab userTenantId available ho
+  // Match user profile tenant ID (user.tenant) with SystemTenant.id
+  useEffect(() => {
+    if (!isSystemAdminUser && userTenantId && !filters.tenantId) {
+      // Ensure we use the tenant ID from user profile that matches SystemTenant.id
+      const matchedTenant = tenants.find(
+        t => String(t.id).trim() === userTenantId
+      );
+      if (matchedTenant) {
+        setFilters(prev => ({
+          ...prev,
+          tenantId: String(matchedTenant.id).trim(),
+        }));
+      }
+    }
+  }, [isSystemAdminUser, userTenantId, filters.tenantId, tenants]);
 
   useEffect(() => {
     if (filters.tenantId) fetchDepartments(filters.tenantId);
@@ -348,7 +483,12 @@ const CrossTenantLeaveManagement: React.FC = () => {
     chart: {
       type: 'bar',
       stacked: !!filters.tenantId,
-      toolbar: { show: true },
+      toolbar: {
+        show: false, // Completely remove toolbar (3 lines menu and download options)
+        tools: {
+          download: false, // Disable all download tools
+        },
+      },
       zoom: { enabled: false },
     },
     plotOptions: {
@@ -597,20 +737,23 @@ const CrossTenantLeaveManagement: React.FC = () => {
             spacing={2}
             flexWrap='wrap'
           >
-            <FormControl sx={{ minWidth: 160 }} size='small'>
-              <InputLabel>Tenant</InputLabel>
-              <Select
-                label='Tenant'
-                value={filters.tenantId}
-                onChange={e => handleFilterChange('tenantId', e.target.value)}
-              >
-                {tenants.map(t => (
-                  <MenuItem key={t.id} value={t.id}>
-                    {t.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            {/* System Admin ko tenant dropdown dikhaya, Admin ke liye completely hide */}
+            {isSystemAdminUser && (
+              <FormControl sx={{ minWidth: 160 }} size='small'>
+                <InputLabel>Tenant</InputLabel>
+                <Select
+                  label='Tenant'
+                  value={filters.tenantId}
+                  onChange={e => handleFilterChange('tenantId', e.target.value)}
+                >
+                  {tenants.map(t => (
+                    <MenuItem key={t.id} value={t.id}>
+                      {t.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
           </Stack>
         </Paper>
         <ChartSection />
