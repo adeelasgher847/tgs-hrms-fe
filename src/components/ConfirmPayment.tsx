@@ -70,6 +70,14 @@ const ConfirmPayment: React.FC = () => {
           localStorage.setItem('refreshToken', data.refreshToken);
           if (data.user) {
             localStorage.setItem('user', JSON.stringify(data.user));
+            
+            // Store tenant_id separately from login/signup response
+            const userData = data.user as Record<string, unknown>;
+            const tenantId = userData?.tenant_id;
+            if (tenantId) {
+              localStorage.setItem('tenant_id', String(tenantId));
+            }
+            
             if (data.permissions) {
               localStorage.setItem(
                 'permissions',
