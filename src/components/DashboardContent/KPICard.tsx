@@ -29,14 +29,14 @@ const KpiCard: React.FC<KpiCardProps> = ({
   return (
     <Card
       sx={{
-        borderRadius: 2,
+        borderRadius: 1,
         backgroundColor: theme.palette.background.paper,
         height: '100%',
         width: '100%',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        boxShadow: theme.shadows[1],
+        boxShadow:'none'
       }}
     >
       <CardContent

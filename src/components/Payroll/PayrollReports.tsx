@@ -249,8 +249,7 @@ const PayrollReports: React.FC = () => {
           mb: 3,
           p: 3,
           backgroundColor: cardBg,
-          borderRadius: 2,
-          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: 1,
         }}
       >
         {statsLoading ? (

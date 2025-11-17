@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Button,
@@ -117,6 +117,10 @@ const EmployeeManager: React.FC = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
 
+  // Track initial mount to prevent duplicate API calls
+  const isInitialMount = useRef(true);
+  const isLoadingRef = useRef(false);
+
   // Dark mode
   const bgColor = darkMode ? '#111' : '#fff';
   const textColor = darkMode ? '#8f8f8f' : '#000';
@@ -165,7 +169,13 @@ const EmployeeManager: React.FC = () => {
   }, []);
 
   const loadEmployees = useCallback(async (page: number = 1) => {
+    // Prevent duplicate calls
+    if (isLoadingRef.current) {
+      return;
+    }
+    
     try {
+      isLoadingRef.current = true;
       setLoading(true);
       setError(null);
 
@@ -275,20 +285,32 @@ const EmployeeManager: React.FC = () => {
       setError(errorResult.message);
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
   }, [departmentFilter, designationFilter]);
+
+  // Mark initial mount as complete after first render
+  useEffect(() => {
+    isInitialMount.current = false;
+  }, []);
 
   // Load employees on component mount
   useEffect(() => {
     loadEmployees(1);
     loadDepartmentsAndDesignations();
-  }, [loadEmployees, loadDepartmentsAndDesignations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Re-fetch from backend when filters change, reset to first page
   useEffect(() => {
+    // Skip on initial mount to prevent duplicate API call
+    if (isInitialMount.current) {
+      return;
+    }
     setCurrentPage(1);
     loadEmployees(1);
-  }, [departmentFilter, designationFilter, loadEmployees]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [departmentFilter, designationFilter]);
 
   // Handle page change
   const handlePageChange = (page: number) => {

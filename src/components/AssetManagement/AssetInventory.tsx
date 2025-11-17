@@ -79,9 +79,6 @@ const resolveSubcategoryName = (asset: InventoryAsset): string | undefined =>
 
 const AssetInventory: React.FC = () => {
   const [assets, setAssets] = useState<InventoryAsset[]>([]);
-  const [allAssetsForStats, setAllAssetsForStats] = useState<InventoryAsset[]>(
-    []
-  ); // Store all assets for statistics
   const [filteredAssets, setFilteredAssets] = useState<InventoryAsset[]>([]);
   const [statusCounts, setStatusCounts] = useState<{
     total: number;
@@ -99,6 +96,7 @@ const AssetInventory: React.FC = () => {
     pending: 0,
   }); // Store counts from API response
   const initialLoadRef = React.useRef(false); // Track if initial load has been done
+  const fetchingRef = React.useRef(false); // Track if fetch is in progress to prevent duplicate calls
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<AssetFilters>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -235,51 +233,7 @@ const AssetInventory: React.FC = () => {
     [getUserName]
   );
 
-  // Fetch all assets for statistics (without pagination)
-  const fetchAllAssetsForStats = React.useCallback(async () => {
-    try {
-      // Fetch all assets by looping through all pages
-      let allApiAssets: ApiAssetWithUser[] = [];
-      let currentPage = 1;
-      let hasMorePages = true;
-      const limit = 1000; // Use a high limit per page
-
-      while (hasMorePages) {
-        const response = await assetApi.getAllAssets({
-          page: currentPage,
-          limit,
-        });
-        const apiAssets = response.assets || [];
-        const paginationInfo = response.pagination;
-
-        if (apiAssets && apiAssets.length > 0) {
-          allApiAssets = [...allApiAssets, ...apiAssets];
-        }
-
-        // Check if there are more pages
-        if (paginationInfo && currentPage < paginationInfo.totalPages) {
-          currentPage++;
-        } else {
-          hasMorePages = false;
-        }
-
-        // Safety check to prevent infinite loops
-        if (currentPage > 100) {
-          hasMorePages = false;
-        }
-      }
-
-      if (allApiAssets.length > 0) {
-        const transformedAssets = transformApiAssets(allApiAssets);
-        setAllAssetsForStats(transformedAssets);
-      } else {
-        setAllAssetsForStats([]);
-      }
-    } catch (error) {
-      console.error('Failed to fetch all assets for statistics:', error);
-      // Don't show snackbar for this as it's a background operation
-    }
-  }, [transformApiAssets]);
+  // Removed fetchAllAssetsForStats - using counts from API response instead
 
   // Fetch assets from API
   const fetchAssets = React.useCallback(
@@ -288,13 +242,24 @@ const AssetInventory: React.FC = () => {
       limit: number = 25,
       isInitialLoad: boolean = false
     ) => {
+      // Prevent duplicate calls
+      if (fetchingRef.current) {
+        return;
+      }
+
       try {
+        fetchingRef.current = true;
+        
         // Only show initial loading on very first load, not on pagination or when returning to page 1
         if (isInitialLoad && page === 1) {
           setInitialLoading(true);
         }
 
-        const response = await assetApi.getAllAssets({ page, limit });
+        // Ensure page and limit are always provided
+        const response = await assetApi.getAllAssets({ 
+          page: page || 1, 
+          limit: limit || 25 
+        });
 
         const apiAssets = response.assets; // Extract assets from paginated response
 
@@ -327,6 +292,7 @@ const AssetInventory: React.FC = () => {
         console.error('Failed to fetch assets:', error);
         showSnackbar('Failed to load assets', 'error');
       } finally {
+        fetchingRef.current = false;
         // Only set initial loading to false on very first load
         if (isInitialLoad && page === 1) {
           setInitialLoading(false);
@@ -336,37 +302,20 @@ const AssetInventory: React.FC = () => {
     [transformApiAssets]
   );
 
-  // Initial load: fetch stats FIRST, then paginated assets
+  // Initial load: fetch paginated assets (counts are included in API response)
   useEffect(() => {
     // Only run initial load once
     if (initialLoadRef.current) {
       return;
     }
+    if (fetchingRef.current) {
+      return; // Don't fetch if already fetching
+    }
 
     initialLoadRef.current = true;
 
-    // Test API connection first
-    const testConnection = async () => {
-      try {
-        await assetApi.testApiConnection();
-      } catch (error) {
-        console.error('API connection test failed:', error);
-        showSnackbar('Failed to connect to API', 'error');
-      }
-    };
-
-    testConnection();
-
-    // Initialize data: fetch stats FIRST, then paginated assets
-    // This ensures correct counts (26) are shown immediately when page loads, not 25 initially
-    const initializeData = async () => {
-      // Fetch all assets for statistics FIRST to get accurate counts immediately
-      await fetchAllAssetsForStats();
-      // Then fetch paginated assets for the table (isInitialLoad = true)
-      await fetchAssets(pagination.page, pagination.limit, true);
-    };
-
-    initializeData();
+    // Fetch paginated assets (counts are included in API response)
+    fetchAssets(pagination.page, pagination.limit, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on initial mount
 
@@ -475,10 +424,8 @@ const AssetInventory: React.FC = () => {
 
         // Assets will be refreshed from API
         showSnackbar('Asset updated successfully', 'success');
-        // Refresh the current page (not initial load)
+        // Refresh the current page to update counts (not initial load)
         fetchAssets(pagination.page, pagination.limit, false);
-        // Refresh all assets for statistics
-        fetchAllAssetsForStats();
       } else {
         // Create new asset
         const createData: {
@@ -503,10 +450,8 @@ const AssetInventory: React.FC = () => {
 
         // Assets will be refreshed from API
         showSnackbar('Asset created successfully', 'success');
-        // Refresh the current page (not initial load)
+        // Refresh the current page to update counts (not initial load)
         fetchAssets(pagination.page, pagination.limit, false);
-        // Refresh all assets for statistics
-        fetchAllAssetsForStats();
       }
 
       setIsModalOpen(false);
@@ -538,10 +483,8 @@ const AssetInventory: React.FC = () => {
       showSnackbar('Asset deleted successfully', 'success');
       setDeleteDialogOpen(false);
       setAssetToDelete(null);
-      // Refresh the current page
-      fetchAssets(pagination.page, pagination.limit);
-      // Refresh all assets for statistics
-      fetchAllAssetsForStats();
+      // Refresh the current page to update counts
+      fetchAssets(pagination.page, pagination.limit, false);
     } catch (error) {
       console.error('Failed to delete asset:', error);
       showSnackbar('Failed to delete asset', 'error');
@@ -561,10 +504,8 @@ const AssetInventory: React.FC = () => {
 
       showSnackbar('Asset marked as under maintenance', 'success');
       setAnchorEl(null);
-      // Refresh the current page
-      fetchAssets(pagination.page, pagination.limit);
-      // Refresh all assets for statistics
-      fetchAllAssetsForStats();
+      // Refresh the current page to update counts
+      fetchAssets(pagination.page, pagination.limit, false);
     } catch (error) {
       console.error('Failed to update asset status:', error);
       showSnackbar('Failed to update asset status', 'error');
@@ -584,10 +525,8 @@ const AssetInventory: React.FC = () => {
 
       showSnackbar('Asset marked as available', 'success');
       setAnchorEl(null);
-      // Refresh the current page
-      fetchAssets(pagination.page, pagination.limit);
-      // Refresh all assets for statistics
-      fetchAllAssetsForStats();
+      // Refresh the current page to update counts
+      fetchAssets(pagination.page, pagination.limit, false);
     } catch (error) {
       console.error('Failed to update asset status:', error);
       showSnackbar('Failed to update asset status', 'error');
@@ -596,9 +535,9 @@ const AssetInventory: React.FC = () => {
     }
   };
 
-  // Use counts from API response if available, otherwise calculate from allAssetsForStats
+  // Use counts from API response
   const displayCounts = useMemo(() => {
-    // If we have counts from API response, use them (most accurate)
+    // Use counts from API response if available
     if (
       statusCounts.total > 0 ||
       statusCounts.available > 0 ||
@@ -615,21 +554,7 @@ const AssetInventory: React.FC = () => {
       };
     }
 
-    // Fallback: Calculate from allAssetsForStats if available
-    if (allAssetsForStats.length > 0) {
-      return {
-        total: pagination.total || allAssetsForStats.length,
-        available: allAssetsForStats.filter(a => a.status === 'available')
-          .length,
-        assigned: allAssetsForStats.filter(a => a.status === 'assigned').length,
-        underMaintenance: allAssetsForStats.filter(
-          a => a.status === 'under_maintenance'
-        ).length,
-        retired: allAssetsForStats.filter(a => a.status === 'retired').length,
-      };
-    }
-
-    // If nothing is loaded yet, show total from pagination but show 0 for status counts
+    // Fallback: Use total from pagination, show 0 for status counts until API provides them
     return {
       total: pagination.total || 0,
       available: 0,
@@ -637,7 +562,7 @@ const AssetInventory: React.FC = () => {
       underMaintenance: 0,
       retired: 0,
     };
-  }, [statusCounts, allAssetsForStats, pagination.total]);
+  }, [statusCounts, pagination.total]);
 
   const handlePageChange = (
     event: React.ChangeEvent<unknown>,

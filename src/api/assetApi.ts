@@ -179,7 +179,9 @@ export const assetApi = {
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
-    const response = await axiosInstance.get(`/assets?${params.toString()}`);
+    // Only append query string if there are params, otherwise just use base URL
+    const url = params.toString() ? `/assets?${params.toString()}` : '/assets';
+    const response = await axiosInstance.get(url);
 
     // Handle different possible response structures
     const responseData = response.data;

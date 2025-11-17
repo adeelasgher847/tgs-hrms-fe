@@ -141,7 +141,7 @@ const Dashboard: React.FC = () => {
         sx={{
           direction: language === 'ar' ? 'rtl' : 'ltr',
           color: darkMode ? '#8f8f8f' : '#000',
-          textAlign: { xs: 'center', md: 'left' },
+          textAlign: { xs: 'left'},
         }}
       >
         {lang.title}
@@ -159,10 +159,9 @@ const Dashboard: React.FC = () => {
           <Paper
             elevation={3}
             sx={{
-              p: { xs: 2, sm: 3 },
               width: '100%',
-              borderRadius: 2,
-              backgroundColor: theme.palette.background.paper,
+              borderRadius: 1,
+              backgroundColor: 'unset',
               boxShadow: 'none',
             }}
           >
@@ -191,7 +190,7 @@ const Dashboard: React.FC = () => {
             sx={{
               p: { xs: 2, sm: 3 },
               width: '100%',
-              borderRadius: 2,
+              borderRadius: 1,
               backgroundColor: theme.palette.background.paper,
               boxShadow: 'none',
             }}
@@ -217,7 +216,7 @@ const Dashboard: React.FC = () => {
                 elevation={3}
                 sx={{
                   p: { xs: 2, sm: 3 },
-                  borderRadius: 2,
+                  borderRadius: 1,
                   backgroundColor: theme.palette.background.paper,
                   display: 'flex',
                   flexDirection: 'column',
@@ -319,7 +318,7 @@ const Dashboard: React.FC = () => {
             elevation={3}
             sx={{
               p: { xs: 2, sm: 3 },
-              borderRadius: 2,
+              borderRadius: 1,
               backgroundColor: theme.palette.background.paper,
               boxShadow: 'none',
             }}

@@ -375,7 +375,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
     : [{ name: 'Total Leaves', data: summary.map(s => s.totalLeaves) }];
 
   const ChartSection = memo(() => (
-    <Paper sx={{ p: 3, mb: 3, overflowX: 'auto' }}>
+    <Paper sx={{ p: 3, mb: 3, overflowX: 'auto',boxShadow:'none'}}>
       <Typography variant='subtitle1' fontWeight={600} mb={2}>
         Leave Summary
       </Typography>
@@ -422,7 +422,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         page: number
       ) => void;
     }) => (
-      <Paper sx={{ p: 3, position: 'relative' }}>
+      <Paper sx={{ p: 3, position: 'relative', boxShadow:'none' }}>
         <Typography variant='subtitle1' fontWeight={600} mb={2}>
           Leave Management Table
         </Typography>
@@ -583,10 +583,10 @@ const CrossTenantLeaveManagement: React.FC = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box
-        sx={{ background: '#f7f7f7', minHeight: '100vh', p: 3 }}
+        sx={{ background: '#f7f7f7', minHeight: '100vh',}}
         onKeyDown={handleKeyDown}
       >
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Paper sx={{ p: 3, mb: 3, boxShadow:'none' }}>
           <Typography variant='h6' fontWeight={700} mb={2}>
             Tenant Leave Management
           </Typography>
