@@ -539,6 +539,7 @@ const EmployeeManager: React.FC = () => {
     updates: Partial<EmployeeDto> & {
       designationId?: string;
       password?: string;
+      role?: string;
       role_name?: string;
       team_id?: string;
       cnicNumber?: string;
@@ -559,10 +560,13 @@ const EmployeeManager: React.FC = () => {
           ? updates.designationId
           : editing.designationId;
 
+      // Handle role update - check both role and role_name from form
       const nextRoleName =
-        updates.role_name && updates.role_name !== ''
-          ? updates.role_name
-          : editing.role_name;
+        updates.role_name && updates.role_name.trim() !== ''
+          ? updates.role_name.trim()
+          : (updates.role && updates.role.trim() !== ''
+              ? updates.role.trim()
+              : editing.role_name);
 
       const updatedEmployee = await employeeApi.updateEmployee(editing.id, {
         first_name: updates.first_name,
@@ -608,7 +612,7 @@ const EmployeeManager: React.FC = () => {
                 phone: updatedEmployee.phone,
                 departmentId: newDepartmentId,
                 designationId: nextDesignationId,
-                role_name: updatedEmployee.role_name || emp.role_name,
+                role_name: updatedEmployee.role_name || nextRoleName || emp.role_name,
                 status: updatedEmployee.status || emp.status,
                 cnic_number: updatedEmployee.cnic_number || emp.cnic_number,
                 profile_picture: updatedEmployee.profile_picture || emp.profile_picture,
@@ -1113,6 +1117,7 @@ const EmployeeManager: React.FC = () => {
                     profilePicture: toAbsoluteUrl(editing.profile_picture),
                     cnicFrontPicture: toAbsoluteUrl(editing.cnic_picture),
                     cnicBackPicture: toAbsoluteUrl(editing.cnic_back_picture),
+                    role: editing.role_name || '',
                     role_name: editing.role_name || '',
                     designationId: editing.designationId,
                     departmentId: editing.departmentId,
