@@ -26,6 +26,7 @@ import {
   DialogContent,
   DialogActions,
   Grid,
+  Pagination,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -47,7 +48,6 @@ interface AssetCategory {
   icon?: string | null;
 }
 
-// Extended SystemAsset with category_id and subcategory_id from API response
 interface ExtendedSystemAsset extends SystemAsset {
   category_id?: string;
   subcategory_id?: string;
@@ -68,10 +68,14 @@ const SystemAdminAssets: React.FC = () => {
   );
   const [viewMoreDialogOpen, setViewMoreDialogOpen] = useState(false);
 
-  // Filters
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [tenantFilter, setTenantFilter] = useState<string>('');
   const [assignedFilter, setAssignedFilter] = useState<string>('');
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const itemsPerPage = 25;
 
   const fetchCategories = async () => {
     try {
@@ -79,7 +83,6 @@ const SystemAdminAssets: React.FC = () => {
       const categoriesList = Array.isArray(data) ? data : [];
       setCategories(categoriesList);
 
-      // Create category map
       const map = new Map<string, string>();
       categoriesList.forEach((cat: AssetCategory) => {
         map.set(cat.id, cat.name);
@@ -93,7 +96,6 @@ const SystemAdminAssets: React.FC = () => {
 
   const fetchSubcategories = async () => {
     try {
-      // Fetch all subcategories
       const data = await assetApi.getAllAssetSubcategories();
       const subcategoriesList = Array.isArray(data)
         ? data
@@ -101,7 +103,6 @@ const SystemAdminAssets: React.FC = () => {
           ? data.items
           : [];
 
-      // Create subcategory map
       const map = new Map<string, string>();
       subcategoriesList.forEach((subcat: AssetSubcategory) => {
         map.set(subcat.id, subcat.name);
@@ -129,11 +130,14 @@ const SystemAdminAssets: React.FC = () => {
         category?: string;
         tenantId?: string;
         assigned?: 'assigned' | 'unassigned';
-      } = {};
+        page?: number;
+        limit?: number;
+      } = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
 
-      // Convert category name to category ID for filtering
       if (categoryFilter) {
-        // Find category ID from category name
         const category = categories.find(cat => cat.name === categoryFilter);
         if (category) {
           filters.category = category.id;
@@ -144,16 +148,27 @@ const SystemAdminAssets: React.FC = () => {
         filters.assigned = assignedFilter as 'assigned' | 'unassigned';
       }
 
-      const data = await assetApi.getSystemAssets(filters);
-      setAssets(Array.isArray(data) ? data : []);
+      const response = await assetApi.getSystemAssets(filters);
+      setAssets(response.items || []);
+      setTotalPages(response.totalPages || 1);
+      setTotalRecords(response.total || 0);
     } catch (error: unknown) {
       console.error('Error fetching system assets:', error);
       setAssets([]);
+      setTotalPages(1);
+      setTotalRecords(0);
     } finally {
       setLoading(false);
       setInitialLoading(false);
     }
-  }, [categoryFilter, tenantFilter, assignedFilter, categories]);
+  }, [
+    categoryFilter,
+    tenantFilter,
+    assignedFilter,
+    categories,
+    currentPage,
+    itemsPerPage,
+  ]);
 
   useEffect(() => {
     fetchCategories();
@@ -164,6 +179,10 @@ const SystemAdminAssets: React.FC = () => {
   useEffect(() => {
     fetchAssets();
   }, [fetchAssets]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [categoryFilter, tenantFilter, assignedFilter]);
 
   const categoryNames = useMemo(() => {
     const cats = new Set<string>();
@@ -193,7 +212,6 @@ const SystemAdminAssets: React.FC = () => {
   const filteredAssets = useMemo(() => {
     let filtered = assets;
 
-    // Apply search filter
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(asset => {
@@ -904,6 +922,26 @@ const SystemAdminAssets: React.FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        {!loading && totalPages > 1 && (
+          <Box display='flex' justifyContent='center' p={2}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={(_, page) => setCurrentPage(page)}
+              color='primary'
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        )}
+        {!loading && filteredAssets.length > 0 && (
+          <Box display='flex' justifyContent='center' pb={2}>
+            <Typography variant='body2' color='textSecondary'>
+              Showing page {currentPage} of {totalPages} ({totalRecords} total
+              records)
+            </Typography>
+          </Box>
+        )}
       </Card>
     </Box>
   );

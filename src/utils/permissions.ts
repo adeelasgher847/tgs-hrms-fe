@@ -326,7 +326,11 @@ export const isSubMenuVisibleForRole = (
       }
     }
     if (parent.includes('assets')) {
-      if (sub.includes('asset inventory') || sub.includes('management')) {
+      if (
+        sub.includes('asset inventory') ||
+        sub.includes('management') ||
+        sub.includes('assets overview')
+      ) {
         visible = false;
       }
     }

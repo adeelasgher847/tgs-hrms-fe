@@ -56,10 +56,17 @@ const PayrollReports: React.FC = () => {
   const loadTenants = useCallback(async () => {
     try {
       setLoadingTenants(true);
-      // Use the same method as TenantGrowthChart in dashboard
       const data = await systemEmployeeApiService.getAllTenants(true);
       console.log('Loaded tenants:', data.length);
       setTenants(data);
+
+      // Set TGS as default tenant if it exists
+      const tgsTenant = data.find(
+        tenant => tenant.name?.toLowerCase() === 'tgs'
+      );
+      if (tgsTenant) {
+        setSelectedTenantId(tgsTenant.id);
+      }
     } catch (error) {
       console.error('Failed to load tenants:', error);
       snackbar.error('Failed to load tenants');
@@ -100,7 +107,12 @@ const PayrollReports: React.FC = () => {
   }, [loadStatistics]);
 
   const trendSeries = useMemo(() => {
-    if (!statistics?.monthlyTrend || statistics.monthlyTrend.length === 0)
+    if (
+      !statistics ||
+      !statistics.monthlyTrend ||
+      !Array.isArray(statistics.monthlyTrend) ||
+      statistics.monthlyTrend.length === 0
+    )
       return [];
     const series = [
       {
@@ -130,9 +142,11 @@ const PayrollReports: React.FC = () => {
 
   const trendOptions: ApexOptions = useMemo(() => {
     const categories =
-      statistics?.monthlyTrend?.map(item =>
-        dayjs(`${item.year}-${item.month}-01`).format('MMM YYYY')
-      ) || [];
+      statistics?.monthlyTrend && Array.isArray(statistics.monthlyTrend)
+        ? statistics.monthlyTrend.map(item =>
+            dayjs(`${item.year}-${item.month}-01`).format('MMM YYYY')
+          )
+        : [];
 
     console.log('Trend chart series:', trendSeries);
     console.log('Trend chart categories:', categories);
@@ -198,7 +212,9 @@ const PayrollReports: React.FC = () => {
 
   const departmentSeries = useMemo(() => {
     if (
-      !statistics?.departmentComparison ||
+      !statistics ||
+      !statistics.departmentComparison ||
+      !Array.isArray(statistics.departmentComparison) ||
       statistics.departmentComparison.length === 0
     )
       return [];
@@ -234,8 +250,10 @@ const PayrollReports: React.FC = () => {
 
   const departmentOptions: ApexOptions = useMemo(() => {
     const categories =
-      statistics?.departmentComparison?.map(item => item.department.trim()) ||
-      [];
+      statistics?.departmentComparison &&
+      Array.isArray(statistics.departmentComparison)
+        ? statistics.departmentComparison.map(item => item.department.trim())
+        : [];
 
     console.log('Department chart series:', departmentSeries);
     console.log('Department chart categories:', categories);
@@ -383,7 +401,8 @@ const PayrollReports: React.FC = () => {
               <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
                 Monthly Trend
               </Typography>
-              {statistics.monthlyTrend.length === 0 ? (
+              {!statistics.monthlyTrend ||
+              statistics.monthlyTrend.length === 0 ? (
                 <Box sx={{ py: 4 }}>
                   <Alert
                     severity='info'
@@ -416,7 +435,8 @@ const PayrollReports: React.FC = () => {
               <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
                 Department Comparison
               </Typography>
-              {statistics.departmentComparison.length === 0 ? (
+              {!statistics.departmentComparison ||
+              statistics.departmentComparison.length === 0 ? (
                 <Box sx={{ py: 4 }}>
                   <Alert
                     severity='info'

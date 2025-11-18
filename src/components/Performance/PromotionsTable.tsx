@@ -44,16 +44,14 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   const [employeeNames, setEmployeeNames] = useState<Record<string, string>>(
     {}
   );
-  const itemsPerPage = 25; // Backend returns 25 records per page
+  const itemsPerPage = 25;
 
-  // Fetch employee names for all unique employee IDs
   const fetchEmployeeNames = useCallback(async (employeeIds: string[]) => {
     if (employeeIds.length === 0) return;
 
     try {
-      // Fetch all employees using systemEmployeeApi (pass null for page to get all records)
       const response = await systemEmployeeApiService.getSystemEmployees({
-        page: null, // Pass null to get all employees for matching
+        page: null,
       });
 
       const employeesData = Array.isArray(response)
@@ -82,14 +80,13 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   const fetchPromotions = useCallback(async () => {
     setLoading(true);
     try {
-      // Build dynamic filter params
       const params: {
         tenantId: string;
         status?: 'pending' | 'approved' | 'rejected';
         startDate?: string;
         endDate?: string;
         page?: number;
-      } = { tenantId, page: currentPage }; // Always include tenantId and page
+      } = { tenantId, page: currentPage };
 
       if (
         filters.status &&
@@ -101,33 +98,29 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
       if (filters.endDate) params.endDate = filters.endDate;
 
       const response = await systemPerformanceApiService.getPromotions(params);
-      setPromotions(response.promotions || []);
-      setStats(response.stats || []);
+      const promotionsArray = Array.isArray(response.promotions)
+        ? response.promotions
+        : [];
+      setPromotions(promotionsArray);
+      setStats(Array.isArray(response.stats) ? response.stats : []);
 
-      // Extract unique employee IDs and fetch their names
       const employeeIds = [
-        ...new Set(
-          (response.promotions || []).map(p => p.employee_id).filter(Boolean)
-        ),
+        ...new Set(promotionsArray.map(p => p.employee_id).filter(Boolean)),
       ];
       if (employeeIds.length > 0) {
         await fetchEmployeeNames(employeeIds);
       }
 
-      // Handle pagination info
-      const hasMorePages = (response.promotions || []).length === itemsPerPage;
-
-      if (response.totalPages && response.total) {
+      if (response.totalPages !== undefined && response.total !== undefined) {
         setTotalPages(response.totalPages);
         setTotalRecords(response.total);
       } else {
-        // Fallback: estimate based on current page and records received
+        const hasMorePages = promotionsArray.length === itemsPerPage;
         setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
         setTotalRecords(
           hasMorePages
             ? currentPage * itemsPerPage
-            : (currentPage - 1) * itemsPerPage +
-                (response.promotions || []).length
+            : (currentPage - 1) * itemsPerPage + promotionsArray.length
         );
       }
     } catch (error) {

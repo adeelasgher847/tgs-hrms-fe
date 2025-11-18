@@ -12,6 +12,7 @@ import {
   IconButton,
   MenuItem,
   Paper,
+  Pagination,
   Stack,
   Table,
   TableBody,
@@ -87,7 +88,6 @@ const PayrollRecords: React.FC = () => {
   const theme = useTheme();
   const darkMode = useIsDarkMode();
 
-  // Safely access outlet context with fallback
   const outletContext = useOutletContext<{ darkMode?: boolean }>();
   const outletDarkMode = outletContext?.darkMode;
   const effectiveDarkMode =
@@ -109,8 +109,20 @@ const PayrollRecords: React.FC = () => {
   const [employeeFilter, setEmployeeFilter] = useState<string>('');
   const [records, setRecords] = useState<PayrollRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const itemsPerPage = 25; 
   const [employees, setEmployees] = useState<
-    Array<{ id: string; name: string }>
+    Array<{
+      id: string;
+      name: string;
+      salary?: {
+        effectiveDate: string;
+        endDate?: string | null;
+        status: string;
+      } | null;
+    }>
   >([]);
   const [generateMonth, setGenerateMonth] = useState<number>(
     currentDate.month() + 1
@@ -162,18 +174,97 @@ const PayrollRecords: React.FC = () => {
     );
   }, [records]);
 
+  const isSalaryActiveForPeriod = useCallback(
+    (
+      salary: {
+        effectiveDate: string;
+        endDate?: string | null;
+        status: string;
+      } | null,
+      month: number,
+      year: number
+    ): boolean => {
+      if (!salary || salary.status !== 'active') {
+        return false;
+      }
+
+      const periodStart = dayjs(`${year}-${month}-01`).startOf('month');
+      const periodEnd = dayjs(`${year}-${month}-01`).endOf('month');
+      const effectiveDate = dayjs(salary.effectiveDate);
+      const endDate = salary.endDate ? dayjs(salary.endDate) : null;
+
+      if (effectiveDate.isAfter(periodEnd)) {
+        return false;
+      }
+
+      if (endDate && endDate.isBefore(periodStart)) {
+        return false;
+      }
+
+      return true;
+    },
+    []
+  );
+
   const loadEmployees = useCallback(async () => {
     try {
-      const data = await payrollApi.getAllEmployeeSalaries();
-      // Ensure data is an array
-      if (!Array.isArray(data)) {
-        setEmployees([]);
-        return;
+      let allData: Array<{
+        employee: {
+          id: string;
+          user: {
+            first_name: string;
+            last_name: string;
+          };
+          status: string;
+        };
+        salary: {
+          status: string;
+          effectiveDate: string;
+          endDate?: string | null;
+        } | null;
+      }> = [];
+
+      try {
+        const response = await payrollApi.getAllEmployeeSalaries({
+          page: null,
+        });
+        const data = Array.isArray(response) ? response : response.items || [];
+        allData = data;
+
+        if (
+          !Array.isArray(response) &&
+          response.totalPages &&
+          response.totalPages > 1
+        ) {
+          const promises: Promise<any>[] = [];
+          for (let page = 2; page <= response.totalPages; page++) {
+            promises.push(
+              payrollApi.getAllEmployeeSalaries({ page, limit: 25 })
+            );
+          }
+          const additionalResponses = await Promise.all(promises);
+          additionalResponses.forEach(resp => {
+            const additionalData = Array.isArray(resp)
+              ? resp
+              : resp.items || [];
+            allData = [...allData, ...additionalData];
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+        const response = await payrollApi.getAllEmployeeSalaries({
+          page: 1,
+          limit: 25,
+        });
+        const data = Array.isArray(response) ? response : response.items || [];
+        allData = data;
       }
-      const mapped = data
+
+      const mapped = allData
         .filter(
           item =>
             item.salary &&
+            item.salary.status === 'active' &&
             item.employee?.status?.toLowerCase() === 'active' &&
             item.employee?.id &&
             item.employee?.user?.first_name &&
@@ -182,6 +273,7 @@ const PayrollRecords: React.FC = () => {
         .map(item => ({
           id: item.employee.id,
           name: `${item.employee.user.first_name} ${item.employee.user.last_name}`,
+          salary: item.salary, 
         }));
       setEmployees(mapped);
     } catch (error) {
@@ -193,20 +285,48 @@ const PayrollRecords: React.FC = () => {
   const loadRecords = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await payrollApi.getPayrollRecords({
+      console.log('Loading payroll records with pagination:', {
         month,
         year,
+        page: currentPage,
+        limit: itemsPerPage,
+        employee_id: employeeFilter || undefined,
       });
-      // Ensure data is an array
-      setRecords(Array.isArray(data) ? data : []);
+      const response = await payrollApi.getPayrollRecords({
+        month,
+        year,
+        page: currentPage,
+        limit: itemsPerPage,
+        employee_id: employeeFilter || undefined,
+      });
+      console.log('Payroll records response:', {
+        itemsCount: response.items?.length || 0,
+        total: response.total,
+        totalPages: response.totalPages,
+        page: response.page,
+      });
+      setRecords(response.items || []);
+      if (response.totalPages !== undefined) {
+        setTotalPages(response.totalPages);
+      } else if (response.total !== undefined) {
+        setTotalPages(Math.ceil(response.total / itemsPerPage));
+      } else {
+        const itemsCount = response.items?.length || 0;
+        setTotalPages(
+          itemsCount > itemsPerPage ? Math.ceil(itemsCount / itemsPerPage) : 1
+        );
+      }
+      setTotalRecords(response.total || response.items?.length || 0);
     } catch (error) {
       console.error('Failed to load payroll records:', error);
       snackbar.error('Failed to load payroll records');
       setRecords([]);
+      setTotalPages(1);
+      setTotalRecords(0);
     } finally {
       setLoading(false);
     }
-  }, [month, year]);
+  }, [month, year, currentPage, itemsPerPage, employeeFilter]);
 
   useEffect(() => {
     loadEmployees();
@@ -218,7 +338,12 @@ const PayrollRecords: React.FC = () => {
 
   useEffect(() => {
     setEmployeeFilter('');
+    setCurrentPage(1); 
   }, [month, year]);
+
+  useEffect(() => {
+    setCurrentPage(1); 
+  }, [employeeFilter]);
 
   const openDetails = (record: PayrollRecord) => {
     setSelectedRecord(record);
@@ -240,7 +365,8 @@ const PayrollRecords: React.FC = () => {
     setHistoryError(null);
     payrollApi
       .getPayrollHistory(employeeIdentifier)
-      .then(history => {
+      .then(response => {
+        const history = response.items || [];
         const sorted = [...history].sort(
           (a, b) =>
             dayjs(`${b.year}-${b.month}-01`).valueOf() -
@@ -267,7 +393,6 @@ const PayrollRecords: React.FC = () => {
 
   const openStatusDialog = (record: PayrollRecord) => {
     setStatusRecord(record);
-    // Map backend status to UI status
     setStatusValue(mapStatusFromBackend(record.status));
     setStatusRemarks(record.remarks || '');
     setStatusDialogOpen(true);
@@ -284,7 +409,6 @@ const PayrollRecords: React.FC = () => {
     if (!statusRecord) return;
     try {
       setUpdatingStatus(true);
-      // Map UI status to backend status
       const backendStatus = mapStatusToBackend(statusValue);
       const updated = await payrollApi.updatePayrollStatus(statusRecord.id, {
         status: backendStatus,
@@ -322,12 +446,16 @@ const PayrollRecords: React.FC = () => {
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [records]);
 
-  // Calculate available employees for the generate dialog (uses generateMonth/generateYear)
   const employeesForGenerateDialog = useMemo(() => {
-    if (!records.length) {
-      return employees;
+    if (!generateMonth || !generateYear) {
+      return [];
     }
-    // Filter out employees who already have payroll records for the generate dialog's month/year
+
+    const employeesWithActiveSalary = employees.filter(emp => {
+      if (!emp.salary) return false;
+      return isSalaryActiveForPeriod(emp.salary, generateMonth, generateYear);
+    });
+
     const existingEmployeeIds = new Set(
       records
         .filter(
@@ -343,20 +471,19 @@ const PayrollRecords: React.FC = () => {
         )
         .filter(Boolean)
     );
-    return employees.filter(emp => !existingEmployeeIds.has(emp.id));
-  }, [employees, records, generateMonth, generateYear]);
 
-  const displayedRecords = useMemo(() => {
-    if (!employeeFilter) return records;
-    return records.filter(record => {
-      const id =
-        record.employee?.id ||
-        record.employee_id ||
-        record.employee?.user?.id ||
-        '';
-      return id === employeeFilter;
-    });
-  }, [records, employeeFilter]);
+    return employeesWithActiveSalary
+      .filter(emp => !existingEmployeeIds.has(emp.id))
+      .map(emp => ({ id: emp.id, name: emp.name }));
+  }, [
+    employees,
+    records,
+    generateMonth,
+    generateYear,
+    isSalaryActiveForPeriod,
+  ]);
+
+  const displayedRecords = records;
 
   const handleGenerate = useCallback(async () => {
     if (!generateMonth || !generateYear) {
@@ -364,12 +491,23 @@ const PayrollRecords: React.FC = () => {
       return;
     }
 
-    // Check if there are employees available to generate payroll for
-    if (employeesForGenerateDialog.length === 0) {
-      snackbar.error(
-        'No employees available for payroll generation. All employees already have payroll records for the selected period.'
+    if (generateEmployeeId) {
+      const selectedEmployee = employeesForGenerateDialog.find(
+        emp => emp.id === generateEmployeeId
       );
-      return;
+      if (!selectedEmployee) {
+        snackbar.error(
+          'Selected employee is not available for payroll generation. The employee may already have a payroll record for this period or may not have an active salary structure for the selected month/year.'
+        );
+        return;
+      }
+    } else {
+      if (employeesForGenerateDialog.length === 0) {
+        snackbar.error(
+          'No employees available for payroll generation. All employees already have payroll records for the selected period or do not have active salary structures for the selected month/year.'
+        );
+        return;
+      }
     }
 
     try {
@@ -380,13 +518,17 @@ const PayrollRecords: React.FC = () => {
         employee_id: generateEmployeeId || undefined,
       });
 
-      // Refresh records to get the updated list
-      const refreshedRecords = await payrollApi.getPayrollRecords({
+      const refreshedResponse = await payrollApi.getPayrollRecords({
         month: generateMonth,
         year: generateYear,
+        page: currentPage,
+        limit: itemsPerPage,
+        employee_id: employeeFilter || undefined,
       });
+      const refreshedRecords = refreshedResponse.items || [];
+      setTotalPages(refreshedResponse.totalPages || 1);
+      setTotalRecords(refreshedResponse.total || 0);
 
-      // Check if new records were actually created by comparing with previous records count
       const previousRecordsCount = records.filter(
         r => r.month === generateMonth && r.year === generateYear
       ).length;
@@ -400,7 +542,6 @@ const PayrollRecords: React.FC = () => {
           `Payroll generated successfully for ${generatedCount} employee(s)`
         );
       } else if (response && response.length > 0) {
-        // Fallback: if API response has data, consider it successful
         snackbar.success(
           `Payroll generated successfully for ${response.length} employee(s)`
         );
@@ -425,6 +566,8 @@ const PayrollRecords: React.FC = () => {
     generateMonth,
     generateYear,
     generateEmployeeId,
+    currentPage,
+    itemsPerPage,
     employeesForGenerateDialog,
     records,
   ]);
@@ -737,6 +880,26 @@ const PayrollRecords: React.FC = () => {
               </TableBody>
             </Table>
           </TableContainer>
+        )}
+        {!loading && totalPages > 1 && (
+          <Box display='flex' justifyContent='center' p={2}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={(_, page) => setCurrentPage(page)}
+              color='primary'
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        )}
+        {!loading && displayedRecords.length > 0 && (
+          <Box display='flex' justifyContent='center' pb={2}>
+            <Typography variant='body2' color='textSecondary'>
+              Showing page {currentPage} of {totalPages} ({totalRecords} total
+              records)
+            </Typography>
+          </Box>
         )}
       </Paper>
 

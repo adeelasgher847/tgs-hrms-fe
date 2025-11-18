@@ -16,6 +16,7 @@ import {
   TableBody,
   Paper,
   Box,
+  Pagination,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import {
@@ -38,19 +39,42 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const itemsPerPage = 25; 
   const theme = useTheme();
 
   const fetchPerformance = useCallback(async () => {
-    const data = await systemPerformanceApiService.getPerformanceRecords({
+    const params: {
+      tenantId: string;
+      page: number;
+      limit: number;
+      status?: 'under_review' | 'completed';
+      startDate?: string;
+      endDate?: string;
+    } = {
       tenantId,
-    });
-    setRecords(data || []);
-  }, [tenantId]);
+      page: currentPage,
+      limit: itemsPerPage,
+    };
+    if (statusFilter === 'completed' || statusFilter === 'under_review') {
+      params.status = statusFilter as 'under_review' | 'completed';
+    }
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+
+    const response =
+      await systemPerformanceApiService.getPerformanceRecords(params);
+    setRecords(response.items || []);
+    setTotalPages(response.totalPages || 1);
+    setTotalRecords(response.total || 0);
+  }, [tenantId, currentPage, itemsPerPage, statusFilter, startDate, endDate]);
 
   const fetchEmployees = useCallback(async () => {
     const data = await systemEmployeeApiService.getSystemEmployees({
       tenantId,
-      page: null, // Pass null to get all employees for dropdown
+      page: null,
     });
     setEmployees(data || []);
   }, [tenantId]);
@@ -58,9 +82,20 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
   useEffect(() => {
     if (tenantId) {
       fetchEmployees();
+    }
+  }, [tenantId, fetchEmployees]);
+
+  useEffect(() => {
+    if (tenantId) {
+      setCurrentPage(1);
+    }
+  }, [tenantId, statusFilter, startDate, endDate]);
+
+  useEffect(() => {
+    if (tenantId) {
       fetchPerformance();
     }
-  }, [tenantId, fetchEmployees, fetchPerformance]);
+  }, [tenantId, fetchPerformance]);
 
   const employeeMap = useMemo(() => {
     return employees.reduce(
@@ -92,10 +127,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
     });
   }, [records, selectedEmployee, statusFilter, startDate, endDate]);
 
-  // Calculate gauge score based on selected employee or all employees
   const gaugeScore = useMemo(() => {
-    // When employee is selected, calculate average of ALL that employee's records
-    // (ignoring status/date filters for gauge calculation)
     if (selectedEmployee) {
       const employeeRecords = records.filter(
         record => record.employee_id === selectedEmployee
@@ -106,20 +138,18 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
       const averageScore =
         employeeRecords.reduce((sum, r) => sum + (r.overallScore || 0), 0) /
         employeeRecords.length;
-      return averageScore * 20; // Convert to percentage (assuming 0-5 scale)
+      return averageScore * 20; 
     }
 
-    // When no employee selected, calculate average of all employees' records
     if (records.length === 0) {
       return 0;
     }
     const averageScore =
       records.reduce((sum, r) => sum + (r.overallScore || 0), 0) /
       records.length;
-    return averageScore * 20; // Convert to percentage (assuming 0-5 scale)
+    return averageScore * 20; 
   }, [records, selectedEmployee]);
 
-  // Memoize chart options to ensure proper updates
   const chartOptions = useMemo(
     () => ({
       chart: {
@@ -326,6 +356,26 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
                   )}
                 </TableBody>
               </Table>
+              {totalPages > 1 && (
+                <Box display='flex' justifyContent='center' mt={2} pb={2}>
+                  <Pagination
+                    count={totalPages}
+                    page={currentPage}
+                    onChange={(_, page) => setCurrentPage(page)}
+                    color='primary'
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              )}
+              {records.length > 0 && (
+                <Box display='flex' justifyContent='center' pb={2}>
+                  <Typography variant='body2' color='textSecondary'>
+                    Showing page {currentPage} of {totalPages} ({totalRecords}{' '}
+                    total records)
+                  </Typography>
+                </Box>
+              )}
             </Paper>
           </Grid>
         </Grid>

@@ -63,26 +63,33 @@ export const SystemTenantApi = {
 
       const payload = response.data;
 
-      const totalHeader = Number(response.headers['x-total-count']);
-      const total = !Number.isNaN(totalHeader)
-        ? totalHeader
-        : !Array.isArray(payload) && typeof payload?.total === 'number'
+      const totalFromResponse =
+        !Array.isArray(payload) && typeof payload?.total === 'number'
           ? payload.total
-          : 0;
+          : null;
+      const totalHeader = Number(response.headers['x-total-count']);
+      const total =
+        totalFromResponse ?? (!Number.isNaN(totalHeader) ? totalHeader : 0);
 
       const page =
         !Array.isArray(payload) && typeof payload?.page === 'number'
           ? payload.page
           : (filters.page ?? 1);
 
-      const totalPages =
+      const totalPagesFromResponse =
         !Array.isArray(payload) && typeof payload?.totalPages === 'number'
           ? payload.totalPages
-          : total > 0
-            ? Math.ceil(total / (filters.limit ?? 25))
-            : 1;
+          : null;
+      const totalPages =
+        totalPagesFromResponse ??
+        (total > 0 ? Math.ceil(total / (filters.limit ?? 25)) : 1);
 
-      const tenants = Array.isArray(payload) ? payload : (payload?.data ?? []);
+      let tenants: SystemTenant[] = [];
+      if (Array.isArray(payload)) {
+        tenants = payload;
+      } else if (payload && typeof payload === 'object') {
+        tenants = (payload.items ?? payload.data ?? []) as SystemTenant[];
+      }
 
       return {
         data: tenants,
@@ -115,17 +122,14 @@ export const SystemTenantApi = {
     adminEmail?: string;
   }): Promise<SystemTenant> => {
     try {
-      // If logo is a File, send as FormData, otherwise send as JSON
       if (data.logo instanceof File) {
         const formData = new FormData();
-        // Always append all required fields - backend expects all fields to be present
         formData.append('name', String(data.name || ''));
         formData.append('domain', String(data.domain || ''));
         formData.append('logo', data.logo);
         formData.append('adminName', String(data.adminName || ''));
         formData.append('adminEmail', String(data.adminEmail || ''));
 
-        // Debug: Log FormData contents
         console.log('Sending FormData with fields:', {
           name: data.name,
           domain: data.domain,
@@ -134,7 +138,6 @@ export const SystemTenantApi = {
           adminEmail: data.adminEmail,
         });
 
-        // Don't set Content-Type header - let axios set it automatically with boundary
         const response: AxiosResponse<SystemTenant> = await axiosInstance.post(
           '/system/tenants',
           formData
@@ -225,8 +228,6 @@ export const SystemTenantApi = {
 
   getAllTenants: async (includeDeleted = true): Promise<SystemTenant[]> => {
     try {
-      // Try to fetch all tenants by using a very large limit or no pagination params
-      // First, try without pagination params
       const res = await axiosInstance.get<
         | SystemTenant[]
         | { items: SystemTenant[]; total?: number; data?: SystemTenant[] }
@@ -236,17 +237,13 @@ export const SystemTenantApi = {
 
       let tenants: SystemTenant[] = [];
 
-      // Handle different response structures
       if (Array.isArray(res.data)) {
         tenants = res.data;
       } else if (res.data && typeof res.data === 'object') {
-        // Check if it's a paginated response
         if ('items' in res.data && Array.isArray(res.data.items)) {
           tenants = res.data.items;
-          // If there are more pages, fetch them
           const total = res.data.total || res.data.items.length;
           if (total > res.data.items.length) {
-            // Fetch remaining pages
             let page = 2;
             const perPage = res.data.items.length || 25;
             while (tenants.length < total) {

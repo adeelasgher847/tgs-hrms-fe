@@ -19,6 +19,7 @@ import {
   DialogActions,
   IconButton,
   Tooltip,
+  Pagination,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import dayjs from 'dayjs';
@@ -51,7 +52,6 @@ const resolveEmployeeId = (): string | null => {
         return parsedTrimmed.length > 0 ? parsedTrimmed : null;
       }
     } catch {
-      // Ignore JSON parse errors, try string parsing instead
     }
 
     const trimmed = raw.replace(/^"|"$/g, '').trim();
@@ -80,6 +80,10 @@ const MySalary: React.FC = () => {
   const [detailLoading, setDetailLoading] = useState<boolean>(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const itemsPerPage = 25; 
 
   const fetchPayslip = useCallback(async (recordId: string | null) => {
     if (!recordId) {
@@ -120,8 +124,12 @@ const MySalary: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const historyRecords =
-        await payrollApi.getPayrollHistory(employeeIdentifier);
+      const historyResponse = await payrollApi.getPayrollHistory(
+        employeeIdentifier,
+        { page: currentPage, limit: itemsPerPage }
+      );
+
+      const historyRecords = historyResponse.items || [];
 
       const sortedHistory = historyRecords.slice().sort(
         (a, b) =>
@@ -138,6 +146,49 @@ const MySalary: React.FC = () => {
       );
 
       setHistory(sortedHistory);
+
+      const backendTotalPages = historyResponse.totalPages;
+      const backendTotal = historyResponse.total;
+
+      if (backendTotalPages !== undefined) {
+        setTotalPages(backendTotalPages);
+      } else if (backendTotal !== undefined) {
+        setTotalPages(Math.ceil(backendTotal / itemsPerPage) || 1);
+      } else {
+        setTotalPages(
+          historyRecords.length === itemsPerPage ? currentPage + 1 : currentPage
+        );
+      }
+
+      if (backendTotal !== undefined) {
+        setTotalRecords(backendTotal);
+      } else {
+        setTotalRecords(
+          historyRecords.length === itemsPerPage
+            ? currentPage * itemsPerPage
+            : (currentPage - 1) * itemsPerPage + historyRecords.length
+        );
+      }
+
+      console.log('MySalary pagination state:', {
+        currentPage,
+        totalPages:
+          backendTotalPages !== undefined
+            ? backendTotalPages
+            : backendTotal !== undefined
+              ? Math.ceil(backendTotal / itemsPerPage) || 1
+              : historyRecords.length === itemsPerPage
+                ? currentPage + 1
+                : currentPage,
+        totalRecords:
+          backendTotal !== undefined
+            ? backendTotal
+            : historyRecords.length === itemsPerPage
+              ? currentPage * itemsPerPage
+              : (currentPage - 1) * itemsPerPage + historyRecords.length,
+        historyLength: historyRecords.length,
+      });
+
       setSelectedRecordId(null);
       setDetailRecord(null);
       setDetailError(null);
@@ -152,14 +203,20 @@ const MySalary: React.FC = () => {
       setDetailError(null);
       setDetailLoading(false);
       setDialogOpen(false);
+      setTotalPages(1);
+      setTotalRecords(0);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, currentPage, itemsPerPage]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [user]);
 
   const handleSelectRecord = useCallback(
     async (record: PayrollRecord) => {
@@ -485,6 +542,39 @@ const MySalary: React.FC = () => {
           }}
         >
           {historyTable}
+
+          {history.length > 0 && (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                justifyContent: 'center',
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: 2,
+                mt: 3,
+                pt: 2,
+              }}
+            >
+              <Typography
+                variant='body2'
+                sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#666' }}
+              >
+                Showing page {currentPage} of {totalPages} ({totalRecords} total
+                records)
+              </Typography>
+              {totalPages > 1 && (
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={(_, page) => setCurrentPage(page)}
+                  color='primary'
+                  size='small'
+                  showFirstButton
+                  showLastButton
+                />
+              )}
+            </Box>
+          )}
         </Paper>
       </Stack>
 

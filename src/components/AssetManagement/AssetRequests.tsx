@@ -154,7 +154,7 @@ const AssetRequests: React.FC = () => {
   const [requests, setRequests] = useState<AssetRequest[]>([]);
   const [allRequestsForStats, setAllRequestsForStats] = useState<
     AssetRequest[]
-  >([]); // Store all requests for statistics
+  >([]);
   const [statusCounts, setStatusCounts] = useState<{
     total: number;
     pending: number;
@@ -314,7 +314,6 @@ const AssetRequests: React.FC = () => {
           subcategoriesData = response.subcategories;
         }
 
-        // Filter subcategories by selected category ID
         const selectedCategory = categories.find(
           cat => cat.id === selectedCategoryId
         );
@@ -334,7 +333,7 @@ const AssetRequests: React.FC = () => {
         setSubcategories(filteredSubcategories);
       } catch (error) {
         console.error(
-          '❌ AssetRequests - Failed to fetch subcategories:',
+          'AssetRequests - Failed to fetch subcategories:',
           error
         );
         setSubcategories([]);
@@ -348,16 +347,13 @@ const AssetRequests: React.FC = () => {
     }
   }, [selectedCategoryId, categories, categories.length]);
 
-  // Helper function to transform API requests
   const transformApiRequests = React.useCallback(
     (apiRequests: ApiAssetRequestExtended[]): AssetRequest[] => {
       return apiRequests.map((apiRequest: ApiAssetRequestExtended) => {
-        // Handle new API response structure with category_id and subcategory_id
         const categoryId =
           apiRequest.category_id || apiRequest.asset_category || '';
         const subcategoryId = apiRequest.subcategory_id || undefined;
 
-        // Find category name - first try from API response category object
         let categoryName = '';
         if (
           apiRequest.category &&
@@ -367,25 +363,21 @@ const AssetRequests: React.FC = () => {
           categoryName = apiRequest.category.name || '';
         }
 
-        // If not found in API response, try from categories list
         if (!categoryName) {
           const categoryObj = categories.find(cat => cat.id === categoryId);
           categoryName = categoryObj?.name || '';
         }
 
-        // If still not found, fallback to ID (but log warning)
         if (!categoryName && categoryId) {
           if (categories.length === 0) {
             console.warn(
-              '⚠️ Categories not loaded yet for category ID:',
+              'Categories not loaded yet for category ID:',
               categoryId
             );
           }
-          categoryName = categoryId; // Fallback to ID if name not found
+          categoryName = categoryId; 
         }
 
-        // Find subcategory name if subcategory_id exists
-        // First try to get from API response subcategory object
         let subcategoryName = '';
         if (apiRequest.subcategory) {
           if (
@@ -399,7 +391,6 @@ const AssetRequests: React.FC = () => {
           }
         }
 
-        // If not found in API response, try to find from subcategories list
         if (!subcategoryName && subcategoryId) {
           const subcategoryObj = subcategories.find(
             sub => sub.id === subcategoryId
@@ -407,7 +398,6 @@ const AssetRequests: React.FC = () => {
           subcategoryName = subcategoryObj?.name || '';
         }
 
-        // Also check subcategoryName field directly
         if (!subcategoryName && apiRequest.subcategoryName) {
           subcategoryName = apiRequest.subcategoryName;
         }
@@ -454,16 +444,14 @@ const AssetRequests: React.FC = () => {
     [categories, subcategories]
   );
 
-  // Fetch all requests for statistics (without pagination)
   const fetchAllRequestsForStats = React.useCallback(async () => {
     if (!currentUserId) return;
 
     try {
-      // Fetch all requests by looping through all pages
       let allApiRequests: ApiAssetRequestExtended[] = [];
       let currentPage = 1;
       let hasMorePages = true;
-      const limit = 1000; // Use a high limit per page
+      const limit = 1000; 
 
       while (hasMorePages) {
         const response = await assetApi.getAssetRequestById(currentUserId, {

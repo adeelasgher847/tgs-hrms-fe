@@ -1,7 +1,6 @@
 import type { AxiosError } from 'axios';
 import axiosInstance from './axiosInstance';
 
-// Asset Management API Types
 export interface Asset {
   id: string;
   name: string;
@@ -47,7 +46,6 @@ export interface UpdateAssetRequest {
   purchaseDate: string;
 }
 
-// Asset Subcategory Types
 type AssetSubcategoryCategory = string | { id?: string; name?: string };
 
 export interface AssetSubcategory {
@@ -97,11 +95,9 @@ export interface AssetRequest {
     name: string;
     email: string;
   };
-  // Legacy field for backward compatibility
   asset_category?: string;
 }
 
-// Utility function to validate and normalize status from API
 export const validateRequestStatus = (
   status: string | number | boolean
 ): 'pending' | 'approved' | 'rejected' => {
@@ -439,8 +435,6 @@ export const assetApi = {
 
     const responseData = response.data;
 
-    // Handle different response structures
-    // Case 1: Paginated response with items array
     if (responseData.items && Array.isArray(responseData.items)) {
       return {
         items: responseData.items,
@@ -452,7 +446,6 @@ export const assetApi = {
       };
     }
 
-    // Case 2: Paginated response with data array
     if (responseData.data && Array.isArray(responseData.data)) {
       return {
         items: responseData.data,
@@ -464,7 +457,6 @@ export const assetApi = {
       };
     }
 
-    // Case 3: Direct array response
     if (Array.isArray(responseData)) {
       return {
         items: responseData,
@@ -476,7 +468,6 @@ export const assetApi = {
       };
     }
 
-    // Fallback: Return as is
     return {
       items: responseData.items || responseData.data || [],
       total: responseData.total || 0,
@@ -496,7 +487,6 @@ export const assetApi = {
     id: string,
     data?: ApproveAssetRequestRequest
   ) => {
-    // Try with body payload first
     try {
       const response = await axiosInstance.put(
         `/asset-requests/${id}/approve`,
@@ -509,12 +499,10 @@ export const assetApi = {
         error: bodyAxiosError?.response?.data,
         status: bodyAxiosError?.response?.status,
       });
-      
-      // If body approach fails, try with just asset_id in query or body
+
       if (data?.asset_id || data?.assetId) {
         const assetId = data.asset_id || data.assetId;
         try {
-          // Try with asset_id in query parameter
           const url = `/asset-requests/${id}/approve?asset_id=${assetId}`;
           const response = await axiosInstance.put(url, {});
           return response.data;
@@ -524,8 +512,7 @@ export const assetApi = {
             error: queryAxiosError?.response?.data,
             status: queryAxiosError?.response?.status,
           });
-          
-          // Try with minimal payload - just asset_id
+
           try {
             const response = await axiosInstance.put(
               `/asset-requests/${id}/approve`,
@@ -539,14 +526,13 @@ export const assetApi = {
         }
       }
 
-      // If all attempts fail, throw the original error
       throw bodyError;
     }
   },
 
   rejectAssetRequest: async (id: string, rejectionReason?: string) => {
     const response = await axiosInstance.put(`/asset-requests/${id}/reject`, {
-      rejection_reason: rejectionReason
+      rejection_reason: rejectionReason,
     });
     return response.data;
   },
@@ -556,7 +542,6 @@ export const assetApi = {
     return response.data;
   },
 
-  // Asset Subcategories CRUD operations
   getAllAssetSubcategories: async (filters?: {
     category?: string;
     page?: number;
@@ -604,24 +589,21 @@ export const assetApi = {
     return response.data;
   },
 
-  // Asset Categories API
   getAllAssetCategories: async () => {
     const response = await axiosInstance.get('/asset-categories');
     return response.data;
   },
 
   getAssetSubcategoriesByCategoryId: async (categoryId: string) => {
-    // Try with category_id parameter first, then fallback to category
     const params = new URLSearchParams();
     params.append('category_id', categoryId);
-    
+
     try {
       const response = await axiosInstance.get(
         `/asset-subcategories?${params.toString()}`
       );
       return response.data;
     } catch {
-      // Fallback to category parameter if category_id doesn't work
       const response = await assetApi.getAllAssetSubcategories({
         category: categoryId,
       });
@@ -629,21 +611,57 @@ export const assetApi = {
     }
   },
 
-  // System Admin Asset APIs
   getSystemAssets: async (filters?: {
     category?: string;
     tenantId?: string;
     assigned?: 'assigned' | 'unassigned';
+    page?: number;
+    limit?: number;
   }) => {
     const params = new URLSearchParams();
     if (filters?.category) params.append('category', filters.category);
     if (filters?.tenantId) params.append('tenantId', filters.tenantId);
     if (filters?.assigned) params.append('assigned', filters.assigned);
+    if (filters?.page !== undefined && filters.page !== null) {
+      params.append('page', filters.page.toString());
+    }
+    if (filters?.limit !== undefined && filters.limit !== null) {
+      params.append('limit', filters.limit.toString());
+    } else {
+      params.append('limit', '25');
+    }
 
-    const response = await axiosInstance.get(
-      `/system/assets/?${params.toString()}`
-    );
-    return response.data;
+    const response = await axiosInstance.get<{
+      items: SystemAsset[];
+      total?: number;
+      page?: number;
+      limit?: number;
+      totalPages?: number;
+    }>(`/system/assets/?${params.toString()}`);
+
+    const responseData = response.data;
+
+    if (
+      responseData &&
+      typeof responseData === 'object' &&
+      'items' in responseData
+    ) {
+      return {
+        items: Array.isArray(responseData.items) ? responseData.items : [],
+        total: responseData.total ?? 0,
+        page: responseData.page ?? 1,
+        limit: responseData.limit ?? 25,
+        totalPages: responseData.totalPages ?? 1,
+      };
+    }
+
+    return {
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 25,
+      totalPages: 1,
+    };
   },
 
   getSystemAssetsSummary: async () => {
@@ -652,11 +670,10 @@ export const assetApi = {
   },
 };
 
-// System Admin Asset Types
 export interface SystemAsset {
   id: string;
   name: string;
-  category: string;
+  category_id: string;
   subcategory_id: string;
   status: string;
   assigned_to: string | null;
@@ -676,6 +693,22 @@ export interface SystemAsset {
     created_at: string;
     updated_at: string;
     first_login_time: string | null;
+  } | null;
+  category?: {
+    id: string;
+    name: string;
+    description?: string | null;
+    icon?: string | null;
+    tenant_id: string;
+    created_at: string;
+  };
+  subcategory?: {
+    id: string;
+    name: string;
+    category_id: string;
+    description?: string | null;
+    tenant_id: string;
+    created_at: string;
   };
   tenant: {
     id: string;

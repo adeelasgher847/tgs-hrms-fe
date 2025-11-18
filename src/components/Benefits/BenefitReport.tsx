@@ -379,14 +379,16 @@ const BenefitReport = () => {
           </Table>
         </TableContainer>
       </Paper>
-      <Box display='flex' justifyContent='center' my={2}>
-        <Pagination
-          count={totalPages}
-          page={page}
-          onChange={(_, newPage) => setPage(newPage)}
-          color='primary'
-        />
-      </Box>
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' my={2}>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(_, newPage) => setPage(newPage)}
+            color='primary'
+          />
+        </Box>
+      )}
 
       <Box textAlign='center' mb={2}>
         <Typography variant='body2' color='text.secondary'>
