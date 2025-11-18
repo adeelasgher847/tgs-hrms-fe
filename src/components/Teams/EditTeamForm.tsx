@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -92,7 +92,6 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
 
           const managersData = await teamApiService.getAvailableManagers();
 
-          // If we have a team, add the current manager to the list if not already present
           if (team && team.manager) {
             const currentManagerExists = managersData.some(
               m => m.id === team.manager_id
@@ -105,14 +104,13 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
                 email: team.manager.email,
                 role: 'Manager',
               };
-              managersData.unshift(currentManager); // Add current manager at the top
+              managersData.unshift(currentManager); 
             }
           }
 
           setManagers(managersData);
         } catch (error) {
           console.error('Failed to load managers:', error);
-          // If we have a team with a manager, create a minimal manager list
           if (team && team.manager) {
             const currentManager: Manager = {
               id: team.manager_id,
@@ -134,7 +132,6 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
     loadManagers();
   }, [open, team]);
 
-  // Populate form when team data changes and managers are loaded
   useEffect(() => {
     if (team && open && managers.length > 0) {
       // Only set manager_id if it exists in the managers list
@@ -147,7 +144,6 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
       setFormData(initialData);
       setOriginalFormData(initialData);
     } else if (team && open && !loadingManagers && managers.length === 0) {
-      // If no managers are available, still set the form data but with empty manager_id
       const initialData = {
         name: team.name,
         description: team.description || '',
@@ -158,12 +154,30 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
     }
   }, [team, open, managers, loadingManagers]);
 
-  // Check if form has changes
-  const hasChanges = team
-    ? formData.name !== originalFormData.name ||
-      formData.description !== originalFormData.description ||
-      formData.manager_id !== originalFormData.manager_id
-    : false;
+  const hasChanges = useMemo(() => {
+    if (!team) return false;
+
+    const formName = (formData.name || '').trim();
+    const originalName = (originalFormData.name || '').trim();
+    const formDescription = (formData.description || '').trim();
+    const originalDescription = (originalFormData.description || '').trim();
+    const formManagerId = String(formData.manager_id || '');
+    const originalManagerId = String(originalFormData.manager_id || '');
+
+    return (
+      formName !== originalName ||
+      formDescription !== originalDescription ||
+      formManagerId !== originalManagerId
+    );
+  }, [
+    team,
+    formData.name,
+    formData.description,
+    formData.manager_id,
+    originalFormData.name,
+    originalFormData.description,
+    originalFormData.manager_id,
+  ]);
 
   const handleChange =
     (field: keyof UpdateTeamDto) =>
@@ -190,18 +204,16 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
       return;
     }
 
-    if (!formData.manager_id) {
-      setError(lang.managerRequired);
-      return;
-    }
-
-    // Validate that the selected manager exists in the available managers list
-    const selectedManagerExists = managers.some(
-      m => m.id === formData.manager_id
-    );
-    if (!selectedManagerExists) {
-      setError('Selected manager is not available');
-      return;
+    // Manager is optional - only validate if one is selected
+    if (formData.manager_id) {
+      // Validate that the selected manager exists in the available managers list
+      const selectedManagerExists = managers.some(
+        m => m.id === formData.manager_id
+      );
+      if (!selectedManagerExists) {
+        setError('Selected manager is not available');
+        return;
+      }
     }
 
     try {
@@ -237,11 +249,11 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          backgroundColor: (theme) => theme.palette.background.paper,
+          backgroundColor: theme => theme.palette.background.paper,
         },
       }}
     >
-      <DialogTitle sx={{ color: (theme) => theme.palette.text.primary }}>
+      <DialogTitle sx={{ color: theme => theme.palette.text.primary }}>
         {lang.title}
       </DialogTitle>
 
@@ -262,14 +274,18 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
               required
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: (theme) => theme.palette.divider },
+                  '& fieldset': { borderColor: theme => theme.palette.divider },
                   '&:hover fieldset': {
-                    borderColor: (theme) => theme.palette.text.secondary,
+                    borderColor: theme => theme.palette.text.secondary,
                   },
-                  '&.Mui-focused fieldset': { borderColor: (theme) => theme.palette.primary.main },
+                  '&.Mui-focused fieldset': {
+                    borderColor: theme => theme.palette.primary.main,
+                  },
                 },
-                '& .MuiInputLabel-root': { color: (theme) => theme.palette.text.secondary },
-                '& input': { color: (theme) => theme.palette.text.primary },
+                '& .MuiInputLabel-root': {
+                  color: theme => theme.palette.text.secondary,
+                },
+                '& input': { color: theme => theme.palette.text.primary },
               }}
             />
 
@@ -282,24 +298,30 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
               rows={3}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: (theme) => theme.palette.divider },
+                  '& fieldset': { borderColor: theme => theme.palette.divider },
                   '&:hover fieldset': {
-                    borderColor: (theme) => theme.palette.text.secondary,
+                    borderColor: theme => theme.palette.text.secondary,
                   },
-                  '&.Mui-focused fieldset': { borderColor: (theme) => theme.palette.primary.main },
+                  '&.Mui-focused fieldset': {
+                    borderColor: theme => theme.palette.primary.main,
+                  },
                 },
-                '& .MuiInputLabel-root': { color: (theme) => theme.palette.text.secondary },
-                '& textarea': { color: (theme) => theme.palette.text.primary },
+                '& .MuiInputLabel-root': {
+                  color: theme => theme.palette.text.secondary,
+                },
+                '& textarea': { color: theme => theme.palette.text.primary },
               }}
             />
 
             <FormControl fullWidth>
               <InputLabel
                 sx={{
-                  color: (theme) => theme.palette.text.secondary,
-                  '&.Mui-focused': { color: (theme) => theme.palette.primary.main },
+                  color: theme => theme.palette.text.secondary,
+                  '&.Mui-focused': {
+                    color: theme => theme.palette.primary.main,
+                  },
                   '&.MuiInputLabel-shrink': {
-                    color: (theme) => theme.palette.text.secondary,
+                    color: theme => theme.palette.text.secondary,
                   },
                 }}
               >
@@ -308,19 +330,20 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
               <Select
                 value={formData.manager_id || ''}
                 onChange={handleChange('manager_id')}
-                required
                 label={lang.manager}
                 sx={{
                   '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: (theme) => theme.palette.divider,
+                    borderColor: theme => theme.palette.divider,
                   },
                   '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: (theme) => theme.palette.text.secondary,
+                    borderColor: theme => theme.palette.text.secondary,
                   },
                   '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: (theme) => theme.palette.primary.main,
+                    borderColor: theme => theme.palette.primary.main,
                   },
-                  '& .MuiSelect-select': { color: (theme) => theme.palette.text.primary },
+                  '& .MuiSelect-select': {
+                    color: theme => theme.palette.text.primary,
+                  },
                 }}
               >
                 <MenuItem value='' disabled>
@@ -353,12 +376,11 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
             type='submit'
             variant='contained'
             disabled={
-              loading ||
-              !hasChanges ||
-              !formData.name?.trim() ||
-              !formData.manager_id
+              loading || !hasChanges || !formData.name?.trim()
+              // Note: manager_id is optional in UpdateTeamDto, so we don't require it
+              // Button enables when name or description changes, even if manager is not selected
             }
-            sx={{ backgroundColor: (theme) => theme.palette.primary.main }}
+            sx={{ backgroundColor: theme => theme.palette.primary.main }}
             startIcon={loading ? <CircularProgress size={16} /> : null}
           >
             {loading ? lang.loading : lang.update}

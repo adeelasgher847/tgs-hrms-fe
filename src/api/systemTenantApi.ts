@@ -82,7 +82,9 @@ export const SystemTenantApi = {
             ? Math.ceil(total / (filters.limit ?? 10))
             : 1;
 
-      const tenants = Array.isArray(payload) ? payload : (payload?.data ?? []);
+      const tenants = Array.isArray(payload) 
+        ? payload 
+        : (payload?.data ?? payload?.items ?? []);
 
       return {
         data: tenants,
@@ -170,21 +172,22 @@ export const SystemTenantApi = {
     }
   },
 
-  update: async (
-    id: string,
-    data: { name?: string; status?: 'active' | 'suspended' }
-  ): Promise<SystemTenant> => {
+  update: async (data: {
+    tenantId: string;
+    companyName: string;
+    domain: string;
+    logo: string;
+  }): Promise<SystemTenant> => {
     try {
-      const response: AxiosResponse<{
-        statusCode: number;
-        message: string;
-        data: SystemTenant;
-      }> = await axiosInstance.put(`/tenants/${id}`, data);
+      const response: AxiosResponse<SystemTenant> = await axiosInstance.put(
+        '/system/tenants',
+        data
+      );
 
       console.log(' Tenant updated successfully:', response.data);
-      return response.data.data;
+      return response.data;
     } catch (error) {
-      console.error(` Failed to update tenant (id=${id}):`, error);
+      console.error(` Failed to update tenant (id=${data.tenantId}):`, error);
       throw error;
     }
   },
