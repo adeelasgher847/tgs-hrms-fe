@@ -132,8 +132,11 @@ const PayrollConfiguration: React.FC = () => {
       setOvertimePolicy(config.overtimePolicy);
       setLeaveDeductionPolicy(config.leaveDeductionPolicy);
       // Load custom fields if they exist
-      if ((config as any).customFields) {
-        const customFieldsObj = (config as any).customFields;
+      const configWithCustomFields = config as PayrollConfig & {
+        customFields?: Record<string, unknown>;
+      };
+      if (configWithCustomFields.customFields) {
+        const customFieldsObj = configWithCustomFields.customFields;
         // Convert object to array format
         if (
           typeof customFieldsObj === 'object' &&
@@ -336,8 +339,39 @@ const PayrollConfiguration: React.FC = () => {
     setError(null);
 
     try {
-      const payload: any = {
-        salaryCycle,
+      interface PayloadType {
+        salaryCycle: 'monthly' | 'weekly' | 'biweekly';
+        basePayComponents: {
+          basic: number;
+          houseRent: number;
+          medical: number;
+          transport: number;
+        };
+        allowances: Array<{
+          type: string;
+          amount: number;
+          percentage: number;
+          description?: string;
+        }>;
+        deductions: {
+          taxPercentage: number;
+          insurancePercentage: number;
+          providentFundPercentage: number;
+        };
+        overtimePolicy: {
+          enabled: boolean;
+          rateMultiplier: number;
+          maxHoursPerMonth: number;
+        };
+        leaveDeductionPolicy: {
+          unpaidLeaveDeduction: boolean;
+          halfDayDeduction: number;
+        };
+        customFields?: Record<string, string | number>;
+      }
+
+      const payload: PayloadType = {
+        salaryCycle: salaryCycle as 'monthly' | 'weekly' | 'biweekly',
         basePayComponents,
         allowances,
         deductions,
@@ -451,7 +485,10 @@ const PayrollConfiguration: React.FC = () => {
       return true;
 
     // Check custom fields
-    const configCustomFields = (config as any).customFields || {};
+    const configWithCustomFields = config as PayrollConfig & {
+      customFields?: Record<string, unknown>;
+    };
+    const configCustomFields = configWithCustomFields.customFields || {};
     const currentCustomFieldsObj = customFields
       .filter(field => field.key.trim() !== '')
       .reduce(

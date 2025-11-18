@@ -52,6 +52,7 @@ const resolveEmployeeId = (): string | null => {
         return parsedTrimmed.length > 0 ? parsedTrimmed : null;
       }
     } catch {
+      // Ignore JSON parse errors, continue with string parsing
     }
 
     const trimmed = raw.replace(/^"|"$/g, '').trim();
@@ -83,7 +84,7 @@ const MySalary: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25; 
+  const itemsPerPage = 25;
 
   const fetchPayslip = useCallback(async (recordId: string | null) => {
     if (!recordId) {

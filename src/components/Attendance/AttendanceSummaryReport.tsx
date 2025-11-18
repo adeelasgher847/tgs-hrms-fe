@@ -41,7 +41,7 @@ const AttendanceSummaryReport: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25; 
+  const itemsPerPage = 25;
   const [openToast, setOpenToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastSeverity, setToastSeverity] = useState<
@@ -61,28 +61,6 @@ const AttendanceSummaryReport: React.FC = () => {
   );
 
   // Calculate days range based on filter
-  const getDaysRange = () => {
-    switch (filter) {
-      case 'thisMonth':
-        return new Date().getDate();
-      case 'prevMonth': {
-        const lastMonth = new Date();
-        lastMonth.setMonth(lastMonth.getMonth() - 1);
-        return new Date(
-          lastMonth.getFullYear(),
-          lastMonth.getMonth() + 1,
-          0
-        ).getDate();
-      }
-      case '60days':
-        return 60;
-      case '90days':
-        return 90;
-      default:
-        return 30;
-    }
-  };
-
   // Get tenant ID from localStorage - same pattern as other attendance pages
   const getTenantId = () => {
     const userStr = localStorage.getItem('user');
@@ -110,6 +88,27 @@ const AttendanceSummaryReport: React.FC = () => {
 
       setLoading(true);
       try {
+        const getDaysRange = () => {
+          switch (filter) {
+            case 'thisMonth':
+              return new Date().getDate();
+            case 'prevMonth': {
+              const lastMonth = new Date();
+              lastMonth.setMonth(lastMonth.getMonth() - 1);
+              return new Date(
+                lastMonth.getFullYear(),
+                lastMonth.getMonth() + 1,
+                0
+              ).getDate();
+            }
+            case '60days':
+              return 60;
+            case '90days':
+              return 90;
+            default:
+              return 30;
+          }
+        };
         const days = getDaysRange();
         console.log(
           'Attendance report: Fetching summary for tenant:',
@@ -192,7 +191,7 @@ const AttendanceSummaryReport: React.FC = () => {
         setLoading(false);
       }
     },
-    [filter, itemsPerPage, showToast]
+    [filter, itemsPerPage, showToast, getTenantId]
   );
 
   // Fetch when filter changes, reset to page 1

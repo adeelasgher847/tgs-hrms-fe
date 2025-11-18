@@ -16,7 +16,6 @@ import {
   TableBody,
   Paper,
   Box,
-  Pagination,
   CircularProgress,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
@@ -41,8 +40,6 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 25;
   const theme = useTheme();
@@ -70,13 +67,9 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
       const response =
         await systemPerformanceApiService.getPerformanceRecords(params);
       setRecords(response.items || []);
-      setTotalPages(response.totalPages || 1);
-      setTotalRecords(response.total || 0);
     } catch (error) {
       console.error('Error fetching performance records:', error);
       setRecords([]);
-      setTotalPages(1);
-      setTotalRecords(0);
     }
   }, [tenantId, currentPage, itemsPerPage, statusFilter, startDate, endDate]);
 

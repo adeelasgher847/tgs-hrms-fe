@@ -112,7 +112,7 @@ const PayrollRecords: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25; 
+  const itemsPerPage = 25;
   const [employees, setEmployees] = useState<
     Array<{
       id: string;
@@ -236,7 +236,24 @@ const PayrollRecords: React.FC = () => {
           response.totalPages &&
           response.totalPages > 1
         ) {
-          const promises: Promise<any>[] = [];
+          const promises: Promise<{
+            items?: Array<{
+              employee: {
+                id: string;
+                user: {
+                  first_name: string;
+                  last_name: string;
+                };
+                status: string;
+              };
+              salary: {
+                status: string;
+                effectiveDate: string;
+                endDate?: string | null;
+              } | null;
+            }>;
+            totalPages?: number;
+          }>[] = [];
           for (let page = 2; page <= response.totalPages; page++) {
             promises.push(
               payrollApi.getAllEmployeeSalaries({ page, limit: 25 })
@@ -273,7 +290,7 @@ const PayrollRecords: React.FC = () => {
         .map(item => ({
           id: item.employee.id,
           name: `${item.employee.user.first_name} ${item.employee.user.last_name}`,
-          salary: item.salary, 
+          salary: item.salary,
         }));
       setEmployees(mapped);
     } catch (error) {
@@ -338,11 +355,11 @@ const PayrollRecords: React.FC = () => {
 
   useEffect(() => {
     setEmployeeFilter('');
-    setCurrentPage(1); 
+    setCurrentPage(1);
   }, [month, year]);
 
   useEffect(() => {
-    setCurrentPage(1); 
+    setCurrentPage(1);
   }, [employeeFilter]);
 
   const openDetails = (record: PayrollRecord) => {

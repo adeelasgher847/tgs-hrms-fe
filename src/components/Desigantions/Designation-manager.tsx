@@ -27,7 +27,6 @@ import {
 import DesignationModal from '../Desigantions/Designation-modal';
 import DeleteConfirmationDialog from './Delete-confirmation-dialog';
 import { useLanguage } from '../../hooks/useLanguage';
-import { useOutletContext } from 'react-router-dom';
 import {
   designationApiService,
   type FrontendDesignation,
@@ -42,7 +41,6 @@ import ErrorSnackbar from '../common/ErrorSnackbar';
 
 export default function DesignationManager() {
   const { language } = useLanguage();
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const isRTL = language === 'ar';
   const [designations, setDesignations] = useState<FrontendDesignation[]>([]);
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
@@ -148,7 +146,7 @@ export default function DesignationManager() {
   }, [fetchDepartments]);
 
   useEffect(() => {
-    setCurrentPage(1); 
+    setCurrentPage(1);
     if (selectedDepartmentId !== 'all') {
       fetchDesignations(selectedDepartmentId, 1);
     } else {
@@ -229,7 +227,7 @@ export default function DesignationManager() {
   };
 
   const filteredDesignations =
-    selectedDepartmentId === 'all' ? designations : designations; 
+    selectedDepartmentId === 'all' ? designations : designations;
 
   const totalPagesForFiltered =
     selectedDepartmentId === 'all'
@@ -241,7 +239,7 @@ export default function DesignationManager() {
           (currentPage - 1) * itemsPerPage,
           currentPage * itemsPerPage
         )
-      : filteredDesignations; 
+      : filteredDesignations;
 
   return (
     <Box dir={isRTL ? 'rtl' : 'ltr'}>

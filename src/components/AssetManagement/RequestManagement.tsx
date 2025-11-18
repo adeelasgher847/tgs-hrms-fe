@@ -178,7 +178,10 @@ const RequestManagement: React.FC = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const initialLoadRef = React.useRef(false); // Track if initial load has been done
   const fetchingRef = React.useRef(false); // Track if fetch is in progress to prevent duplicate calls
-  const lastFetchedPageRef = React.useRef<{ page: number; limit: number } | null>(null); // Track last fetched page/limit
+  const lastFetchedPageRef = React.useRef<{
+    page: number;
+    limit: number;
+  } | null>(null); // Track last fetched page/limit
   const assetsFetchedRef = React.useRef(false); // Track if assets have been fetched
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -319,7 +322,7 @@ const RequestManagement: React.FC = () => {
   );
 
   // Removed fetchAllRequestsForStats - using counts from API response instead
-  const [statusCounts, setStatusCounts] = useState<{
+  const [statusCounts] = useState<{
     total: number;
     pending: number;
     approved: number;
@@ -334,10 +337,10 @@ const RequestManagement: React.FC = () => {
   // Fetch assets separately (only once, not on every request fetch)
   const fetchAssets = React.useCallback(async () => {
     if (assetsFetchedRef.current) return; // Already fetched
-    
+
     try {
       assetsFetchedRef.current = true;
-      
+
       // Fetch assets for assignment - fetch all assets with high limit to get all pages
       // This ensures all available assets are shown in the Assign Asset dropdown
       let allAssets: Record<string, unknown>[] = [];
@@ -369,20 +372,29 @@ const RequestManagement: React.FC = () => {
           // Category can be an object { id, name, ... } or a string
           let categoryName = '';
           let categoryId = '';
-          
-          if (apiAsset.category && typeof apiAsset.category === 'object' && apiAsset.category !== null) {
-            const categoryObj = apiAsset.category as { id?: string; name?: string };
+
+          if (
+            apiAsset.category &&
+            typeof apiAsset.category === 'object' &&
+            apiAsset.category !== null
+          ) {
+            const categoryObj = apiAsset.category as {
+              id?: string;
+              name?: string;
+            };
             categoryName = categoryObj.name || '';
-            categoryId = categoryObj.id || apiAsset.category_id as string || '';
+            categoryId =
+              categoryObj.id || (apiAsset.category_id as string) || '';
           } else if (apiAsset.categoryName) {
             categoryName = apiAsset.categoryName as string;
-            categoryId = apiAsset.category_id as string || '';
+            categoryId = (apiAsset.category_id as string) || '';
           } else if (typeof apiAsset.category === 'string') {
             categoryName = apiAsset.category;
-            categoryId = apiAsset.category_id as string || apiAsset.category as string;
+            categoryId =
+              (apiAsset.category_id as string) || (apiAsset.category as string);
           } else {
-            categoryName = apiAsset.categoryName as string || '';
-            categoryId = apiAsset.category_id as string || '';
+            categoryName = (apiAsset.categoryName as string) || '';
+            categoryId = (apiAsset.category_id as string) || '';
           }
 
           // Try to find matching category from our comprehensive list
@@ -390,8 +402,7 @@ const RequestManagement: React.FC = () => {
             cat =>
               cat.name.toLowerCase() === categoryName.toLowerCase() ||
               cat.subcategories?.some(
-                sub =>
-                  sub.toLowerCase() === categoryName.toLowerCase()
+                sub => sub.toLowerCase() === categoryName.toLowerCase()
               )
           );
 
@@ -450,7 +461,7 @@ const RequestManagement: React.FC = () => {
 
       try {
         fetchingRef.current = true;
-        
+
         if (isInitialLoad && page === 1) {
           setInitialLoading(true);
         }
@@ -638,9 +649,12 @@ const RequestManagement: React.FC = () => {
     }
 
     initialLoadRef.current = true;
-    
+
     // Mark this page/limit as fetched
-    lastFetchedPageRef.current = { page: pagination.page, limit: pagination.limit };
+    lastFetchedPageRef.current = {
+      page: pagination.page,
+      limit: pagination.limit,
+    };
 
     // Fetch paginated requests only (assets will be fetched when needed)
     fetchRequests(pagination.page, pagination.limit, true);
@@ -651,16 +665,23 @@ const RequestManagement: React.FC = () => {
   React.useEffect(() => {
     if (!initialLoadRef.current) return; // Don't fetch if initial load hasn't happened
     if (fetchingRef.current) return; // Don't fetch if already fetching
-    
+
     // Check if page/limit actually changed
     const lastFetched = lastFetchedPageRef.current;
-    if (lastFetched && lastFetched.page === pagination.page && lastFetched.limit === pagination.limit) {
+    if (
+      lastFetched &&
+      lastFetched.page === pagination.page &&
+      lastFetched.limit === pagination.limit
+    ) {
       return; // Already fetched this page/limit combination
     }
 
     // Fetch paginated requests when page or limit changes (but not on initial load)
     if (pagination.page > 0) {
-      lastFetchedPageRef.current = { page: pagination.page, limit: pagination.limit };
+      lastFetchedPageRef.current = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
       fetchRequests(pagination.page, pagination.limit, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

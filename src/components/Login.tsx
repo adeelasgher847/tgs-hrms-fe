@@ -273,7 +273,8 @@ const Login: React.FC = () => {
 
       const employeeId = employee?.id || null;
 
-      const tenantId = (user as any)?.tenant_id || null;
+      const userWithTenant = user as { tenant_id?: string };
+      const tenantId = userWithTenant?.tenant_id || null;
 
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);

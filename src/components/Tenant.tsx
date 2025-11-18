@@ -98,7 +98,7 @@ export const TenantPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25; 
+  const itemsPerPage = 25;
 
   const fetchTenants = useCallback(
     async (page: number = 1) => {
@@ -203,7 +203,6 @@ export const TenantPage: React.FC = () => {
 
   const handleCreate = async () => {
     const { name, domain, adminName, adminEmail } = tenantForm;
-    let logoUrl = '';
     if (
       !name.trim() ||
       !domain.trim() ||
@@ -331,7 +330,9 @@ export const TenantPage: React.FC = () => {
           logoUrl =
             typeof uploadedLogoUrl === 'string'
               ? uploadedLogoUrl
-              : (uploadedLogoUrl as any)?.logo_url || editLogo || '';
+              : (uploadedLogoUrl as { logo_url?: string })?.logo_url ||
+                editLogo ||
+                '';
         } catch (uploadError) {
           console.error('Failed to upload logo:', uploadError);
           setSnackbar({
@@ -508,7 +509,7 @@ export const TenantPage: React.FC = () => {
       setEditDomain('');
       setEditLogo('');
       try {
-        const detail = await SystemTenantApi.getById(tenant.id);
+        await SystemTenantApi.getById(tenant.id);
       } catch (err) {
         console.log('Could not fetch tenant details:', err);
       }

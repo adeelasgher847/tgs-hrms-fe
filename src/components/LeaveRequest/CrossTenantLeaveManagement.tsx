@@ -95,7 +95,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
     // Last fallback: Get from user context
     if (user) {
-      const tenantId = (user as any).tenant_id || (user as any).tenant || '';
+      const userWithTenant = user as { tenant_id?: string; tenant?: string };
+      const tenantId = userWithTenant.tenant_id || userWithTenant.tenant || '';
       if (tenantId) return String(tenantId).trim();
     }
 
@@ -252,7 +253,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         severity: 'error',
       });
     }
-  }, [isSystemAdminUser, userTenantId]);
+  }, [isSystemAdminUser, userTenantId, filters.tenantId]);
 
   const fetchDepartments = useCallback(async (tenantId: string | null) => {
     if (!tenantId) return setDepartments([]);

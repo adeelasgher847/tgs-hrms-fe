@@ -238,7 +238,7 @@ export const payrollApi = {
         'response' in error &&
         (error as { response?: { status?: number } }).response?.status === 404
       ) {
-        return null; 
+        return null;
       }
       console.error('Failed to fetch payroll config:', error);
       throw error;
@@ -543,14 +543,14 @@ export const payrollApi = {
       console.log('Payroll API raw response:', {
         isArray: Array.isArray(response.data),
         dataType: typeof response.data,
-        hasItems: !!(response.data as any)?.items,
+        hasItems: !!(response.data as { items?: unknown[] })?.items,
         itemsLength: Array.isArray(response.data)
           ? response.data.length
-          : (response.data as any)?.items?.length || 0,
-        total: (response.data as any)?.total,
-        totalPages: (response.data as any)?.totalPages,
-        page: (response.data as any)?.page,
-        limit: (response.data as any)?.limit,
+          : (response.data as { items?: unknown[] })?.items?.length || 0,
+        total: (response.data as { total?: number })?.total,
+        totalPages: (response.data as { totalPages?: number })?.totalPages,
+        page: (response.data as { page?: number })?.page,
+        limit: (response.data as { limit?: number })?.limit,
       });
 
       if (Array.isArray(response.data)) {
@@ -704,13 +704,31 @@ export const payrollApi = {
     endDate?: string;
   }): Promise<PayrollStatistics> => {
     try {
+      interface StatisticsItem {
+        tenantId?: string;
+        monthlyTrend?: Array<{
+          month: number;
+          year: number;
+          totalGross: number;
+          totalDeductions: number;
+          totalBonuses: number;
+          totalNet: number;
+          employeeCount: number;
+        }>;
+        departmentComparison?: Array<{
+          department: string;
+          totalGross: number;
+          totalDeductions: number;
+          totalBonuses: number;
+          totalNet: number;
+          employeeCount: number;
+        }>;
+      }
+
       const response = await axiosInstance.get<
         | PayrollStatistics
         | {
-            statistics: Array<{
-              monthlyTrend?: any[];
-              departmentComparison?: any[];
-            }>;
+            statistics: StatisticsItem[];
           }
       >('/payroll/statistics', {
         params: {
@@ -729,7 +747,7 @@ export const payrollApi = {
       ) {
         if (params.tenantId) {
           const filteredStat = response.data.statistics.find(
-            (stat: any) => stat.tenantId === params.tenantId
+            (stat: StatisticsItem) => stat.tenantId === params.tenantId
           );
           if (filteredStat) {
             return {
@@ -743,21 +761,45 @@ export const payrollApi = {
             };
           }
         } else {
-          const aggregatedMonthlyTrend = new Map<string, any>();
-          const aggregatedDepartmentComparison = new Map<string, any>();
+          interface MonthlyTrendItem {
+            month: number;
+            year: number;
+            totalGross: number;
+            totalDeductions: number;
+            totalBonuses: number;
+            totalNet: number;
+            employeeCount: number;
+          }
 
-          response.data.statistics.forEach((stat: any) => {
+          interface DepartmentComparisonItem {
+            department: string;
+            totalGross: number;
+            totalDeductions: number;
+            totalBonuses: number;
+            totalNet: number;
+            employeeCount: number;
+          }
+
+          const aggregatedMonthlyTrend = new Map<string, MonthlyTrendItem>();
+          const aggregatedDepartmentComparison = new Map<
+            string,
+            DepartmentComparisonItem
+          >();
+
+          response.data.statistics.forEach((stat: StatisticsItem) => {
             if (Array.isArray(stat.monthlyTrend)) {
-              stat.monthlyTrend.forEach((trend: any) => {
+              stat.monthlyTrend.forEach(trend => {
                 const key = `${trend.year}-${trend.month}`;
                 if (aggregatedMonthlyTrend.has(key)) {
                   const existing = aggregatedMonthlyTrend.get(key);
-                  existing.totalGross += Number(trend.totalGross) || 0;
-                  existing.totalDeductions +=
-                    Number(trend.totalDeductions) || 0;
-                  existing.totalBonuses += Number(trend.totalBonuses) || 0;
-                  existing.totalNet += Number(trend.totalNet) || 0;
-                  existing.employeeCount += Number(trend.employeeCount) || 0;
+                  if (existing) {
+                    existing.totalGross += Number(trend.totalGross) || 0;
+                    existing.totalDeductions +=
+                      Number(trend.totalDeductions) || 0;
+                    existing.totalBonuses += Number(trend.totalBonuses) || 0;
+                    existing.totalNet += Number(trend.totalNet) || 0;
+                    existing.employeeCount += Number(trend.employeeCount) || 0;
+                  }
                 } else {
                   aggregatedMonthlyTrend.set(key, {
                     month: trend.month,
@@ -773,18 +815,20 @@ export const payrollApi = {
             }
 
             if (Array.isArray(stat.departmentComparison)) {
-              stat.departmentComparison.forEach((dept: any) => {
+              stat.departmentComparison.forEach(dept => {
                 const deptName = dept.department?.trim() || '';
                 if (deptName) {
                   if (aggregatedDepartmentComparison.has(deptName)) {
                     const existing =
                       aggregatedDepartmentComparison.get(deptName);
-                    existing.totalGross += Number(dept.totalGross) || 0;
-                    existing.totalDeductions +=
-                      Number(dept.totalDeductions) || 0;
-                    existing.totalBonuses += Number(dept.totalBonuses) || 0;
-                    existing.totalNet += Number(dept.totalNet) || 0;
-                    existing.employeeCount += Number(dept.employeeCount) || 0;
+                    if (existing) {
+                      existing.totalGross += Number(dept.totalGross) || 0;
+                      existing.totalDeductions +=
+                        Number(dept.totalDeductions) || 0;
+                      existing.totalBonuses += Number(dept.totalBonuses) || 0;
+                      existing.totalNet += Number(dept.totalNet) || 0;
+                      existing.employeeCount += Number(dept.employeeCount) || 0;
+                    }
                   } else {
                     aggregatedDepartmentComparison.set(deptName, {
                       department: deptName,

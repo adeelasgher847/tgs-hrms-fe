@@ -61,8 +61,6 @@ function TabPanel({
   );
 }
 
-const ITEMS_PER_PAGE = 25;
-
 const Reports: React.FC = () => {
   const darkMode = useIsDarkMode();
   const [tab, setTab] = useState(0);

@@ -438,7 +438,7 @@ const LeaveRequestPage = () => {
 
     loadLeaves(shouldSkipFullPageLoader);
     previousViewModeRef.current = viewMode;
-  }, [currentPage, viewMode, role, currentUserId, loadLeaves]);
+  }, [currentPage, viewMode, role, currentUserId, loadLeaves, leaves.length]);
 
   if (initialLoading)
     return (
