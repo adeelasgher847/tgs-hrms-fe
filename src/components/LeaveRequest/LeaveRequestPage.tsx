@@ -40,6 +40,7 @@ const LeaveRequestPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 25; // Backend returns 25 records per page
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<'approved' | 'rejected' | null>(
@@ -168,8 +169,25 @@ const LeaveRequestPage = () => {
 
         setLeaves(Array.from(new Map(leavesData.map(l => [l.id, l])).values()));
 
-        setTotalPages(res.totalPages || 1);
-        setTotalItems(res.total || 0);
+        // Backend returns 25 records per page (fixed page size)
+        // If we get 25 records, there might be more pages
+        // If we get less than 25, it's the last page
+        const hasMorePages = leavesData.length === itemsPerPage;
+
+        // Use backend pagination info if available, otherwise estimate
+        if (res.totalPages && res.total) {
+          setTotalPages(res.totalPages);
+          setTotalItems(res.total);
+        } else {
+          // Fallback: estimate based on current page and records received
+          setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
+          setTotalItems(
+            hasMorePages
+              ? currentPage * itemsPerPage
+              : (currentPage - 1) * itemsPerPage + leavesData.length
+          );
+        }
+
         if (res.page && res.page !== currentPage) {
           setCurrentPage(res.page);
         }

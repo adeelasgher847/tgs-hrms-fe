@@ -61,8 +61,6 @@ function TabPanel({
   );
 }
 
-const ITEMS_PER_PAGE = 10;
-
 const Reports: React.FC = () => {
   const darkMode = useIsDarkMode();
   const [tab, setTab] = useState(0);
@@ -180,18 +178,69 @@ const Reports: React.FC = () => {
 
   const fetchAllLeaveReports = async (pageNum: number) => {
     try {
-      setLoading(true);
+      setLoadingTab(true);
       const data = await leaveReportApi.getAllLeaveReports(pageNum);
-      setAllLeaveReports(data.employeeReports || []);
-      setTotalPages(data.totalPages || 1);
-      setTotalRecords(data.total || 0);
-      setPage(data.page || 1);
+
+      // Handle both old and new API response structures
+      const employeeReports = Array.isArray(data.employeeReports)
+        ? data.employeeReports
+        : data.employeeReports &&
+            typeof data.employeeReports === 'object' &&
+            'items' in data.employeeReports
+          ? data.employeeReports.items || []
+          : [];
+
+      setAllLeaveReports(employeeReports);
+
+      // Extract pagination info from the correct location
+      let paginationTotalPages = data.totalPages;
+      let paginationTotal = data.total;
+      let paginationPage = data.page;
+
+      // If employeeReports is an object with pagination info, use that
+      if (
+        data.employeeReports &&
+        typeof data.employeeReports === 'object' &&
+        'items' in data.employeeReports
+      ) {
+        const reportsObj = data.employeeReports as {
+          items: unknown[];
+          total?: number;
+          page?: number;
+          totalPages?: number;
+        };
+        paginationTotalPages = reportsObj.totalPages ?? paginationTotalPages;
+        paginationTotal = reportsObj.total ?? paginationTotal;
+        paginationPage = reportsObj.page ?? paginationPage;
+      }
+
+      // Ensure we have valid pagination values
+      const finalTotalPages =
+        paginationTotalPages && paginationTotalPages > 0
+          ? paginationTotalPages
+          : 1;
+      const finalTotal =
+        paginationTotal && paginationTotal > 0
+          ? paginationTotal
+          : employeeReports.length;
+
+      setTotalPages(finalTotalPages);
+      setTotalRecords(finalTotal);
+      setPage(paginationPage || pageNum);
+
+      console.log('Pagination info:', {
+        totalPages: finalTotalPages,
+        total: finalTotal,
+        page: paginationPage || pageNum,
+        employeeReportsCount: employeeReports.length,
+      });
+
       setError(null);
     } catch (err: unknown) {
       console.error('Error fetching reports:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch reports');
     } finally {
-      setLoading(false);
+      setLoadingTab(false);
     }
   };
 
@@ -203,27 +252,32 @@ const Reports: React.FC = () => {
 
     const fetchData = async () => {
       try {
-        // For tab changes, use tab-specific loading instead of full page loading
-        setLoadingTab(true);
         setError(null);
 
         if (isAdminView) {
+          // fetchAllLeaveReports handles its own loading state
           await fetchAllLeaveReports(page);
-        } else if (tab === 0) {
-          const data = await leaveReportApi.getLeaveBalance();
-          setLeaveBalance(data.balances || []);
-        } else if (isManager && tab === 1) {
-          const now = new Date();
-          const data = await leaveReportApi.getTeamLeaveSummary(
-            now.getMonth() + 1,
-            now.getFullYear()
-          );
-          setTeamSummary(data.teamMembers || []);
+        } else {
+          // For tab changes, use tab-specific loading instead of full page loading
+          setLoadingTab(true);
+          if (tab === 0) {
+            const data = await leaveReportApi.getLeaveBalance();
+            setLeaveBalance(data.balances || []);
+          } else if (isManager && tab === 1) {
+            const now = new Date();
+            const data = await leaveReportApi.getTeamLeaveSummary(
+              now.getMonth() + 1,
+              now.getFullYear()
+            );
+            setTeamSummary(data.teamMembers || []);
+          }
         }
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Failed to fetch data');
       } finally {
-        setLoadingTab(false);
+        if (!isAdminView) {
+          setLoadingTab(false);
+        }
       }
     };
 
@@ -368,7 +422,21 @@ const Reports: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {allLeaveReports.length === 0 ? (
+                {loadingTab ? (
+                  <TableRow
+                    sx={{
+                      backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+                    }}
+                  >
+                    <TableCell
+                      colSpan={11}
+                      align='center'
+                      sx={{ color: darkMode ? '#ccc' : '#000' }}
+                    >
+                      <CircularProgress size={24} />
+                    </TableCell>
+                  </TableRow>
+                ) : allLeaveReports.length === 0 ? (
                   <TableRow
                     sx={{
                       backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
@@ -493,6 +561,8 @@ const Reports: React.FC = () => {
                 color='primary'
                 shape='rounded'
                 size='small'
+                showFirstButton
+                showLastButton
                 sx={{
                   '& .MuiPaginationItem-root': {
                     borderRadius: '50%',
@@ -505,9 +575,18 @@ const Reports: React.FC = () => {
                 variant='body2'
                 sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
               >
-                Showing {(page - 1) * ITEMS_PER_PAGE + 1}–
-                {Math.min(page * ITEMS_PER_PAGE, totalRecords)} of{' '}
-                {totalRecords} records
+                Showing page {page} of {totalPages} ({totalRecords} total
+                records)
+              </Typography>
+            </Box>
+          )}
+          {totalPages === 1 && totalRecords > 0 && (
+            <Box display='flex' justifyContent='center' mt={2}>
+              <Typography
+                variant='body2'
+                sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+              >
+                Showing all {totalRecords} records
               </Typography>
             </Box>
           )}

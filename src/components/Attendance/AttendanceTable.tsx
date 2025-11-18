@@ -127,7 +127,6 @@ const AttendanceTable = () => {
     }));
   };
 
-  // UPDATED: Function to handle events-based data with proper cross-day support
   const buildFromEvents = (
     eventsRaw: AttendanceEvent[],
     currentUserId: string,
@@ -152,7 +151,6 @@ const AttendanceTable = () => {
 
     const sessions: AttendanceRecord[] = [];
 
-    // Group events by user for cross-day compatibility
     const userEvents = new Map<
       string,
       Array<{
@@ -163,7 +161,6 @@ const AttendanceTable = () => {
       }>
     >();
 
-    // Group events by user
     for (const ev of events) {
       const userId = ev.user_id as string;
       if (!userEvents.has(userId)) {
@@ -177,7 +174,6 @@ const AttendanceTable = () => {
       });
     }
 
-    // Process each user's events chronologically
     for (const [userId, userEventList] of userEvents.entries()) {
       const openSessions: Array<{
         checkIn: {
@@ -190,7 +186,6 @@ const AttendanceTable = () => {
 
       for (const event of userEventList) {
         if (event.type === 'check-in') {
-          // Add new open session
           openSessions.push({
             checkIn: {
               id: event.id,
@@ -200,19 +195,16 @@ const AttendanceTable = () => {
             checkOut: null,
           });
         } else if (event.type === 'check-out') {
-          // Find the most recent open session (last check-in without check-out)
           const lastOpenIndex = openSessions.findIndex(
             session => !session.checkOut
           );
 
           if (lastOpenIndex !== -1) {
-            // Close the most recent open session
             openSessions[lastOpenIndex].checkOut = {
               id: event.id,
               timestamp: event.timestamp,
             };
           }
-          // If no open session found, we ignore orphaned check-outs
         }
       }
 

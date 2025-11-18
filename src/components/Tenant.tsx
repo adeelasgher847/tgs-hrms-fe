@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -30,6 +30,7 @@ import {
   Chip,
   Card,
   Pagination,
+  Avatar,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
@@ -37,11 +38,14 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   SystemTenantApi,
   type SystemTenant,
   type SystemTenantDetail,
 } from '../api/systemTenantApi';
+import companyApi from '../api/companyApi';
 
 type StatusFilterOption = 'All' | 'active' | 'suspended' | 'deleted';
 
@@ -79,68 +83,132 @@ export const TenantPage: React.FC = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [tenantForm, setTenantForm] = useState(createEmptyTenantForm);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editName, setEditName] = useState('');
   const [editTenantId, setEditTenantId] = useState<string | null>(null);
+  const [editCompanyName, setEditCompanyName] = useState('');
+  const [editDomain, setEditDomain] = useState('');
+  const [editLogo, setEditLogo] = useState('');
+  const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
+  const [editLogoPreview, setEditLogoPreview] = useState<string | null>(null);
+  const [uploadingEditLogo, setUploadingEditLogo] = useState(false);
+
+  const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const itemsPerPage = 25;
 
-  const fetchTenants = async () => {
-    try {
-      setIsLoading(true);
-      const res = await SystemTenantApi.getAll({ includeDeleted: true });
-      setTenants(res.data);
-    } catch (err) {
-      console.error(err);
-      setSnackbar({
-        open: true,
-        message: 'Failed to fetch tenants',
-        severity: 'error',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const fetchTenants = useCallback(
+    async (page: number = 1) => {
+      try {
+        setIsLoading(true);
+        const res = await SystemTenantApi.getAll({
+          page,
+          limit: itemsPerPage,
+          includeDeleted:
+            statusFilter === 'All' ? true : statusFilter === 'deleted',
+        });
+        let filtered = res.data;
+        if (statusFilter === 'active' || statusFilter === 'suspended') {
+          filtered = res.data.filter(
+            t => !t.isDeleted && t.status === statusFilter
+          );
+        } else if (statusFilter === 'deleted') {
+          filtered = res.data.filter(t => t.isDeleted);
+        }
+
+        setTenants(filtered);
+        const hasMorePages = res.data.length === itemsPerPage;
+        if (res.totalPages && res.total) {
+          setTotalPages(res.totalPages);
+          setTotalRecords(res.total);
+        } else {
+          setTotalPages(hasMorePages ? page + 1 : page);
+          setTotalRecords(
+            hasMorePages
+              ? page * itemsPerPage
+              : (page - 1) * itemsPerPage + res.data.length
+          );
+        }
+      } catch (err) {
+        console.error(err);
+        setSnackbar({
+          open: true,
+          message: 'Failed to fetch tenants',
+          severity: 'error',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [statusFilter, itemsPerPage]
+  );
 
   useEffect(() => {
-    fetchTenants();
-  }, []);
-
-  const filteredTenants = useMemo(() => {
-    return tenants.filter(t => {
-      if (statusFilter === 'deleted') return t.isDeleted;
-      if (statusFilter === 'active' || statusFilter === 'suspended')
-        return !t.isDeleted && t.status === statusFilter;
-      return true;
-    });
-  }, [tenants, statusFilter]);
-
-  const totalPages = Math.ceil(filteredTenants.length / itemsPerPage);
-  const paginatedTenants = filteredTenants.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+    fetchTenants(currentPage);
+  }, [currentPage, fetchTenants]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter]);
 
   const closeCreateModal = () => {
     setIsFormOpen(false);
     setTenantForm(createEmptyTenantForm());
+    setSelectedLogoFile(null);
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+    }
+    setLogoPreview(null);
+  };
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setSnackbar({
+        open: true,
+        message: 'Please select an image file',
+        severity: 'error',
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setSnackbar({
+        open: true,
+        message: 'File size should be less than 5MB',
+        severity: 'error',
+      });
+      return;
+    }
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+    }
+
+    setSelectedLogoFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setLogoPreview(previewUrl);
+  };
+
+  const handleRemoveLogoFile = () => {
+    setSelectedLogoFile(null);
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+    }
+    setLogoPreview(null);
   };
 
   const handleCreate = async () => {
-    const { name, domain, logo, adminName, adminEmail } = tenantForm;
-
-    const trimmedForm = {
-      name: name.trim(),
-      domain: domain.trim(),
-      logo: logo.trim(),
-      adminName: adminName.trim(),
-      adminEmail: adminEmail.trim(),
-    };
-
-    const hasEmptyFields = Object.values(trimmedForm).some(
-      value => value === ''
-    );
-    if (hasEmptyFields) {
+    const { name, domain, adminName, adminEmail } = tenantForm;
+    if (
+      !name.trim() ||
+      !domain.trim() ||
+      !adminName.trim() ||
+      !adminEmail.trim()
+    ) {
       setSnackbar({
         open: true,
         message: 'All fields are required',
@@ -149,8 +217,10 @@ export const TenantPage: React.FC = () => {
       return;
     }
 
+    // Logo is optional - if provided, it will be uploaded
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedForm.adminEmail)) {
+    if (!emailRegex.test(adminEmail.trim())) {
       setSnackbar({
         open: true,
         message: 'Please enter a valid admin email',
@@ -160,10 +230,7 @@ export const TenantPage: React.FC = () => {
     }
 
     const nameRegex = /^[A-Za-z\s]+$/;
-    if (
-      !nameRegex.test(trimmedForm.name) ||
-      !nameRegex.test(trimmedForm.adminName)
-    ) {
+    if (!nameRegex.test(name.trim()) || !nameRegex.test(adminName.trim())) {
       setSnackbar({
         open: true,
         message: 'Names can only contain letters and spaces',
@@ -173,7 +240,24 @@ export const TenantPage: React.FC = () => {
     }
 
     try {
-      await SystemTenantApi.create(trimmedForm);
+      setUploadingLogo(true);
+      const tenantData = {
+        name: name.trim(),
+        domain: domain.trim(),
+        logo: selectedLogoFile!,
+        adminName: adminName.trim(),
+        adminEmail: adminEmail.trim(),
+      };
+
+      console.log('Creating tenant with data:', {
+        name: tenantData.name,
+        domain: tenantData.domain,
+        logo: tenantData.logo?.name,
+        adminName: tenantData.adminName,
+        adminEmail: tenantData.adminEmail,
+      });
+
+      await SystemTenantApi.create(tenantData);
       fetchTenants();
       setSnackbar({
         open: true,
@@ -189,9 +273,23 @@ export const TenantPage: React.FC = () => {
       const maybeAxiosError = error as {
         response?: {
           status?: number;
-          data?: { message?: string };
+          data?: {
+            message?: string;
+            errors?: Array<{ field: string; message: string }>;
+          };
         };
       };
+
+      if (maybeAxiosError.response?.data?.errors) {
+        const errors = maybeAxiosError.response.data.errors;
+        const errorMessages = errors
+          .map(e => `${e.field}: ${e.message}`)
+          .join(', ');
+        errorMessage = `Validation errors: ${errorMessages}`;
+        console.error('Validation errors:', errors);
+      } else if (maybeAxiosError.response?.data?.message) {
+        errorMessage = maybeAxiosError.response.data.message;
+      }
 
       const alreadyExists =
         maybeAxiosError.response?.status === 409 ||
@@ -208,22 +306,73 @@ export const TenantPage: React.FC = () => {
         message: errorMessage,
         severity: 'error',
       });
+    } finally {
+      setUploadingLogo(false);
     }
   };
-  const handleUpdate = async (
-    tenantId: string,
-    updatedData: { name: string }
-  ) => {
+  const handleUpdate = async () => {
+    if (!editTenantId || !editCompanyName.trim() || !editDomain.trim()) {
+      setSnackbar({
+        open: true,
+        message: 'Company name and domain are required',
+        severity: 'error',
+      });
+      return;
+    }
+
     try {
-      const updatedTenant = await SystemTenantApi.update(tenantId, updatedData);
+      setUploadingEditLogo(true);
+      let logoUrl = editLogo || '';
+      if (editLogoFile) {
+        try {
+          const uploadedLogoUrl =
+            await companyApi.uploadCompanyLogo(editLogoFile);
+          logoUrl =
+            typeof uploadedLogoUrl === 'string'
+              ? uploadedLogoUrl
+              : (uploadedLogoUrl as { logo_url?: string })?.logo_url ||
+                editLogo ||
+                '';
+        } catch (uploadError) {
+          console.error('Failed to upload logo:', uploadError);
+          setSnackbar({
+            open: true,
+            message: 'Failed to upload logo',
+            severity: 'error',
+          });
+          setUploadingEditLogo(false);
+          return;
+        }
+      }
+
+      const updateData = {
+        tenantId: editTenantId,
+        companyName: editCompanyName.trim(),
+        domain: editDomain.trim(),
+        logo: logoUrl,
+      };
+
+      const updatedTenant = await SystemTenantApi.update(updateData);
       setTenants(prev =>
-        prev.map(t => (t.id === tenantId ? { ...t, ...updatedTenant } : t))
+        prev.map(t => (t.id === editTenantId ? { ...t, ...updatedTenant } : t))
       );
       setSnackbar({
         open: true,
         message: 'Tenant updated successfully',
         severity: 'success',
       });
+      setIsEditOpen(false);
+      // Reset edit form
+      setEditTenantId(null);
+      setEditCompanyName('');
+      setEditDomain('');
+      setEditLogo('');
+      setEditLogoFile(null);
+      if (editLogoPreview) {
+        URL.revokeObjectURL(editLogoPreview);
+      }
+      setEditLogoPreview(null);
+      fetchTenants(currentPage);
     } catch (error) {
       console.error('Failed to update tenant:', error);
       setSnackbar({
@@ -231,7 +380,48 @@ export const TenantPage: React.FC = () => {
         message: 'Failed to update tenant',
         severity: 'error',
       });
+    } finally {
+      setUploadingEditLogo(false);
     }
+  };
+
+  const handleEditLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setSnackbar({
+        open: true,
+        message: 'Please select an image file',
+        severity: 'error',
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setSnackbar({
+        open: true,
+        message: 'File size should be less than 5MB',
+        severity: 'error',
+      });
+      return;
+    }
+
+    if (editLogoPreview) {
+      URL.revokeObjectURL(editLogoPreview);
+    }
+
+    setEditLogoFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setEditLogoPreview(previewUrl);
+  };
+
+  const handleRemoveEditLogoFile = () => {
+    setEditLogoFile(null);
+    if (editLogoPreview) {
+      URL.revokeObjectURL(editLogoPreview);
+    }
+    setEditLogoPreview(null);
   };
 
   const toggleStatus = async (tenant: SystemTenant) => {
@@ -312,6 +502,44 @@ export const TenantPage: React.FC = () => {
     }
   };
 
+  const handleOpenEdit = async (tenant: SystemTenant) => {
+    try {
+      setEditTenantId(tenant.id);
+      setEditCompanyName(tenant.name);
+      setEditDomain('');
+      setEditLogo('');
+      try {
+        await SystemTenantApi.getById(tenant.id);
+      } catch (err) {
+        console.log('Could not fetch tenant details:', err);
+      }
+
+      // Try to get company details if available
+      try {
+        const companyDetails = await companyApi.getCompanyDetails();
+        if (companyDetails && companyDetails.tenant_id === tenant.id) {
+          setEditDomain(companyDetails.domain || '');
+          setEditLogo(companyDetails.logo_url || '');
+          if (companyDetails.logo_url) {
+            setEditLogoPreview(companyDetails.logo_url);
+          }
+        }
+      } catch (err) {
+        console.log('Could not fetch company details:', err);
+        // Continue - user can enter manually
+      }
+
+      setIsEditOpen(true);
+    } catch (error) {
+      console.error('Failed to open edit modal:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to load tenant details',
+        severity: 'error',
+      });
+    }
+  };
+
   return (
     <Box>
       {/* Header */}
@@ -376,7 +604,7 @@ export const TenantPage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {paginatedTenants.map(t => (
+                {tenants.map(t => (
                   <TableRow key={t.id} hover>
                     <TableCell>{t.name}</TableCell>
                     <TableCell>
@@ -403,11 +631,7 @@ export const TenantPage: React.FC = () => {
                           <Tooltip title='Edit Tenant'>
                             <IconButton
                               color='primary'
-                              onClick={() => {
-                                setEditTenantId(t.id);
-                                setEditName(t.name);
-                                setIsEditOpen(true);
-                              }}
+                              onClick={() => handleOpenEdit(t)}
                             >
                               <EditIcon />
                             </IconButton>
@@ -439,7 +663,7 @@ export const TenantPage: React.FC = () => {
                   </TableRow>
                 ))}
 
-                {paginatedTenants.length === 0 && (
+                {tenants.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} align='center'>
                       <Alert severity='info' sx={{ my: 2, borderRadius: 2 }}>
@@ -453,8 +677,6 @@ export const TenantPage: React.FC = () => {
           </TableContainer>
         </Paper>
       )}
-
-      {/*  Client-side Pagination */}
       {totalPages > 1 && (
         <Box display='flex' justifyContent='center' mt={2}>
           <Pagination
@@ -467,11 +689,11 @@ export const TenantPage: React.FC = () => {
           />
         </Box>
       )}
-      {filteredTenants.length > 0 && (
+      {tenants.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {totalPages} ({filteredTenants.length}{' '}
-            total records)
+            Showing page {currentPage} of {totalPages} ({totalRecords} total
+            records)
           </Typography>
         </Box>
       )}
@@ -488,77 +710,167 @@ export const TenantPage: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           {tenantDetail ? (
-            <Box sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                {/* Basic Info */}
-                <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                  <Card variant='outlined' sx={{ p: 2, height: '100%' }}>
-                    <Typography variant='h6' gutterBottom color='primary'>
-                      Basic Information
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Tenant + Logo Section */}
+              <Card
+                sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 3 }}
+              >
+                {tenantDetail.logo &&
+                tenantDetail.logo !== '[object Object]' ? (
+                  <img
+                    src={tenantDetail.logo}
+                    alt='Tenant Logo'
+                    style={{
+                      width: 70,
+                      height: 70,
+                      borderRadius: '10px',
+                      objectFit: 'cover',
+                      border: '1px solid #ddd',
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: 70,
+                      height: 70,
+                      backgroundColor: '#eee',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      fontSize: 12,
+                      color: '#777',
+                      border: '1px solid #ddd',
+                    }}
+                  >
+                    No Logo
+                  </Box>
+                )}
+
+                <Box>
+                  <Typography variant='h6' fontWeight={600}>
+                    {tenantDetail.name}
+                  </Typography>
+                </Box>
+              </Card>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: 2,
+                }}
+              >
+                {/* Tenant Info */}
+                <Card variant='outlined' sx={{ p: 2 }}>
+                  <Typography
+                    variant='subtitle1'
+                    color='primary'
+                    fontWeight={600}
+                  >
+                    Tenant Information
+                  </Typography>
+                  <Box sx={{ mt: 1 }}>
+                    <Typography>
+                      <strong>Domain:</strong> {tenantDetail.domain}
                     </Typography>
-                    <Box
-                      sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
+                    <Typography>
+                      <strong>Status:</strong>{' '}
+                      <Chip
+                        label={tenantDetail.status}
+                        color={
+                          tenantDetail.status === 'active'
+                            ? 'success'
+                            : tenantDetail.status === 'suspended'
+                              ? 'warning'
+                              : 'error'
+                        }
+                        size='small'
+                        sx={{ ml: 1 }}
+                      />
+                    </Typography>
+                    <Typography>
+                      <strong>Created:</strong>{' '}
+                      {new Date(tenantDetail.created_at).toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Card>
+
+                {/* Company Info */}
+                {tenantDetail.company && (
+                  <Card variant='outlined' sx={{ p: 2 }}>
+                    <Typography
+                      variant='subtitle1'
+                      color='primary'
+                      fontWeight={600}
                     >
-                      <Typography variant='body2'>
-                        <strong>Name:</strong> {tenantDetail.name}
+                      Company Information
+                    </Typography>
+                    <Box sx={{ mt: 1 }}>
+                      <Typography>
+                        <strong>Name:</strong>{' '}
+                        {tenantDetail.company.company_name}
                       </Typography>
-                      <Typography
-                        variant='body2'
-                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                      >
-                        <strong>Status:</strong>
+                      <Typography>
+                        <strong>Plan:</strong> {tenantDetail.company.plan_id}
+                      </Typography>
+                      <Typography>
+                        <strong>Paid:</strong>{' '}
                         <Chip
-                          label={tenantDetail.status}
+                          label={tenantDetail.company.is_paid ? 'Paid' : 'Free'}
                           color={
-                            tenantDetail.status === 'active'
-                              ? 'success'
-                              : tenantDetail.status === 'suspended'
-                                ? 'warning'
-                                : 'error'
+                            tenantDetail.company.is_paid ? 'success' : 'warning'
                           }
                           size='small'
+                          sx={{ ml: 1 }}
                         />
                       </Typography>
                     </Box>
                   </Card>
-                </Box>
-
-                {/* Counts */}
-                <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                  <Card variant='outlined' sx={{ p: 2, height: '100%' }}>
-                    <Typography variant='h6' gutterBottom color='primary'>
-                      Summary
-                    </Typography>
-                    <Box
-                      sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
-                    >
-                      <Typography variant='body2'>
-                        <strong>Departments:</strong>{' '}
-                        {tenantDetail.departmentCount}
-                      </Typography>
-                      <Typography variant='body2'>
-                        <strong>Employees:</strong> {tenantDetail.employeeCount}
-                      </Typography>
-                    </Box>
-                  </Card>
-                </Box>
-
-                {/* Departments List */}
-                {tenantDetail.departments.length > 0 && (
-                  <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                    <Card variant='outlined' sx={{ p: 2 }}>
-                      <Typography variant='h6' gutterBottom color='primary'>
-                        Departments
-                      </Typography>
-                      <ul style={{ paddingLeft: 20 }}>
-                        {tenantDetail.departments.map(dep => (
-                          <li key={dep.id}>{dep.name}</li>
-                        ))}
-                      </ul>
-                    </Card>
-                  </Box>
                 )}
+
+                {/* Summary */}
+                <Card variant='outlined' sx={{ p: 2 }}>
+                  <Typography
+                    variant='subtitle1'
+                    color='primary'
+                    fontWeight={600}
+                  >
+                    Summary
+                  </Typography>
+                  <Box sx={{ mt: 1 }}>
+                    <Typography>
+                      <strong>Departments:</strong>{' '}
+                      {tenantDetail.departmentCount}
+                    </Typography>
+                    <Typography>
+                      <strong>Employees:</strong> {tenantDetail.employeeCount}
+                    </Typography>
+                  </Box>
+                </Card>
               </Box>
+
+              {/* Departments */}
+              {tenantDetail.departments?.length > 0 && (
+                <Card variant='outlined' sx={{ p: 2 }}>
+                  <Typography
+                    variant='subtitle1'
+                    color='primary'
+                    fontWeight={600}
+                  >
+                    Departments
+                  </Typography>
+                  <Box sx={{ mt: 1 }}>
+                    {tenantDetail.departments.map(dep => (
+                      <Chip
+                        key={dep.id}
+                        label={dep.name}
+                        size='small'
+                        sx={{ mr: 1, mb: 1 }}
+                      />
+                    ))}
+                  </Box>
+                </Card>
+              )}
             </Box>
           ) : (
             <Box display='flex' justifyContent='center' mt={2}>
@@ -566,6 +878,7 @@ export const TenantPage: React.FC = () => {
             </Box>
           )}
         </DialogContent>
+
         <DialogActions sx={{ p: 2 }}>
           <Button
             onClick={() => setIsDetailOpen(false)}
@@ -612,17 +925,63 @@ export const TenantPage: React.FC = () => {
             sx={{ mt: 2 }}
             placeholder='example.com'
           />
-          <TextField
-            label='Logo URL'
-            value={tenantForm.logo}
-            onChange={e =>
-              setTenantForm(prev => ({ ...prev, logo: e.target.value }))
-            }
-            fullWidth
-            sx={{ mt: 2 }}
-            placeholder='https://example.com/logo.png'
-            type='url'
-          />
+
+          {/* Logo Upload Section */}
+          <Box sx={{ mt: 2 }}>
+            <input
+              accept='image/*'
+              style={{ display: 'none' }}
+              id='logo-upload-button'
+              type='file'
+              onChange={handleLogoFileChange}
+            />
+            <label htmlFor='logo-upload-button'>
+              <Button
+                variant='outlined'
+                component='span'
+                startIcon={<CloudUploadIcon />}
+                fullWidth
+                sx={{ mb: 2 }}
+              >
+                {selectedLogoFile ? 'Change Logo' : 'Upload Company Logo'}
+              </Button>
+            </label>
+            {logoPreview && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  mt: 2,
+                  p: 2,
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 1,
+                }}
+              >
+                <Avatar
+                  src={logoPreview}
+                  alt='Logo preview'
+                  sx={{ width: 80, height: 80 }}
+                  variant='rounded'
+                />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant='body2' fontWeight='bold'>
+                    {selectedLogoFile?.name}
+                  </Typography>
+                  <Typography variant='caption' color='text.secondary'>
+                    {(selectedLogoFile?.size || 0) / 1024} KB
+                  </Typography>
+                </Box>
+                <IconButton
+                  onClick={handleRemoveLogoFile}
+                  color='error'
+                  size='small'
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            )}
+          </Box>
           <TextField
             label='Admin Name'
             value={tenantForm.adminName}
@@ -651,9 +1010,22 @@ export const TenantPage: React.FC = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeCreateModal}>Cancel</Button>
-          <Button variant='contained' onClick={handleCreate}>
-            Save
+          <Button onClick={closeCreateModal} disabled={uploadingLogo}>
+            Cancel
+          </Button>
+          <Button
+            variant='contained'
+            onClick={handleCreate}
+            disabled={uploadingLogo}
+          >
+            {uploadingLogo ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={16} />
+                Uploading...
+              </Box>
+            ) : (
+              'Save'
+            )}
           </Button>
         </DialogActions>
       </Dialog>
@@ -682,46 +1054,142 @@ export const TenantPage: React.FC = () => {
       {/* Edit Tenant Modal */}
       <Dialog
         open={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
+        onClose={() => {
+          setIsEditOpen(false);
+          // Reset edit form
+          setEditTenantId(null);
+          setEditCompanyName('');
+          setEditDomain('');
+          setEditLogo('');
+          setEditLogoFile(null);
+          if (editLogoPreview) {
+            URL.revokeObjectURL(editLogoPreview);
+          }
+          setEditLogoPreview(null);
+        }}
         fullWidth
         maxWidth='sm'
       >
         <DialogTitle>Edit Tenant</DialogTitle>
         <DialogContent dividers>
           <TextField
-            label='Tenant Name'
-            value={editName}
+            label='Company Name'
+            value={editCompanyName}
             onChange={e => {
               const value = e.target.value;
               if (/^[A-Za-z\s]*$/.test(value)) {
-                setEditName(value);
+                setEditCompanyName(value);
               }
             }}
             fullWidth
             sx={{ mt: 2 }}
             inputProps={{ maxLength: 50 }}
-            helperText='Only alphabets are allowed'
+            helperText='Only alphabets and spaces are allowed'
+            required
           />
+          <TextField
+            label='Domain'
+            value={editDomain}
+            onChange={e => setEditDomain(e.target.value)}
+            fullWidth
+            sx={{ mt: 2 }}
+            placeholder='example.com'
+            required
+          />
+
+          {/* Logo Upload Section */}
+          <Box sx={{ mt: 2 }}>
+            <input
+              accept='image/*'
+              style={{ display: 'none' }}
+              id='edit-logo-upload-button'
+              type='file'
+              onChange={handleEditLogoFileChange}
+            />
+            <label htmlFor='edit-logo-upload-button'>
+              <Button
+                variant='outlined'
+                component='span'
+                startIcon={<CloudUploadIcon />}
+                fullWidth
+                sx={{ mb: 2 }}
+              >
+                {editLogoFile ? 'Change Logo' : 'Upload Company Logo'}
+              </Button>
+            </label>
+            {(editLogoPreview || editLogo) && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  mt: 2,
+                  p: 2,
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 1,
+                }}
+              >
+                <Avatar
+                  src={editLogoPreview || editLogo}
+                  alt='Logo preview'
+                  sx={{ width: 80, height: 80 }}
+                  variant='rounded'
+                />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant='body2' fontWeight='bold'>
+                    {editLogoFile?.name || 'Current Logo'}
+                  </Typography>
+                  {editLogoFile && (
+                    <Typography variant='caption' color='text.secondary'>
+                      {(editLogoFile.size || 0) / 1024} KB
+                    </Typography>
+                  )}
+                </Box>
+                {editLogoFile && (
+                  <IconButton
+                    onClick={handleRemoveEditLogoFile}
+                    color='error'
+                    size='small'
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                )}
+              </Box>
+            )}
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsEditOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => {
+              setIsEditOpen(false);
+              // Reset edit form
+              setEditTenantId(null);
+              setEditCompanyName('');
+              setEditDomain('');
+              setEditLogo('');
+              setEditLogoFile(null);
+              if (editLogoPreview) {
+                URL.revokeObjectURL(editLogoPreview);
+              }
+              setEditLogoPreview(null);
+            }}
+            disabled={uploadingEditLogo}
+          >
+            Cancel
+          </Button>
           <Button
             variant='contained'
-            onClick={async () => {
-              if (!editTenantId || !editName.trim()) {
-                setSnackbar({
-                  open: true,
-                  message: 'Tenant name is required',
-                  severity: 'error',
-                });
-                return;
-              }
-              await handleUpdate(editTenantId, { name: editName.trim() });
-              setIsEditOpen(false);
-              setEditName('');
-            }}
+            onClick={handleUpdate}
+            disabled={uploadingEditLogo}
           >
-            Update
+            {uploadingEditLogo ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={16} />
+                Updating...
+              </Box>
+            ) : (
+              'Update'
+            )}
           </Button>
         </DialogActions>
       </Dialog>

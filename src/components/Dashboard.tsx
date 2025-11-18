@@ -63,7 +63,7 @@ const Dashboard: React.FC = () => {
   const [logs, setLogs] = useState<RecentLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 25; // Backend returns 25 records per page
 
   useEffect(() => {
     const fetchData = async () => {
@@ -120,11 +120,17 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  const totalPages = Math.ceil(logs.length / itemsPerPage);
-  const paginatedLogs = logs.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Backend returns 25 records per page (fixed page size)
+  // If we get 25 records, there might be more pages
+  // If we get less than 25, it's the last page
+  const hasMorePages = logs.length === itemsPerPage;
+  // Since we don't have total count, we'll show pagination based on current page and whether there are more records
+  const showPagination = currentPage > 1 || hasMorePages;
+  // Calculate estimated total records
+  const estimatedTotalRecords = hasMorePages
+    ? currentPage * itemsPerPage
+    : (currentPage - 1) * itemsPerPage + logs.length;
+  const estimatedTotalPages = hasMorePages ? currentPage + 1 : currentPage;
 
   return (
     <Box
@@ -141,7 +147,7 @@ const Dashboard: React.FC = () => {
         sx={{
           direction: language === 'ar' ? 'rtl' : 'ltr',
           color: darkMode ? '#8f8f8f' : '#000',
-          textAlign: { xs: 'center', md: 'left' },
+          textAlign: { xs: 'left'},
         }}
       >
         {lang.title}
@@ -159,10 +165,9 @@ const Dashboard: React.FC = () => {
           <Paper
             elevation={3}
             sx={{
-              p: { xs: 2, sm: 3 },
               width: '100%',
-              borderRadius: 2,
-              backgroundColor: theme.palette.background.paper,
+              borderRadius: 1,
+              backgroundColor: 'unset',
               boxShadow: 'none',
             }}
           >
@@ -191,7 +196,7 @@ const Dashboard: React.FC = () => {
             sx={{
               p: { xs: 2, sm: 3 },
               width: '100%',
-              borderRadius: 2,
+              borderRadius: 1,
               backgroundColor: theme.palette.background.paper,
               boxShadow: 'none',
             }}
@@ -217,7 +222,7 @@ const Dashboard: React.FC = () => {
                 elevation={3}
                 sx={{
                   p: { xs: 2, sm: 3 },
-                  borderRadius: 2,
+                  borderRadius: 1,
                   backgroundColor: theme.palette.background.paper,
                   display: 'flex',
                   flexDirection: 'column',
@@ -266,6 +271,7 @@ const Dashboard: React.FC = () => {
                       overflowX: 'auto',
                       px: 2,
                       pb: 2,
+                      maxHeight: '200px', // Fixed height to show scrollbar after ~4 records
                     }}
                   >
                     <Table size='small' stickyHeader>
@@ -319,7 +325,7 @@ const Dashboard: React.FC = () => {
             elevation={3}
             sx={{
               p: { xs: 2, sm: 3 },
-              borderRadius: 2,
+              borderRadius: 1,
               backgroundColor: theme.palette.background.paper,
               boxShadow: 'none',
             }}
@@ -371,14 +377,14 @@ const Dashboard: React.FC = () => {
                         <CircularProgress />
                       </TableCell>
                     </TableRow>
-                  ) : paginatedLogs.length === 0 ? (
+                  ) : logs.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} align='center'>
                         No logs found
                       </TableCell>
                     </TableRow>
                   ) : (
-                    paginatedLogs.map(log => (
+                    logs.map(log => (
                       <TableRow key={log.id} hover>
                         <TableCell>{log.action}</TableCell>
                         <TableCell>{log.entityType}</TableCell>
@@ -394,10 +400,10 @@ const Dashboard: React.FC = () => {
               </Table>
             </Box>
 
-            {totalPages > 1 && (
+            {showPagination && (
               <Box display='flex' justifyContent='center' mt={2}>
                 <Pagination
-                  count={totalPages}
+                  count={estimatedTotalPages}
                   page={currentPage}
                   onChange={(_, page) => setCurrentPage(page)}
                   color='primary'
@@ -410,8 +416,8 @@ const Dashboard: React.FC = () => {
             {logs.length > 0 && (
               <Box display='flex' justifyContent='center' mt={1}>
                 <Typography variant='body2' color='textSecondary'>
-                  Showing page {currentPage} of {totalPages} ({logs.length}{' '}
-                  total records)
+                  Showing page {currentPage} of {estimatedTotalPages} (
+                  {estimatedTotalRecords} total records)
                 </Typography>
               </Box>
             )}

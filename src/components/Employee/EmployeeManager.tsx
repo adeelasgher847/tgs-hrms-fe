@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Button,
@@ -97,6 +97,7 @@ const EmployeeManager: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 25; // Backend returns 25 records per page
 
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [designationFilter, setDesignationFilter] = useState('');
@@ -116,6 +117,10 @@ const EmployeeManager: React.FC = () => {
   // View modal state
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
+
+  // Track initial mount to prevent duplicate API calls
+  const isInitialMount = useRef(true);
+  const isLoadingRef = useRef(false);
 
   // Dark mode
   const bgColor = darkMode ? '#111' : '#fff';
@@ -164,26 +169,77 @@ const EmployeeManager: React.FC = () => {
     }
   }, []);
 
-  const loadEmployees = useCallback(async (page: number = 1) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loadEmployees = useCallback(
+    async (page: number = 1) => {
+      // Prevent duplicate calls
+      if (isLoadingRef.current) {
+        return;
+      }
 
-      const filters = {
-        departmentId: departmentFilter || undefined,
-        designationId: designationFilter || undefined,
-      };
+      try {
+        isLoadingRef.current = true;
+        setLoading(true);
+        setError(null);
 
-      const response = await employeeApi.getAllEmployees(filters, page);
+        const filters = {
+          departmentId: departmentFilter || undefined,
+          designationId: designationFilter || undefined,
+        };
 
-      // If requested page exceeds available totalPages (possible after filters), clamp and refetch
-      if (response.totalPages > 0 && page > response.totalPages) {
-        setCurrentPage(response.totalPages);
-        const retry = await employeeApi.getAllEmployees(
-          filters,
-          response.totalPages
-        );
-        const convertedEmployeesRetry: Employee[] = retry.items.map(emp => ({
+        const response = await employeeApi.getAllEmployees(filters, page);
+
+        // If requested page exceeds available totalPages (possible after filters), clamp and refetch
+        if (response.totalPages > 0 && page > response.totalPages) {
+          setCurrentPage(response.totalPages);
+          const retry = await employeeApi.getAllEmployees(
+            filters,
+            response.totalPages
+          );
+          const convertedEmployeesRetry: Employee[] = retry.items.map(emp => ({
+            id: emp.id,
+            user_id: emp.user_id,
+            name: emp.name,
+            firstName: emp.firstName,
+            lastName: emp.lastName,
+            email: emp.email,
+            phone: emp.phone,
+            departmentId: emp.departmentId,
+            designationId: emp.designationId,
+            role_name: emp.role_name,
+            status: emp.status,
+            cnic_number: emp.cnic_number,
+            profile_picture: emp.profile_picture,
+            cnic_picture: emp.cnic_picture,
+            cnic_back_picture: emp.cnic_back_picture,
+            department: emp.department || {
+              id: '',
+              name: '',
+              description: '',
+              tenantId: '',
+              createdAt: '',
+              updatedAt: '',
+            },
+            designation: emp.designation || {
+              id: '',
+              title: '',
+              tenantId: '',
+              departmentId: '',
+              createdAt: '',
+              updatedAt: '',
+            },
+            tenantId: emp.tenantId,
+            createdAt: emp.createdAt,
+            updatedAt: emp.updatedAt,
+          }));
+
+          setEmployees(convertedEmployeesRetry);
+          setTotalPages(retry.totalPages);
+          setTotalItems(retry.total);
+          return;
+        }
+
+        // Convert BackendEmployee to Employee
+        const convertedEmployees: Employee[] = response.items.map(emp => ({
           id: emp.id,
           user_id: emp.user_id,
           name: emp.name,
@@ -220,80 +276,72 @@ const EmployeeManager: React.FC = () => {
           updatedAt: emp.updatedAt,
         }));
 
-        setEmployees(convertedEmployeesRetry);
-        setTotalPages(retry.totalPages);
-        setTotalItems(retry.total);
-        return;
+        setEmployees(convertedEmployees);
+
+        // Backend returns 25 records per page (fixed page size)
+        // If we get 25 records, there might be more pages
+        // If we get less than 25, it's the last page
+        const hasMorePages = convertedEmployees.length === itemsPerPage;
+
+        // Use backend pagination info if available, otherwise estimate
+        if (response.totalPages && response.total) {
+          setCurrentPage(response.page);
+          setTotalPages(response.totalPages);
+          setTotalItems(response.total);
+        } else {
+          // Fallback: estimate based on current page and records received
+          const actualPage = response.page || page;
+          setCurrentPage(actualPage);
+          setTotalPages(hasMorePages ? actualPage + 1 : actualPage);
+          setTotalItems(
+            hasMorePages
+              ? actualPage * itemsPerPage
+              : (actualPage - 1) * itemsPerPage + convertedEmployees.length
+          );
+        }
+      } catch (error: unknown) {
+        const errorResult = extractErrorMessage(error);
+        setError(errorResult.message);
+        setEmployees([]);
+        setTotalPages(1);
+        setTotalItems(0);
+      } finally {
+        setLoading(false);
+        isLoadingRef.current = false;
       }
+    },
+    [departmentFilter, designationFilter]
+  );
 
-      // Convert BackendEmployee to Employee
-      const convertedEmployees: Employee[] = response.items.map(emp => ({
-        id: emp.id,
-        user_id: emp.user_id,
-        name: emp.name,
-        firstName: emp.firstName,
-        lastName: emp.lastName,
-        email: emp.email,
-        phone: emp.phone,
-        departmentId: emp.departmentId,
-        designationId: emp.designationId,
-        role_name: emp.role_name,
-        status: emp.status,
-        cnic_number: emp.cnic_number,
-        profile_picture: emp.profile_picture,
-        cnic_picture: emp.cnic_picture,
-        cnic_back_picture: emp.cnic_back_picture,
-        department: emp.department || {
-          id: '',
-          name: '',
-          description: '',
-          tenantId: '',
-          createdAt: '',
-          updatedAt: '',
-        },
-        designation: emp.designation || {
-          id: '',
-          title: '',
-          tenantId: '',
-          departmentId: '',
-          createdAt: '',
-          updatedAt: '',
-        },
-        tenantId: emp.tenantId,
-        createdAt: emp.createdAt,
-        updatedAt: emp.updatedAt,
-      }));
-
-      setEmployees(convertedEmployees);
-
-      // Update pagination state
-      setCurrentPage(response.page);
-      setTotalPages(response.totalPages);
-      setTotalItems(response.total);
-    } catch (error: unknown) {
-      const errorResult = extractErrorMessage(error);
-      setError(errorResult.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [departmentFilter, designationFilter]);
+  // Mark initial mount as complete after first render
+  useEffect(() => {
+    isInitialMount.current = false;
+  }, []);
 
   // Load employees on component mount
   useEffect(() => {
-    loadEmployees(1);
     loadDepartmentsAndDesignations();
-  }, [loadEmployees, loadDepartmentsAndDesignations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Re-fetch from backend when filters change, reset to first page
   useEffect(() => {
+    // Skip on initial mount to prevent duplicate API call
+    if (isInitialMount.current) {
+      return;
+    }
     setCurrentPage(1);
-    loadEmployees(1);
-  }, [departmentFilter, designationFilter, loadEmployees]);
+  }, [departmentFilter, designationFilter]);
+
+  // Load employees when page or filters change
+  useEffect(() => {
+    loadEmployees(currentPage);
+  }, [currentPage, departmentFilter, designationFilter, loadEmployees]);
 
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    loadEmployees(page);
+    // loadEmployees will be called automatically by useEffect when currentPage changes
   };
 
   const handleAddEmployee = async (
@@ -517,6 +565,7 @@ const EmployeeManager: React.FC = () => {
     updates: Partial<EmployeeDto> & {
       designationId?: string;
       password?: string;
+      role?: string;
       role_name?: string;
       team_id?: string;
       cnicNumber?: string;
@@ -537,10 +586,13 @@ const EmployeeManager: React.FC = () => {
           ? updates.designationId
           : editing.designationId;
 
+      // Handle role update - check both role and role_name from form
       const nextRoleName =
-        updates.role_name && updates.role_name !== ''
-          ? updates.role_name
-          : editing.role_name;
+        updates.role_name && updates.role_name.trim() !== ''
+          ? updates.role_name.trim()
+          : (updates.role && updates.role.trim() !== ''
+              ? updates.role.trim()
+              : editing.role_name);
 
       const updatedEmployee = await employeeApi.updateEmployee(editing.id, {
         first_name: updates.first_name,
@@ -586,12 +638,14 @@ const EmployeeManager: React.FC = () => {
                 phone: updatedEmployee.phone,
                 departmentId: newDepartmentId,
                 designationId: nextDesignationId,
-                role_name: updatedEmployee.role_name || emp.role_name,
+                role_name: updatedEmployee.role_name || nextRoleName || emp.role_name,
                 status: updatedEmployee.status || emp.status,
                 cnic_number: updatedEmployee.cnic_number || emp.cnic_number,
-                profile_picture: updatedEmployee.profile_picture || emp.profile_picture,
+                profile_picture:
+                  updatedEmployee.profile_picture || emp.profile_picture,
                 cnic_picture: updatedEmployee.cnic_picture || emp.cnic_picture,
-                cnic_back_picture: updatedEmployee.cnic_back_picture || emp.cnic_back_picture,
+                cnic_back_picture:
+                  updatedEmployee.cnic_back_picture || emp.cnic_back_picture,
                 department: emp.department
                   ? {
                       ...emp.department,
@@ -751,13 +805,16 @@ const EmployeeManager: React.FC = () => {
   const filters = { page: '1' };
 
   // Build absolute media URL from backend path
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
   const toAbsoluteUrl = (path?: string | null) => {
     if (!path) return '';
     const trimmed = path.trim();
     const isAbsolute = /^https?:\/\//i.test(trimmed);
     const base = API_BASE_URL.replace(/\/$/, '');
-    const url = isAbsolute ? trimmed : `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+    const url = isAbsolute
+      ? trimmed
+      : `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
     return `${url}?t=${Date.now()}`;
   };
 
@@ -1091,6 +1148,7 @@ const EmployeeManager: React.FC = () => {
                     profilePicture: toAbsoluteUrl(editing.profile_picture),
                     cnicFrontPicture: toAbsoluteUrl(editing.cnic_picture),
                     cnicBackPicture: toAbsoluteUrl(editing.cnic_back_picture),
+                    role: editing.role_name || '',
                     role_name: editing.role_name || '',
                     designationId: editing.designationId,
                     departmentId: editing.departmentId,

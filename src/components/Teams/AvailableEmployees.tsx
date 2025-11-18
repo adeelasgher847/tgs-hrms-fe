@@ -189,7 +189,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
   useEffect(() => {
     const loadTeams = async () => {
       try {
-        const response = await teamApiService.getAllTeams(1);
+        const response = await teamApiService.getAllTeams(null); // Pass null to get all teams for dropdown
         setTeams(response.items || []);
       } catch {
         setTeams([]);

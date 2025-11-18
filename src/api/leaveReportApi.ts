@@ -48,11 +48,40 @@ export interface LeaveBalanceResponse {
 }
 
 export interface AllLeaveReportsResponse {
-  employeeReports: EmployeeReport[];
+  period?: {
+    year: number;
+    startDate: string;
+    endDate: string;
+  };
+  organizationStats?: {
+    totalEmployees: number;
+    employeesOnLeave: number;
+    totalLeaveDays: number;
+    totalPendingDays: number;
+    totalLeaveRequests: number;
+    approvedRequests: number;
+    pendingRequests: number;
+    rejectedRequests: number;
+  };
+  employeeReports:
+    | EmployeeReport[]
+    | {
+        items: EmployeeReport[];
+        total?: number;
+        page?: number;
+        limit?: number;
+        totalPages?: number;
+      };
   total?: number;
   page?: number;
   limit?: number;
   totalPages?: number;
+  leaveTypes?: Array<{
+    id: string;
+    name: string;
+    maxDaysPerYear: number;
+    carryForward: boolean;
+  }>;
 }
 
 export interface LeaveRecord {
@@ -233,8 +262,43 @@ export const leaveReportApi = {
       }
     };
 
-    if (Array.isArray(data.employeeReports)) {
-      const fixedReports = data.employeeReports.map((emp: EmployeeReport) => {
+    // Handle new API response structure with nested employeeReports.items
+    let employeeReportsData: EmployeeReport[] = [];
+    let paginationInfo: {
+      total?: number;
+      page?: number;
+      limit?: number;
+      totalPages?: number;
+    } = {};
+
+    if (
+      data.employeeReports &&
+      typeof data.employeeReports === 'object' &&
+      'items' in data.employeeReports
+    ) {
+      // New structure: employeeReports is an object with items array
+      employeeReportsData = Array.isArray(data.employeeReports.items)
+        ? data.employeeReports.items
+        : [];
+      paginationInfo = {
+        total: data.employeeReports.total,
+        page: data.employeeReports.page,
+        limit: data.employeeReports.limit,
+        totalPages: data.employeeReports.totalPages,
+      };
+    } else if (Array.isArray(data.employeeReports)) {
+      // Old structure: employeeReports is directly an array
+      employeeReportsData = data.employeeReports;
+      paginationInfo = {
+        total: data.total,
+        page: data.page,
+        limit: data.limit,
+        totalPages: data.totalPages,
+      };
+    }
+
+    if (employeeReportsData.length > 0) {
+      const fixedReports = employeeReportsData.map((emp: EmployeeReport) => {
         const leaveRecords: LeaveRecord[] = emp.leaveRecords || [];
         const leaveSummary: LeaveSummaryItem[] = emp.leaveSummary || [];
 
@@ -408,21 +472,28 @@ export const leaveReportApi = {
       });
 
       return {
+        period: data.period,
+        organizationStats: data.organizationStats,
         employeeReports: fixedReports,
-        total: data.total || fixedReports.length,
-        page: data.page || page,
-        limit: data.limit || 10,
-        totalPages: data.totalPages || 1,
+        total: paginationInfo.total || fixedReports.length,
+        page: paginationInfo.page || page,
+        limit: paginationInfo.limit || 25,
+        totalPages: paginationInfo.totalPages || 1,
+        leaveTypes: data.leaveTypes,
       };
     }
 
+    // Fallback for other response structures
     if (Array.isArray(data.items)) {
       return {
+        period: data.period,
+        organizationStats: data.organizationStats,
         employeeReports: data.items,
         total: data.total || data.items.length,
         page: data.page || page,
-        limit: data.limit || 10,
+        limit: data.limit || 25,
         totalPages: data.totalPages || 1,
+        leaveTypes: data.leaveTypes,
       };
     }
 
@@ -431,7 +502,7 @@ export const leaveReportApi = {
         employeeReports: data,
         total: data.length,
         page,
-        limit: 10,
+        limit: 25,
         totalPages: 1,
       };
     }

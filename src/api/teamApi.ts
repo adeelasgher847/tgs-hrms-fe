@@ -120,10 +120,10 @@ class TeamApiService {
   }
 
   // Get all teams with pagination (Admin only)
-  async getAllTeams(page: number = 1): Promise<PaginatedResponse<Team>> {
-    const response = await axiosInstance.get<PaginatedResponse<Team>>(
-      `${this.baseUrl}?page=${page}`
-    );
+  async getAllTeams(page: number | null = 1): Promise<PaginatedResponse<Team>> {
+    // Only add page parameter if it's not null (for dropdowns, pass null to get all records)
+    const url = page === null ? this.baseUrl : `${this.baseUrl}?page=${page}`;
+    const response = await axiosInstance.get<PaginatedResponse<Team>>(url);
     const teams = response.data;
 
     // For each team, fetch the member count if not already included
@@ -281,7 +281,10 @@ class TeamApiService {
       return response.data;
     } catch (error: unknown) {
       console.group('Employee Pool API Error');
-      console.error('Error Message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error(
+        'Error Message:',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
       console.error('Full Error:', error);
       console.groupEnd();
 

@@ -15,12 +15,15 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Pagination,
+  CircularProgress,
 } from '@mui/material';
 import {
   systemPerformanceApiService,
   type PromotionRecord,
   type PromotionStats,
 } from '../../api/systemPerformanceApi';
+import systemEmployeeApiService from '../../api/systemEmployeeApi';
 
 interface PromotionsListProps {
   tenantId: string;
@@ -29,35 +32,111 @@ interface PromotionsListProps {
 const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   const [promotions, setPromotions] = useState<PromotionRecord[]>([]);
   const [stats, setStats] = useState<PromotionStats[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     status: '',
     startDate: '',
     endDate: '',
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [employeeNames, setEmployeeNames] = useState<Record<string, string>>(
+    {}
+  );
+  const itemsPerPage = 25;
+
+  const fetchEmployeeNames = useCallback(async (employeeIds: string[]) => {
+    if (employeeIds.length === 0) return;
+
+    try {
+      const response = await systemEmployeeApiService.getSystemEmployees({
+        page: null,
+      });
+
+      const employeesData = Array.isArray(response)
+        ? response
+        : 'items' in response
+          ? response.items
+          : [];
+
+      const namesMap: Record<string, string> = {};
+
+      employeesData.forEach((emp: { id: string; name?: string }) => {
+        if (emp.id && employeeIds.includes(emp.id)) {
+          const name = emp.name || '';
+          if (name) {
+            namesMap[emp.id] = name;
+          }
+        }
+      });
+
+      setEmployeeNames(prev => ({ ...prev, ...namesMap }));
+    } catch (error) {
+      console.error('Failed to fetch employee names:', error);
+    }
+  }, []);
 
   const fetchPromotions = useCallback(async () => {
-    // Build dynamic filter params
-    const params: {
-      tenantId: string;
-      status?: 'pending' | 'approved' | 'rejected';
-      startDate?: string;
-      endDate?: string;
-    } = { tenantId }; // Always include tenantId
+    setLoading(true);
+    try {
+      const params: {
+        tenantId: string;
+        status?: 'pending' | 'approved' | 'rejected';
+        startDate?: string;
+        endDate?: string;
+        page?: number;
+      } = { tenantId, page: currentPage };
 
-    if (
-      filters.status &&
-      ['pending', 'approved', 'rejected'].includes(filters.status)
-    ) {
-      params.status = filters.status as 'pending' | 'approved' | 'rejected';
+      if (
+        filters.status &&
+        ['pending', 'approved', 'rejected'].includes(filters.status)
+      ) {
+        params.status = filters.status as 'pending' | 'approved' | 'rejected';
+      }
+      if (filters.startDate) params.startDate = filters.startDate;
+      if (filters.endDate) params.endDate = filters.endDate;
+
+      const response = await systemPerformanceApiService.getPromotions(params);
+      const promotionsArray = Array.isArray(response.promotions)
+        ? response.promotions
+        : [];
+      setPromotions(promotionsArray);
+      setStats(Array.isArray(response.stats) ? response.stats : []);
+
+      const employeeIds = [
+        ...new Set(promotionsArray.map(p => p.employee_id).filter(Boolean)),
+      ];
+      if (employeeIds.length > 0) {
+        await fetchEmployeeNames(employeeIds);
+      }
+
+      if (response.totalPages !== undefined && response.total !== undefined) {
+        setTotalPages(response.totalPages);
+        setTotalRecords(response.total);
+      } else {
+        const hasMorePages = promotionsArray.length === itemsPerPage;
+        setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
+        setTotalRecords(
+          hasMorePages
+            ? currentPage * itemsPerPage
+            : (currentPage - 1) * itemsPerPage + promotionsArray.length
+        );
+      }
+    } catch (error) {
+      console.error('Failed to fetch promotions:', error);
+    } finally {
+      setLoading(false);
     }
-    if (filters.startDate) params.startDate = filters.startDate;
-    if (filters.endDate) params.endDate = filters.endDate;
-
-    const { promotions, stats } =
-      await systemPerformanceApiService.getPromotions(params);
-    setPromotions(promotions);
-    setStats(stats);
-  }, [tenantId, filters.status, filters.startDate, filters.endDate]);
+  }, [
+    tenantId,
+    filters.status,
+    filters.startDate,
+    filters.endDate,
+    currentPage,
+    itemsPerPage,
+    fetchEmployeeNames,
+  ]);
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -73,8 +152,16 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.status, filters.startDate, filters.endDate]);
+
+  useEffect(() => {
     fetchPromotions();
   }, [fetchPromotions]);
+
+  const getEmployeeName = (employeeId: string): string => {
+    return employeeNames[employeeId] || employeeId || 'N/A';
+  };
 
   return (
     <Box>
@@ -82,7 +169,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         Promotions Tracking
       </Typography>
 
-      <Box display='flex' gap={2} mb={3} flexWrap='wrap'>
+      <Box display='flex' gap={2} mb={1} flexWrap='wrap'>
         <FormControl sx={{ minWidth: 200 }}>
           <InputLabel>Status</InputLabel>
           <Select
@@ -115,7 +202,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
           onChange={e => setFilters(f => ({ ...f, endDate: e.target.value }))}
         />
 
-        <Button variant='contained' onClick={fetchPromotions}>
+        <Button variant='contained' onClick={() => setCurrentPage(1)}>
           Apply Filters
         </Button>
       </Box>
@@ -128,9 +215,13 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
               p: 2,
               display: 'flex',
               justifyContent: 'space-between',
+              flexDirection: 'column',
+              boxShadow: 'none',
             }}
           >
-            <Typography variant='h6'>Stats: </Typography>
+            <Typography variant='h6' sx={{ mb: 1 }}>
+              Stats:{' '}
+            </Typography>
             <Box display='flex' gap={1}>
               <Chip label={`Approved: ${s.approvedCount}`} color='success' />
               <Chip label={`Pending: ${s.pendingCount}`} color='warning' />
@@ -140,36 +231,79 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         ))}
       </Box>
 
-      <Paper sx={{ p: 2 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Employee</TableCell>
-              <TableCell>Previous Designation</TableCell>
-              <TableCell>New Designation</TableCell>
-              <TableCell>Effective Date</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Tenant</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {promotions.map(p => (
-              <TableRow key={p.id}>
-                <TableCell>{p.employee?.user_id}</TableCell>
-                <TableCell>{p.previousDesignation}</TableCell>
-                <TableCell>{p.newDesignation}</TableCell>
-                <TableCell>
-                  {new Date(p.effectiveDate).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <Chip label={p.status} color={statusColor(p.status)} />
-                </TableCell>
-                <TableCell>{p.tenant?.name}</TableCell>
+      <Paper sx={{ p: 2, overflowX: 'scroll' }}>
+        {loading ? (
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            minHeight='200px'
+          >
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Table sx={{}}>
+            <TableHead>
+              <TableRow>
+                <TableCell>Employee</TableCell>
+                <TableCell>Previous Designation</TableCell>
+                <TableCell>New Designation</TableCell>
+                <TableCell>Effective Date</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Tenant</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody>
+              {promotions.length > 0 ? (
+                promotions.map(p => (
+                  <TableRow key={p.id}>
+                    <TableCell>{getEmployeeName(p.employee_id)}</TableCell>
+                    <TableCell>{p.previousDesignation}</TableCell>
+                    <TableCell>{p.newDesignation}</TableCell>
+                    <TableCell>
+                      {new Date(p.effectiveDate).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={p.status} color={statusColor(p.status)} />
+                    </TableCell>
+                    <TableCell>{p.tenant?.name}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} align='center'>
+                    No promotions found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </Paper>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' mt={3}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color='primary'
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+
+      {/* Pagination Info */}
+      {promotions.length > 0 && (
+        <Box display='flex' justifyContent='center' mt={1}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {currentPage} of {totalPages} ({totalRecords} total
+            records)
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };

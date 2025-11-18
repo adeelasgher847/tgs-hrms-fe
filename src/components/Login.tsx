@@ -266,13 +266,15 @@ const Login: React.FC = () => {
         permissions,
         employee,
         requiresPayment,
+        session_id,
+        signupSessionId,
+        company,
       } = res.data;
 
       const employeeId = employee?.id || null;
-      
-      // Extract tenant_id from login response and store separately
-      // Login response has tenant_id field which we need to preserve
-      const tenantId = (user as any)?.tenant_id || null;
+
+      const userWithTenant = user as { tenant_id?: string };
+      const tenantId = userWithTenant?.tenant_id || null;
 
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
@@ -285,7 +287,16 @@ const Login: React.FC = () => {
         console.warn('No employeeId found in response');
       }
 
-      // Store tenant_id separately from login response
+      if (session_id) {
+        localStorage.setItem('signupSessionId', session_id);
+      } else if (signupSessionId) {
+        localStorage.setItem('signupSessionId', signupSessionId);
+      }
+
+      if (company) {
+        localStorage.setItem('company', JSON.stringify(company));
+      }
+
       if (tenantId) {
         localStorage.setItem('tenant_id', tenantId);
       } else {

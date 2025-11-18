@@ -95,7 +95,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
     // Last fallback: Get from user context
     if (user) {
-      const tenantId = (user as any).tenant_id || (user as any).tenant || '';
+      const userWithTenant = user as { tenant_id?: string; tenant?: string };
+      const tenantId = userWithTenant.tenant_id || userWithTenant.tenant || '';
       if (tenantId) return String(tenantId).trim();
     }
 
@@ -104,8 +105,11 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   const userTenantId = getTenantIdFromStorage();
 
+  // For non-system-admin users, initialize with their tenant_id from localStorage
+  const initialTenantId = isSystemAdminUser ? '' : userTenantId;
+
   const [filters, setFilters] = useState<FiltersState>({
-    tenantId: '',
+    tenantId: initialTenantId,
     departmentId: '',
     status: '',
     startDate: null,
@@ -126,7 +130,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 10;
+  const [totalRecords, setTotalRecords] = useState(0);
+  const itemsPerPage = 25; // Backend returns 25 records per page
   const isInitialTenantSet = useRef(false);
   const isInitialLoad = useRef(true);
   const hasLoadedDataOnce = useRef(false);
@@ -135,12 +140,15 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }, []);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLElement>): void => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    },
+    []
+  );
 
   const handleFilterChange = useCallback(
     <K extends keyof FiltersState>(field: K, value: FiltersState[K]) => {
@@ -171,9 +179,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
       const activeTenants = allTenants.filter(
         tenant => tenant.status === 'active' && !tenant.isDeleted
       );
-
-      // If user is not system-admin, filter to only show their tenant
-      // Match user profile tenant ID with SystemTenant.id
       let filteredTenants = activeTenants;
       if (!isSystemAdminUser && userTenantId) {
         // Strict matching: user.tenant (from profile) === SystemTenant.id
@@ -201,8 +206,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
         let defaultTenant: SystemTenant | undefined;
 
         if (!isSystemAdminUser && userTenantId) {
-          // Admin: Find and auto-select tenant matching their tenant ID from profile
-          // Match user profile tenant ID (user.tenant) with SystemTenant.id
+          // Admin: Find and auto-select tenant matching their tenant ID from localStorage
+          // Match tenant_id from localStorage with SystemTenant.id
           defaultTenant = filteredTenants.find(
             t => String(t.id).trim() === userTenantId
           );
@@ -212,12 +217,14 @@ const CrossTenantLeaveManagement: React.FC = () => {
               `Failed to match admin tenant ID: ${userTenantId} with any tenant`
             );
           }
-        } else {
-          // System Admin: Select default (ibex or first)
-          const ibexTech = filteredTenants.find(t =>
-            t.name.toLowerCase().includes('ibex')
-          );
-          defaultTenant = ibexTech || filteredTenants[0];
+        } else if (isSystemAdminUser) {
+          // System Admin: Select default (ibex or first) only if no tenant is selected
+          if (!filters.tenantId) {
+            const ibexTech = filteredTenants.find(t =>
+              t.name.toLowerCase().includes('ibex')
+            );
+            defaultTenant = ibexTech || filteredTenants[0];
+          }
         }
 
         if (defaultTenant) {
@@ -227,6 +234,16 @@ const CrossTenantLeaveManagement: React.FC = () => {
             ...prev,
             tenantId: String(defaultTenant.id).trim(),
           }));
+        } else if (!isSystemAdminUser && userTenantId) {
+          // For non-system-admin, ensure tenant filter is set even if tenant not found in list
+          // This allows the API to still filter by tenant_id
+          isInitialTenantSet.current = true;
+          if (filters.tenantId !== userTenantId) {
+            setFilters(prev => ({
+              ...prev,
+              tenantId: userTenantId,
+            }));
+          }
         }
       }
     } catch {
@@ -236,7 +253,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         severity: 'error',
       });
     }
-  }, [isSystemAdminUser, userTenantId]);
+  }, [isSystemAdminUser, userTenantId, filters.tenantId]);
 
   const fetchDepartments = useCallback(async (tenantId: string | null) => {
     if (!tenantId) return setDepartments([]);
@@ -393,9 +410,25 @@ const CrossTenantLeaveManagement: React.FC = () => {
       }));
 
       setLeaves(mappedLeaves);
-      setTotalPages(
-        response.totalPages || Math.ceil(response.total / itemsPerPage)
-      );
+
+      // Backend returns 25 records per page (fixed page size)
+      // If we get 25 records, there might be more pages
+      // If we get less than 25, it's the last page
+      const hasMorePages = mappedLeaves.length === itemsPerPage;
+
+      // Use backend pagination info if available, otherwise estimate
+      if (response.totalPages && response.total) {
+        setTotalPages(response.totalPages);
+        setTotalRecords(response.total);
+      } else {
+        // Fallback: estimate based on current page and records received
+        setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
+        setTotalRecords(
+          hasMorePages
+            ? currentPage * itemsPerPage
+            : (currentPage - 1) * itemsPerPage + mappedLeaves.length
+        );
+      }
 
       hasLoadedDataOnce.current = true;
       if (isInitialLoad.current) isInitialLoad.current = false;
@@ -429,18 +462,23 @@ const CrossTenantLeaveManagement: React.FC = () => {
     fetchTenants();
   }, [fetchTenants]);
 
-  // Admin ke liye tenant auto-set karo jab userTenantId available ho
-  // Match user profile tenant ID (user.tenant) with SystemTenant.id
+  // For non-system-admin users: ensure tenant filter is always set to their tenant_id from localStorage
+  // This ensures data is always filtered by their tenant, even if tenant list hasn't loaded yet
   useEffect(() => {
-    if (!isSystemAdminUser && userTenantId && !filters.tenantId) {
-      // Ensure we use the tenant ID from user profile that matches SystemTenant.id
+    if (!isSystemAdminUser && userTenantId) {
+      // Always use tenant_id from localStorage for non-system-admin users
+      // Match with tenant list if available, otherwise use the tenant_id directly
       const matchedTenant = tenants.find(
         t => String(t.id).trim() === userTenantId
       );
-      if (matchedTenant) {
+      const tenantIdToUse = matchedTenant
+        ? String(matchedTenant.id).trim()
+        : userTenantId;
+
+      if (filters.tenantId !== tenantIdToUse) {
         setFilters(prev => ({
           ...prev,
-          tenantId: String(matchedTenant.id).trim(),
+          tenantId: tenantIdToUse,
         }));
       }
     }
@@ -516,7 +554,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
     : [{ name: 'Total Leaves', data: summary.map(s => s.totalLeaves) }];
 
   const ChartSection = memo(() => (
-    <Paper sx={{ p: 3, mb: 3, overflowX: 'auto' }}>
+    <Paper sx={{ p: 3, mb: 3, overflowX: 'auto', boxShadow: 'none' }}>
       <Typography variant='subtitle1' fontWeight={600} mb={2}>
         Leave Summary
       </Typography>
@@ -537,6 +575,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
       departments,
       currentPage,
       totalPages,
+      totalRecords,
       isMobile,
       handleFilterChange,
       handlePageChange,
@@ -553,6 +592,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
       departments: DepartmentOption[];
       currentPage: number;
       totalPages: number;
+      totalRecords: number;
       isMobile: boolean;
       handleFilterChange: <K extends keyof FiltersState>(
         field: K,
@@ -563,7 +603,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         page: number
       ) => void;
     }) => (
-      <Paper sx={{ p: 3, position: 'relative' }}>
+      <Paper sx={{ p: 3, position: 'relative', boxShadow: 'none' }}>
         <Typography variant='subtitle1' fontWeight={600} mb={2}>
           Leave Management Table
         </Typography>
@@ -705,6 +745,14 @@ const CrossTenantLeaveManagement: React.FC = () => {
             />
           </Box>
         )}
+        {leaves.length > 0 && (
+          <Box display='flex' justifyContent='center' mt={1}>
+            <Typography variant='body2' color='textSecondary'>
+              Showing page {currentPage} of {totalPages} ({totalRecords} total
+              records)
+            </Typography>
+          </Box>
+        )}
       </Paper>
     )
   );
@@ -724,10 +772,10 @@ const CrossTenantLeaveManagement: React.FC = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box
-        sx={{ background: '#f7f7f7', minHeight: '100vh', p: 3 }}
+        sx={{ background: '#f7f7f7', minHeight: '100vh' }}
         onKeyDown={handleKeyDown}
       >
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Paper sx={{ p: 3, mb: 3, boxShadow: 'none' }}>
           <Typography variant='h6' fontWeight={700} mb={2}>
             Tenant Leave Management
           </Typography>
@@ -764,6 +812,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
           departments={departments}
           currentPage={currentPage}
           totalPages={totalPages}
+          totalRecords={totalRecords}
           isMobile={isMobile}
           handleFilterChange={handleFilterChange}
           handlePageChange={handlePageChange}

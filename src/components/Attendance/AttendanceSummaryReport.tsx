@@ -17,6 +17,7 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  Pagination,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import attendanceSummaryApi from '../../api/reportApi';
@@ -37,7 +38,10 @@ const AttendanceSummaryReport: React.FC = () => {
   const [filter, setFilter] = useState<
     'thisMonth' | 'prevMonth' | '60days' | '90days'
   >('thisMonth');
-  // Snackbar states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const itemsPerPage = 25;
   const [openToast, setOpenToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastSeverity, setToastSeverity] = useState<
@@ -57,28 +61,6 @@ const AttendanceSummaryReport: React.FC = () => {
   );
 
   // Calculate days range based on filter
-  const getDaysRange = () => {
-    switch (filter) {
-      case 'thisMonth':
-        return new Date().getDate();
-      case 'prevMonth': {
-        const lastMonth = new Date();
-        lastMonth.setMonth(lastMonth.getMonth() - 1);
-        return new Date(
-          lastMonth.getFullYear(),
-          lastMonth.getMonth() + 1,
-          0
-        ).getDate();
-      }
-      case '60days':
-        return 60;
-      case '90days':
-        return 90;
-      default:
-        return 30;
-    }
-  };
-
   // Get tenant ID from localStorage - same pattern as other attendance pages
   const getTenantId = () => {
     const userStr = localStorage.getItem('user');
@@ -92,69 +74,143 @@ const AttendanceSummaryReport: React.FC = () => {
     }
   };
 
-  // Fetch attendance summary - same pattern as AttendanceCheck and AttendanceTable
-  const fetchSummary = async () => {
-    const tenantId = getTenantId();
-    if (!tenantId) {
-      console.log('Attendance report: No tenant ID available');
-      setSummaryData([]);
-      setLoading(false);
-      showToast('User tenant not found. Please log in again.', 'error');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const days = getDaysRange();
-      console.log(
-        'Attendance report: Fetching summary for tenant:',
-        tenantId,
-        'days:',
-        days
-      );
-      const resp = await attendanceSummaryApi.getAttendanceSummary(
-        tenantId,
-        days
-      );
-
-      let items: AttendanceSummaryItem[] = [];
-
-      if (!resp) {
-        items = [];
-      } else if (Array.isArray(resp)) {
-        items = resp as AttendanceSummaryItem[];
-      } else if (Array.isArray((resp as Record<string, unknown>).items)) {
-        items = (resp as Record<string, unknown>)
-          .items as AttendanceSummaryItem[];
-      } else if (Array.isArray((resp as Record<string, unknown>).data)) {
-        items = (resp as Record<string, unknown>)
-          .data as AttendanceSummaryItem[];
-      } else {
-        items = [];
+  // Fetch attendance summary with pagination
+  const fetchSummary = useCallback(
+    async (page: number = 1) => {
+      const tenantId = getTenantId();
+      if (!tenantId) {
+        console.log('Attendance report: No tenant ID available');
+        setSummaryData([]);
+        setLoading(false);
+        showToast('User tenant not found. Please log in again.', 'error');
+        return;
       }
 
-      console.log('Attendance report: Data received:', items.length, 'items');
-      setSummaryData(items);
-    } catch (err) {
-      console.error('Attendance report: Error fetching summary:', err);
-      setSummaryData([]);
-      showToast('Failed to fetch attendance summary.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+      setLoading(true);
+      try {
+        const getDaysRange = () => {
+          switch (filter) {
+            case 'thisMonth':
+              return new Date().getDate();
+            case 'prevMonth': {
+              const lastMonth = new Date();
+              lastMonth.setMonth(lastMonth.getMonth() - 1);
+              return new Date(
+                lastMonth.getFullYear(),
+                lastMonth.getMonth() + 1,
+                0
+              ).getDate();
+            }
+            case '60days':
+              return 60;
+            case '90days':
+              return 90;
+            default:
+              return 30;
+          }
+        };
+        const days = getDaysRange();
+        console.log(
+          'Attendance report: Fetching summary for tenant:',
+          tenantId,
+          'days:',
+          days,
+          'page:',
+          page
+        );
+        const resp = await attendanceSummaryApi.getAttendanceSummary(
+          tenantId,
+          days,
+          page
+        );
 
-  // Initial load on mount - same pattern as AttendanceCheck and AttendanceTable
-  useEffect(() => {
-    fetchSummary();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+        let items: AttendanceSummaryItem[] = [];
+        let paginationInfo = {
+          total: 0,
+          page: 1,
+          limit: 25,
+          totalPages: 1,
+        };
 
-  // Fetch when filter changes
+        // Handle paginated response
+        if (resp && typeof resp === 'object' && 'items' in resp) {
+          items = (resp.items || []) as AttendanceSummaryItem[];
+          paginationInfo = {
+            total: resp.total || 0,
+            page: resp.page || page,
+            limit: resp.limit || 25,
+            totalPages: resp.totalPages || 1,
+          };
+        } else if (Array.isArray(resp)) {
+          items = resp as AttendanceSummaryItem[];
+          paginationInfo = {
+            total: items.length,
+            page: 1,
+            limit: 25,
+            totalPages: 1,
+          };
+        } else if (resp && typeof resp === 'object' && 'data' in resp) {
+          const data = (resp as Record<string, unknown>).data;
+          if (Array.isArray(data)) {
+            items = data as AttendanceSummaryItem[];
+            paginationInfo = {
+              total: items.length,
+              page: 1,
+              limit: 25,
+              totalPages: 1,
+            };
+          }
+        }
+
+        // Backend returns 25 records per page (fixed page size)
+        // If we get 25 records, there might be more pages
+        // If we get less than 25, it's the last page
+        const hasMorePages = items.length === itemsPerPage;
+
+        // Use backend pagination info if available, otherwise estimate
+        if (paginationInfo.total && paginationInfo.totalPages) {
+          setTotalPages(paginationInfo.totalPages);
+          setTotalRecords(paginationInfo.total);
+        } else {
+          // Fallback: estimate based on current page and records received
+          setTotalPages(hasMorePages ? page + 1 : page);
+          setTotalRecords(
+            hasMorePages
+              ? page * itemsPerPage
+              : (page - 1) * itemsPerPage + items.length
+          );
+        }
+
+        console.log('Attendance report: Data received:', items.length, 'items');
+        setSummaryData(items);
+      } catch (err) {
+        console.error('Attendance report: Error fetching summary:', err);
+        setSummaryData([]);
+        showToast('Failed to fetch attendance summary.', 'error');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filter, itemsPerPage, showToast, getTenantId]
+  );
+
+  // Fetch when filter changes, reset to page 1
   useEffect(() => {
-    fetchSummary();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setCurrentPage(1);
   }, [filter]);
+
+  // Fetch when page or filter changes
+  useEffect(() => {
+    fetchSummary(currentPage);
+  }, [currentPage, filter, fetchSummary]);
+
+  // Handle page change
+  const handlePageChange = (
+    _event: React.ChangeEvent<unknown>,
+    page: number
+  ) => {
+    setCurrentPage(page);
+  };
 
   const safeData = Array.isArray(summaryData) ? summaryData : [];
 
@@ -339,13 +395,29 @@ const AttendanceSummaryReport: React.FC = () => {
         </Paper>
       )}
 
-      <Box textAlign='center' my={2} px={2}>
-        <Box display='inline-block'>
-          <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
-            Total: {safeData.length} record{safeData.length !== 1 ? 's' : ''}
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' mt={3}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={handlePageChange}
+            color='primary'
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+
+      {/* Pagination Info */}
+      {safeData.length > 0 && (
+        <Box display='flex' justifyContent='center' mt={1} mb={2}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {currentPage} of {totalPages} ({totalRecords} total
+            records)
           </Typography>
         </Box>
-      </Box>
+      )}
 
       <Snackbar
         open={openToast}

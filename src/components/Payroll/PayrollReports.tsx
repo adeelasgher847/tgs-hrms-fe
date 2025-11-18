@@ -1,11 +1,23 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Box, CircularProgress, Paper, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  Paper,
+  Typography,
+  TextField,
+  MenuItem,
+  Stack,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useOutletContext } from 'react-router-dom';
 import dayjs from 'dayjs';
 import Chart from 'react-apexcharts';
 import type { ApexOptions } from 'apexcharts';
 import { payrollApi, type PayrollStatistics } from '../../api/payrollApi';
+import systemEmployeeApiService, {
+  type SystemEmployee,
+} from '../../api/systemEmployeeApi';
 import { useIsDarkMode } from '../../theme';
 import { snackbar } from '../../utils/snackbar';
 
@@ -31,6 +43,9 @@ const PayrollReports: React.FC = () => {
 
   const [statistics, setStatistics] = useState<PayrollStatistics | null>(null);
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
+  const [tenants, setTenants] = useState<SystemEmployee[]>([]);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('');
+  const [loadingTenants, setLoadingTenants] = useState<boolean>(false);
 
   const bgColor = effectiveDarkMode
     ? '#121212'
@@ -38,10 +53,41 @@ const PayrollReports: React.FC = () => {
   const cardBg = effectiveDarkMode ? '#1a1a1a' : '#fff';
   const textColor = effectiveDarkMode ? '#fff' : '#000';
 
+  const loadTenants = useCallback(async () => {
+    try {
+      setLoadingTenants(true);
+      const data = await systemEmployeeApiService.getAllTenants(true);
+      console.log('Loaded tenants:', data.length);
+      setTenants(data);
+
+      // Set TGS as default tenant if it exists
+      const tgsTenant = data.find(
+        tenant => tenant.name?.toLowerCase() === 'tgs'
+      );
+      if (tgsTenant) {
+        setSelectedTenantId(tgsTenant.id);
+      }
+    } catch (error) {
+      console.error('Failed to load tenants:', error);
+      snackbar.error('Failed to load tenants');
+    } finally {
+      setLoadingTenants(false);
+    }
+  }, []);
+
   const loadStatistics = useCallback(async () => {
     try {
       setStatsLoading(true);
-      const data = await payrollApi.getPayrollStatistics({});
+      const params: {
+        tenantId?: string;
+      } = {};
+      if (selectedTenantId) {
+        params.tenantId = selectedTenantId;
+      }
+      const data = await payrollApi.getPayrollStatistics(params);
+      console.log('Payroll statistics data:', data);
+      console.log('Monthly trend:', data?.monthlyTrend);
+      console.log('Department comparison:', data?.departmentComparison);
       setStatistics(data);
     } catch (error) {
       console.error('Failed to load payroll statistics:', error);
@@ -50,45 +96,60 @@ const PayrollReports: React.FC = () => {
     } finally {
       setStatsLoading(false);
     }
-  }, []);
+  }, [selectedTenantId]);
+
+  useEffect(() => {
+    loadTenants();
+  }, [loadTenants]);
 
   useEffect(() => {
     loadStatistics();
   }, [loadStatistics]);
 
-  const trendOptions: ApexOptions = useMemo(() => {
-    const categories =
-      statistics?.monthlyTrend.map(item =>
-        dayjs(`${item.year}-${item.month}-01`).format('MMM YYYY')
-      ) || [];
+  const trendSeries = useMemo(() => {
+    if (
+      !statistics ||
+      !statistics.monthlyTrend ||
+      !Array.isArray(statistics.monthlyTrend) ||
+      statistics.monthlyTrend.length === 0
+    )
+      return [];
     const series = [
       {
         name: 'Gross',
-        data:
-          statistics?.monthlyTrend.map(item => Number(item.totalGross) || 0) ||
-          [],
+        data: statistics.monthlyTrend.map(item => Number(item.totalGross) || 0),
       },
       {
         name: 'Deductions',
-        data:
-          statistics?.monthlyTrend.map(
-            item => Number(item.totalDeductions) || 0
-          ) || [],
+        data: statistics.monthlyTrend.map(
+          item => Number(item.totalDeductions) || 0
+        ),
       },
       {
         name: 'Bonuses',
-        data:
-          statistics?.monthlyTrend.map(
-            item => Number(item.totalBonuses) || 0
-          ) || [],
+        data: statistics.monthlyTrend.map(
+          item => Number(item.totalBonuses) || 0
+        ),
       },
       {
         name: 'Net',
-        data:
-          statistics?.monthlyTrend.map(item => Number(item.totalNet) || 0) ||
-          [],
+        data: statistics.monthlyTrend.map(item => Number(item.totalNet) || 0),
       },
     ];
+    console.log('Trend series data:', series);
+    return series;
+  }, [statistics]);
+
+  const trendOptions: ApexOptions = useMemo(() => {
+    const categories =
+      statistics?.monthlyTrend && Array.isArray(statistics.monthlyTrend)
+        ? statistics.monthlyTrend.map(item =>
+            dayjs(`${item.year}-${item.month}-01`).format('MMM YYYY')
+          )
+        : [];
+
+    console.log('Trend chart series:', trendSeries);
+    console.log('Trend chart categories:', categories);
 
     const colors = ['#484c7f', '#f19828', '#f5558d', '#6dd3ff'];
 
@@ -97,6 +158,9 @@ const PayrollReports: React.FC = () => {
         type: 'line',
         toolbar: { show: false },
         zoom: { enabled: false },
+        animations: {
+          enabled: true,
+        },
       },
       stroke: {
         curve: 'smooth',
@@ -104,6 +168,9 @@ const PayrollReports: React.FC = () => {
       },
       markers: {
         size: 4,
+        hover: {
+          size: 6,
+        },
       },
       xaxis: {
         categories,
@@ -113,9 +180,17 @@ const PayrollReports: React.FC = () => {
       },
       yaxis: {
         labels: {
-          formatter: val => `$${val / 1000}k`,
+          formatter: val => {
+            if (val === 0) return '$0';
+            if (val < 1000) return `$${val}`;
+            return `$${val / 1000}k`;
+          },
           style: { colors: effectiveDarkMode ? '#d0d0d0' : '#666' },
         },
+        min: 0,
+        max: undefined,
+        forceNiceScale: true,
+        tickAmount: 5,
       },
       legend: {
         position: 'top',
@@ -132,30 +207,56 @@ const PayrollReports: React.FC = () => {
           formatter: val => formatCurrency(val),
         },
       },
-      series,
     } as ApexOptions;
-  }, [statistics, effectiveDarkMode]);
+  }, [statistics, effectiveDarkMode, trendSeries]);
+
+  const departmentSeries = useMemo(() => {
+    if (
+      !statistics ||
+      !statistics.departmentComparison ||
+      !Array.isArray(statistics.departmentComparison) ||
+      statistics.departmentComparison.length === 0
+    )
+      return [];
+    const series = [
+      {
+        name: 'Gross',
+        data: statistics.departmentComparison.map(
+          item => Number(item.totalGross) || 0
+        ),
+      },
+      {
+        name: 'Deductions',
+        data: statistics.departmentComparison.map(
+          item => Number(item.totalDeductions) || 0
+        ),
+      },
+      {
+        name: 'Bonuses',
+        data: statistics.departmentComparison.map(
+          item => Number(item.totalBonuses) || 0
+        ),
+      },
+      {
+        name: 'Net',
+        data: statistics.departmentComparison.map(
+          item => Number(item.totalNet) || 0
+        ),
+      },
+    ];
+    console.log('Department series data:', series);
+    return series;
+  }, [statistics]);
 
   const departmentOptions: ApexOptions = useMemo(() => {
     const categories =
-      statistics?.departmentComparison.map(item => item.department) || [];
+      statistics?.departmentComparison &&
+      Array.isArray(statistics.departmentComparison)
+        ? statistics.departmentComparison.map(item => item.department.trim())
+        : [];
 
-    const grossData =
-      statistics?.departmentComparison.map(
-        item => Number(item.totalGross) || 0
-      ) || [];
-    const deductionsData =
-      statistics?.departmentComparison.map(
-        item => Number(item.totalDeductions) || 0
-      ) || [];
-    const bonusesData =
-      statistics?.departmentComparison.map(
-        item => Number(item.totalBonuses) || 0
-      ) || [];
-    const netData =
-      statistics?.departmentComparison.map(
-        item => Number(item.totalNet) || 0
-      ) || [];
+    console.log('Department chart series:', departmentSeries);
+    console.log('Department chart categories:', categories);
 
     const colors = ['#484c7f', '#f19828', '#f5558d', '#6dd3ff'];
 
@@ -163,12 +264,21 @@ const PayrollReports: React.FC = () => {
       chart: {
         type: 'bar',
         toolbar: { show: false },
+        animations: {
+          enabled: true,
+        },
       },
       plotOptions: {
         bar: {
           horizontal: true,
           barHeight: '50%',
+          dataLabels: {
+            position: 'top',
+          },
         },
+      },
+      dataLabels: {
+        enabled: false,
       },
       xaxis: {
         categories,
@@ -181,6 +291,10 @@ const PayrollReports: React.FC = () => {
           style: { colors: effectiveDarkMode ? '#d0d0d0' : '#666' },
           formatter: val => formatCurrency(val),
         },
+        min: 0,
+        max: undefined,
+        forceNiceScale: true,
+        tickAmount: 5,
       },
       colors,
       grid: {
@@ -197,26 +311,8 @@ const PayrollReports: React.FC = () => {
           formatter: val => formatCurrency(val),
         },
       },
-      series: [
-        {
-          name: 'Gross',
-          data: grossData,
-        },
-        {
-          name: 'Deductions',
-          data: deductionsData,
-        },
-        {
-          name: 'Bonuses',
-          data: bonusesData,
-        },
-        {
-          name: 'Net',
-          data: netData,
-        },
-      ],
     } as ApexOptions;
-  }, [statistics, effectiveDarkMode]);
+  }, [statistics, effectiveDarkMode, departmentSeries]);
 
   return (
     <Box
@@ -241,6 +337,33 @@ const PayrollReports: React.FC = () => {
             Payroll Reports
           </Typography>
         </Box>
+        <Stack direction='row' spacing={2} alignItems='center'>
+          <TextField
+            select
+            label='Tenant'
+            value={selectedTenantId}
+            onChange={e => setSelectedTenantId(e.target.value)}
+            size='small'
+            sx={{
+              minWidth: 200,
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff',
+                color: textColor,
+              },
+              '& .MuiInputLabel-root': {
+                color: effectiveDarkMode ? '#ccc' : '#666',
+              },
+            }}
+            disabled={loadingTenants}
+          >
+            <MenuItem value=''>All Tenants</MenuItem>
+            {tenants.map(tenant => (
+              <MenuItem key={tenant.id} value={tenant.id}>
+                {tenant.name}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Stack>
       </Box>
 
       <Paper
@@ -249,8 +372,7 @@ const PayrollReports: React.FC = () => {
           mb: 3,
           p: 3,
           backgroundColor: cardBg,
-          borderRadius: 2,
-          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: 1,
         }}
       >
         {statsLoading ? (
@@ -278,7 +400,8 @@ const PayrollReports: React.FC = () => {
               <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
                 Monthly Trend
               </Typography>
-              {statistics.monthlyTrend.length === 0 ? (
+              {!statistics.monthlyTrend ||
+              statistics.monthlyTrend.length === 0 ? (
                 <Box sx={{ py: 4 }}>
                   <Alert
                     severity='info'
@@ -288,12 +411,14 @@ const PayrollReports: React.FC = () => {
                   </Alert>
                 </Box>
               ) : (
-                <Chart
-                  options={trendOptions}
-                  series={(trendOptions.series as ApexOptions['series']) || []}
-                  type='line'
-                  height={320}
-                />
+                <Box>
+                  <Chart
+                    options={trendOptions}
+                    series={trendSeries}
+                    type='line'
+                    height={320}
+                  />
+                </Box>
               )}
             </Paper>
             <Paper
@@ -309,7 +434,8 @@ const PayrollReports: React.FC = () => {
               <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
                 Department Comparison
               </Typography>
-              {statistics.departmentComparison.length === 0 ? (
+              {!statistics.departmentComparison ||
+              statistics.departmentComparison.length === 0 ? (
                 <Box sx={{ py: 4 }}>
                   <Alert
                     severity='info'
@@ -319,14 +445,14 @@ const PayrollReports: React.FC = () => {
                   </Alert>
                 </Box>
               ) : (
-                <Chart
-                  options={departmentOptions}
-                  series={
-                    (departmentOptions.series as ApexOptions['series']) || []
-                  }
-                  type='bar'
-                  height={320}
-                />
+                <Box>
+                  <Chart
+                    options={departmentOptions}
+                    series={departmentSeries}
+                    type='bar'
+                    height={320}
+                  />
+                </Box>
               )}
             </Paper>
           </Box>

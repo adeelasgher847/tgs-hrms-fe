@@ -33,7 +33,7 @@ import BenefitFormModal from './BenefitFormModal';
 import type { BenefitFormValues } from './BenefitFormModal';
 import benefitsApi from '../../api/benefitApi';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 
 interface Benefit {
   id: string;
@@ -48,6 +48,8 @@ const BenefitList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [modalOpen, setModalOpen] = useState(false);
@@ -66,10 +68,36 @@ const BenefitList: React.FC = () => {
     setLoading(true);
     try {
       const resp = await benefitsApi.getBenefits(page);
+      // Handle both array and paginated response
       const items = Array.isArray(resp) ? resp : resp.items || [];
+      const paginationInfo = Array.isArray(resp)
+        ? null
+        : 'total' in resp && 'totalPages' in resp
+          ? resp
+          : null;
+
       setBenefits(items);
       setTypes(Array.from(new Set(items.map(b => b.type))));
       setStatuses(Array.from(new Set(items.map(b => b.status))));
+
+      // Backend returns 25 records per page (fixed page size)
+      // If we get 25 records, there might be more pages
+      // If we get less than 25, it's the last page
+      const hasMorePages = items.length === ITEMS_PER_PAGE;
+
+      // Use backend pagination info if available, otherwise estimate
+      if (paginationInfo && paginationInfo.total && paginationInfo.totalPages) {
+        setTotalPages(paginationInfo.totalPages);
+        setTotalRecords(paginationInfo.total);
+      } else {
+        // Fallback: estimate based on current page and records received
+        setTotalPages(hasMorePages ? page + 1 : page);
+        setTotalRecords(
+          hasMorePages
+            ? page * ITEMS_PER_PAGE
+            : (page - 1) * ITEMS_PER_PAGE + items.length
+        );
+      }
     } catch (err) {
       console.error('Error fetching benefits:', err);
       setBenefits([]);
@@ -197,12 +225,10 @@ const BenefitList: React.FC = () => {
     return typeMatch && statusMatch;
   });
 
-  const totalRecords = filteredBenefits.length;
-  const totalFilteredPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
-  const paginatedBenefits = filteredBenefits.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
-  );
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [filterType, filterStatus]);
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
@@ -326,14 +352,14 @@ const BenefitList: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {paginatedBenefits.length === 0 ? (
+                {filteredBenefits.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align='center'>
                       No benefits found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedBenefits.map(b => (
+                  filteredBenefits.map(b => (
                     <TableRow key={b.id}>
                       <TableCell>{b.name}</TableCell>
                       <TableCell>{b.type}</TableCell>
@@ -392,27 +418,26 @@ const BenefitList: React.FC = () => {
         </Paper>
       )}
 
-      {totalFilteredPages > 1 && (
+      {totalPages > 1 && (
         <Box display='flex' justifyContent='center' alignItems='center' py={2}>
           <Pagination
-            count={totalFilteredPages}
+            count={totalPages}
             page={page}
             onChange={handlePageChange}
             color='primary'
+            showFirstButton
+            showLastButton
           />
         </Box>
       )}
 
-      <Box textAlign='center' my={2}>
-        <Typography variant='body2' color='text.secondary'>
-          Showing{' '}
-          {totalRecords === 0
-            ? 0
-            : Math.min((page - 1) * ITEMS_PER_PAGE + 1, totalRecords)}
-          –{Math.min(page * ITEMS_PER_PAGE, totalRecords)} of {totalRecords}{' '}
-          records
-        </Typography>
-      </Box>
+      {benefits.length > 0 && (
+        <Box display='flex' justifyContent='center' my={1}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {page} of {totalPages} ({totalRecords} total records)
+          </Typography>
+        </Box>
+      )}
 
       <Dialog
         open={deleteDialogOpen}
