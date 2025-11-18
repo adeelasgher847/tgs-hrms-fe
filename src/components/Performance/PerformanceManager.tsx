@@ -8,6 +8,7 @@ import {
   Paper,
   Snackbar,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import PerformanceKpiGrid from './KPIPerformanceOverview';
 import PerformanceTrendChart from './PerformanceTrend';
@@ -17,8 +18,7 @@ import type { Tenant } from '../../types';
 
 const PerformanceDashboard: React.FC = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [selectedTenant, setSelectedTenant] =
-    useState<string>('Testify Solutions');
+  const [selectedTenant, setSelectedTenant] = useState<string>('');
   const [loadingTenants, setLoadingTenants] = useState(true);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -79,17 +79,25 @@ const PerformanceDashboard: React.FC = () => {
         </FormControl>
       </Box>
 
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <PerformanceKpiGrid tenantId={selectedTenant} />
-      </Paper>
+      {loadingTenants || !selectedTenant ? (
+        <Box display='flex' justifyContent='center' alignItems='center' minHeight='400px'>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          <Paper sx={{ p: 2, mb: 3, boxShadow:'none' }}>
+            <PerformanceKpiGrid tenantId={selectedTenant} />
+          </Paper>
 
-      <Paper sx={{ mb: 3 }}>
-        <PerformanceTrendChart tenantId={selectedTenant} />
-      </Paper>
+          <Paper sx={{ mb: 3, boxShadow:'none' }}>
+            <PerformanceTrendChart tenantId={selectedTenant} />
+          </Paper>
 
-      <Paper sx={{ p: 2 }}>
-        <PromotionsList tenantId={selectedTenant} />
-      </Paper>
+          <Paper sx={{ p: 2,boxShadow:'none' }}>
+            <PromotionsList tenantId={selectedTenant} />
+          </Paper>
+        </>
+      )}
 
       <Snackbar
         open={showToast}

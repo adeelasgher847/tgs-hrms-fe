@@ -420,7 +420,8 @@ const LeaveRequestPage = () => {
 
     loadLeaves(shouldSkipFullPageLoader);
     previousViewModeRef.current = viewMode;
-  }, [currentPage, viewMode, role, currentUserId, loadLeaves, leaves.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, viewMode, role, currentUserId]);
 
   if (initialLoading)
     return (

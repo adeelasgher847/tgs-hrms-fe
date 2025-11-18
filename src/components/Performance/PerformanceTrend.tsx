@@ -16,6 +16,7 @@ import {
   TableBody,
   Paper,
   Box,
+  CircularProgress,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import {
@@ -38,33 +39,53 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [loading, setLoading] = useState(true);
   const theme = useTheme();
 
   const fetchPerformance = useCallback(async () => {
-    const data = await systemPerformanceApiService.getPerformanceRecords({
-      tenantId,
-    });
-    setRecords(data || []);
+    try {
+      const data = await systemPerformanceApiService.getPerformanceRecords({
+        tenantId,
+      });
+      setRecords(data || []);
+    } catch (error) {
+      console.error('Error fetching performance records:', error);
+      setRecords([]);
+    }
   }, [tenantId]);
 
   const fetchEmployees = useCallback(async () => {
-    const data = await systemEmployeeApiService.getSystemEmployees({
-      tenantId,
-    });
-    setEmployees(data || []);
+    try {
+      const data = await systemEmployeeApiService.getSystemEmployees({
+        tenantId,
+      });
+      // Handle paginated response
+      const employeesList = Array.isArray(data) 
+        ? data 
+        : 'items' in data 
+          ? data.items 
+          : [];
+      setEmployees(employeesList);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      setEmployees([]);
+    }
   }, [tenantId]);
 
   useEffect(() => {
     if (tenantId) {
-      fetchEmployees();
-      fetchPerformance();
+      setLoading(true);
+      Promise.all([fetchEmployees(), fetchPerformance()]).finally(() => {
+        setLoading(false);
+      });
     }
   }, [tenantId, fetchEmployees, fetchPerformance]);
 
   const employeeMap = useMemo(() => {
     return employees.reduce(
       (map, emp) => {
-        map[emp.id] = emp.user?.fullname || emp.name || 'N/A';
+        // SystemEmployee type has name property, user might be available at runtime
+        map[emp.id] = (emp as any).user?.fullname || emp.name || 'N/A';
         return map;
       },
       {} as Record<string, string>
@@ -202,6 +223,23 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
     () => [Math.min(Math.max(gaugeScore, 0), 100)],
     [gaugeScore]
   );
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader
+          title='Company Performance'
+          subheader='Overview gauge by tenant'
+          titleTypographyProps={{ variant: 'h5', fontWeight: 600 }}
+        />
+        <CardContent>
+          <Box display='flex' justifyContent='center' alignItems='center' minHeight='400px'>
+            <CircularProgress />
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Grid } from '@mui/material';
+import { Grid, Box, CircularProgress } from '@mui/material';
 import {
   systemPerformanceApiService,
   type SystemPerformanceKpi,
@@ -17,19 +17,32 @@ const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
   tenantId,
 }) => {
   const [data, setData] = useState<SystemPerformanceKpi[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const kpiData = await systemPerformanceApiService.getSystemKpis();
+      setLoading(true);
+      try {
+        const kpiData = await systemPerformanceApiService.getSystemKpis();
 
-      const filteredData = tenantId
-        ? kpiData.filter(item => item.tenantId === tenantId)
-        : kpiData; 
+        const filteredData = tenantId
+          ? kpiData.filter(item => item.tenantId === tenantId)
+          : kpiData; 
 
-      setData(filteredData);
+        setData(filteredData);
+      } catch (error) {
+        console.error('Error fetching KPI data:', error);
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchData();
+    if (tenantId) {
+      fetchData();
+    } else {
+      setLoading(false);
+    }
   }, [tenantId]);
 
   const totalKpiCategories =
@@ -49,6 +62,14 @@ const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
   const lowestCategory = data
     .flatMap(d => d.categories)
     .sort((a, b) => a.avgScore - b.avgScore)[0]?.category;
+
+  if (loading) {
+    return (
+      <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Grid container spacing={2}>

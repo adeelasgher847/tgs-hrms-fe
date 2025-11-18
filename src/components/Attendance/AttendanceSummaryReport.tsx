@@ -144,13 +144,7 @@ const AttendanceSummaryReport: React.FC = () => {
     }
   };
 
-  // Initial load on mount - same pattern as AttendanceCheck and AttendanceTable
-  useEffect(() => {
-    fetchSummary();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Fetch when filter changes
+  // Fetch when filter changes (also runs on initial mount)
   useEffect(() => {
     fetchSummary();
     // eslint-disable-next-line react-hooks/exhaustive-deps

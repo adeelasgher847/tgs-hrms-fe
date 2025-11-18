@@ -15,6 +15,7 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  CircularProgress,
 } from '@mui/material';
 import {
   systemPerformanceApiService,
@@ -29,6 +30,7 @@ interface PromotionsListProps {
 const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   const [promotions, setPromotions] = useState<PromotionRecord[]>([]);
   const [stats, setStats] = useState<PromotionStats[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     status: '',
     startDate: '',
@@ -36,27 +38,36 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   });
 
   const fetchPromotions = useCallback(async () => {
-    // Build dynamic filter params
-    const params: {
-      tenantId: string;
-      status?: 'pending' | 'approved' | 'rejected';
-      startDate?: string;
-      endDate?: string;
-    } = { tenantId }; // Always include tenantId
+    setLoading(true);
+    try {
+      // Build dynamic filter params
+      const params: {
+        tenantId: string;
+        status?: 'pending' | 'approved' | 'rejected';
+        startDate?: string;
+        endDate?: string;
+      } = { tenantId }; // Always include tenantId
 
-    if (
-      filters.status &&
-      ['pending', 'approved', 'rejected'].includes(filters.status)
-    ) {
-      params.status = filters.status as 'pending' | 'approved' | 'rejected';
+      if (
+        filters.status &&
+        ['pending', 'approved', 'rejected'].includes(filters.status)
+      ) {
+        params.status = filters.status as 'pending' | 'approved' | 'rejected';
+      }
+      if (filters.startDate) params.startDate = filters.startDate;
+      if (filters.endDate) params.endDate = filters.endDate;
+
+      const { promotions, stats } =
+        await systemPerformanceApiService.getPromotions(params);
+      setPromotions(promotions);
+      setStats(stats);
+    } catch (error) {
+      console.error('Error fetching promotions:', error);
+      setPromotions([]);
+      setStats([]);
+    } finally {
+      setLoading(false);
     }
-    if (filters.startDate) params.startDate = filters.startDate;
-    if (filters.endDate) params.endDate = filters.endDate;
-
-    const { promotions, stats } =
-      await systemPerformanceApiService.getPromotions(params);
-    setPromotions(promotions);
-    setStats(stats);
   }, [tenantId, filters.status, filters.startDate, filters.endDate]);
 
   const statusColor = (status: string) => {
@@ -82,7 +93,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         Promotions Tracking
       </Typography>
 
-      <Box display='flex' gap={2} mb={3} flexWrap='wrap'>
+      <Box display='flex' gap={2} mb={1} flexWrap='wrap'>
         <FormControl sx={{ minWidth: 200 }}>
           <InputLabel>Status</InputLabel>
           <Select
@@ -128,9 +139,11 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
               p: 2,
               display: 'flex',
               justifyContent: 'space-between',
+              flexDirection:'column',
+              boxShadow:'none'
             }}
           >
-            <Typography variant='h6'>Stats: </Typography>
+            <Typography variant='h6' sx={{mb:1}}>Stats: </Typography>
             <Box display='flex' gap={1}>
               <Chip label={`Approved: ${s.approvedCount}`} color='success' />
               <Chip label={`Pending: ${s.pendingCount}`} color='warning' />
@@ -140,35 +153,49 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         ))}
       </Box>
 
-      <Paper sx={{ p: 2 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Employee</TableCell>
-              <TableCell>Previous Designation</TableCell>
-              <TableCell>New Designation</TableCell>
-              <TableCell>Effective Date</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Tenant</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {promotions.map(p => (
-              <TableRow key={p.id}>
-                <TableCell>{p.employee?.user_id}</TableCell>
-                <TableCell>{p.previousDesignation}</TableCell>
-                <TableCell>{p.newDesignation}</TableCell>
-                <TableCell>
-                  {new Date(p.effectiveDate).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <Chip label={p.status} color={statusColor(p.status)} />
-                </TableCell>
-                <TableCell>{p.tenant?.name}</TableCell>
+      <Paper sx={{ p: 2,overflowX:'scroll'}}>
+        {loading ? (
+          <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Table sx={{  }}>
+            <TableHead>
+              <TableRow>
+                <TableCell>Employee</TableCell>
+                <TableCell>Previous Designation</TableCell>
+                <TableCell>New Designation</TableCell>
+                <TableCell>Effective Date</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Tenant</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody>
+              {promotions.length > 0 ? (
+                promotions.map(p => (
+                  <TableRow key={p.id}>
+                    <TableCell>{p.employee?.user_id}</TableCell>
+                    <TableCell>{p.previousDesignation}</TableCell>
+                    <TableCell>{p.newDesignation}</TableCell>
+                    <TableCell>
+                      {new Date(p.effectiveDate).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={p.status} color={statusColor(p.status)} />
+                    </TableCell>
+                    <TableCell>{p.tenant?.name}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} align='center'>
+                    No promotions found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </Paper>
     </Box>
   );

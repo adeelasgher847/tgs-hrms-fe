@@ -199,35 +199,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({
     }
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        if (isManager()) {
-          // Load manager's teams and members
-          const [teamsData, membersData] = await Promise.all([
-            teamApiService.getMyTeams(),
-            teamApiService.getMyTeamMembers(1),
-          ]);
-          setTeams(teamsData);
-          setTeamMembers(membersData.items || []);
-        } else if (isAdmin()) {
-          // Load all teams for admin with members included
-          const teamsData = await teamApiService.getAllTeams(1);
-          setTeams(teamsData.items || []);
-        }
-      } catch {
-        setError('Failed to refresh team data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
-
   const handleTeamUpdated = async () => {
     // Refresh data when team is updated without page reload
     try {
