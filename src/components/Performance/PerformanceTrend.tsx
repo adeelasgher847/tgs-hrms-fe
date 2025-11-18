@@ -85,7 +85,10 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
     return employees.reduce(
       (map, emp) => {
         // SystemEmployee type has name property, user might be available at runtime
-        map[emp.id] = (emp as any).user?.fullname || emp.name || 'N/A';
+        const employeeWithUser = emp as SystemEmployee & {
+          user?: { fullname?: string };
+        };
+        map[emp.id] = employeeWithUser.user?.fullname || emp.name || 'N/A';
         return map;
       },
       {} as Record<string, string>

@@ -155,7 +155,7 @@ const MySalary: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     loadData();
