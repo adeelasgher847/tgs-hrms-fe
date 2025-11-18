@@ -94,7 +94,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>): void => {
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
