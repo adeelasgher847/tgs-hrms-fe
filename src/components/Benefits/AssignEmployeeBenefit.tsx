@@ -107,7 +107,7 @@ const AssignEmployeeBenefit: React.FC<{
         setFetching(true);
         const [employeesData, benResp] = await Promise.all([
           employeeApi.getAllEmployeesWithoutPagination(),
-          benefitsApi.getBenefits(1),
+          benefitsApi.getBenefits(null), // Pass null to get all benefits for dropdown
         ]);
 
         const normalizedEmployees = employeesData.map(emp => ({

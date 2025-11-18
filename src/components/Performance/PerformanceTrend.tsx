@@ -39,31 +39,51 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const itemsPerPage = 25;
   const theme = useTheme();
 
   const fetchPerformance = useCallback(async () => {
     try {
-      const data = await systemPerformanceApiService.getPerformanceRecords({
+      const params: {
+        tenantId: string;
+        page: number;
+        limit: number;
+        status?: 'under_review' | 'completed';
+        startDate?: string;
+        endDate?: string;
+      } = {
         tenantId,
-      });
-      setRecords(data || []);
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (statusFilter === 'completed' || statusFilter === 'under_review') {
+        params.status = statusFilter as 'under_review' | 'completed';
+      }
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+
+      const response =
+        await systemPerformanceApiService.getPerformanceRecords(params);
+      setRecords(response.items || []);
     } catch (error) {
       console.error('Error fetching performance records:', error);
       setRecords([]);
     }
-  }, [tenantId]);
+  }, [tenantId, currentPage, itemsPerPage, statusFilter, startDate, endDate]);
 
   const fetchEmployees = useCallback(async () => {
     try {
       const data = await systemEmployeeApiService.getSystemEmployees({
         tenantId,
+        page: null,
       });
       // Handle paginated response
-      const employeesList = Array.isArray(data) 
-        ? data 
-        : 'items' in data 
-          ? data.items 
+      const employeesList = Array.isArray(data)
+        ? data
+        : 'items' in data
+          ? data.items
           : [];
       setEmployees(employeesList);
     } catch (error) {
@@ -71,6 +91,12 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
       setEmployees([]);
     }
   }, [tenantId]);
+
+  useEffect(() => {
+    if (tenantId) {
+      setCurrentPage(1);
+    }
+  }, [tenantId, statusFilter, startDate, endDate]);
 
   useEffect(() => {
     if (tenantId) {
@@ -115,10 +141,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
     });
   }, [records, selectedEmployee, statusFilter, startDate, endDate]);
 
-  // Calculate gauge score based on selected employee or all employees
   const gaugeScore = useMemo(() => {
-    // When employee is selected, calculate average of ALL that employee's records
-    // (ignoring status/date filters for gauge calculation)
     if (selectedEmployee) {
       const employeeRecords = records.filter(
         record => record.employee_id === selectedEmployee
@@ -129,20 +152,18 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
       const averageScore =
         employeeRecords.reduce((sum, r) => sum + (r.overallScore || 0), 0) /
         employeeRecords.length;
-      return averageScore * 20; // Convert to percentage (assuming 0-5 scale)
+      return averageScore * 20;
     }
 
-    // When no employee selected, calculate average of all employees' records
     if (records.length === 0) {
       return 0;
     }
     const averageScore =
       records.reduce((sum, r) => sum + (r.overallScore || 0), 0) /
       records.length;
-    return averageScore * 20; // Convert to percentage (assuming 0-5 scale)
+    return averageScore * 20;
   }, [records, selectedEmployee]);
 
-  // Memoize chart options to ensure proper updates
   const chartOptions = useMemo(
     () => ({
       chart: {
@@ -236,7 +257,12 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           titleTypographyProps={{ variant: 'h5', fontWeight: 600 }}
         />
         <CardContent>
-          <Box display='flex' justifyContent='center' alignItems='center' minHeight='400px'>
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            minHeight='400px'
+          >
             <CircularProgress />
           </Box>
         </CardContent>

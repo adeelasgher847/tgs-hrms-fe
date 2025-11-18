@@ -24,6 +24,7 @@ import {
   CircularProgress,
   Alert,
   Stack,
+  Pagination,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useIsDarkMode } from '../../theme';
@@ -93,6 +94,10 @@ const EmployeeSalaryPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState<EmployeeSalaryListItem[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const itemsPerPage = 25; 
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] =
@@ -108,7 +113,6 @@ const EmployeeSalaryPage: React.FC = () => {
   const [mySalary, setMySalary] = useState<EmployeeSalary | null>(null);
   const [mySalaryLoading, setMySalaryLoading] = useState(false);
 
-  // Form state
   const [baseSalary, setBaseSalary] = useState<number>(0);
   const [allowances, setAllowances] = useState<EmployeeSalaryAllowance[]>([]);
   const [deductions, setDeductions] = useState<EmployeeSalaryDeduction[]>([]);
@@ -134,7 +138,7 @@ const EmployeeSalaryPage: React.FC = () => {
       const userId = currentUser?.id;
       if (!userId) return null;
 
-      const allEmps = await employeeApi.getAllEmployees({}, 1);
+      const allEmps = await employeeApi.getAllEmployees({}, null);
       const employee = allEmps.items.find(emp => emp.user_id === userId);
       return employee?.id || null;
     } catch (error) {
@@ -146,15 +150,20 @@ const EmployeeSalaryPage: React.FC = () => {
   const loadAllEmployeeSalaries = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await payrollApi.getAllEmployeeSalaries();
-      setEmployees(data);
+      const response = await payrollApi.getAllEmployeeSalaries({
+        page: currentPage,
+        limit: itemsPerPage,
+      });
+      setEmployees(response.items || []);
+      setTotalPages(response.totalPages || 1);
+      setTotalRecords(response.total || 0);
     } catch (error) {
       console.error('Failed to load employee salaries:', error);
       snackbar.error('Failed to load employee salaries');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentPage, itemsPerPage]);
 
   const loadMySalary = useCallback(async () => {
     try {
@@ -275,7 +284,6 @@ const EmployeeSalaryPage: React.FC = () => {
         return;
       }
 
-      // Create effective date as 1st of selected month/year
       const effectiveDate = dayjs(
         `${effectiveYear}-${effectiveMonth}-01`
       ).format('YYYY-MM-DD');
@@ -985,6 +993,26 @@ const EmployeeSalaryPage: React.FC = () => {
               </TableBody>
             </Table>
           </TableContainer>
+        )}
+        {!loading && totalPages > 1 && (
+          <Box display='flex' justifyContent='center' p={2}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={(_, page) => setCurrentPage(page)}
+              color='primary'
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        )}
+        {!loading && employees.length > 0 && (
+          <Box display='flex' justifyContent='center' pb={2}>
+            <Typography variant='body2' color='textSecondary'>
+              Showing page {currentPage} of {totalPages} ({totalRecords} total
+              records)
+            </Typography>
+          </Box>
         )}
       </Paper>
 

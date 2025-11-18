@@ -222,7 +222,8 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
       designationId: data.designation_id as string,
       status: data.invite_status as string,
       cnic_number: data.cnic_number as string,
-      profile_picture: (user?.profile_pic as string) || (data.profile_picture as string),
+      profile_picture:
+        (user?.profile_pic as string) || (data.profile_picture as string),
       cnic_picture: data.cnic_picture as string,
       cnic_back_picture: data.cnic_back_picture as string,
       department: department
@@ -280,7 +281,7 @@ class EmployeeApiService {
 
   async getAllEmployees(
     filters: EmployeeFilters = {},
-    page: number = 1
+    page: number | null = 1
   ): Promise<{
     items: BackendEmployee[];
     total: number;
@@ -290,7 +291,11 @@ class EmployeeApiService {
   }> {
     try {
       const params = new URLSearchParams();
-      params.append('page', page.toString());
+      // Only add page parameter if it's not null (for dropdowns, pass null to get all records)
+      if (page !== null) {
+        params.append('page', page.toString());
+        params.append('limit', '25'); // Backend returns 25 records per page
+      }
 
       if (filters.departmentId)
         params.append('department_id', filters.departmentId);
@@ -366,7 +371,7 @@ class EmployeeApiService {
     try {
       // Create FormData for multipart/form-data submission
       const formData = new FormData();
-      
+
       // Add text fields
       formData.append('first_name', employeeData.first_name);
       formData.append('last_name', employeeData.last_name);
@@ -389,16 +394,28 @@ class EmployeeApiService {
       if (employeeData.cnicNumber) {
         formData.append('cnic_number', employeeData.cnicNumber);
       }
-      
+
       // Add image files if they exist
       if (employeeData.profilePicture) {
-        formData.append('profile_picture', employeeData.profilePicture, employeeData.profilePicture.name);
+        formData.append(
+          'profile_picture',
+          employeeData.profilePicture,
+          employeeData.profilePicture.name
+        );
       }
       if (employeeData.cnicFrontPicture) {
-        formData.append('cnic_picture', employeeData.cnicFrontPicture, employeeData.cnicFrontPicture.name);
+        formData.append(
+          'cnic_picture',
+          employeeData.cnicFrontPicture,
+          employeeData.cnicFrontPicture.name
+        );
       }
       if (employeeData.cnicBackPicture) {
-        formData.append('cnic_back_picture', employeeData.cnicBackPicture, employeeData.cnicBackPicture.name);
+        formData.append(
+          'cnic_back_picture',
+          employeeData.cnicBackPicture,
+          employeeData.cnicBackPicture.name
+        );
       }
 
       const response = await axiosInstance.post<RawEmployee>(
@@ -424,7 +441,7 @@ class EmployeeApiService {
   async createManager(employeeData: EmployeeDto): Promise<BackendEmployee> {
     // Create FormData for multipart/form-data submission
     const formData = new FormData();
-    
+
     // Add text fields
     formData.append('first_name', employeeData.first_name);
     formData.append('last_name', employeeData.last_name);
@@ -447,16 +464,28 @@ class EmployeeApiService {
     if (employeeData.cnicNumber) {
       formData.append('cnic_number', employeeData.cnicNumber);
     }
-    
+
     // Add image files if they exist
     if (employeeData.profilePicture) {
-      formData.append('profile_picture', employeeData.profilePicture, employeeData.profilePicture.name);
+      formData.append(
+        'profile_picture',
+        employeeData.profilePicture,
+        employeeData.profilePicture.name
+      );
     }
     if (employeeData.cnicFrontPicture) {
-      formData.append('cnic_picture', employeeData.cnicFrontPicture, employeeData.cnicFrontPicture.name);
+      formData.append(
+        'cnic_picture',
+        employeeData.cnicFrontPicture,
+        employeeData.cnicFrontPicture.name
+      );
     }
     if (employeeData.cnicBackPicture) {
-      formData.append('cnic_back_picture', employeeData.cnicBackPicture, employeeData.cnicBackPicture.name);
+      formData.append(
+        'cnic_back_picture',
+        employeeData.cnicBackPicture,
+        employeeData.cnicBackPicture.name
+      );
     }
 
     const response = await axiosInstance.post<RawEmployee>(
@@ -475,7 +504,7 @@ class EmployeeApiService {
   async createHrAdmin(employeeData: EmployeeDto): Promise<BackendEmployee> {
     // Create FormData for multipart/form-data submission
     const formData = new FormData();
-    
+
     // Add text fields
     formData.append('first_name', employeeData.first_name);
     formData.append('last_name', employeeData.last_name);
@@ -498,16 +527,28 @@ class EmployeeApiService {
     if (employeeData.cnicNumber) {
       formData.append('cnic_number', employeeData.cnicNumber);
     }
-    
+
     // Add image files if they exist
     if (employeeData.profilePicture) {
-      formData.append('profile_picture', employeeData.profilePicture, employeeData.profilePicture.name);
+      formData.append(
+        'profile_picture',
+        employeeData.profilePicture,
+        employeeData.profilePicture.name
+      );
     }
     if (employeeData.cnicFrontPicture) {
-      formData.append('cnic_picture', employeeData.cnicFrontPicture, employeeData.cnicFrontPicture.name);
+      formData.append(
+        'cnic_picture',
+        employeeData.cnicFrontPicture,
+        employeeData.cnicFrontPicture.name
+      );
     }
     if (employeeData.cnicBackPicture) {
-      formData.append('cnic_back_picture', employeeData.cnicBackPicture, employeeData.cnicBackPicture.name);
+      formData.append(
+        'cnic_back_picture',
+        employeeData.cnicBackPicture,
+        employeeData.cnicBackPicture.name
+      );
     }
 
     const response = await axiosInstance.post<RawEmployee>(
@@ -538,7 +579,8 @@ class EmployeeApiService {
       if (updates.phone !== undefined) formData.append('phone', updates.phone);
       if (updates.password && updates.password.trim() !== '')
         formData.append('password', updates.password);
-      if (updates.gender !== undefined) formData.append('gender', updates.gender);
+      if (updates.gender !== undefined)
+        formData.append('gender', updates.gender);
 
       if (updates.role_name && updates.role_name.trim() !== '') {
         formData.append('role_name', updates.role_name);
@@ -548,17 +590,39 @@ class EmployeeApiService {
         formData.append('designation_id', updates.designationId);
       }
 
-      if (updates.cnicNumber !== undefined) formData.append('cnic_number', updates.cnicNumber);
-      
+      if (updates.cnicNumber !== undefined)
+        formData.append('cnic_number', updates.cnicNumber);
+
       // Add image files if they exist
-      if (updates.profilePicture !== undefined && updates.profilePicture !== null) {
-        formData.append('profile_picture', updates.profilePicture, updates.profilePicture.name);
+      if (
+        updates.profilePicture !== undefined &&
+        updates.profilePicture !== null
+      ) {
+        formData.append(
+          'profile_picture',
+          updates.profilePicture,
+          updates.profilePicture.name
+        );
       }
-      if (updates.cnicFrontPicture !== undefined && updates.cnicFrontPicture !== null) {
-        formData.append('cnic_picture', updates.cnicFrontPicture, updates.cnicFrontPicture.name);
+      if (
+        updates.cnicFrontPicture !== undefined &&
+        updates.cnicFrontPicture !== null
+      ) {
+        formData.append(
+          'cnic_picture',
+          updates.cnicFrontPicture,
+          updates.cnicFrontPicture.name
+        );
       }
-      if (updates.cnicBackPicture !== undefined && updates.cnicBackPicture !== null) {
-        formData.append('cnic_back_picture', updates.cnicBackPicture, updates.cnicBackPicture.name);
+      if (
+        updates.cnicBackPicture !== undefined &&
+        updates.cnicBackPicture !== null
+      ) {
+        formData.append(
+          'cnic_back_picture',
+          updates.cnicBackPicture,
+          updates.cnicBackPicture.name
+        );
       }
 
       const response = await axiosInstance.put<RawEmployee>(

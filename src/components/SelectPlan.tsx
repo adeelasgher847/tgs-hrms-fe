@@ -13,7 +13,11 @@ import {
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import signupApi, { type SubscriptionPlan, type CompanyDetailsRequest, type LogoUploadRequest } from '../api/signupApi';
+import signupApi, {
+  type SubscriptionPlan,
+  type CompanyDetailsRequest,
+  type LogoUploadRequest,
+} from '../api/signupApi';
 
 // Default plans as fallback
 const defaultPlans = [
@@ -76,12 +80,21 @@ const SelectPlan: React.FC = () => {
 
   const hasFetched = useRef(false);
 
-  // Check if user has signupSessionId and company details, redirect if not
+  // Check access: either signup flow (with signupSessionId and companyDetails) or login flow (with requiresPayment)
   useEffect(() => {
     const signupSessionId = localStorage.getItem('signupSessionId');
     const companyDetails = localStorage.getItem('companyDetails');
+    const accessToken = localStorage.getItem('accessToken');
+    const userStr = localStorage.getItem('user');
 
-    if (!signupSessionId || !companyDetails) {
+    // Check if this is a signup flow (has signupSessionId AND companyDetails)
+    const isSignupFlow = signupSessionId && companyDetails;
+
+    // Check if this is a login flow (user is logged in, may or may not have signupSessionId)
+    const isLoginFlow = accessToken && userStr;
+
+    // If neither flow is valid, redirect to signup
+    if (!isSignupFlow && !isLoginFlow) {
       navigate('/Signup');
       return;
     }
@@ -200,73 +213,207 @@ const SelectPlan: React.FC = () => {
     setError(null);
 
     try {
-      const signupSessionId = localStorage.getItem('signupSessionId');
-      const companyDetails = JSON.parse(
-        localStorage.getItem('companyDetails') || '{}'
-      );
+      const signupSessionIdRaw = localStorage.getItem('signupSessionId');
+      const companyDetailsStr = localStorage.getItem('companyDetails');
+      const companyDetails = companyDetailsStr
+        ? JSON.parse(companyDetailsStr)
+        : {};
+      const accessToken = localStorage.getItem('accessToken');
+      const userStr = localStorage.getItem('user');
 
-      if (!signupSessionId) {
-        throw new Error('Signup session not found. Please start over.');
-      }
+      // Validate and normalize signupSessionId
+      const signupSessionId = signupSessionIdRaw
+        ? String(signupSessionIdRaw).trim()
+        : null;
 
-      // 1. Create company details with selected plan
-      const companyDetailsRequest: CompanyDetailsRequest = {
-        signupSessionId,
-        companyName: companyDetails.companyName,
-        domain: companyDetails.domain,
-        planId: selectedPlan,
-      };
+      // Determine if this is signup flow or login flow
+      // Signup flow: has signupSessionId AND companyDetails (from signup process)
+      // Login flow: has accessToken and user, may have signupSessionId from login response
+      const isSignupFlow = signupSessionId && companyDetailsStr;
+      const isLoginFlow = accessToken && userStr && !companyDetailsStr; // Login flow doesn't have companyDetails
 
-      await signupApi.createCompanyDetails(
-        companyDetailsRequest
-      );
+      if (isSignupFlow) {
+        // Signup flow: Create company details and proceed with payment
+        if (!signupSessionId || signupSessionId.length === 0) {
+          throw new Error('Signup session not found. Please start over.');
+        }
 
-      // 2. Upload logo if available
-      if (companyDetails.logoBase64 && companyDetails.logoFileName && companyDetails.logoFileType) {
-        try {
-          // Convert base64 back to File object
-          const byteCharacters = atob(companyDetails.logoBase64.split(',')[1]);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const logoFile = new File([byteArray], companyDetails.logoFileName, {
-            type: companyDetails.logoFileType,
+        // Debug: Log company details
+        console.log('Company details from localStorage:', companyDetails);
+        console.log('SignupSessionId:', signupSessionId);
+
+        // Validate company details are present and not empty
+        const companyName = companyDetails?.companyName
+          ? String(companyDetails.companyName).trim()
+          : '';
+        const domain = companyDetails?.domain
+          ? String(companyDetails.domain).trim()
+          : '';
+
+        if (!companyName || !domain) {
+          console.error('Missing company details:', {
+            companyName,
+            domain,
+            fullCompanyDetails: companyDetails,
           });
+          throw new Error(
+            'Company name and domain are required. Please go back and fill in all required fields.'
+          );
+        }
 
-          const logoUploadData: LogoUploadRequest = {
-            signupSessionId,
-            logo: logoFile,
+        // 1. Create company details with selected plan
+        const companyDetailsRequest: CompanyDetailsRequest = {
+          signupSessionId, // Now guaranteed to be a non-empty string
+          companyName,
+          domain,
+          planId: selectedPlan,
+        };
+
+        await signupApi.createCompanyDetails(companyDetailsRequest);
+
+        // 2. Upload logo if available
+        if (
+          companyDetails.logoBase64 &&
+          companyDetails.logoFileName &&
+          companyDetails.logoFileType
+        ) {
+          try {
+            // Convert base64 back to File object
+            const byteCharacters = atob(
+              companyDetails.logoBase64.split(',')[1]
+            );
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const logoFile = new File(
+              [byteArray],
+              companyDetails.logoFileName,
+              {
+                type: companyDetails.logoFileType,
+              }
+            );
+
+            const logoUploadData: LogoUploadRequest = {
+              signupSessionId,
+              logo: logoFile,
+            };
+
+            await signupApi.uploadLogo(logoUploadData);
+            console.log('Logo uploaded successfully');
+          } catch (logoError: unknown) {
+            console.error('Logo upload failed:', logoError);
+            // Don't block the flow if logo upload fails
+          }
+        }
+
+        // 3. Create Stripe Checkout Session
+        // signupSessionId is already validated above as a non-empty string
+        const paymentRequest: PaymentRequest = {
+          signupSessionId, // Guaranteed to be a non-empty string
+          mode: 'checkout' as const, // Use Stripe Checkout
+        };
+
+        const checkoutSession = await signupApi.createPayment(paymentRequest);
+
+        setSnackbar({
+          open: true,
+          message: 'Redirecting to secure payment...',
+          severity: 'success',
+        });
+
+        // 4. Redirect to Stripe Checkout
+        if (checkoutSession.url) {
+          window.location.href = checkoutSession.url;
+        } else {
+          throw new Error('No checkout URL received from server');
+        }
+      } else if (isLoginFlow) {
+        // Login flow: User is already logged in after tenant creation
+        // Backend flow: System admin creates tenant → Admin logs in → Admin selects plan → Payment
+        // For login flow, company details are already created during tenant creation
+        // We just need to call /signup/company-details with session_id and planId
+        try {
+          // Get session_id from localStorage (set during login as signupSessionId)
+          const loginSignupSessionIdRaw =
+            localStorage.getItem('signupSessionId');
+          const loginSignupSessionId = loginSignupSessionIdRaw
+            ? String(loginSignupSessionIdRaw).trim()
+            : null;
+
+          if (!loginSignupSessionId || loginSignupSessionId.length === 0) {
+            throw new Error('Session ID not found. Please log in again.');
+          }
+
+          // Step 1: Update company details with selected plan
+          // Backend already has company details from tenant creation, we just need to update with planId
+          // But backend still expects companyName and domain, so we get them from the company object in login response
+          // Actually, let's check if we need to send companyName and domain or if backend can get them from session_id
+          // Based on user's description: "POST /signup/company-details with session_id aur planId"
+          // It seems backend only needs session_id and planId, but the error suggests it needs companyName and domain too
+          // Let's try sending only session_id and planId first, and if that fails, we'll get company details from user object
+
+          // Get company details from localStorage (stored during login)
+          const companyStr = localStorage.getItem('company');
+          const company = companyStr ? JSON.parse(companyStr) : null;
+
+          if (!company || !company.company_name || !company.domain) {
+            throw new Error('Company details not found. Please log in again.');
+          }
+
+          // Step 1: Update company details with selected plan
+          // Backend already has company details from tenant creation, but still requires companyName and domain
+          const companyDetailsRequest: CompanyDetailsRequest = {
+            signupSessionId: loginSignupSessionId,
+            companyName: company.company_name,
+            domain: company.domain,
+            planId: selectedPlan,
           };
 
-          await signupApi.uploadLogo(logoUploadData);
-          console.log('Logo uploaded successfully');
-        } catch (logoError: unknown) {
-          console.error('Logo upload failed:', logoError);
-          // Don't block the flow if logo upload fails
+          await signupApi.createCompanyDetails(companyDetailsRequest);
+
+          // Step 2: Create payment with session_id
+          const paymentRequest: PaymentRequest = {
+            signupSessionId: loginSignupSessionId,
+            mode: 'checkout' as const,
+          };
+
+          const checkoutSession = await signupApi.createPayment(paymentRequest);
+
+          setSnackbar({
+            open: true,
+            message: 'Redirecting to secure payment...',
+            severity: 'success',
+          });
+
+          if (checkoutSession.url) {
+            window.location.href = checkoutSession.url;
+          } else {
+            throw new Error('No checkout URL received from server');
+          }
+        } catch (paymentError: unknown) {
+          console.error(
+            'Payment creation error for logged-in user:',
+            paymentError
+          );
+          const error = paymentError as {
+            response?: { status?: number; data?: { message?: string } };
+            message?: string;
+          };
+
+          let errorMessage =
+            'Failed to create payment session. Please contact support or try again later.';
+          if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+
+          throw new Error(errorMessage);
         }
-      }
-
-      // 3. Create Stripe Checkout Session
-      const paymentRequest = {
-        signupSessionId,
-        mode: 'checkout' as const, // Use Stripe Checkout
-      };
-
-      const checkoutSession = await signupApi.createPayment(paymentRequest);
-
-      setSnackbar({
-        open: true,
-        message: 'Redirecting to secure payment...',
-        severity: 'success',
-      });
-
-      // 4. Redirect to Stripe Checkout
-      if (checkoutSession.url) {
-        window.location.href = checkoutSession.url;
       } else {
-        throw new Error('No checkout URL received from server');
+        throw new Error('Invalid session. Please start over.');
       }
     } catch (err: unknown) {
       let errorMessage = 'Failed to create payment session. Please try again.';
@@ -292,7 +439,18 @@ const SelectPlan: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate('/signup/company-details');
+    const signupSessionId = localStorage.getItem('signupSessionId');
+    const accessToken = localStorage.getItem('accessToken');
+
+    // If signup flow, go back to company details
+    // If login flow, go back to dashboard
+    if (signupSessionId) {
+      navigate('/signup/company-details');
+    } else if (accessToken) {
+      navigate('/dashboard');
+    } else {
+      navigate('/Signup');
+    }
   };
 
   if (loading) {
@@ -434,7 +592,7 @@ const SelectPlan: React.FC = () => {
                 <Box
                   sx={{
                     borderRadius: '16px',
-                    
+
                     mb: 0.5,
                   }}
                 >

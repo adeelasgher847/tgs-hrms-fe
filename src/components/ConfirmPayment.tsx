@@ -28,145 +28,177 @@ const ConfirmPayment: React.FC = () => {
       // Get parameters from URL
       const sessionId = searchParams.get('session_id');
       const signupSessionId = searchParams.get('signupSessionId');
+      const accessToken = localStorage.getItem('accessToken');
 
+      // Determine flow: signup flow has signupSessionId, login flow has accessToken but no signupSessionId
+      const isSignupFlow = signupSessionId;
+      const isLoginFlow = accessToken && !signupSessionId;
 
-      if (!sessionId || !signupSessionId) {
+      if (!sessionId) {
         throw new Error('Missing payment session information');
+      }
+
+      if (!isSignupFlow && !isLoginFlow) {
+        throw new Error('Invalid payment session. Please try again.');
       }
 
       // 1. Confirm payment with backend using Stripe checkout session id
       const paymentConfirmRequest = {
-        signupSessionId,
+        signupSessionId: signupSessionId || null, // String for signup flow, null for login flow
         checkoutSessionId: sessionId,
-      } as const;
+      };
 
       const paymentResult = await signupApi.confirmPayment(
         paymentConfirmRequest
       );
 
       if (paymentResult.status === 'succeeded') {
-        // 2. Complete signup process
-        const completeSignupRequest = {
-          signupSessionId,
-        } as const;
+        if (isSignupFlow && signupSessionId) {
+          // Signup flow: Complete signup process
+          const completeSignupRequest = {
+            signupSessionId,
+          } as const;
 
-        const signupResult = await signupApi.completeSignup(
-          completeSignupRequest
-        );
+          const signupResult = await signupApi.completeSignup(
+            completeSignupRequest
+          );
 
-        // First, clear all existing auth data to ensure clean state
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        localStorage.removeItem('permissions');
+          // First, clear all existing auth data to ensure clean state
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          localStorage.removeItem('permissions');
 
-        // Now set the new user's data if available
-        if (
-          (signupResult as Record<string, unknown>).accessToken &&
-          (signupResult as Record<string, unknown>).refreshToken
-        ) {
-          const data = signupResult as Record<string, unknown>;
-          localStorage.setItem('accessToken', data.accessToken);
-          localStorage.setItem('refreshToken', data.refreshToken);
-          if (data.user) {
-            localStorage.setItem('user', JSON.stringify(data.user));
-            
-            // Store tenant_id separately from login/signup response
-            const userData = data.user as Record<string, unknown>;
-            const tenantId = userData?.tenant_id;
-            if (tenantId) {
-              localStorage.setItem('tenant_id', String(tenantId));
-            }
-            
-            if (data.permissions) {
-              localStorage.setItem(
-                'permissions',
-                JSON.stringify(data.permissions)
-              );
-            }
-            // Update UserContext immediately so dashboard shows user without refresh
-            try {
-              updateUser(data.user);
-            } catch {
-              // If updateUser fails for any reason, fallback to refresh
-              try {
-                await refreshUser();
-              } catch {
-                // Ignore refresh errors
+          // Now set the new user's data if available
+          if (
+            (signupResult as Record<string, unknown>).accessToken &&
+            (signupResult as Record<string, unknown>).refreshToken
+          ) {
+            const data = signupResult as Record<string, unknown>;
+            localStorage.setItem('accessToken', data.accessToken as string);
+            localStorage.setItem('refreshToken', data.refreshToken as string);
+            if (data.user) {
+              localStorage.setItem('user', JSON.stringify(data.user));
+
+              // Store tenant_id separately from login/signup response
+              const userData = data.user as Record<string, unknown>;
+              const tenantId = userData?.tenant_id;
+              if (tenantId) {
+                localStorage.setItem('tenant_id', String(tenantId));
               }
-            }
-          } else {
-            // If there's no user object in response, try refreshing the user
-            try {
-              await refreshUser();
-            } catch {
-              // Ignore refresh errors
-            }
-          }
-        } else {
-          // Fallback: try to login using pending credentials saved in sessionStorage
-          try {
-            const credsStr = sessionStorage.getItem('pendingSignupCredentials');
-            if (credsStr) {
-              const creds = JSON.parse(credsStr);
-              // Clear all existing auth data before attempting login
-              localStorage.removeItem('accessToken');
-              localStorage.removeItem('refreshToken');
-              localStorage.removeItem('user');
-              localStorage.removeItem('permissions');
 
-              // Call login endpoint
-              const res = await axiosInstance.post('/auth/login', {
-                email: creds.email,
-                password: creds.password,
-              });
-              if (res?.data) {
-                localStorage.setItem('accessToken', res.data.accessToken);
-                if (res.data.refreshToken)
-                  localStorage.setItem('refreshToken', res.data.refreshToken);
-                if (res.data.user) {
-                  localStorage.setItem('user', JSON.stringify(res.data.user));
-                  try {
-                    updateUser(res.data.user);
-                  } catch {
-                    try {
-                      await refreshUser();
-                    } catch {
-                      // Ignore refresh error
+              if (data.permissions) {
+                localStorage.setItem(
+                  'permissions',
+                  JSON.stringify(data.permissions)
+                );
+              }
+              // Update UserContext immediately so dashboard shows user without refresh
+              try {
+                updateUser(data.user);
+              } catch {
+                // If updateUser fails for any reason, fallback to refresh
+                try {
+                  await refreshUser();
+                } catch {
+                  // Ignore refresh errors
+                }
+              }
+            } else {
+              // If there's no user object in response, try refreshing the user
+              // Fallback: try to login using pending credentials saved in sessionStorage
+              try {
+                const credsStr = sessionStorage.getItem(
+                  'pendingSignupCredentials'
+                );
+                if (credsStr) {
+                  const creds = JSON.parse(credsStr);
+                  // Clear all existing auth data before attempting login
+                  localStorage.removeItem('accessToken');
+                  localStorage.removeItem('refreshToken');
+                  localStorage.removeItem('user');
+                  localStorage.removeItem('permissions');
+
+                  // Call login endpoint
+                  const res = await axiosInstance.post('/auth/login', {
+                    email: creds.email,
+                    password: creds.password,
+                  });
+                  if (res?.data) {
+                    localStorage.setItem('accessToken', res.data.accessToken);
+                    if (res.data.refreshToken)
+                      localStorage.setItem(
+                        'refreshToken',
+                        res.data.refreshToken
+                      );
+                    if (res.data.user) {
+                      localStorage.setItem(
+                        'user',
+                        JSON.stringify(res.data.user)
+                      );
+                      try {
+                        updateUser(res.data.user);
+                      } catch {
+                        try {
+                          await refreshUser();
+                        } catch {
+                          // Ignore refresh error
+                        }
+                      }
                     }
+                    if (res.data.permissions)
+                      localStorage.setItem(
+                        'permissions',
+                        JSON.stringify(res.data.permissions)
+                      );
                   }
                 }
-                if (res.data.permissions)
-                  localStorage.setItem(
-                    'permissions',
-                    JSON.stringify(res.data.permissions)
-                  );
+              } catch (loginErr) {
+                console.warn('Auto-login after payment failed', loginErr);
+                // Don't block redirect; user can login manually
               }
             }
-          } catch (loginErr) {
-            console.warn('Auto-login after payment failed', loginErr);
-            // Don't block redirect; user can login manually
+          }
+
+          // Cleanup pending signup storage
+          try {
+            sessionStorage.removeItem('pendingSignupCredentials');
+          } catch {
+            // Ignore cleanup errors
+          }
+          try {
+            localStorage.removeItem('signupSessionId');
+          } catch {
+            // Ignore cleanup errors
+          }
+        } else if (isLoginFlow) {
+          // Login flow: User is already logged in, just refresh user data to get updated subscription status
+          try {
+            await refreshUser();
+            // Wait a bit to ensure user context is updated
+            await new Promise(resolve => setTimeout(resolve, 500));
+          } catch {
+            // Ignore refresh errors - user is already logged in
+            console.warn('Failed to refresh user after payment confirmation');
+          }
+
+          // Clean up payment-related data from localStorage for login flow
+          try {
+            localStorage.removeItem('signupSessionId');
+            localStorage.removeItem('company');
+            localStorage.removeItem('companyDetails');
+          } catch {
+            // Ignore cleanup errors
           }
         }
 
         setSuccess(true);
 
-        // Cleanup pending signup storage
-        try {
-          sessionStorage.removeItem('pendingSignupCredentials');
-        } catch {
-          // Ignore cleanup errors
-        }
-        try {
-          localStorage.removeItem('signupSessionId');
-        } catch {
-          // Ignore cleanup errors
-        }
-
-        // 3. Redirect to dashboard
+        // Redirect to dashboard with replace to prevent back navigation issues
+        // Use a longer delay to ensure all state updates are complete
         setTimeout(() => {
-          navigate('/dashboard');
-        }, 1500);
+          navigate('/dashboard', { replace: true });
+        }, 2000);
       } else {
         throw new Error('Payment was not successful');
       }

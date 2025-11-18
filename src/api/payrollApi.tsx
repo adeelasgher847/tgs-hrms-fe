@@ -79,8 +79,6 @@ export interface CreatePayrollConfigRequest {
   leaveDeductionPolicy: LeaveDeductionPolicy;
 }
 
-// Backend accepts: pending, approved, paid, rejected
-// UI uses: unpaid, paid (where unpaid maps to pending/approved/rejected)
 export type PayrollStatus = 'pending' | 'approved' | 'paid' | 'rejected';
 
 export interface PayrollOtherItem {
@@ -240,7 +238,7 @@ export const payrollApi = {
         'response' in error &&
         (error as { response?: { status?: number } }).response?.status === 404
       ) {
-        return null; // Config doesn't exist yet
+        return null;
       }
       console.error('Failed to fetch payroll config:', error);
       throw error;
@@ -335,7 +333,6 @@ export const payrollApi = {
     }
   },
 
-  // Get employee salary history
   getEmployeeSalaryHistory: async (
     employeeId: string
   ): Promise<EmployeeSalary[]> => {
@@ -350,8 +347,11 @@ export const payrollApi = {
     }
   },
 
-  getAllEmployeeSalaries: async (): Promise<
-    Array<{
+  getAllEmployeeSalaries: async (params?: {
+    page?: number | null;
+    limit?: number;
+  }): Promise<{
+    items: Array<{
       employee: {
         id: string;
         user: {
@@ -373,35 +373,88 @@ export const payrollApi = {
         status: string;
       };
       salary: EmployeeSalary | null;
-    }>
-  > => {
+    }>;
+    total?: number;
+    page?: number;
+    totalPages?: number;
+  }> => {
     try {
+      const requestParams: Record<string, string | number> = {};
+      if (params?.page !== undefined && params.page !== null) {
+        requestParams.page = params.page;
+        requestParams.limit = params.limit ?? 25;
+      }
+
       const response = await axiosInstance.get<
-        Array<{
-          employee: {
-            id: string;
-            user: {
+        | Array<{
+            employee: {
               id: string;
-              first_name: string;
-              last_name: string;
-              email: string;
-              profile_pic: string | null;
+              user: {
+                id: string;
+                first_name: string;
+                last_name: string;
+                email: string;
+                profile_pic: string | null;
+              };
+              designation: {
+                id: string;
+                title: string;
+              };
+              department: {
+                id: string;
+                name: string;
+              };
+              team: { id: string; name: string } | null;
+              status: string;
             };
-            designation: {
-              id: string;
-              title: string;
-            };
-            department: {
-              id: string;
-              name: string;
-            };
-            team: { id: string; name: string } | null;
-            status: string;
-          };
-          salary: EmployeeSalary | null;
-        }>
-      >('/payroll/salary');
-      return response.data;
+            salary: EmployeeSalary | null;
+          }>
+        | {
+            items: Array<{
+              employee: {
+                id: string;
+                user: {
+                  id: string;
+                  first_name: string;
+                  last_name: string;
+                  email: string;
+                  profile_pic: string | null;
+                };
+                designation: {
+                  id: string;
+                  title: string;
+                };
+                department: {
+                  id: string;
+                  name: string;
+                };
+                team: { id: string; name: string } | null;
+                status: string;
+              };
+              salary: EmployeeSalary | null;
+            }>;
+            total?: number;
+            page?: number;
+            totalPages?: number;
+          }
+      >('/payroll/salary', { params: requestParams });
+
+      if (Array.isArray(response.data)) {
+        return {
+          items: response.data,
+          total: response.data.length,
+          page: 1,
+          totalPages: 1,
+        };
+      } else if (response.data && typeof response.data === 'object') {
+        return {
+          items: response.data.items || [],
+          total: response.data.total,
+          page: response.data.page || 1,
+          totalPages: response.data.totalPages || 1,
+        };
+      }
+      return { items: [], total: 0, page: 1, totalPages: 1 };
     } catch (error) {
       console.error('Failed to fetch all employee salaries:', error);
       throw error;
@@ -411,7 +464,8 @@ export const payrollApi = {
   generatePayroll: async (params: {
     month: number;
     year: number;
-    tenant_id?: string;
+    tenantId?: string;
+    employeeId?: string;
     employee_id?: string;
   }): Promise<PayrollRecord[]> => {
     try {
@@ -419,11 +473,12 @@ export const payrollApi = {
         month: params.month,
         year: params.year,
       };
-      if (params.tenant_id) {
-        query.tenant_id = params.tenant_id;
+      if (params.tenantId) {
+        query.tenantId = params.tenantId;
       }
-      if (params.employee_id) {
-        query.employee_id = params.employee_id;
+      const employeeId = params.employee_id || params.employeeId;
+      if (employeeId) {
+        query.employee_id = employeeId;
       }
 
       const response = await axiosInstance.post<PayrollRecord[]>(
@@ -445,7 +500,14 @@ export const payrollApi = {
     year: number;
     tenant_id?: string;
     employee_id?: string;
-  }): Promise<PayrollRecord[]> => {
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    items: PayrollRecord[];
+    total?: number;
+    page?: number;
+    totalPages?: number;
+  }> => {
     try {
       const query: Record<string, string | number> = {
         month: params.month,
@@ -457,23 +519,127 @@ export const payrollApi = {
       if (params.employee_id) {
         query.employee_id = params.employee_id;
       }
+      if (params.page !== undefined && params.page !== null) {
+        query.page = params.page;
+        query.limit = params.limit ?? 25;
+      } else {
+        query.page = 1;
+        query.limit = params.limit ?? 25;
+      }
 
-      const response = await axiosInstance.get<PayrollRecord[]>('/payroll', {
-        params: query,
+      console.log('Payroll API request params:', query);
+
+      const response = await axiosInstance.get<
+        | PayrollRecord[]
+        | {
+            items: PayrollRecord[];
+            total?: number;
+            page?: number;
+            limit?: number;
+            totalPages?: number;
+          }
+      >('/payroll', { params: query });
+
+      console.log('Payroll API raw response:', {
+        isArray: Array.isArray(response.data),
+        dataType: typeof response.data,
+        hasItems: !!(response.data as { items?: unknown[] })?.items,
+        itemsLength: Array.isArray(response.data)
+          ? response.data.length
+          : (response.data as { items?: unknown[] })?.items?.length || 0,
+        total: (response.data as { total?: number })?.total,
+        totalPages: (response.data as { totalPages?: number })?.totalPages,
+        page: (response.data as { page?: number })?.page,
+        limit: (response.data as { limit?: number })?.limit,
       });
-      return response.data;
+
+      if (Array.isArray(response.data)) {
+        const itemsCount = response.data.length;
+        const limit = (query.limit as number) || 25;
+        return {
+          items: response.data,
+          total: itemsCount,
+          page: 1,
+          totalPages: Math.ceil(itemsCount / limit),
+        };
+      } else if (response.data && typeof response.data === 'object') {
+        const data = response.data as {
+          items?: PayrollRecord[];
+          total?: number;
+          page?: number;
+          limit?: number;
+          totalPages?: number;
+        };
+        const items = data.items || [];
+        const total = data.total ?? items.length;
+        const limit = data.limit ?? (query.limit as number) ?? 25;
+        const page = data.page ?? 1;
+        const totalPages = data.totalPages ?? Math.ceil(total / limit);
+
+        console.log('Processed pagination response:', {
+          itemsCount: items.length,
+          total,
+          page,
+          limit,
+          totalPages,
+        });
+
+        return {
+          items,
+          total,
+          page,
+          totalPages,
+        };
+      }
+      return { items: [], total: 0, page: 1, totalPages: 1 };
     } catch (error) {
       console.error('Failed to fetch payroll records:', error);
       throw error;
     }
   },
 
-  getPayrollHistory: async (employeeId: string): Promise<PayrollRecord[]> => {
+  getPayrollHistory: async (
+    employeeId: string,
+    params?: { page?: number | null; limit?: number }
+  ): Promise<{
+    items: PayrollRecord[];
+    total?: number;
+    page?: number;
+    totalPages?: number;
+  }> => {
     try {
-      const response = await axiosInstance.get<PayrollRecord[]>(
-        `/payroll/employee/${employeeId}/history`
-      );
-      return response.data;
+      const requestParams: Record<string, string | number> = {};
+      if (params?.page !== undefined && params.page !== null) {
+        requestParams.page = params.page;
+        requestParams.limit = params.limit ?? 25;
+      }
+
+      const response = await axiosInstance.get<
+        | PayrollRecord[]
+        | {
+            items: PayrollRecord[];
+            total?: number;
+            page?: number;
+            totalPages?: number;
+          }
+      >(`/payroll/employee/${employeeId}/history`, { params: requestParams });
+
+      if (Array.isArray(response.data)) {
+        return {
+          items: response.data,
+          total: response.data.length,
+          page: 1,
+          totalPages: 1,
+        };
+      } else if (response.data && typeof response.data === 'object') {
+        return {
+          items: response.data.items || [],
+          total: response.data.total,
+          page: response.data.page || 1,
+          totalPages: response.data.totalPages || 1,
+        };
+      }
+      return { items: [], total: 0, page: 1, totalPages: 1 };
     } catch (error) {
       console.error('Failed to fetch payroll history:', error);
       throw error;
@@ -538,20 +704,177 @@ export const payrollApi = {
     endDate?: string;
   }): Promise<PayrollStatistics> => {
     try {
-      const response = await axiosInstance.get<PayrollStatistics>(
-        '/payroll/statistics',
-        {
-          params: {
-            tenant_id: params.tenantId,
-            tenantId: params.tenantId,
-            startDate: params.startDate,
-            start_date: params.startDate,
-            endDate: params.endDate,
-            end_date: params.endDate,
-          },
+      interface StatisticsItem {
+        tenantId?: string;
+        monthlyTrend?: Array<{
+          month: number;
+          year: number;
+          totalGross: number;
+          totalDeductions: number;
+          totalBonuses: number;
+          totalNet: number;
+          employeeCount: number;
+        }>;
+        departmentComparison?: Array<{
+          department: string;
+          totalGross: number;
+          totalDeductions: number;
+          totalBonuses: number;
+          totalNet: number;
+          employeeCount: number;
+        }>;
+      }
+
+      const response = await axiosInstance.get<
+        | PayrollStatistics
+        | {
+            statistics: StatisticsItem[];
+          }
+      >('/payroll/statistics', {
+        params: {
+          ...(params.tenantId && { tenantId: params.tenantId }),
+          ...(params.startDate && { startDate: params.startDate }),
+          ...(params.endDate && { endDate: params.endDate }),
+        },
+      });
+
+      if (
+        response.data &&
+        typeof response.data === 'object' &&
+        'statistics' in response.data &&
+        Array.isArray(response.data.statistics) &&
+        response.data.statistics.length > 0
+      ) {
+        if (params.tenantId) {
+          const filteredStat = response.data.statistics.find(
+            (stat: StatisticsItem) => stat.tenantId === params.tenantId
+          );
+          if (filteredStat) {
+            return {
+              monthlyTrend: filteredStat.monthlyTrend || [],
+              departmentComparison: filteredStat.departmentComparison || [],
+            };
+          } else {
+            return {
+              monthlyTrend: [],
+              departmentComparison: [],
+            };
+          }
+        } else {
+          interface MonthlyTrendItem {
+            month: number;
+            year: number;
+            totalGross: number;
+            totalDeductions: number;
+            totalBonuses: number;
+            totalNet: number;
+            employeeCount: number;
+          }
+
+          interface DepartmentComparisonItem {
+            department: string;
+            totalGross: number;
+            totalDeductions: number;
+            totalBonuses: number;
+            totalNet: number;
+            employeeCount: number;
+          }
+
+          const aggregatedMonthlyTrend = new Map<string, MonthlyTrendItem>();
+          const aggregatedDepartmentComparison = new Map<
+            string,
+            DepartmentComparisonItem
+          >();
+
+          response.data.statistics.forEach((stat: StatisticsItem) => {
+            if (Array.isArray(stat.monthlyTrend)) {
+              stat.monthlyTrend.forEach(trend => {
+                const key = `${trend.year}-${trend.month}`;
+                if (aggregatedMonthlyTrend.has(key)) {
+                  const existing = aggregatedMonthlyTrend.get(key);
+                  if (existing) {
+                    existing.totalGross += Number(trend.totalGross) || 0;
+                    existing.totalDeductions +=
+                      Number(trend.totalDeductions) || 0;
+                    existing.totalBonuses += Number(trend.totalBonuses) || 0;
+                    existing.totalNet += Number(trend.totalNet) || 0;
+                    existing.employeeCount += Number(trend.employeeCount) || 0;
+                  }
+                } else {
+                  aggregatedMonthlyTrend.set(key, {
+                    month: trend.month,
+                    year: trend.year,
+                    totalGross: Number(trend.totalGross) || 0,
+                    totalDeductions: Number(trend.totalDeductions) || 0,
+                    totalBonuses: Number(trend.totalBonuses) || 0,
+                    totalNet: Number(trend.totalNet) || 0,
+                    employeeCount: Number(trend.employeeCount) || 0,
+                  });
+                }
+              });
+            }
+
+            if (Array.isArray(stat.departmentComparison)) {
+              stat.departmentComparison.forEach(dept => {
+                const deptName = dept.department?.trim() || '';
+                if (deptName) {
+                  if (aggregatedDepartmentComparison.has(deptName)) {
+                    const existing =
+                      aggregatedDepartmentComparison.get(deptName);
+                    if (existing) {
+                      existing.totalGross += Number(dept.totalGross) || 0;
+                      existing.totalDeductions +=
+                        Number(dept.totalDeductions) || 0;
+                      existing.totalBonuses += Number(dept.totalBonuses) || 0;
+                      existing.totalNet += Number(dept.totalNet) || 0;
+                      existing.employeeCount += Number(dept.employeeCount) || 0;
+                    }
+                  } else {
+                    aggregatedDepartmentComparison.set(deptName, {
+                      department: deptName,
+                      totalGross: Number(dept.totalGross) || 0,
+                      totalDeductions: Number(dept.totalDeductions) || 0,
+                      totalBonuses: Number(dept.totalBonuses) || 0,
+                      totalNet: Number(dept.totalNet) || 0,
+                      employeeCount: Number(dept.employeeCount) || 0,
+                    });
+                  }
+                }
+              });
+            }
+          });
+
+          return {
+            monthlyTrend: Array.from(aggregatedMonthlyTrend.values()).sort(
+              (a, b) => {
+                if (a.year !== b.year) return a.year - b.year;
+                return a.month - b.month;
+              }
+            ),
+            departmentComparison: Array.from(
+              aggregatedDepartmentComparison.values()
+            ),
+          };
         }
-      );
-      return response.data;
+      }
+
+      if (
+        response.data &&
+        typeof response.data === 'object' &&
+        ('monthlyTrend' in response.data ||
+          'departmentComparison' in response.data)
+      ) {
+        return {
+          monthlyTrend: (response.data as PayrollStatistics).monthlyTrend || [],
+          departmentComparison:
+            (response.data as PayrollStatistics).departmentComparison || [],
+        };
+      }
+
+      return {
+        monthlyTrend: [],
+        departmentComparison: [],
+      };
     } catch (error) {
       console.error('Failed to fetch payroll statistics:', error);
       throw error;

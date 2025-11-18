@@ -214,7 +214,7 @@ export const isSubMenuVisibleForRole = (
       visible = false;
     }
     if (parent.includes('assets')) {
-      if (sub.includes('asset requests')) {
+      if (sub.includes('asset requests') || sub.includes('assets overview')) {
         visible = false;
       }
     }
@@ -302,6 +302,16 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (parent.includes('payroll')) {
+      if (!sub.includes('my salary')) {
+        visible = false;
+      }
+    }
+    if (parent.includes('assets')) {
+      if (sub.includes('assets overview')) {
+        visible = false;
+      }
+    }
   }
 
   if (r === 'employee' || r === 'user') {
@@ -316,7 +326,11 @@ export const isSubMenuVisibleForRole = (
       }
     }
     if (parent.includes('assets')) {
-      if (sub.includes('asset inventory') || sub.includes('management')) {
+      if (
+        sub.includes('asset inventory') ||
+        sub.includes('management') ||
+        sub.includes('assets overview')
+      ) {
         visible = false;
       }
     }
@@ -341,9 +355,13 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (parent.includes('assets')) {
+      if (sub.includes('assets overview')) {
+        visible = false;
+      }
+    }
   }
 
-  // System Admin: For Assets menu - only see System Assets Overview (hide all other asset pages)
   if (r === 'system-admin') {
     if (parent.includes('assets')) {
       // Hide all asset submenus except System Assets Overview
@@ -365,7 +383,6 @@ export const isSubMenuVisibleForRole = (
       }
     }
   } else {
-    // Hide System Assets Overview for non-system-admin roles
     if (parent.includes('assets') && sub.includes('system assets overview')) {
       visible = false;
     }

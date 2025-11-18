@@ -42,7 +42,7 @@ export interface CompanyDetailsResponse {
 }
 
 export interface PaymentRequest {
-  signupSessionId: string;
+  signupSessionId: string | null; // String for signup flow, null for login flow
   mode: 'checkout'; // Add mode field
 }
 
@@ -55,7 +55,7 @@ export interface PaymentResponse {
 
 // Accept either checkout session id (Stripe Checkout) or payment intent id (alt flows)
 export interface PaymentConfirmRequest {
-  signupSessionId: string;
+  signupSessionId: string | null; // String for signup flow, null for login flow
   checkoutSessionId?: string;
   paymentIntentId?: string;
 }
@@ -85,7 +85,6 @@ export interface LogoUploadResponse {
   logoUrl: string;
   signupSessionId: string;
 }
-
 
 class SignupApiService {
   private baseUrl = '/signup';
@@ -128,12 +127,13 @@ class SignupApiService {
       const response = await axiosInstance.get(
         `/subscription-plans/prices-by-plans?${params.toString()}`
       );
-      console.log("Get stripe prices by plans id response: ", response)
+      console.log('Get stripe prices by plans id response: ', response);
       return response.data;
     } catch (error: unknown) {
       console.error(
         'Stripe prices by plan IDs API Error:',
-        (error as Record<string, unknown>)?.response?.data || (error as Record<string, unknown>)?.message
+        (error as Record<string, unknown>)?.response?.data ||
+          (error as Record<string, unknown>)?.message
       );
       throw error;
     }
@@ -143,6 +143,45 @@ class SignupApiService {
   async createCompanyDetails(
     data: CompanyDetailsRequest
   ): Promise<CompanyDetailsResponse> {
+    // Validate required fields before sending
+    if (
+      !data.signupSessionId ||
+      typeof data.signupSessionId !== 'string' ||
+      data.signupSessionId.trim().length === 0
+    ) {
+      throw new Error(
+        'signupSessionId is required and must be a non-empty string'
+      );
+    }
+    if (
+      !data.companyName ||
+      typeof data.companyName !== 'string' ||
+      data.companyName.trim().length === 0
+    ) {
+      throw new Error('companyName is required and must be a non-empty string');
+    }
+    if (
+      !data.domain ||
+      typeof data.domain !== 'string' ||
+      data.domain.trim().length === 0
+    ) {
+      throw new Error('domain is required and must be a non-empty string');
+    }
+    if (
+      !data.planId ||
+      typeof data.planId !== 'string' ||
+      data.planId.trim().length === 0
+    ) {
+      throw new Error('planId is required and must be a non-empty string');
+    }
+
+    console.log('Creating company details with:', {
+      signupSessionId: data.signupSessionId,
+      companyName: data.companyName,
+      domain: data.domain,
+      planId: data.planId,
+    });
+
     const response = await axiosInstance.post(
       `${this.baseUrl}/company-details`,
       data
@@ -152,10 +191,7 @@ class SignupApiService {
 
   // Step 3: Create Payment Intent
   async createPayment(data: PaymentRequest): Promise<PaymentResponse> {
-    const response = await axiosInstance.post(
-      `${this.baseUrl}/payment`,
-      data
-    );
+    const response = await axiosInstance.post(`${this.baseUrl}/payment`, data);
     return response.data;
   }
 
@@ -174,10 +210,7 @@ class SignupApiService {
   async completeSignup(
     data: CompleteSignupRequest
   ): Promise<CompleteSignupResponse> {
-    const response = await axiosInstance.post(
-      `${this.baseUrl}/complete`,
-      data
-    );
+    const response = await axiosInstance.post(`${this.baseUrl}/complete`, data);
     return response.data;
   }
 
@@ -198,7 +231,6 @@ class SignupApiService {
     );
     return response.data;
   }
-
 }
 
 const signupApi = new SignupApiService();

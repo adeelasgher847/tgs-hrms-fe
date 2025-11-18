@@ -33,11 +33,13 @@ const PerformanceDashboard: React.FC = () => {
       setTenants(data);
 
       if (data.length > 0) {
-        const testifyTenant = data.find(t => t.name === 'Testify Solutions');
-        if (testifyTenant) {
-          setSelectedTenant(testifyTenant.id);
-        } else {
-          setSelectedTenant(data[0].id);
+        if (!selectedTenant || !data.find(t => t.id === selectedTenant)) {
+          const testifyTenant = data.find(t => t.name === 'Testify Solutions');
+          if (testifyTenant) {
+            setSelectedTenant(testifyTenant.id);
+          } else {
+            setSelectedTenant(data[0].id);
+          }
         }
       }
     } catch (err) {
@@ -48,7 +50,7 @@ const PerformanceDashboard: React.FC = () => {
     } finally {
       setLoadingTenants(false);
     }
-  }, []);
+  }, [selectedTenant]);
 
   useEffect(() => {
     fetchTenants();
@@ -63,11 +65,14 @@ const PerformanceDashboard: React.FC = () => {
       <Box display='flex' gap={2} mb={3} flexWrap='wrap'>
         <FormControl size='small' sx={{ minWidth: 160, maxWidth: 220 }}>
           <Select
-            value={selectedTenant}
+            value={selectedTenant || ''}
             onChange={e => setSelectedTenant(e.target.value)}
+            disabled={loadingTenants || tenants.length === 0}
           >
             {loadingTenants ? (
               <MenuItem disabled>Loading...</MenuItem>
+            ) : tenants.length === 0 ? (
+              <MenuItem disabled>No tenants available</MenuItem>
             ) : (
               tenants.map(t => (
                 <MenuItem key={t.id} value={t.id}>

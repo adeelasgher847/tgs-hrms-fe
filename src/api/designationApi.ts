@@ -43,7 +43,9 @@ export interface DesignationDto {
   departmentId: string;
 }
 
-function normalizeDesignation(raw: Record<string, unknown>): BackendDesignation {
+function normalizeDesignation(
+  raw: Record<string, unknown>
+): BackendDesignation {
   return {
     id: raw?.id as string,
     title: raw?.title as string,
@@ -75,13 +77,15 @@ class DesignationApiService {
       this.departmentUrl
     );
     const items = Array.isArray(response.data) ? response.data : [];
-    return items.map((item: unknown) => normalizeDepartment(item as Record<string, unknown>));
+    return items.map((item: unknown) =>
+      normalizeDepartment(item as Record<string, unknown>)
+    );
   }
 
   // Get all designations for a department with pagination
   async getDesignationsByDepartment(
     departmentId: string,
-    page: number = 1
+    page: number | null = 1
   ): Promise<{
     items: BackendDesignation[];
     total: number;
@@ -90,9 +94,12 @@ class DesignationApiService {
     totalPages: number;
   }> {
     try {
-      const response = await axiosInstance.get(
-        `${this.baseUrl}/department/${departmentId}?page=${page}`
-      );
+      // Only add page parameter if it's not null (for dropdowns, pass null to get all records)
+      const url =
+        page === null
+          ? `${this.baseUrl}/department/${departmentId}`
+          : `${this.baseUrl}/department/${departmentId}?page=${page}`;
+      const response = await axiosInstance.get(url);
 
       // Handle both paginated and non-paginated responses
       let items: unknown[] = [];
@@ -121,7 +128,9 @@ class DesignationApiService {
       }
 
       return {
-        items: items.map((item: unknown) => normalizeDesignation(item as Record<string, unknown>)),
+        items: items.map((item: unknown) =>
+          normalizeDesignation(item as Record<string, unknown>)
+        ),
         total,
         page: currentPage,
         limit,
@@ -170,7 +179,9 @@ class DesignationApiService {
     const response = await axiosInstance.get<BackendDesignation>(
       `${this.baseUrl}/${id}`
     );
-    return normalizeDesignation(response.data as unknown as Record<string, unknown>);
+    return normalizeDesignation(
+      response.data as unknown as Record<string, unknown>
+    );
   }
 
   // Create new designation
@@ -187,7 +198,9 @@ class DesignationApiService {
         this.baseUrl,
         payload
       );
-      return normalizeDesignation(response.data as unknown as Record<string, unknown>);
+      return normalizeDesignation(
+        response.data as unknown as Record<string, unknown>
+      );
     } catch (error) {
       const errorResult = handleApiError(error, {
         operation: 'create',
@@ -210,7 +223,9 @@ class DesignationApiService {
         `${this.baseUrl}/${id}`,
         payload
       );
-      return normalizeDesignation(response.data as unknown as Record<string, unknown>);
+      return normalizeDesignation(
+        response.data as unknown as Record<string, unknown>
+      );
     } catch (error) {
       const errorResult = handleApiError(error, {
         operation: 'update',

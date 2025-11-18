@@ -27,7 +27,6 @@ import {
 import DesignationModal from '../Desigantions/Designation-modal';
 import DeleteConfirmationDialog from './Delete-confirmation-dialog';
 import { useLanguage } from '../../hooks/useLanguage';
-import { useOutletContext } from 'react-router-dom';
 import {
   designationApiService,
   type FrontendDesignation,
@@ -42,9 +41,7 @@ import ErrorSnackbar from '../common/ErrorSnackbar';
 
 export default function DesignationManager() {
   const { language } = useLanguage();
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const isRTL = language === 'ar';
-  // Theme available if needed
   const [designations, setDesignations] = useState<FrontendDesignation[]>([]);
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,12 +56,13 @@ export default function DesignationManager() {
     string | 'all'
   >('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+  const itemsPerPage = 25;
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   const getText = (en: string, ar: string) => (language === 'ar' ? ar : en);
 
-  // Fetch all departments from backend
   const fetchDepartments = useCallback(async () => {
     try {
       setDepartmentsLoading(true);
@@ -80,42 +78,53 @@ export default function DesignationManager() {
     }
   }, [showError]);
 
-  // Fetch designations for a specific department with pagination
-  const fetchDesignations = useCallback(async (departmentId: string, page: number = 1) => {
-    try {
-      setLoading(true);
-      const response = await designationApiService.getDesignationsByDepartment(
-        departmentId,
-        page
-      );
-      const frontendDesignations = response.items.map(designation =>
-        designationApiService.convertBackendToFrontend(designation)
-      );
-      setDesignations(frontendDesignations);
+  const fetchDesignations = useCallback(
+    async (departmentId: string, page: number = 1) => {
+      try {
+        setLoading(true);
+        const response =
+          await designationApiService.getDesignationsByDepartment(
+            departmentId,
+            page
+          );
+        const frontendDesignations = response.items.map(designation =>
+          designationApiService.convertBackendToFrontend(designation)
+        );
+        setDesignations(frontendDesignations);
 
-      // Update pagination state
-      setCurrentPage(response.page);
-      setItemsPerPage(response.limit);
-    } catch (error: unknown) {
-      showError(error, { operation: 'fetch', resource: 'designation' });
-    } finally {
-      setLoading(false);
-    }
-  }, [showError]);
+        const hasMorePages = response.items.length === itemsPerPage;
 
-  // Handle page change for designations
+        if (response.totalPages && response.total) {
+          setCurrentPage(response.page);
+          setTotalPages(response.totalPages);
+          setTotalRecords(response.total);
+        } else {
+          setCurrentPage(response.page || page);
+          setTotalPages(hasMorePages ? page + 1 : page);
+          setTotalRecords(
+            hasMorePages
+              ? page * itemsPerPage
+              : (page - 1) * itemsPerPage + response.items.length
+          );
+        }
+      } catch (error: unknown) {
+        showError(error, { operation: 'fetch', resource: 'designation' });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [showError, itemsPerPage]
+  );
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     if (selectedDepartmentId !== 'all') {
       fetchDesignations(selectedDepartmentId, page);
     } else {
-      // For "all" departments, we'll need to implement a different approach
-      // since the backend doesn't have a direct endpoint for all designations with pagination
       fetchAllDesignations();
     }
   };
 
-  // Fetch all designations from all departments
   const fetchAllDesignations = useCallback(async () => {
     try {
       setLoading(true);
@@ -132,15 +141,14 @@ export default function DesignationManager() {
     }
   }, [showError]);
 
-  // Load departments on component mount
   useEffect(() => {
     fetchDepartments();
   }, [fetchDepartments]);
 
-  // Load designations when department changes
   useEffect(() => {
+    setCurrentPage(1);
     if (selectedDepartmentId !== 'all') {
-      fetchDesignations(selectedDepartmentId);
+      fetchDesignations(selectedDepartmentId, 1);
     } else {
       fetchAllDesignations();
     }
@@ -153,7 +161,6 @@ export default function DesignationManager() {
   }) => {
     try {
       if (editingDesignation) {
-        // Update existing designation
         const designationDto = {
           title: data.title,
           departmentId: data.departmentId,
@@ -177,7 +184,6 @@ export default function DesignationManager() {
           )
         );
 
-
         showSuccess('Designation updated successfully');
       } else {
         // Create new designation
@@ -195,9 +201,7 @@ export default function DesignationManager() {
         };
         setDesignations(prev => [...prev, newDesignation]);
 
-
         showSuccess('Designation created successfully');
-
       }
       setModalOpen(false);
       setEditingDesignation(null);
@@ -223,22 +227,22 @@ export default function DesignationManager() {
   };
 
   const filteredDesignations =
-    selectedDepartmentId === 'all'
-      ? designations
-      : designations.filter(d => d.departmentId === selectedDepartmentId);
+    selectedDepartmentId === 'all' ? designations : designations;
 
-  // Use the state variable instead of redeclaring
-  const totalPagesForFiltered = Math.ceil(
-    filteredDesignations.length / itemsPerPage
-  );
-  const paginatedData = filteredDesignations.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const totalPagesForFiltered =
+    selectedDepartmentId === 'all'
+      ? Math.ceil(filteredDesignations.length / itemsPerPage)
+      : totalPages;
+  const paginatedData =
+    selectedDepartmentId === 'all'
+      ? filteredDesignations.slice(
+          (currentPage - 1) * itemsPerPage,
+          currentPage * itemsPerPage
+        )
+      : filteredDesignations;
 
   return (
     <Box dir={isRTL ? 'rtl' : 'ltr'}>
-      {/* Top Bar */}
       <Box
         sx={{
           display: 'flex',
@@ -249,13 +253,6 @@ export default function DesignationManager() {
           gap: 2,
         }}
       >
-        <Typography
-          variant='h4'
-          sx={{ fontWeight: 700, color: darkMode ? '#8f8f8f' : '#000' }}
-        >
-          {getText('Designations', 'المسميات الوظيفية')}
-        </Typography>
-
         <Box
           sx={{
             display: { sx: 'block', sm: 'flex' },
@@ -282,7 +279,6 @@ export default function DesignationManager() {
         </Box>
       </Box>
 
-      {/* Filter by Department */}
       <Paper sx={{ mb: 3, boxShadow: 'none' }}>
         <FormControl fullWidth>
           <InputLabel id='dept-select'>
@@ -318,7 +314,6 @@ export default function DesignationManager() {
         </FormControl>
       </Paper>
 
-      {/* Designation Table */}
       <Paper variant='outlined' sx={{ bgcolor: 'unset', border: 'none' }}>
         <Box>
           <Typography variant='body2' sx={{ mb: 2, color: 'text.secondary' }}>
@@ -405,7 +400,6 @@ export default function DesignationManager() {
                   </TableRow>
                 ) : (
                   paginatedData.map(designation => {
-                    // Find department name for this designation
                     const department = departments.find(
                       d => d.id === designation.departmentId
                     );
@@ -488,13 +482,12 @@ export default function DesignationManager() {
             </Box>
           )}
 
-          {/* Pagination Info */}
-          {filteredDesignations.length > 0 && (
+          {paginatedData.length > 0 && (
             <Box display='flex' justifyContent='center' mt={1}>
               <Typography variant='body2' color='textSecondary'>
                 {getText(
-                  `Showing page ${currentPage} of ${totalPagesForFiltered} (${filteredDesignations.length} total records)`,
-                  `عرض الصفحة ${currentPage} من ${totalPagesForFiltered} (${filteredDesignations.length} سجل إجمالي)`
+                  `Showing page ${currentPage} of ${totalPagesForFiltered} (${selectedDepartmentId === 'all' ? filteredDesignations.length : totalRecords} total records)`,
+                  `عرض الصفحة ${currentPage} من ${totalPagesForFiltered} (${selectedDepartmentId === 'all' ? filteredDesignations.length : totalRecords} سجل إجمالي)`
                 )}
               </Typography>
             </Box>
@@ -502,7 +495,6 @@ export default function DesignationManager() {
         </Box>
       </Paper>
 
-      {/* Modals */}
       <DesignationModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -523,7 +515,6 @@ export default function DesignationManager() {
         isRTL={isRTL}
       />
 
-      {/* Snackbar for notifications */}
       <ErrorSnackbar
         open={snackbar.open}
         message={snackbar.message}

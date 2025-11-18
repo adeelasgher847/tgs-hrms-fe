@@ -15,6 +15,7 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Pagination,
   CircularProgress,
 } from '@mui/material';
 import {
@@ -22,6 +23,7 @@ import {
   type PromotionRecord,
   type PromotionStats,
 } from '../../api/systemPerformanceApi';
+import systemEmployeeApiService from '../../api/systemEmployeeApi';
 
 interface PromotionsListProps {
   tenantId: string;
@@ -36,17 +38,55 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
     startDate: '',
     endDate: '',
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [employeeNames, setEmployeeNames] = useState<Record<string, string>>(
+    {}
+  );
+  const itemsPerPage = 25;
+
+  const fetchEmployeeNames = useCallback(async (employeeIds: string[]) => {
+    if (employeeIds.length === 0) return;
+
+    try {
+      const response = await systemEmployeeApiService.getSystemEmployees({
+        page: null,
+      });
+
+      const employeesData = Array.isArray(response)
+        ? response
+        : 'items' in response
+          ? response.items
+          : [];
+
+      const namesMap: Record<string, string> = {};
+
+      employeesData.forEach((emp: { id: string; name?: string }) => {
+        if (emp.id && employeeIds.includes(emp.id)) {
+          const name = emp.name || '';
+          if (name) {
+            namesMap[emp.id] = name;
+          }
+        }
+      });
+
+      setEmployeeNames(prev => ({ ...prev, ...namesMap }));
+    } catch (error) {
+      console.error('Failed to fetch employee names:', error);
+    }
+  }, []);
 
   const fetchPromotions = useCallback(async () => {
     setLoading(true);
     try {
-      // Build dynamic filter params
       const params: {
         tenantId: string;
         status?: 'pending' | 'approved' | 'rejected';
         startDate?: string;
         endDate?: string;
-      } = { tenantId }; // Always include tenantId
+        page?: number;
+      } = { tenantId, page: currentPage };
 
       if (
         filters.status &&
@@ -57,18 +97,46 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
       if (filters.startDate) params.startDate = filters.startDate;
       if (filters.endDate) params.endDate = filters.endDate;
 
-      const { promotions, stats } =
-        await systemPerformanceApiService.getPromotions(params);
-      setPromotions(promotions);
-      setStats(stats);
+      const response = await systemPerformanceApiService.getPromotions(params);
+      const promotionsArray = Array.isArray(response.promotions)
+        ? response.promotions
+        : [];
+      setPromotions(promotionsArray);
+      setStats(Array.isArray(response.stats) ? response.stats : []);
+
+      const employeeIds = [
+        ...new Set(promotionsArray.map(p => p.employee_id).filter(Boolean)),
+      ];
+      if (employeeIds.length > 0) {
+        await fetchEmployeeNames(employeeIds);
+      }
+
+      if (response.totalPages !== undefined && response.total !== undefined) {
+        setTotalPages(response.totalPages);
+        setTotalRecords(response.total);
+      } else {
+        const hasMorePages = promotionsArray.length === itemsPerPage;
+        setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
+        setTotalRecords(
+          hasMorePages
+            ? currentPage * itemsPerPage
+            : (currentPage - 1) * itemsPerPage + promotionsArray.length
+        );
+      }
     } catch (error) {
-      console.error('Error fetching promotions:', error);
-      setPromotions([]);
-      setStats([]);
+      console.error('Failed to fetch promotions:', error);
     } finally {
       setLoading(false);
     }
-  }, [tenantId, filters.status, filters.startDate, filters.endDate]);
+  }, [
+    tenantId,
+    filters.status,
+    filters.startDate,
+    filters.endDate,
+    currentPage,
+    itemsPerPage,
+    fetchEmployeeNames,
+  ]);
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -84,8 +152,16 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.status, filters.startDate, filters.endDate]);
+
+  useEffect(() => {
     fetchPromotions();
   }, [fetchPromotions]);
+
+  const getEmployeeName = (employeeId: string): string => {
+    return employeeNames[employeeId] || employeeId || 'N/A';
+  };
 
   return (
     <Box>
@@ -126,7 +202,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
           onChange={e => setFilters(f => ({ ...f, endDate: e.target.value }))}
         />
 
-        <Button variant='contained' onClick={fetchPromotions}>
+        <Button variant='contained' onClick={() => setCurrentPage(1)}>
           Apply Filters
         </Button>
       </Box>
@@ -139,11 +215,13 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
               p: 2,
               display: 'flex',
               justifyContent: 'space-between',
-              flexDirection:'column',
-              boxShadow:'none'
+              flexDirection: 'column',
+              boxShadow: 'none',
             }}
           >
-            <Typography variant='h6' sx={{mb:1}}>Stats: </Typography>
+            <Typography variant='h6' sx={{ mb: 1 }}>
+              Stats:{' '}
+            </Typography>
             <Box display='flex' gap={1}>
               <Chip label={`Approved: ${s.approvedCount}`} color='success' />
               <Chip label={`Pending: ${s.pendingCount}`} color='warning' />
@@ -153,13 +231,18 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         ))}
       </Box>
 
-      <Paper sx={{ p: 2,overflowX:'scroll'}}>
+      <Paper sx={{ p: 2, overflowX: 'scroll' }}>
         {loading ? (
-          <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            minHeight='200px'
+          >
             <CircularProgress />
           </Box>
         ) : (
-          <Table sx={{  }}>
+          <Table sx={{}}>
             <TableHead>
               <TableRow>
                 <TableCell>Employee</TableCell>
@@ -174,7 +257,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
               {promotions.length > 0 ? (
                 promotions.map(p => (
                   <TableRow key={p.id}>
-                    <TableCell>{p.employee?.user_id}</TableCell>
+                    <TableCell>{getEmployeeName(p.employee_id)}</TableCell>
                     <TableCell>{p.previousDesignation}</TableCell>
                     <TableCell>{p.newDesignation}</TableCell>
                     <TableCell>
@@ -197,6 +280,30 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
           </Table>
         )}
       </Paper>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' mt={3}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color='primary'
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+
+      {/* Pagination Info */}
+      {promotions.length > 0 && (
+        <Box display='flex' justifyContent='center' mt={1}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {currentPage} of {totalPages} ({totalRecords} total
+            records)
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };

@@ -70,6 +70,9 @@ const PayrollConfiguration: React.FC = () => {
     unpaidLeaveDeduction: false,
     halfDayDeduction: 50,
   });
+  const [customFields, setCustomFields] = useState<
+    Array<{ key: string; value: string; type: 'text' | 'number' }>
+  >([]);
 
   // Load existing configuration
   useEffect(() => {
@@ -116,6 +119,7 @@ const PayrollConfiguration: React.FC = () => {
       unpaidLeaveDeduction: false,
       halfDayDeduction: 50,
     });
+    setCustomFields([]);
     setEditModalOpen(true);
   };
 
@@ -127,6 +131,36 @@ const PayrollConfiguration: React.FC = () => {
       setDeductions(config.deductions);
       setOvertimePolicy(config.overtimePolicy);
       setLeaveDeductionPolicy(config.leaveDeductionPolicy);
+      // Load custom fields if they exist
+      const configWithCustomFields = config as PayrollConfig & {
+        customFields?: Record<string, unknown>;
+      };
+      if (configWithCustomFields.customFields) {
+        const customFieldsObj = configWithCustomFields.customFields;
+        // Convert object to array format
+        if (
+          typeof customFieldsObj === 'object' &&
+          !Array.isArray(customFieldsObj)
+        ) {
+          const fieldsArray = Object.entries(customFieldsObj).map(
+            ([key, value]) => ({
+              key,
+              value: String(value),
+              type:
+                typeof value === 'number'
+                  ? ('number' as const)
+                  : ('text' as const),
+            })
+          );
+          setCustomFields(fieldsArray);
+        } else if (Array.isArray(customFieldsObj)) {
+          setCustomFields(customFieldsObj);
+        } else {
+          setCustomFields([]);
+        }
+      } else {
+        setCustomFields([]);
+      }
     }
     setEditModalOpen(true);
   };
@@ -162,6 +196,24 @@ const PayrollConfiguration: React.FC = () => {
 
   const handleRemoveAllowance = (index: number) => {
     setAllowances(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddCustomField = () => {
+    setCustomFields(prev => [...prev, { key: '', value: '', type: 'text' }]);
+  };
+
+  const handleRemoveCustomField = (index: number) => {
+    setCustomFields(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCustomFieldChange = (
+    index: number,
+    field: 'key' | 'value' | 'type',
+    value: string
+  ) => {
+    setCustomFields(prev =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
   };
 
   const handleDeductionChange = (
@@ -287,14 +339,65 @@ const PayrollConfiguration: React.FC = () => {
     setError(null);
 
     try {
-      const payload = {
-        salaryCycle,
+      interface PayloadType {
+        salaryCycle: 'monthly' | 'weekly' | 'biweekly';
+        basePayComponents: {
+          basic: number;
+          houseRent: number;
+          medical: number;
+          transport: number;
+        };
+        allowances: Array<{
+          type: string;
+          amount: number;
+          percentage: number;
+          description?: string;
+        }>;
+        deductions: {
+          taxPercentage: number;
+          insurancePercentage: number;
+          providentFundPercentage: number;
+        };
+        overtimePolicy: {
+          enabled: boolean;
+          rateMultiplier: number;
+          maxHoursPerMonth: number;
+        };
+        leaveDeductionPolicy: {
+          unpaidLeaveDeduction: boolean;
+          halfDayDeduction: number;
+        };
+        customFields?: Record<string, string | number>;
+      }
+
+      const payload: PayloadType = {
+        salaryCycle: salaryCycle as 'monthly' | 'weekly' | 'biweekly',
         basePayComponents,
         allowances,
         deductions,
         overtimePolicy,
         leaveDeductionPolicy,
       };
+
+      // Add custom fields if any exist
+      if (customFields.length > 0) {
+        const validCustomFields = customFields.filter(
+          field => field.key.trim() !== ''
+        );
+        if (validCustomFields.length > 0) {
+          payload.customFields = validCustomFields.reduce(
+            (acc, field) => {
+              const value =
+                field.type === 'number'
+                  ? parseFloat(field.value) || 0
+                  : field.value;
+              acc[field.key] = value;
+              return acc;
+            },
+            {} as Record<string, string | number>
+          );
+        }
+      }
 
       let savedConfig: PayrollConfig;
       if (config) {
@@ -381,6 +484,30 @@ const PayrollConfiguration: React.FC = () => {
     )
       return true;
 
+    // Check custom fields
+    const configWithCustomFields = config as PayrollConfig & {
+      customFields?: Record<string, unknown>;
+    };
+    const configCustomFields = configWithCustomFields.customFields || {};
+    const currentCustomFieldsObj = customFields
+      .filter(field => field.key.trim() !== '')
+      .reduce(
+        (acc, field) => {
+          const value =
+            field.type === 'number'
+              ? parseFloat(field.value) || 0
+              : field.value;
+          acc[field.key] = value;
+          return acc;
+        },
+        {} as Record<string, string | number>
+      );
+    if (
+      JSON.stringify(configCustomFields) !==
+      JSON.stringify(currentCustomFieldsObj)
+    )
+      return true;
+
     return false;
   }, [
     config,
@@ -390,6 +517,7 @@ const PayrollConfiguration: React.FC = () => {
     deductions,
     overtimePolicy,
     leaveDeductionPolicy,
+    customFields,
   ]);
 
   if (loading) {
@@ -454,7 +582,6 @@ const PayrollConfiguration: React.FC = () => {
           </Typography>
         </Paper>
 
-        {/* Create Modal */}
         <Dialog
           open={editModalOpen}
           onClose={handleCloseEditModal}
@@ -970,6 +1097,190 @@ const PayrollConfiguration: React.FC = () => {
                     }}
                   />
                 </Box>
+              </Box>
+
+              {/* Custom Fields Section */}
+              <Box>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 2,
+                  }}
+                >
+                  <Typography
+                    variant='h6'
+                    sx={{
+                      fontWeight: 600,
+                      color: darkMode ? '#fff' : '#000',
+                    }}
+                  >
+                    Custom Fields
+                  </Typography>
+                  <Button
+                    variant='outlined'
+                    size='small'
+                    startIcon={<AddIcon />}
+                    onClick={handleAddCustomField}
+                    sx={{
+                      textTransform: 'none',
+                      borderColor: theme.palette.divider,
+                      color: darkMode ? '#fff' : '#000',
+                    }}
+                  >
+                    Add Custom Field
+                  </Button>
+                </Box>
+                {customFields.length === 0 ? (
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      color: darkMode ? '#8f8f8f' : '#666',
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    No custom fields added. Click "Add Custom Field" to add one.
+                  </Typography>
+                ) : (
+                  <Box
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+                  >
+                    {customFields.map((field, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          p: 2,
+                          border: `1px solid ${theme.palette.divider}`,
+                          borderRadius: 1,
+                          backgroundColor: darkMode ? '#2d2d2d' : '#f9f9f9',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            mb: 2,
+                          }}
+                        >
+                          <Typography
+                            variant='subtitle2'
+                            sx={{
+                              color: darkMode ? '#fff' : '#000',
+                              fontWeight: 600,
+                            }}
+                          >
+                            Custom Field {index + 1}
+                          </Typography>
+                          <IconButton
+                            size='small'
+                            onClick={() => handleRemoveCustomField(index)}
+                            sx={{
+                              color: theme.palette.error.main,
+                            }}
+                          >
+                            <DeleteIcon fontSize='small' />
+                          </IconButton>
+                        </Box>
+                        <Box
+                          sx={{
+                            display: 'grid',
+                            gridTemplateColumns: {
+                              xs: '1fr',
+                              sm: 'repeat(3, 1fr)',
+                            },
+                            gap: 2,
+                          }}
+                        >
+                          <TextField
+                            fullWidth
+                            label='Field Name (Key)'
+                            value={field.key}
+                            onChange={e =>
+                              handleCustomFieldChange(
+                                index,
+                                'key',
+                                e.target.value
+                              )
+                            }
+                            placeholder='e.g., bonus, commission, etc.'
+                            InputLabelProps={{
+                              sx: { color: darkMode ? '#ccc' : undefined },
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                backgroundColor: darkMode ? '#1a1a1a' : '#fff',
+                                color: darkMode ? '#fff' : '#000',
+                                '& fieldset': {
+                                  borderColor: theme.palette.divider,
+                                },
+                              },
+                            }}
+                          />
+                          <FormControl fullWidth>
+                            <InputLabel
+                              sx={{
+                                color: darkMode ? '#ccc' : undefined,
+                              }}
+                            >
+                              Type
+                            </InputLabel>
+                            <Select
+                              value={field.type}
+                              onChange={e =>
+                                handleCustomFieldChange(
+                                  index,
+                                  'type',
+                                  e.target.value
+                                )
+                              }
+                              label='Type'
+                              sx={{
+                                backgroundColor: darkMode ? '#1a1a1a' : '#fff',
+                                color: darkMode ? '#fff' : '#000',
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: theme.palette.divider,
+                                },
+                              }}
+                            >
+                              <MenuItem value='text'>Text</MenuItem>
+                              <MenuItem value='number'>Number</MenuItem>
+                            </Select>
+                          </FormControl>
+                          <TextField
+                            fullWidth
+                            label='Value'
+                            type={field.type === 'number' ? 'number' : 'text'}
+                            value={field.value}
+                            onChange={e =>
+                              handleCustomFieldChange(
+                                index,
+                                'value',
+                                e.target.value
+                              )
+                            }
+                            placeholder={
+                              field.type === 'number' ? '0' : 'Enter value'
+                            }
+                            InputLabelProps={{
+                              sx: { color: darkMode ? '#ccc' : undefined },
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                backgroundColor: darkMode ? '#1a1a1a' : '#fff',
+                                color: darkMode ? '#fff' : '#000',
+                                '& fieldset': {
+                                  borderColor: theme.palette.divider,
+                                },
+                              },
+                            }}
+                          />
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
               </Box>
             </Box>
           </DialogContent>
@@ -2031,6 +2342,188 @@ const PayrollConfiguration: React.FC = () => {
                   }}
                 />
               </Box>
+            </Box>
+
+            {/* Custom Fields Section */}
+            <Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2,
+                }}
+              >
+                <Typography
+                  variant='h6'
+                  sx={{
+                    fontWeight: 600,
+                    color: darkMode ? '#fff' : '#000',
+                  }}
+                >
+                  Custom Fields
+                </Typography>
+                <Button
+                  variant='outlined'
+                  size='small'
+                  startIcon={<AddIcon />}
+                  onClick={handleAddCustomField}
+                  sx={{
+                    textTransform: 'none',
+                    borderColor: theme.palette.divider,
+                    color: darkMode ? '#fff' : '#000',
+                  }}
+                >
+                  Add Custom Field
+                </Button>
+              </Box>
+              {customFields.length === 0 ? (
+                <Typography
+                  variant='body2'
+                  sx={{
+                    color: darkMode ? '#8f8f8f' : '#666',
+                    fontStyle: 'italic',
+                  }}
+                >
+                  No custom fields added. Click "Add Custom Field" to add one.
+                </Typography>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {customFields.map((field, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        p: 2,
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 1,
+                        backgroundColor: darkMode ? '#2d2d2d' : '#f9f9f9',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          mb: 2,
+                        }}
+                      >
+                        <Typography
+                          variant='subtitle2'
+                          sx={{
+                            color: darkMode ? '#fff' : '#000',
+                            fontWeight: 600,
+                          }}
+                        >
+                          Custom Field {index + 1}
+                        </Typography>
+                        <IconButton
+                          size='small'
+                          onClick={() => handleRemoveCustomField(index)}
+                          sx={{
+                            color: theme.palette.error.main,
+                          }}
+                        >
+                          <DeleteIcon fontSize='small' />
+                        </IconButton>
+                      </Box>
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: {
+                            xs: '1fr',
+                            sm: 'repeat(3, 1fr)',
+                          },
+                          gap: 2,
+                        }}
+                      >
+                        <TextField
+                          fullWidth
+                          label='Field Name (Key)'
+                          value={field.key}
+                          onChange={e =>
+                            handleCustomFieldChange(
+                              index,
+                              'key',
+                              e.target.value
+                            )
+                          }
+                          placeholder='e.g., bonus, commission, etc.'
+                          InputLabelProps={{
+                            sx: { color: darkMode ? '#ccc' : undefined },
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
+                              color: darkMode ? '#fff' : '#000',
+                              '& fieldset': {
+                                borderColor: theme.palette.divider,
+                              },
+                            },
+                          }}
+                        />
+                        <FormControl fullWidth>
+                          <InputLabel
+                            sx={{
+                              color: darkMode ? '#ccc' : undefined,
+                            }}
+                          >
+                            Type
+                          </InputLabel>
+                          <Select
+                            value={field.type}
+                            onChange={e =>
+                              handleCustomFieldChange(
+                                index,
+                                'type',
+                                e.target.value
+                              )
+                            }
+                            label='Type'
+                            sx={{
+                              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
+                              color: darkMode ? '#fff' : '#000',
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: theme.palette.divider,
+                              },
+                            }}
+                          >
+                            <MenuItem value='text'>Text</MenuItem>
+                            <MenuItem value='number'>Number</MenuItem>
+                          </Select>
+                        </FormControl>
+                        <TextField
+                          fullWidth
+                          label='Value'
+                          type={field.type === 'number' ? 'number' : 'text'}
+                          value={field.value}
+                          onChange={e =>
+                            handleCustomFieldChange(
+                              index,
+                              'value',
+                              e.target.value
+                            )
+                          }
+                          placeholder={
+                            field.type === 'number' ? '0' : 'Enter value'
+                          }
+                          InputLabelProps={{
+                            sx: { color: darkMode ? '#ccc' : undefined },
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
+                              color: darkMode ? '#fff' : '#000',
+                              '& fieldset': {
+                                borderColor: theme.palette.divider,
+                              },
+                            },
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </Box>
           </Box>
         </DialogContent>

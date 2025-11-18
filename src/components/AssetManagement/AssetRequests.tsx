@@ -186,7 +186,10 @@ const AssetRequests: React.FC = () => {
   const [loadingData, setLoadingData] = useState(false);
   const initialLoadRef = React.useRef(false); // Track if initial load has been done
   const fetchingRef = React.useRef(false); // Track if fetch is in progress to prevent duplicate calls
-  const lastFetchedPageRef = React.useRef<{ page: number; limit: number } | null>(null); // Track last fetched page/limit
+  const lastFetchedPageRef = React.useRef<{
+    page: number;
+    limit: number;
+  } | null>(null); // Track last fetched page/limit
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -207,7 +210,7 @@ const AssetRequests: React.FC = () => {
   // Pagination state
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 25,
+    limit: 25, // Backend returns 25 records per page
     total: 0,
     totalPages: 0,
   });
@@ -313,7 +316,6 @@ const AssetRequests: React.FC = () => {
           subcategoriesData = response.subcategories;
         }
 
-        // Filter subcategories by selected category ID
         const selectedCategory = categories.find(
           cat => cat.id === selectedCategoryId
         );
@@ -332,10 +334,7 @@ const AssetRequests: React.FC = () => {
 
         setSubcategories(filteredSubcategories);
       } catch (error) {
-        console.error(
-          '❌ AssetRequests - Failed to fetch subcategories:',
-          error
-        );
+        console.error('AssetRequests - Failed to fetch subcategories:', error);
         setSubcategories([]);
       } finally {
         setLoadingData(false);
@@ -347,16 +346,13 @@ const AssetRequests: React.FC = () => {
     }
   }, [selectedCategoryId, categories, categories.length]);
 
-  // Helper function to transform API requests
   const transformApiRequests = React.useCallback(
     (apiRequests: ApiAssetRequestExtended[]): AssetRequest[] => {
       return apiRequests.map((apiRequest: ApiAssetRequestExtended) => {
-        // Handle new API response structure with category_id and subcategory_id
         const categoryId =
           apiRequest.category_id || apiRequest.asset_category || '';
         const subcategoryId = apiRequest.subcategory_id || undefined;
 
-        // Find category name - first try from API response category object
         let categoryName = '';
         if (
           apiRequest.category &&
@@ -366,25 +362,21 @@ const AssetRequests: React.FC = () => {
           categoryName = apiRequest.category.name || '';
         }
 
-        // If not found in API response, try from categories list
         if (!categoryName) {
           const categoryObj = categories.find(cat => cat.id === categoryId);
           categoryName = categoryObj?.name || '';
         }
 
-        // If still not found, fallback to ID (but log warning)
         if (!categoryName && categoryId) {
           if (categories.length === 0) {
             console.warn(
-              '⚠️ Categories not loaded yet for category ID:',
+              'Categories not loaded yet for category ID:',
               categoryId
             );
           }
-          categoryName = categoryId; // Fallback to ID if name not found
+          categoryName = categoryId;
         }
 
-        // Find subcategory name if subcategory_id exists
-        // First try to get from API response subcategory object
         let subcategoryName = '';
         if (apiRequest.subcategory) {
           if (
@@ -398,7 +390,6 @@ const AssetRequests: React.FC = () => {
           }
         }
 
-        // If not found in API response, try to find from subcategories list
         if (!subcategoryName && subcategoryId) {
           const subcategoryObj = subcategories.find(
             sub => sub.id === subcategoryId
@@ -406,7 +397,6 @@ const AssetRequests: React.FC = () => {
           subcategoryName = subcategoryObj?.name || '';
         }
 
-        // Also check subcategoryName field directly
         if (!subcategoryName && apiRequest.subcategoryName) {
           subcategoryName = apiRequest.subcategoryName;
         }
@@ -453,8 +443,6 @@ const AssetRequests: React.FC = () => {
     [categories, subcategories]
   );
 
-  // Removed fetchAllRequestsForStats - using counts from API response instead
-
   // Get current user ID on component mount
   React.useEffect(() => {
     const userId = getCurrentUserId();
@@ -468,8 +456,8 @@ const AssetRequests: React.FC = () => {
       limit: number = 25,
       isInitialLoad: boolean = false
     ) => {
-      if (!currentUserId) return; // Don't fetch until we have user ID
-      
+      if (!currentUserId) return;
+
       // Prevent duplicate calls
       if (fetchingRef.current) {
         return;
@@ -477,13 +465,11 @@ const AssetRequests: React.FC = () => {
 
       try {
         fetchingRef.current = true;
-        
-        // Only show initial loading on very first load, not on pagination or when returning to page 1
+
         if (isInitialLoad && page === 1) {
           setInitialLoading(true);
         }
 
-        // Use getAssetRequestById to get current user's requests with pagination
         const apiResponse = await assetApi.getAssetRequestById(currentUserId, {
           page,
           limit,
@@ -497,31 +483,26 @@ const AssetRequests: React.FC = () => {
         const transformedRequests = transformApiRequests(apiRequests);
         setRequests(transformedRequests);
 
-        // Update pagination info from API response (only update total/totalPages, not page/limit to avoid triggering effect)
-        setPagination(prev => {
-          const newTotal = apiResponse.total || 0;
-          const newTotalPages = apiResponse.totalPages || 1;
-          
-          // Only update if values actually changed to avoid unnecessary re-renders
-          if (prev.total === newTotal && prev.totalPages === newTotalPages && prev.page === page && prev.limit === limit) {
-            return prev; // No change, return same object reference
-          }
-          
-          // Only update if page/limit haven't changed to avoid triggering page change effect
-          if (prev.page === page && prev.limit === limit) {
-            return {
-              ...prev,
-              total: newTotal,
-              totalPages: newTotalPages,
-            };
-          }
-          return {
-            page: prev.page,
-            limit: prev.limit,
-            total: newTotal,
-            totalPages: newTotalPages,
-          };
-        });
+        const hasMorePages = (apiResponse.items || []).length === limit;
+
+        if (apiResponse.total && apiResponse.totalPages) {
+          setPagination(prev => ({
+            ...prev,
+            total: apiResponse.total || 0,
+            totalPages: apiResponse.totalPages || 1,
+          }));
+        } else {
+          const estimatedTotal = hasMorePages
+            ? page * limit
+            : (page - 1) * limit + (apiResponse.items || []).length;
+          const estimatedTotalPages = hasMorePages ? page + 1 : page;
+
+          setPagination(prev => ({
+            ...prev,
+            total: estimatedTotal,
+            totalPages: estimatedTotalPages,
+          }));
+        }
 
         // Update counts from API response if available
         if (apiResponse.counts) {
@@ -566,9 +547,12 @@ const AssetRequests: React.FC = () => {
     }
 
     initialLoadRef.current = true;
-    
+
     // Mark this page/limit as fetched
-    lastFetchedPageRef.current = { page: pagination.page, limit: pagination.limit };
+    lastFetchedPageRef.current = {
+      page: pagination.page,
+      limit: pagination.limit,
+    };
 
     // Fetch paginated requests (counts are included in API response)
     fetchRequests(pagination.page, pagination.limit, true);
@@ -579,16 +563,23 @@ const AssetRequests: React.FC = () => {
   React.useEffect(() => {
     if (!currentUserId || !initialLoadRef.current) return; // Don't fetch if initial load hasn't happened
     if (fetchingRef.current) return; // Don't fetch if already fetching
-    
+
     // Check if page/limit actually changed
     const lastFetched = lastFetchedPageRef.current;
-    if (lastFetched && lastFetched.page === pagination.page && lastFetched.limit === pagination.limit) {
+    if (
+      lastFetched &&
+      lastFetched.page === pagination.page &&
+      lastFetched.limit === pagination.limit
+    ) {
       return; // Already fetched this page/limit combination
     }
 
     // Fetch paginated requests when page or limit changes (but not on initial load)
     if (pagination.page > 0) {
-      lastFetchedPageRef.current = { page: pagination.page, limit: pagination.limit };
+      lastFetchedPageRef.current = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
       fetchRequests(pagination.page, pagination.limit, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1120,7 +1111,19 @@ const AssetRequests: React.FC = () => {
             onChange={handlePageChange}
             color='primary'
             disabled={initialLoading}
+            showFirstButton
+            showLastButton
           />
+        </Box>
+      )}
+
+      {/* Pagination Info */}
+      {requests.length > 0 && (
+        <Box display='flex' justifyContent='center' mt={1}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {pagination.page} of {pagination.totalPages} (
+            {pagination.total} total records)
+          </Typography>
         </Box>
       )}
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -203,7 +203,6 @@ export const TenantPage: React.FC = () => {
 
   const handleCreate = async () => {
     const { name, domain, adminName, adminEmail } = tenantForm;
-    let logoUrl = '';
     if (
       !name.trim() ||
       !domain.trim() ||
@@ -217,6 +216,8 @@ export const TenantPage: React.FC = () => {
       });
       return;
     }
+
+    // Logo is optional - if provided, it will be uploaded
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(adminEmail.trim())) {
@@ -329,7 +330,9 @@ export const TenantPage: React.FC = () => {
           logoUrl =
             typeof uploadedLogoUrl === 'string'
               ? uploadedLogoUrl
-              : (uploadedLogoUrl as any)?.logo_url || editLogo || '';
+              : (uploadedLogoUrl as { logo_url?: string })?.logo_url ||
+                editLogo ||
+                '';
         } catch (uploadError) {
           console.error('Failed to upload logo:', uploadError);
           setSnackbar({
@@ -506,7 +509,7 @@ export const TenantPage: React.FC = () => {
       setEditDomain('');
       setEditLogo('');
       try {
-        const detail = await SystemTenantApi.getById(tenant.id);
+        await SystemTenantApi.getById(tenant.id);
       } catch (err) {
         console.log('Could not fetch tenant details:', err);
       }
