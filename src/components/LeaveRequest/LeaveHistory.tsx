@@ -24,7 +24,7 @@ import UndoIcon from '@mui/icons-material/Undo';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import type { Leave } from '../../type/levetypes';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 
 const statusConfig: Record<
   string,

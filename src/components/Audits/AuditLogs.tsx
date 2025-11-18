@@ -68,9 +68,9 @@ const AuditLogs: React.FC = () => {
 
   return (
     <Box sx={{ minHeight: '100vh' }}>
+      <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
       <Typography
         variant='h4'
-        mb={3}
         sx={{
           color: theme.palette.text.primary,
           textAlign: { xs: 'center', md: 'left' },
@@ -78,17 +78,6 @@ const AuditLogs: React.FC = () => {
       >
         Audit Logs
       </Typography>
-
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          mb: 2,
-          gap: 1,
-        }}
-      >
         <Tooltip title='Export Audit Logs (CSV)'>
           <IconButton
             color='primary'
@@ -103,7 +92,7 @@ const AuditLogs: React.FC = () => {
             <DownloadIcon />
           </IconButton>
         </Tooltip>
-      </Box>
+        </Box>
 
       <Box
         sx={{

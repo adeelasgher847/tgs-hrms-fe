@@ -17,6 +17,7 @@ import {
   Paper,
   Box,
   Pagination,
+  CircularProgress,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import {
@@ -42,48 +43,61 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25; 
+  const [loading, setLoading] = useState(true);
+  const itemsPerPage = 25;
   const theme = useTheme();
 
   const fetchPerformance = useCallback(async () => {
-    const params: {
-      tenantId: string;
-      page: number;
-      limit: number;
-      status?: 'under_review' | 'completed';
-      startDate?: string;
-      endDate?: string;
-    } = {
-      tenantId,
-      page: currentPage,
-      limit: itemsPerPage,
-    };
-    if (statusFilter === 'completed' || statusFilter === 'under_review') {
-      params.status = statusFilter as 'under_review' | 'completed';
-    }
-    if (startDate) params.startDate = startDate;
-    if (endDate) params.endDate = endDate;
+    try {
+      const params: {
+        tenantId: string;
+        page: number;
+        limit: number;
+        status?: 'under_review' | 'completed';
+        startDate?: string;
+        endDate?: string;
+      } = {
+        tenantId,
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (statusFilter === 'completed' || statusFilter === 'under_review') {
+        params.status = statusFilter as 'under_review' | 'completed';
+      }
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
 
-    const response =
-      await systemPerformanceApiService.getPerformanceRecords(params);
-    setRecords(response.items || []);
-    setTotalPages(response.totalPages || 1);
-    setTotalRecords(response.total || 0);
+      const response =
+        await systemPerformanceApiService.getPerformanceRecords(params);
+      setRecords(response.items || []);
+      setTotalPages(response.totalPages || 1);
+      setTotalRecords(response.total || 0);
+    } catch (error) {
+      console.error('Error fetching performance records:', error);
+      setRecords([]);
+      setTotalPages(1);
+      setTotalRecords(0);
+    }
   }, [tenantId, currentPage, itemsPerPage, statusFilter, startDate, endDate]);
 
   const fetchEmployees = useCallback(async () => {
-    const data = await systemEmployeeApiService.getSystemEmployees({
-      tenantId,
-      page: null,
-    });
-    setEmployees(data || []);
-  }, [tenantId]);
-
-  useEffect(() => {
-    if (tenantId) {
-      fetchEmployees();
+    try {
+      const data = await systemEmployeeApiService.getSystemEmployees({
+        tenantId,
+        page: null,
+      });
+      // Handle paginated response
+      const employeesList = Array.isArray(data)
+        ? data
+        : 'items' in data
+          ? data.items
+          : [];
+      setEmployees(employeesList);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      setEmployees([]);
     }
-  }, [tenantId, fetchEmployees]);
+  }, [tenantId]);
 
   useEffect(() => {
     if (tenantId) {
@@ -93,14 +107,21 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
 
   useEffect(() => {
     if (tenantId) {
-      fetchPerformance();
+      setLoading(true);
+      Promise.all([fetchEmployees(), fetchPerformance()]).finally(() => {
+        setLoading(false);
+      });
     }
-  }, [tenantId, fetchPerformance]);
+  }, [tenantId, fetchEmployees, fetchPerformance]);
 
   const employeeMap = useMemo(() => {
     return employees.reduce(
       (map, emp) => {
-        map[emp.id] = emp.user?.fullname || emp.name || 'N/A';
+        // SystemEmployee type has name property, user might be available at runtime
+        const employeeWithUser = emp as SystemEmployee & {
+          user?: { fullname?: string };
+        };
+        map[emp.id] = employeeWithUser.user?.fullname || emp.name || 'N/A';
         return map;
       },
       {} as Record<string, string>
@@ -138,7 +159,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
       const averageScore =
         employeeRecords.reduce((sum, r) => sum + (r.overallScore || 0), 0) /
         employeeRecords.length;
-      return averageScore * 20; 
+      return averageScore * 20;
     }
 
     if (records.length === 0) {
@@ -147,7 +168,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
     const averageScore =
       records.reduce((sum, r) => sum + (r.overallScore || 0), 0) /
       records.length;
-    return averageScore * 20; 
+    return averageScore * 20;
   }, [records, selectedEmployee]);
 
   const chartOptions = useMemo(
@@ -233,6 +254,28 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
     () => [Math.min(Math.max(gaugeScore, 0), 100)],
     [gaugeScore]
   );
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader
+          title='Company Performance'
+          subheader='Overview gauge by tenant'
+          titleTypographyProps={{ variant: 'h5', fontWeight: 600 }}
+        />
+        <CardContent>
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            minHeight='400px'
+          >
+            <CircularProgress />
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -356,26 +399,6 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
                   )}
                 </TableBody>
               </Table>
-              {totalPages > 1 && (
-                <Box display='flex' justifyContent='center' mt={2} pb={2}>
-                  <Pagination
-                    count={totalPages}
-                    page={currentPage}
-                    onChange={(_, page) => setCurrentPage(page)}
-                    color='primary'
-                    showFirstButton
-                    showLastButton
-                  />
-                </Box>
-              )}
-              {records.length > 0 && (
-                <Box display='flex' justifyContent='center' pb={2}>
-                  <Typography variant='body2' color='textSecondary'>
-                    Showing page {currentPage} of {totalPages} ({totalRecords}{' '}
-                    total records)
-                  </Typography>
-                </Box>
-              )}
             </Paper>
           </Grid>
         </Grid>

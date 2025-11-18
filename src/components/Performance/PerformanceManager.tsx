@@ -8,6 +8,7 @@ import {
   Paper,
   Snackbar,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import PerformanceKpiGrid from './KPIPerformanceOverview';
 import PerformanceTrendChart from './PerformanceTrend';
@@ -83,17 +84,21 @@ const PerformanceDashboard: React.FC = () => {
         </FormControl>
       </Box>
 
-      {selectedTenant && (
+      {loadingTenants || !selectedTenant ? (
+        <Box display='flex' justifyContent='center' alignItems='center' minHeight='400px'>
+          <CircularProgress />
+        </Box>
+      ) : (
         <>
-          <Paper sx={{ p: 2, mb: 3 }}>
+          <Paper sx={{ p: 2, mb: 3, boxShadow:'none' }}>
             <PerformanceKpiGrid tenantId={selectedTenant} />
           </Paper>
 
-          <Paper sx={{ mb: 3 }}>
+          <Paper sx={{ mb: 3, boxShadow:'none' }}>
             <PerformanceTrendChart tenantId={selectedTenant} />
           </Paper>
 
-          <Paper sx={{ p: 2 }}>
+          <Paper sx={{ p: 2,boxShadow:'none' }}>
             <PromotionsList tenantId={selectedTenant} />
           </Paper>
         </>

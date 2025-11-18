@@ -32,6 +32,7 @@ interface PromotionsListProps {
 const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   const [promotions, setPromotions] = useState<PromotionRecord[]>([]);
   const [stats, setStats] = useState<PromotionStats[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     status: '',
     startDate: '',
@@ -40,7 +41,6 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [employeeNames, setEmployeeNames] = useState<Record<string, string>>(
     {}
   );
@@ -169,7 +169,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         Promotions Tracking
       </Typography>
 
-      <Box display='flex' gap={2} mb={3} flexWrap='wrap'>
+      <Box display='flex' gap={2} mb={1} flexWrap='wrap'>
         <FormControl sx={{ minWidth: 200 }}>
           <InputLabel>Status</InputLabel>
           <Select
@@ -215,9 +215,13 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
               p: 2,
               display: 'flex',
               justifyContent: 'space-between',
+              flexDirection: 'column',
+              boxShadow: 'none',
             }}
           >
-            <Typography variant='h6'>Stats: </Typography>
+            <Typography variant='h6' sx={{ mb: 1 }}>
+              Stats:{' '}
+            </Typography>
             <Box display='flex' gap={1}>
               <Chip label={`Approved: ${s.approvedCount}`} color='success' />
               <Chip label={`Pending: ${s.pendingCount}`} color='warning' />
@@ -227,74 +231,79 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         ))}
       </Box>
 
-      <Paper sx={{ p: 2 }}>
+      <Paper sx={{ p: 2, overflowX: 'scroll' }}>
         {loading ? (
-          <Box display='flex' justifyContent='center' py={4}>
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            minHeight='200px'
+          >
             <CircularProgress />
           </Box>
         ) : (
-          <>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Employee</TableCell>
-                  <TableCell>Previous Designation</TableCell>
-                  <TableCell>New Designation</TableCell>
-                  <TableCell>Effective Date</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Tenant</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {promotions.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align='center'>
-                      No promotions found
+          <Table sx={{}}>
+            <TableHead>
+              <TableRow>
+                <TableCell>Employee</TableCell>
+                <TableCell>Previous Designation</TableCell>
+                <TableCell>New Designation</TableCell>
+                <TableCell>Effective Date</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Tenant</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {promotions.length > 0 ? (
+                promotions.map(p => (
+                  <TableRow key={p.id}>
+                    <TableCell>{getEmployeeName(p.employee_id)}</TableCell>
+                    <TableCell>{p.previousDesignation}</TableCell>
+                    <TableCell>{p.newDesignation}</TableCell>
+                    <TableCell>
+                      {new Date(p.effectiveDate).toLocaleDateString()}
                     </TableCell>
+                    <TableCell>
+                      <Chip label={p.status} color={statusColor(p.status)} />
+                    </TableCell>
+                    <TableCell>{p.tenant?.name}</TableCell>
                   </TableRow>
-                ) : (
-                  promotions.map(p => (
-                    <TableRow key={p.id}>
-                      <TableCell>{getEmployeeName(p.employee_id)}</TableCell>
-                      <TableCell>{p.previousDesignation}</TableCell>
-                      <TableCell>{p.newDesignation}</TableCell>
-                      <TableCell>
-                        {new Date(p.effectiveDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={p.status} color={statusColor(p.status)} />
-                      </TableCell>
-                      <TableCell>{p.tenant?.name}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-
-            {totalPages > 1 && (
-              <Box display='flex' justifyContent='center' mt={2}>
-                <Pagination
-                  count={totalPages}
-                  page={currentPage}
-                  onChange={(_, page) => setCurrentPage(page)}
-                  color='primary'
-                  showFirstButton
-                  showLastButton
-                />
-              </Box>
-            )}
-
-            {promotions.length > 0 && (
-              <Box display='flex' justifyContent='center' mt={1}>
-                <Typography variant='body2' color='textSecondary'>
-                  Showing page {currentPage} of {totalPages} ({totalRecords}{' '}
-                  total records)
-                </Typography>
-              </Box>
-            )}
-          </>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} align='center'>
+                    No promotions found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         )}
       </Paper>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' mt={3}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color='primary'
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+
+      {/* Pagination Info */}
+      {promotions.length > 0 && (
+        <Box display='flex' justifyContent='center' mt={1}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {currentPage} of {totalPages} ({totalRecords} total
+            records)
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };

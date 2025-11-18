@@ -79,6 +79,14 @@ const ConfirmPayment: React.FC = () => {
             localStorage.setItem('refreshToken', data.refreshToken as string);
             if (data.user) {
               localStorage.setItem('user', JSON.stringify(data.user));
+
+              // Store tenant_id separately from login/signup response
+              const userData = data.user as Record<string, unknown>;
+              const tenantId = userData?.tenant_id;
+              if (tenantId) {
+                localStorage.setItem('tenant_id', String(tenantId));
+              }
+
               if (data.permissions) {
                 localStorage.setItem(
                   'permissions',
@@ -98,57 +106,57 @@ const ConfirmPayment: React.FC = () => {
               }
             } else {
               // If there's no user object in response, try refreshing the user
+              // Fallback: try to login using pending credentials saved in sessionStorage
               try {
-                await refreshUser();
-              } catch {
-                // Ignore refresh errors
-              }
-            }
-          } else {
-            // Fallback: try to login using pending credentials saved in sessionStorage
-            try {
-              const credsStr = sessionStorage.getItem(
-                'pendingSignupCredentials'
-              );
-              if (credsStr) {
-                const creds = JSON.parse(credsStr);
-                // Clear all existing auth data before attempting login
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('refreshToken');
-                localStorage.removeItem('user');
-                localStorage.removeItem('permissions');
+                const credsStr = sessionStorage.getItem(
+                  'pendingSignupCredentials'
+                );
+                if (credsStr) {
+                  const creds = JSON.parse(credsStr);
+                  // Clear all existing auth data before attempting login
+                  localStorage.removeItem('accessToken');
+                  localStorage.removeItem('refreshToken');
+                  localStorage.removeItem('user');
+                  localStorage.removeItem('permissions');
 
-                // Call login endpoint
-                const res = await axiosInstance.post('/auth/login', {
-                  email: creds.email,
-                  password: creds.password,
-                });
-                if (res?.data) {
-                  localStorage.setItem('accessToken', res.data.accessToken);
-                  if (res.data.refreshToken)
-                    localStorage.setItem('refreshToken', res.data.refreshToken);
-                  if (res.data.user) {
-                    localStorage.setItem('user', JSON.stringify(res.data.user));
-                    try {
-                      updateUser(res.data.user);
-                    } catch {
+                  // Call login endpoint
+                  const res = await axiosInstance.post('/auth/login', {
+                    email: creds.email,
+                    password: creds.password,
+                  });
+                  if (res?.data) {
+                    localStorage.setItem('accessToken', res.data.accessToken);
+                    if (res.data.refreshToken)
+                      localStorage.setItem(
+                        'refreshToken',
+                        res.data.refreshToken
+                      );
+                    if (res.data.user) {
+                      localStorage.setItem(
+                        'user',
+                        JSON.stringify(res.data.user)
+                      );
                       try {
-                        await refreshUser();
+                        updateUser(res.data.user);
                       } catch {
-                        // Ignore refresh error
+                        try {
+                          await refreshUser();
+                        } catch {
+                          // Ignore refresh error
+                        }
                       }
                     }
+                    if (res.data.permissions)
+                      localStorage.setItem(
+                        'permissions',
+                        JSON.stringify(res.data.permissions)
+                      );
                   }
-                  if (res.data.permissions)
-                    localStorage.setItem(
-                      'permissions',
-                      JSON.stringify(res.data.permissions)
-                    );
                 }
+              } catch (loginErr) {
+                console.warn('Auto-login after payment failed', loginErr);
+                // Don't block redirect; user can login manually
               }
-            } catch (loginErr) {
-              console.warn('Auto-login after payment failed', loginErr);
-              // Don't block redirect; user can login manually
             }
           }
 

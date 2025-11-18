@@ -188,6 +188,8 @@ const AssetRequests: React.FC = () => {
   const [subcategories, setSubcategories] = useState<AssetSubcategory[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   const initialLoadRef = React.useRef(false); // Track if initial load has been done
+  const fetchingRef = React.useRef(false); // Track if fetch is in progress to prevent duplicate calls
+  const lastFetchedPageRef = React.useRef<{ page: number; limit: number } | null>(null); // Track last fetched page/limit
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -517,15 +519,20 @@ const AssetRequests: React.FC = () => {
       limit: number = 25,
       isInitialLoad: boolean = false
     ) => {
-      if (!currentUserId) return; // Don't fetch until we have user ID
+      if (!currentUserId) return; 
+      
+      // Prevent duplicate calls
+      if (fetchingRef.current) {
+        return;
+      }
 
       try {
-        // Only show initial loading on very first load, not on pagination or when returning to page 1
+        fetchingRef.current = true;
+        
         if (isInitialLoad && page === 1) {
           setInitialLoading(true);
         }
 
-        // Use getAssetRequestById to get current user's requests with pagination
         const apiResponse = await assetApi.getAssetRequestById(currentUserId, {
           page,
           limit,
@@ -539,12 +546,8 @@ const AssetRequests: React.FC = () => {
         const transformedRequests = transformApiRequests(apiRequests);
         setRequests(transformedRequests);
 
-        // Backend returns 25 records per page (fixed page size)
-        // If we get 25 records, there might be more pages
-        // If we get less than 25, it's the last page
         const hasMorePages = (apiResponse.items || []).length === limit;
 
-        // Use backend pagination info if available, otherwise estimate
         if (apiResponse.total && apiResponse.totalPages) {
           setPagination(prev => ({
             ...prev,
@@ -552,7 +555,6 @@ const AssetRequests: React.FC = () => {
             totalPages: apiResponse.totalPages || 1,
           }));
         } else {
-          // Fallback: estimate based on current page and records received
           const estimatedTotal = hasMorePages
             ? page * limit
             : (page - 1) * limit + (apiResponse.items || []).length;
@@ -578,6 +580,7 @@ const AssetRequests: React.FC = () => {
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
+        fetchingRef.current = false;
         // Only set initial loading to false on very first load
         if (isInitialLoad && page === 1) {
           setInitialLoading(false);
@@ -596,9 +599,10 @@ const AssetRequests: React.FC = () => {
     }
   }, [categories, rawApiRequests, transformApiRequests]);
 
-  // Initial load: fetch stats FIRST, then paginated requests
+  // Initial load: fetch paginated requests (counts come from API response)
   React.useEffect(() => {
     if (!currentUserId) return; // Don't fetch until we have user ID
+    if (fetchingRef.current) return; // Don't fetch if already fetching
 
     // Only run initial load once
     if (initialLoadRef.current) {
@@ -606,30 +610,33 @@ const AssetRequests: React.FC = () => {
     }
 
     initialLoadRef.current = true;
+    
+    // Mark this page/limit as fetched
+    lastFetchedPageRef.current = { page: pagination.page, limit: pagination.limit };
 
-    // Initialize data: fetch stats FIRST, then paginated requests
-    // This ensures correct counts are shown immediately when page loads
-    const initializeData = async () => {
-      // Fetch all requests for statistics FIRST to get accurate counts immediately
-      await fetchAllRequestsForStats();
-      // Then fetch paginated requests for the table (isInitialLoad = true)
-      await fetchRequests(pagination.page, pagination.limit, true);
-    };
-
-    initializeData();
+    // Fetch paginated requests (counts are included in API response)
+    fetchRequests(pagination.page, pagination.limit, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserId]); // Only run when currentUserId is available
 
-  // Handle page changes: only fetch paginated requests, not stats
+  // Handle page changes: fetch paginated requests (counts come from API response)
   React.useEffect(() => {
     if (!currentUserId || !initialLoadRef.current) return; // Don't fetch if initial load hasn't happened
+    if (fetchingRef.current) return; // Don't fetch if already fetching
+    
+    // Check if page/limit actually changed
+    const lastFetched = lastFetchedPageRef.current;
+    if (lastFetched && lastFetched.page === pagination.page && lastFetched.limit === pagination.limit) {
+      return; // Already fetched this page/limit combination
+    }
 
-    // Only fetch paginated requests when page changes, not stats
-    // Stats are already loaded and don't need to be refreshed on page change
+    // Fetch paginated requests when page or limit changes (but not on initial load)
     if (pagination.page > 0) {
+      lastFetchedPageRef.current = { page: pagination.page, limit: pagination.limit };
       fetchRequests(pagination.page, pagination.limit, false);
     }
-  }, [pagination.page, pagination.limit, currentUserId, fetchRequests]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.page, pagination.limit]); // Removed fetchRequests and currentUserId from deps to prevent re-triggers
 
   // Since we're now fetching only current user's requests, we can use requests directly
   const userRequests = useMemo(() => {
@@ -715,8 +722,8 @@ const AssetRequests: React.FC = () => {
 
       setRequests(prev => [newRequest, ...prev]);
 
-      // Refresh all requests for statistics
-      fetchAllRequestsForStats();
+      // Refresh paginated requests to update counts
+      fetchRequests(pagination.page, pagination.limit, false);
 
       // Show success snackbar
       showSnackbar(
@@ -773,10 +780,7 @@ const AssetRequests: React.FC = () => {
       );
       setRequests(updatedRequests);
 
-      // Refresh all requests for statistics
-      fetchAllRequestsForStats();
-
-      // Refresh the current page (not initial load)
+      // Refresh the current page to update counts (not initial load)
       fetchRequests(pagination.page, pagination.limit, false);
 
       // Show success snackbar
@@ -799,9 +803,9 @@ const AssetRequests: React.FC = () => {
     }
   };
 
-  // Use counts from API response if available, otherwise calculate from allRequestsForStats
+  // Use counts from API response
   const displayCounts = useMemo(() => {
-    // If we have counts from API response, use them (most accurate)
+    // Use counts from API response if available
     if (
       statusCounts.total > 0 ||
       statusCounts.pending > 0 ||
@@ -816,26 +820,14 @@ const AssetRequests: React.FC = () => {
       };
     }
 
-    // Fallback: Calculate from allRequestsForStats if available
-    if (allRequestsForStats.length > 0) {
-      return {
-        all: pagination.total || allRequestsForStats.length,
-        pending: allRequestsForStats.filter(r => r.status === 'pending').length,
-        approved: allRequestsForStats.filter(r => r.status === 'approved')
-          .length,
-        rejected: allRequestsForStats.filter(r => r.status === 'rejected')
-          .length,
-      };
-    }
-
-    // If nothing is loaded yet, show total from pagination but show 0 for status counts
+    // Fallback: Use total from pagination, show 0 for status counts until API provides them
     return {
       all: pagination.total || 0,
       pending: 0,
       approved: 0,
       rejected: 0,
     };
-  }, [statusCounts, allRequestsForStats, pagination.total]);
+  }, [statusCounts, pagination.total]);
 
   if (initialLoading) {
     return (

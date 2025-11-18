@@ -208,7 +208,7 @@ const MySalary: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage]);
 
   useEffect(() => {
     loadData();
@@ -536,8 +536,7 @@ const MySalary: React.FC = () => {
           elevation={0}
           sx={{
             p: 3,
-            borderRadius: 2,
-            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 1,
             backgroundColor: effectiveDarkMode ? '#1a1a1a' : '#fff',
           }}
         >

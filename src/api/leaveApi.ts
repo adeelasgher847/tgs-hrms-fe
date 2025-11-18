@@ -59,7 +59,7 @@ export const leaveApi = {
     totalPages: number;
   }> => {
     try {
-      const params = userId ? { userId, page } : { page };
+      const params = userId ? { userId, page, limit: 25 } : { page, limit: 25 };
       const response = await axiosInstance.get('/leaves', { params });
       console.log('User leaves response:', response);
       const data = response.data;
@@ -91,7 +91,9 @@ export const leaveApi = {
     totalPages: number;
   }> => {
     try {
-      const response = await axiosInstance.get('/leaves/all', { params: { page } });
+      const response = await axiosInstance.get('/leaves/all', {
+        params: { page, limit: 25 },
+      });
       console.log('All leaves response:', response);
       const data = response.data;
 
@@ -122,7 +124,9 @@ export const leaveApi = {
     totalPages: number;
   }> => {
     try {
-      const response = await axiosInstance.get('/leaves/team', { params: { page } });
+      const response = await axiosInstance.get('/leaves/team', {
+        params: { page, limit: 25 },
+      });
       console.log('Team leaves response:', response);
       const data = response.data;
 

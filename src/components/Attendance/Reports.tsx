@@ -193,9 +193,50 @@ const Reports: React.FC = () => {
           : [];
 
       setAllLeaveReports(employeeReports);
-      setTotalPages(data.totalPages || 1);
-      setTotalRecords(data.total || 0);
-      setPage(data.page || pageNum);
+
+      // Extract pagination info from the correct location
+      let paginationTotalPages = data.totalPages;
+      let paginationTotal = data.total;
+      let paginationPage = data.page;
+
+      // If employeeReports is an object with pagination info, use that
+      if (
+        data.employeeReports &&
+        typeof data.employeeReports === 'object' &&
+        'items' in data.employeeReports
+      ) {
+        const reportsObj = data.employeeReports as {
+          items: unknown[];
+          total?: number;
+          page?: number;
+          totalPages?: number;
+        };
+        paginationTotalPages = reportsObj.totalPages ?? paginationTotalPages;
+        paginationTotal = reportsObj.total ?? paginationTotal;
+        paginationPage = reportsObj.page ?? paginationPage;
+      }
+
+      // Ensure we have valid pagination values
+      const finalTotalPages =
+        paginationTotalPages && paginationTotalPages > 0
+          ? paginationTotalPages
+          : 1;
+      const finalTotal =
+        paginationTotal && paginationTotal > 0
+          ? paginationTotal
+          : employeeReports.length;
+
+      setTotalPages(finalTotalPages);
+      setTotalRecords(finalTotal);
+      setPage(paginationPage || pageNum);
+
+      console.log('Pagination info:', {
+        totalPages: finalTotalPages,
+        total: finalTotal,
+        page: paginationPage || pageNum,
+        employeeReportsCount: employeeReports.length,
+      });
+
       setError(null);
     } catch (err: unknown) {
       console.error('Error fetching reports:', err);
@@ -522,6 +563,8 @@ const Reports: React.FC = () => {
                 color='primary'
                 shape='rounded'
                 size='small'
+                showFirstButton
+                showLastButton
                 sx={{
                   '& .MuiPaginationItem-root': {
                     borderRadius: '50%',
@@ -536,6 +579,16 @@ const Reports: React.FC = () => {
               >
                 Showing page {page} of {totalPages} ({totalRecords} total
                 records)
+              </Typography>
+            </Box>
+          )}
+          {totalPages === 1 && totalRecords > 0 && (
+            <Box display='flex' justifyContent='center' mt={2}>
+              <Typography
+                variant='body2'
+                sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+              >
+                Showing all {totalRecords} records
               </Typography>
             </Box>
           )}
