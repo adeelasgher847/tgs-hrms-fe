@@ -191,7 +191,7 @@ const AttendanceSummaryReport: React.FC = () => {
         setLoading(false);
       }
     },
-    [filter, itemsPerPage, showToast, getTenantId]
+    [filter, itemsPerPage, showToast]
   );
 
   // Fetch when filter changes, reset to page 1

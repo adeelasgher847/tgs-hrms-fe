@@ -10,6 +10,7 @@ import ConfirmPayment from './components/ConfirmPayment';
 import SignupSuccess from './components/SignupSuccess';
 import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
 import { DepartmentList } from './components/department/Department-list';
 import DesignationManager from './components/Desigantions/Designation-manager';
 import Error404 from './components/Error404';
@@ -79,11 +80,13 @@ function App() {
               <Route
                 path='/dashboard/*'
                 element={
-                  <CompanyProvider>
-                    <ThemeProvider>
-                      <Layout />
-                    </ThemeProvider>
-                  </CompanyProvider>
+                  <ProtectedRoute>
+                    <CompanyProvider>
+                      <ThemeProvider>
+                        <Layout />
+                      </ThemeProvider>
+                    </CompanyProvider>
+                  </ProtectedRoute>
                 }
               >
                 <Route index element={<Dashboard />} />

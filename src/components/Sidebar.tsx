@@ -358,7 +358,49 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
           {filteredMenuItems.map(item => {
             const isParentActive = openItem === item.label;
             const hasSubMenu = item.subItems && item.subItems.length > 0;
+            const hasSingleSubItem =
+              item.subItems && item.subItems.length === 1;
             const isDirectLink = !hasSubMenu && item.path;
+
+            if (hasSingleSubItem) {
+              const singleSubItem = item.subItems[0];
+              const linkPath =
+                singleSubItem.path === ''
+                  ? '/dashboard'
+                  : `/dashboard/${singleSubItem.path}`;
+              const isActive =
+                location.pathname === linkPath ||
+                (singleSubItem.path === '' &&
+                  location.pathname === '/dashboard');
+
+              return (
+                <Box key={item.label}>
+                  <ListItemButton
+                    component={NavLink}
+                    to={linkPath}
+                    onClick={() => {
+                      setOpenItem(item.label);
+                      setActiveSubItem(singleSubItem.label);
+                      onMenuItemClick?.();
+                    }}
+                    sx={{
+                      color: isActive ? 'orange' : 'white',
+                      pl: 1,
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        color: isActive ? 'orange' : 'white',
+                        minWidth: '36px',
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText primary={item.label} />
+                  </ListItemButton>
+                </Box>
+              );
+            }
 
             return (
               <Box key={item.label}>
@@ -410,7 +452,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                         {item.icon}
                       </ListItemIcon>
                       <ListItemText primary={item.label} />
-                      {item.subItems && (
+                      {item.subItems && item.subItems.length > 1 && (
                         <img
                           src={dotted}
                           alt='dotted'
