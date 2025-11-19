@@ -96,6 +96,14 @@ const ConfirmPayment: React.FC = () => {
               // Update UserContext immediately so dashboard shows user without refresh
               try {
                 updateUser(data.user);
+                // Wait a bit to ensure UserContext state is updated
+                await new Promise(resolve => setTimeout(resolve, 300));
+                // Then refresh from API to ensure we have the latest data
+                try {
+                  await refreshUser();
+                } catch {
+                  // Ignore refresh errors, updateUser already set the user
+                }
               } catch {
                 // If updateUser fails for any reason, fallback to refresh
                 try {
@@ -138,6 +146,14 @@ const ConfirmPayment: React.FC = () => {
                       );
                       try {
                         updateUser(res.data.user);
+                        // Wait a bit to ensure UserContext state is updated
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                        // Then refresh from API to ensure we have the latest data
+                        try {
+                          await refreshUser();
+                        } catch {
+                          // Ignore refresh errors, updateUser already set the user
+                        }
                       } catch {
                         try {
                           await refreshUser();
@@ -194,11 +210,32 @@ const ConfirmPayment: React.FC = () => {
 
         setSuccess(true);
 
+        // Wait for UserContext to be properly initialized before navigating
+        // Check user state in UserContext and wait if needed
+        const waitForUserContext = async () => {
+          let attempts = 0;
+          const maxAttempts = 20; // Maximum 4 seconds (20 * 200ms)
+
+          while (attempts < maxAttempts) {
+            const userFromStorage = localStorage.getItem('user');
+            const token = localStorage.getItem('accessToken');
+
+            // If we have both user and token, and UserContext should have been updated
+            if (userFromStorage && token) {
+              // Wait a bit more to ensure UserContext state is propagated
+              await new Promise(resolve => setTimeout(resolve, 200));
+              break;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 200));
+            attempts++;
+          }
+        };
+
+        await waitForUserContext();
+
         // Redirect to dashboard with replace to prevent back navigation issues
-        // Use a longer delay to ensure all state updates are complete
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 2000);
+        navigate('/dashboard', { replace: true });
       } else {
         throw new Error('Payment was not successful');
       }

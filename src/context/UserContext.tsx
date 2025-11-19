@@ -15,9 +15,7 @@ export const UserContext = createContext<UserContextType | undefined>(
   undefined
 );
 
-const UserProvider: React.FC<{ children: ReactNode }> = ({
-  children,
-}) => {
+const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,6 +54,8 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({
   // Load user data from localStorage on mount and refresh from API
   useEffect(() => {
     const loadUserData = async () => {
+      let userLoadedFromStorage = false;
+
       try {
         // Check if user is authenticated
         const token = localStorage.getItem('accessToken');
@@ -70,34 +70,62 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({
           try {
             const parsedUser = JSON.parse(userData);
             setUser(parsedUser);
+            setLoading(false); // Set loading to false immediately after loading from localStorage
+            userLoadedFromStorage = true;
           } catch (parseError) {
-            console.warn('Failed to parse user data from localStorage:', parseError);
+            console.warn(
+              'Failed to parse user data from localStorage:',
+              parseError
+            );
           }
         }
 
-        // Try to refresh from API to ensure consistency
+        // Try to refresh from API to ensure consistency (don't block on this)
         try {
           const apiUser = await profileApiService.getUserProfile();
           setUser(apiUser);
           localStorage.setItem('user', JSON.stringify(apiUser));
         } catch (error: unknown) {
           // If API call fails, check if it's due to user deletion
-          const errorResponse = error as { response?: { status?: number }; message?: string };
-          if (errorResponse?.response?.status === 401 || errorResponse?.response?.status === 403) {
-            console.warn('User profile fetch failed - user may have been deleted');
+          const errorResponse = error as {
+            response?: { status?: number };
+            message?: string;
+          };
+          if (
+            errorResponse?.response?.status === 401 ||
+            errorResponse?.response?.status === 403
+          ) {
+            console.warn(
+              'User profile fetch failed - user may have been deleted'
+            );
             clearAuthData();
             setUser(null);
+            setLoading(false);
           } else {
             // For other errors (network, server issues), keep the localStorage data
-            console.warn('Failed to refresh user profile, keeping localStorage data:', errorResponse?.message);
+            console.warn(
+              'Failed to refresh user profile, keeping localStorage data:',
+              errorResponse?.message
+            );
+            // Don't set loading to false here if we already loaded from localStorage
+            if (!userLoadedFromStorage) {
+              setLoading(false);
+            }
           }
         }
       } catch (error) {
         console.error('Error loading user data:', error);
         clearAuthData();
         setUser(null);
-      } finally {
         setLoading(false);
+      } finally {
+        // Ensure loading is false if we haven't set it yet
+        if (!userLoadedFromStorage) {
+          const hasUserData = localStorage.getItem('user');
+          if (!hasUserData) {
+            setLoading(false);
+          }
+        }
       }
     };
 
