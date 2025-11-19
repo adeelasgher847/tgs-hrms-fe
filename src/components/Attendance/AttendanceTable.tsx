@@ -96,6 +96,10 @@ const AttendanceTable = () => {
     useState('all');
   const [teamCurrentNavigationDate, setTeamCurrentNavigationDate] =
     useState('all');
+  
+  // Date range filter state for Team Attendance
+  const [teamStartDate, setTeamStartDate] = useState('');
+  const [teamEndDate, setTeamEndDate] = useState('');
 
   const toDisplayTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString() : null;
@@ -257,14 +261,84 @@ const AttendanceTable = () => {
     return sessions;
   };
 
-  const fetchTeamAttendance = async (page = 1) => {
+  const fetchTeamAttendance = async (
+    page = 1,
+    startDate?: string,
+    endDate?: string
+  ) => {
     setTeamLoading(true);
     setTeamError('');
     try {
-      const response = await attendanceApi.getTeamAttendance(page);
+      const response = await attendanceApi.getTeamAttendance(
+        page,
+        startDate,
+        endDate
+      );
 
-      setTeamAttendance(response.items || []);
-      setFilteredTeamAttendance(response.items || []);
+      const teamItems = response.items || [];
+      setTeamAttendance(teamItems);
+
+      // Apply client-side filtering by date range if dates are provided
+      if (startDate || endDate) {
+        const filteredItems = teamItems
+          .map(member => {
+            const filteredAttendance =
+              (member as any).attendance?.filter((att: any) => {
+                if (!att.date) return false;
+
+                // Handle different date formats
+                let attDateStr = '';
+
+                // If date is already in YYYY-MM-DD format
+                if (
+                  typeof att.date === 'string' &&
+                  att.date.match(/^\d{4}-\d{2}-\d{2}$/)
+                ) {
+                  attDateStr = att.date;
+                }
+                // If date is an ISO timestamp, extract YYYY-MM-DD
+                else if (typeof att.date === 'string' && att.date.includes('T')) {
+                  attDateStr = att.date.split('T')[0];
+                }
+                // If date is a Date object or ISO string
+                else {
+                  try {
+                    const dateObj = new Date(att.date);
+                    if (!isNaN(dateObj.getTime())) {
+                      const year = dateObj.getFullYear();
+                      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                      const day = String(dateObj.getDate()).padStart(2, '0');
+                      attDateStr = `${year}-${month}-${day}`;
+                    }
+                  } catch {
+                    attDateStr = String(att.date);
+                  }
+                }
+
+                // Check if date is within range
+                if (startDate && endDate) {
+                  return attDateStr >= startDate && attDateStr <= endDate;
+                } else if (startDate) {
+                  return attDateStr >= startDate;
+                } else if (endDate) {
+                  return attDateStr <= endDate;
+                }
+                return true;
+              }) || [];
+            return {
+              ...member,
+              attendance: filteredAttendance,
+            };
+          })
+          .filter(
+            member =>
+              (member as any).attendance &&
+              (member as any).attendance.length > 0
+          );
+        setFilteredTeamAttendance(filteredItems);
+      } else {
+        setFilteredTeamAttendance(teamItems);
+      }
 
       // Update pagination state
       setTeamCurrentPage(response.page || 1);
@@ -372,9 +446,12 @@ const AttendanceTable = () => {
         setTotalPages(1);
         setTotalItems(rows.length);
       } else {
-        // For Team Attendance, we'll keep the existing team attendance logic
-        // but could be modified to fetch by date if the API supports it
-        const teamResponse = await attendanceApi.getTeamAttendance(1);
+        // For Team Attendance, fetch team attendance with date filter
+        const teamResponse = await attendanceApi.getTeamAttendance(
+          1,
+          date, // Start date
+          date // End date (same day)
+        );
         // Convert to AttendanceResponse format
         response = {
           items: teamResponse.items,
@@ -383,7 +460,56 @@ const AttendanceTable = () => {
           limit: 10, // Default limit
           totalPages: teamResponse.totalPages,
         };
-        setTeamAttendance((response.items as AttendanceEvent[]) || []);
+        const teamItems = (response.items as AttendanceEvent[]) || [];
+        setTeamAttendance(teamItems);
+        
+        // Apply client-side filtering by date immediately (in case API doesn't filter properly)
+        // This ensures empty array [] if no records exist for the selected date
+        const selectedDateStr = date;
+        const filteredItems = teamItems
+          .map(member => {
+            const filteredAttendance =
+              (member as any).attendance?.filter((att: any) => {
+                if (!att.date) return false;
+                
+                // Handle different date formats
+                let attDateStr = '';
+                
+                // If date is already in YYYY-MM-DD format
+                if (typeof att.date === 'string' && att.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                  attDateStr = att.date;
+                }
+                // If date is an ISO timestamp, extract YYYY-MM-DD
+                else if (typeof att.date === 'string' && att.date.includes('T')) {
+                  attDateStr = att.date.split('T')[0];
+                }
+                // If date is a Date object or ISO string
+                else {
+                  try {
+                    const dateObj = new Date(att.date);
+                    if (!isNaN(dateObj.getTime())) {
+                      const year = dateObj.getFullYear();
+                      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                      const day = String(dateObj.getDate()).padStart(2, '0');
+                      attDateStr = `${year}-${month}-${day}`;
+                    }
+                  } catch {
+                    // If parsing fails, try direct string comparison
+                    attDateStr = String(att.date);
+                  }
+                }
+                
+                return attDateStr === selectedDateStr;
+              }) || [];
+            return {
+              ...member,
+              attendance: filteredAttendance,
+            };
+          })
+          .filter(member => (member as any).attendance && (member as any).attendance.length > 0);
+        
+        // Set filtered data - will be empty array [] if no records match the selected date
+        setFilteredTeamAttendance(filteredItems);
       }
     } catch {
       if (view === 'all' || view === 'my') {
@@ -391,6 +517,7 @@ const AttendanceTable = () => {
         setFilteredData([]);
       } else {
         setTeamAttendance([]);
+        setFilteredTeamAttendance([]);
       }
     } finally {
       if (view === 'all' || view === 'my') {
@@ -576,23 +703,11 @@ const AttendanceTable = () => {
   const handleTeamDateNavigationChange = (newDate: string) => {
     setTeamCurrentNavigationDate(newDate);
     if (newDate === 'all') {
-      // Show all team records
-      setFilteredTeamAttendance(teamAttendance);
+      // Show all team records - fetch all data
+      fetchTeamAttendance(1);
     } else {
-      // Filter team records for specific date
-      const filtered = teamAttendance
-        .map(member => {
-          const filteredAttendance =
-            (member as any).attendance?.filter(
-              (att: any) => att.date === newDate
-            ) || [];
-          return {
-            ...member,
-            attendance: filteredAttendance,
-          };
-        })
-        .filter(member => (member as any).attendance.length > 0);
-      setFilteredTeamAttendance(filtered);
+      // Fetch team attendance for specific date from API
+      fetchAttendanceByDate(newDate, 'team');
     }
   };
 
@@ -639,6 +754,9 @@ const AttendanceTable = () => {
     setTeamCurrentPage(1);
     // Reset to show all records for date navigation
     setTeamCurrentNavigationDate('all');
+    // Reset date range filters
+    setTeamStartDate('');
+    setTeamEndDate('');
     // Show all team records initially
     fetchTeamAttendance(1);
   };
@@ -673,6 +791,77 @@ const AttendanceTable = () => {
     }
     setFilteredData(data);
   }, [attendanceData, selectedEmployee]);
+
+  // Client-side filtering for team attendance by date (as fallback if API doesn't filter)
+  // Note: Date range filter is handled in fetchTeamAttendance, this only handles date navigation
+  useEffect(() => {
+    // If date range filter is active, don't apply date navigation filtering
+    if (teamStartDate || teamEndDate) {
+      // Date range filter is active, filtering is already done in fetchTeamAttendance
+      return;
+    }
+    
+    if (teamCurrentNavigationDate === 'all') {
+      setFilteredTeamAttendance(teamAttendance);
+    } else if (teamCurrentNavigationDate && teamCurrentNavigationDate !== 'all') {
+      // Apply client-side filtering for the selected date
+      const selectedDateStr = teamCurrentNavigationDate;
+      
+      if (teamAttendance.length === 0) {
+        // No data available, set empty array
+        setFilteredTeamAttendance([]);
+        return;
+      }
+      
+      const filtered = teamAttendance
+        .map(member => {
+          const filteredAttendance =
+            (member as any).attendance?.filter((att: any) => {
+              if (!att.date) return false;
+              
+              // Handle different date formats
+              let attDateStr = '';
+              
+              // If date is already in YYYY-MM-DD format
+              if (typeof att.date === 'string' && att.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                attDateStr = att.date;
+              }
+              // If date is an ISO timestamp, extract YYYY-MM-DD
+              else if (typeof att.date === 'string' && att.date.includes('T')) {
+                attDateStr = att.date.split('T')[0];
+              }
+              // If date is a Date object or ISO string
+              else {
+                try {
+                  const dateObj = new Date(att.date);
+                  if (!isNaN(dateObj.getTime())) {
+                    const year = dateObj.getFullYear();
+                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const day = String(dateObj.getDate()).padStart(2, '0');
+                    attDateStr = `${year}-${month}-${day}`;
+                  }
+                } catch {
+                  // If parsing fails, try direct string comparison
+                  attDateStr = String(att.date);
+                }
+              }
+              
+              return attDateStr === selectedDateStr;
+            }) || [];
+          return {
+            ...member,
+            attendance: filteredAttendance,
+          };
+        })
+        .filter(member => (member as any).attendance && (member as any).attendance.length > 0);
+      
+      // Set filtered data - will be empty array [] if no records match the selected date
+      setFilteredTeamAttendance(filtered);
+    } else {
+      // Default: show all if no date is selected
+      setFilteredTeamAttendance(teamAttendance);
+    }
+  }, [teamAttendance, teamCurrentNavigationDate, teamStartDate, teamEndDate]);
 
   // Handle filter changes - reset page to 1 and fetch new data
   const handleFilterChange = () => {
@@ -712,25 +901,6 @@ const AttendanceTable = () => {
         Attendance Management
       </Typography>
 
-      {/* Manager View Toggle */}
-      {isManager && !isAdminLike && managerView === 'team' && (
-        <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
-          <Button
-            variant={
-              (managerView as string) === 'my' ? 'contained' : 'outlined'
-            }
-            onClick={handleManagerMyAttendance}
-          >
-            My Attendance
-          </Button>
-          <Button
-            variant={managerView === 'team' ? 'contained' : 'outlined'}
-            onClick={handleManagerTeamAttendance}
-          >
-            Team Attendance
-          </Button>
-        </Box>
-      )}
       {/* Tabs - Only show for regular users (non-Managers and non-Admins) */}
       {!isManager && !isAdminLike && (
         <Box sx={{ mb: 3 }}>
@@ -1118,6 +1288,89 @@ const AttendanceTable = () => {
             <Typography variant='h6'>Team Attendance</Typography>
           </Box>
 
+          {/* Date Range Filter for Team Attendance */}
+          <Box
+            sx={{
+              mb: 3,
+              display: 'flex',
+              gap: 2,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <Box>
+              <DatePicker
+                range
+                numberOfMonths={2}
+                value={
+                  teamStartDate && teamEndDate
+                    ? [new Date(teamStartDate), new Date(teamEndDate)]
+                    : teamStartDate
+                      ? [new Date(teamStartDate)]
+                      : []
+                }
+                onChange={dates => {
+                  if (dates && dates.length === 2) {
+                    const start = dates[0]?.format('YYYY-MM-DD') || '';
+                    const end = dates[1]?.format('YYYY-MM-DD') || '';
+                    setTeamStartDate(start);
+                    setTeamEndDate(end);
+                    setTeamCurrentNavigationDate('all'); // Reset date navigation
+                    fetchTeamAttendance(1, start, end);
+                  } else if (dates && dates.length === 1) {
+                    const start = dates[0]?.format('YYYY-MM-DD') || '';
+                    setTeamStartDate(start);
+                    setTeamEndDate('');
+                    setTeamCurrentNavigationDate('all'); // Reset date navigation
+                    fetchTeamAttendance(1, start, '');
+                  } else {
+                    setTeamStartDate('');
+                    setTeamEndDate('');
+                    setTeamCurrentNavigationDate('all'); // Reset date navigation
+                    fetchTeamAttendance(1);
+                  }
+                }}
+                format='MM/DD/YYYY'
+                placeholder='Start Date - End Date'
+                style={{
+                  width: '100%',
+                  height: '40px',
+                  padding: '6.5px 14px',
+                  border: '1px solid rgba(0, 0, 0, 0.23)',
+                  borderRadius: '4px',
+                  fontSize: '16px',
+                  fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+                  backgroundColor: 'transparent',
+                  outline: 'none',
+                }}
+                containerStyle={{
+                  width: '100%',
+                }}
+                inputClass={`custom-date-picker-input ${mode === 'dark' ? 'theme-dark' : ''}`}
+                className={`custom-date-picker ${mode === 'dark' ? 'theme-dark' : ''}`}
+                editable={false}
+                showOtherDays={true}
+                onOpen={() => {
+                  document.body.style.overflow = 'hidden';
+                }}
+                onClose={() => {
+                  document.body.style.overflow = 'auto';
+                }}
+              />
+            </Box>
+            <Button
+              variant='outlined'
+              onClick={() => {
+                setTeamStartDate('');
+                setTeamEndDate('');
+                setTeamCurrentNavigationDate('all');
+                fetchTeamAttendance(1);
+              }}
+            >
+              Clear Filters
+            </Button>
+          </Box>
+
           <TableContainer>
             <Table>
               <TableHead>
@@ -1216,15 +1469,105 @@ const AttendanceTable = () => {
       {/* Manager Team Attendance - Show when Manager clicks Team Attendance button */}
       {isManager && !isAdminLike && managerView === 'team' && (
         <Paper sx={{ background: 'unset !important', boxShadow: 'none' }}>
+          {/* Manager View Toggle, Date Range Filter, and Clear Filter in One Div */}
           <Box
             sx={{
+              mb: 3,
+              mt: 3,
               display: 'flex',
-              justifyContent: 'space-between',
+              gap: 2,
               alignItems: 'center',
-              mb: 2,
+              flexWrap: 'wrap',
             }}
           >
-            {/* <Typography variant='h6'>Team Attendance</Typography> */}
+            {/* Manager View Toggle Buttons */}
+            <Button
+              variant={
+                (managerView as string) === 'my' ? 'contained' : 'outlined'
+              }
+              onClick={handleManagerMyAttendance}
+            >
+              My Attendance
+            </Button>
+            <Button
+              variant={managerView === 'team' ? 'contained' : 'outlined'}
+              onClick={handleManagerTeamAttendance}
+            >
+              Team Attendance
+            </Button>
+
+            {/* Date Range Filter */}
+            <Box>
+              <DatePicker
+                range
+                numberOfMonths={2}
+                value={
+                  teamStartDate && teamEndDate
+                    ? [new Date(teamStartDate), new Date(teamEndDate)]
+                    : teamStartDate
+                      ? [new Date(teamStartDate)]
+                      : []
+                }
+                onChange={dates => {
+                  if (dates && dates.length === 2) {
+                    const start = dates[0]?.format('YYYY-MM-DD') || '';
+                    const end = dates[1]?.format('YYYY-MM-DD') || '';
+                    setTeamStartDate(start);
+                    setTeamEndDate(end);
+                    setTeamCurrentNavigationDate('all'); // Reset date navigation
+                    fetchTeamAttendance(1, start, end);
+                  } else if (dates && dates.length === 1) {
+                    const start = dates[0]?.format('YYYY-MM-DD') || '';
+                    setTeamStartDate(start);
+                    setTeamEndDate('');
+                    setTeamCurrentNavigationDate('all'); // Reset date navigation
+                    fetchTeamAttendance(1, start, '');
+                  } else {
+                    setTeamStartDate('');
+                    setTeamEndDate('');
+                    setTeamCurrentNavigationDate('all'); // Reset date navigation
+                    fetchTeamAttendance(1);
+                  }
+                }}
+                format='MM/DD/YYYY'
+                placeholder='Start Date - End Date'
+                style={{
+                  width: '100%',
+                  height: '40px',
+                  padding: '6.5px 14px',
+                  border: '1px solid rgba(0, 0, 0, 0.23)',
+                  borderRadius: '4px',
+                  fontSize: '16px',
+                  fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+                  backgroundColor: 'transparent',
+                  outline: 'none',
+                }}
+                containerStyle={{
+                  width: '100%',
+                }}
+                inputClass={`custom-date-picker-input ${mode === 'dark' ? 'theme-dark' : ''}`}
+                className={`custom-date-picker ${mode === 'dark' ? 'theme-dark' : ''}`}
+                editable={false}
+                showOtherDays={true}
+                onOpen={() => {
+                  document.body.style.overflow = 'hidden';
+                }}
+                onClose={() => {
+                  document.body.style.overflow = 'auto';
+                }}
+              />
+            </Box>
+            <Button
+              variant='outlined'
+              onClick={() => {
+                setTeamStartDate('');
+                setTeamEndDate('');
+                setTeamCurrentNavigationDate('all');
+                fetchTeamAttendance(1);
+              }}
+            >
+              Clear Filters
+            </Button>
           </Box>
 
           <TableContainer>

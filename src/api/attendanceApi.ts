@@ -226,15 +226,27 @@ class AttendanceApiService {
   }
 
   // Get team attendance for manager
-  async getTeamAttendance(page: number = 1): Promise<{
+  async getTeamAttendance(
+    page: number = 1,
+    startDate?: string,
+    endDate?: string
+  ): Promise<{
     items: AttendanceEvent[];
     total: number;
     page: number;
     totalPages: number;
   }> {
     try {
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      if (startDate) {
+        params.append('startDate', startDate);
+      }
+      if (endDate) {
+        params.append('endDate', endDate);
+      }
       const response = await axiosInstance.get(
-        `${this.baseUrl}/team?page=${page}`
+        `${this.baseUrl}/team?${params.toString()}`
       );
       return response.data;
     } catch {
