@@ -63,6 +63,11 @@ axiosInstance.interceptors.request.use(
       // No token available
     }
 
+    // If data is FormData, remove Content-Type header so axios can set it automatically with boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     // Debug logging
 
     return config;
