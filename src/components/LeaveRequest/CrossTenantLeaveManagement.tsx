@@ -772,7 +772,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box
-        sx={{ background: '#f7f7f7', minHeight: '100vh' }}
+        sx={{ minHeight: '100vh' }}
         onKeyDown={handleKeyDown}
       >
         <Paper sx={{ p: 3, mb: 3, boxShadow: 'none' }}>

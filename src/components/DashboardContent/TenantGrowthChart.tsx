@@ -5,6 +5,7 @@ import {
   Select,
   FormControl,
   CircularProgress,
+  TextField,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
@@ -44,9 +45,7 @@ const TenantGrowthChart: React.FC = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
   const [selectedTenant, setSelectedTenant] = useState<string>('Ibex Tech.');
-  const [selectedYear, setSelectedYear] = useState<number>(
-    new Date().getFullYear()
-  );
+  const [selectedYear, setSelectedYear] = useState<number>(2025);
   const [tenantGrowthData, setTenantGrowthData] = useState<TenantGrowth[]>([]);
 
   const labels = {
@@ -185,24 +184,36 @@ const TenantGrowthChart: React.FC = () => {
         </Typography>
 
         <Box display='flex' gap={2}>
-          <FormControl size='small' sx={{ minWidth: 100 }}>
-            <Select
-              value={selectedYear}
-              onChange={e => setSelectedYear(Number(e.target.value))}
-              sx={{
+          <TextField
+            type='number'
+            value={selectedYear}
+            onChange={e => {
+              const value = parseInt(e.target.value);
+              if (!isNaN(value) && value > 0) {
+                setSelectedYear(value);
+              }
+            }}
+            size='small'
+            sx={{
+              width: 120,
+              '& .MuiOutlinedInput-root': {
                 color: textColor,
-                '.MuiOutlinedInput-notchedOutline': {
+                '& fieldset': {
                   borderColor: borderColor,
                 },
-              }}
-            >
-              {[2023, 2024, 2025, 2026].map(year => (
-                <MenuItem key={year} value={year}>
-                  {year}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+                '&:hover fieldset': {
+                  borderColor: borderColor,
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: borderColor,
+                },
+              },
+            }}
+            inputProps={{
+              min: 2000,
+              max: 2100,
+            }}
+          />
 
           <FormControl size='small' sx={{ minWidth: 160 }}>
             <Select

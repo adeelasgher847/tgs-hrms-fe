@@ -20,6 +20,7 @@ import systemEmployeeApiService, {
 } from '../../api/systemEmployeeApi';
 import { useIsDarkMode } from '../../theme';
 import { snackbar } from '../../utils/snackbar';
+import axiosInstance from '../../api/axiosInstance';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -44,6 +45,10 @@ const PayrollReports: React.FC = () => {
   const [statistics, setStatistics] = useState<PayrollStatistics | null>(null);
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
   const [tenants, setTenants] = useState<SystemEmployee[]>([]);
+  const [allTenants, setAllTenants] = useState<SystemEmployee[]>([]);
+  const [tenantsWithData, setTenantsWithData] = useState<Set<string>>(
+    new Set()
+  );
   const [selectedTenantId, setSelectedTenantId] = useState<string>('');
   const [loadingTenants, setLoadingTenants] = useState<boolean>(false);
 
@@ -53,19 +58,141 @@ const PayrollReports: React.FC = () => {
   const cardBg = effectiveDarkMode ? '#1a1a1a' : '#fff';
   const textColor = effectiveDarkMode ? '#fff' : '#000';
 
-  const loadTenants = useCallback(async () => {
+  const loadTenantsWithData = useCallback(async () => {
     try {
       setLoadingTenants(true);
-      const data = await systemEmployeeApiService.getAllTenants(true);
-      console.log('Loaded tenants:', data.length);
-      setTenants(data);
 
-      // Set TGS as default tenant if it exists
-      const tgsTenant = data.find(
-        tenant => tenant.name?.toLowerCase() === 'tgs'
-      );
-      if (tgsTenant) {
-        setSelectedTenantId(tgsTenant.id);
+      // First, get all tenants
+      const allTenantsData = await systemEmployeeApiService.getAllTenants(true);
+      console.log('Loaded tenants:', allTenantsData.length);
+      setAllTenants(allTenantsData);
+
+      // Then, get payroll statistics without tenantId to see which tenants have data
+      try {
+        // Call API directly to get raw response with tenantIds
+        interface StatisticsItem {
+          tenantId?: string;
+          monthlyTrend?: Array<{
+            month: number;
+            year: number;
+            totalGross: number;
+            totalDeductions: number;
+            totalBonuses: number;
+            totalNet: number;
+            employeeCount: number;
+          }>;
+          departmentComparison?: Array<{
+            department: string;
+            totalGross: number;
+            totalDeductions: number;
+            totalBonuses: number;
+            totalNet: number;
+            employeeCount: number;
+          }>;
+        }
+
+        const statsResponse = await axiosInstance.get<
+          | PayrollStatistics
+          | {
+              statistics: StatisticsItem[];
+            }
+        >('/payroll/statistics');
+
+        // Extract tenantIds from statistics response
+        const tenantIdsWithData = new Set<string>();
+
+        // Check if response has statistics array (multi-tenant response)
+        if (
+          statsResponse.data &&
+          typeof statsResponse.data === 'object' &&
+          'statistics' in statsResponse.data &&
+          Array.isArray(
+            (statsResponse.data as { statistics?: StatisticsItem[] }).statistics
+          )
+        ) {
+          const statsArray = (
+            statsResponse.data as { statistics: StatisticsItem[] }
+          ).statistics;
+          statsArray.forEach((stat: StatisticsItem) => {
+            if (stat.tenantId) {
+              tenantIdsWithData.add(stat.tenantId);
+            }
+            // Also check if there's data in the statistics
+            if (
+              (stat.monthlyTrend && stat.monthlyTrend.length > 0) ||
+              (stat.departmentComparison &&
+                stat.departmentComparison.length > 0)
+            ) {
+              if (stat.tenantId) {
+                tenantIdsWithData.add(stat.tenantId);
+              }
+            }
+          });
+        } else if (
+          statsResponse.data &&
+          typeof statsResponse.data === 'object' &&
+          ('monthlyTrend' in statsResponse.data ||
+            'departmentComparison' in statsResponse.data)
+        ) {
+          // Single tenant response - check if there's data
+          const singleTenantStats = statsResponse.data as PayrollStatistics;
+          if (
+            (singleTenantStats.monthlyTrend &&
+              singleTenantStats.monthlyTrend.length > 0) ||
+            (singleTenantStats.departmentComparison &&
+              singleTenantStats.departmentComparison.length > 0)
+          ) {
+            // Get current user's tenantId from localStorage
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+              try {
+                const user = JSON.parse(userStr);
+                const userTenantId =
+                  user.tenant_id || user.tenantId || user.tenant;
+                if (userTenantId) {
+                  tenantIdsWithData.add(userTenantId);
+                }
+              } catch {
+                // Ignore parse errors
+              }
+            }
+          }
+        }
+
+        setTenantsWithData(tenantIdsWithData);
+
+        // Show all tenants in dropdown (don't filter)
+        setTenants(allTenantsData);
+
+        // Set the first tenant with data as default (if any have data), otherwise first tenant
+        if (tenantIdsWithData.size > 0) {
+          // Find first tenant that has data
+          // Check both tenantId and id fields since tenant objects might use either
+          const tenantWithData = allTenantsData.find(tenant => {
+            const tenantId = tenant.tenantId || tenant.id;
+            return tenantIdsWithData.has(tenantId);
+          });
+          if (tenantWithData) {
+            // Use the same field as dropdown (tenant.id)
+            setSelectedTenantId(tenantWithData.id);
+          } else if (allTenantsData.length > 0) {
+            // Fallback to first tenant if no match found
+            setSelectedTenantId(allTenantsData[0].id);
+          }
+        } else if (allTenantsData.length > 0) {
+          // No tenants with data found, use first tenant
+          setSelectedTenantId(allTenantsData[0].id);
+        }
+      } catch (statsError) {
+        console.error(
+          'Failed to load payroll statistics for tenant filtering:',
+          statsError
+        );
+        // If stats call fails, show all tenants
+        setTenants(allTenantsData);
+        if (allTenantsData.length > 0) {
+          setSelectedTenantId(allTenantsData[0].id);
+        }
       }
     } catch (error) {
       console.error('Failed to load tenants:', error);
@@ -99,8 +226,8 @@ const PayrollReports: React.FC = () => {
   }, [selectedTenantId]);
 
   useEffect(() => {
-    loadTenants();
-  }, [loadTenants]);
+    loadTenantsWithData();
+  }, [loadTenantsWithData]);
 
   useEffect(() => {
     loadStatistics();

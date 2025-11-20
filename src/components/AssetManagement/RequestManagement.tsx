@@ -181,7 +181,7 @@ const RequestManagement: React.FC = () => {
   const lastFetchedPageRef = React.useRef<{
     page: number;
     limit: number;
-  } | null>(null); // Track last fetched page/limit
+  } | null>(null);
   const assetsFetchedRef = React.useRef(false); // Track if assets have been fetched
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -206,10 +206,9 @@ const RequestManagement: React.FC = () => {
     null
   );
 
-  // Pagination state
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 25, // Backend returns 25 records per page
+    limit: 25, 
     total: 0,
     totalPages: 0,
   });
@@ -321,17 +320,18 @@ const RequestManagement: React.FC = () => {
     []
   );
 
-  // Removed fetchAllRequestsForStats - using counts from API response instead
-  const [statusCounts] = useState<{
+  const [statusCounts, setStatusCounts] = useState<{
     total: number;
     pending: number;
     approved: number;
     rejected: number;
+    cancelled: number;
   }>({
     total: 0,
     pending: 0,
     approved: 0,
     rejected: 0,
+    cancelled: 0,
   }); // Store counts from API response
 
   // Fetch assets separately (only once, not on every request fetch)
@@ -499,6 +499,17 @@ const RequestManagement: React.FC = () => {
         );
 
         setRequests(transformedRequests);
+
+        // Update counts from API response if available
+        if (apiResponse.counts) {
+          setStatusCounts({
+            total: apiResponse.counts.total || 0,
+            pending: apiResponse.counts.pending || 0,
+            approved: apiResponse.counts.approved || 0,
+            rejected: apiResponse.counts.rejected || 0,
+            cancelled: apiResponse.counts.cancelled || 0,
+          });
+        }
 
         let allAssets: Record<string, unknown>[] = [];
         let assetCurrentPage = 1;
@@ -1162,29 +1173,14 @@ const RequestManagement: React.FC = () => {
 
   // Use counts from API response
   const displayCounts = useMemo(() => {
-    // Use counts from API response if available
-    if (
-      statusCounts.total > 0 ||
-      statusCounts.pending > 0 ||
-      statusCounts.approved > 0 ||
-      statusCounts.rejected > 0
-    ) {
-      return {
-        all: statusCounts.total,
-        pending: statusCounts.pending,
-        approved: statusCounts.approved,
-        rejected: statusCounts.rejected,
-      };
-    }
-
-    // Fallback: Use total from pagination, show 0 for status counts until API provides them
+    // Always use counts from statusCounts state (updated from API response)
     return {
-      all: pagination.total || 0,
-      pending: 0,
-      approved: 0,
-      rejected: 0,
+      all: statusCounts.total,
+      pending: statusCounts.pending,
+      approved: statusCounts.approved,
+      rejected: statusCounts.rejected,
     };
-  }, [statusCounts, pagination.total]);
+  }, [statusCounts]);
 
   if (initialLoading) {
     return (
