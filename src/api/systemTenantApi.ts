@@ -18,6 +18,17 @@ export interface SystemTenantDetail {
   created_at: string;
   departmentCount: number;
   employeeCount: number;
+  logo?: string;
+  domain?: string;
+  company?: {
+    id: string;
+    company_name: string;
+    domain: string;
+    logo_url: string;
+    is_paid: boolean;
+    plan_id: string;
+    tenant_id: string;
+  };
   departments: Array<{
     id?: string;
     name?: string;
@@ -32,6 +43,7 @@ export interface SystemTenantFilters {
 
 interface PaginatedSystemTenantsResponse {
   data?: SystemTenant[];
+  items?: SystemTenant[];
   total?: number;
   page?: number;
   totalPages?: number;
@@ -107,7 +119,49 @@ export const SystemTenantApi = {
     try {
       const response: AxiosResponse<SystemTenantDetail> =
         await axiosInstance.get(`/system/tenants/${id}`);
-      return response.data;
+      
+      const detail = response.data;
+      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
+      
+      // Helper function to convert relative path to full URL
+      const getFullLogoUrl = (logoPath: string | undefined | null): string | undefined => {
+        if (!logoPath || typeof logoPath !== 'string' || logoPath === '[object Object]') {
+          return undefined;
+        }
+        
+        // If it's already a full URL (starts with http:// or https://), return as is
+        if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
+          return logoPath;
+        }
+        
+        // If it's a relative path (starts with /), prepend base URL
+        if (logoPath.startsWith('/')) {
+          return `${baseURL}${logoPath}`;
+        }
+        
+        // Otherwise, assume it's a relative path and prepend base URL with /
+        return `${baseURL}/${logoPath}`;
+      };
+      
+      // Extract logo from direct logo property or company.logo_url
+      let logoUrl = detail.logo || detail.company?.logo_url;
+      logoUrl = getFullLogoUrl(logoUrl);
+      
+      // Set the processed logo URL
+      if (logoUrl) {
+        detail.logo = logoUrl;
+      }
+      
+      console.log('Tenant Detail API Response:', {
+        id: detail.id,
+        name: detail.name,
+        originalLogo: response.data.logo,
+        originalCompanyLogoUrl: response.data.company?.logo_url,
+        processedLogo: detail.logo,
+        baseURL,
+      });
+      
+      return detail;
     } catch (error) {
       console.error(` Failed to fetch tenant details (id=${id}):`, error);
       throw error;
@@ -124,23 +178,31 @@ export const SystemTenantApi = {
     try {
       if (data.logo instanceof File) {
         const formData = new FormData();
-        formData.append('name', String(data.name || ''));
-        formData.append('domain', String(data.domain || ''));
+        // Append logo file first
         formData.append('logo', data.logo);
-        formData.append('adminName', String(data.adminName || ''));
-        formData.append('adminEmail', String(data.adminEmail || ''));
+        // Append other fields as form fields
+        formData.append('name', data.name);
+        formData.append('domain', data.domain || '');
+        formData.append('adminName', data.adminName || '');
+        formData.append('adminEmail', data.adminEmail || '');
 
-        console.log('Sending FormData with fields:', {
+        console.log('Sending FormData with logo as multipart:', {
+          logo: data.logo.name,
+          logoSize: data.logo.size,
+          logoType: data.logo.type,
           name: data.name,
           domain: data.domain,
-          logo: data.logo.name,
           adminName: data.adminName,
           adminEmail: data.adminEmail,
         });
 
         const response: AxiosResponse<SystemTenant> = await axiosInstance.post(
           '/system/tenants',
-          formData
+          formData,
+          {
+            // Axios will automatically set Content-Type with boundary for FormData
+            // We don't need to set headers here
+          }
         );
         console.log(' Tenant created successfully:', response.data);
         return response.data;
@@ -209,18 +271,49 @@ export const SystemTenantApi = {
 
   update: async (data: {
     tenantId: string;
-    companyName: string;
-    domain: string;
-    logo: string;
+    companyName?: string;
+    domain?: string;
+    logo?: string | File;
   }): Promise<SystemTenant> => {
     try {
-      const response: AxiosResponse<SystemTenant> = await axiosInstance.put(
-        '/system/tenants',
-        data
-      );
+      if (data.logo instanceof File) {
+        // Use multipart/form-data when logo is a File
+        const formData = new FormData();
+        formData.append('tenantId', data.tenantId);
+        if (data.companyName) {
+          formData.append('companyName', data.companyName);
+        }
+        if (data.domain) {
+          formData.append('domain', data.domain);
+        }
+        formData.append('logo', data.logo);
 
-      console.log(' Tenant updated successfully:', response.data);
-      return response.data;
+        console.log('Sending FormData for tenant update with logo as multipart:', {
+          tenantId: data.tenantId,
+          companyName: data.companyName,
+          domain: data.domain,
+          logo: data.logo.name,
+          logoSize: data.logo.size,
+          logoType: data.logo.type,
+        });
+
+        const response: AxiosResponse<SystemTenant> = await axiosInstance.put(
+          '/system/tenants',
+          formData
+        );
+
+        console.log(' Tenant updated successfully:', response.data);
+        return response.data;
+      } else {
+        // Use JSON when logo is a string or not provided
+        const response: AxiosResponse<SystemTenant> = await axiosInstance.put(
+          '/system/tenants',
+          data
+        );
+
+        console.log(' Tenant updated successfully:', response.data);
+        return response.data;
+      }
     } catch (error) {
       console.error(` Failed to update tenant (id=${data.tenantId}):`, error);
       throw error;

@@ -55,13 +55,55 @@ const ConfirmPayment: React.FC = () => {
       if (paymentResult.status === 'succeeded') {
         if (isSignupFlow && signupSessionId) {
           // Signup flow: Complete signup process
-          const completeSignupRequest = {
-            signupSessionId,
-          } as const;
+          // Check if tenant already exists (e.g., created by system admin or during company details step)
+          // Only call completeSignup if tenant doesn't already exist
+          let signupResult: Record<string, unknown> | null = null;
+          
+          try {
+            const completeSignupRequest = {
+              signupSessionId,
+            } as const;
 
-          const signupResult = await signupApi.completeSignup(
-            completeSignupRequest
-          );
+            signupResult = (await signupApi.completeSignup(
+              completeSignupRequest
+            )) as unknown as Record<string, unknown>;
+          } catch (completeSignupError: unknown) {
+            // If completeSignup fails because tenant already exists, try to get user data from payment confirmation
+            const error = completeSignupError as { response?: { data?: { message?: string } } };
+            const errorMessage = error?.response?.data?.message || '';
+            
+            // Check if error is about tenant already existing
+            if (
+              errorMessage.toLowerCase().includes('tenant') &&
+              (errorMessage.toLowerCase().includes('already') ||
+                errorMessage.toLowerCase().includes('exists') ||
+                errorMessage.toLowerCase().includes('duplicate'))
+            ) {
+              console.log('Tenant already exists, skipping tenant creation');
+              // Try to get user data from payment confirmation response or login
+              // The payment confirmation might have already created/activated the user
+              try {
+                const credsStr = sessionStorage.getItem('pendingSignupCredentials');
+                if (credsStr) {
+                  const creds = JSON.parse(credsStr);
+                  // Try to login to get user data
+                  const loginRes = await axiosInstance.post('/auth/login', {
+                    email: creds.email,
+                    password: creds.password,
+                  });
+                  if (loginRes?.data) {
+                    signupResult = loginRes.data as Record<string, unknown>;
+                  }
+                }
+              } catch (loginErr) {
+                console.warn('Failed to login after tenant exists error:', loginErr);
+                // Continue with error handling below
+              }
+            } else {
+              // Re-throw if it's a different error
+              throw completeSignupError;
+            }
+          }
 
           // First, clear all existing auth data to ensure clean state
           localStorage.removeItem('accessToken');
@@ -71,6 +113,7 @@ const ConfirmPayment: React.FC = () => {
 
           // Now set the new user's data if available
           if (
+            signupResult &&
             (signupResult as Record<string, unknown>).accessToken &&
             (signupResult as Record<string, unknown>).refreshToken
           ) {
@@ -95,14 +138,8 @@ const ConfirmPayment: React.FC = () => {
               }
               // Update UserContext immediately so dashboard shows user without refresh
               try {
-                updateUser(data.user);
-                // Wait a bit to ensure UserContext state is updated
-                await new Promise(resolve => setTimeout(resolve, 300));
-                // Then refresh from API to ensure we have the latest data
-                try {
-                  await refreshUser();
-                } catch {
-                  // Ignore refresh errors, updateUser already set the user
+                if (data.user && typeof data.user === 'object' && Object.keys(data.user).length > 0) {
+                  updateUser(data.user as Parameters<typeof updateUser>[0]);
                 }
               } catch {
                 // If updateUser fails for any reason, fallback to refresh
