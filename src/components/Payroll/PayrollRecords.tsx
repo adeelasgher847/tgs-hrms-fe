@@ -587,6 +587,7 @@ const PayrollRecords: React.FC = () => {
     itemsPerPage,
     employeesForGenerateDialog,
     records,
+    employeeFilter,
   ]);
 
   const openGenerateDialog = useCallback(() => {

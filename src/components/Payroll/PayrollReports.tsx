@@ -45,10 +45,6 @@ const PayrollReports: React.FC = () => {
   const [statistics, setStatistics] = useState<PayrollStatistics | null>(null);
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
   const [tenants, setTenants] = useState<SystemEmployee[]>([]);
-  const [allTenants, setAllTenants] = useState<SystemEmployee[]>([]);
-  const [tenantsWithData, setTenantsWithData] = useState<Set<string>>(
-    new Set()
-  );
   const [selectedTenantId, setSelectedTenantId] = useState<string>('');
   const [loadingTenants, setLoadingTenants] = useState<boolean>(false);
 
@@ -65,7 +61,6 @@ const PayrollReports: React.FC = () => {
       // First, get all tenants
       const allTenantsData = await systemEmployeeApiService.getAllTenants(true);
       console.log('Loaded tenants:', allTenantsData.length);
-      setAllTenants(allTenantsData);
 
       // Then, get payroll statistics without tenantId to see which tenants have data
       try {
@@ -158,8 +153,6 @@ const PayrollReports: React.FC = () => {
             }
           }
         }
-
-        setTenantsWithData(tenantIdsWithData);
 
         // Show all tenants in dropdown (don't filter)
         setTenants(allTenantsData);

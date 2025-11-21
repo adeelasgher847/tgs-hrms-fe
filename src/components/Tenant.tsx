@@ -100,55 +100,56 @@ export const TenantPage: React.FC = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const itemsPerPage = 25;
 
-  const fetchTenants = useCallback(
-    async (page: number = 1) => {
-      try {
-        setIsLoading(true);
-        const res = await SystemTenantApi.getAll({
-          page,
-          limit: itemsPerPage,
-          includeDeleted:
-            statusFilter === 'All' ? true : statusFilter === 'deleted',
-        });
-        let filtered = res.data;
-        if (statusFilter === 'active' || statusFilter === 'suspended') {
-          filtered = res.data.filter(
-            t => !t.isDeleted && t.status === statusFilter
-          );
-        } else if (statusFilter === 'deleted') {
-          filtered = res.data.filter(t => t.isDeleted);
-        }
+  const fetchTenants = useCallback(async () => {
+    try {
+      setIsLoading(true);
 
-        setTenants(filtered);
-        const hasMorePages = res.data.length === itemsPerPage;
-        if (res.totalPages && res.total) {
-          setTotalPages(res.totalPages);
-          setTotalRecords(res.total);
-        } else {
-          setTotalPages(hasMorePages ? page + 1 : page);
-          setTotalRecords(
-            hasMorePages
-              ? page * itemsPerPage
-              : (page - 1) * itemsPerPage + res.data.length
-          );
-        }
-      } catch (err) {
-        console.error(err);
-        setSnackbar({
-          open: true,
-          message: 'Failed to fetch tenants',
-          severity: 'error',
-        });
-      } finally {
-        setIsLoading(false);
+      const res = await SystemTenantApi.getAll({
+        page: 1,
+        limit: 999999,
+        includeDeleted: true,
+      });
+
+      let allTenants = res.data;
+
+      let filtered = allTenants;
+
+      if (statusFilter === 'active') {
+        filtered = allTenants.filter(
+          t => !t.isDeleted && t.status === 'active'
+        );
+      } else if (statusFilter === 'suspended') {
+        filtered = allTenants.filter(
+          t => !t.isDeleted && t.status === 'suspended'
+        );
+      } else if (statusFilter === 'deleted') {
+        filtered = allTenants.filter(t => t.isDeleted);
       }
-    },
-    [statusFilter, itemsPerPage]
-  );
+
+      setTotalRecords(filtered.length);
+
+      const pages = Math.ceil(filtered.length / itemsPerPage);
+      setTotalPages(pages);
+
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      setTenants(filtered.slice(start, end));
+    } catch (err) {
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to fetch tenants',
+        severity: 'error',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [statusFilter, currentPage, itemsPerPage]);
 
   useEffect(() => {
-    fetchTenants(currentPage);
-  }, [currentPage, fetchTenants]);
+    fetchTenants();
+  }, [currentPage, statusFilter]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter]);
