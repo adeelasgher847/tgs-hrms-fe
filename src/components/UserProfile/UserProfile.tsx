@@ -35,6 +35,7 @@ import ProfilePictureUpload from '../common/ProfilePictureUpload';
 import EmployeeProfileView from '../Employee/EmployeeProfileView';
 import EditProfileModal from './EditProfileModal';
 import { useIsDarkMode } from '../../theme';
+import { formatDate } from '../../utils/dateUtils';
 
 const UserProfileComponent = React.memo(() => {
   const { user: profile, loading, refreshUser, updateUser } = useUser();
@@ -150,7 +151,7 @@ const UserProfileComponent = React.memo(() => {
       {
         icon: <CalendarToday sx={{ color: 'primary.main' }} />,
         label: 'Joined',
-        value: new Date(profile.created_at).toLocaleDateString(),
+        value: formatDate(profile.created_at),
       },
     ],
     [

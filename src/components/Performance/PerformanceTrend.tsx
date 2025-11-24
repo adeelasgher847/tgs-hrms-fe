@@ -27,6 +27,7 @@ import {
   systemEmployeeApiService,
   type SystemEmployee,
 } from '../../api/systemEmployeeApi';
+import { formatDate } from '../../utils/dateUtils';
 
 interface PerformanceTrendProps {
   tenantId: string;
@@ -331,7 +332,16 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           />
         </Stack>
 
-        <Grid container spacing={4}>
+        <Grid
+          container
+          spacing={4}
+          sx={{
+            flexWrap: {
+              xs: 'wrap',
+              md: 'nowrap',
+            },
+          }}
+        >
           <Grid item xs={12} md={4}>
             <Box
               sx={{
@@ -379,7 +389,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
                         <TableCell>{row.overallScore}</TableCell>
                         <TableCell>{row.status}</TableCell>
                         <TableCell>
-                          {new Date(row.createdAt).toLocaleDateString()}
+                          {formatDate(row.createdAt)}
                         </TableCell>
                       </TableRow>
                     ))

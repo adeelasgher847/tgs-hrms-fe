@@ -59,6 +59,7 @@ import StatusChip from './StatusChip';
 import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../Data/assetCategories';
 import type { AxiosError } from 'axios';
+import { formatDate } from '../../utils/dateUtils';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
@@ -133,6 +134,7 @@ const normalizeRequestStatus = (
       return 'pending'; // Default fallback
   }
 };
+
 
 const schema = yup.object({
   action: yup.string().required('Action is required'),
@@ -1231,7 +1233,7 @@ const RequestManagement: React.FC = () => {
         <StatusChip status={request.status} type='request' />
       </TableCell>
       <TableCell>
-        {new Date(request.requestedDate).toLocaleDateString()}
+        {formatDate(request.requestedDate)}
       </TableCell>
       <TableCell>
         {request.remarks && (

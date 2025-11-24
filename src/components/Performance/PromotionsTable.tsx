@@ -24,10 +24,12 @@ import {
   type PromotionStats,
 } from '../../api/systemPerformanceApi';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
+import { formatDate } from '../../utils/dateUtils';
 
 interface PromotionsListProps {
   tenantId: string;
 }
+
 
 const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   const [promotions, setPromotions] = useState<PromotionRecord[]>([]);
@@ -261,7 +263,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
                     <TableCell>{p.previousDesignation}</TableCell>
                     <TableCell>{p.newDesignation}</TableCell>
                     <TableCell>
-                      {new Date(p.effectiveDate).toLocaleDateString()}
+                      {formatDate(p.effectiveDate)}
                     </TableCell>
                     <TableCell>
                       <Chip label={p.status} color={statusColor(p.status)} />
