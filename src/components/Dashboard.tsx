@@ -221,9 +221,8 @@ const Dashboard: React.FC = () => {
               <Paper
                 elevation={3}
                 sx={{
-                  p: { xs: 2, sm: 3 },
                   borderRadius: 1,
-                  backgroundColor: theme.palette.background.paper,
+                  backgroundColor: 'unset',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 3,
@@ -243,9 +242,6 @@ const Dashboard: React.FC = () => {
 
                 <Box
                   sx={{
-                    flexGrow: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
                     overflow: 'hidden',
                     borderRadius: 1,
                     backgroundColor: theme.palette.background.paper,

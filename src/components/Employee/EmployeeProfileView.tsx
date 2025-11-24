@@ -22,6 +22,7 @@ import type {
   EmployeeProfileLeaveHistoryItem,
 } from '../../api/employeeApi';
 import UserAvatar from '../common/UserAvatar';
+import { formatDate } from '../../utils/dateUtils';
 
 const EmployeeProfileView: React.FC = () => {
   const [profile, setProfile] = useState<EmployeeFullProfile | null>(null);
@@ -119,6 +120,7 @@ const EmployeeProfileView: React.FC = () => {
       ? String(iso)
       : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
 
   if (isLoading) {
     return (
@@ -232,7 +234,7 @@ const EmployeeProfileView: React.FC = () => {
                           index % 2 === 0 ? 'background.default' : 'grey.50',
                       }}
                     >
-                      <TableCell>{log.date}</TableCell>
+                      <TableCell>{formatDate(log.date)}</TableCell>
                       <TableCell>{formatTime(log.checkIn)}</TableCell>
                       <TableCell>{formatTime(log.checkOut)}</TableCell>
                       <TableCell>{log.workedHours ?? 0}h</TableCell>
@@ -280,8 +282,8 @@ const EmployeeProfileView: React.FC = () => {
                     }}
                   >
                     <TableCell>{lv.type}</TableCell>
-                    <TableCell>{lv.fromDate}</TableCell>
-                    <TableCell>{lv.toDate}</TableCell>
+                    <TableCell>{formatDate(lv.fromDate)}</TableCell>
+                    <TableCell>{formatDate(lv.toDate)}</TableCell>
                     <TableCell>
                       <Chip
                         label={lv.status}

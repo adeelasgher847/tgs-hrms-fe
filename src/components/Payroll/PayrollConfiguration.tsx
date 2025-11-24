@@ -558,7 +558,7 @@ const PayrollConfiguration: React.FC = () => {
             startIcon={<AddIcon />}
             sx={{
               textTransform: 'none',
-              fontWeight: 500,
+              fontWeight: 600,
               px: 2,
               py: 1,
             }}
@@ -602,7 +602,7 @@ const PayrollConfiguration: React.FC = () => {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <AddIcon /> Create Payroll Configuration
+              Create Payroll Configuration
             </Box>
             <IconButton
               onClick={handleCloseEditModal}
@@ -629,7 +629,7 @@ const PayrollConfiguration: React.FC = () => {
               </Alert>
             )}
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3,marginTop: 2 }}>
               <FormControl fullWidth>
                 <InputLabel
                   sx={{

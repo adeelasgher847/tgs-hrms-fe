@@ -37,6 +37,7 @@ import {
 } from '../../utils/roleUtils';
 import DateNavigation from './DateNavigation';
 import { useTheme } from '../../theme/hooks';
+import { formatDate } from '../../utils/dateUtils';
 
 interface AttendanceRecord {
   id: string;
@@ -56,6 +57,7 @@ const formatLocalYMD = (d: Date) => {
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 };
+
 
 const AttendanceTable = () => {
   const { mode } = useTheme();
@@ -1219,7 +1221,7 @@ const AttendanceTable = () => {
                       )}
                       <TableCell>
                         {record.checkInISO
-                          ? record.checkInISO.split('T')[0]
+                          ? formatDate(record.checkInISO.split('T')[0])
                           : '--'}
                       </TableCell>
                       <TableCell>{record.checkIn || '--'}</TableCell>
@@ -1411,7 +1413,9 @@ const AttendanceTable = () => {
                                 {(member as any).first_name}{' '}
                                 {(member as any).last_name}
                               </TableCell>
-                              <TableCell>{attendance.date || '--'}</TableCell>
+                              <TableCell>
+                                {attendance.date ? formatDate(attendance.date) : '--'}
+                              </TableCell>
                               <TableCell>
                                 {attendance.checkIn
                                   ? new Date(
@@ -1609,7 +1613,9 @@ const AttendanceTable = () => {
                                 {(member as any).first_name}{' '}
                                 {(member as any).last_name}
                               </TableCell>
-                              <TableCell>{attendance.date || '--'}</TableCell>
+                              <TableCell>
+                                {attendance.date ? formatDate(attendance.date) : '--'}
+                              </TableCell>
                               <TableCell>
                                 {attendance.checkIn
                                   ? new Date(
