@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -20,7 +20,6 @@ import systemEmployeeApiService, {
 } from '../../api/systemEmployeeApi';
 import { useIsDarkMode } from '../../theme';
 import { snackbar } from '../../utils/snackbar';
-import axiosInstance from '../../api/axiosInstance';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -54,187 +53,68 @@ const PayrollReports: React.FC = () => {
   const cardBg = effectiveDarkMode ? '#1a1a1a' : '#fff';
   const textColor = effectiveDarkMode ? '#fff' : '#000';
 
-  const loadTenantsWithData = useCallback(async () => {
-    try {
-      setLoadingTenants(true);
-
-      // First, get all tenants
-      const allTenantsData = await systemEmployeeApiService.getAllTenants(true);
-      console.log('Loaded tenants:', allTenantsData.length);
-
-      // Then, get payroll statistics without tenantId to see which tenants have data
+  useEffect(() => {
+    const loadInitialData = async () => {
       try {
-        // Call API directly to get raw response with tenantIds
-        interface StatisticsItem {
-          tenantId?: string;
-          monthlyTrend?: Array<{
-            month: number;
-            year: number;
-            totalGross: number;
-            totalDeductions: number;
-            totalBonuses: number;
-            totalNet: number;
-            employeeCount: number;
-          }>;
-          departmentComparison?: Array<{
-            department: string;
-            totalGross: number;
-            totalDeductions: number;
-            totalBonuses: number;
-            totalNet: number;
-            employeeCount: number;
-          }>;
-        }
+        setLoadingTenants(true);
+        setStatsLoading(true);
 
-        const statsResponse = await axiosInstance.get<
-          | PayrollStatistics
-          | {
-              statistics: StatisticsItem[];
-            }
-        >('/payroll/statistics');
+        const allTenants = await systemEmployeeApiService.getAllTenants(true);
+        setTenants(allTenants);
 
-        // Extract tenantIds from statistics response
-        const tenantIdsWithData = new Set<string>();
-
-        // Check if response has statistics array (multi-tenant response)
-        if (
-          statsResponse.data &&
-          typeof statsResponse.data === 'object' &&
-          'statistics' in statsResponse.data &&
-          Array.isArray(
-            (statsResponse.data as { statistics?: StatisticsItem[] }).statistics
-          )
-        ) {
-          const statsArray = (
-            statsResponse.data as { statistics: StatisticsItem[] }
-          ).statistics;
-          statsArray.forEach((stat: StatisticsItem) => {
-            if (stat.tenantId) {
-              tenantIdsWithData.add(stat.tenantId);
-            }
-            // Also check if there's data in the statistics
-            if (
-              (stat.monthlyTrend && stat.monthlyTrend.length > 0) ||
-              (stat.departmentComparison &&
-                stat.departmentComparison.length > 0)
-            ) {
-              if (stat.tenantId) {
-                tenantIdsWithData.add(stat.tenantId);
-              }
-            }
-          });
-        } else if (
-          statsResponse.data &&
-          typeof statsResponse.data === 'object' &&
-          ('monthlyTrend' in statsResponse.data ||
-            'departmentComparison' in statsResponse.data)
-        ) {
-          // Single tenant response - check if there's data
-          const singleTenantStats = statsResponse.data as PayrollStatistics;
-          if (
-            (singleTenantStats.monthlyTrend &&
-              singleTenantStats.monthlyTrend.length > 0) ||
-            (singleTenantStats.departmentComparison &&
-              singleTenantStats.departmentComparison.length > 0)
-          ) {
-            // Get current user's tenantId from localStorage
-            const userStr = localStorage.getItem('user');
-            if (userStr) {
-              try {
-                const user = JSON.parse(userStr);
-                const userTenantId =
-                  user.tenant_id || user.tenantId || user.tenant;
-                if (userTenantId) {
-                  tenantIdsWithData.add(userTenantId);
-                }
-              } catch {
-                // Ignore parse errors
-              }
-            }
-          }
-        }
-
-        // Show all tenants in dropdown (don't filter)
-        setTenants(allTenantsData);
-
-        // Set the first tenant with data as default (if any have data), otherwise first tenant
-        if (tenantIdsWithData.size > 0) {
-          // Find first tenant that has data
-          // Check both tenantId and id fields since tenant objects might use either
-          const tenantWithData = allTenantsData.find(tenant => {
-            const tenantId = tenant.tenantId || tenant.id;
-            return tenantIdsWithData.has(tenantId);
-          });
-          if (tenantWithData) {
-            // Use the same field as dropdown (tenant.id)
-            setSelectedTenantId(tenantWithData.id);
-          } else if (allTenantsData.length > 0) {
-            // Fallback to first tenant if no match found
-            setSelectedTenantId(allTenantsData[0].id);
-          }
-        } else if (allTenantsData.length > 0) {
-          // No tenants with data found, use first tenant
-          setSelectedTenantId(allTenantsData[0].id);
-        }
-      } catch (statsError) {
-        console.error(
-          'Failed to load payroll statistics for tenant filtering:',
-          statsError
+        // Default tenant: "Testify Solutions"
+        let defaultTenantId = '';
+        const testifyTenant = allTenants.find(
+          t => t.name.toLowerCase() === 'testify solutions'
         );
-        // If stats call fails, show all tenants
-        setTenants(allTenantsData);
-        if (allTenantsData.length > 0) {
-          setSelectedTenantId(allTenantsData[0].id);
+        if (testifyTenant) {
+          defaultTenantId = testifyTenant.id;
+        } else if (allTenants.length > 0) {
+          defaultTenantId = allTenants[0].id;
         }
+        setSelectedTenantId(defaultTenantId);
+
+        // Load statistics for default tenant
+        const stats = await payrollApi.getPayrollStatistics({
+          tenantId: defaultTenantId,
+        });
+        setStatistics(stats);
+      } catch (error) {
+        console.error('Error loading initial payroll data:', error);
+        snackbar.error('Failed to load payroll data');
+      } finally {
+        setLoadingTenants(false);
+        setStatsLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to load tenants:', error);
-      snackbar.error('Failed to load tenants');
-    } finally {
-      setLoadingTenants(false);
-    }
+    };
+
+    loadInitialData();
   }, []);
 
-  const loadStatistics = useCallback(async () => {
-    try {
-      setStatsLoading(true);
-      const params: {
-        tenantId?: string;
-      } = {};
-      if (selectedTenantId) {
-        params.tenantId = selectedTenantId;
+  useEffect(() => {
+    if (!selectedTenantId) return;
+
+    const loadStats = async () => {
+      try {
+        setStatsLoading(true);
+        const stats = await payrollApi.getPayrollStatistics({
+          tenantId: selectedTenantId,
+        });
+        setStatistics(stats);
+      } catch (error) {
+        snackbar.error('Failed to load payroll statistics');
+      } finally {
+        setStatsLoading(false);
       }
-      const data = await payrollApi.getPayrollStatistics(params);
-      console.log('Payroll statistics data:', data);
-      console.log('Monthly trend:', data?.monthlyTrend);
-      console.log('Department comparison:', data?.departmentComparison);
-      setStatistics(data);
-    } catch (error) {
-      console.error('Failed to load payroll statistics:', error);
-      snackbar.error('Failed to load payroll statistics');
-      setStatistics(null);
-    } finally {
-      setStatsLoading(false);
-    }
+    };
+
+    loadStats();
   }, [selectedTenantId]);
 
-  useEffect(() => {
-    loadTenantsWithData();
-  }, [loadTenantsWithData]);
-
-  useEffect(() => {
-    loadStatistics();
-  }, [loadStatistics]);
-
   const trendSeries = useMemo(() => {
-    if (
-      !statistics ||
-      !statistics.monthlyTrend ||
-      !Array.isArray(statistics.monthlyTrend) ||
-      statistics.monthlyTrend.length === 0
-    )
+    if (!statistics?.monthlyTrend || statistics.monthlyTrend.length === 0)
       return [];
-    const series = [
+    return [
       {
         name: 'Gross',
         data: statistics.monthlyTrend.map(item => Number(item.totalGross) || 0),
@@ -256,89 +136,29 @@ const PayrollReports: React.FC = () => {
         data: statistics.monthlyTrend.map(item => Number(item.totalNet) || 0),
       },
     ];
-    console.log('Trend series data:', series);
-    return series;
   }, [statistics]);
 
   const trendOptions: ApexOptions = useMemo(() => {
     const categories =
-      statistics?.monthlyTrend && Array.isArray(statistics.monthlyTrend)
-        ? statistics.monthlyTrend.map(item =>
-            dayjs(`${item.year}-${item.month}-01`).format('MMM YYYY')
-          )
-        : [];
-
-    console.log('Trend chart series:', trendSeries);
-    console.log('Trend chart categories:', categories);
-
-    const colors = ['#484c7f', '#f19828', '#f5558d', '#6dd3ff'];
-
+      statistics?.monthlyTrend?.map(item =>
+        dayjs(`${item.year}-${item.month}-01`).format('MMM YYYY')
+      ) ?? [];
     return {
-      chart: {
-        type: 'line',
-        toolbar: { show: false },
-        zoom: { enabled: false },
-        animations: {
-          enabled: true,
-        },
-      },
-      stroke: {
-        curve: 'smooth',
-        width: 3,
-      },
-      markers: {
-        size: 4,
-        hover: {
-          size: 6,
-        },
-      },
-      xaxis: {
-        categories,
-        labels: {
-          style: { colors: effectiveDarkMode ? '#d0d0d0' : '#666' },
-        },
-      },
-      yaxis: {
-        labels: {
-          formatter: val => {
-            if (val === 0) return '$0';
-            if (val < 1000) return `$${val}`;
-            return `$${val / 1000}k`;
-          },
-          style: { colors: effectiveDarkMode ? '#d0d0d0' : '#666' },
-        },
-        min: 0,
-        max: undefined,
-        forceNiceScale: true,
-        tickAmount: 5,
-      },
-      legend: {
-        position: 'top',
-        horizontalAlign: 'center',
-        labels: { colors: effectiveDarkMode ? '#d0d0d0' : '#333' },
-      },
-      grid: {
-        borderColor: effectiveDarkMode ? '#333' : '#e0e0e0',
-      },
-      colors,
-      tooltip: {
-        theme: effectiveDarkMode ? 'dark' : 'light',
-        y: {
-          formatter: val => formatCurrency(val),
-        },
-      },
-    } as ApexOptions;
-  }, [statistics, effectiveDarkMode, trendSeries]);
+      chart: { type: 'line', toolbar: { show: false } },
+      stroke: { curve: 'smooth', width: 3 },
+      markers: { size: 4 },
+      xaxis: { categories },
+      tooltip: { y: { formatter: val => formatCurrency(val) } },
+    };
+  }, [statistics]);
 
   const departmentSeries = useMemo(() => {
     if (
-      !statistics ||
-      !statistics.departmentComparison ||
-      !Array.isArray(statistics.departmentComparison) ||
+      !statistics?.departmentComparison ||
       statistics.departmentComparison.length === 0
     )
       return [];
-    const series = [
+    return [
       {
         name: 'Gross',
         data: statistics.departmentComparison.map(
@@ -364,83 +184,25 @@ const PayrollReports: React.FC = () => {
         ),
       },
     ];
-    console.log('Department series data:', series);
-    return series;
   }, [statistics]);
 
   const departmentOptions: ApexOptions = useMemo(() => {
     const categories =
-      statistics?.departmentComparison &&
-      Array.isArray(statistics.departmentComparison)
-        ? statistics.departmentComparison.map(item => item.department.trim())
-        : [];
-
-    console.log('Department chart series:', departmentSeries);
-    console.log('Department chart categories:', categories);
-
-    const colors = ['#484c7f', '#f19828', '#f5558d', '#6dd3ff'];
-
+      statistics?.departmentComparison?.map(item => item.department.trim()) ??
+      [];
     return {
-      chart: {
-        type: 'bar',
-        toolbar: { show: false },
-        animations: {
-          enabled: true,
-        },
-      },
-      plotOptions: {
-        bar: {
-          horizontal: true,
-          barHeight: '50%',
-          dataLabels: {
-            position: 'top',
-          },
-        },
-      },
-      dataLabels: {
-        enabled: false,
-      },
-      xaxis: {
-        categories,
-        labels: {
-          style: { colors: effectiveDarkMode ? '#d0d0d0' : '#666' },
-        },
-      },
-      yaxis: {
-        labels: {
-          style: { colors: effectiveDarkMode ? '#d0d0d0' : '#666' },
-          formatter: val => formatCurrency(val),
-        },
-        min: 0,
-        max: undefined,
-        forceNiceScale: true,
-        tickAmount: 5,
-      },
-      colors,
-      grid: {
-        borderColor: effectiveDarkMode ? '#333' : '#e0e0e0',
-      },
-      legend: {
-        position: 'top',
-        horizontalAlign: 'center',
-        labels: { colors: effectiveDarkMode ? '#d0d0d0' : '#333' },
-      },
-      tooltip: {
-        theme: effectiveDarkMode ? 'dark' : 'light',
-        y: {
-          formatter: val => formatCurrency(val),
-        },
-      },
-    } as ApexOptions;
-  }, [statistics, effectiveDarkMode, departmentSeries]);
+      chart: { type: 'bar', toolbar: { show: false } },
+      plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
+      yaxis: { categories, labels: { style: { fontSize: '13px' } } },
+      xaxis: { labels: { formatter: val => formatCurrency(val) } },
+      dataLabels: { enabled: false },
+      tooltip: { y: { formatter: val => formatCurrency(val) } },
+    };
+  }, [statistics]);
 
   return (
     <Box
-      sx={{
-        backgroundColor: bgColor,
-        minHeight: '100vh',
-        color: textColor,
-      }}
+      sx={{ backgroundColor: bgColor, minHeight: '100vh', color: textColor }}
     >
       <Box
         sx={{
@@ -452,127 +214,70 @@ const PayrollReports: React.FC = () => {
           mb: 3,
         }}
       >
-        <Box>
-          <Typography variant='h4' sx={{ fontWeight: 600, color: textColor }}>
-            Payroll Reports
-          </Typography>
-        </Box>
-        <Stack direction='row' spacing={2} alignItems='center'>
+        <Typography variant='h4' sx={{ fontWeight: 600 }}>
+          Payroll Reports
+        </Typography>
+        <Stack direction='row' spacing={2}>
           <TextField
             select
             label='Tenant'
             value={selectedTenantId}
             onChange={e => setSelectedTenantId(e.target.value)}
             size='small'
-            sx={{
-              minWidth: 200,
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff',
-                color: textColor,
-              },
-              '& .MuiInputLabel-root': {
-                color: effectiveDarkMode ? '#ccc' : '#666',
-              },
-            }}
+            sx={{ minWidth: 200 }}
             disabled={loadingTenants}
           >
-            <MenuItem value=''>All Tenants</MenuItem>
-            {tenants.map(tenant => (
-              <MenuItem key={tenant.id} value={tenant.id}>
-                {tenant.name}
+            {tenants.map(t => (
+              <MenuItem key={t.id} value={t.id}>
+                {t.name}
               </MenuItem>
             ))}
           </TextField>
         </Stack>
       </Box>
 
-      <Paper
-        elevation={0}
-        sx={{
-          mb: 3,
-          p: 3,
-          backgroundColor: cardBg,
-          borderRadius: 1,
-        }}
-      >
+      <Paper sx={{ p: 3, backgroundColor: cardBg }}>
         {statsLoading ? (
-          <Box sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ textAlign: 'center', py: 4 }}>
             <CircularProgress />
           </Box>
         ) : !statistics ? (
-          <Box sx={{ py: 4 }}>
-            <Alert severity='info' sx={{ backgroundColor: 'transparent' }}>
-              No statistics available for the selected filters.
-            </Alert>
-          </Box>
+          <Alert severity='info'>No statistics available</Alert>
         ) : (
-          <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                border: `1px solid ${theme.palette.divider}`,
-                backgroundColor: effectiveDarkMode ? '#121212' : '#fff',
-                width: '100%',
-              }}
-            >
-              <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
                 Monthly Trend
               </Typography>
-              {!statistics.monthlyTrend ||
-              statistics.monthlyTrend.length === 0 ? (
-                <Box sx={{ py: 4 }}>
-                  <Alert
-                    severity='info'
-                    sx={{ backgroundColor: 'transparent' }}
-                  >
-                    No trend data available for the selected date range.
-                  </Alert>
-                </Box>
+              {trendSeries.length === 0 ? (
+                <Alert severity='info' sx={{ mt: 2 }}>
+                  No monthly trend data
+                </Alert>
               ) : (
-                <Box>
-                  <Chart
-                    options={trendOptions}
-                    series={trendSeries}
-                    type='line'
-                    height={320}
-                  />
-                </Box>
+                <Chart
+                  options={trendOptions}
+                  series={trendSeries}
+                  type='line'
+                  height={320}
+                />
               )}
             </Paper>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                border: `1px solid ${theme.palette.divider}`,
-                backgroundColor: effectiveDarkMode ? '#121212' : '#fff',
-                width: '100%',
-              }}
-            >
-              <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
+
+            <Paper sx={{ p: 2 }}>
+              <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
                 Department Comparison
               </Typography>
-              {!statistics.departmentComparison ||
-              statistics.departmentComparison.length === 0 ? (
-                <Box sx={{ py: 4 }}>
-                  <Alert
-                    severity='info'
-                    sx={{ backgroundColor: 'transparent' }}
-                  >
-                    No department comparison data available.
-                  </Alert>
-                </Box>
+              {departmentSeries.length === 0 ? (
+                <Alert severity='info' sx={{ mt: 2 }}>
+                  No department data
+                </Alert>
               ) : (
-                <Box>
-                  <Chart
-                    options={departmentOptions}
-                    series={departmentSeries}
-                    type='bar'
-                    height={320}
-                  />
-                </Box>
+                <Chart
+                  options={departmentOptions}
+                  series={departmentSeries}
+                  type='bar'
+                  height={320}
+                />
               )}
             </Paper>
           </Box>

@@ -218,8 +218,6 @@ export const TenantPage: React.FC = () => {
       return;
     }
 
-    // Logo is optional - if provided, it will be uploaded
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(adminEmail.trim())) {
       setSnackbar({
@@ -242,18 +240,27 @@ export const TenantPage: React.FC = () => {
 
     try {
       setUploadingLogo(true);
-      const tenantData = {
+      const tenantData: {
+        name: string;
+        domain: string;
+        logo?: File;
+        adminName: string;
+        adminEmail: string;
+      } = {
         name: name.trim(),
         domain: domain.trim(),
-        logo: selectedLogoFile!,
         adminName: adminName.trim(),
         adminEmail: adminEmail.trim(),
       };
 
+      if (selectedLogoFile) {
+        tenantData.logo = selectedLogoFile;
+      }
+
       console.log('Creating tenant with data:', {
         name: tenantData.name,
         domain: tenantData.domain,
-        logo: tenantData.logo?.name,
+        logo: tenantData.logo?.name || 'No logo',
         adminName: tenantData.adminName,
         adminEmail: tenantData.adminEmail,
       });
@@ -323,35 +330,25 @@ export const TenantPage: React.FC = () => {
 
     try {
       setUploadingEditLogo(true);
-      let logoUrl = editLogo || '';
-      if (editLogoFile) {
-        try {
-          const uploadedLogoUrl =
-            await companyApi.uploadCompanyLogo(editLogoFile);
-          logoUrl =
-            typeof uploadedLogoUrl === 'string'
-              ? uploadedLogoUrl
-              : (uploadedLogoUrl as { logo_url?: string })?.logo_url ||
-                editLogo ||
-                '';
-        } catch (uploadError) {
-          console.error('Failed to upload logo:', uploadError);
-          setSnackbar({
-            open: true,
-            message: 'Failed to upload logo',
-            severity: 'error',
-          });
-          setUploadingEditLogo(false);
-          return;
-        }
-      }
 
-      const updateData = {
+      const updateData: {
+        tenantId: string;
+        companyName: string;
+        domain: string;
+        logo?: string | File;
+      } = {
         tenantId: editTenantId,
         companyName: editCompanyName.trim(),
         domain: editDomain.trim(),
-        logo: logoUrl,
       };
+
+      // If a new logo file is selected, pass it directly (will be sent as multipart)
+      // Otherwise, pass the existing logo URL if available
+      if (editLogoFile) {
+        updateData.logo = editLogoFile;
+      } else if (editLogo) {
+        updateData.logo = editLogo;
+      }
 
       const updatedTenant = await SystemTenantApi.update(updateData);
       setTenants(prev =>
@@ -437,7 +434,10 @@ export const TenantPage: React.FC = () => {
       );
       setSnackbar({
         open: true,
-        message: `Tenant "${tenant.name}" status changed to "${updatedTenant.status}"`,
+        message: `Tenant "${tenant.name}" status changed to "${
+          updatedTenant.status.charAt(0).toUpperCase() +
+          updatedTenant.status.slice(1).toLowerCase()
+        }"`,
         severity: 'success',
       });
     } catch (err) {
@@ -507,27 +507,35 @@ export const TenantPage: React.FC = () => {
     try {
       setEditTenantId(tenant.id);
       setEditCompanyName(tenant.name);
-      setEditDomain('');
-      setEditLogo('');
+      
+      // Fetch tenant details to get domain and logo
       try {
-        await SystemTenantApi.getById(tenant.id);
-      } catch (err) {
-        console.log('Could not fetch tenant details:', err);
-      }
-
-      // Try to get company details if available
-      try {
-        const companyDetails = await companyApi.getCompanyDetails();
-        if (companyDetails && companyDetails.tenant_id === tenant.id) {
-          setEditDomain(companyDetails.domain || '');
-          setEditLogo(companyDetails.logo_url || '');
-          if (companyDetails.logo_url) {
-            setEditLogoPreview(companyDetails.logo_url);
-          }
+        const tenantDetail = await SystemTenantApi.getById(tenant.id);
+        
+        // Set domain from tenant detail
+        if (tenantDetail.domain) {
+          setEditDomain(tenantDetail.domain);
+        } else if (tenantDetail.company?.domain) {
+          setEditDomain(tenantDetail.company.domain);
+        }
+        
+        // Set logo from tenant detail
+        let logoUrl = tenantDetail.logo || tenantDetail.company?.logo_url;
+        
+        // Convert relative path to full URL if needed
+        if (logoUrl && typeof logoUrl === 'string' && logoUrl.startsWith('/')) {
+          const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
+          logoUrl = `${baseURL}${logoUrl}`;
+        }
+        
+        if (logoUrl && typeof logoUrl === 'string' && logoUrl !== '[object Object]') {
+          setEditLogo(logoUrl);
+          setEditLogoPreview(logoUrl);
         }
       } catch (err) {
-        console.log('Could not fetch company details:', err);
-        // Continue - user can enter manually
+        console.log('Could not fetch tenant details:', err);
+        // Set domain from tenant object as fallback
+        setEditDomain('');
       }
 
       setIsEditOpen(true);
@@ -616,7 +624,10 @@ export const TenantPage: React.FC = () => {
                           color='primary'
                         />
                       )}
-                      {t.isDeleted ? 'Deleted' : t.status}
+                      {t.isDeleted
+                        ? 'Deleted'
+                        : t.status.charAt(0).toUpperCase() +
+                          t.status.slice(1).toLowerCase()}
                     </TableCell>
                     <TableCell>
                       {new Date(t.created_at).toLocaleDateString()}
@@ -716,10 +727,40 @@ export const TenantPage: React.FC = () => {
               <Card
                 sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 3 }}
               >
-                {tenantDetail.logo &&
-                tenantDetail.logo !== '[object Object]' ? (
-                  <img
-                    src={tenantDetail.logo}
+                {(() => {
+                  // Check for logo in multiple places: direct logo property or company.logo_url
+                  let logoUrl =
+                    tenantDetail.logo ||
+                    tenantDetail.company?.logo_url ||
+                    null;
+                  
+                  // If logo is a relative path, convert it to full URL
+                  if (logoUrl && typeof logoUrl === 'string' && logoUrl.startsWith('/')) {
+                    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
+                    logoUrl = `${baseURL}${logoUrl}`;
+                  }
+                  
+                  // Check if logoUrl is valid (not empty, not '[object Object]', and is a string)
+                  const isValidLogo =
+                    logoUrl &&
+                    typeof logoUrl === 'string' &&
+                    logoUrl !== '[object Object]' &&
+                    logoUrl.trim() !== '' &&
+                    !logoUrl.includes('[object Object]');
+
+                  if (!isValidLogo) {
+                    console.log('Tenant Detail Logo Debug:', {
+                      tenantDetail,
+                      logoUrl,
+                      logoType: typeof logoUrl,
+                      companyLogoUrl: tenantDetail.company?.logo_url,
+                      processedLogo: tenantDetail.logo,
+                    });
+                  }
+
+                  return isValidLogo && logoUrl ? (
+                    <img
+                      src={logoUrl}
                     alt='Tenant Logo'
                     style={{
                       width: 70,
@@ -728,6 +769,11 @@ export const TenantPage: React.FC = () => {
                       objectFit: 'cover',
                       border: '1px solid #ddd',
                     }}
+                      onError={e => {
+                        console.error('Failed to load logo image:', logoUrl);
+                        // Hide broken image
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
                   />
                 ) : (
                   <Box
@@ -746,7 +792,8 @@ export const TenantPage: React.FC = () => {
                   >
                     No Logo
                   </Box>
-                )}
+                  );
+                })()}
 
                 <Box>
                   <Typography variant='h6' fontWeight={600}>
@@ -777,7 +824,10 @@ export const TenantPage: React.FC = () => {
                     <Typography>
                       <strong>Status:</strong>{' '}
                       <Chip
-                        label={tenantDetail.status}
+                        label={
+                          tenantDetail.status.charAt(0).toUpperCase() +
+                          tenantDetail.status.slice(1).toLowerCase()
+                        }
                         color={
                           tenantDetail.status === 'active'
                             ? 'success'
