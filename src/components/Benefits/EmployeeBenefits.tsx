@@ -307,7 +307,7 @@ const EmployeeBenefits: React.FC = () => {
         elevation={0}
         sx={{
           overflow: 'hidden',
-          border: '1px solid',
+          borderRadius: 0,
           borderColor: 'divider',
         }}
       >

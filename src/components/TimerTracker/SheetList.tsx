@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import timesheetApi from '../../api/timesheetApi';
 import type { TimesheetEntry } from '../../api/timesheetApi';
+import { formatDate } from '../../utils/dateUtils';
 
 const SheetList: React.FC = () => {
   const [timesheet, setTimesheet] = useState<TimesheetEntry[]>([]);
@@ -53,6 +54,21 @@ const SheetList: React.FC = () => {
     setCurrentPage(page);
     fetchData(page);
   };
+
+  // Format date with time (keeps time, formats date part)
+  const formatDateTime = (dateString: string | null): string => {
+    if (!dateString) return '—';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '—';
+      
+      const formattedDate = formatDate(date);
+      const time = date.toLocaleTimeString();
+      return `${formattedDate} ${time}`;
+    } catch {
+      return '—';
+    }
+  };
   return (
     <Box>
       <Paper elevation={3} sx={{ boxShadow: 'none' }}>
@@ -78,12 +94,10 @@ const SheetList: React.FC = () => {
                   <TableRow key={row.id}>
                     <TableCell>{row.employee_full_name}</TableCell>
                     <TableCell>
-                      {new Date(row.start_time || '').toLocaleString()}
+                      {formatDateTime(row.start_time)}
                     </TableCell>
                     <TableCell>
-                      {row.end_time
-                        ? new Date(row.end_time).toLocaleString()
-                        : '—'}
+                      {formatDateTime(row.end_time)}
                     </TableCell>
                     <TableCell>{row.duration_hours ?? '—'}</TableCell>
                   </TableRow>
