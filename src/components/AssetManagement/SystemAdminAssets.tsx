@@ -40,6 +40,7 @@ import {
   type AssetSubcategory,
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
+import { formatDate } from '../../utils/dateUtils';
 
 interface AssetCategory {
   id: string;
@@ -248,13 +249,6 @@ const SystemAdminAssets: React.FC = () => {
     setSearchTerm('');
   };
 
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString();
-    } catch {
-      return dateString;
-    }
-  };
 
   if (initialLoading) {
     return (
@@ -298,7 +292,11 @@ const SystemAdminAssets: React.FC = () => {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, 1fr)',
+                md: 'repeat(3, 1fr)',
+              },
               gap: 3,
               mb: 3,
             }}

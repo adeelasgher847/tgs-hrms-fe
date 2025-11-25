@@ -46,6 +46,7 @@ import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { Snackbar, Alert } from '@mui/material';
 import { type AssetSubcategory } from '../../api/assetApi';
+import { formatDate } from '../../utils/dateUtils';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
@@ -95,6 +96,7 @@ const getCurrentUserId = () => {
   }
   return '1'; // Default fallback
 };
+
 
 // Normalize status to ensure it matches expected values
 const normalizeRequestStatus = (
@@ -824,11 +826,10 @@ const AssetRequests: React.FC = () => {
         <StatusChip status={request.status} type='request' />
       </TableCell>
       <TableCell>
-        {new Date(request.requestedDate).toLocaleDateString()}
+        {formatDate(request.requestedDate)}
       </TableCell>
       <TableCell>
-        {request.processedDate &&
-          new Date(request.processedDate).toLocaleDateString()}
+        {request.processedDate && formatDate(request.processedDate)}
       </TableCell>
       <TableCell>
         {request.rejectionReason &&

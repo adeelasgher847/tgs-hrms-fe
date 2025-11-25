@@ -50,6 +50,7 @@ import ConfirmationDialog from './ConfirmationDialog';
 import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../Data/assetCategories';
 import { isHRAdmin } from '../../utils/roleUtils';
+import { formatDate } from '../../utils/dateUtils';
 
 // Extended interface for API asset response that may include additional user information
 interface ApiAssetWithUser extends ApiAsset {
@@ -881,7 +882,7 @@ const AssetInventory: React.FC = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      {new Date(asset.purchaseDate).toLocaleDateString()}
+                      {formatDate(asset.purchaseDate)}
                     </TableCell>
                     {!hideActions && (
                       <TableCell align='right'>

@@ -415,7 +415,7 @@ const BenefitReport: React.FC = () => {
               flex: 1,
             }}
           >
-            <Box sx={{ flexGrow: 1 }}>
+            <Box sx={{ flexGrow: 1,}}>
               <SummaryCard {...card} />
             </Box>
           </Grid>
@@ -481,7 +481,7 @@ const BenefitReport: React.FC = () => {
         </Tooltip>
       </Box>
 
-      <Paper sx={{ borderRadius: 2, mt: 2 }}>
+      <Paper sx={{ borderRadius: 1,boxShadow: 'none' }}>
         <TableContainer>
           <Table>
             <TableHead sx={{ backgroundColor: '#f5f5f5' }}>

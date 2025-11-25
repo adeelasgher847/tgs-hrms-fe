@@ -19,6 +19,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import employeeBenefitApi from '../../api/employeeBenefitApi';
 import BenefitCard from '../Benefits/BenefitCard';
+import { formatDate } from '../../utils/dateUtils';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -62,8 +63,6 @@ const BenefitDetails: React.FC = () => {
     fetchBenefits();
   }, [page]);
 
-  const formatDate = (date: string) =>
-    date ? new Date(date).toLocaleDateString() : '-';
 
   const csvEscape = (value: unknown) => {
     if (value === null || value === undefined) return '';

@@ -46,6 +46,7 @@ import {
   type SystemTenantDetail,
 } from '../api/systemTenantApi';
 import companyApi from '../api/companyApi';
+import { formatDate } from '../utils/dateUtils';
 
 type StatusFilterOption = 'All' | 'active' | 'suspended' | 'deleted';
 
@@ -582,7 +583,7 @@ export const TenantPage: React.FC = () => {
             </Select>
           </FormControl>
           <Button variant='contained' onClick={() => setIsFormOpen(true)}>
-            <AddIcon />
+            <AddIcon /> Create Tenant
           </Button>
         </Box>
       </Box>
@@ -630,7 +631,7 @@ export const TenantPage: React.FC = () => {
                           t.status.slice(1).toLowerCase()}
                     </TableCell>
                     <TableCell>
-                      {new Date(t.created_at).toLocaleDateString()}
+                      {formatDate(t.created_at)}
                     </TableCell>
                     <TableCell align='center'>
                       {!t.isDeleted ? (
@@ -841,7 +842,7 @@ export const TenantPage: React.FC = () => {
                     </Typography>
                     <Typography>
                       <strong>Created:</strong>{' '}
-                      {new Date(tenantDetail.created_at).toLocaleString()}
+                      {formatDate(tenantDetail.created_at)}
                     </Typography>
                   </Box>
                 </Card>
