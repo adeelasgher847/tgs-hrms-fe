@@ -25,7 +25,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 
-const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
+const ITEMS_PER_PAGE = 25; 
 
 const statusConfig: Record<
   string,

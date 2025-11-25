@@ -222,7 +222,7 @@ export const isSubMenuVisibleForRole = (
       visible = false;
     }
     if (parent.includes('assets')) {
-      if (sub.includes('asset requests') || sub.includes('assets overview')) {
+      if (sub.includes('asset requests')) {
         visible = false;
       }
     }
@@ -279,6 +279,14 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
+    if (
+      parent.includes('leave analytics') ||
+      parent.includes('leave-analytics')
+    ) {
+      if (sub.includes('cross tenant leaves')) {
+        visible = false;
+      }
+    }
     if (parent.includes('attendance') && sub === 'reports') {
       visible = false;
     }
@@ -320,16 +328,6 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
-    if (parent.includes('payroll')) {
-      if (!sub.includes('my salary')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('assets')) {
-      if (sub.includes('assets overview')) {
-        visible = false;
-      }
-    }
   }
 
   if (r === 'employee' || r === 'user') {
@@ -344,11 +342,7 @@ export const isSubMenuVisibleForRole = (
       }
     }
     if (parent.includes('assets')) {
-      if (
-        sub.includes('asset inventory') ||
-        sub.includes('management') ||
-        sub.includes('assets overview')
-      ) {
+      if (sub.includes('asset inventory') || sub.includes('management')) {
         visible = false;
       }
     }
@@ -373,13 +367,9 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
-    if (parent.includes('assets')) {
-      if (sub.includes('assets overview')) {
-        visible = false;
-      }
-    }
   }
 
+  // System Admin: For Assets menu - only see System Assets Overview (hide all other asset pages)
   if (r === 'system-admin') {
     if (parent.includes('assets')) {
       // Hide all asset submenus except System Assets Overview
@@ -401,6 +391,7 @@ export const isSubMenuVisibleForRole = (
       }
     }
   } else {
+    // Hide System Assets Overview for non-system-admin roles
     if (parent.includes('assets') && sub.includes('system assets overview')) {
       visible = false;
     }
@@ -428,14 +419,14 @@ export const isSubMenuVisibleForRole = (
         visible = false;
       }
     }
-    if (
-      parent.includes('leave analytics') ||
-      parent.includes('leave-analytics')
-    ) {
-      if (sub.includes('reports')) {
-        visible = false;
-      }
-    }
+    // if (
+    //   parent.includes('leave analytics') ||
+    //   parent.includes('leave-analytics')
+    // ) {
+    //   if (sub.includes('reports')) {
+    //     visible = false;
+    //   }
+    // }
   }
 
   if (r === 'manager') {
@@ -574,7 +565,7 @@ export const isDashboardPathAllowedForRole = (
       'AttendanceCheck',
       'AttendanceTable',
       'AttendanceCheck/TimesheetLayout',
-      // 'Reports',
+      'Reports',
       'teams',
       // Assets - Admin sees Inventory and Management only
       'assets',
