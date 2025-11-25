@@ -39,6 +39,7 @@ import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { useUser } from '../../hooks/useUser';
 import { isSystemAdmin } from '../../utils/auth';
+import { formatDate } from '../../utils/dateUtils';
 
 type LeaveStatus = '' | 'pending' | 'approved' | 'rejected' | 'withdrawn';
 
@@ -57,6 +58,7 @@ type SnackbarState = {
 };
 
 type DepartmentOption = Pick<ApiDepartment, 'id' | 'name' | 'tenant_id'>;
+
 
 const CrossTenantLeaveManagement: React.FC = () => {
   const { user } = useUser();
@@ -690,10 +692,10 @@ const CrossTenantLeaveManagement: React.FC = () => {
                     <TableCell>{leave.departmentName || '-'}</TableCell>
                     <TableCell>{leave.leaveType}</TableCell>
                     <TableCell>
-                      {dayjs(leave.startDate).format('YYYY-MM-DD')}
+                      {formatDate(leave.startDate)}
                     </TableCell>
                     <TableCell>
-                      {dayjs(leave.endDate).format('YYYY-MM-DD')}
+                      {formatDate(leave.endDate)}
                     </TableCell>
                     <TableCell>{leave.totalDays}</TableCell>
                     <TableCell

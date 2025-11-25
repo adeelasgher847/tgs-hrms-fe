@@ -25,7 +25,6 @@ const ConfirmPayment: React.FC = () => {
     try {
       setLoading(true);
 
-      // Get parameters from URL
       const sessionId = searchParams.get('session_id');
       const signupSessionId = searchParams.get('signupSessionId');
       const accessToken = localStorage.getItem('accessToken');

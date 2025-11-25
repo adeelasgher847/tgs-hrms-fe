@@ -1415,7 +1415,7 @@ const EmployeeSalaryPage: React.FC = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ pt: 3, maxHeight: '70vh', overflowY: 'auto' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3,marginTop: 2 }}>
             {!selectedSalary && (
               <FormControl fullWidth>
                 <InputLabel sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>

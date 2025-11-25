@@ -34,6 +34,7 @@ import {
   type BackendDepartment,
 } from '../../api/departmentApi';
 import SystemEmployeeProfileView from './SystemEmployeeProfileView';
+import { formatDate } from '../../utils/dateUtils';
 
 type EmployeeWithTenantName = SystemEmployee & {
   tenantName: string;
@@ -57,6 +58,7 @@ type EmployeeWithTenantName = SystemEmployee & {
     name: string;
   };
 };
+
 
 const TenantBasedEmployeeManager: React.FC = () => {
   const [employees, setEmployees] = useState<EmployeeWithTenantName[]>([]);
@@ -147,34 +149,50 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
       const updatedEmployees = employeesData.map(
         (emp: SystemEmployee): EmployeeWithTenantName => {
+          // Try to find tenant from current tenants state, but don't block on it
           const matchedTenant = tenants.find(
             (t: SystemEmployee) => t.id === emp.tenantId
           );
 
+          // Type assertion for API response which includes nested objects
+          const empWithNested = emp as SystemEmployee & {
+            user?: {
+              id: string;
+              first_name?: string;
+              last_name?: string;
+              email?: string;
+              profile_pic?: string | null;
+            };
+            designation?: { id: string; title: string };
+            department?: { id: string; name: string };
+            team?: { id: string; name: string } | string;
+          };
+
           // Log to see what we're getting
-          if (!emp.user) {
+          if (!empWithNested.user) {
             console.warn('Employee missing user object:', emp.id, emp);
           }
 
           // Preserve all fields from API including user, designation, department, team objects
-          const mapped = {
+          const mapped: EmployeeWithTenantName = {
             ...emp,
             // Map flat fields if they exist in nested objects
             name:
               emp.name ||
-              (emp.user
-                ? `${emp.user.first_name || ''} ${emp.user.last_name || ''}`.trim()
+              (empWithNested.user
+                ? `${empWithNested.user.first_name || ''} ${empWithNested.user.last_name || ''}`.trim()
                 : ''),
-            email: emp.email || emp.user?.email || '',
-            departmentName: emp.departmentName || emp.department?.name || '',
+            email: emp.email || empWithNested.user?.email || '',
+            departmentName: emp.departmentName || empWithNested.department?.name || '',
             designationTitle:
-              emp.designationTitle || emp.designation?.title || '',
-            tenantName: matchedTenant ? matchedTenant.name : 'Unknown Tenant',
+              emp.designationTitle || empWithNested.designation?.title || '',
+            // Set tenant name if available, otherwise will be updated when tenants load
+            tenantName: matchedTenant ? matchedTenant.name : 'Loading...',
             // Explicitly preserve the user object for accessing user.id later
-            user: emp.user || undefined,
-            designation: emp.designation || undefined,
-            department: emp.department || undefined,
-            team: emp.team || undefined,
+            user: empWithNested.user || undefined,
+            designation: empWithNested.designation || undefined,
+            department: empWithNested.department || undefined,
+            team: typeof empWithNested.team === 'object' ? empWithNested.team : undefined,
           };
 
           return mapped;
@@ -207,10 +225,12 @@ const TenantBasedEmployeeManager: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, tenants, currentPage]);
+  }, [filters, currentPage]);
 
   useEffect(() => {
     fetchFiltersData();
+    // Fetch employees immediately without waiting for tenants
+    fetchEmployees();
   }, []);
 
   useEffect(() => {
@@ -222,8 +242,31 @@ const TenantBasedEmployeeManager: React.FC = () => {
   }, [filters.departmentId]);
 
   useEffect(() => {
-    if (tenants.length > 0) fetchEmployees();
-  }, [fetchEmployees, tenants, currentPage]);
+    // Fetch employees when filters or page changes
+    fetchEmployees();
+  }, [fetchEmployees, currentPage]);
+
+  // Update tenant names in employees when tenants are loaded
+  useEffect(() => {
+    if (tenants.length > 0 && employees.length > 0) {
+      setEmployees(prevEmployees =>
+        prevEmployees.map(emp => {
+          const matchedTenant = tenants.find(
+            (t: SystemEmployee) => t.id === emp.tenantId
+          );
+          const newTenantName = matchedTenant ? matchedTenant.name : 'Unknown Tenant';
+          // Only update if tenant name is different to avoid unnecessary re-renders
+          if (emp.tenantName !== newTenantName) {
+            return {
+              ...emp,
+              tenantName: newTenantName,
+            };
+          }
+          return emp;
+        })
+      );
+    }
+  }, [tenants]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -441,7 +484,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
                     <TableCell>{emp.status}</TableCell>
                     <TableCell>
                       {emp.createdAt
-                        ? new Date(emp.createdAt).toLocaleDateString()
+                        ? formatDate(emp.createdAt)
                         : 'N/A'}
                     </TableCell>
                     <TableCell align='center'>
@@ -471,7 +514,6 @@ const TenantBasedEmployeeManager: React.FC = () => {
             setSelectedEmployee(null);
           }}
           employeeId={selectedEmployee.id}
-          employeeData={selectedEmployee}
         />
       )}
 

@@ -587,6 +587,7 @@ const PayrollRecords: React.FC = () => {
     itemsPerPage,
     employeesForGenerateDialog,
     records,
+    employeeFilter,
   ]);
 
   const openGenerateDialog = useCallback(() => {
@@ -750,8 +751,8 @@ const PayrollRecords: React.FC = () => {
         sx={{
           p: 0,
           backgroundColor: cardBg,
-          borderRadius: 2,
-          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: 1,
+
         }}
       >
         <Box
@@ -1311,7 +1312,7 @@ const PayrollRecords: React.FC = () => {
       >
         <DialogTitle>Generate Payroll</DialogTitle>
         <DialogContent>
-          <Stack spacing={2}>
+          <Stack spacing={2} marginTop={2}>
             <TextField
               select
               label='Month'

@@ -23,6 +23,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import UndoIcon from '@mui/icons-material/Undo';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import type { Leave } from '../../type/levetypes';
+import { formatDate } from '../../utils/dateUtils';
 
 const ITEMS_PER_PAGE = 25; 
 
@@ -51,14 +52,6 @@ const statusConfig: Record<
   },
 };
 
-const formatDate = (dateString?: string) => {
-  if (!dateString) return 'N/A';
-  try {
-    return new Date(dateString).toISOString().split('T')[0];
-  } catch {
-    return 'N/A';
-  }
-};
 
 interface LeaveHistoryProps {
   leaves: Leave[];

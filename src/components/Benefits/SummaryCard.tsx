@@ -40,9 +40,7 @@ const SummaryCard = ({ title, value, icon }: SummaryCardProps) => {
   return (
     <Box
       sx={{
-        border: '1px solid',
-        borderColor,
-        borderRadius: 2,
+        borderRadius: 1,
         p: 2.5,
         display: 'flex',
         flexDirection: 'column',
@@ -51,9 +49,6 @@ const SummaryCard = ({ title, value, icon }: SummaryCardProps) => {
         bgcolor: bgColor,
         color: textColor,
         direction: language === 'ar' ? 'rtl' : 'ltr',
-        boxShadow: darkMode
-          ? '0 2px 6px rgba(0,0,0,0.4)'
-          : '0 2px 8px rgba(0,0,0,0.08)',
         maxWidth: {
           xs: '100%',
           sm: 300, 

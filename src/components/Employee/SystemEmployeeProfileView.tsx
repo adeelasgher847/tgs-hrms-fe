@@ -97,7 +97,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
       maxWidth='md'
       scroll='paper'
       PaperProps={{
-        sx: { borderRadius: 3, maxHeight: '90vh', overflowY: 'auto' },
+        sx: { borderRadius: 1, maxHeight: '90vh', overflowY: 'auto' },
       }}
     >
       <DialogTitle
