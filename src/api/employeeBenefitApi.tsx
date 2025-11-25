@@ -181,6 +181,31 @@ const employeeBenefitApi = {
       throw error;
     }
   },
+
+  async getSystemAdminBenefitSummary(tenant_id?: string): Promise<{
+    tenant_id: string;
+    totalActiveBenefits: number;
+    mostCommonBenefitType: string;
+    totalEmployeesCovered: number;
+  }> {
+    try {
+      const response = await axiosInstance.get(
+        '/employee-benefits/system-admin/summary',
+        {
+          params: { tenant_id: tenant_id || 'all' },
+        }
+      );
+      console.log('System Admin Benefit Summary:', response.data);
+      return response.data;
+    } catch (error: unknown) {
+      console.error(
+        'System Admin Benefit Summary API Error:',
+        (error as { response?: { data?: unknown }; message?: string }).response
+          ?.data || (error as { message?: string }).message
+      );
+      throw error;
+    }
+  },
 };
 
 export default employeeBenefitApi;

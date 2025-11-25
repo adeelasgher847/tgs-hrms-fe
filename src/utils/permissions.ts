@@ -61,7 +61,7 @@ export const isMenuVisibleForRole = (
       'teams',
       'assets',
       'attendance',
-      // 'benefits',
+      'benefits',
       'leave-analytics',
       'report',
       'audit logs',
@@ -79,7 +79,9 @@ export const isMenuVisibleForRole = (
     ],
     'hr-admin': [
       'attendance',
+      'department',
       'teams',
+      'assets',
       'benefits',
       'leave-analytics',
       'payroll',
@@ -160,6 +162,12 @@ export const isSubMenuVisibleForRole = (
       }
     }
 
+    if (parent.includes('benefits')) {
+      if (!sub.includes('benefits report')) {
+        visible = false;
+      }
+    }
+
     if (
       parent.includes('leave analytics') ||
       parent.includes('leave-analytics')
@@ -206,7 +214,7 @@ export const isSubMenuVisibleForRole = (
       }
     }
     if (parent.includes('benefits')) {
-      if (!sub.includes('benefits report')) {
+      if (sub.includes('benefits report') || sub.includes('benefit details')) {
         visible = false;
       }
     }
@@ -241,6 +249,16 @@ export const isSubMenuVisibleForRole = (
     }
     if (parent.includes('payroll')) {
       if (sub.includes('payroll reports') || sub.includes('my salary')) {
+        visible = false;
+      }
+    }
+    if (parent.includes('department')) {
+      if (!sub.includes('add designation')) {
+        visible = false;
+      }
+    }
+    if (parent.includes('assets')) {
+      if (sub.includes('assets overview') || sub.includes('asset requests')) {
         visible = false;
       }
     }
@@ -389,9 +407,6 @@ export const isSubMenuVisibleForRole = (
   }
 
   if (r === 'hr-admin') {
-    if (parent.includes('assets')) {
-      visible = false;
-    }
     if (parent.includes('benefits')) {
       if (sub.includes('benefits report') || sub.includes('benefit details')) {
         visible = false;
@@ -476,9 +491,7 @@ export const isDashboardPathAllowedForRole = (
       'CrossTenantLeaveManagement',
       // Teams
       'teams',
-      // Assets - System admin only sees System Assets Overview
       'assets/system-admin',
-      // Employee profile view
       'EmployeeProfileView',
       // Settings
       'settings',
@@ -493,6 +506,7 @@ export const isDashboardPathAllowedForRole = (
       'audit-logs',
       'performance-dashboard',
       'payroll-reports',
+      'benefit-report',
     ]),
     'network-admin': new Set([
       '',
@@ -516,14 +530,19 @@ export const isDashboardPathAllowedForRole = (
       'attendance-summary',
       // Settings
       'settings',
-      'benefit-report',
+      // 'benefit-report',
+      'benefits-list',
+      'employee-benefit',
     ]),
     'hr-admin': new Set([
       '', // Allow main dashboard
+      'Designations',
       'AttendanceCheck',
       'AttendanceTable',
       'AttendanceCheck/TimesheetLayout',
       'UserProfile',
+      'assets',
+      'assets/request-management',
       // Assets - HR admin has no access
       'settings',
       // Benefits
