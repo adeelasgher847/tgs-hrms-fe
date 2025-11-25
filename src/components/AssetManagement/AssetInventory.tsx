@@ -49,6 +49,7 @@ import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../Data/assetCategories';
+import { isHRAdmin } from '../../utils/roleUtils';
 import { formatDate } from '../../utils/dateUtils';
 
 // Extended interface for API asset response that may include additional user information
@@ -117,6 +118,11 @@ const AssetInventory: React.FC = () => {
   }>({ open: false, message: '', severity: 'success' });
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = storedUser.role;
+
+  const hideActions = isHRAdmin(userRole);
 
   const showSnackbar = (
     message: string,
@@ -250,16 +256,16 @@ const AssetInventory: React.FC = () => {
 
       try {
         fetchingRef.current = true;
-        
+
         // Only show initial loading on very first load, not on pagination or when returning to page 1
         if (isInitialLoad && page === 1) {
           setInitialLoading(true);
         }
 
         // Ensure page and limit are always provided
-        const response = await assetApi.getAllAssets({ 
-          page: page || 1, 
-          limit: limit || 25 
+        const response = await assetApi.getAllAssets({
+          page: page || 1,
+          limit: limit || 25,
         });
 
         const apiAssets = response.assets; // Extract assets from paginated response
@@ -813,7 +819,7 @@ const AssetInventory: React.FC = () => {
                 <TableCell>Status</TableCell>
                 <TableCell>Assigned To</TableCell>
                 <TableCell>Purchase Date</TableCell>
-                <TableCell align='right'>Actions</TableCell>
+                {!hideActions && <TableCell align='right'>Actions</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -878,57 +884,64 @@ const AssetInventory: React.FC = () => {
                     <TableCell>
                       {formatDate(asset.purchaseDate)}
                     </TableCell>
-                    <TableCell align='right'>
-                      <IconButton
-                        onClick={e => handleMenuClick(e, asset.id)}
-                        size='small'
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                      <Menu
-                        anchorEl={anchorEl}
-                        open={Boolean(anchorEl) && selectedAssetId === asset.id}
-                        onClose={handleMenuClose}
-                      >
-                        <MenuItem onClick={() => handleEditAsset(asset)}>
-                          <ListItemIcon>
-                            <EditIcon fontSize='small' />
-                          </ListItemIcon>
-                          <ListItemText>Edit</ListItemText>
-                        </MenuItem>
-                        {asset.status !== 'under_maintenance' && (
-                          <MenuItem
-                            onClick={() => handleMarkAsMaintenance(asset)}
-                            sx={{ color: 'warning.main' }}
-                          >
-                            <ListItemIcon>
-                              <BuildIcon fontSize='small' color='warning' />
-                            </ListItemIcon>
-                            <ListItemText>Mark as Maintenance</ListItemText>
-                          </MenuItem>
-                        )}
-                        {asset.status === 'under_maintenance' && (
-                          <MenuItem
-                            onClick={() => handleMarkAsAvailable(asset)}
-                            sx={{ color: 'success.main' }}
-                          >
-                            <ListItemIcon>
-                              <AvailableIcon fontSize='small' color='success' />
-                            </ListItemIcon>
-                            <ListItemText>Mark as Available</ListItemText>
-                          </MenuItem>
-                        )}
-                        <MenuItem
-                          onClick={() => handleDeleteAsset(asset)}
-                          sx={{ color: 'error.main' }}
+                    {!hideActions && (
+                      <TableCell align='right'>
+                        <IconButton
+                          onClick={e => handleMenuClick(e, asset.id)}
+                          size='small'
                         >
-                          <ListItemIcon>
-                            <DeleteIcon fontSize='small' color='error' />
-                          </ListItemIcon>
-                          <ListItemText>Delete</ListItemText>
-                        </MenuItem>
-                      </Menu>
-                    </TableCell>
+                          <MoreVertIcon />
+                        </IconButton>
+                        <Menu
+                          anchorEl={anchorEl}
+                          open={
+                            Boolean(anchorEl) && selectedAssetId === asset.id
+                          }
+                          onClose={handleMenuClose}
+                        >
+                          <MenuItem onClick={() => handleEditAsset(asset)}>
+                            <ListItemIcon>
+                              <EditIcon fontSize='small' />
+                            </ListItemIcon>
+                            <ListItemText>Edit</ListItemText>
+                          </MenuItem>
+                          {asset.status !== 'under_maintenance' && (
+                            <MenuItem
+                              onClick={() => handleMarkAsMaintenance(asset)}
+                              sx={{ color: 'warning.main' }}
+                            >
+                              <ListItemIcon>
+                                <BuildIcon fontSize='small' color='warning' />
+                              </ListItemIcon>
+                              <ListItemText>Mark as Maintenance</ListItemText>
+                            </MenuItem>
+                          )}
+                          {asset.status === 'under_maintenance' && (
+                            <MenuItem
+                              onClick={() => handleMarkAsAvailable(asset)}
+                              sx={{ color: 'success.main' }}
+                            >
+                              <ListItemIcon>
+                                <AvailableIcon
+                                  fontSize='small'
+                                  color='success'
+                                />
+                              </ListItemIcon>
+                              <ListItemText>Mark as Available</ListItemText>
+                            </MenuItem>
+                          )}
+                          <MenuItem
+                            onClick={() => handleDeleteAsset(asset)}
+                            sx={{ color: 'error.main' }}
+                          >
+                            <ListItemIcon>
+                              <DeleteIcon fontSize='small' color='error' />
+                            </ListItemIcon>
+                            <ListItemText>Delete</ListItemText>
+                          </MenuItem>
+                        </Menu>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))
               )}

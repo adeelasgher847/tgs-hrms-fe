@@ -47,6 +47,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
             parsedUser?.requiresPayment === true ||
             parsedUser?.requires_payment === true;
         } catch {
+          // Ignore parse errors - user data may be invalid
         }
       }
     }
