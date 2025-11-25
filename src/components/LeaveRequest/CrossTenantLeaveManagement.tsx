@@ -40,13 +40,7 @@ import type { SystemTenant } from '../../api/systemTenantApi';
 import { useUser } from '../../hooks/useUser';
 import { isSystemAdmin } from '../../utils/auth';
 
-type LeaveStatus =
-  | ''
-  | 'pending'
-  | 'approved'
-  | 'rejected'
-  | 'withdrawn'
-  | 'cancelled';
+type LeaveStatus = '' | 'pending' | 'approved' | 'rejected' | 'withdrawn';
 
 type FiltersState = {
   tenantId: string;
@@ -68,10 +62,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const { user } = useUser();
   const isSystemAdminUser = isSystemAdmin();
 
-  // Get tenant ID from localStorage where it's stored from login response
-  // Login response stores tenant_id separately in localStorage with key 'tenant_id'
   const getTenantIdFromStorage = useCallback((): string => {
-    // First priority: Get tenant_id directly from localStorage (stored from login response)
     try {
       const storedTenantId = localStorage.getItem('tenant_id');
       if (storedTenantId) {
@@ -175,21 +166,16 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   const fetchTenants = useCallback(async () => {
     try {
-      const allTenants = await SystemTenantApi.getAllTenants(false);
-      const activeTenants = allTenants.filter(
-        tenant => tenant.status === 'active' && !tenant.isDeleted
-      );
-      let filteredTenants = activeTenants;
+      const allTenants = await SystemTenantApi.getAllTenants(true);
+      let filteredTenants = allTenants;
       if (!isSystemAdminUser && userTenantId) {
-        // Strict matching: user.tenant (from profile) === SystemTenant.id
-        filteredTenants = activeTenants.filter(
+        filteredTenants = allTenants.filter(
           tenant => String(tenant.id).trim() === userTenantId
         );
 
-        // Validate that admin's tenant exists in the system
         if (filteredTenants.length === 0) {
           console.warn(
-            `Admin's tenant ID (${userTenantId}) not found in active tenants`
+            `Admin's tenant ID (${userTenantId}) not found in tenants list`
           );
           setSnackbar({
             open: true,
@@ -201,13 +187,10 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
       setTenants(filteredTenants);
 
-      // Auto-select tenant based on user role
       if (filteredTenants.length > 0 && !isInitialTenantSet.current) {
         let defaultTenant: SystemTenant | undefined;
 
         if (!isSystemAdminUser && userTenantId) {
-          // Admin: Find and auto-select tenant matching their tenant ID from localStorage
-          // Match tenant_id from localStorage with SystemTenant.id
           defaultTenant = filteredTenants.find(
             t => String(t.id).trim() === userTenantId
           );
@@ -229,7 +212,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
         if (defaultTenant) {
           isInitialTenantSet.current = true;
-          // Ensure we use the matched tenant's ID
           setFilters(prev => ({
             ...prev,
             tenantId: String(defaultTenant.id).trim(),
@@ -256,22 +238,32 @@ const CrossTenantLeaveManagement: React.FC = () => {
   }, [isSystemAdminUser, userTenantId, filters.tenantId]);
 
   const fetchDepartments = useCallback(async (tenantId: string | null) => {
-    if (!tenantId) return setDepartments([]);
+    if (!tenantId) {
+      setDepartments([]);
+      return;
+    }
     try {
-      const tenantDetails = await TenantLeaveApi.getTenantDetailsById(tenantId);
-      if (tenantDetails?.departments?.length) {
-        const departmentsFromTenant: TenantDepartment[] =
-          tenantDetails.departments ?? [];
-        const normalizedDepartments: DepartmentOption[] = departmentsFromTenant
-          .filter((dept): dept is TenantDepartment => Boolean(dept))
-          .map(dept => ({
-            id: dept.id ?? '',
-            name: dept.name ?? 'Unnamed Department',
-            tenant_id: tenantId,
-          }));
+      const tenantDetails = await SystemTenantApi.getById(tenantId);
+      const tenantIdStr = String(tenantId).trim();
+
+      if (tenantDetails?.departments && tenantDetails.departments.length > 0) {
+        const normalizedDepartments: DepartmentOption[] =
+          tenantDetails.departments
+            .filter((dept): dept is { id: string; name: string } => {
+              return Boolean(dept && dept.id && dept.name);
+            })
+            .map(dept => ({
+              id: String(dept.id).trim(),
+              name: String(dept.name).trim(),
+              tenant_id: tenantIdStr,
+            }));
+
         setDepartments(normalizedDepartments);
-      } else setDepartments([]);
-    } catch {
+      } else {
+        setDepartments([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch departments:', error);
       setSnackbar({
         open: true,
         message: 'Failed to load departments',
@@ -283,31 +275,18 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   const fetchSummary = useCallback(async () => {
     try {
-      // Get tenant ID from logged-in admin's profile and match with tenant data
-      // For admin: use user.tenant (from profile) which matches SystemTenant.id
-      // For system-admin: use selected tenant from filters
       let tenantIdToUse: string | undefined;
       if (!isSystemAdminUser && userTenantId) {
-        // Admin: Use tenant ID from user profile (user.tenant === SystemTenant.id)
         tenantIdToUse = userTenantId;
       } else {
         // System Admin: Use selected tenant ID from filters
         tenantIdToUse = filters.tenantId || undefined;
       }
-
       const summaryData = await TenantLeaveApi.getSystemLeaveSummary({
         tenantId: tenantIdToUse,
-        status: filters.status ? filters.status : undefined,
-        startDate: filters.startDate
-          ? dayjs(filters.startDate).format('YYYY-MM-DD')
-          : undefined,
-        endDate: filters.endDate
-          ? dayjs(filters.endDate).format('YYYY-MM-DD')
-          : undefined,
       });
 
       let filteredData = summaryData;
-      // Filter by tenantIdToUse (user's tenant for admin, selected tenant for system-admin)
       if (tenantIdToUse) {
         filteredData = summaryData.filter(
           item => item.tenantId === tenantIdToUse
@@ -353,15 +332,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         severity: 'error',
       });
     }
-  }, [
-    filters.tenantId,
-    filters.status,
-    filters.startDate,
-    filters.endDate,
-    tenants,
-    isSystemAdminUser,
-    userTenantId,
-  ]);
+  }, [filters.tenantId, tenants, isSystemAdminUser, userTenantId]);
 
   const fetchLeaves = useCallback(async () => {
     const shouldShowFullPageLoader =
@@ -375,22 +346,19 @@ const CrossTenantLeaveManagement: React.FC = () => {
       } else {
         setTableLoading(true);
       }
-
-      // Get tenant ID from logged-in admin's profile and match with tenant data
-      // For admin: use user.tenant (from profile) which matches SystemTenant.id
-      // For system-admin: use selected tenant from filters
       let tenantIdToUse: string | undefined;
       if (!isSystemAdminUser && userTenantId) {
-        // Admin: Use tenant ID from user profile (user.tenant === SystemTenant.id)
         tenantIdToUse = userTenantId;
       } else {
-        // System Admin: Use selected tenant ID from filters
         tenantIdToUse = filters.tenantId || undefined;
       }
 
       const apiFilters: SystemLeaveFilters = {
         tenantId: tenantIdToUse,
-        departmentId: filters.departmentId || undefined,
+        departmentId:
+          filters.departmentId && filters.departmentId.trim() !== ''
+            ? filters.departmentId.trim()
+            : undefined,
         status: filters.status ? filters.status : undefined,
         startDate: filters.startDate
           ? filters.startDate.format('YYYY-MM-DD')
@@ -402,12 +370,39 @@ const CrossTenantLeaveManagement: React.FC = () => {
         limit: itemsPerPage,
       };
 
+      console.log('Fetching leaves with filters:', apiFilters);
+
       const response = await TenantLeaveApi.getSystemLeaves(apiFilters);
-      const mappedLeaves: SystemLeaveResponse[] = response.items.map(leave => ({
-        ...leave,
-        tenantName: leave.tenantName ?? 'Unknown Tenant',
-        departmentName: leave.departmentName ?? 'N/A',
-      }));
+
+      const departmentMap: Record<string, string> = {};
+      departments.forEach(dept => {
+        if (dept.id && dept.name) {
+          departmentMap[String(dept.id).trim()] = dept.name;
+        }
+      });
+
+      let mappedLeaves: SystemLeaveResponse[] = response.items.map(leave => {
+        let departmentName: string | undefined = leave.departmentName;
+        if (!departmentName && leave.departmentId) {
+          const deptId = String(leave.departmentId).trim();
+          departmentName = departmentMap[deptId] || undefined;
+        }
+
+        return {
+          ...leave,
+          tenantName: leave.tenantName ?? 'Unknown Tenant',
+          departmentName: departmentName ?? 'N/A',
+        };
+      });
+
+      if (apiFilters.departmentId && apiFilters.departmentId.trim() !== '') {
+        const departmentIdToFilter = apiFilters.departmentId.trim();
+        mappedLeaves = mappedLeaves.filter(
+          leave => leave.departmentId === departmentIdToFilter
+        );
+      }
+
+      console.log('Filtered leaves after department filter:', mappedLeaves);
 
       setLeaves(mappedLeaves);
 
@@ -456,12 +451,12 @@ const CrossTenantLeaveManagement: React.FC = () => {
     currentPage,
     isSystemAdminUser,
     userTenantId,
+    departments,
   ]);
 
   useEffect(() => {
     fetchTenants();
   }, [fetchTenants]);
-
   // For non-system-admin users: ensure tenant filter is always set to their tenant_id from localStorage
   // This ensures data is always filtered by their tenant, even if tenant list hasn't loaded yet
   useEffect(() => {
@@ -491,13 +486,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   useEffect(() => {
     if (filters.tenantId) fetchSummary();
-  }, [
-    filters.tenantId,
-    filters.status,
-    filters.startDate,
-    filters.endDate,
-    fetchSummary,
-  ]);
+  }, [filters.tenantId, fetchSummary]);
 
   useEffect(() => {
     if (filters.tenantId) fetchLeaves();
@@ -522,9 +511,9 @@ const CrossTenantLeaveManagement: React.FC = () => {
       type: 'bar',
       stacked: !!filters.tenantId,
       toolbar: {
-        show: false, // Completely remove toolbar (3 lines menu and download options)
+        show: false,
         tools: {
-          download: false, // Disable all download tools
+          download: false,
         },
       },
       zoom: { enabled: false },
@@ -549,7 +538,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         { name: 'Approved', data: summary.map(s => s.approvedCount) },
         { name: 'Rejected', data: summary.map(s => s.rejectedCount) },
         { name: 'Pending', data: summary.map(s => s.pendingCount) },
-        { name: 'Cancelled', data: summary.map(s => s.cancelledCount) },
+        { name: 'Withdrawn', data: summary.map(s => s.cancelledCount) },
       ]
     : [{ name: 'Total Leaves', data: summary.map(s => s.totalLeaves) }];
 
@@ -641,7 +630,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
               <MenuItem value='pending'>Pending</MenuItem>
               <MenuItem value='approved'>Approved</MenuItem>
               <MenuItem value='rejected'>Rejected</MenuItem>
-              <MenuItem value='cancelled'>Cancelled</MenuItem>
+              <MenuItem value='withdrawn'>Withdrawn</MenuItem>
             </Select>
           </FormControl>
           <DatePicker
@@ -714,11 +703,17 @@ const CrossTenantLeaveManagement: React.FC = () => {
                             ? 'green'
                             : leave.status === 'rejected'
                               ? 'red'
-                              : '#ff9800',
+                              : leave.status === 'withdrawn' ||
+                                  leave.status === 'cancelled'
+                                ? '#607d8b' // Blue-grey color for withdrawn status
+                                : '#ff9800',
                         fontWeight: 600,
                       }}
                     >
-                      {leave.status}
+                      {/* Map cancelled to withdrawn for display */}
+                      {leave.status === 'cancelled'
+                        ? 'withdrawn'
+                        : leave.status}
                     </TableCell>
                     <TableCell>{leave.reason}</TableCell>
                   </TableRow>
@@ -785,7 +780,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
             spacing={2}
             flexWrap='wrap'
           >
-            {/* System Admin ko tenant dropdown dikhaya, Admin ke liye completely hide */}
             {isSystemAdminUser && (
               <FormControl sx={{ minWidth: 160 }} size='small'>
                 <InputLabel>Tenant</InputLabel>
