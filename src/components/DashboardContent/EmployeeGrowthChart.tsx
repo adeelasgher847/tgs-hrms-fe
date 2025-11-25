@@ -34,7 +34,7 @@ interface TenantGrowth {
   designations: number;
 }
 
-const TenantGrowthChart: React.FC = () => {
+const EmployeeGrowthChart: React.FC = () => {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
 
@@ -46,11 +46,12 @@ const TenantGrowthChart: React.FC = () => {
   const [loadingTenants, setLoadingTenants] = useState(true);
   const [selectedTenant, setSelectedTenant] = useState<string>('Ibex Tech.');
   const [selectedYear, setSelectedYear] = useState<number>(2025);
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [tenantGrowthData, setTenantGrowthData] = useState<TenantGrowth[]>([]);
 
   const labels = {
-    en: 'Tenant Growth Overview',
-    ar: 'نظرة عامة على نمو المستأجرين',
+    en: 'Employee Growth',
+    ar: 'نمو الموظفين',
   };
 
   useEffect(() => {
@@ -58,7 +59,7 @@ const TenantGrowthChart: React.FC = () => {
       try {
         const data = await systemEmployeeApiService.getAllTenants(true);
         // Show all tenants (no filtering)
-        setTenants(data);
+        setTenants(data as unknown as Tenant[]);
 
         if (data.length > 0) {
           const ibexTenant = data.find(t => t.name === 'Ibex Tech.');
@@ -96,28 +97,49 @@ const TenantGrowthChart: React.FC = () => {
     fetchTenantGrowth();
   }, [selectedTenant, selectedYear]);
 
-  const months = tenantGrowthData.map(d => d.monthName);
-  const employeesData = tenantGrowthData.map(d => d.employees);
-  const departmentsData = tenantGrowthData.map(d => d.departments);
-  const designationsData = tenantGrowthData.map(d => d.designations);
+  // Filter data by selected month if a month is selected
+  const filteredData = selectedMonth
+    ? tenantGrowthData.filter(d => d.month === selectedMonth)
+    : tenantGrowthData;
+
+  const months = filteredData.map(d => d.monthName);
+  const employeesData = filteredData.map(d => d.employees);
+
+  // Get unique months from API response for dropdown
+  const availableMonths = Array.from(
+    new Set(tenantGrowthData.map(d => d.month))
+  ).sort();
+
+  const monthLabels = {
+    en: 'Month',
+    ar: 'الشهر',
+  };
 
   const series = [
     { name: 'Employees', data: employeesData },
-    { name: 'Departments', data: departmentsData },
-    { name: 'Designations', data: designationsData },
   ];
 
   const options: ApexCharts.ApexOptions = {
     chart: {
-      type: 'bar',
-      stacked: true,
+      type: 'line',
       toolbar: { show: false },
+      zoom: { enabled: false },
     },
-    plotOptions: {
-      bar: { horizontal: false, columnWidth: '55%' },
+    stroke: {
+      curve: 'smooth',
+      width: 3,
+      colors: ['#FF8C00'],
+    },
+    markers: {
+      size: 5,
+      colors: ['#FF8C00'],
+      strokeColors: '#fff',
+      strokeWidth: 2,
+      hover: {
+        size: 7,
+      },
     },
     dataLabels: { enabled: false },
-    stroke: { show: true, width: 1, colors: ['#fff'] },
     xaxis: {
       categories: months,
       labels: { style: { fontSize: '12px', colors: textColor } },
@@ -137,7 +159,7 @@ const TenantGrowthChart: React.FC = () => {
       borderColor: borderColor,
       padding: { top: 20, left: 10, right: 10, bottom: 10 },
     },
-    colors: ['#4E79A7', '#F28E2B', '#E15759'],
+    colors: ['#FF8C00'],
     tooltip: {
       theme: darkMode ? 'dark' : 'light',
       y: { formatter: (val: number) => `${val}` },
@@ -160,12 +182,14 @@ const TenantGrowthChart: React.FC = () => {
   return (
     <Box
       sx={{
+        border: `1px solid ${borderColor}`,
         borderRadius: '0.375rem',
         backgroundColor: bgColor,
         direction: language === 'ar' ? 'rtl' : 'ltr',
         height: 400,
         display: 'flex',
         flexDirection: 'column',
+        padding: 2,
       }}
     >
       <Box
@@ -182,7 +206,53 @@ const TenantGrowthChart: React.FC = () => {
           {labels[language]} ({selectedYear})
         </Typography>
 
-        <Box display='flex' gap={2}>
+        <Box display='flex' gap={2} flexWrap='wrap'>
+          <FormControl size='small' sx={{ minWidth: { xs: '100%', sm: 140 }, width: { xs: '100%', sm: 'auto' } }}>
+            <Select
+              value={selectedTenant}
+              onChange={e => setSelectedTenant(e.target.value)}
+              sx={{
+                color: textColor,
+                '.MuiOutlinedInput-notchedOutline': {
+                  borderColor: borderColor,
+                },
+              }}
+            >
+              {tenants.map(tenant => (
+                <MenuItem key={tenant.id} value={tenant.id}>
+                  {tenant.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl size='small' sx={{ minWidth: { xs: '100%', sm: 120 }, width: { xs: '100%', sm: 'auto' } }}>
+            <Select
+              value={selectedMonth}
+              onChange={e => setSelectedMonth(e.target.value)}
+              displayEmpty
+              disabled={availableMonths.length === 0}
+              sx={{
+                color: textColor,
+                '.MuiOutlinedInput-notchedOutline': {
+                  borderColor: borderColor,
+                },
+              }}
+            >
+              <MenuItem value=''>
+                <em>{language === 'ar' ? 'كل الشهور' : 'All Months'}</em>
+              </MenuItem>
+              {availableMonths.map(month => {
+                const monthData = tenantGrowthData.find(d => d.month === month);
+                return (
+                  <MenuItem key={month} value={month}>
+                    {monthData?.monthName || month}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+
           <TextField
             type='number'
             value={selectedYear}
@@ -194,7 +264,7 @@ const TenantGrowthChart: React.FC = () => {
             }}
             size='small'
             sx={{
-              width: 120,
+              width: { xs: '100%', sm: 120 },
               '& .MuiOutlinedInput-root': {
                 color: textColor,
                 '& fieldset': {
@@ -213,25 +283,6 @@ const TenantGrowthChart: React.FC = () => {
               max: 2100,
             }}
           />
-
-          <FormControl size='small' sx={{ minWidth: 160 }}>
-            <Select
-              value={selectedTenant}
-              onChange={e => setSelectedTenant(e.target.value)}
-              sx={{
-                color: textColor,
-                '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: borderColor,
-                },
-              }}
-            >
-              {tenants.map(tenant => (
-                <MenuItem key={tenant.id} value={tenant.id}>
-                  {tenant.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
         </Box>
       </Box>
 
@@ -241,10 +292,11 @@ const TenantGrowthChart: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <Chart options={options} series={series} type='bar' height='100%' />
+        <Chart options={options} series={series} type='line' height='100%' />
       </Box>
     </Box>
   );
 };
 
-export default TenantGrowthChart;
+export default EmployeeGrowthChart;
+
