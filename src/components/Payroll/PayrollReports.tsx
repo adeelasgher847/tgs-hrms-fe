@@ -266,16 +266,16 @@ const PayrollReports: React.FC = () => {
         </Stack>
       </Box>
 
-      <Paper sx={{ p: 3, backgroundColor: cardBg }}>
+      <Paper sx={{ backgroundColor:'unset',boxShadow:'none' }}>
         {statsLoading ? (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Box sx={{ textAlign: 'center', py: 4}}>
             <CircularProgress />
           </Box>
         ) : !statistics ? (
           <Alert severity='info'>No statistics available</Alert>
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Paper sx={{ p: 2 }}>
+            <Paper sx={{ p: 2,boxShadow:'none' }}>
               <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
                 Monthly Trend
               </Typography>
@@ -293,7 +293,7 @@ const PayrollReports: React.FC = () => {
               )}
             </Paper>
 
-            <Paper sx={{ p: 2 }}>
+            <Paper sx={{ p: 2,boxShadow:'none' }}>
               <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
                 Department Comparison
               </Typography>
