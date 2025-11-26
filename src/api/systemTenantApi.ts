@@ -374,7 +374,6 @@ export const SystemTenantApi = {
           tenants = res.data.data;
         }
       }
-
       console.log(`Fetched ${tenants.length} tenants`);
       return tenants;
     } catch (error) {

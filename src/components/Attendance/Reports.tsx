@@ -77,6 +77,7 @@ const Reports: React.FC = () => {
     userId: string | null;
     isManager: boolean;
     isHrAdmin: boolean;
+    isAdmin: boolean;
     isSystemAdmin: boolean;
   } | null>(null);
 
@@ -91,19 +92,21 @@ const Reports: React.FC = () => {
         userId: null,
         isManager: false,
         isHrAdmin: false,
+        isAdmin: false,
         isSystemAdmin: false,
       });
     }
   }, []);
 
-  const { userId, isManager, isHrAdmin, isSystemAdmin } = userInfo || {
+  const { userId, isManager, isHrAdmin, isAdmin, isSystemAdmin } = userInfo || {
     userId: null,
     isManager: false,
     isHrAdmin: false,
+    isAdmin: false,
     isSystemAdmin: false,
   };
 
-  const isAdminView = isHrAdmin || isSystemAdmin;
+  const isAdminView = isHrAdmin || isAdmin || isSystemAdmin;
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) =>
     setTab(newValue);
@@ -595,234 +598,104 @@ const Reports: React.FC = () => {
 
       {!isAdminView && (
         <>
-          {isManager && (
-            <Tabs
-              value={tab}
-              onChange={handleTabChange}
-              variant='scrollable'
-              scrollButtons='auto'
-              sx={{ borderBottom: 1, borderColor: 'divider' }}
+          {loadingTab ? (
+            <Box
+              display='flex'
+              justifyContent='center'
+              alignItems='center'
+              py={4}
             >
-              <Tab label='My Leave Summary' />
-              <Tab label='Team Leave Summary' />
-            </Tabs>
-          )}
-          <TabPanel value={tab} index={0}>
-            {loadingTab ? (
-              <Box
-                display='flex'
-                justifyContent='center'
-                alignItems='center'
-                py={4}
-              >
-                <CircularProgress />
+              <CircularProgress />
+            </Box>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+                {leaveBalance.map((item, idx) => (
+                  <Card key={idx} sx={getCardStyle(darkMode)}>
+                    <CardContent>
+                      <Typography
+                        sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+                        gutterBottom
+                      >
+                        {item.leaveTypeName}
+                      </Typography>
+                      <Typography
+                        variant='h4'
+                        fontWeight={600}
+                        color='primary.main'
+                      >
+                        {item.remaining}
+                      </Typography>
+                      <Typography
+                        sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+                        variant='body2'
+                      >
+                        Used: {item.used} / {item.maxDaysPerYear}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                ))}
               </Box>
-            ) : (
-              <>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-                  {leaveBalance.map((item, idx) => (
-                    <Card key={idx} sx={getCardStyle(darkMode)}>
-                      <CardContent>
-                        <Typography
-                          sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
-                          gutterBottom
-                        >
-                          {item.leaveTypeName}
-                        </Typography>
-                        <Typography
-                          variant='h4'
-                          fontWeight={600}
-                          color='primary.main'
-                        >
-                          {item.remaining}
-                        </Typography>
-                        <Typography
-                          variant='body2'
-                          sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
-                        >
-                          Used: {item.used} / {item.maxDaysPerYear}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </Box>
-                <TableContainer
-                  component={Card}
-                  sx={{
-                    boxShadow: 'none',
-                    backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
-                  }}
-                >
-                  <Table>
-                    <TableHead>
+
+              <TableContainer
+                component={Card}
+                sx={{
+                  boxShadow: 'none',
+                  backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+                }}
+              >
+                <Table>
+                  <TableHead>
+                    <TableRow
+                      sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#ffffff' }}
+                    >
+                      <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                        Leave Type
+                      </TableCell>
+                      <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                        Max Days
+                      </TableCell>
+                      <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                        Used
+                      </TableCell>
+                      <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                        Remaining
+                      </TableCell>
+                      <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                        Carry Forward
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {leaveBalance.map((item, idx) => (
                       <TableRow
+                        key={idx}
+                        hover
                         sx={{
-                          backgroundColor: darkMode ? '#2a2a2a' : '#ffffff',
+                          backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
                         }}
                       >
-                        <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
-                          Leave Type
+                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          {item.leaveTypeName}
                         </TableCell>
-                        <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
-                          Max Days
+                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          {item.maxDaysPerYear}
                         </TableCell>
-                        <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
-                          Used
+                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          {item.used}
                         </TableCell>
-                        <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
-                          Remaining
+                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          {item.remaining}
                         </TableCell>
-                        <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
-                          Carry Forward
+                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          {item.carryForward ? 'Yes' : 'No'}
                         </TableCell>
                       </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {leaveBalance.map((item, idx) => (
-                        <TableRow
-                          key={idx}
-                          hover
-                          sx={{
-                            backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
-                            '&:hover': {
-                              backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
-                            },
-                          }}
-                        >
-                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                            {item.leaveTypeName}
-                          </TableCell>
-                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                            {item.maxDaysPerYear}
-                          </TableCell>
-                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                            {item.used}
-                          </TableCell>
-                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                            {item.remaining}
-                          </TableCell>
-                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                            {item.carryForward ? 'Yes' : 'No'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </>
-            )}
-          </TabPanel>
-
-          {isManager && (
-            <TabPanel value={tab} index={1}>
-              {loadingTab ? (
-                <Box
-                  display='flex'
-                  justifyContent='center'
-                  alignItems='center'
-                  py={4}
-                >
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <>
-                  {!teamSummary.length && (
-                    <Typography sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                      No team data found.
-                    </Typography>
-                  )}
-                  {!!teamSummary.length && (
-                    <TableContainer
-                      component={Card}
-                      sx={{
-                        boxShadow: 'none',
-                        backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
-                      }}
-                    >
-                      <Table>
-                        <TableHead>
-                          <TableRow
-                            sx={{
-                              backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
-                            }}
-                          >
-                            <TableCell
-                              sx={{ color: darkMode ? '#fff' : '#000' }}
-                            >
-                              Employee
-                            </TableCell>
-                            <TableCell
-                              sx={{ color: darkMode ? '#fff' : '#000' }}
-                            >
-                              Email
-                            </TableCell>
-                            <TableCell
-                              sx={{ color: darkMode ? '#fff' : '#000' }}
-                            >
-                              Department
-                            </TableCell>
-                            <TableCell
-                              sx={{ color: darkMode ? '#fff' : '#000' }}
-                            >
-                              Designation
-                            </TableCell>
-                            <TableCell
-                              sx={{ color: darkMode ? '#fff' : '#000' }}
-                            >
-                              Total Leave Days
-                            </TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {teamSummary.map((member, idx) => (
-                            <TableRow
-                              key={idx}
-                              hover
-                              sx={{
-                                backgroundColor: darkMode
-                                  ? '#1e1e1e'
-                                  : '#ffffff',
-                                '&:hover': {
-                                  backgroundColor: darkMode
-                                    ? '#2a2a2a'
-                                    : '#f5f5f5',
-                                },
-                              }}
-                            >
-                              <TableCell
-                                sx={{ color: darkMode ? '#ccc' : '#000' }}
-                              >
-                                {member.name}
-                              </TableCell>
-                              <TableCell
-                                sx={{ color: darkMode ? '#ccc' : '#000' }}
-                              >
-                                {member.email}
-                              </TableCell>
-                              <TableCell
-                                sx={{ color: darkMode ? '#ccc' : '#000' }}
-                              >
-                                {member.department}
-                              </TableCell>
-                              <TableCell
-                                sx={{ color: darkMode ? '#ccc' : '#000' }}
-                              >
-                                {member.designation}
-                              </TableCell>
-                              <TableCell
-                                sx={{ color: darkMode ? '#ccc' : '#000' }}
-                              >
-                                {member.totalLeaveDays}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  )}
-                </>
-              )}
-            </TabPanel>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
           )}
         </>
       )}

@@ -138,6 +138,7 @@ const getUserFromLocalStorage = () => {
         role: 'unknown',
         isManager: false,
         isHrAdmin: false,
+        isAdmin: false,
         isSystemAdmin: false,
       };
     }
@@ -148,12 +149,14 @@ const getUserFromLocalStorage = () => {
     const isHrAdmin = roleLower === 'hr-admin' || roleLower === 'hr_admin';
     const isSystemAdmin =
       roleLower === 'system-admin' || roleLower === 'system_admin';
+    const isAdmin = roleLower === 'admin';
 
     return {
       userId: parsed?.id,
       role: roleLower,
       isManager: roleLower === 'manager',
       isHrAdmin,
+      isAdmin,
       isSystemAdmin,
     };
   } catch (error) {
@@ -163,6 +166,7 @@ const getUserFromLocalStorage = () => {
       role: 'unknown',
       isManager: false,
       isHrAdmin: false,
+      isAdmin: false,
       isSystemAdmin: false,
     };
   }
