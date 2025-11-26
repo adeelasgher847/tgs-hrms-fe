@@ -105,6 +105,7 @@ export const isMenuVisibleForRole = (
       'report',
       'leave-analytics',
       'payroll',
+      'benefits'
     ],
     employee: [
       'attendance',
@@ -327,6 +328,11 @@ export const isSubMenuVisibleForRole = (
     }
     if (parent.includes('assets')) {
       if (sub.includes('assets overview')) {
+        visible = false;
+      }
+    }
+    if (parent.includes('benefits')) {
+      if (!sub.includes('benefit details')) {
         visible = false;
       }
     }
@@ -612,6 +618,7 @@ export const isDashboardPathAllowedForRole = (
       'benefits/assign',
       'benefits/reporting',
       'my-benefits',
+      'benefit-details',
       'employee-salary',
       'my-salary',
     ]),

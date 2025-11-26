@@ -60,17 +60,19 @@ const PayrollReports: React.FC = () => {
         setStatsLoading(true);
 
         const allTenants = await systemEmployeeApiService.getAllTenants(true);
-        setTenants(allTenants);
+        // Filter to only show active tenants
+        const activeTenants = allTenants.filter(t => t.status === 'active');
+        setTenants(activeTenants);
 
         // Default tenant: "Testify Solutions"
         let defaultTenantId = '';
-        const testifyTenant = allTenants.find(
+        const testifyTenant = activeTenants.find(
           t => t.name.toLowerCase() === 'testify solutions'
         );
         if (testifyTenant) {
           defaultTenantId = testifyTenant.id;
-        } else if (allTenants.length > 0) {
-          defaultTenantId = allTenants[0].id;
+        } else if (activeTenants.length > 0) {
+          defaultTenantId = activeTenants[0].id;
         }
         setSelectedTenantId(defaultTenantId);
 
@@ -187,18 +189,46 @@ const PayrollReports: React.FC = () => {
   }, [statistics]);
 
   const departmentOptions: ApexOptions = useMemo(() => {
-    const categories =
-      statistics?.departmentComparison?.map(item => item.department.trim()) ??
-      [];
+    if (
+      !statistics?.departmentComparison ||
+      statistics.departmentComparison.length === 0
+    ) {
+      return {
+        chart: { type: 'bar', toolbar: { show: false } },
+        plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
+        yaxis: { labels: { style: { fontSize: '13px', colors: textColor } } },
+        xaxis: { labels: { formatter: val => formatCurrency(val) } },
+        dataLabels: { enabled: false },
+        tooltip: { y: { formatter: val => formatCurrency(val) } },
+      };
+    }
+
+    // Extract department names in the same order as the data
+    const categories = statistics.departmentComparison.map(item =>
+      item.department.trim()
+    );
+
     return {
       chart: { type: 'bar', toolbar: { show: false } },
       plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
-      yaxis: { categories, labels: { style: { fontSize: '13px' } } },
+      yaxis: {
+        categories: categories,
+        labels: {
+          style: { fontSize: '13px', colors: textColor },
+          formatter: (val: number) => {
+            // ApexCharts passes numeric index, map it to category name
+            if (val >= 0 && val < categories.length) {
+              return categories[Math.floor(val)];
+            }
+            return String(val);
+          },
+        },
+      },
       xaxis: { labels: { formatter: val => formatCurrency(val) } },
       dataLabels: { enabled: false },
       tooltip: { y: { formatter: val => formatCurrency(val) } },
     };
-  }, [statistics]);
+  }, [statistics, textColor]);
 
   return (
     <Box

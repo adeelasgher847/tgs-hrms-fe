@@ -206,6 +206,54 @@ const employeeBenefitApi = {
       throw error;
     }
   },
+
+  async getAllTenantsEmployeeBenefits(): Promise<{
+    tenants: Array<{
+      tenant_id: string;
+      tenant_name: string;
+      tenant_status: string;
+      employees: Array<{
+        employeeId: string;
+        employeeName: string;
+        email: string;
+        profile_pic?: string | null;
+        department: string;
+        designation: string;
+        benefits: Array<{
+          id: string;
+          name: string;
+          description: string;
+          type: string;
+          eligibilityCriteria: string;
+          status: string;
+          tenant_id: string;
+          createdBy: string;
+          createdAt: string;
+          benefitAssignmentId: string;
+          statusOfAssignment: string;
+          startDate: string;
+          endDate: string;
+          assignedBy: string;
+          benefitCreatedAt: string;
+        }>;
+      }>;
+    }>;
+  }> {
+    try {
+      const response = await axiosInstance.get(
+        '/employee-benefits/all-tenants'
+      );
+      console.log('All Tenants Employee Benefits:', response.data);
+      return response.data;
+    } catch (error: unknown) {
+      console.error(
+        'All Tenants Employee Benefits API Error:',
+        (error as { response?: { data?: unknown }; message?: string }).response
+          ?.data || (error as { message?: string }).message
+      );
+      throw error;
+    }
+  },
 };
 
 export default employeeBenefitApi;
