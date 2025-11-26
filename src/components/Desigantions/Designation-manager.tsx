@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -18,6 +18,7 @@ import {
   IconButton,
   Pagination,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -37,13 +38,35 @@ import {
 } from '../../api/departmentApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
+import {
+  getRoleName,
+  isSystemAdmin as isSystemAdminFn,
+} from '../../utils/roleUtils';
+import { SystemTenantApi } from '../../api/systemTenantApi';
+import type { SystemTenant } from '../../api/systemTenantApi';
 // import { extractErrorMessage } from '../../utils/errorHandler';
 
 export default function DesignationManager() {
   const { language } = useLanguage();
   const isRTL = language === 'ar';
+
+  // Get user role
+  const user = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}');
+    } catch {
+      return {};
+    }
+  }, []);
+  const userRoleValue = user?.role;
+  const isSystemAdmin = isSystemAdminFn(userRoleValue);
+
   const [designations, setDesignations] = useState<FrontendDesignation[]>([]);
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
+  // Store tenant info for each designation (for system admin)
+  const [designationTenantMap, setDesignationTenantMap] = useState<
+    Map<string, { tenantId: string; tenantName: string }>
+  >(new Map());
   const [loading, setLoading] = useState(true);
   const [departmentsLoading, setDepartmentsLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -58,10 +81,37 @@ export default function DesignationManager() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalRecords, setTotalRecords] = useState<number>(0);
+  const [allTenants, setAllTenants] = useState<SystemTenant[]>([]);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
+  const [loadingTenants, setLoadingTenants] = useState(false);
   const itemsPerPage = 25;
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   const getText = (en: string, ar: string) => (language === 'ar' ? ar : en);
+
+  // Fetch tenants for system admin
+  useEffect(() => {
+    if (!isSystemAdmin) return;
+
+    const fetchTenants = async () => {
+      try {
+        setLoadingTenants(true);
+        const tenants = await SystemTenantApi.getAllTenants(false);
+        const activeTenants = tenants.filter(
+          t => t.status === 'active' && t.isDeleted === false
+        );
+        setAllTenants(activeTenants);
+
+        // Default to "All Tenants" - no need to set selectedTenantId
+      } catch (error) {
+        console.error('Error fetching tenants:', error);
+      } finally {
+        setLoadingTenants(false);
+      }
+    };
+
+    fetchTenants();
+  }, [isSystemAdmin]);
 
   const fetchDepartments = useCallback(async () => {
     try {
@@ -116,8 +166,85 @@ export default function DesignationManager() {
     [showError, itemsPerPage]
   );
 
+  // Fetch designations for system admin
+  const fetchSystemAdminDesignations = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Pass tenant_id only if a specific tenant is selected (not "all")
+      const tenantIdParam =
+        selectedTenantId && selectedTenantId !== 'all'
+          ? selectedTenantId
+          : undefined;
+      const response =
+        await designationApiService.getAllTenantsWithDesignations(
+          tenantIdParam
+        );
+
+      // Flatten designations from all tenants or selected tenant
+      const allDesignations: FrontendDesignation[] = [];
+      const allDepartmentsMap = new Map<string, FrontendDepartment>();
+      const tenantMap = new Map<
+        string,
+        { tenantId: string; tenantName: string }
+      >();
+
+      response.tenants.forEach(tenant => {
+        // If "All Tenants" is selected or no tenant selected, show all designations
+        // Otherwise, only show designations from selected tenant
+        if (
+          selectedTenantId === 'all' ||
+          !selectedTenantId ||
+          tenant.tenant_id === selectedTenantId
+        ) {
+          tenant.departments.forEach(dept => {
+            // Add department to map if not already present
+            if (!allDepartmentsMap.has(dept.department_id)) {
+              allDepartmentsMap.set(dept.department_id, {
+                id: dept.department_id,
+                name: dept.department_name,
+                nameAr: '',
+                description: '',
+                descriptionAr: '',
+              });
+            }
+
+            // Add designations
+            dept.designations.forEach(des => {
+              allDesignations.push({
+                id: des.id,
+                title: des.title,
+                titleAr: '',
+                departmentId: dept.department_id,
+              });
+              // Store tenant info for this designation
+              tenantMap.set(des.id, {
+                tenantId: tenant.tenant_id,
+                tenantName: tenant.tenant_name,
+              });
+            });
+          });
+        }
+      });
+
+      setDesignations(allDesignations);
+      setDepartments(Array.from(allDepartmentsMap.values()));
+      setDesignationTenantMap(tenantMap);
+      setTotalPages(1);
+      setTotalRecords(allDesignations.length);
+      setCurrentPage(1);
+    } catch (error: unknown) {
+      showError(error, { operation: 'fetch', resource: 'designation' });
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedTenantId, showError]);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    if (isSystemAdmin) {
+      // For system admin, pagination is handled client-side
+      return;
+    }
     if (selectedDepartmentId !== 'all') {
       fetchDesignations(selectedDepartmentId, page);
     } else {
@@ -146,13 +273,29 @@ export default function DesignationManager() {
   }, [fetchDepartments]);
 
   useEffect(() => {
-    setCurrentPage(1);
-    if (selectedDepartmentId !== 'all') {
-      fetchDesignations(selectedDepartmentId, 1);
+    if (isSystemAdmin) {
+      fetchSystemAdminDesignations();
     } else {
-      fetchAllDesignations();
+      setCurrentPage(1);
+      if (selectedDepartmentId !== 'all') {
+        fetchDesignations(selectedDepartmentId, 1);
+      } else {
+        fetchAllDesignations();
+      }
     }
-  }, [selectedDepartmentId, fetchDesignations, fetchAllDesignations]);
+  }, [
+    isSystemAdmin,
+    selectedDepartmentId,
+    selectedTenantId,
+    fetchDesignations,
+    fetchAllDesignations,
+    fetchSystemAdminDesignations,
+  ]);
+
+  const handleTenantChange = (event: SelectChangeEvent<string>) => {
+    setSelectedTenantId(event.target.value);
+    setSelectedDepartmentId('all'); // Reset department filter when tenant changes
+  };
 
   const handleSaveDesignation = async (data: {
     title: string;
@@ -226,93 +369,165 @@ export default function DesignationManager() {
     setDesignationToDelete(null);
   };
 
-  const filteredDesignations =
-    selectedDepartmentId === 'all' ? designations : designations;
+  const filteredDesignations = useMemo(() => {
+    if (selectedDepartmentId === 'all') {
+      return designations;
+    }
+    return designations.filter(d => d.departmentId === selectedDepartmentId);
+  }, [designations, selectedDepartmentId]);
 
-  const totalPagesForFiltered =
-    selectedDepartmentId === 'all'
-      ? Math.ceil(filteredDesignations.length / itemsPerPage)
-      : totalPages;
-  const paginatedData =
-    selectedDepartmentId === 'all'
-      ? filteredDesignations.slice(
-          (currentPage - 1) * itemsPerPage,
-          currentPage * itemsPerPage
-        )
-      : filteredDesignations;
+  const totalPagesForFiltered = Math.ceil(
+    filteredDesignations.length / itemsPerPage
+  );
+  const paginatedData = filteredDesignations.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <Box dir={isRTL ? 'rtl' : 'ltr'}>
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           mb: 3,
           gap: 2,
         }}
       >
+        <Typography variant='h4' sx={{ fontWeight: 600 }}>
+          {getText('Designation', 'المسمى الوظيفي')}
+        </Typography>
+
         <Box
           sx={{
-            display: { sx: 'block', sm: 'flex' },
+            display: 'flex',
             gap: 2,
             alignItems: 'center',
+            flexWrap: 'wrap',
           }}
         >
-          <Button
-            variant='contained'
-            startIcon={<AddIcon />}
-            onClick={() => {
-              setEditingDesignation(null);
-              setModalOpen(true);
-            }}
-            sx={{
-              minWidth: 200,
-              fontWeight: 600,
-              py: 1,
-              backgroundColor: '#464b8a',
-            }}
-          >
-            {getText('Create Designation', 'إنشاء مسمى وظيفي')}
-          </Button>
+          {isSystemAdmin ? (
+            <>
+              <FormControl
+                size='small'
+                sx={{ minWidth: { xs: '100%', sm: 200 } }}
+              >
+                <InputLabel id='tenant-select'>
+                  {getText('Select Tenant', 'اختر المستأجر')}
+                </InputLabel>
+                <Select
+                  labelId='tenant-select'
+                  value={selectedTenantId}
+                  label={getText('Select Tenant', 'اختر المستأجر')}
+                  onChange={handleTenantChange}
+                  sx={{
+                    '.MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'divider',
+                    },
+                  }}
+                >
+                  <MenuItem value='all'>
+                    {getText('All Tenants', 'جميع المستأجرين')}
+                  </MenuItem>
+                  {allTenants.map((tenant: SystemTenant) => (
+                    <MenuItem key={tenant.id} value={tenant.id}>
+                      {tenant.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl
+                size='small'
+                sx={{ minWidth: { xs: '100%', sm: 200 } }}
+              >
+                <InputLabel id='dept-select'>
+                  {getText('Filter by Department', 'تصفية حسب القسم')}
+                </InputLabel>
+                <Select
+                  labelId='dept-select'
+                  value={selectedDepartmentId}
+                  label={getText('Filter by Department', 'تصفية حسب القسم')}
+                  onChange={e => {
+                    setSelectedDepartmentId(
+                      e.target.value === 'all' ? 'all' : e.target.value
+                    );
+                    setCurrentPage(1);
+                  }}
+                  disabled={departmentsLoading}
+                >
+                  <MenuItem value='all'>
+                    {getText('All Departments', 'كل الأقسام')}
+                  </MenuItem>
+                  {departments.map(d => (
+                    <MenuItem key={d.id} value={d.id}>
+                      {getText(d.name, d.nameAr)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </>
+          ) : (
+            <>
+              <FormControl
+                size='small'
+                sx={{ minWidth: { xs: '100%', sm: 200 } }}
+              >
+                <InputLabel id='dept-select'>
+                  {getText('Filter by Department', 'تصفية حسب القسم')}
+                </InputLabel>
+                <Select
+                  labelId='dept-select'
+                  value={selectedDepartmentId}
+                  label={getText('Filter by Department', 'تصفية حسب القسم')}
+                  onChange={e => {
+                    setSelectedDepartmentId(
+                      e.target.value === 'all' ? 'all' : e.target.value
+                    );
+                    setCurrentPage(1);
+                  }}
+                  disabled={departmentsLoading}
+                >
+                  <MenuItem value='all'>
+                    {getText('All Departments', 'كل الأقسام')}
+                  </MenuItem>
+                  {departmentsLoading ? (
+                    <MenuItem disabled>
+                      {getText(
+                        'Loading departments...',
+                        'جاري تحميل الأقسام...'
+                      )}
+                    </MenuItem>
+                  ) : (
+                    departments.map(d => (
+                      <MenuItem key={d.id} value={d.id}>
+                        {getText(d.name, d.nameAr)}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
+              <Button
+                variant='contained'
+                startIcon={<AddIcon />}
+                onClick={() => {
+                  setEditingDesignation(null);
+                  setModalOpen(true);
+                }}
+                sx={{
+                  minWidth: 200,
+                  fontWeight: 600,
+                  py: 1,
+                  backgroundColor: '#464b8a',
+                }}
+              >
+                {getText('Create Designation', 'إنشاء مسمى وظيفي')}
+              </Button>
+            </>
+          )}
         </Box>
       </Box>
-
-      <Paper sx={{ mb: 3, boxShadow: 'none' }}>
-        <FormControl fullWidth>
-          <InputLabel id='dept-select'>
-            {getText('Filter by Department', 'تصفية حسب القسم')}
-          </InputLabel>
-          <Select
-            labelId='dept-select'
-            value={selectedDepartmentId}
-            label={getText('Filter by Department', 'تصفية حسب القسم')}
-            onChange={e => {
-              setSelectedDepartmentId(
-                e.target.value === 'all' ? 'all' : e.target.value
-              );
-              setCurrentPage(1);
-            }}
-            disabled={departmentsLoading}
-          >
-            <MenuItem value='all'>
-              {getText('All Departments', 'كل الأقسام')}
-            </MenuItem>
-            {departmentsLoading ? (
-              <MenuItem disabled>
-                {getText('Loading departments...', 'جاري تحميل الأقسام...')}
-              </MenuItem>
-            ) : (
-              departments.map(d => (
-                <MenuItem key={d.id} value={d.id}>
-                  {getText(d.name, d.nameAr)}
-                </MenuItem>
-              ))
-            )}
-          </Select>
-        </FormControl>
-      </Paper>
 
       <Paper variant='outlined' sx={{ bgcolor: 'unset', border: 'none' }}>
         <Box>
@@ -329,6 +544,18 @@ export default function DesignationManager() {
             <Table>
               <TableHead>
                 <TableRow>
+                  {isSystemAdmin && (
+                    <TableCell
+                      sx={{
+                        fontWeight: 'bold',
+                        ...(isRTL
+                          ? { textAlign: 'right' }
+                          : { textAlign: 'left' }),
+                      }}
+                    >
+                      {getText('Tenant', 'المستأجر')}
+                    </TableCell>
+                  )}
                   <TableCell
                     sx={{
                       fontWeight: 'bold',
@@ -339,7 +566,7 @@ export default function DesignationManager() {
                   >
                     {getText('Designation Title', 'المسمى الوظيفي')}
                   </TableCell>
-                  {selectedDepartmentId === 'all' && (
+                  {(selectedDepartmentId === 'all' || isSystemAdmin) && (
                     <TableCell
                       sx={{
                         fontWeight: 'bold',
@@ -351,22 +578,30 @@ export default function DesignationManager() {
                       {getText('Department', 'القسم')}
                     </TableCell>
                   )}
-                  <TableCell
-                    align='center'
-                    sx={{
-                      fontWeight: 'bold',
-                      minWidth: 120,
-                    }}
-                  >
-                    {getText('Actions', 'الإجراءات')}
-                  </TableCell>
+                  {!isSystemAdmin && (
+                    <TableCell
+                      align='center'
+                      sx={{
+                        fontWeight: 'bold',
+                        minWidth: 120,
+                      }}
+                    >
+                      {getText('Actions', 'الإجراءات')}
+                    </TableCell>
+                  )}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
                     <TableCell
-                      colSpan={selectedDepartmentId === 'all' ? 3 : 2}
+                      colSpan={
+                        isSystemAdmin
+                          ? 3
+                          : selectedDepartmentId === 'all'
+                            ? 3
+                            : 2
+                      }
                       align='center'
                       sx={{ color: 'text.secondary' }}
                     >
@@ -383,7 +618,13 @@ export default function DesignationManager() {
                 ) : paginatedData.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={selectedDepartmentId === 'all' ? 3 : 2}
+                      colSpan={
+                        isSystemAdmin
+                          ? 3
+                          : selectedDepartmentId === 'all'
+                            ? 3
+                            : 2
+                      }
                       align='center'
                       sx={{ color: 'text.secondary' }}
                     >
@@ -406,9 +647,21 @@ export default function DesignationManager() {
                     const departmentName = department
                       ? getText(department.name, department.nameAr)
                       : 'Unknown Department';
+                    const tenantInfo = designationTenantMap.get(designation.id);
 
                     return (
                       <TableRow key={designation.id} hover>
+                        {isSystemAdmin && (
+                          <TableCell
+                            sx={{
+                              ...(isRTL
+                                ? { textAlign: 'right' }
+                                : { textAlign: 'left' }),
+                            }}
+                          >
+                            {tenantInfo?.tenantName || '-'}
+                          </TableCell>
+                        )}
                         <TableCell
                           sx={{
                             ...(isRTL
@@ -418,7 +671,7 @@ export default function DesignationManager() {
                         >
                           {getText(designation.title, designation.titleAr)}
                         </TableCell>
-                        {selectedDepartmentId === 'all' && (
+                        {(selectedDepartmentId === 'all' || isSystemAdmin) && (
                           <TableCell
                             sx={{
                               ...(isRTL
@@ -429,38 +682,40 @@ export default function DesignationManager() {
                             {departmentName}
                           </TableCell>
                         )}
-                        <TableCell align='center'>
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              gap: 1,
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <IconButton
-                              color='primary'
-                              size='small'
-                              onClick={() => {
-                                setEditingDesignation(designation);
-                                setModalOpen(true);
+                        {!isSystemAdmin && (
+                          <TableCell align='center'>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                gap: 1,
+                                justifyContent: 'center',
                               }}
-                              title={getText('Edit', 'تعديل')}
                             >
-                              <EditIcon fontSize='small' />
-                            </IconButton>
-                            <IconButton
-                              color='error'
-                              size='small'
-                              onClick={() => {
-                                setDesignationToDelete(designation);
-                                setDeleteDialogOpen(true);
-                              }}
-                              title={getText('Delete', 'حذف')}
-                            >
-                              <DeleteIcon fontSize='small' />
-                            </IconButton>
-                          </Box>
-                        </TableCell>
+                              <IconButton
+                                color='primary'
+                                size='small'
+                                onClick={() => {
+                                  setEditingDesignation(designation);
+                                  setModalOpen(true);
+                                }}
+                                title={getText('Edit', 'تعديل')}
+                              >
+                                <EditIcon fontSize='small' />
+                              </IconButton>
+                              <IconButton
+                                color='error'
+                                size='small'
+                                onClick={() => {
+                                  setDesignationToDelete(designation);
+                                  setDeleteDialogOpen(true);
+                                }}
+                                title={getText('Delete', 'حذف')}
+                              >
+                                <DeleteIcon fontSize='small' />
+                              </IconButton>
+                            </Box>
+                          </TableCell>
+                        )}
                       </TableRow>
                     );
                   })

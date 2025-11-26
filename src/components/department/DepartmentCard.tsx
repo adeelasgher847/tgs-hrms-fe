@@ -14,8 +14,8 @@ import deleteIcon from '../../assets/dashboardIcon/ui-delete.svg';
 
 interface DepartmentCardProps {
   department: Department;
-  onEdit: (department: Department) => void;
-  onDelete: (department: Department) => void;
+  onEdit?: (department: Department) => void;
+  onDelete?: (department: Department) => void;
   isRtl?: boolean;
 }
 
@@ -102,72 +102,78 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
         )}
       </CardContent>
 
-      <CardActions
-        sx={{
-          justifyContent: 'flex-start',
-          px: 2,
-          pb: 2,
-        }}
-      >
-        <Box display='flex' width={100}>
-          <IconButton
-            onClick={() => onEdit(department)}
-            color='success'
-            size='small'
-            sx={{
-              border: `1px solid ${borderColor}`,
-              borderTopLeftRadius: isRtl ? 0 : '5px',
-              borderBottomLeftRadius: isRtl ? 0 : '5px',
-              borderTopRightRadius: isRtl ? '5px' : 0,
-              borderBottomRightRadius: isRtl ? '5px' : 0,
-              '&:hover': {
-                backgroundColor: 'orange',
-                color: 'white',
-              },
-            }}
-          >
-            <img
-              src={edit}
-              alt='Absent'
-              style={{
-                width: 15,
-                height: 15,
-                filter:
-                  'invert(48%) sepia(59%) saturate(528%) hue-rotate(85deg) brightness(90%) contrast(91%)',
-              }}
-            />
-            {/* <EditIcon fontSize="small" /> */}
-          </IconButton>
+      {(onEdit || onDelete) && (
+        <CardActions
+          sx={{
+            justifyContent: 'flex-start',
+            px: 2,
+            pb: 2,
+          }}
+        >
+          <Box display='flex' width={100}>
+            {onEdit && (
+              <IconButton
+                onClick={() => onEdit(department)}
+                color='success'
+                size='small'
+                sx={{
+                  border: `1px solid ${borderColor}`,
+                  borderTopLeftRadius: isRtl ? 0 : '5px',
+                  borderBottomLeftRadius: isRtl ? 0 : '5px',
+                  borderTopRightRadius: isRtl ? '5px' : 0,
+                  borderBottomRightRadius: isRtl ? '5px' : 0,
+                  '&:hover': {
+                    backgroundColor: 'orange',
+                    color: 'white',
+                  },
+                }}
+              >
+                <img
+                  src={edit}
+                  alt='Absent'
+                  style={{
+                    width: 15,
+                    height: 15,
+                    filter:
+                      'invert(48%) sepia(59%) saturate(528%) hue-rotate(85deg) brightness(90%) contrast(91%)',
+                  }}
+                />
+                {/* <EditIcon fontSize="small" /> */}
+              </IconButton>
+            )}
 
-          <IconButton
-            onClick={() => onDelete(department)}
-            color='error'
-            size='small'
-            sx={{
-              border: `1px solid ${borderColor}`,
-              borderTopLeftRadius: isRtl ? '5px' : 0,
-              borderBottomLeftRadius: isRtl ? '5px' : 0,
-              borderTopRightRadius: isRtl ? 0 : '5px',
-              borderBottomRightRadius: isRtl ? 0 : '5px',
-              '&:hover': {
-                backgroundColor: 'orange',
-                color: 'white',
-              },
-            }}
-          >
-            <img
-              src={deleteIcon}
-              alt='Delete'
-              style={{
-                width: 15,
-                height: 15,
-                filter:
-                  'invert(28%) sepia(97%) saturate(1404%) hue-rotate(329deg) brightness(95%) contrast(96%)',
-              }}
-            />
-          </IconButton>
-        </Box>
-      </CardActions>
+            {onDelete && (
+              <IconButton
+                onClick={() => onDelete(department)}
+                color='error'
+                size='small'
+                sx={{
+                  border: `1px solid ${borderColor}`,
+                  borderTopLeftRadius: isRtl ? '5px' : 0,
+                  borderBottomLeftRadius: isRtl ? '5px' : 0,
+                  borderTopRightRadius: isRtl ? 0 : '5px',
+                  borderBottomRightRadius: isRtl ? 0 : '5px',
+                  '&:hover': {
+                    backgroundColor: 'orange',
+                    color: 'white',
+                  },
+                }}
+              >
+                <img
+                  src={deleteIcon}
+                  alt='Delete'
+                  style={{
+                    width: 15,
+                    height: 15,
+                    filter:
+                      'invert(28%) sepia(97%) saturate(1404%) hue-rotate(329deg) brightness(95%) contrast(96%)',
+                  }}
+                />
+              </IconButton>
+            )}
+          </Box>
+        </CardActions>
+      )}
     </Card>
   );
 };

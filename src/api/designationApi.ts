@@ -104,7 +104,7 @@ class DesignationApiService {
       // Handle both paginated and non-paginated responses
       let items: unknown[] = [];
       let total = 0;
-      let currentPage = page;
+      let currentPage = page ?? 1;
       let limit = 25;
       let totalPages = 1;
 
@@ -112,7 +112,7 @@ class DesignationApiService {
         // Paginated response
         items = response.data.items;
         total = response.data.total || items.length;
-        currentPage = response.data.page || page;
+        currentPage = response.data.page || (page ?? 1);
         limit = response.data.limit || 25;
         totalPages = response.data.totalPages || Math.ceil(total / limit);
       } else if (Array.isArray(response.data)) {
@@ -287,6 +287,48 @@ class DesignationApiService {
       title: frontendDesignation.title,
       departmentId: frontendDesignation.departmentId,
     };
+  }
+
+  // Get all tenants with designations (for system admin)
+  async getAllTenantsWithDesignations(tenantId?: string): Promise<{
+    tenants: Array<{
+      tenant_id: string;
+      tenant_name: string;
+      tenant_status: string;
+      departments: Array<{
+        department_id: string;
+        department_name: string;
+        designations: Array<{
+          id: string;
+          title: string;
+          created_at: string;
+        }>;
+      }>;
+    }>;
+  }> {
+    try {
+      const params = tenantId ? { tenant_id: tenantId } : {};
+      const response = await axiosInstance.get<{
+        tenants: Array<{
+          tenant_id: string;
+          tenant_name: string;
+          tenant_status: string;
+          departments: Array<{
+            department_id: string;
+            department_name: string;
+            designations: Array<{
+              id: string;
+              title: string;
+              created_at: string;
+            }>;
+          }>;
+        }>;
+      }>(`${this.baseUrl}/all-tenants`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching all tenants with designations:', error);
+      throw error;
+    }
   }
 }
 

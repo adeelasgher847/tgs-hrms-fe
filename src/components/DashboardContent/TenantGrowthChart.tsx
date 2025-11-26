@@ -57,15 +57,17 @@ const TenantGrowthChart: React.FC = () => {
     const fetchTenants = async () => {
       try {
         const data = await systemEmployeeApiService.getAllTenants(true);
-        // Show all tenants (no filtering)
-        setTenants(data);
+        const activeTenants = data.filter(
+          t => t.status === 'active' && t.isDeleted === false
+        );
+        setTenants(activeTenants);
 
-        if (data.length > 0) {
-          const ibexTenant = data.find(t => t.name === 'Ibex Tech.');
+        if (activeTenants.length > 0) {
+          const ibexTenant = activeTenants.find(t => t.name === 'Ibex Tech.');
           if (ibexTenant) {
             setSelectedTenant(ibexTenant.id);
           } else {
-            setSelectedTenant(data[0].id);
+            setSelectedTenant(activeTenants[0].id);
           }
         }
       } catch (error) {
