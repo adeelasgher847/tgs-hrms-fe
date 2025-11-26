@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef, memo } from 'react';
+import React, { useEffect, useState, useCallback, useRef, memo, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -108,6 +108,11 @@ const CrossTenantLeaveManagement: React.FC = () => {
     startDate: null,
     endDate: null,
   });
+  
+  // Keep ref in sync with filters.tenantId
+  useEffect(() => {
+    currentTenantIdRef.current = filters.tenantId;
+  }, [filters.tenantId]);
 
   const [tenants, setTenants] = useState<SystemTenant[]>([]);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
@@ -129,6 +134,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const isInitialLoad = useRef(true);
   const hasLoadedDataOnce = useRef(false);
   const isInitialMount = useRef(true);
+  const currentTenantIdRef = useRef<string>('');
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -152,9 +158,11 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
       setFilters(prev => {
         if (field === 'tenantId') {
+          const newTenantId = value as string;
+          currentTenantIdRef.current = newTenantId;
           return {
             ...prev,
-            tenantId: value as string,
+            tenantId: newTenantId,
             departmentId: '',
           };
         }
@@ -204,7 +212,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
           }
         } else if (isSystemAdminUser) {
           // System Admin: Select default (ibex or first) only if no tenant is selected
-          if (!filters.tenantId) {
+          const currentTenantId = currentTenantIdRef.current;
+          if (!currentTenantId) {
             const ibexTech = filteredTenants.find(t =>
               t.name.toLowerCase().includes('ibex')
             );
@@ -214,20 +223,26 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
         if (defaultTenant) {
           isInitialTenantSet.current = true;
+          const tenantIdStr = String(defaultTenant.id).trim();
+          currentTenantIdRef.current = tenantIdStr;
           setFilters(prev => ({
             ...prev,
-            tenantId: String(defaultTenant.id).trim(),
+            tenantId: tenantIdStr,
           }));
         } else if (!isSystemAdminUser && userTenantId) {
           // For non-system-admin, ensure tenant filter is set even if tenant not found in list
           // This allows the API to still filter by tenant_id
           isInitialTenantSet.current = true;
-          if (filters.tenantId !== userTenantId) {
-            setFilters(prev => ({
-              ...prev,
-              tenantId: userTenantId,
-            }));
-          }
+          currentTenantIdRef.current = userTenantId;
+          setFilters(prev => {
+            if (prev.tenantId !== userTenantId) {
+              return {
+                ...prev,
+                tenantId: userTenantId,
+              };
+            }
+            return prev;
+          });
         }
       }
     } catch {
@@ -237,7 +252,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         severity: 'error',
       });
     }
-  }, [isSystemAdminUser, userTenantId, filters.tenantId]);
+  }, [isSystemAdminUser, userTenantId]);
 
   const fetchDepartments = useCallback(async (tenantId: string | null) => {
     if (!tenantId) {
@@ -275,15 +290,20 @@ const CrossTenantLeaveManagement: React.FC = () => {
     }
   }, []);
 
-  const fetchSummary = useCallback(async () => {
+  const fetchSummary = useCallback(async (tenantId?: string) => {
     try {
       let tenantIdToUse: string | undefined;
       if (!isSystemAdminUser && userTenantId) {
         tenantIdToUse = userTenantId;
       } else {
         // System Admin: Use selected tenant ID from filters
-        tenantIdToUse = filters.tenantId || undefined;
+        tenantIdToUse = tenantId || filters.tenantId || undefined;
       }
+      
+      if (!tenantIdToUse) {
+        return; // Don't fetch if no tenant ID
+      }
+      
       const summaryData = await TenantLeaveApi.getSystemLeaveSummary({
         tenantId: tenantIdToUse,
       });
@@ -334,7 +354,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         severity: 'error',
       });
     }
-  }, [filters.tenantId, tenants, isSystemAdminUser, userTenantId]);
+  }, [tenants, isSystemAdminUser, userTenantId]);
 
   const fetchLeaves = useCallback(async () => {
     const shouldShowFullPageLoader =
@@ -456,9 +476,12 @@ const CrossTenantLeaveManagement: React.FC = () => {
     departments,
   ]);
 
+  // Fetch tenants only once on mount
   useEffect(() => {
     fetchTenants();
-  }, [fetchTenants]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // For non-system-admin users: ensure tenant filter is always set to their tenant_id from localStorage
   // This ensures data is always filtered by their tenant, even if tenant list hasn't loaded yet
   useEffect(() => {
@@ -473,25 +496,40 @@ const CrossTenantLeaveManagement: React.FC = () => {
         : userTenantId;
 
       if (filters.tenantId !== tenantIdToUse) {
+        currentTenantIdRef.current = tenantIdToUse;
         setFilters(prev => ({
           ...prev,
           tenantId: tenantIdToUse,
         }));
       }
     }
-  }, [isSystemAdminUser, userTenantId, filters.tenantId, tenants]);
+  }, [isSystemAdminUser, userTenantId, tenants]);
 
   useEffect(() => {
     if (filters.tenantId) fetchDepartments(filters.tenantId);
     else setDepartments([]);
   }, [filters.tenantId, fetchDepartments]);
 
+  // Use ref to track last fetched tenant to prevent duplicate calls
+  const lastFetchedSummaryTenant = useRef<string>('');
   useEffect(() => {
-    if (filters.tenantId) fetchSummary();
+    if (filters.tenantId && filters.tenantId !== lastFetchedSummaryTenant.current) {
+      lastFetchedSummaryTenant.current = filters.tenantId;
+      fetchSummary(filters.tenantId);
+    }
   }, [filters.tenantId, fetchSummary]);
 
+  // Use ref to track last fetched filters to prevent duplicate calls
+  const lastFetchedLeavesParams = useRef<string>('');
   useEffect(() => {
-    if (filters.tenantId) fetchLeaves();
+    if (!filters.tenantId) return;
+    
+    const paramsKey = `${filters.tenantId}-${filters.status}-${filters.startDate?.format('YYYY-MM-DD') || ''}-${filters.endDate?.format('YYYY-MM-DD') || ''}-${filters.departmentId}-${currentPage}`;
+    
+    if (paramsKey !== lastFetchedLeavesParams.current) {
+      lastFetchedLeavesParams.current = paramsKey;
+      fetchLeaves();
+    }
   }, [
     filters.tenantId,
     filters.status,
@@ -508,7 +546,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const handlePageChange = (_: React.ChangeEvent<unknown>, page: number) =>
     setCurrentPage(page);
 
-  const chartOptions: ApexCharts.ApexOptions = {
+  // Memoize chart options and series to prevent unnecessary re-renders
+  const chartOptions = useMemo<ApexCharts.ApexOptions>(() => ({
     chart: {
       type: 'bar',
       stacked: !!filters.tenantId,
@@ -533,16 +572,19 @@ const CrossTenantLeaveManagement: React.FC = () => {
     xaxis: { categories: summary.map(item => item.tenantName) },
     yaxis: { labels: { formatter: val => `${val}` } },
     legend: { position: 'top', horizontalAlign: 'right' },
-  };
+  }), [filters.tenantId, summary]);
 
-  const chartSeries = filters.tenantId
-    ? [
-        { name: 'Approved', data: summary.map(s => s.approvedCount) },
-        { name: 'Rejected', data: summary.map(s => s.rejectedCount) },
-        { name: 'Pending', data: summary.map(s => s.pendingCount) },
-        { name: 'Withdrawn', data: summary.map(s => s.cancelledCount) },
-      ]
-    : [{ name: 'Total Leaves', data: summary.map(s => s.totalLeaves) }];
+  const chartSeries = useMemo(() => 
+    filters.tenantId
+      ? [
+          { name: 'Approved', data: summary.map(s => s.approvedCount) },
+          { name: 'Rejected', data: summary.map(s => s.rejectedCount) },
+          { name: 'Pending', data: summary.map(s => s.pendingCount) },
+          { name: 'Withdrawn', data: summary.map(s => s.cancelledCount) },
+        ]
+      : [{ name: 'Total Leaves', data: summary.map(s => s.totalLeaves) }],
+    [filters.tenantId, summary]
+  );
 
   const ChartSection = memo(() => (
     <Paper sx={{ p: 3, mb: 3, overflowX: 'auto', boxShadow: 'none' }}>

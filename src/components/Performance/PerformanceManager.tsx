@@ -90,7 +90,7 @@ const PerformanceDashboard: React.FC = () => {
         </Box>
       ) : (
         <>
-          <Paper sx={{ p: 2, mb: 3, boxShadow:'none' }}>
+          <Paper sx={{mb: 3, boxShadow:'none' ,backgroundColor:'unset'}}>
             <PerformanceKpiGrid tenantId={selectedTenant} />
           </Paper>
 
