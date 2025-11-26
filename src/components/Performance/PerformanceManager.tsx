@@ -30,15 +30,22 @@ const PerformanceDashboard: React.FC = () => {
     setLoadingTenants(true);
     try {
       const data = await systemEmployeeApiService.getAllTenants(true);
-      setTenants(data);
+      // Filter to only show active tenants
+      const activeTenants = data.filter(t => t.status === 'active');
+      setTenants(activeTenants);
 
-      if (data.length > 0) {
-        if (!selectedTenant || !data.find(t => t.id === selectedTenant)) {
-          const testifyTenant = data.find(t => t.name === 'Testify Solutions');
+      if (activeTenants.length > 0) {
+        if (
+          !selectedTenant ||
+          !activeTenants.find(t => t.id === selectedTenant)
+        ) {
+          const testifyTenant = activeTenants.find(
+            t => t.name === 'Testify Solutions'
+          );
           if (testifyTenant) {
             setSelectedTenant(testifyTenant.id);
           } else {
-            setSelectedTenant(data[0].id);
+            setSelectedTenant(activeTenants[0].id);
           }
         }
       }
@@ -85,20 +92,25 @@ const PerformanceDashboard: React.FC = () => {
       </Box>
 
       {loadingTenants || !selectedTenant ? (
-        <Box display='flex' justifyContent='center' alignItems='center' minHeight='400px'>
+        <Box
+          display='flex'
+          justifyContent='center'
+          alignItems='center'
+          minHeight='400px'
+        >
           <CircularProgress />
         </Box>
       ) : (
         <>
-          <Paper sx={{ p: 2, mb: 3, boxShadow:'none' }}>
+          <Paper sx={{ p: 2, mb: 3, boxShadow: 'none' }}>
             <PerformanceKpiGrid tenantId={selectedTenant} />
           </Paper>
 
-          <Paper sx={{ mb: 3, boxShadow:'none' }}>
+          <Paper sx={{ mb: 3, boxShadow: 'none' }}>
             <PerformanceTrendChart tenantId={selectedTenant} />
           </Paper>
 
-          <Paper sx={{ p: 2,boxShadow:'none' }}>
+          <Paper sx={{ p: 2, boxShadow: 'none' }}>
             <PromotionsList tenantId={selectedTenant} />
           </Paper>
         </>

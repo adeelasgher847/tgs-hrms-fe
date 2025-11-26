@@ -80,7 +80,7 @@ const menuItems: MenuItem[] = [
     icon: <People />,
     subItems: [
       { label: 'Department List', path: 'departments' },
-      { label: 'Add Designation', path: 'Designations' },
+      { label: 'Designation', path: 'Designations' },
       { label: 'User List', path: 'UserList' },
       { label: 'Policies', path: 'policies' },
       { label: 'Holidays', path: 'holidays' },
