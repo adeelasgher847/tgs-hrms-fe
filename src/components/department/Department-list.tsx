@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -11,7 +11,11 @@ import {
   // Alert,
   CircularProgress,
   useTheme,
+  FormControl,
+  Select,
+  MenuItem,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
 import type { DepartmentFormData } from '../../types';
@@ -25,6 +29,12 @@ import {
 } from '../../api/departmentApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
+import {
+  getRoleName,
+  isSystemAdmin as isSystemAdminFn,
+} from '../../utils/roleUtils';
+import { SystemTenantApi } from '../../api/systemTenantApi';
+import type { SystemTenant } from '../../api/systemTenantApi';
 
 const labels = {
   en: {
@@ -57,6 +67,18 @@ export const DepartmentList: React.FC = () => {
   const textSecond = darkMode ? '#9a9a9a' : theme.palette.text.secondary;
   const dividerCol = darkMode ? '#333' : '#ccc';
   const textColor = darkMode ? '#8f8f8f' : '#000';
+  const borderColor = darkMode ? '#252525' : '#f0f0f0';
+
+  // Get user role
+  const user = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}');
+    } catch {
+      return {};
+    }
+  }, []);
+  const userRoleValue = user?.role;
+  const isSystemAdmin = isSystemAdminFn(userRoleValue);
 
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,17 +86,84 @@ export const DepartmentList: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] =
     useState<FrontendDepartment | null>(null);
+  const [allTenants, setAllTenants] = useState<SystemTenant[]>([]);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
+  const [loadingTenants, setLoadingTenants] = useState(false);
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
+
+  // Fetch tenants for system admin
+  useEffect(() => {
+    if (!isSystemAdmin) return;
+
+    const fetchTenants = async () => {
+      try {
+        setLoadingTenants(true);
+        const tenants = await SystemTenantApi.getAllTenants(false);
+        const activeTenants = tenants.filter(
+          t => t.status === 'active' && t.isDeleted === false
+        );
+        setAllTenants(activeTenants);
+
+        // Default to "All Tenants" - no need to set selectedTenantId
+      } catch (error) {
+        console.error('Error fetching tenants:', error);
+      } finally {
+        setLoadingTenants(false);
+      }
+    };
+
+    fetchTenants();
+  }, [isSystemAdmin]);
 
   /* ---------- API handlers ---------- */
   const fetchDepartments = async () => {
     try {
       setLoading(true);
-      const backendDepartments = await departmentApiService.getAllDepartments();
-      const frontendDepartments = backendDepartments.map(dept =>
-        departmentApiService.convertBackendToFrontend(dept)
-      );
-      setDepartments(frontendDepartments);
+
+      if (isSystemAdmin) {
+        // Use new API for system admin
+        // Pass tenant_id only if a specific tenant is selected (not "all")
+        const tenantIdParam =
+          selectedTenantId && selectedTenantId !== 'all'
+            ? selectedTenantId
+            : undefined;
+        const response =
+          await departmentApiService.getAllTenantsWithDepartments(
+            tenantIdParam
+          );
+
+        // Filter departments based on selected tenant
+        const allDepartments: FrontendDepartment[] = [];
+        response.tenants.forEach(tenant => {
+          // If "All Tenants" is selected or no tenant selected, show all departments
+          // Otherwise, only show departments from selected tenant
+          if (
+            selectedTenantId === 'all' ||
+            !selectedTenantId ||
+            tenant.tenant_id === selectedTenantId
+          ) {
+            tenant.departments.forEach(dept => {
+              allDepartments.push({
+                id: dept.id,
+                name: dept.name,
+                nameAr: '',
+                description: dept.description || '',
+                descriptionAr: '',
+              });
+            });
+          }
+        });
+
+        setDepartments(allDepartments);
+      } else {
+        // Use existing API for other roles
+        const backendDepartments =
+          await departmentApiService.getAllDepartments();
+        const frontendDepartments = backendDepartments.map(dept =>
+          departmentApiService.convertBackendToFrontend(dept)
+        );
+        setDepartments(frontendDepartments);
+      }
     } catch (error: unknown) {
       showError(error, { operation: 'fetch', resource: 'department' });
     } finally {
@@ -82,11 +171,15 @@ export const DepartmentList: React.FC = () => {
     }
   };
 
-  // Load departments on component mount
+  // Load departments on component mount and when tenant changes
   useEffect(() => {
     fetchDepartments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isSystemAdmin, selectedTenantId]);
+
+  const handleTenantChange = (event: SelectChangeEvent<string>) => {
+    setSelectedTenantId(event.target.value);
+  };
 
   const handleCreateDepartment = async (data: DepartmentFormData) => {
     try {
@@ -196,7 +289,41 @@ export const DepartmentList: React.FC = () => {
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {!isMobile && (
+          {isSystemAdmin && (
+            <FormControl
+              size='small'
+              sx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}
+            >
+              <Select
+                value={selectedTenantId}
+                onChange={handleTenantChange}
+                displayEmpty
+                sx={{
+                  color: textColor,
+                  backgroundColor: bgPaper,
+                  '.MuiOutlinedInput-notchedOutline': {
+                    borderColor: borderColor,
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: borderColor,
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: borderColor,
+                  },
+                }}
+              >
+                <MenuItem value='all'>
+                  {language === 'ar' ? 'جميع المستأجرين' : 'All Tenants'}
+                </MenuItem>
+                {allTenants.map((tenant: SystemTenant) => (
+                  <MenuItem key={tenant.id} value={tenant.id}>
+                    {tenant.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+          {!isMobile && !isSystemAdmin && (
             <Button
               variant='contained'
               startIcon={<AddIcon />}
@@ -261,21 +388,23 @@ export const DepartmentList: React.FC = () => {
           <Typography variant='body2' color={textSecond} sx={{ mb: 3 }}>
             {lang.description}
           </Typography>
-          <Button
-            variant='contained'
-            startIcon={<AddIcon />}
-            onClick={() => {
-              setSelectedDepartment(null);
-              setIsFormModalOpen(true);
-            }}
-            sx={{
-              backgroundColor: '#464b8a',
-              boxShadow: 'none',
-              '&:hover': { boxShadow: 'none' },
-            }}
-          >
-            {lang.createFirst}
-          </Button>
+          {!isSystemAdmin && (
+            <Button
+              variant='contained'
+              startIcon={<AddIcon />}
+              onClick={() => {
+                setSelectedDepartment(null);
+                setIsFormModalOpen(true);
+              }}
+              sx={{
+                backgroundColor: '#464b8a',
+                boxShadow: 'none',
+                '&:hover': { boxShadow: 'none' },
+              }}
+            >
+              {lang.createFirst}
+            </Button>
+          )}
         </Paper>
       ) : (
         <Box
@@ -299,14 +428,22 @@ export const DepartmentList: React.FC = () => {
             >
               <DepartmentCard
                 department={d}
-                onEdit={dept => {
-                  setSelectedDepartment(dept);
-                  setIsFormModalOpen(true);
-                }}
-                onDelete={dept => {
-                  setSelectedDepartment(dept);
-                  setIsDeleteModalOpen(true);
-                }}
+                onEdit={
+                  isSystemAdmin
+                    ? undefined
+                    : dept => {
+                        setSelectedDepartment(dept);
+                        setIsFormModalOpen(true);
+                      }
+                }
+                onDelete={
+                  isSystemAdmin
+                    ? undefined
+                    : dept => {
+                        setSelectedDepartment(dept);
+                        setIsDeleteModalOpen(true);
+                      }
+                }
                 isRtl={isRtl}
               />
             </Box>
@@ -315,7 +452,7 @@ export const DepartmentList: React.FC = () => {
       )}
 
       {/* FAB (mobile) */}
-      {isMobile && (
+      {isMobile && !isSystemAdmin && (
         <Fab
           color='primary'
           onClick={() => {

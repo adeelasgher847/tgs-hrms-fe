@@ -114,13 +114,12 @@ const BenefitList: React.FC = () => {
 
   const handleSaveBenefit = async (data: BenefitFormValues) => {
     try {
-      setLoading(true);
       const payload = {
         name: data.name,
         description: data.description,
         type: data.type,
         eligibilityCriteria: data.eligibilityCriteria,
-        status: data.status.toLowerCase(),
+        status: data.status.toLowerCase() as 'active' | 'inactive',
       };
 
       if (editingBenefit) {
@@ -141,8 +140,6 @@ const BenefitList: React.FC = () => {
       setToastSeverity('error');
       setToastMessage('Failed to save benefit.');
       setShowToast(true);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -154,12 +151,13 @@ const BenefitList: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (!selectedBenefit) return;
     try {
-      setLoading(true);
       const res = await benefitsApi.deleteBenefit(selectedBenefit.id);
       if (res.deleted) {
         setToastMessage('Benefit deleted successfully!');
         setToastSeverity('success');
         setShowToast(true);
+        setDeleteDialogOpen(false);
+        setSelectedBenefit(null);
         fetchBenefits();
       } else {
         throw new Error('Delete failed');
@@ -172,10 +170,6 @@ const BenefitList: React.FC = () => {
           ?.message || 'Failed to delete benefit.'
       );
       setShowToast(true);
-    } finally {
-      setLoading(false);
-      setDeleteDialogOpen(false);
-      setSelectedBenefit(null);
     }
   };
 

@@ -36,6 +36,7 @@ import ApartmentIcon from '@mui/icons-material/Apartment';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import TenantGrowthChart from './DashboardContent/TenantGrowthChart';
+import EmployeeGrowthChart from './DashboardContent/EmployeeGrowthChart';
 import SystemUptimeCard from './DashboardContent/SystemUptimeCard';
 import RecentActivityLogs from './DashboardContent/RecentActivityLogs';
 import { getCurrentUser } from '../utils/auth';
@@ -294,7 +295,7 @@ const Dashboard: React.FC = () => {
                 </Box>
 
                 <Box sx={{ flexShrink: 0 }}>
-                  <EmployeesInfoChart />
+                  <EmployeeGrowthChart />
                 </Box>
               </Paper>
             </Grid>

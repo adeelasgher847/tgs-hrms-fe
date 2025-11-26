@@ -86,10 +86,56 @@ export interface Manager {
   role: string;
 }
 
+export interface TenantTeamMember {
+  id: string;
+  status: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    profile_pic?: string | null;
+  };
+  designation: {
+    id: string;
+    title: string;
+  };
+  department: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface TenantTeam {
+  id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  manager: {
+    id: string;
+    name: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    profile_pic?: string | null;
+    role: string;
+  };
+  members: TenantTeamMember[];
+}
+
+export interface TenantTeams {
+  tenant_id: string;
+  tenant_name: string;
+  tenant_status: string;
+  teams: TenantTeam[];
+}
+
+export interface AllTenantsTeamsResponse {
+  tenants: TenantTeams[];
+}
+
 class TeamApiService {
   private baseUrl = '/teams';
 
-  // Get available managers (users with manager role who are not assigned to any team)
   async getAvailableManagers(): Promise<Manager[]> {
     try {
       const response = await axiosInstance.get<Manager[]>(
@@ -101,32 +147,26 @@ class TeamApiService {
     }
   }
 
-  // Create new team (Admin only)
   async createTeam(teamData: CreateTeamDto): Promise<Team> {
     const response = await axiosInstance.post<Team>(this.baseUrl, teamData);
     const newTeam = response.data;
 
-    // Add the manager as a team member so they appear in team member lists
     if (newTeam.id && teamData.manager_id) {
       try {
         await this.addMemberToTeam(newTeam.id, teamData.manager_id);
       } catch (error) {
         console.warn('Failed to add manager as team member:', error);
-        // Don't throw here as the team was created successfully
       }
     }
 
     return newTeam;
   }
 
-  // Get all teams with pagination (Admin only)
   async getAllTeams(page: number | null = 1): Promise<PaginatedResponse<Team>> {
-    // Only add page parameter if it's not null (for dropdowns, pass null to get all records)
     const url = page === null ? this.baseUrl : `${this.baseUrl}?page=${page}`;
     const response = await axiosInstance.get<PaginatedResponse<Team>>(url);
     const teams = response.data;
 
-    // For each team, fetch the member count if not already included
     if (teams.items) {
       const teamsWithMembers = await Promise.all(
         teams.items.map(async team => {
@@ -138,34 +178,25 @@ class TeamApiService {
                 teamMembers: membersResponse.items || [],
               };
             } catch {
-              return {
-                ...team,
-                teamMembers: [],
-              };
+              return { ...team, teamMembers: [] };
             }
           }
           return team;
         })
       );
 
-      return {
-        ...teams,
-        items: teamsWithMembers,
-      };
+      return { ...teams, items: teamsWithMembers };
     }
 
     return teams;
   }
 
-  // Get specific team details
   async getTeamById(id: string): Promise<Team> {
     const response = await axiosInstance.get<Team>(`${this.baseUrl}/${id}`);
     return response.data;
   }
 
-  // Update team (Admin only)
   async updateTeam(id: string, teamData: UpdateTeamDto): Promise<Team> {
-    // Get current team data to check if manager is changing
     const currentTeam = await this.getTeamById(id);
 
     const response = await axiosInstance.patch<Team>(
@@ -174,26 +205,20 @@ class TeamApiService {
     );
     const updatedTeam = response.data;
 
-    // If manager is changing, update team membership
     if (teamData.manager_id && teamData.manager_id !== currentTeam.manager_id) {
       try {
-        // Remove old manager from team if they exist
         if (currentTeam.manager_id) {
           await this.removeMemberFromTeam(id, currentTeam.manager_id);
         }
-
-        // Add new manager to team
         await this.addMemberToTeam(id, teamData.manager_id);
       } catch (error) {
-        console.warn('Failed to update manager team membership:', error);
-        // Don't throw here as the team was updated successfully
+        console.warn('Failed to update manager:', error);
       }
     }
 
     return updatedTeam;
   }
 
-  // Delete team (Admin only)
   async deleteTeam(id: string): Promise<void> {
     await axiosInstance.delete(`${this.baseUrl}/${id}`);
   }
@@ -220,17 +245,10 @@ class TeamApiService {
       );
       return response.data;
     } catch {
-      return {
-        items: [],
-        total: 0,
-        page: 1,
-        limit: 25,
-        totalPages: 1,
-      };
+      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
     }
   }
 
-  // 🔹 Get members of a specific team
   async getTeamMembers(
     teamId: string,
     page: number = 1
@@ -239,17 +257,9 @@ class TeamApiService {
       const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(
         `${this.baseUrl}/${teamId}/members?page=${page}`
       );
-      console.log(`📦 Team Members for Team ${teamId}:`, response.data);
       return response.data;
-    } catch (error) {
-      console.error(`❌ Error fetching team members for ${teamId}:`, error);
-      return {
-        items: [],
-        total: 0,
-        page: 1,
-        limit: 25,
-        totalPages: 1,
-      };
+    } catch {
+      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
     }
   }
 
@@ -260,41 +270,17 @@ class TeamApiService {
   ): Promise<PaginatedResponse<TeamMember>> {
     try {
       const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
+        page: String(page),
+        limit: String(limit),
       });
       if (search) params.append('search', search);
 
       const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(
         `${this.baseUrl}/employee-pool?${params}`
       );
-
-      console.group('🟢 Employee Pool API Response');
-      console.log(
-        '✅ Full API URL:',
-        `${this.baseUrl}/employee-pool?${params}`
-      );
-      console.log('📦 Status:', response.status);
-      console.log('📬 Data:', response.data);
-      console.groupEnd();
-
       return response.data;
-    } catch (error: unknown) {
-      console.group('Employee Pool API Error');
-      console.error(
-        'Error Message:',
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-      console.error('Full Error:', error);
-      console.groupEnd();
-
-      return {
-        items: [],
-        total: 0,
-        page: 1,
-        limit: 25,
-        totalPages: 1,
-      };
+    } catch {
+      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
     }
   }
 
@@ -304,13 +290,8 @@ class TeamApiService {
     employeeId: string,
     companyId?: string
   ): Promise<void> {
-    const payload: { employee_id: string; company_id?: string } = {
-      employee_id: employeeId,
-    };
-
-    if (companyId) {
-      payload.company_id = companyId;
-    }
+    const payload: any = { employee_id: employeeId };
+    if (companyId) payload.company_id = companyId;
 
     await axiosInstance.post(`${this.baseUrl}/${teamId}/add-member`, payload);
   }
@@ -325,7 +306,6 @@ class TeamApiService {
     });
   }
 
-  // Get all team members across all teams (Admin only)
   async getAllTeamMembers(
     page: number = 1
   ): Promise<
@@ -337,13 +317,22 @@ class TeamApiService {
       >(`${this.baseUrl}/all-members?page=${page}`);
       return response.data;
     } catch {
-      return {
-        items: [],
-        total: 0,
-        page: 1,
-        limit: 25,
-        totalPages: 1,
-      };
+      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
+    }
+  }
+
+  async getAllTenantsWithTeams(
+    tenantId?: string
+  ): Promise<AllTenantsTeamsResponse> {
+    try {
+      const params = tenantId ? `?tenant_id=${tenantId}` : '';
+      const response = await axiosInstance.get<AllTenantsTeamsResponse>(
+        `${this.baseUrl}/all-tenants${params}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching all tenant teams:', error);
+      return { tenants: [] };
     }
   }
 }
