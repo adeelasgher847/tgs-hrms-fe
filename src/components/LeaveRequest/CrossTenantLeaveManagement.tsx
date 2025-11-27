@@ -19,6 +19,7 @@ import {
   TableCell,
   TableContainer,
   Stack,
+  Tooltip,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -119,6 +120,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const [leaves, setLeaves] = useState<SystemLeaveResponse[]>([]);
   const [summary, setSummary] = useState<SystemLeaveSummary[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
@@ -463,6 +465,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
       } else {
         setTableLoading(false);
       }
+      setInitialDataLoaded(prev => (prev ? prev : true));
     }
   }, [
     filters.tenantId,
@@ -759,7 +762,33 @@ const CrossTenantLeaveManagement: React.FC = () => {
                         ? 'withdrawn'
                         : leave.status}
                     </TableCell>
-                    <TableCell>{leave.reason}</TableCell>
+                    <TableCell>
+                      <Tooltip
+                        title={leave.reason || 'N/A'}
+                        placement='top'
+                        arrow
+                        slotProps={{
+                          tooltip: {
+                            sx: {
+                              position: 'relative',
+                              left: '-115px',
+                            }
+                          }
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            fontSize: 14,
+                            maxWidth: { xs: 120, sm: 200, md: 260 },
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {leave.reason || 'N/A'}
+                        </Typography>
+                      </Tooltip>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
@@ -796,7 +825,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
     )
   );
 
-  if (loading)
+  if (loading || !initialDataLoaded)
     return (
       <Box
         display='flex'
