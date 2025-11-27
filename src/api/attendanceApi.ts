@@ -1,4 +1,3 @@
-// attendanceApi.ts
 import axiosInstance from './axiosInstance';
 
 export interface AttendanceEvent {
@@ -29,7 +28,6 @@ export interface AttendanceResponse {
   totalPages: number;
 }
 
-// -------- System-wide (cross-tenant) attendance --------
 
 export interface SystemTenantEmployeeAttendance {
   user_id: string;

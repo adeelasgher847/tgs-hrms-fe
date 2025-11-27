@@ -597,7 +597,6 @@ const AttendanceTable = () => {
                       attDateStr = `${year}-${month}-${day}`;
                     }
                   } catch {
-                    // If parsing fails, try direct string comparison
                     attDateStr = String(att.date);
                   }
                 }
@@ -642,7 +641,6 @@ const AttendanceTable = () => {
         return;
       }
 
-      // Get admin's tenant_id for filtering employees
       const storedUser = localStorage.getItem('user');
       if (!storedUser) {
         console.warn('No user found in localStorage');
@@ -671,10 +669,9 @@ const AttendanceTable = () => {
           console.warn('Admin tenant_id not found');
         }
       }
-      const userIdMapByEmail = new Map<string, string>(); // email -> user_id
-      const userIdMapByName = new Map<string, string>(); // name -> user_id
+      const userIdMapByEmail = new Map<string, string>(); 
+      const userIdMapByName = new Map<string, string>(); 
 
-      // Only call attendance API for system admin
       if (isSystemAdminFlag) {
         console.log(
           'System Admin: Getting user_id mapping from system/all API with tenantId:',
@@ -686,7 +683,6 @@ const AttendanceTable = () => {
           await attendanceApi.getSystemAllAttendance();
 
         systemAttendanceResponse.tenants.forEach(tenant => {
-          // Filter by tenant if specified
           if (
             tenantIdForEmployees &&
             tenant.tenant_id !== tenantIdForEmployees
@@ -694,7 +690,6 @@ const AttendanceTable = () => {
             return;
           }
 
-          // Only process active tenants
           if (tenant.tenant_status !== 'active') {
             return;
           }
@@ -707,7 +702,6 @@ const AttendanceTable = () => {
               if (emp.email) {
                 userIdMapByEmail.set(emp.email.toLowerCase(), emp.user_id);
               }
-              // Map by name (fallback)
               if (fullName) {
                 userIdMapByName.set(fullName.toLowerCase(), emp.user_id);
               }
@@ -727,12 +721,11 @@ const AttendanceTable = () => {
 
       const response = await systemEmployeeApiService.getSystemEmployees({
         tenantId: tenantIdForEmployees,
-        page: null, // null to get all employees without pagination
+        page: null, 
       });
 
       console.log('Employees API response:', response);
 
-      // Handle both array and paginated response
       const employeesData = Array.isArray(response)
         ? response
         : 'items' in response && Array.isArray(response.items)
@@ -747,11 +740,9 @@ const AttendanceTable = () => {
 
       const employeeOptions = employeesData
         .map((emp: any) => {
-          // Handle different name formats
           let employeeName = 'Unknown';
           let employeeEmail = (emp.email || '').toLowerCase();
 
-          // Check if employee has user object (from API response)
           const userObj = emp.user || {};
           const userFirstName = userObj.first_name || emp.first_name || '';
           const userLastName = userObj.last_name || emp.last_name || '';
@@ -797,7 +788,6 @@ const AttendanceTable = () => {
               employeeUserId
             );
           }
-          // Fourth try: Direct user_id field
           else if (emp.user_id) {
             employeeUserId = emp.user_id;
             console.log('Using emp.user_id:', employeeUserId);
@@ -1009,7 +999,7 @@ const AttendanceTable = () => {
           const isAllAttendanceView =
             canViewAllAttendance &&
             effectiveView === 'all' &&
-            !effectiveSelectedEmployee; // Only true when NO employee is selected
+            !effectiveSelectedEmployee; 
 
           console.log('🔨 Building from events:', {
             userIdForBuild,
@@ -1089,11 +1079,9 @@ const AttendanceTable = () => {
       }
       let filteredRows = rows;
       if (effectiveSelectedEmployee) {
-        // Filter by selected employee
         console.log('Filtering rows by employee:', effectiveSelectedEmployee);
         console.log('Rows before filtering:', rows.length);
         filteredRows = rows.filter(record => {
-          // Compare userId - ensure both are strings for accurate comparison
           const recordUserId = String(record.userId || '').trim();
           const selectedUserId = String(effectiveSelectedEmployee || '').trim();
           const matches = recordUserId === selectedUserId;
@@ -1133,10 +1121,8 @@ const AttendanceTable = () => {
   const handleDateNavigationChange = (newDate: string) => {
     setCurrentNavigationDate(newDate);
     if (newDate === 'all') {
-      // Show all records (no pagination)
       fetchAttendance('all', selectedEmployee, '', '');
     } else {
-      // Show all records for specific date
       fetchAttendanceByDate(newDate, 'all');
     }
   };
