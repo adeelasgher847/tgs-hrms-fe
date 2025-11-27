@@ -19,12 +19,17 @@ import {
 } from '@mui/icons-material';
 
 import { useLanguage } from '../../hooks/useLanguage';
-import { isAdmin, isManager, isHRAdmin } from '../../utils/auth';
+import { isAdmin, isManager, isHRAdmin, isSystemAdmin } from '../../utils/auth';
 import { teamApiService } from '../../api/teamApi';
-import type { Team, TeamMember } from '../../api/teamApi';
+import type {
+  Team,
+  TeamMember,
+  AllTenantsTeamsResponse,
+} from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
 import TeamList from './TeamList';
 import MyTeams from './MyTeams';
+import SystemAdminTenantTeams from './SystemAdminTenantTeams';
 
 import CreateTeamForm from './CreateTeamForm';
 import { useOutletContext } from 'react-router-dom';
@@ -68,6 +73,8 @@ const TeamManager: React.FC<TeamManagerProps> = ({
   const [tabValue, setTabValue] = useState(0);
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [tenantsWithTeams, setTenantsWithTeams] =
+    useState<AllTenantsTeamsResponse>({ tenants: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -109,7 +116,11 @@ const TeamManager: React.FC<TeamManagerProps> = ({
         setLoading(true);
         setError(null);
 
-        if (isManager()) {
+        if (isSystemAdmin()) {
+          // Load all tenants with teams for system admin
+          const tenantsData = await teamApiService.getAllTenantsWithTeams();
+          setTenantsWithTeams(tenantsData);
+        } else if (isManager()) {
           // Load manager's teams and members
           const [teamsData, membersData] = await Promise.all([
             teamApiService.getMyTeams(),
@@ -144,7 +155,11 @@ const TeamManager: React.FC<TeamManagerProps> = ({
           setLoading(true);
           setError(null);
 
-          if (isManager()) {
+          if (isSystemAdmin()) {
+            // Load all tenants with teams for system admin
+            const tenantsData = await teamApiService.getAllTenantsWithTeams();
+            setTenantsWithTeams(tenantsData);
+          } else if (isManager()) {
             // Load manager's teams and members
             const [teamsData, membersData] = await Promise.all([
               teamApiService.getMyTeams(),
@@ -205,7 +220,11 @@ const TeamManager: React.FC<TeamManagerProps> = ({
       setLoading(true);
       setError(null);
 
-      if (isManager()) {
+      if (isSystemAdmin()) {
+        // Load all tenants with teams for system admin
+        const tenantsData = await teamApiService.getAllTenantsWithTeams();
+        setTenantsWithTeams(tenantsData);
+      } else if (isManager()) {
         // Load manager's teams and members
         const [teamsData, membersData] = await Promise.all([
           teamApiService.getMyTeams(),
@@ -217,7 +236,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
         // Load all teams for admin with members included
         const teamsData = await teamApiService.getAllTeams(1);
         setTeams(teamsData.items || []);
-      } 
+      }
     } catch {
       setError('Failed to refresh team data');
     } finally {
@@ -296,7 +315,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
         >
           {lang.title}
         </Typography>
-        {isAdmin() && !isHRAdmin() && (
+        {isAdmin() && !isHRAdmin() && !isSystemAdmin() && (
           <Button
             variant='contained'
             startIcon={<AddIcon />}
@@ -312,64 +331,24 @@ const TeamManager: React.FC<TeamManagerProps> = ({
         )}
       </Box>
 
-      {/* Stats Cards */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            sm: 'repeat(2, 1fr)',
-            md: isAdmin() ? 'repeat(1, 1fr)' : 'repeat(2, 1fr)', // Only 1 card for admin, 2 for manager
-          },
-          gap: { xs: 2, sm: 3 },
-          mb: 3,
-        }}
-      >
-        <Card sx={{ backgroundColor: theme => theme.palette.background.paper }}>
-          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <Box>
-                <Typography
-                  variant='h4'
-                  sx={{
-                    color: theme => theme.palette.text.primary,
-                    fontSize: { xs: '1.75rem', sm: '2.125rem' },
-                  }}
-                >
-                  {teams.length}
-                </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: theme => theme.palette.text.secondary,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  }}
-                >
-                  {lang.teamCount}
-                </Typography>
-              </Box>
-              <BusinessIcon
-                sx={{
-                  fontSize: { xs: 32, sm: 40 },
-                  color: theme => theme.palette.primary.main,
-                }}
-              />
-            </Box>
-          </CardContent>
-        </Card>
-
-        {/* Only show Members Count Card for Managers */}
-        {isManager() && (
+      {/* Stats Cards - Hide for system admin */}
+      {!isSystemAdmin() && (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, 1fr)',
+              md: isAdmin() ? 'repeat(1, 1fr)' : 'repeat(2, 1fr)', // Only 1 card for admin, 2 for manager
+            },
+            gap: { xs: 2, sm: 3 },
+            mb: 3,
+          }}
+        >
           <Card
             sx={{ backgroundColor: theme => theme.palette.background.paper }}
           >
-            <CardContent>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box
                 sx={{
                   display: 'flex',
@@ -385,7 +364,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                       fontSize: { xs: '1.75rem', sm: '2.125rem' },
                     }}
                   >
-                    {teamMembers.length}
+                    {teams.length}
                   </Typography>
                   <Typography
                     variant='body2'
@@ -394,10 +373,10 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                       fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     }}
                   >
-                    {lang.memberCount}
+                    {lang.teamCount}
                   </Typography>
                 </Box>
-                <PersonIcon
+                <BusinessIcon
                   sx={{
                     fontSize: { xs: 32, sm: 40 },
                     color: theme => theme.palette.primary.main,
@@ -406,67 +385,120 @@ const TeamManager: React.FC<TeamManagerProps> = ({
               </Box>
             </CardContent>
           </Card>
-        )}
-      </Box>
 
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs
-          value={tabValue}
-          onChange={handleTabChange}
-          aria-label='team management tabs'
-          variant='standard'
-          sx={{
-            '& .MuiTabs-flexContainer': {
-              justifyContent: 'flex-start', // Always align to start on all screen sizes
-            },
-            '& .MuiTab-root': {
-              color: theme => theme.palette.text.secondary,
-              fontSize: { xs: '0.875rem', sm: '1rem' },
-              minHeight: { xs: 48, sm: 56 },
-              minWidth: 'auto',
-              '&.Mui-selected': {
-                color: theme => theme.palette.primary.main,
-              },
-            },
-          }}
-        >
+          {/* Only show Members Count Card for Managers */}
           {isManager() && (
-            <Tab
-              label={lang.myTeams}
-              icon={<GroupIcon />}
-              iconPosition='start'
-            />
+            <Card
+              sx={{ backgroundColor: theme => theme.palette.background.paper }}
+            >
+              <CardContent>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant='h4'
+                      sx={{
+                        color: theme => theme.palette.text.primary,
+                        fontSize: { xs: '1.75rem', sm: '2.125rem' },
+                      }}
+                    >
+                      {teamMembers.length}
+                    </Typography>
+                    <Typography
+                      variant='body2'
+                      sx={{
+                        color: theme => theme.palette.text.secondary,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      }}
+                    >
+                      {lang.memberCount}
+                    </Typography>
+                  </Box>
+                  <PersonIcon
+                    sx={{
+                      fontSize: { xs: 32, sm: 40 },
+                      color: theme => theme.palette.primary.main,
+                    }}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
           )}
-          {(isAdmin() || isHRAdmin() )&& (
-            <Tab
-              label={lang.allTeams}
-              icon={<BusinessIcon />}
-              iconPosition='start'
-            />
-          )}
-        </Tabs>
-      </Box>
-
-      {/* Tab Panels */}
-      {isManager() && (
-        <TabPanel value={tabValue} index={0}>
-          <MyTeams teams={teams} darkMode={darkMode} />
-        </TabPanel>
+        </Box>
       )}
 
-      {(isAdmin() || isHRAdmin()) && (
-        <TabPanel value={tabValue} index={isManager() ? 1 : 0}>
-          <TeamList
-            teams={teams}
-            darkMode={darkMode}
-            onTeamUpdated={handleTeamUpdated}
-          />
-        </TabPanel>
+      {/* System Admin View - Show tenants with teams */}
+      {isSystemAdmin() && (
+        <SystemAdminTenantTeams data={tenantsWithTeams} darkMode={darkMode} />
       )}
 
-      {/* Create Team Form Modal */}
-      {showCreateForm && (
+      {/* Tabs - Hide for system admin */}
+      {!isSystemAdmin() && (
+        <>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs
+              value={tabValue}
+              onChange={handleTabChange}
+              aria-label='team management tabs'
+              variant='standard'
+              sx={{
+                '& .MuiTabs-flexContainer': {
+                  justifyContent: 'flex-start', // Always align to start on all screen sizes
+                },
+                '& .MuiTab-root': {
+                  color: theme => theme.palette.text.secondary,
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  minHeight: { xs: 48, sm: 56 },
+                  minWidth: 'auto',
+                  '&.Mui-selected': {
+                    color: theme => theme.palette.primary.main,
+                  },
+                },
+              }}
+            >
+              {isManager() && (
+                <Tab
+                  label={lang.myTeams}
+                  icon={<GroupIcon />}
+                  iconPosition='start'
+                />
+              )}
+              {(isAdmin() || isHRAdmin()) && (
+                <Tab
+                  label={lang.allTeams}
+                  icon={<BusinessIcon />}
+                  iconPosition='start'
+                />
+              )}
+            </Tabs>
+          </Box>
+
+          {/* Tab Panels */}
+          {isManager() && (
+            <TabPanel value={tabValue} index={0}>
+              <MyTeams teams={teams} darkMode={darkMode} />
+            </TabPanel>
+          )}
+
+          {(isAdmin() || isHRAdmin()) && (
+            <TabPanel value={tabValue} index={isManager() ? 1 : 0}>
+              <TeamList
+                teams={teams}
+                darkMode={darkMode}
+                onTeamUpdated={handleTeamUpdated}
+              />
+            </TabPanel>
+          )}
+        </>
+      )}
+
+      {/* Create Team Form Modal - Hide for system admin */}
+      {showCreateForm && !isSystemAdmin() && (
         <CreateTeamForm
           open={showCreateForm}
           onClose={() => setShowCreateForm(false)}

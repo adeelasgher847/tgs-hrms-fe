@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -24,6 +24,7 @@ import {
 // UserProfile type available if needed
 import { useUser } from '../../hooks/useUser';
 import type { UserProfile } from '../../api/profileApi';
+import { profileApiService } from '../../api/profileApi';
 import { useProfilePicture } from '../../context/ProfilePictureContext';
 import {
   getRoleName,
@@ -38,46 +39,44 @@ import { useIsDarkMode } from '../../theme';
 import { formatDate } from '../../utils/dateUtils';
 
 const UserProfileComponent = React.memo(() => {
-  const { user: profile, loading, refreshUser, updateUser } = useUser();
+  const { user: profile, loading, updateUser } = useUser();
   const { updateProfilePicture } = useProfilePicture();
   const [error, setError] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const theme = useTheme();
   const darkMode = useIsDarkMode();
+  const tenantFetchedRef = useRef(false);
 
+  // Silently fetch tenant if missing (without causing loading state)
   useEffect(() => {
-    // Only fetch if we don't have user data and we're not already loading
-    if (!profile && !loading) {
-      const fetchProfile = async () => {
-        try {
-          await refreshUser();
-        } catch {
-          setError('Profile not found or failed to load.');
-        }
-      };
-      fetchProfile();
-    }
-  }, [profile, loading, refreshUser]);
-
-  // Ensure tenant is populated on first render by forcing a /profile/me refresh
-  useEffect(() => {
-    if (profile && !profile.tenant && !loading) {
-      refreshUser().catch(() => {
-        // ignore; fallback remains
-      });
+    // Only fetch tenant if profile exists, tenant is missing, and we haven't fetched yet
+    if (
+      profile &&
+      !profile.tenant &&
+      !loading &&
+      !tenantFetchedRef.current
+    ) {
+      tenantFetchedRef.current = true;
+      // Fetch directly from API and update state without triggering loading
+      profileApiService
+        .getUserProfile()
+        .then((updatedProfile) => {
+          // Update user state directly without going through refreshUser (which sets loading)
+          updateUser(updatedProfile);
+        })
+        .catch(() => {
+          // Silently fail - keep existing data
+          tenantFetchedRef.current = false; // Allow retry if needed
+        });
+    } else if (profile?.tenant) {
+      // Tenant exists, mark as fetched
+      tenantFetchedRef.current = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.tenant, loading]); // Only depend on tenant, not entire profile
+  }, [profile?.tenant, loading]); // Only run when tenant or loading changes
 
-  // Initialize profile picture state when user data loads
-  useEffect(() => {
-    if (profile?.profile_pic) {
-      const API_BASE_URL =
-        import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-      const profilePicUrl = `${API_BASE_URL}/users/${profile.id}/profile-picture`;
-      updateProfilePicture(profilePicUrl);
-    }
-  }, [profile?.profile_pic, profile?.id, updateProfilePicture]);
+  // Profile picture is already handled by Navbar component, no need to update here
+  // This prevents unnecessary re-renders when navigating to profile page
 
   const handleProfileUpdate = useCallback(() => {
     // The UserContext will handle the update automatically
@@ -117,60 +116,66 @@ const UserProfileComponent = React.memo(() => {
   const userIsEmployee = isEmployee(profile?.role) || isManager(profile?.role);
 
   const profileItems = useMemo(
-    () => [
-      {
-        icon: <Person sx={{ color: 'primary.main' }} />,
-        label: 'First Name',
-        value: profile.first_name,
-      },
-      {
-        icon: <Person sx={{ color: 'primary.main' }} />,
-        label: 'Last Name',
-        value: profile.last_name,
-      },
-      {
-        icon: <Email sx={{ color: 'primary.main' }} />,
-        label: 'Email Address',
-        value: profile.email,
-      },
-      {
-        icon: <Phone sx={{ color: 'primary.main' }} />,
-        label: 'Phone',
-        value: profile.phone,
-      },
-      {
-        icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
-        label: 'Role',
-        value: getRoleName(profile.role),
-      },
-      {
-        icon: <Business sx={{ color: 'primary.main' }} />,
-        label: 'Tenant',
-        value: profile.tenant,
-      },
-      {
-        icon: <CalendarToday sx={{ color: 'primary.main' }} />,
-        label: 'Joined',
-        value: formatDate(profile.created_at),
-      },
-    ],
+    () => {
+      if (!profile) return [];
+      return [
+        {
+          icon: <Person sx={{ color: 'primary.main' }} />,
+          label: 'First Name',
+          value: profile.first_name,
+        },
+        {
+          icon: <Person sx={{ color: 'primary.main' }} />,
+          label: 'Last Name',
+          value: profile.last_name,
+        },
+        {
+          icon: <Email sx={{ color: 'primary.main' }} />,
+          label: 'Email Address',
+          value: profile.email,
+        },
+        {
+          icon: <Phone sx={{ color: 'primary.main' }} />,
+          label: 'Phone',
+          value: profile.phone,
+        },
+        {
+          icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
+          label: 'Role',
+          value: getRoleName(profile.role),
+        },
+        {
+          icon: <Business sx={{ color: 'primary.main' }} />,
+          label: 'Tenant',
+          value: profile.tenant,
+        },
+        {
+          icon: <CalendarToday sx={{ color: 'primary.main' }} />,
+          label: 'Joined',
+          value: formatDate(profile.created_at),
+        },
+      ];
+    },
     [
-      profile.first_name,
-      profile.last_name,
-      profile.email,
-      profile.phone,
-      profile.role,
-      profile.tenant,
-      profile.created_at,
+      profile?.first_name,
+      profile?.last_name,
+      profile?.email,
+      profile?.phone,
+      profile?.role,
+      profile?.tenant,
+      profile?.created_at,
     ]
   );
 
-  if (loading)
+  // Only show loading if we truly don't have profile data and it's still loading
+  // If we have profile data, show it even if loading is true (might be fetching tenant in background)
+  if (loading && !profile) {
     return (
       <Box display='flex' justifyContent='center' mt={6}>
         <CircularProgress />
       </Box>
     );
+  }
   if (error) return <Alert severity='error'>{error}</Alert>;
   if (!profile) return null;
 

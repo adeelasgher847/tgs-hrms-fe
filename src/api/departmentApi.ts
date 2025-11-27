@@ -139,6 +139,42 @@ class DepartmentApiService {
       description: frontendDept.description || undefined, // Only send if not empty
     };
   }
+
+  // Get all tenants with departments (for system admin)
+  async getAllTenantsWithDepartments(tenantId?: string): Promise<{
+    tenants: Array<{
+      tenant_id: string;
+      tenant_name: string;
+      tenant_status: string;
+      departments: Array<{
+        id: string;
+        name: string;
+        description?: string;
+        created_at: string;
+      }>;
+    }>;
+  }> {
+    try {
+      const params = tenantId ? { tenant_id: tenantId } : {};
+      const response = await axiosInstance.get<{
+        tenants: Array<{
+          tenant_id: string;
+          tenant_name: string;
+          tenant_status: string;
+          departments: Array<{
+            id: string;
+            name: string;
+            description?: string;
+            created_at: string;
+          }>;
+        }>;
+      }>(`${this.baseUrl}/all-tenants`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching all tenants with departments:', error);
+      throw error;
+    }
+  }
 }
 
 export const departmentApiService = new DepartmentApiService();

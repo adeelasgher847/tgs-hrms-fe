@@ -171,8 +171,8 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         Promotions Tracking
       </Typography>
 
-      <Box display='flex' gap={2} mb={1} flexWrap='wrap'>
-        <FormControl sx={{ minWidth: 200 }}>
+      <Box display='flex' gap={1.5} mb={1} flexWrap='wrap' alignItems='center'>
+        <FormControl size='small' sx={{ minWidth: 200 }}>
           <InputLabel>Status</InputLabel>
           <Select
             value={filters.status}
@@ -189,6 +189,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         </FormControl>
 
         <TextField
+          size='small'
           label='Start Date'
           type='date'
           InputLabelProps={{ shrink: true }}
@@ -197,6 +198,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         />
 
         <TextField
+          size='small'
           label='End Date'
           type='date'
           InputLabelProps={{ shrink: true }}
@@ -204,7 +206,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
           onChange={e => setFilters(f => ({ ...f, endDate: e.target.value }))}
         />
 
-        <Button variant='contained' onClick={() => setCurrentPage(1)}>
+        <Button  variant='contained' onClick={() => setCurrentPage(1)}>
           Apply Filters
         </Button>
       </Box>
