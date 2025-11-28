@@ -1126,15 +1126,12 @@ const AttendanceTable = () => {
       fetchAttendanceByDate(newDate, 'all');
     }
   };
-
-  // Handle date navigation changes for My Attendance
   const handleMyAttendanceDateNavigationChange = (newDate: string) => {
     setMyAttendanceNavigationDate(newDate);
     if (newDate === 'all') {
-      // Show all records (no pagination)
+      
       fetchAttendance('my', undefined, '', '');
     } else {
-      // Show all records for specific date in My Attendance
       fetchAttendanceByDate(newDate, 'my');
     }
   };
@@ -1216,15 +1213,9 @@ const AttendanceTable = () => {
           !t.deleted_at &&
           t.deleted_at === null &&
           statusLower !== 'deleted';
-
-        // STRICT CHECK 3: Must not be suspended
         const isNotSuspended =
           statusLower !== 'suspended' && statusLower !== 'suspend';
-
-        // Only include if ALL conditions are met: active, not deleted, not suspended
         const shouldInclude = isActive && isNotDeleted && isNotSuspended;
-
-        // Log excluded tenants for debugging
         if (!shouldInclude) {
           const reason = !isActive
             ? 'status is not active'
@@ -1234,7 +1225,7 @@ const AttendanceTable = () => {
                 ? 'tenant is suspended'
                 : 'unknown reason';
 
-          console.log('❌ Excluding tenant:', {
+          console.log(' Excluding tenant:', {
             name: t.name,
             id: t.id,
             status: t.status,
@@ -1258,11 +1249,8 @@ const AttendanceTable = () => {
           deleted_at: t.deleted_at,
         })),
       });
-
-      // Shape dropdown values - Final verification to ensure only active tenants
       const tenantOptions = activeTenants
         .filter((t: any) => {
-          // Double-check: Only include if status is exactly 'active'
           const statusLower = String(t.status || '')
             .toLowerCase()
             .trim();
@@ -1276,8 +1264,6 @@ const AttendanceTable = () => {
           id: t.id,
           name: t.name,
         }));
-
-      // Final verification log
       console.log('🔍 Final tenant verification:', {
         totalFetched: allTenants.length,
         afterFilter: activeTenants.length,
@@ -1286,12 +1272,11 @@ const AttendanceTable = () => {
       });
 
       setTenants(tenantOptions);
-      console.log('✅ Set tenants in dropdown:', {
+      console.log(' Set tenants in dropdown:', {
         count: tenantOptions.length,
         tenants: tenantOptions.map(t => t.name),
       });
 
-      // Log excluded tenants for debugging
       const excludedTenants = allTenants.filter((t: any) => {
         const statusLower = String(t.status || '')
           .toLowerCase()
@@ -1305,7 +1290,7 @@ const AttendanceTable = () => {
 
       if (excludedTenants.length > 0) {
         console.log(
-          '❌ Excluded tenants:',
+          ' Excluded tenants:',
           excludedTenants.map((t: any) => ({
             name: t.name,
             status: t.status,
@@ -1322,14 +1307,12 @@ const AttendanceTable = () => {
     }
   };
 
-  // Fetch employees from system attendance for a specific tenant
   const fetchEmployeesFromSystemAttendance = async (tenantId?: string) => {
     try {
       const response = await attendanceApi.getSystemAllAttendance();
       const uniqueEmployees = new Map<string, { id: string; name: string }>();
 
       response.tenants.forEach(tenant => {
-        // If tenantId is provided, only process that tenant; otherwise process all
         if (tenantId && tenant.tenant_id !== tenantId) return;
 
         tenant.employees.forEach(emp => {
@@ -1359,17 +1342,13 @@ const AttendanceTable = () => {
     setSelectedEmployee('');
     setCurrentPage(1);
 
-    // NOTE: Don't call fetchAttendance here - useEffect will handle it when selectedTenant changes
-    // This prevents duplicate API calls
   };
 
-  // Handle manager view change - separate buttons
   const handleManagerMyAttendance = () => {
     setManagerView('my');
     setCurrentPage(1);
     setStartDate('');
     setEndDate('');
-    // Reset to show all records for date navigation
     setMyAttendanceNavigationDate('all');
     fetchAttendance('my', undefined, '', '');
   };
@@ -1377,16 +1356,11 @@ const AttendanceTable = () => {
   const handleManagerTeamAttendance = () => {
     setManagerView('team');
     setTeamCurrentPage(1);
-    // Reset to show all records for date navigation
     setTeamCurrentNavigationDate('all');
-    // Reset date range filters
     setTeamStartDate('');
     setTeamEndDate('');
-    // Show all team records initially
     fetchTeamAttendance(1);
   };
-
-  // Set theme attribute on body when component mounts or theme changes
   useEffect(() => {
     if (mode === 'dark') {
       document.body.setAttribute('data-theme', 'dark');
@@ -1395,26 +1369,18 @@ const AttendanceTable = () => {
     }
   }, [mode]);
 
-  // Initial load
   useEffect(() => {
     fetchAttendance('my', undefined, '', '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Tenants are now loaded only when "All Attendance" is clicked via fetchTenantsFromSystemAttendance
-
-  // Refetch attendance when selectedTenant changes (only for "All Attendance" view)
   useEffect(() => {
     if (adminView === 'all' && isSystemAdminUser) {
       fetchAttendance('all', undefined, startDate, endDate);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTenant]);
 
   useEffect(() => {
     if (attendanceData.length > 0 && adminView === 'all') {
       if (selectedEmployee) {
-        // Employee is selected - filter to show ONLY that employee's records
         console.log(
           'useEffect: Filtering data for employee:',
           selectedEmployee,
@@ -1423,7 +1389,6 @@ const AttendanceTable = () => {
           'records'
         );
         const filtered = attendanceData.filter(record => {
-          // Compare userId - ensure both are strings for accurate comparison
           const recordUserId = String(record.userId || '').trim();
           const selectedUserId = String(selectedEmployee || '').trim();
           const matches = recordUserId === selectedUserId;
@@ -1449,7 +1414,6 @@ const AttendanceTable = () => {
         );
         setFilteredData(filtered);
       } else {
-        // No employee selected, show all data
         console.log(
           'useEffect: No employee selected, showing all',
           attendanceData.length,
@@ -1458,17 +1422,12 @@ const AttendanceTable = () => {
         setFilteredData(attendanceData);
       }
     } else if (attendanceData.length > 0) {
-      // For other views, just set the data
       setFilteredData(attendanceData);
     }
   }, [attendanceData, selectedEmployee, adminView]);
 
-  // Client-side filtering for team attendance by date (as fallback if API doesn't filter)
-  // Note: Date range filter is handled in fetchTeamAttendance, this only handles date navigation
   useEffect(() => {
-    // If date range filter is active, don't apply date navigation filtering
     if (teamStartDate || teamEndDate) {
-      // Date range filter is active, filtering is already done in fetchTeamAttendance
       return;
     }
 
@@ -1478,11 +1437,9 @@ const AttendanceTable = () => {
       teamCurrentNavigationDate &&
       teamCurrentNavigationDate !== 'all'
     ) {
-      // Apply client-side filtering for the selected date
       const selectedDateStr = teamCurrentNavigationDate;
 
       if (teamAttendance.length === 0) {
-        // No data available, set empty array
         setFilteredTeamAttendance([]);
         return;
       }
@@ -1493,21 +1450,17 @@ const AttendanceTable = () => {
             (member as any).attendance?.filter((att: any) => {
               if (!att.date) return false;
 
-              // Handle different date formats
               let attDateStr = '';
 
-              // If date is already in YYYY-MM-DD format
               if (
                 typeof att.date === 'string' &&
                 att.date.match(/^\d{4}-\d{2}-\d{2}$/)
               ) {
                 attDateStr = att.date;
               }
-              // If date is an ISO timestamp, extract YYYY-MM-DD
               else if (typeof att.date === 'string' && att.date.includes('T')) {
                 attDateStr = att.date.split('T')[0];
               }
-              // If date is a Date object or ISO string
               else {
                 try {
                   const dateObj = new Date(att.date);
@@ -1521,7 +1474,6 @@ const AttendanceTable = () => {
                     attDateStr = `${year}-${month}-${day}`;
                   }
                 } catch {
-                  // If parsing fails, try direct string comparison
                   attDateStr = String(att.date);
                 }
               }
@@ -1538,15 +1490,12 @@ const AttendanceTable = () => {
             (member as any).attendance && (member as any).attendance.length > 0
         );
 
-      // Set filtered data - will be empty array [] if no records match the selected date
       setFilteredTeamAttendance(filtered);
     } else {
-      // Default: show all if no date is selected
       setFilteredTeamAttendance(teamAttendance);
     }
   }, [teamAttendance, teamCurrentNavigationDate, teamStartDate, teamEndDate]);
 
-  // Handle filter changes - reset page to 1 and fetch new data
   const handleFilterChange = () => {
     setCurrentPage(1);
     setStartDate('');
@@ -1556,7 +1505,6 @@ const AttendanceTable = () => {
     fetchAttendance(viewForFetch, '', '', '');
   };
 
-  // Handle employee selection change
   const handleEmployeeChange = (value: string) => {
     console.log('Employee selected from dropdown:', value);
     console.log(
@@ -1564,28 +1512,19 @@ const AttendanceTable = () => {
       employees.map(emp => ({ id: emp.id, name: emp.name }))
     );
 
-    // Find the selected employee to verify the ID
     const selectedEmp = employees.find(emp => emp.id === value);
     console.log('Selected employee details:', selectedEmp);
 
     setSelectedEmployee(value);
     setCurrentPage(1);
-    // Immediately pass the selected employee to avoid stale state in fetch
     fetchAttendance('all', value, startDate, endDate);
   };
-
-  // Determine admin-like UI behavior (Admin, System-Admin, Network-Admin, or HR-Admin)
   const userRoleLc = (userRole || '').toLowerCase();
   const isAdminLike =
     userRoleLc === 'admin' ||
     userRoleLc === 'system_admin' ||
     userRoleLc === 'network_admin' ||
     userRoleLc === 'hr_admin';
-
-  // Check if user is strictly an admin (not system-admin, network-admin, or hr-admin)
-  // const _isStrictAdmin = isAdminUser && !isSystemAdminUser && !isNetworkAdminUser && !isHRAdminUser;
-
-  // Check if user can view all attendance (Admin, System-Admin, Network-Admin, or HR-Admin)
   const canViewAllAttendance =
     isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser;
 
@@ -1594,22 +1533,10 @@ const AttendanceTable = () => {
       <Typography variant='h4' gutterBottom>
         Attendance Management
       </Typography>
-
-      {/* Tabs - Only show for regular users (non-Managers and non-Admins) */}
       {!isManager && !isAdminLike && (
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex' }}>
-            {/* <Button
-              onClick={() => setTab(0)}
-              sx={{
-                borderBottom: tab === 0 ? 2 : 0,
-                borderColor: 'primary.main',
-                borderRadius: 0,
-                mr: 2,
-              }}
-            >
-              My Attendance
-            </Button> */}
+           
             {isManager && (
               <Button
                 onClick={() => setTab(1)}
@@ -1626,12 +1553,10 @@ const AttendanceTable = () => {
         </Box>
       )}
 
-      {/* My Attendance Tab - Show for regular users (tab 0) or when Manager/Admin is viewing My Attendance or Admin is viewing All Attendance */}
       {((tab === 0 && !isManager && !isAdminLike) ||
         (isManager && !isAdminLike && managerView === 'my') ||
         (isAdminLike && (adminView === 'my' || adminView === 'all'))) && (
         <Paper sx={{ background: 'unset', boxShadow: 'none' }}>
-          {/* All Controls in Same Line */}
           <Box
             sx={{
               mb: 3,
@@ -1651,7 +1576,6 @@ const AttendanceTable = () => {
                 flexWrap: 'wrap',
               }}
             >
-              {/* Admin View Toggle - Show for Admin, System-Admin, Network-Admin, and HR-Admin users */}
               {canViewAllAttendance && (
                 <>
                   <Button
@@ -1669,7 +1593,6 @@ const AttendanceTable = () => {
                 </>
               )}
 
-              {/* Manager View Toggle */}
               {isManager && !isAdminLike && (
                 <>
                   <Button
@@ -1687,7 +1610,6 @@ const AttendanceTable = () => {
                 </>
               )}
 
-              {/* Tenant Filter - Show ONLY for System Admin */}
               {adminView === 'all' && isSystemAdminUser && (
                 <FormControl size='small' sx={{ minWidth: 220 }}>
                   <InputLabel>Tenant</InputLabel>
@@ -1710,7 +1632,6 @@ const AttendanceTable = () => {
                 </FormControl>
               )}
 
-              {/* Employee Filter - Show for admin "All" view (including HR-Admin) */}
               {canViewAllAttendance && adminView === 'all' && (
                 <TextField
                   select
@@ -1728,7 +1649,6 @@ const AttendanceTable = () => {
                   ))}
                 </TextField>
               )}
-              {/* Date Range Filter - Always show */}
               <Box>
                 <DatePicker
                   range
@@ -1746,7 +1666,6 @@ const AttendanceTable = () => {
                       const end = dates[1]?.format('YYYY-MM-DD') || '';
                       setStartDate(start);
                       setEndDate(end);
-                      // Trigger the filter change
                       setCurrentPage(1);
                       const view = canViewAllAttendance ? adminView : 'my';
                       const selectedId =
@@ -1756,7 +1675,6 @@ const AttendanceTable = () => {
                       const start = dates[0]?.format('YYYY-MM-DD') || '';
                       setStartDate(start);
                       setEndDate('');
-                      // Trigger the filter change
                       setCurrentPage(1);
                       const view = canViewAllAttendance ? adminView : 'my';
                       const selectedId =
@@ -1765,7 +1683,6 @@ const AttendanceTable = () => {
                     } else {
                       setStartDate('');
                       setEndDate('');
-                      // Trigger the filter change
                       setCurrentPage(1);
                       const view = canViewAllAttendance ? adminView : 'my';
                       const selectedId =
@@ -1794,11 +1711,9 @@ const AttendanceTable = () => {
                   editable={false}
                   showOtherDays={true}
                   onOpen={() => {
-                    // Prevent body scroll when calendar opens
                     document.body.style.overflow = 'hidden';
                   }}
                   onClose={() => {
-                    // Restore body scroll when calendar closes
                     document.body.style.overflow = 'auto';
                   }}
                 />
@@ -1809,9 +1724,7 @@ const AttendanceTable = () => {
               </Button>
             </Box>
 
-            {/* Export Buttons - Right Side */}
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              {/* Export All Attendance - For Admin, System-Admin, Network-Admin, and HR-Admin users */}
               {canViewAllAttendance && (
                 <Tooltip title='Export All Attendance'>
                   <IconButton
@@ -1838,7 +1751,6 @@ const AttendanceTable = () => {
                   </IconButton>
                 </Tooltip>
               )}
-              {/* Export Team Attendance - Only for Managers */}
               {isManager && !isAdminLike && (
                 <Tooltip title='Export Team Attendance'>
                   <IconButton
@@ -1865,7 +1777,6 @@ const AttendanceTable = () => {
                   </IconButton>
                 </Tooltip>
               )}
-              {/* Export Button for Regular Employees */}
               {!isAdminUser &&
                 !isSystemAdminUser &&
                 !isNetworkAdminUser &&
@@ -1898,7 +1809,6 @@ const AttendanceTable = () => {
                 )}
             </Box>
           </Box>
-          {/* Attendance Table */}
           <TableContainer>
             <Table>
               <TableHead>
@@ -1960,7 +1870,6 @@ const AttendanceTable = () => {
             </Table>
           </TableContainer>
 
-          {/* Date Navigation for All Attendance */}
           {canViewAllAttendance && adminView === 'all' && (
             <DateNavigation
               currentDate={currentNavigationDate}
@@ -1969,7 +1878,6 @@ const AttendanceTable = () => {
             />
           )}
 
-          {/* Date Navigation for My Attendance */}
           {(!canViewAllAttendance ||
             (canViewAllAttendance && adminView === 'my') ||
             (isManager && !isAdminLike && managerView === 'my')) && (
@@ -1980,7 +1888,6 @@ const AttendanceTable = () => {
             />
           )}
 
-          {/* Show total records count */}
           {totalItems > 0 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
               <Typography variant='body2' color='text.secondary'>
@@ -1991,7 +1898,6 @@ const AttendanceTable = () => {
         </Paper>
       )}
 
-      {/* Team Attendance Tab - Only show for regular users (tab system) */}
       {tab === 1 && !isManager && !isAdminLike && (
         <Paper sx={{ p: 3 }}>
           <Box
@@ -2005,7 +1911,6 @@ const AttendanceTable = () => {
             <Typography variant='h6'>Team Attendance</Typography>
           </Box>
 
-          {/* Date Range Filter for Team Attendance */}
           <Box
             sx={{
               mb: 3,
@@ -2178,7 +2083,6 @@ const AttendanceTable = () => {
               </TableBody>
             </Table>
           </TableContainer>
-          {/* Date Navigation for Team Attendance */}
           <DateNavigation
             currentDate={teamCurrentNavigationDate}
             onDateChange={handleTeamDateNavigationChange}
@@ -2187,10 +2091,8 @@ const AttendanceTable = () => {
         </Paper>
       )}
 
-      {/* Manager Team Attendance - Show when Manager clicks Team Attendance button */}
       {isManager && !isAdminLike && managerView === 'team' && (
         <Paper sx={{ background: 'unset !important', boxShadow: 'none' }}>
-          {/* Manager View Toggle, Date Range Filter, and Clear Filter in One Div */}
           <Box
             sx={{
               mb: 3,
@@ -2201,7 +2103,6 @@ const AttendanceTable = () => {
               flexWrap: 'wrap',
             }}
           >
-            {/* Manager View Toggle Buttons */}
             <Button
               variant={
                 (managerView as string) === 'my' ? 'contained' : 'outlined'
@@ -2217,7 +2118,6 @@ const AttendanceTable = () => {
               Team Attendance
             </Button>
 
-            {/* Date Range Filter */}
             <Box>
               <DatePicker
                 range
@@ -2374,7 +2274,6 @@ const AttendanceTable = () => {
               </TableBody>
             </Table>
           </TableContainer>
-          {/* Date Navigation for Manager Team Attendance */}
           <DateNavigation
             currentDate={teamCurrentNavigationDate}
             onDateChange={handleTeamDateNavigationChange}

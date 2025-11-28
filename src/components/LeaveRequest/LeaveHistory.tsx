@@ -24,6 +24,7 @@ import UndoIcon from '@mui/icons-material/Undo';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
+import { leaveApi } from '../../api/leaveApi';
 
 const ITEMS_PER_PAGE = 25; 
 
@@ -69,6 +70,7 @@ interface LeaveHistoryProps {
   onPageChange?: (page: number) => void;
   isLoading?: boolean;
   onExportAll?: () => Promise<Leave[]>;
+  userRole?: string;
 }
 
 const LeaveHistory: React.FC<LeaveHistoryProps> = ({
@@ -87,6 +89,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   onPageChange,
   isLoading = false,
   onExportAll,
+  userRole,
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [page, setPage] = useState(1);
@@ -144,71 +147,44 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   const handleDownloadCSV = async () => {
     if (exporting) return;
 
-    let leavesToExport: Leave[] = [];
+    try {
+      setExporting(true);
+      let blob: Blob;
+      let filename = 'leave-history.csv';
 
-    // If onExportAll is provided, fetch all leaves from all pages
-    if (onExportAll) {
-      try {
-        setExporting(true);
-        leavesToExport = await onExportAll();
-      } catch (error) {
-        console.error('Error fetching all leaves for export:', error);
-        // Fallback to current filtered leaves
-        leavesToExport = filteredLeaves;
-      } finally {
-        setExporting(false);
+      // Determine which API to call based on user role and view mode
+      const role = userRole || '';
+      const isAdminRole = ['hr-admin', 'system-admin', 'admin', 'network-admin'].includes(role);
+
+      if (isAdminRole) {
+        // Admin/HR Admin/Network Admin - export all leaves for tenant
+        blob = await leaveApi.exportAllLeavesCSV();
+        filename = 'all-leaves-export.csv';
+      } else if (isManager && viewMode === 'team') {
+        // Manager viewing team leaves - export team leave requests
+        blob = await leaveApi.exportTeamLeavesCSV();
+        filename = 'team-leaves-export.csv';
+      } else {
+        // Employee or Manager viewing own leaves - export self leave requests
+        blob = await leaveApi.exportSelfLeavesCSV();
+        filename = 'my-leaves-export.csv';
       }
-    } else {
-      // Use filtered leaves if no export function provided
-      leavesToExport = filteredLeaves;
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting leave history:', error);
+      alert('Failed to export leave history. Please try again.');
+    } finally {
+      setExporting(false);
     }
-
-    if (leavesToExport.length === 0) {
-      alert('No leave history to export');
-      return;
-    }
-
-    const headers = [
-      'Name',
-      'Type',
-      'From',
-      'To',
-      'Applied',
-      'Reason',
-      'Status',
-      'Remarks',
-    ];
-
-    const escapeCSV = (value: unknown): string => {
-      if (value == null) return '';
-      const str = String(value).replace(/"/g, '""'); // escape double quotes
-      return `"${str}"`; // wrap in quotes
-    };
-
-    const rows = leavesToExport.map(leave => [
-      escapeCSV(leave.employee?.first_name || 'N/A'),
-      escapeCSV(leave.leaveType?.name || 'Unknown'),
-      escapeCSV(formatDate(leave.startDate)),
-      escapeCSV(formatDate(leave.endDate)),
-      escapeCSV(formatDate(leave.createdAt)),
-      escapeCSV(leave.reason || 'N/A'),
-      escapeCSV(leave.status || 'Unknown'),
-      escapeCSV(leave.remarks || ''),
-    ]);
-
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join(
-      '\n'
-    );
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'leave-history.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   if (!Array.isArray(leaves)) {
