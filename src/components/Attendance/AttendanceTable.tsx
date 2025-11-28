@@ -93,6 +93,10 @@ const AttendanceTable = () => {
   const [filteredTeamAttendance, setFilteredTeamAttendance] = useState<
     AttendanceEvent[]
   >([]);
+  const [teamEmployees, setTeamEmployees] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [selectedTeamEmployee, setSelectedTeamEmployee] = useState('');
   const [teamLoading, setTeamLoading] = useState(false);
   const [tenants, setTenants] = useState<TenantOption[]>([]);
   const [selectedTenant, setSelectedTenant] = useState<string>('');
@@ -508,12 +512,22 @@ const AttendanceTable = () => {
           rows = buildFromEvents(events, currentUser.id, true);
         }
 
-        setAttendanceData(rows);
-        setFilteredData(rows);
+        // If an employee is selected in admin "All" view, keep only that employee's records
+        let filteredRows = rows;
+        if (selectedEmployee) {
+          const selectedId = String(selectedEmployee).trim();
+          filteredRows = rows.filter(record => {
+            const recordUserId = String(record.userId || '').trim();
+            return recordUserId === selectedId;
+          });
+        }
+
+        setAttendanceData(filteredRows);
+        setFilteredData(filteredRows);
 
         setCurrentPage(1);
         setTotalPages(1);
-        setTotalItems(rows.length);
+        setTotalItems(filteredRows.length);
       } else if (view === 'my') {
         response = await attendanceApi.getAttendanceEvents(
           currentUser.id, 
@@ -910,19 +924,33 @@ const AttendanceTable = () => {
             : adminTenantId || selectedTenant || undefined;
 
           if (effectiveSelectedEmployee) {
-            
+            // When a specific employee is selected in All Attendance view,
+            // apply the selected date range as well so that both filters work together.
+            const employeeStart =
+              effectiveStartDate && effectiveStartDate !== ''
+                ? effectiveStartDate
+                : undefined;
+            const employeeEnd =
+              effectiveEndDate && effectiveEndDate !== ''
+                ? effectiveEndDate
+                : undefined;
 
             console.log(
-              'Fetching attendance for employee by userId only:',
-              effectiveSelectedEmployee,
-              '(no date filter)'
+              'Fetching attendance for selected employee with date range:',
+              {
+                userId: effectiveSelectedEmployee,
+                startDate: employeeStart,
+                endDate: employeeEnd,
+                tenantId: tenantIdForFetch,
+              }
             );
+
             response = await attendanceApi.getAttendanceEvents(
-              effectiveSelectedEmployee, 
-              1, 
-              undefined, 
-              undefined, 
-              undefined 
+              effectiveSelectedEmployee,
+              1,
+              employeeStart,
+              employeeEnd,
+              tenantIdForFetch
             );
             console.log('Attendance response for selected employee:', response);
           } else {
@@ -1139,11 +1167,22 @@ const AttendanceTable = () => {
   const handleTeamDateNavigationChange = (newDate: string) => {
     setTeamCurrentNavigationDate(newDate);
     if (newDate === 'all') {
-      // Show all team records - fetch all data
-      fetchTeamAttendance(1);
+      // Show all team records or only selected employee records (no date filter)
+      if (selectedTeamEmployee) {
+        // No date filter, just selected employee
+        handleTeamEmployeeChange(selectedTeamEmployee, '', '');
+      } else {
+        fetchTeamAttendance(1);
+      }
     } else {
-      // Fetch team attendance for specific date from API
-      fetchAttendanceByDate(newDate, 'team');
+      // Fetch attendance for specific date
+      if (selectedTeamEmployee) {
+        // Apply date filter + selected employee together
+        handleTeamEmployeeChange(selectedTeamEmployee, newDate, newDate);
+      } else {
+        // No employee selected -> fetch full team attendance for that date
+        fetchAttendanceByDate(newDate, 'team');
+      }
     }
   };
 
@@ -1173,20 +1212,24 @@ const AttendanceTable = () => {
     setEndDate('');
     setCurrentNavigationDate('all');
 
+    // Fetch initial attendance IMMEDIATELY for System Admin "All Attendance"
+    // so that /attendance/system/all is hit right away on button click.
+    fetchAttendance('all', undefined, '', '');
+
     // 👉 Load tenants from system-wide attendance (only for system admin)
+    // Run this in parallel so it doesn't delay the attendance API call.
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const currentUser = JSON.parse(storedUser);
       const isSystemAdminFlag = isSystemAdmin(currentUser.role);
 
       if (isSystemAdminFlag) {
-        await fetchTenantsFromSystemAttendance();
+        // No await here – let tenants load in background
+        fetchTenantsFromSystemAttendance();
       }
     }
 
-    // Fetch initial attendance
     // Employees will be automatically extracted from attendance data in fetchAttendance
-    fetchAttendance('all', undefined, '', '');
   };
   const fetchTenantsFromSystemAttendance = async () => {
     try {
@@ -1496,6 +1539,105 @@ const AttendanceTable = () => {
     }
   }, [teamAttendance, teamCurrentNavigationDate, teamStartDate, teamEndDate]);
 
+  // Build unique team employee list whenever team attendance changes
+  useEffect(() => {
+    const unique = new Map<string, { id: string; name: string }>();
+    teamAttendance.forEach(member => {
+      const anyMember = member as any;
+      const id = anyMember.user_id as string | undefined;
+      if (!id) return;
+      const firstName =
+        anyMember.first_name ||
+        anyMember.user?.first_name ||
+        '';
+      const lastName =
+        anyMember.last_name ||
+        anyMember.user?.last_name ||
+        '';
+      const name = `${firstName} ${lastName}`.trim() || 'Unknown';
+      if (!unique.has(id)) {
+        unique.set(id, { id, name });
+      }
+    });
+    setTeamEmployees(Array.from(unique.values()));
+  }, [teamAttendance]);
+
+  // Handle team employee selection change (use events API by userId)
+  const handleTeamEmployeeChange = async (
+    value: string,
+    startDateOverride?: string | null,
+    endDateOverride?: string | null
+  ) => {
+    setSelectedTeamEmployee(value);
+
+    // Resolve effective start/end dates (override > state)
+    const resolvedStart =
+      typeof startDateOverride !== 'undefined'
+        ? startDateOverride || ''
+        : teamStartDate;
+    const resolvedEnd =
+      typeof endDateOverride !== 'undefined'
+        ? endDateOverride || ''
+        : teamEndDate;
+
+    const startForApi = resolvedStart || undefined;
+    const endForApi = resolvedEnd || undefined;
+
+    // If cleared, reload team data for current date range
+    if (!value) {
+      await fetchTeamAttendance(1, startForApi, endForApi);
+      return;
+    }
+
+    setTeamLoading(true);
+    try {
+      const response = await attendanceApi.getAttendanceEvents(
+        value,
+        1,
+        startForApi,
+        endForApi
+      );
+
+      const events: AttendanceEvent[] =
+        (response.items as AttendanceEvent[]) || [];
+
+      const records = buildFromEvents(events, value, false);
+
+      if (records.length === 0) {
+        setFilteredTeamAttendance([]);
+        return;
+      }
+
+      const first = records[0];
+      const totalDaysWorked = records.length;
+      const totalHoursWorked = records.reduce(
+        (sum, r) => sum + (r.workedHours || 0),
+        0
+      );
+
+      const member = {
+        user_id: value,
+        first_name: first.user?.first_name || '',
+        last_name: first.user?.last_name || '',
+        totalDaysWorked,
+        totalHoursWorked,
+        attendance: records.map(r => ({
+          date: r.date,
+          checkIn: r.checkInISO,
+          checkOut: r.checkOutISO,
+          workedHours: r.workedHours || 0,
+        })),
+      };
+
+      setFilteredTeamAttendance([member as any]);
+    } catch {
+      setFilteredTeamAttendance([]);
+    } finally {
+      setTeamLoading(false);
+    }
+  };
+
+  // Handle filter changes - reset page to 1 and fetch new data
   const handleFilterChange = () => {
     setCurrentPage(1);
     setStartDate('');
@@ -1700,7 +1842,6 @@ const AttendanceTable = () => {
                     borderRadius: '4px',
                     fontSize: '16px',
                     fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
-                    backgroundColor: 'transparent',
                     outline: 'none',
                   }}
                   containerStyle={{
@@ -1938,18 +2079,33 @@ const AttendanceTable = () => {
                     setTeamStartDate(start);
                     setTeamEndDate(end);
                     setTeamCurrentNavigationDate('all'); // Reset date navigation
-                    fetchTeamAttendance(1, start, end);
+                    if (selectedTeamEmployee) {
+                      // Apply date range + selected employee together
+                      handleTeamEmployeeChange(selectedTeamEmployee, start, end);
+                    } else {
+                      // No employee selected -> fetch full team attendance
+                      fetchTeamAttendance(1, start, end);
+                    }
                   } else if (dates && dates.length === 1) {
                     const start = dates[0]?.format('YYYY-MM-DD') || '';
                     setTeamStartDate(start);
                     setTeamEndDate('');
                     setTeamCurrentNavigationDate('all'); // Reset date navigation
-                    fetchTeamAttendance(1, start, '');
+                    if (selectedTeamEmployee) {
+                      handleTeamEmployeeChange(selectedTeamEmployee, start, '');
+                    } else {
+                      fetchTeamAttendance(1, start, '');
+                    }
                   } else {
                     setTeamStartDate('');
                     setTeamEndDate('');
                     setTeamCurrentNavigationDate('all'); // Reset date navigation
-                    fetchTeamAttendance(1);
+                    if (selectedTeamEmployee) {
+                      // Clear date filter but keep selected employee
+                      handleTeamEmployeeChange(selectedTeamEmployee, '', '');
+                    } else {
+                      fetchTeamAttendance(1);
+                    }
                   }
                 }}
                 format='MM/DD/YYYY'
@@ -1962,7 +2118,6 @@ const AttendanceTable = () => {
                   borderRadius: '4px',
                   fontSize: '16px',
                   fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
-                  backgroundColor: 'transparent',
                   outline: 'none',
                 }}
                 containerStyle={{
@@ -1980,12 +2135,31 @@ const AttendanceTable = () => {
                 }}
               />
             </Box>
+            {/* Team Employee Filter - for team attendance (regular users) */}
+            {teamEmployees.length > 0 && (
+              <TextField
+                select
+                label='Select Employee'
+                value={selectedTeamEmployee}
+                onChange={e => handleTeamEmployeeChange(e.target.value)}
+                sx={{ minWidth: 200 }}
+                size='small'
+              >
+                <MenuItem value=''>All Employees</MenuItem>
+                {teamEmployees.map(emp => (
+                  <MenuItem key={emp.id} value={emp.id}>
+                    {emp.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
             <Button
               variant='outlined'
               onClick={() => {
                 setTeamStartDate('');
                 setTeamEndDate('');
                 setTeamCurrentNavigationDate('all');
+                setSelectedTeamEmployee('');
                 fetchTeamAttendance(1);
               }}
             >
@@ -2034,9 +2208,7 @@ const AttendanceTable = () => {
                                 {(member as any).last_name}
                               </TableCell>
                               <TableCell>
-                                {attendance.date
-                                  ? formatDate(attendance.date)
-                                  : '--'}
+                                {attendance.date ? formatDate(attendance.date) : '--'}
                               </TableCell>
                               <TableCell>
                                 {attendance.checkIn
@@ -2136,18 +2308,32 @@ const AttendanceTable = () => {
                     setTeamStartDate(start);
                     setTeamEndDate(end);
                     setTeamCurrentNavigationDate('all'); // Reset date navigation
-                    fetchTeamAttendance(1, start, end);
+                    if (selectedTeamEmployee) {
+                      // Apply date range + selected employee together
+                      handleTeamEmployeeChange(selectedTeamEmployee, start, end);
+                    } else {
+                      fetchTeamAttendance(1, start, end);
+                    }
                   } else if (dates && dates.length === 1) {
                     const start = dates[0]?.format('YYYY-MM-DD') || '';
                     setTeamStartDate(start);
                     setTeamEndDate('');
                     setTeamCurrentNavigationDate('all'); // Reset date navigation
-                    fetchTeamAttendance(1, start, '');
+                    if (selectedTeamEmployee) {
+                      handleTeamEmployeeChange(selectedTeamEmployee, start, '');
+                    } else {
+                      fetchTeamAttendance(1, start, '');
+                    }
                   } else {
                     setTeamStartDate('');
                     setTeamEndDate('');
                     setTeamCurrentNavigationDate('all'); // Reset date navigation
-                    fetchTeamAttendance(1);
+                    if (selectedTeamEmployee) {
+                      // Clear date filter but keep selected employee
+                      handleTeamEmployeeChange(selectedTeamEmployee, '', '');
+                    } else {
+                      fetchTeamAttendance(1);
+                    }
                   }
                 }}
                 format='MM/DD/YYYY'
@@ -2160,7 +2346,6 @@ const AttendanceTable = () => {
                   borderRadius: '4px',
                   fontSize: '16px',
                   fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
-                  backgroundColor: 'transparent',
                   outline: 'none',
                 }}
                 containerStyle={{
@@ -2178,12 +2363,31 @@ const AttendanceTable = () => {
                 }}
               />
             </Box>
+            {/* Team Employee Filter - for manager team attendance */}
+            {teamEmployees.length > 0 && (
+              <TextField
+                select
+                label='Select Employee'
+                value={selectedTeamEmployee}
+                onChange={e => handleTeamEmployeeChange(e.target.value)}
+                sx={{ minWidth: 200 }}
+                size='small'
+              >
+                <MenuItem value=''>All Employees</MenuItem>
+                {teamEmployees.map(emp => (
+                  <MenuItem key={emp.id} value={emp.id}>
+                    {emp.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
             <Button
               variant='outlined'
               onClick={() => {
                 setTeamStartDate('');
                 setTeamEndDate('');
                 setTeamCurrentNavigationDate('all');
+                setSelectedTeamEmployee('');
                 fetchTeamAttendance(1);
               }}
             >
@@ -2231,9 +2435,7 @@ const AttendanceTable = () => {
                                 {(member as any).last_name}
                               </TableCell>
                               <TableCell>
-                                {attendance.date
-                                  ? formatDate(attendance.date)
-                                  : '--'}
+                                {attendance.date ? formatDate(attendance.date) : '--'}
                               </TableCell>
                               <TableCell>
                                 {attendance.checkIn

@@ -317,9 +317,31 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                     <TableCell>{formatDate(leave.endDate)}</TableCell>
                     <TableCell>{formatDate(leave.createdAt)}</TableCell>
                     <TableCell>
-                      <Typography sx={{ fontSize: 14 }}>
-                        {leave.reason || 'N/A'}
-                      </Typography>
+                      <Tooltip
+                        title={leave.reason || 'N/A'}
+                        placement='top'
+                        arrow
+                        slotProps={{
+                          tooltip: {
+                            sx: {
+                              position: 'relative',
+                              left: '-115px',
+                            }
+                          }
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            fontSize: 14,
+                            maxWidth: { xs: 120, sm: 200, md: 260 },
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {leave.reason || 'N/A'}
+                        </Typography>
+                      </Tooltip>
                     </TableCell>
                     <TableCell>
                       <Chip

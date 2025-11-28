@@ -49,13 +49,7 @@ const SummaryCard = ({ title, value, icon }: SummaryCardProps) => {
         bgcolor: bgColor,
         color: textColor,
         direction: language === 'ar' ? 'rtl' : 'ltr',
-        maxWidth: {
-          xs: '100%',
-          sm: 300, 
-          md: 350, 
-        },
         width: '100%',
-        mx: 'auto', 
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
