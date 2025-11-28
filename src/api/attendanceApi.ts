@@ -29,6 +29,38 @@ export interface AttendanceResponse {
   totalPages: number;
 }
 
+// -------- System-wide (cross-tenant) attendance --------
+
+export interface SystemTenantEmployeeAttendance {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  profile_pic: string;
+  attendance: {
+    date: string;
+    checkIn: string | null;
+    checkOut: string | null;
+    workedHours: number;
+  }[];
+  totalDaysWorked: number;
+  totalHoursWorked: number;
+}
+
+export interface SystemTenantAttendance {
+  tenant_id: string;
+  tenant_name: string;
+  tenant_status: string;
+  employees: SystemTenantEmployeeAttendance[];
+  totalEmployees: number;
+  totalAttendanceRecords: number;
+}
+
+export interface SystemAllAttendanceResponse {
+  tenants: SystemTenantAttendance[];
+  totalTenants: number;
+}
+
 class AttendanceApiService {
   private baseUrl = '/attendance';
 
@@ -37,7 +69,8 @@ class AttendanceApiService {
     page: number = 1,
     startDate?: string,
     endDate?: string,
-    selectedEmployee?: string
+    selectedEmployee?: string,
+    tenantId?: string
   ): Promise<AttendanceResponse> {
     try {
       const params = new URLSearchParams();
@@ -50,6 +83,9 @@ class AttendanceApiService {
       }
       if (selectedEmployee) {
         params.append('userId', selectedEmployee);
+      }
+      if (tenantId) {
+        params.append('tenantId', tenantId);
       }
 
       const response = await axiosInstance.get(
@@ -91,7 +127,8 @@ class AttendanceApiService {
     userId?: string,
     page: number = 1,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
+    tenantId?: string
   ): Promise<AttendanceResponse> {
     try {
       const params = new URLSearchParams();
@@ -104,6 +141,9 @@ class AttendanceApiService {
       }
       if (endDate) {
         params.append('endDate', endDate);
+      }
+      if (tenantId) {
+        params.append('tenantId', tenantId);
       }
 
       const url = `${this.baseUrl}/events?${params.toString()}`;
@@ -145,7 +185,8 @@ class AttendanceApiService {
     userId?: string,
     page: number = 1,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
+    tenantId?: string
   ): Promise<AttendanceResponse> {
     try {
       const params = new URLSearchParams();
@@ -158,6 +199,9 @@ class AttendanceApiService {
       }
       if (endDate) {
         params.append('endDate', endDate);
+      }
+      if (tenantId) {
+        params.append('tenantId', tenantId);
       }
 
       const url = `${this.baseUrl}?${params.toString()}`; // This hits the /attendance endpoint for daily summaries
@@ -229,7 +273,8 @@ class AttendanceApiService {
   async getTeamAttendance(
     page: number = 1,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
+    tenantId?: string
   ): Promise<{
     items: AttendanceEvent[];
     total: number;
@@ -245,6 +290,9 @@ class AttendanceApiService {
       if (endDate) {
         params.append('endDate', endDate);
       }
+      if (tenantId) {
+        params.append('tenantId', tenantId);
+      }
       const response = await axiosInstance.get(
         `${this.baseUrl}/team?${params.toString()}`
       );
@@ -257,6 +305,29 @@ class AttendanceApiService {
         totalPages: 1,
       };
     }
+  }
+
+  // Get system-wide (cross-tenant) attendance for system admin
+  async getSystemAllAttendance(
+    startDate?: string,
+    endDate?: string
+  ): Promise<SystemAllAttendanceResponse> {
+    const params = new URLSearchParams();
+    if (startDate) {
+      params.append('startDate', startDate);
+    }
+    if (endDate) {
+      params.append('endDate', endDate);
+    }
+
+    const query = params.toString();
+    const url =
+      query.length > 0
+        ? `${this.baseUrl}/system/all?${query}`
+        : `${this.baseUrl}/system/all`;
+
+    const response = await axiosInstance.get<SystemAllAttendanceResponse>(url);
+    return response.data;
   }
 }
 

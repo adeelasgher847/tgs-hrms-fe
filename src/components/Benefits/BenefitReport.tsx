@@ -203,25 +203,45 @@ const BenefitReport: React.FC = () => {
       }
 
       try {
-        const params: any = { page: 1 };
+        let flattened: BenefitRow[] = [];
+
         if (isSystemAdmin) {
-          if (selectedTenant) params.tenantId = selectedTenant;
+          // Use new API for system admin
+          const response =
+            await employeeBenefitApi.getAllTenantsEmployeeBenefits();
+
+          // Transform the response structure to BenefitRow[]
+          flattened = (response.tenants || []).flatMap((tenant: any) =>
+            (tenant.employees || []).flatMap((emp: any) =>
+              (emp.benefits || []).map((b: any) => ({
+                tenantId: tenant.tenant_id,
+                tenantName: tenant.tenant_name,
+                department: emp.department || '-',
+                designation: emp.designation || '-',
+                employeeName: emp.employeeName || '-',
+                benefitType: b.type || b.name || '-',
+                status: b.statusOfAssignment || b.status || '-',
+              }))
+            )
+          );
+        } else {
+          // Use existing API for other roles
+          const params: any = { page: 1 };
+          const response =
+            await employeeBenefitApi.getFilteredEmployeeBenefits(params);
+
+          flattened = (response || []).flatMap((emp: any) =>
+            (emp.benefits || []).map((b: any) => ({
+              tenantId: emp.tenantId ?? emp.tenant_id ?? undefined,
+              tenantName: emp.tenantName ?? emp.tenant_name ?? undefined,
+              department: emp.department || '-',
+              designation: emp.designation || '-',
+              employeeName: emp.employeeName || emp.employee_name || '-',
+              benefitType: b.type || b.name || '-',
+              status: b.statusOfAssignment || b.status || '-',
+            }))
+          );
         }
-
-        const response =
-          await employeeBenefitApi.getFilteredEmployeeBenefits(params);
-
-        const flattened: BenefitRow[] = (response || []).flatMap((emp: any) =>
-          (emp.benefits || []).map((b: any) => ({
-            tenantId: emp.tenantId ?? emp.tenant_id ?? undefined,
-            tenantName: emp.tenantName ?? emp.tenant_name ?? undefined,
-            department: emp.department || '-',
-            designation: emp.designation || '-',
-            employeeName: emp.employeeName || emp.employee_name || '-',
-            benefitType: b.type || b.name || '-',
-            status: b.statusOfAssignment || b.status || '-',
-          }))
-        );
 
         if (!isMounted) return;
         setBenefitData(flattened);
@@ -483,7 +503,7 @@ const BenefitReport: React.FC = () => {
         </Tooltip>
       </Box>
 
-      <Paper sx={{ borderRadius: 1,boxShadow: 'none' }}>
+      <Paper sx={{ borderRadius: 1, boxShadow: 'none' }}>
         <TableContainer>
           <Table>
             <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
