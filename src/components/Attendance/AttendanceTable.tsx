@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import {
   Box,
@@ -16,13 +15,18 @@ import {
   MenuItem,
   IconButton,
   Tooltip,
+  FormControl,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import DatePicker from 'react-multi-date-picker';
 import 'react-multi-date-picker/styles/layouts/mobile.css';
 import 'react-multi-date-picker/styles/colors/teal.css';
 import './AttendanceTable.css';
-import attendanceApi from '../../api/attendanceApi';
+import attendanceApi, {
+  type SystemAllAttendanceResponse,
+} from '../../api/attendanceApi';
 import { exportCSV } from '../../api/exportApi';
 import type {
   AttendanceEvent,
@@ -38,15 +42,19 @@ import {
 import DateNavigation from './DateNavigation';
 import { useTheme } from '../../theme/hooks';
 import { formatDate } from '../../utils/dateUtils';
+import systemEmployeeApiService from '../../api/systemEmployeeApi';
+import { SystemTenantApi } from '../../api/systemTenantApi';
+
+type TenantOption = { id: string; name: string };
 
 interface AttendanceRecord {
   id: string;
   userId: string;
-  date: string; // YYYY-MM-DD (shift date)
-  checkInISO: string | null; // ISO for calc/sort
-  checkOutISO: string | null; // ISO for calc/sort
-  checkIn: string | null; // display
-  checkOut: string | null; // display
+  date: string;
+  checkInISO: string | null;
+  checkOutISO: string | null;
+  checkIn: string | null;
+  checkOut: string | null;
   workedHours: number | null;
   user?: { first_name: string; last_name?: string };
 }
@@ -57,7 +65,6 @@ const formatLocalYMD = (d: Date) => {
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 };
-
 
 const AttendanceTable = () => {
   const { mode } = useTheme();
@@ -87,19 +94,18 @@ const AttendanceTable = () => {
     AttendanceEvent[]
   >([]);
   const [teamLoading, setTeamLoading] = useState(false);
+  const [tenants, setTenants] = useState<TenantOption[]>([]);
+  const [selectedTenant, setSelectedTenant] = useState<string>('');
+  const [tenantsLoading, setTenantsLoading] = useState(false);
   const [, setTeamError] = useState('');
   const [, setTeamCurrentPage] = useState(1);
   const [, setTeamTotalPages] = useState(1);
   const [, setTeamTotalItems] = useState(0);
-
-  // Date navigation state for All Attendance, My Attendance, and Team Attendance
   const [currentNavigationDate, setCurrentNavigationDate] = useState('all');
   const [myAttendanceNavigationDate, setMyAttendanceNavigationDate] =
     useState('all');
   const [teamCurrentNavigationDate, setTeamCurrentNavigationDate] =
     useState('all');
-  
-  // Date range filter state for Team Attendance
   const [teamStartDate, setTeamStartDate] = useState('');
   const [teamEndDate, setTeamEndDate] = useState('');
 
@@ -107,8 +113,6 @@ const AttendanceTable = () => {
     iso ? new Date(iso).toLocaleTimeString() : null;
   const token = localStorage.getItem('token');
   const filters = { page: '1' };
-
-  // Function to handle daily summaries from backend (cross-day compatible)
   const buildFromSummaries = (
     summariesRaw: Record<string, unknown>[],
     currentUserId: string
@@ -138,18 +142,45 @@ const AttendanceTable = () => {
     currentUserId: string,
     isAllAttendance: boolean = false
   ): AttendanceRecord[] => {
+    console.log('buildFromEvents called with:', {
+      eventsCount: eventsRaw.length,
+      currentUserId,
+      isAllAttendance,
+    });
+
     const events = eventsRaw
       .filter(e => e && (e as any).timestamp && (e as any).type)
-      .map(e => ({
-        id: (e as any).id as string,
-        user_id:
-          ((e as any).user_id as string) ||
-          (isAllAttendance ? null : currentUserId),
-        timestamp: (e as any).timestamp as string,
-        type: (e as any).type as 'check-in' | 'check-out',
-        user: (e as any).user,
-      }))
-      .filter(e => e.user_id)
+      .map(e => {
+        const eventUserId = (e as any).user_id as string;
+        // Also check user.id if user_id is not available
+        const userObjId = (e as any).user?.id as string;
+        const finalUserId =
+          eventUserId || userObjId || (isAllAttendance ? null : currentUserId);
+
+        console.log('Processing event:', {
+          eventId: (e as any).id,
+          eventUserId,
+          userObjId,
+          finalUserId,
+          currentUserId,
+          isAllAttendance,
+        });
+
+        return {
+          id: (e as any).id as string,
+          user_id: finalUserId,
+          timestamp: (e as any).timestamp as string,
+          type: (e as any).type as 'check-in' | 'check-out',
+          user: (e as any).user,
+        };
+      })
+      .filter(e => {
+        const hasUserId = !!e.user_id;
+        if (!hasUserId) {
+          console.warn('Filtering out event without user_id:', e);
+        }
+        return hasUserId;
+      }) // Only include events with valid user_id
       .sort(
         (a, b) =>
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -169,18 +200,62 @@ const AttendanceTable = () => {
 
     for (const ev of events) {
       const userId = ev.user_id as string;
-      if (!userEvents.has(userId)) {
-        userEvents.set(userId, []);
+
+      if (!isAllAttendance) {
+        
+        if (userId && userId !== currentUserId) {
+          // Skip events for other users when specific employee is selected
+          console.log(
+            '⏭️ Skipping event - userId:',
+            userId,
+            'does not match selected employee:',
+            currentUserId
+          );
+          continue;
+        }
+        // Only process events for the selected employee (currentUserId)
+        if (!userEvents.has(currentUserId)) {
+          userEvents.set(currentUserId, []);
+        }
+        userEvents.get(currentUserId)!.push({
+          id: ev.id as string,
+          timestamp: ev.timestamp as string,
+          type: ev.type as 'check-in' | 'check-out',
+          user: ev.user as any,
+        });
+        console.log(' Added event for selected employee:', {
+          eventId: ev.id,
+          userId: currentUserId,
+          type: ev.type,
+        });
+      } else {
+        // For all attendance view (no employee selected), process all events
+        const finalUserId = userId || currentUserId;
+        if (!finalUserId) continue;
+
+        if (!userEvents.has(finalUserId)) {
+          userEvents.set(finalUserId, []);
+        }
+        userEvents.get(finalUserId)!.push({
+          id: ev.id as string,
+          timestamp: ev.timestamp as string,
+          type: ev.type as 'check-in' | 'check-out',
+          user: ev.user as any,
+        });
       }
-      userEvents.get(userId)!.push({
-        id: ev.id as string,
-        timestamp: ev.timestamp as string,
-        type: ev.type as 'check-in' | 'check-out',
-        user: ev.user as any,
-      });
     }
 
     for (const [userId, userEventList] of userEvents.entries()) {
+      // When employee is selected (isAllAttendance = false), only process events for that employee
+      if (!isAllAttendance && userId !== currentUserId) {
+        console.log(
+          'Skipping events for userId:',
+          userId,
+          'expected:',
+          currentUserId
+        );
+        continue;
+      }
       const openSessions: Array<{
         checkIn: {
           id: string;
@@ -213,8 +288,6 @@ const AttendanceTable = () => {
           }
         }
       }
-
-      // Convert sessions to AttendanceRecord format
       for (const session of openSessions) {
         const checkInDate = new Date(session.checkIn.timestamp);
         const shiftDate = formatLocalYMD(checkInDate); // Use check-in date as the shift date
@@ -237,7 +310,7 @@ const AttendanceTable = () => {
 
         sessions.push({
           id: `${session.checkIn.id}-${session.checkOut ? session.checkOut.id : 'open'}`,
-          userId,
+          userId: userId, // Use the userId from the map key (this is the user_id from events)
           date: shiftDate,
           checkInISO: session.checkIn.timestamp,
           checkOutISO,
@@ -251,8 +324,6 @@ const AttendanceTable = () => {
         });
       }
     }
-
-    // Sort by date (desc) then time (desc)
     sessions.sort((a, b) => {
       if (a.date !== b.date) return a.date < b.date ? 1 : -1;
       const at = a.checkInISO ? new Date(a.checkInISO).getTime() : 0;
@@ -261,6 +332,44 @@ const AttendanceTable = () => {
     });
 
     return sessions;
+  };
+  const buildFromSystemAll = (
+    systemData: SystemAllAttendanceResponse,
+    tenantFilter?: string | null,
+    employeeFilter?: string | null
+  ): AttendanceRecord[] => {
+    const rows: AttendanceRecord[] = [];
+
+    systemData.tenants.forEach(tenant => {
+      if (tenantFilter && tenant.tenant_id !== tenantFilter) return;
+
+      tenant.employees.forEach(emp => {
+        // Filter by employee if employeeFilter is provided
+        if (employeeFilter && emp.user_id !== employeeFilter) return;
+
+        emp.attendance.forEach(att => {
+          const id = `${tenant.tenant_id}-${emp.user_id}-${att.date}`;
+
+          rows.push({
+            id,
+            userId: emp.user_id,
+            date: att.date,
+            checkInISO: att.checkIn,
+            checkOutISO: att.checkOut,
+            checkIn: att.checkIn ? toDisplayTime(att.checkIn) : null,
+            checkOut: att.checkOut ? toDisplayTime(att.checkOut) : null,
+            workedHours:
+              typeof att.workedHours === 'number' ? att.workedHours : null,
+            user: {
+              first_name: emp.first_name,
+              last_name: emp.last_name,
+            },
+          });
+        });
+      });
+    });
+
+    return rows;
   };
 
   const fetchTeamAttendance = async (
@@ -274,41 +383,38 @@ const AttendanceTable = () => {
       const response = await attendanceApi.getTeamAttendance(
         page,
         startDate,
-        endDate
+        endDate,
+        selectedTenant || undefined // tenantId
       );
 
       const teamItems = response.items || [];
       setTeamAttendance(teamItems);
-
-      // Apply client-side filtering by date range if dates are provided
       if (startDate || endDate) {
         const filteredItems = teamItems
           .map(member => {
             const filteredAttendance =
               (member as any).attendance?.filter((att: any) => {
                 if (!att.date) return false;
-
-                // Handle different date formats
                 let attDateStr = '';
-
-                // If date is already in YYYY-MM-DD format
                 if (
                   typeof att.date === 'string' &&
                   att.date.match(/^\d{4}-\d{2}-\d{2}$/)
                 ) {
                   attDateStr = att.date;
-                }
-                // If date is an ISO timestamp, extract YYYY-MM-DD
-                else if (typeof att.date === 'string' && att.date.includes('T')) {
+                } else if (
+                  typeof att.date === 'string' &&
+                  att.date.includes('T')
+                ) {
                   attDateStr = att.date.split('T')[0];
-                }
-                // If date is a Date object or ISO string
-                else {
+                } else {
                   try {
                     const dateObj = new Date(att.date);
                     if (!isNaN(dateObj.getTime())) {
                       const year = dateObj.getFullYear();
-                      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                      const month = String(dateObj.getMonth() + 1).padStart(
+                        2,
+                        '0'
+                      );
                       const day = String(dateObj.getDate()).padStart(2, '0');
                       attDateStr = `${year}-${month}-${day}`;
                     }
@@ -316,8 +422,6 @@ const AttendanceTable = () => {
                     attDateStr = String(att.date);
                   }
                 }
-
-                // Check if date is within range
                 if (startDate && endDate) {
                   return attDateStr >= startDate && attDateStr <= endDate;
                 } else if (startDate) {
@@ -341,8 +445,6 @@ const AttendanceTable = () => {
       } else {
         setFilteredTeamAttendance(teamItems);
       }
-
-      // Update pagination state
       setTeamCurrentPage(response.page || 1);
       setTeamTotalPages(response.totalPages || 1);
       setTeamTotalItems(response.total || 0);
@@ -357,8 +459,6 @@ const AttendanceTable = () => {
       setTeamLoading(false);
     }
   };
-
-  // Fetch attendance data for a specific date (for date navigation)
   const fetchAttendanceByDate = async (
     date: string,
     view: 'all' | 'my' | 'team'
@@ -385,16 +485,17 @@ const AttendanceTable = () => {
 
       if (view === 'all') {
         response = await attendanceApi.getAllAttendance(
-          1, // Always page 1 - show all records
-          date, // Start date
-          date // End date (same day)
+          1,
+          date,
+          date,
+          undefined,
+          selectedTenant || undefined
         );
 
         const events: AttendanceEvent[] =
           (response.items as AttendanceEvent[]) || [];
         let rows: AttendanceRecord[] = [];
 
-        // Check if response contains shift-based data or events
         const isShiftBased =
           events.length > 0 &&
           events[0] &&
@@ -410,24 +511,22 @@ const AttendanceTable = () => {
         setAttendanceData(rows);
         setFilteredData(rows);
 
-        // Always show all records without pagination
         setCurrentPage(1);
         setTotalPages(1);
         setTotalItems(rows.length);
       } else if (view === 'my') {
-        // For My Attendance, fetch events for the current user for specific date
         response = await attendanceApi.getAttendanceEvents(
-          currentUser.id,
-          1, // Always page 1 when showing all
-          date, // Start date
-          date // End date (same day)
+          currentUser.id, 
+          1, 
+          date, 
+          date,
+          selectedTenant || undefined 
         );
 
         const events: AttendanceEvent[] =
           (response.items as AttendanceEvent[]) || [];
         let rows: AttendanceRecord[] = [];
 
-        // Check if response contains shift-based data or events
         const isShiftBased =
           events.length > 0 &&
           events[0] &&
@@ -443,18 +542,16 @@ const AttendanceTable = () => {
         setAttendanceData(rows);
         setFilteredData(rows);
 
-        // Always show all records without pagination
         setCurrentPage(1);
         setTotalPages(1);
         setTotalItems(rows.length);
       } else {
-        // For Team Attendance, fetch team attendance with date filter
         const teamResponse = await attendanceApi.getTeamAttendance(
           1,
           date, // Start date
-          date // End date (same day)
+          date, // End date (same day)
+          selectedTenant || undefined // tenantId
         );
-        // Convert to AttendanceResponse format
         response = {
           items: teamResponse.items,
           total: teamResponse.total,
@@ -464,34 +561,38 @@ const AttendanceTable = () => {
         };
         const teamItems = (response.items as AttendanceEvent[]) || [];
         setTeamAttendance(teamItems);
+
         
-        // Apply client-side filtering by date immediately (in case API doesn't filter properly)
-        // This ensures empty array [] if no records exist for the selected date
         const selectedDateStr = date;
         const filteredItems = teamItems
           .map(member => {
             const filteredAttendance =
               (member as any).attendance?.filter((att: any) => {
                 if (!att.date) return false;
-                
-                // Handle different date formats
+
                 let attDateStr = '';
-                
-                // If date is already in YYYY-MM-DD format
-                if (typeof att.date === 'string' && att.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+
+                if (
+                  typeof att.date === 'string' &&
+                  att.date.match(/^\d{4}-\d{2}-\d{2}$/)
+                ) {
                   attDateStr = att.date;
                 }
-                // If date is an ISO timestamp, extract YYYY-MM-DD
-                else if (typeof att.date === 'string' && att.date.includes('T')) {
+                else if (
+                  typeof att.date === 'string' &&
+                  att.date.includes('T')
+                ) {
                   attDateStr = att.date.split('T')[0];
                 }
-                // If date is a Date object or ISO string
                 else {
                   try {
                     const dateObj = new Date(att.date);
                     if (!isNaN(dateObj.getTime())) {
                       const year = dateObj.getFullYear();
-                      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                      const month = String(dateObj.getMonth() + 1).padStart(
+                        2,
+                        '0'
+                      );
                       const day = String(dateObj.getDate()).padStart(2, '0');
                       attDateStr = `${year}-${month}-${day}`;
                     }
@@ -500,7 +601,7 @@ const AttendanceTable = () => {
                     attDateStr = String(att.date);
                   }
                 }
-                
+
                 return attDateStr === selectedDateStr;
               }) || [];
             return {
@@ -508,9 +609,11 @@ const AttendanceTable = () => {
               attendance: filteredAttendance,
             };
           })
-          .filter(member => (member as any).attendance && (member as any).attendance.length > 0);
-        
-        // Set filtered data - will be empty array [] if no records match the selected date
+          .filter(
+            member =>
+              (member as any).attendance &&
+              (member as any).attendance.length > 0
+          );
         setFilteredTeamAttendance(filteredItems);
       }
     } catch {
@@ -530,40 +633,226 @@ const AttendanceTable = () => {
     }
   };
 
-  // Fetch employees from attendance data
-  const fetchEmployeesFromAttendance = async () => {
+  const fetchEmployeesFromAttendance = async (viewOverride?: 'my' | 'all') => {
     try {
-      // Aggregate all unique employees from all attendance pages
-      let page = 1;
-      let totalPages = 1;
-      const uniqueEmployees = new Map();
+      const currentView = viewOverride || adminView;
 
-      do {
-        const attendanceResponse = await attendanceApi.getAllAttendance(page);
-        if (attendanceResponse && attendanceResponse.items) {
-          attendanceResponse.items.forEach((item: any) => {
-            if (item.user_id && item.user?.first_name) {
-              const employeeId = item.user_id;
-              const employeeName =
-                item.user.first_name +
-                (item.user.last_name ? ` ${item.user.last_name}` : '');
-              if (!uniqueEmployees.has(employeeId)) {
-                uniqueEmployees.set(employeeId, {
-                  id: employeeId,
-                  name: employeeName,
-                });
+      if (currentView === 'my') {
+        setEmployees([]);
+        return;
+      }
+
+      // Get admin's tenant_id for filtering employees
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        console.warn('No user found in localStorage');
+        setEmployees([]);
+        return;
+      }
+
+      const currentUser = JSON.parse(storedUser);
+      const isSystemAdminFlag = isSystemAdmin(currentUser.role);
+      const isAdminFlag = isAdmin(currentUser.role);
+      const isNetworkAdminFlag = isNetworkAdmin(currentUser.role);
+      const isHRAdminFlag = isHRAdmin(currentUser.role);
+
+      let tenantIdForEmployees: string | undefined =
+        selectedTenant || undefined;
+
+      if (
+        !isSystemAdminFlag &&
+        (isAdminFlag || isNetworkAdminFlag || isHRAdminFlag)
+      ) {
+        const adminTenantId = getAdminTenantId(currentUser);
+        if (adminTenantId) {
+          tenantIdForEmployees = adminTenantId;
+          console.log('Using admin tenant_id for employees:', adminTenantId);
+        } else {
+          console.warn('Admin tenant_id not found');
+        }
+      }
+      const userIdMapByEmail = new Map<string, string>(); // email -> user_id
+      const userIdMapByName = new Map<string, string>(); // name -> user_id
+
+      // Only call attendance API for system admin
+      if (isSystemAdminFlag) {
+        console.log(
+          'System Admin: Getting user_id mapping from system/all API with tenantId:',
+          tenantIdForEmployees
+        );
+
+       
+        const systemAttendanceResponse =
+          await attendanceApi.getSystemAllAttendance();
+
+        systemAttendanceResponse.tenants.forEach(tenant => {
+          // Filter by tenant if specified
+          if (
+            tenantIdForEmployees &&
+            tenant.tenant_id !== tenantIdForEmployees
+          ) {
+            return;
+          }
+
+          // Only process active tenants
+          if (tenant.tenant_status !== 'active') {
+            return;
+          }
+
+          tenant.employees.forEach(emp => {
+            if (emp.user_id && emp.first_name) {
+              const fullName =
+                `${emp.first_name} ${emp.last_name || ''}`.trim();
+            
+              if (emp.email) {
+                userIdMapByEmail.set(emp.email.toLowerCase(), emp.user_id);
+              }
+              // Map by name (fallback)
+              if (fullName) {
+                userIdMapByName.set(fullName.toLowerCase(), emp.user_id);
               }
             }
           });
-          totalPages = attendanceResponse.totalPages || 1;
-        }
-        page++;
-      } while (page <= totalPages);
+        });
 
-      setEmployees(Array.from(uniqueEmployees.values()));
-    } catch {
+        console.log('User ID mapping from attendance API:', {
+          byEmail: userIdMapByEmail.size,
+          byName: userIdMapByName.size,
+        });
+      } else {
+        console.log(
+          'Regular Admin: Skipping attendance API call, using employees API directly'
+        );
+      }
+
+      const response = await systemEmployeeApiService.getSystemEmployees({
+        tenantId: tenantIdForEmployees,
+        page: null, // null to get all employees without pagination
+      });
+
+      console.log('Employees API response:', response);
+
+      // Handle both array and paginated response
+      const employeesData = Array.isArray(response)
+        ? response
+        : 'items' in response && Array.isArray(response.items)
+          ? response.items
+          : [];
+
+      console.log(
+        'Employees data after processing:',
+        employeesData.length,
+        'employees'
+      );
+
+      const employeeOptions = employeesData
+        .map((emp: any) => {
+          // Handle different name formats
+          let employeeName = 'Unknown';
+          let employeeEmail = (emp.email || '').toLowerCase();
+
+          // Check if employee has user object (from API response)
+          const userObj = emp.user || {};
+          const userFirstName = userObj.first_name || emp.first_name || '';
+          const userLastName = userObj.last_name || emp.last_name || '';
+          const userEmail = (userObj.email || emp.email || '').toLowerCase();
+
+          if (userFirstName) {
+            employeeName =
+              `${userFirstName}${userLastName ? ` ${userLastName}` : ''}`.trim();
+          } else if (emp.firstName && emp.lastName) {
+            employeeName = `${emp.firstName} ${emp.lastName}`.trim();
+          } else if (emp.name) {
+            employeeName = emp.name;
+          } else if (userEmail) {
+            employeeName = userEmail;
+          }
+
+          employeeEmail = userEmail || employeeEmail;
+
+
+          let employeeUserId: string | undefined;
+
+          if (userObj.id) {
+            employeeUserId = userObj.id;
+            console.log(
+              ' Using user.id from employees API (correct user_id):',
+              employeeUserId
+            );
+          }
+          else if (employeeEmail && userIdMapByEmail.has(employeeEmail)) {
+            employeeUserId = userIdMapByEmail.get(employeeEmail);
+            console.log(
+              'Using user_id from attendance API (by email):',
+              employeeUserId
+            );
+          }
+          else if (
+            employeeName &&
+            userIdMapByName.has(employeeName.toLowerCase())
+          ) {
+            employeeUserId = userIdMapByName.get(employeeName.toLowerCase());
+            console.log(
+              'Using user_id from attendance API (by name):',
+              employeeUserId
+            );
+          }
+          // Fourth try: Direct user_id field
+          else if (emp.user_id) {
+            employeeUserId = emp.user_id;
+            console.log('Using emp.user_id:', employeeUserId);
+          }
+          else {
+            employeeUserId = emp.id;
+            console.warn(
+              'Using emp.id as fallback (may not match attendance):',
+              employeeUserId
+            );
+          }
+
+          console.log('Mapping employee to dropdown:', {
+            name: employeeName,
+            email: employeeEmail,
+            user_id: employeeUserId,
+            employee_id: emp.id,
+            hasUserObject: !!userObj.id,
+          });
+
+          return {
+            id: employeeUserId!, 
+            name: employeeName,
+          };
+        })
+        .filter(emp => emp.id && emp.name !== 'Unknown'); 
+
+      console.log('Final employee options:', employeeOptions);
+      setEmployees(employeeOptions);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
       setEmployees([]);
     }
+  };
+
+  const getAdminTenantId = (currentUser: any): string | undefined => {
+    try {
+      const storedTenantId = localStorage.getItem('tenant_id');
+      if (storedTenantId) {
+        return storedTenantId.trim();
+      }
+    } catch (error) {
+      console.warn('Failed to get tenant_id from localStorage:', error);
+    }
+
+    try {
+      const tenantId = currentUser?.tenant_id || currentUser?.tenant;
+      if (tenantId) {
+        return String(tenantId).trim();
+      }
+    } catch (error) {
+      console.warn('Failed to get tenant_id from user object:', error);
+    }
+
+    return undefined;
   };
 
   const fetchAttendance = async (
@@ -598,72 +887,241 @@ const AttendanceTable = () => {
       setIsNetworkAdminUser(isNetworkAdminFlag);
       setIsHRAdminUser(isHRAdminFlag);
 
+      const adminTenantId =
+        !isSystemAdminFlag &&
+        (isAdminFlag || isNetworkAdminFlag || isHRAdminFlag)
+          ? getAdminTenantId(currentUser)
+          : undefined;
+
       let response: AttendanceResponse;
 
       const effectiveView: 'my' | 'all' = view ?? adminView;
       const effectiveSelectedEmployee = selectedUserId ?? selectedEmployee;
       const effectiveStartDate = startDateOverride ?? startDate;
       const effectiveEndDate = endDateOverride ?? endDate;
+      let rows: AttendanceRecord[] = [];
 
-      // UPDATED: Use getAttendanceEvents for all attendance fetching
-      if (canViewAllAttendance && effectiveView === 'all') {
-        if (effectiveSelectedEmployee) {
-          // When a specific employee is selected, fetch events for that user
-          response = await attendanceApi.getAttendanceEvents(
-            effectiveSelectedEmployee,
-            1, // Always page 1 - show all records
-            effectiveStartDate || undefined,
-            effectiveEndDate || undefined
-          );
-        } else {
-          // No employee selected: fetch all attendance without pagination
-          response = await attendanceApi.getAllAttendance(
-            1, // Always page 1 - show all records
-            effectiveStartDate || undefined,
-            effectiveEndDate || undefined
-          );
-        }
-      } else {
-        // For non-admins or 'my' view, fetch events for the current user
-        response = await attendanceApi.getAttendanceEvents(
-          currentUser.id,
-          1, // Always page 1 - show all records
+      if (isSystemAdminFlag && effectiveView === 'all') {
+        const systemData = await attendanceApi.getSystemAllAttendance(
           effectiveStartDate || undefined,
           effectiveEndDate || undefined
         );
-      }
-
-      const events: AttendanceEvent[] =
-        (response.items as AttendanceEvent[]) || [];
-
-      // Check if response contains shift-based data or events
-      const isShiftBased =
-        events.length > 0 &&
-        events[0] &&
-        (events[0] as any).date &&
-        (events[0] as any).checkIn !== undefined;
-
-      let rows: AttendanceRecord[];
-
-      if (isShiftBased) {
-        // Handle shift-based data from backend
-        rows = buildFromSummaries(events as any, currentUser.id);
-      } else {
-        // Handle events-based data (primary method)
-        rows = buildFromEvents(
-          events,
-          currentUser.id,
-          canViewAllAttendance && effectiveView === 'all'
+        rows = buildFromSystemAll(
+          systemData,
+          selectedTenant || null,
+          effectiveSelectedEmployee || null
         );
+      } else {
+        
+        if (canViewAllAttendance && effectiveView === 'all') {
+         
+          const tenantIdForFetch = isSystemAdminFlag
+            ? selectedTenant || undefined
+            : adminTenantId || selectedTenant || undefined;
+
+          if (effectiveSelectedEmployee) {
+            
+
+            console.log(
+              'Fetching attendance for employee by userId only:',
+              effectiveSelectedEmployee,
+              '(no date filter)'
+            );
+            response = await attendanceApi.getAttendanceEvents(
+              effectiveSelectedEmployee, 
+              1, 
+              undefined, 
+              undefined, 
+              undefined 
+            );
+            console.log('Attendance response for selected employee:', response);
+          } else {
+          
+            response = await attendanceApi.getAllAttendance(
+              1,
+              effectiveStartDate || undefined,
+              effectiveEndDate || undefined,
+              undefined, 
+              tenantIdForFetch 
+            );
+          }
+        } else {
+          
+          let myStartDate = effectiveStartDate;
+          let myEndDate = effectiveEndDate;
+
+          if (!myStartDate || !myEndDate) {
+            
+            const today = new Date();
+            const oneYearAgo = new Date();
+            oneYearAgo.setFullYear(today.getFullYear() - 1);
+
+            myStartDate = myStartDate || formatLocalYMD(oneYearAgo);
+            myEndDate = myEndDate || formatLocalYMD(today);
+          }
+
+          response = await attendanceApi.getAttendanceEvents(
+            currentUser.id, 
+            1,
+            myStartDate, 
+            myEndDate,
+            selectedTenant || undefined 
+          );
+        }
+
+        const events: AttendanceEvent[] =
+          (response.items as AttendanceEvent[]) || [];
+
+        console.log(
+          'Events from API response:',
+          events.length,
+          'events',
+          'for employee:',
+          effectiveSelectedEmployee
+        );
+        console.log('Full response:', response);
+
+        if (events.length > 0) {
+          console.log(
+            'Sample events with user_id:',
+            events.slice(0, 3).map(ev => ({
+              id: (ev as any).id,
+              user_id: (ev as any).user_id,
+              user: (ev as any).user,
+              type: (ev as any).type,
+              timestamp: (ev as any).timestamp,
+            }))
+          );
+        }
+        const isShiftBased =
+          events.length > 0 &&
+          events[0] &&
+          (events[0] as any).date &&
+          (events[0] as any).checkIn !== undefined;
+
+        console.log('Is shift-based data:', isShiftBased);
+
+        if (isShiftBased) {
+          const userIdForBuild = effectiveSelectedEmployee || currentUser.id;
+          rows = buildFromSummaries(events as any, userIdForBuild);
+        } else {
+          const userIdForBuild = effectiveSelectedEmployee || currentUser.id;
+          const isAllAttendanceView =
+            canViewAllAttendance &&
+            effectiveView === 'all' &&
+            !effectiveSelectedEmployee; // Only true when NO employee is selected
+
+          console.log('🔨 Building from events:', {
+            userIdForBuild,
+            isAllAttendanceView,
+            eventsCount: events.length,
+            selectedEmployee: effectiveSelectedEmployee,
+          });
+
+          rows = buildFromEvents(
+            events,
+            userIdForBuild, 
+            isAllAttendanceView 
+          );
+
+          console.log(' Built attendance records:', {
+            rowsCount: rows.length,
+            userId: userIdForBuild,
+            isAllAttendance: isAllAttendanceView,
+          });
+        }
       }
 
-      // Always show all records without pagination
       setCurrentPage(1);
       setTotalPages(1);
       setTotalItems(rows.length);
 
+      console.log(
+        'Setting attendance data, rows count:',
+        rows.length,
+        'for employee:',
+        effectiveSelectedEmployee
+      );
+      console.log('Sample rows:', rows.slice(0, 2));
+
       setAttendanceData(rows);
-      setFilteredData(rows);
+      if (
+        canViewAllAttendance &&
+        effectiveView === 'all' &&
+        !effectiveSelectedEmployee
+      ) {
+        const employeesFromAttendance = new Map<
+          string,
+          { id: string; name: string }
+        >();
+
+        rows.forEach(record => {
+          if (record.userId && record.user) {
+            const userId = String(record.userId).trim();
+            const firstName = record.user.first_name || '';
+            const lastName = record.user.last_name || '';
+            const fullName = `${firstName} ${lastName}`.trim() || 'Unknown';
+
+            if (!employeesFromAttendance.has(userId)) {
+              employeesFromAttendance.set(userId, {
+                id: userId, 
+                name: fullName,
+              });
+            }
+          }
+        });
+
+        const extractedEmployees = Array.from(employeesFromAttendance.values());
+
+        console.log('📋 Extracted employees from attendance data:', {
+          count: extractedEmployees.length,
+          employees: extractedEmployees.slice(0, 5),
+        });
+
+        if (extractedEmployees.length > 0) {
+          setEmployees(extractedEmployees);
+          console.log(
+            ' Updated employee dropdown with',
+            extractedEmployees.length,
+            'employees from attendance data'
+          );
+        }
+      }
+      let filteredRows = rows;
+      if (effectiveSelectedEmployee) {
+        // Filter by selected employee
+        console.log('Filtering rows by employee:', effectiveSelectedEmployee);
+        console.log('Rows before filtering:', rows.length);
+        filteredRows = rows.filter(record => {
+          // Compare userId - ensure both are strings for accurate comparison
+          const recordUserId = String(record.userId || '').trim();
+          const selectedUserId = String(effectiveSelectedEmployee || '').trim();
+          const matches = recordUserId === selectedUserId;
+
+          if (!matches && rows.length > 0) {
+            console.log('Record userId mismatch:', {
+              recordUserId: recordUserId,
+              selectedUserId: selectedUserId,
+              record: {
+                id: record.id,
+                userId: record.userId,
+                date: record.date,
+                user: record.user,
+              },
+            });
+          }
+          return matches;
+        });
+        console.log('Filtered rows count:', filteredRows.length);
+        console.log('Sample filtered rows:', filteredRows.slice(0, 2));
+      }
+
+      setFilteredData(filteredRows);
+      console.log(
+        'Final filteredData set with',
+        filteredRows.length,
+        'records'
+      );
     } catch {
       setAttendanceData([]);
       setFilteredData([]);
@@ -672,13 +1130,6 @@ const AttendanceTable = () => {
     }
   };
 
-  // Handle team page change
-  // const _handleTeamPageChange = (page: number) => {
-  //   setTeamCurrentPage(page);
-  //   fetchTeamAttendance(page);
-  // };
-
-  // Handle date navigation changes for All Attendance
   const handleDateNavigationChange = (newDate: string) => {
     setCurrentNavigationDate(newDate);
     if (newDate === 'all') {
@@ -722,22 +1173,208 @@ const AttendanceTable = () => {
     setEndDate('');
     // Reset to show all records for date navigation
     setMyAttendanceNavigationDate('all');
+
+    // Fetch attendance - will show only the current user's attendance
     fetchAttendance('my', undefined, '', '');
+
+    // Clear employees list for "My Attendance" since it only shows user's own attendance
+    setEmployees([]);
   };
 
-  const handleAllAttendance = () => {
+  const handleAllAttendance = async () => {
     setAdminView('all');
     setCurrentPage(1);
     setSelectedEmployee('');
+    setSelectedTenant('');
     setStartDate('');
     setEndDate('');
-    // Reset to show all records for date navigation
     setCurrentNavigationDate('all');
 
-    // Show all records initially (no date filtering)
+    // 👉 Load tenants from system-wide attendance (only for system admin)
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const currentUser = JSON.parse(storedUser);
+      const isSystemAdminFlag = isSystemAdmin(currentUser.role);
+
+      if (isSystemAdminFlag) {
+        await fetchTenantsFromSystemAttendance();
+      }
+    }
+
+    // Fetch initial attendance
+    // Employees will be automatically extracted from attendance data in fetchAttendance
     fetchAttendance('all', undefined, '', '');
-    // Fetch employees from attendance data after initial load
-    fetchEmployeesFromAttendance();
+  };
+  const fetchTenantsFromSystemAttendance = async () => {
+    try {
+      setTenantsLoading(true);
+
+      // Use SystemTenantApi to get ALL tenants (not just those with attendance)
+      // Fetch all tenants (without pagination limit)
+      const allTenants = await SystemTenantApi.getAllTenants(false); // false = exclude deleted
+
+      // Filter ACTIVE tenants only - STRICT filtering to exclude suspended and deleted
+      // Convert status to lowercase for case-insensitive comparison
+      const activeTenants = allTenants.filter((t: any) => {
+        // Get status in lowercase for comparison
+        const statusLower = String(t.status || '')
+          .toLowerCase()
+          .trim();
+
+        // STRICT CHECK 1: Status must be exactly 'active'
+        const isActive = statusLower === 'active';
+
+        // STRICT CHECK 2: Must not be deleted (check multiple fields)
+        const isNotDeleted =
+          t.isDeleted === false &&
+          !t.deleted_at &&
+          t.deleted_at === null &&
+          statusLower !== 'deleted';
+
+        // STRICT CHECK 3: Must not be suspended
+        const isNotSuspended =
+          statusLower !== 'suspended' && statusLower !== 'suspend';
+
+        // Only include if ALL conditions are met: active, not deleted, not suspended
+        const shouldInclude = isActive && isNotDeleted && isNotSuspended;
+
+        // Log excluded tenants for debugging
+        if (!shouldInclude) {
+          const reason = !isActive
+            ? 'status is not active'
+            : !isNotDeleted
+              ? 'tenant is deleted'
+              : !isNotSuspended
+                ? 'tenant is suspended'
+                : 'unknown reason';
+
+          console.log('❌ Excluding tenant:', {
+            name: t.name,
+            id: t.id,
+            status: t.status,
+            statusLower,
+            isDeleted: t.isDeleted,
+            deleted_at: t.deleted_at,
+            reason,
+          });
+        }
+
+        return shouldInclude;
+      });
+
+      console.log('Fetched all tenants:', {
+        total: allTenants.length,
+        active: activeTenants.length,
+        allTenantsStatus: allTenants.map((t: any) => ({
+          name: t.name,
+          status: t.status,
+          isDeleted: t.isDeleted,
+          deleted_at: t.deleted_at,
+        })),
+      });
+
+      // Shape dropdown values - Final verification to ensure only active tenants
+      const tenantOptions = activeTenants
+        .filter((t: any) => {
+          // Double-check: Only include if status is exactly 'active'
+          const statusLower = String(t.status || '')
+            .toLowerCase()
+            .trim();
+          const isActive = statusLower === 'active';
+          const isNotDeleted = t.isDeleted === false && !t.deleted_at;
+          const isNotSuspended = statusLower !== 'suspended';
+
+          return isActive && isNotDeleted && isNotSuspended;
+        })
+        .map((t: any) => ({
+          id: t.id,
+          name: t.name,
+        }));
+
+      // Final verification log
+      console.log('🔍 Final tenant verification:', {
+        totalFetched: allTenants.length,
+        afterFilter: activeTenants.length,
+        finalDropdown: tenantOptions.length,
+        finalTenants: tenantOptions.map(t => t.name),
+      });
+
+      setTenants(tenantOptions);
+      console.log('✅ Set tenants in dropdown:', {
+        count: tenantOptions.length,
+        tenants: tenantOptions.map(t => t.name),
+      });
+
+      // Log excluded tenants for debugging
+      const excludedTenants = allTenants.filter((t: any) => {
+        const statusLower = String(t.status || '')
+          .toLowerCase()
+          .trim();
+        const isActive = statusLower === 'active';
+        const isNotDeleted =
+          !t.isDeleted && !t.deleted_at && statusLower !== 'deleted';
+        const isNotSuspended = statusLower !== 'suspended';
+        return !(isActive && isNotDeleted && isNotSuspended);
+      });
+
+      if (excludedTenants.length > 0) {
+        console.log(
+          '❌ Excluded tenants:',
+          excludedTenants.map((t: any) => ({
+            name: t.name,
+            status: t.status,
+            isDeleted: t.isDeleted,
+            deleted_at: t.deleted_at,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+      setTenants([]);
+    } finally {
+      setTenantsLoading(false);
+    }
+  };
+
+  // Fetch employees from system attendance for a specific tenant
+  const fetchEmployeesFromSystemAttendance = async (tenantId?: string) => {
+    try {
+      const response = await attendanceApi.getSystemAllAttendance();
+      const uniqueEmployees = new Map<string, { id: string; name: string }>();
+
+      response.tenants.forEach(tenant => {
+        // If tenantId is provided, only process that tenant; otherwise process all
+        if (tenantId && tenant.tenant_id !== tenantId) return;
+
+        tenant.employees.forEach(emp => {
+          if (emp.user_id && emp.first_name) {
+            const employeeId = emp.user_id;
+            const employeeName =
+              emp.first_name + (emp.last_name ? ` ${emp.last_name}` : '');
+            if (!uniqueEmployees.has(employeeId)) {
+              uniqueEmployees.set(employeeId, {
+                id: employeeId,
+                name: employeeName,
+              });
+            }
+          }
+        });
+      });
+
+      setEmployees(Array.from(uniqueEmployees.values()));
+    } catch (error) {
+      console.error('Error fetching employees from system attendance:', error);
+      setEmployees([]);
+    }
+  };
+
+  const handleTenantChange = (tenantId: string) => {
+    setSelectedTenant(tenantId);
+    setSelectedEmployee('');
+    setCurrentPage(1);
+
+    // NOTE: Don't call fetchAttendance here - useEffect will handle it when selectedTenant changes
+    // This prevents duplicate API calls
   };
 
   // Handle manager view change - separate buttons
@@ -778,21 +1415,67 @@ const AttendanceTable = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // helper to convert YYYY-MM-DD -> Date at local midnight
-  // const _ymdToLocalDate = (ymd: string) => {
-  //   if (!ymd) return null;
-  //   const [y, m, d] = ymd.split('-').map(Number);
-  //   return new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0);
-  // };
+  // Tenants are now loaded only when "All Attendance" is clicked via fetchTenantsFromSystemAttendance
 
-  // Separate effect for data filtering (only by selected employee; dates handled server-side)
+  // Refetch attendance when selectedTenant changes (only for "All Attendance" view)
   useEffect(() => {
-    let data = [...attendanceData];
-    if (selectedEmployee) {
-      data = data.filter(record => record.userId === selectedEmployee);
+    if (adminView === 'all' && isSystemAdminUser) {
+      fetchAttendance('all', undefined, startDate, endDate);
     }
-    setFilteredData(data);
-  }, [attendanceData, selectedEmployee]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTenant]);
+
+  useEffect(() => {
+    if (attendanceData.length > 0 && adminView === 'all') {
+      if (selectedEmployee) {
+        // Employee is selected - filter to show ONLY that employee's records
+        console.log(
+          'useEffect: Filtering data for employee:',
+          selectedEmployee,
+          'from',
+          attendanceData.length,
+          'records'
+        );
+        const filtered = attendanceData.filter(record => {
+          // Compare userId - ensure both are strings for accurate comparison
+          const recordUserId = String(record.userId || '').trim();
+          const selectedUserId = String(selectedEmployee || '').trim();
+          const matches = recordUserId === selectedUserId;
+
+          if (!matches) {
+            console.log('useEffect: Filtering out - userId mismatch:', {
+              recordUserId: recordUserId,
+              selectedUserId: selectedUserId,
+              record: {
+                id: record.id,
+                userId: record.userId,
+                date: record.date,
+              },
+            });
+          }
+          return matches;
+        });
+        console.log(
+          'useEffect: Filtered to',
+          filtered.length,
+          'records for employee:',
+          selectedEmployee
+        );
+        setFilteredData(filtered);
+      } else {
+        // No employee selected, show all data
+        console.log(
+          'useEffect: No employee selected, showing all',
+          attendanceData.length,
+          'records'
+        );
+        setFilteredData(attendanceData);
+      }
+    } else if (attendanceData.length > 0) {
+      // For other views, just set the data
+      setFilteredData(attendanceData);
+    }
+  }, [attendanceData, selectedEmployee, adminView]);
 
   // Client-side filtering for team attendance by date (as fallback if API doesn't filter)
   // Note: Date range filter is handled in fetchTeamAttendance, this only handles date navigation
@@ -802,30 +1485,36 @@ const AttendanceTable = () => {
       // Date range filter is active, filtering is already done in fetchTeamAttendance
       return;
     }
-    
+
     if (teamCurrentNavigationDate === 'all') {
       setFilteredTeamAttendance(teamAttendance);
-    } else if (teamCurrentNavigationDate && teamCurrentNavigationDate !== 'all') {
+    } else if (
+      teamCurrentNavigationDate &&
+      teamCurrentNavigationDate !== 'all'
+    ) {
       // Apply client-side filtering for the selected date
       const selectedDateStr = teamCurrentNavigationDate;
-      
+
       if (teamAttendance.length === 0) {
         // No data available, set empty array
         setFilteredTeamAttendance([]);
         return;
       }
-      
+
       const filtered = teamAttendance
         .map(member => {
           const filteredAttendance =
             (member as any).attendance?.filter((att: any) => {
               if (!att.date) return false;
-              
+
               // Handle different date formats
               let attDateStr = '';
-              
+
               // If date is already in YYYY-MM-DD format
-              if (typeof att.date === 'string' && att.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              if (
+                typeof att.date === 'string' &&
+                att.date.match(/^\d{4}-\d{2}-\d{2}$/)
+              ) {
                 attDateStr = att.date;
               }
               // If date is an ISO timestamp, extract YYYY-MM-DD
@@ -838,7 +1527,10 @@ const AttendanceTable = () => {
                   const dateObj = new Date(att.date);
                   if (!isNaN(dateObj.getTime())) {
                     const year = dateObj.getFullYear();
-                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const month = String(dateObj.getMonth() + 1).padStart(
+                      2,
+                      '0'
+                    );
                     const day = String(dateObj.getDate()).padStart(2, '0');
                     attDateStr = `${year}-${month}-${day}`;
                   }
@@ -847,7 +1539,7 @@ const AttendanceTable = () => {
                   attDateStr = String(att.date);
                 }
               }
-              
+
               return attDateStr === selectedDateStr;
             }) || [];
           return {
@@ -855,8 +1547,11 @@ const AttendanceTable = () => {
             attendance: filteredAttendance,
           };
         })
-        .filter(member => (member as any).attendance && (member as any).attendance.length > 0);
-      
+        .filter(
+          member =>
+            (member as any).attendance && (member as any).attendance.length > 0
+        );
+
       // Set filtered data - will be empty array [] if no records match the selected date
       setFilteredTeamAttendance(filtered);
     } else {
@@ -871,11 +1566,22 @@ const AttendanceTable = () => {
     setStartDate('');
     setEndDate('');
     setSelectedEmployee('');
-    fetchAttendance(canViewAllAttendance ? adminView : 'my', '', '', '');
+    const viewForFetch = canViewAllAttendance ? adminView : 'my';
+    fetchAttendance(viewForFetch, '', '', '');
   };
 
   // Handle employee selection change
   const handleEmployeeChange = (value: string) => {
+    console.log('Employee selected from dropdown:', value);
+    console.log(
+      'Available employees:',
+      employees.map(emp => ({ id: emp.id, name: emp.name }))
+    );
+
+    // Find the selected employee to verify the ID
+    const selectedEmp = employees.find(emp => emp.id === value);
+    console.log('Selected employee details:', selectedEmp);
+
     setSelectedEmployee(value);
     setCurrentPage(1);
     // Immediately pass the selected employee to avoid stale state in fetch
@@ -993,6 +1699,29 @@ const AttendanceTable = () => {
                     Team Attendance
                   </Button>
                 </>
+              )}
+
+              {/* Tenant Filter - Show ONLY for System Admin */}
+              {adminView === 'all' && isSystemAdminUser && (
+                <FormControl size='small' sx={{ minWidth: 220 }}>
+                  <InputLabel>Tenant</InputLabel>
+                  <Select
+                    value={selectedTenant}
+                    label='Tenant'
+                    disabled={tenantsLoading}
+                    onChange={e => handleTenantChange(e.target.value)}
+                  >
+                    <MenuItem value=''>
+                      <em>All Tenants</em>
+                    </MenuItem>
+
+                    {tenants.map(tenant => (
+                      <MenuItem key={tenant.id} value={tenant.id}>
+                        {tenant.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               )}
 
               {/* Employee Filter - Show for admin "All" view (including HR-Admin) */}
@@ -1414,7 +2143,9 @@ const AttendanceTable = () => {
                                 {(member as any).last_name}
                               </TableCell>
                               <TableCell>
-                                {attendance.date ? formatDate(attendance.date) : '--'}
+                                {attendance.date
+                                  ? formatDate(attendance.date)
+                                  : '--'}
                               </TableCell>
                               <TableCell>
                                 {attendance.checkIn
@@ -1614,7 +2345,9 @@ const AttendanceTable = () => {
                                 {(member as any).last_name}
                               </TableCell>
                               <TableCell>
-                                {attendance.date ? formatDate(attendance.date) : '--'}
+                                {attendance.date
+                                  ? formatDate(attendance.date)
+                                  : '--'}
                               </TableCell>
                               <TableCell>
                                 {attendance.checkIn
