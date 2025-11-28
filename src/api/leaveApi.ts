@@ -231,4 +231,39 @@ export const leaveApi = {
       throw error;
     }
   },
+  exportSelfLeavesCSV: async (): Promise<Blob> => {
+    try {
+      const response = await axiosInstance.get('/leaves/export/self', {
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to export self leaves CSV:', error);
+      throw error;
+    }
+  },
+
+  exportTeamLeavesCSV: async (): Promise<Blob> => {
+    try {
+      const response = await axiosInstance.get('/leaves/export/team', {
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to export team leaves CSV:', error);
+      throw error;
+    }
+  },
+
+  exportAllLeavesCSV: async (): Promise<Blob> => {
+    try {
+      const response = await axiosInstance.get('/leaves/export/all', {
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to export all leaves CSV:', error);
+      throw error;
+    }
+  },
 };

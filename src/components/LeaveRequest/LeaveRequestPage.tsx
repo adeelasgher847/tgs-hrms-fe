@@ -475,6 +475,7 @@ const LeaveRequestPage = () => {
                     ? fetchAllLeavesForExport
                     : undefined
                 }
+                userRole={role}
               />
             </>
           )
@@ -490,6 +491,7 @@ const LeaveRequestPage = () => {
             onPageChange={setCurrentPage}
             isLoading={tableLoading}
             onExportAll={fetchAllLeavesForExport}
+            userRole={role}
           />
         )}
       </Box>
