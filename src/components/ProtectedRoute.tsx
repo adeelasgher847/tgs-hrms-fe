@@ -1,7 +1,8 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { useUser } from '../hooks/useUser';
 import { CircularProgress, Box } from '@mui/material';
+import { getStoredUser } from '../utils/authSession';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,52 +11,26 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useUser();
   const location = useLocation();
-  const [isChecking, setIsChecking] = useState(true);
-  const [requiresPayment, setRequiresPayment] = useState<boolean | null>(null);
+  const token =
+    typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsChecking(false);
-    }, 100);
+  const effectiveUser = useMemo(
+    () => user ?? getStoredUser<Record<string, unknown>>(),
+    [user]
+  );
 
-    return () => clearTimeout(timer);
-  }, []);
+  const requiresPayment = useMemo(() => {
+    if (!token || !effectiveUser) return false;
+    const candidate = effectiveUser as {
+      requiresPayment?: boolean;
+      requires_payment?: boolean;
+    };
+    return (
+      candidate.requiresPayment === true || candidate.requires_payment === true
+    );
+  }, [effectiveUser, token]);
 
-  useEffect(() => {
-    if (loading || isChecking) return;
-
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      setRequiresPayment(false);
-      return;
-    }
-
-    let needsPayment = false;
-
-    if (user) {
-      const userAny = user as Record<string, unknown>;
-      needsPayment =
-        userAny?.requiresPayment === true || userAny?.requires_payment === true;
-    }
-
-    if (!needsPayment) {
-      const userFromStorage = localStorage.getItem('user');
-      if (userFromStorage) {
-        try {
-          const parsedUser = JSON.parse(userFromStorage);
-          needsPayment =
-            parsedUser?.requiresPayment === true ||
-            parsedUser?.requires_payment === true;
-        } catch {
-          // Ignore parse errors - user data may be invalid
-        }
-      }
-    }
-
-    setRequiresPayment(needsPayment);
-  }, [user, loading, isChecking]);
-
-  if (loading || isChecking || requiresPayment === null) {
+  if (loading) {
     return (
       <Box
         sx={{
@@ -69,8 +44,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       </Box>
     );
   }
-
-  const token = localStorage.getItem('accessToken');
 
   if (!token) {
     return <Navigate to='/' replace state={{ from: location }} />;

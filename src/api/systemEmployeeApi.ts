@@ -200,66 +200,11 @@ class SystemEmployeeApiService {
 
   async getAllTenants(includeDeleted = true): Promise<SystemEmployee[]> {
     try {
-      let allTenants: SystemEmployee[] = [];
-      let currentPage = 1;
-      let hasMorePages = true;
-      const maxPages = 100; // Safety limit
+      const res = await axiosInstance.get('/system/tenants', {
+        params: { includeDeleted, limit: 'all' },
+      });
 
-      // Fetch all pages to get all tenants
-      while (hasMorePages && currentPage <= maxPages) {
-        const res = await axiosInstance.get<
-          | SystemEmployee[]
-          | {
-              items?: SystemEmployee[];
-              data?: SystemEmployee[] | { items?: SystemEmployee[] };
-              total?: number;
-              totalPages?: number;
-              page?: number;
-            }
-        >('/system/tenants', {
-          params: { includeDeleted, page: currentPage, limit: 25 },
-        });
-
-        let pageTenants: SystemEmployee[] = [];
-
-        if (Array.isArray(res.data)) {
-          pageTenants = res.data;
-        } else if (res.data?.items && Array.isArray(res.data.items)) {
-          pageTenants = res.data.items;
-        } else {
-          const dataField = res.data?.data;
-          if (Array.isArray(dataField)) {
-            pageTenants = dataField;
-          } else if (
-            dataField &&
-            typeof dataField === 'object' &&
-            'items' in dataField
-          ) {
-            const maybeItems = (dataField as { items?: SystemEmployee[] })
-              .items;
-            if (Array.isArray(maybeItems)) {
-              pageTenants = maybeItems;
-            }
-          }
-        }
-
-        if (pageTenants.length > 0) {
-          allTenants = [...allTenants, ...pageTenants];
-        }
-
-        // Check if there are more pages
-        const totalPages =
-          !Array.isArray(res.data) && res.data?.totalPages
-            ? res.data.totalPages
-            : pageTenants.length === 25
-              ? currentPage + 1
-              : currentPage;
-
-        hasMorePages = currentPage < totalPages && pageTenants.length === 25;
-        currentPage++;
-      }
-
-      return allTenants;
+      return res.data?.items || [];
     } catch (error) {
       console.error('Error fetching tenants:', error);
       return [];

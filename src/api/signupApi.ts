@@ -86,8 +86,28 @@ export interface LogoUploadResponse {
   signupSessionId: string;
 }
 
+export interface GoogleSignupInitResponse {
+  alreadyRegistered?: boolean;
+  accessToken?: string;
+  refreshToken?: string;
+  user?: Record<string, unknown>;
+  permissions?: unknown[];
+  signupSessionId?: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  suggested?: Record<string, unknown>;
+}
+
 class SignupApiService {
   private baseUrl = '/signup';
+
+  async initGoogleSignup(idToken: string): Promise<GoogleSignupInitResponse> {
+    const response = await axiosInstance.post(`${this.baseUrl}/google-init`, {
+      idToken,
+    });
+    return response.data;
+  }
 
   // Step 1: Personal Details
   async createPersonalDetails(
