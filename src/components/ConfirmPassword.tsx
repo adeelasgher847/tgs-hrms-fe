@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import axiosInstance from '../api/axiosInstance';
+import authApi from '../api/authApi';
 
 const PasswordReset: React.FC = () => {
   const navigate = useNavigate();
@@ -62,7 +62,7 @@ const PasswordReset: React.FC = () => {
         confirmPassword, // Add this field to match backend DTO
       };
 
-      await axiosInstance.post('/auth/reset-password', requestData);
+      await authApi.resetPassword(requestData);
 
       // If we get here, the request was successful (no error thrown)
 

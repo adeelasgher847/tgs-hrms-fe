@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Paper,
@@ -38,34 +38,16 @@ import { formatDate } from '../../utils/dateUtils';
 
 type EmployeeWithTenantName = SystemEmployee & {
   tenantName: string;
-  user?: {
-    id: string;
-    first_name?: string;
-    last_name?: string;
-    email?: string;
-    profile_pic?: string | null;
-  };
-  designation?: {
-    id: string;
-    title: string;
-  };
-  department?: {
-    id: string;
-    name: string;
-  };
-  team?: {
-    id: string;
-    name: string;
-  };
 };
-
 
 const TenantBasedEmployeeManager: React.FC = () => {
   const [employees, setEmployees] = useState<EmployeeWithTenantName[]>([]);
   const [departments, setDepartments] = useState<BackendDepartment[]>([]);
   const [designations, setDesignations] = useState<BackendDesignation[]>([]);
   const [tenants, setTenants] = useState<SystemEmployee[]>([]);
+
   const [loading, setLoading] = useState(false);
+
   const [filters, setFilters] = useState({
     tenantId: '',
     departmentId: '',
@@ -73,29 +55,25 @@ const TenantBasedEmployeeManager: React.FC = () => {
   });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25; // Backend returns 25 records per page
+  const itemsPerPage = 25;
 
   const [selectedEmployee, setSelectedEmployee] =
     useState<EmployeeWithTenantName | null>(null);
   const [openProfile, setOpenProfile] = useState(false);
 
-  const handleOpenProfile = (employee: EmployeeWithTenantName) => {
-    setSelectedEmployee(employee);
-    setOpenProfile(true);
-  };
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const darkMode = theme.palette.mode === 'dark';
 
+  // Fetch departments + tenants once on mount
   const fetchFiltersData = async () => {
     try {
       const [deptRes, tenantRes] = await Promise.all([
         departmentApiService.getAllDepartments(),
         systemEmployeeApiService.getAllTenants(true),
       ]);
-
       setDepartments(deptRes || []);
       setTenants(tenantRes || []);
     } catch (err) {
@@ -103,6 +81,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
     }
   };
 
+  // Fetch designations for department dropdown
   const fetchDesignationsByDepartment = async (departmentId: string) => {
     if (!departmentId) {
       setDesignations([]);
@@ -112,165 +91,118 @@ const TenantBasedEmployeeManager: React.FC = () => {
       const res = await designationApiService.getDesignationsByDepartment(
         departmentId,
         null
-      ); // Pass null to get all designations for dropdown
+      );
       setDesignations(res.items || []);
     } catch (err) {
       console.error('Error fetching designations by department:', err);
     }
   };
 
-  const fetchEmployees = useCallback(async () => {
+  // Fetch employees. Not memoized so it always uses latest tenants/filters/currentPage.
+  const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const params = {
-        tenantId: filters.tenantId || undefined,
-        departmentId: filters.departmentId || undefined,
-        designationId: filters.designationId || undefined,
-        page: currentPage, // Pass page parameter to backend
+      const params: any = {
+        page: currentPage,
       };
+      if (filters.tenantId) params.tenantId = filters.tenantId;
+      if (filters.departmentId) params.departmentId = filters.departmentId;
+      if (filters.designationId) params.designationId = filters.designationId;
 
       const res = await systemEmployeeApiService.getSystemEmployees(params);
-      // Handle both array and paginated response
-      const employeesData = Array.isArray(res)
+      const employeesData: SystemEmployee[] = Array.isArray(res)
         ? res
-        : 'items' in res
-          ? res.items
-          : [];
+        : res.items || [];
 
-      // Get pagination info from response if available
-      const paginationInfo = Array.isArray(res)
-        ? null
-        : 'total' in res && 'totalPages' in res
-          ? res
-          : null;
+      // Map flat API fields to include tenantName (match by tenantId)
+      const mapped: EmployeeWithTenantName[] = employeesData.map(emp => {
+        const tenantId =
+          (emp as any).tenantId ||
+          (emp as any).tenant_id ||
+          (emp as any).tenant?.id;
+        const matchedTenant = tenants.find(t => t.id === tenantId);
+        return {
+          ...emp,
+          tenantName: matchedTenant ? matchedTenant.name : '', // show empty until tenants loaded
+        };
+      });
 
-      console.log('Raw employees data from API:', employeesData);
-      console.log('First employee sample:', employeesData[0]);
+      setEmployees(mapped);
 
-      const updatedEmployees = employeesData.map(
-        (emp: SystemEmployee): EmployeeWithTenantName => {
-          // Try to find tenant from current tenants state, but don't block on it
-          const matchedTenant = tenants.find(
-            (t: SystemEmployee) => t.id === emp.tenantId
-          );
-
-          // Type assertion for API response which includes nested objects
-          const empWithNested = emp as SystemEmployee & {
-            user?: {
-              id: string;
-              first_name?: string;
-              last_name?: string;
-              email?: string;
-              profile_pic?: string | null;
-            };
-            designation?: { id: string; title: string };
-            department?: { id: string; name: string };
-            team?: { id: string; name: string } | string;
-          };
-
-          // Log to see what we're getting
-          if (!empWithNested.user) {
-            console.warn('Employee missing user object:', emp.id, emp);
-          }
-
-          // Preserve all fields from API including user, designation, department, team objects
-          const mapped: EmployeeWithTenantName = {
-            ...emp,
-            // Map flat fields if they exist in nested objects
-            name:
-              emp.name ||
-              (empWithNested.user
-                ? `${empWithNested.user.first_name || ''} ${empWithNested.user.last_name || ''}`.trim()
-                : ''),
-            email: emp.email || empWithNested.user?.email || '',
-            departmentName: emp.departmentName || empWithNested.department?.name || '',
-            designationTitle:
-              emp.designationTitle || empWithNested.designation?.title || '',
-            // Set tenant name if available, otherwise will be updated when tenants load
-            tenantName: matchedTenant ? matchedTenant.name : 'Loading...',
-            // Explicitly preserve the user object for accessing user.id later
-            user: empWithNested.user || undefined,
-            designation: empWithNested.designation || undefined,
-            department: empWithNested.department || undefined,
-            team: typeof empWithNested.team === 'object' ? empWithNested.team : undefined,
-          };
-
-          return mapped;
-        }
-      );
-
-      console.log(
-        'Mapped employees with user objects:',
-        updatedEmployees.filter((e: EmployeeWithTenantName) => e.user)
-      );
-
-      setEmployees(updatedEmployees);
-
-      // Store pagination info if available from backend
-      if (paginationInfo) {
-        setTotalRecords(paginationInfo.total || updatedEmployees.length);
-        setTotalPages(paginationInfo.totalPages || 1);
+      // pagination info
+      if (!Array.isArray(res) && typeof res.totalPages !== 'undefined') {
+        setTotalPages(res.totalPages || 1);
+        setTotalRecords(res.total || mapped.length);
       } else {
-        // Fallback: estimate based on current page and records received
-        const hasMorePages = updatedEmployees.length === itemsPerPage;
+        // fallback estimate
+        const hasMore = mapped.length === itemsPerPage;
+        setTotalPages(hasMore ? currentPage + 1 : currentPage);
         setTotalRecords(
-          hasMorePages
+          hasMore
             ? currentPage * itemsPerPage
-            : (currentPage - 1) * itemsPerPage + updatedEmployees.length
+            : (currentPage - 1) * itemsPerPage + mapped.length
         );
-        setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
       }
     } catch (err) {
       console.error('Error fetching system employees:', err);
     } finally {
       setLoading(false);
     }
-  }, [filters, currentPage]);
+  };
 
+  // mount: load tenants & departments
   useEffect(() => {
     fetchFiltersData();
-    // Fetch employees immediately without waiting for tenants
-    fetchEmployees();
   }, []);
 
+  // whenever tenants OR filters OR page changes, load employees
+  // -> guarantees that when tenants arrive, employees are fetched/mapped again to pick up tenant names
   useEffect(() => {
-    if (filters.departmentId) {
+    fetchEmployees();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    tenants,
+    filters.tenantId,
+    filters.departmentId,
+    filters.designationId,
+    currentPage,
+  ]);
+
+  useEffect(() => {
+    if (filters.departmentId)
       fetchDesignationsByDepartment(filters.departmentId);
-    } else {
-      setDesignations([]);
-    }
+    else setDesignations([]);
   }, [filters.departmentId]);
 
+  // Update tenantName for currently shown employees when tenants array updates,
+  // but only if there is a change (prevents unnecessary rerenders).
   useEffect(() => {
-    // Fetch employees when filters or page changes
-    fetchEmployees();
-  }, [fetchEmployees, currentPage]);
+    if (!tenants.length || !employees.length) return;
 
-  // Update tenant names in employees when tenants are loaded
-  useEffect(() => {
-    if (tenants.length > 0 && employees.length > 0) {
-      setEmployees(prevEmployees =>
-        prevEmployees.map(emp => {
-          const matchedTenant = tenants.find(
-            (t: SystemEmployee) => t.id === emp.tenantId
-          );
-          const newTenantName = matchedTenant ? matchedTenant.name : 'Unknown Tenant';
-          // Only update if tenant name is different to avoid unnecessary re-renders
-          if (emp.tenantName !== newTenantName) {
-            return {
-              ...emp,
-              tenantName: newTenantName,
-            };
-          }
-          return emp;
-        })
-      );
-    }
+    setEmployees(prev => {
+      let changed = false;
+      const updated = prev.map(emp => {
+        const tenantId =
+          (emp as any).tenantId ||
+          (emp as any).tenant_id ||
+          (emp as any).tenant?.id;
+        const match = tenants.find(t => t.id === tenantId);
+        const name = match ? match.name : '';
+        if (emp.tenantName !== name) {
+          changed = true;
+          return { ...emp, tenantName: name };
+        }
+        return emp;
+      });
+      return changed ? updated : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenants]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     if (key === 'departmentId') {
+      // reset designation when department changes
       setFilters(prev => ({ ...prev, departmentId: value, designationId: '' }));
     }
     setCurrentPage(1);
@@ -306,8 +238,8 @@ const TenantBasedEmployeeManager: React.FC = () => {
       [
         csvEscape(emp.name),
         csvEscape(emp.tenantName),
-        csvEscape(emp.departmentName),
-        csvEscape(emp.designationTitle),
+        csvEscape((emp as any).departmentName),
+        csvEscape((emp as any).designationTitle),
         csvEscape(emp.status),
         csvEscape(
           emp.createdAt ? new Date(emp.createdAt).toLocaleDateString() : 'N/A'
@@ -327,6 +259,11 @@ const TenantBasedEmployeeManager: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleOpenProfile = (employee: EmployeeWithTenantName) => {
+    setSelectedEmployee(employee);
+    setOpenProfile(true);
+  };
+
   const filterBtn = darkMode ? '#888' : '#999';
   const textColor = darkMode ? '#fff' : '#000';
   const darkInputStyles = darkMode
@@ -339,11 +276,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
       }
     : {};
 
-  // Backend returns 25 records per page (fixed page size)
-  // If we get 25 records, there might be more pages
-  // If we get less than 25, it's the last page
   const hasMorePages = employees.length === itemsPerPage;
-  // Calculate estimated total records if not provided by backend
   const estimatedTotalRecords =
     totalRecords ||
     (hasMorePages
@@ -413,7 +346,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
             value={filters.designationId}
             onChange={e => handleFilterChange('designationId', e.target.value)}
             size='small'
-            disabled={!filters.departmentId} // Disable when no department is selected
+            disabled={!filters.departmentId}
             sx={{ width: isMobile ? '100%' : 190, ...darkInputStyles }}
           >
             <MenuItem value=''>All Designations</MenuItem>
@@ -427,10 +360,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
           <Button
             variant='outlined'
             onClick={handleClearFilters}
-            sx={{
-              borderColor: filterBtn,
-              color: textColor,
-            }}
+            sx={{ borderColor: filterBtn, color: textColor }}
           >
             Clear Filters
           </Button>
@@ -478,14 +408,12 @@ const TenantBasedEmployeeManager: React.FC = () => {
                 employees.map(emp => (
                   <TableRow key={emp.id}>
                     <TableCell>{emp.name}</TableCell>
-                    <TableCell>{emp.tenantName}</TableCell>
-                    <TableCell>{emp.departmentName}</TableCell>
-                    <TableCell>{emp.designationTitle}</TableCell>
+                    <TableCell>{emp.tenantName || <em>—</em>}</TableCell>
+                    <TableCell>{(emp as any).departmentName}</TableCell>
+                    <TableCell>{(emp as any).designationTitle}</TableCell>
                     <TableCell>{emp.status}</TableCell>
                     <TableCell>
-                      {emp.createdAt
-                        ? formatDate(emp.createdAt)
-                        : 'N/A'}
+                      {emp.createdAt ? formatDate(emp.createdAt) : 'N/A'}
                     </TableCell>
                     <TableCell align='center'>
                       <IconButton onClick={() => handleOpenProfile(emp)}>
