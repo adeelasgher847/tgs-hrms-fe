@@ -223,7 +223,7 @@ export const isSubMenuVisibleForRole = (
       visible = false;
     }
     if (parent.includes('assets')) {
-      if (sub.includes('asset requests')) {
+      if (sub.includes('asset requests') || sub.includes('assets overview')) {
         visible = false;
       }
     }
@@ -358,7 +358,7 @@ export const isSubMenuVisibleForRole = (
       }
     }
     if (parent.includes('assets')) {
-      if (sub.includes('asset inventory') || sub.includes('management')) {
+      if (sub.includes('asset inventory') || sub.includes('management') || sub.includes('assets overview')) {
         visible = false;
       }
     }
@@ -447,7 +447,7 @@ export const isSubMenuVisibleForRole = (
 
   if (r === 'manager') {
     if (parent.includes('assets')) {
-      if (sub.includes('asset inventory') || sub.includes('management')) {
+      if (sub.includes('asset inventory') || sub.includes('management') || sub.includes('assets overview')) {
         visible = false;
       }
     }

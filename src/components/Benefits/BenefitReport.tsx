@@ -375,10 +375,12 @@ const BenefitReport: React.FC = () => {
       <Box
         display='flex'
         justifyContent='space-between'
+        gap={3}
+        flexWrap='wrap'
         alignItems='center'
         mb={2}
       >
-        <Typography variant='h4' fontWeight={600} gutterBottom>
+        <Typography variant='h4' fontSize={{xs: '25px', sm: '34px',}}  fontWeight={600} gutterBottom mb={0}>
           Benefits Report
         </Typography>
 
@@ -407,7 +409,18 @@ const BenefitReport: React.FC = () => {
         )}
       </Box>
 
-      <Grid container spacing={2} mb={3}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: '1fr 1fr',
+            md: 'repeat(3, 1fr)',
+          },
+          gap: 2,
+          mb: 3,
+        }}
+      >
         {[
           {
             title: 'Total Active Benefits',
@@ -425,22 +438,11 @@ const BenefitReport: React.FC = () => {
             icon: <PeopleIcon color='primary' />,
           },
         ].map((card, index) => (
-          <Grid
-            item
-            key={index}
-            xs={12}
-            sm={4}
-            sx={{
-              display: 'flex',
-              flex: 1,
-            }}
-          >
-            <Box sx={{ flexGrow: 1 }}>
-              <SummaryCard {...card} />
-            </Box>
-          </Grid>
+          <Box key={index}>
+            <SummaryCard {...card} />
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
       <Box display='flex' justifyContent='space-between' alignItems='center'>
         <Grid container spacing={2} mb={2}>
