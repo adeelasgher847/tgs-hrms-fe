@@ -235,7 +235,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         ))}
       </Box>
 
-      <Paper sx={{ p: 2, overflowX: 'scroll' }}>
+      <Paper sx={{ p: 2,overflow: 'auto', boxShadow: 'none' }}>
         {loading ? (
           <Box
             display='flex'

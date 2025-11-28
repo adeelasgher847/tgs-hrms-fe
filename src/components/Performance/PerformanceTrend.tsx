@@ -367,7 +367,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           </Grid>
 
           <Grid item xs={12} md={8}>
-            <Paper elevation={1} sx={{ width: '100%', overflow: 'auto' }}>
+            <Paper elevation={1} sx={{ width: '100%', overflow: 'auto',boxShadow: 'none' }}>
               <Table size='small'>
                 <TableHead>
                   <TableRow>

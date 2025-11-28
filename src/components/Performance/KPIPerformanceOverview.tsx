@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Grid, Box, CircularProgress } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import {
   systemPerformanceApiService,
   type SystemPerformanceKpi,
@@ -72,40 +72,41 @@ const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
   }
 
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12} md={6} flexGrow={1}>
-        <KpiCard
-          title='Total KPI Categories'
-          value={totalKpiCategories}
-          icon={<AssessmentIcon />}
-          contentFontSize='1.8rem'
-        />
-      </Grid>
-      <Grid item xs={12} md={6} flexGrow={1}>
-        <KpiCard
-          title='Average Score'
-          value={`${avgKpiScore.toFixed(1)}%`}
-          icon={<TrendingUpIcon />}
-          contentFontSize='1.8rem'
-        />
-      </Grid>
-      <Grid item xs={12} md={6} flexGrow={1}>
-        <KpiCard
-          title='Top Category'
-          value={bestCategory || '-'}
-          icon={<TrendingUpIcon />}
-          contentFontSize='1.8rem'
-        />
-      </Grid>
-      <Grid item xs={12} md={6} flexGrow={1}>
-        <KpiCard
-          title='Lowest Category'
-          value={lowestCategory || '-'}
-          icon={<WarningAmberIcon />}
-          contentFontSize='1.8rem'
-        />
-      </Grid>
-    </Grid>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: {
+          xs: '1fr',
+          sm: 'repeat(2, minmax(0, 1fr))',
+        },
+        gap: 2,
+      }}
+    >
+      <KpiCard
+        title='Total KPI Categories'
+        value={totalKpiCategories}
+        icon={<AssessmentIcon />}
+        contentFontSize='1.8rem'
+      />
+      <KpiCard
+        title='Average Score'
+        value={`${avgKpiScore.toFixed(1)}%`}
+        icon={<TrendingUpIcon />}
+        contentFontSize='1.8rem'
+      />
+      <KpiCard
+        title='Top Category'
+        value={bestCategory || '-'}
+        icon={<TrendingUpIcon />}
+        contentFontSize='1.8rem'
+      />
+      <KpiCard
+        title='Lowest Category'
+        value={lowestCategory || '-'}
+        icon={<WarningAmberIcon />}
+        contentFontSize='1.8rem'
+      />
+    </Box>
   );
 };
 
