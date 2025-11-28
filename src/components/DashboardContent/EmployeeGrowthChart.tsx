@@ -240,7 +240,7 @@ const EmployeeGrowthChart: React.FC = () => {
               }}
             >
               <MenuItem value=''>
-                <em>{language === 'ar' ? 'كل الشهور' : 'All Months'}</em>
+                {language === 'ar' ? 'كل الشهور' : 'All Months'}
               </MenuItem>
               {availableMonths.map(month => {
                 const monthData = tenantGrowthData.find(d => d.month === month);

@@ -351,7 +351,7 @@ const LeaveRequestPage = () => {
             flexDirection: { xs: 'column', sm: 'row' },
             alignItems: { xs: 'flex-start', sm: 'center' },
             justifyContent: 'space-between',
-            textAlign: { xs: 'center', sm: 'left' },
+            textAlign: { xs: 'start', sm: 'left' },
             gap: { xs: 1, sm: 0 },
           }}
         >

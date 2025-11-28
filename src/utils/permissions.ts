@@ -196,7 +196,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     'leave-analytics': { deny: ['report'] },
     attendance: { deny: ['leave request'] },
     payroll: { allowOnly: ['payroll reports'] },
-    assets: { allowOnly: ['system assets overview'] },
+    assets: { allowOnly: ['assets overview'] },
     employees: { deny: ['employee list'] },
   },
   'network-admin': {
@@ -205,14 +205,14 @@ const ROLE_SUBMENU_POLICIES: Record<
     attendance: { deny: ['reports', 'leave request'] },
     benefits: { deny: ['benefits report', 'benefit details'] },
     'audit logs': { denyAll: true },
-    assets: { deny: ['asset requests'] },
+    assets: { deny: ['asset requests', 'assets overview'] },
   },
   'hr-admin': {
     employees: { deny: ['tenant employees'] },
     attendance: { deny: ['reports'] },
     'audit logs': { denyAll: true },
     payroll: { deny: ['payroll reports', 'my salary'] },
-    department: { allowOnly: ['add designation'] },
+    department: { allowOnly: ['designation'] },
     assets: { deny: ['assets overview', 'asset requests'] },
     benefits: { deny: ['benefits report', 'benefit details'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
@@ -234,12 +234,12 @@ const ROLE_SUBMENU_POLICIES: Record<
     payroll: { allowOnly: ['my salary'] },
     assets: { deny: ['assets overview', 'asset inventory', 'management'] },
     benefits: { allowOnly: ['benefit details'] },
-    'leave-analytics': { deny: ['report', 'cross tenant leaves'] },
+    'leave-analytics': { deny: ['cross tenant leaves'] },
   },
   employee: {
     employees: { deny: ['tenant employees'] },
     attendance: { deny: ['report'] },
-    assets: { deny: ['asset inventory', 'management'] },
+    assets: { deny: ['asset inventory', 'management', 'assets overview'] },
     benefits: { allowOnly: ['benefit details'] },
     'leave-analytics': { allowOnly: ['report'] },
     'audit logs': { denyAll: true },
@@ -248,7 +248,7 @@ const ROLE_SUBMENU_POLICIES: Record<
   user: {
     employees: { deny: ['tenant employees'] },
     attendance: { deny: ['report'] },
-    assets: { deny: ['asset inventory', 'management'] },
+    assets: { deny: ['asset inventory', 'management', 'assets overview'] },
     benefits: { allowOnly: ['benefit details'] },
     'leave-analytics': { allowOnly: ['report'] },
     'audit logs': { denyAll: true },
@@ -279,7 +279,7 @@ export const isSubMenuVisibleForRole = (
   const subKey = normalizeLabel(subLabel);
 
   if (subKey === 'report') {
-    return r === 'admin' || r === 'manager';
+    return r === 'admin';
   }
 
   if (parentKey === 'assets' && subKey.includes('system assets overview')) {

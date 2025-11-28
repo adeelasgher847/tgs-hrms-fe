@@ -107,7 +107,7 @@ export const TenantPage: React.FC = () => {
 
       const res = await SystemTenantApi.getAll({
         page: 1,
-        limit: 999999,
+        limit: 'all',
         includeDeleted: true,
       });
 
@@ -371,7 +371,7 @@ export const TenantPage: React.FC = () => {
         URL.revokeObjectURL(editLogoPreview);
       }
       setEditLogoPreview(null);
-      fetchTenants(currentPage);
+      fetchTenants();
     } catch (error) {
       console.error('Failed to update tenant:', error);
       setSnackbar({
@@ -731,16 +731,20 @@ export const TenantPage: React.FC = () => {
                 {(() => {
                   // Check for logo in multiple places: direct logo property or company.logo_url
                   let logoUrl =
-                    tenantDetail.logo ||
-                    tenantDetail.company?.logo_url ||
-                    null;
-                  
+                    tenantDetail.logo || tenantDetail.company?.logo_url || null;
+
                   // If logo is a relative path, convert it to full URL
-                  if (logoUrl && typeof logoUrl === 'string' && logoUrl.startsWith('/')) {
-                    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
+                  if (
+                    logoUrl &&
+                    typeof logoUrl === 'string' &&
+                    logoUrl.startsWith('/')
+                  ) {
+                    const baseURL =
+                      import.meta.env.VITE_API_BASE_URL ||
+                      'http://localhost:5173';
                     logoUrl = `${baseURL}${logoUrl}`;
                   }
-                  
+
                   // Check if logoUrl is valid (not empty, not '[object Object]', and is a string)
                   const isValidLogo =
                     logoUrl &&
@@ -759,40 +763,48 @@ export const TenantPage: React.FC = () => {
                     });
                   }
 
+                  const companyName =
+                    tenantDetail.company?.company_name || tenantDetail.name || '';
+                  const initials =
+                    companyName
+                      .trim()
+                      .split(/\s+/)
+                      .slice(0, 2)
+                      .map(word => word.charAt(0).toUpperCase())
+                      .join('') || 'NA';
+
                   return isValidLogo && logoUrl ? (
                     <img
                       src={logoUrl}
-                    alt='Tenant Logo'
-                    style={{
-                      width: 70,
-                      height: 70,
-                      borderRadius: '10px',
-                      objectFit: 'cover',
-                      border: '1px solid #ddd',
-                    }}
+                      alt='Tenant Logo'
+                      style={{
+                        width: 70,
+                        height: 70,
+                        borderRadius: '10px',
+                        objectFit: 'cover',
+                        border: '1px solid #ddd',
+                      }}
                       onError={e => {
                         console.error('Failed to load logo image:', logoUrl);
                         // Hide broken image
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
-                  />
-                ) : (
-                  <Box
-                    sx={{
-                      width: 70,
-                      height: 70,
-                      backgroundColor: '#eee',
-                      borderRadius: '10px',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      fontSize: 12,
-                      color: '#777',
-                      border: '1px solid #ddd',
-                    }}
-                  >
-                    No Logo
-                  </Box>
+                    />
+                  ) : (
+                    <Avatar
+                      sx={{
+                        width: 70,
+                        height: 70,
+                        borderRadius: '10px',
+                        bgcolor: '#3f51b5',
+                        color: '#fff',
+                        fontWeight: 600,
+                        fontSize: 20,
+                      }}
+                      variant='rounded'
+                    >
+                      {initials}
+                    </Avatar>
                   );
                 })()}
 
