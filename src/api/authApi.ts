@@ -18,7 +18,32 @@ export interface AuthResponse {
   }>;
 }
 
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken?: string;
+  user?: Record<string, unknown>;
+  permissions?: unknown[];
+  employee?: { id?: string | number } | null;
+  requiresPayment?: boolean;
+  session_id?: string;
+  signupSessionId?: string;
+  company?: Record<string, unknown>;
+}
+
 export const authApi = {
+  /**
+   * Authenticate user credentials and retrieve auth tokens
+   */
+  login: async (data: LoginRequest): Promise<LoginResponse> => {
+    const response = await axiosInstance.post('/auth/login', data);
+    return response.data;
+  },
+
   /**
    * Send password reset link to user's email
    * @param data - Email address for password reset

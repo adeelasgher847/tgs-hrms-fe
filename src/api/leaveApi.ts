@@ -7,6 +7,20 @@ export interface CreateLeaveRequest {
   reason: string;
 }
 
+export interface LeaveType {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface LeaveTypeListResponse {
+  items: LeaveType[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
 export interface LeaveResponse {
   id: string;
   employeeId?: string;
@@ -189,6 +203,31 @@ export const leaveApi = {
       return response.data;
     } catch (error) {
       console.error(`Failed to reject leave ${id}:`, error);
+      throw error;
+    }
+  },
+
+  getLeaveTypes: async (
+    params: { page?: number; limit?: number } = { page: 1, limit: 50 }
+  ): Promise<LeaveTypeListResponse> => {
+    try {
+      const response = await axiosInstance.get('/leave-types', { params });
+      const data = response.data;
+      if (data && Array.isArray(data.items)) {
+        return data;
+      }
+      if (Array.isArray(data)) {
+        return {
+          items: data,
+          total: data.length,
+          page: 1,
+          limit: data.length,
+          totalPages: 1,
+        };
+      }
+      return { items: [] };
+    } catch (error) {
+      console.error('Failed to fetch leave types:', error);
       throw error;
     }
   },
