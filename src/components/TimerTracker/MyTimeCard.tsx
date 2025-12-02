@@ -23,7 +23,17 @@ interface OutletContext {
   language: 'en' | 'ar';
 }
 
-const MyTimerCard: React.FC = () => {
+interface MyTimerCardProps {
+  /**
+   * Optional token from parent to force-refresh attendance status
+   * (e.g. after a successful check-in/check-out).
+   */
+  attendanceRefreshToken?: number;
+}
+
+const MyTimerCard: React.FC<MyTimerCardProps> = ({
+  attendanceRefreshToken,
+}) => {
   const { darkMode } = useOutletContext<OutletContext>();
   const [currentSession, setCurrentSession] = useState<TimesheetEntry | null>(
     null
@@ -87,6 +97,15 @@ const MyTimerCard: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // No dependencies - stable function
+
+  // When parent notifies that attendance changed (e.g. user just checked in),
+  // force-refresh today's attendance summary so the "You must check in..."
+  // message and Clock In button update immediately without full page reload.
+  useEffect(() => {
+    if (attendanceRefreshToken !== undefined) {
+      checkAttendanceStatus(true);
+    }
+  }, [attendanceRefreshToken, checkAttendanceStatus]);
 
   const fetchLatestSession = useCallback(async (force = false) => {
     if (!isComponentMountedRef.current) return;
@@ -177,10 +196,33 @@ const MyTimerCard: React.FC = () => {
       !currentSession.end_time
     ) {
       const startMs = new Date(currentSession.start_time).getTime();
+      const nowMs = Date.now();
 
-      setElapsed(Math.floor((Date.now() - startMs) / 1000));
+      // Calculate initial elapsed based on server start time.
+      // If the user's system clock/date is wildly off (e.g. moved days ahead/behind),
+      // the raw diff can be huge or even negative. In that case we clamp to 0 so
+      // the timer starts from the clock‑in moment instead of showing 96h+ etc.
+      let initialElapsed = Math.floor((nowMs - startMs) / 1000);
+
+      const MAX_CONTINUOUS_SESSION_SECONDS = 18 * 60 * 60; // 18 hours safety cap
+      if (
+        !Number.isFinite(initialElapsed) ||
+        initialElapsed < 0 ||
+        initialElapsed > MAX_CONTINUOUS_SESSION_SECONDS
+      ) {
+        initialElapsed = 0;
+      }
+
+      // After the initial calculation, advance time using a monotonic clock
+      // so that changing the OS date/time doesn't jump the timer.
+      const startPerf = performance.now();
+
+      setElapsed(initialElapsed);
       tickId = window.setInterval(() => {
-        setElapsed(Math.floor((Date.now() - startMs) / 1000));
+        const elapsedSinceMount = Math.floor(
+          (performance.now() - startPerf) / 1000
+        );
+        setElapsed(initialElapsed + elapsedSinceMount);
       }, 1000);
     } else {
       setElapsed(0);
