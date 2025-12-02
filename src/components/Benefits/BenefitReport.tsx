@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   Box,
   Typography,
-  Grid,
   Table,
   TableHead,
   TableBody,
@@ -33,8 +32,6 @@ import {
   getRoleName,
   isSystemAdmin as isSystemAdminFn,
 } from '../../utils/roleUtils';
-
-const ITEMS_PER_PAGE = 10;
 
 interface Tenant {
   id: string;
@@ -98,6 +95,8 @@ const BenefitReport: React.FC = () => {
   const [selectedDesignation, setSelectedDesignation] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+  const [paginationLimit, setPaginationLimit] = useState<number | null>(null);
 
   // Summary fetch (updates when selectedTenant changes for system admin)
   useEffect(() => {
@@ -206,12 +205,22 @@ const BenefitReport: React.FC = () => {
         let flattened: BenefitRow[] = [];
 
         if (isSystemAdmin) {
-          // Use new API for system admin
+          // Use new API for system admin with pagination
           const response =
-            await employeeBenefitApi.getAllTenantsEmployeeBenefits();
+            await employeeBenefitApi.getAllTenantsEmployeeBenefits({
+              page,
+            });
+
+          // Check if response has pagination structure (items) or old structure (tenants)
+          const tenants =
+            'items' in response
+              ? response.items
+              : 'tenants' in response
+                ? response.tenants
+                : [];
 
           // Transform the response structure to BenefitRow[]
-          flattened = (response.tenants || []).flatMap((tenant: any) =>
+          flattened = (tenants || []).flatMap((tenant: any) =>
             (tenant.employees || []).flatMap((emp: any) =>
               (emp.benefits || []).map((b: any) => ({
                 tenantId: tenant.tenant_id,
@@ -224,38 +233,95 @@ const BenefitReport: React.FC = () => {
               }))
             )
           );
+
+          // Set pagination info from backend if available
+          if (
+            'items' in response &&
+            'total' in response &&
+            'totalPages' in response &&
+            'limit' in response
+          ) {
+            setTotalPages(response.totalPages);
+            setTotalRecords(response.total);
+            setPaginationLimit(response.limit);
+          } else {
+            // Fallback: calculate from flattened data
+            const limit = paginationLimit || 25;
+            setTotalPages(Math.max(1, Math.ceil(flattened.length / limit)));
+            setTotalRecords(flattened.length);
+            setPaginationLimit(null);
+          }
         } else {
           // Use existing API for other roles
-          const params: any = { page: 1 };
+          const params: any = { page };
           const response =
             await employeeBenefitApi.getFilteredEmployeeBenefits(params);
 
-          flattened = (response || []).flatMap((emp: any) =>
-            (emp.benefits || []).map((b: any) => ({
-              tenantId: emp.tenantId ?? emp.tenant_id ?? undefined,
-              tenantName: emp.tenantName ?? emp.tenant_name ?? undefined,
-              department: emp.department || '-',
-              designation: emp.designation || '-',
-              employeeName: emp.employeeName || emp.employee_name || '-',
-              benefitType: b.type || b.name || '-',
-              status: b.statusOfAssignment || b.status || '-',
-            }))
-          );
+          // Check if response is paginated
+          if (
+            response &&
+            typeof response === 'object' &&
+            !Array.isArray(response) &&
+            'items' in response &&
+            'total' in response &&
+            'totalPages' in response
+          ) {
+            const paginatedResponse = response as {
+              items: any[];
+              total: number;
+              totalPages: number;
+              limit?: number;
+            };
+            flattened = (paginatedResponse.items || []).flatMap((emp: any) =>
+              (emp.benefits || []).map((b: any) => ({
+                tenantId: emp.tenantId ?? emp.tenant_id ?? undefined,
+                tenantName: emp.tenantName ?? emp.tenant_name ?? undefined,
+                department: emp.department || '-',
+                designation: emp.designation || '-',
+                employeeName: emp.employeeName || emp.employee_name || '-',
+                benefitType: b.type || b.name || '-',
+                status: b.statusOfAssignment || b.status || '-',
+              }))
+            );
+            setTotalPages(paginatedResponse.totalPages);
+            setTotalRecords(paginatedResponse.total);
+            setPaginationLimit(paginatedResponse.limit || null);
+          } else {
+            // Fallback for array response
+            const items = Array.isArray(response) ? response : [];
+            flattened = items.flatMap((emp: any) =>
+              (emp.benefits || []).map((b: any) => ({
+                tenantId: emp.tenantId ?? emp.tenant_id ?? undefined,
+                tenantName: emp.tenantName ?? emp.tenant_name ?? undefined,
+                department: emp.department || '-',
+                designation: emp.designation || '-',
+                employeeName: emp.employeeName || emp.employee_name || '-',
+                benefitType: b.type || b.name || '-',
+                status: b.statusOfAssignment || b.status || '-',
+              }))
+            );
+            const limit = paginationLimit || 25;
+            setTotalPages(Math.max(1, Math.ceil(flattened.length / limit)));
+            setTotalRecords(flattened.length);
+            setPaginationLimit(null);
+          }
         }
 
         if (!isMounted) return;
         setBenefitData(flattened);
         setFilteredData(flattened);
-        setTotalPages(
-          Math.max(1, Math.ceil(flattened.length / ITEMS_PER_PAGE))
-        );
-        setPage(1);
+        // Reset to page 1 only on initial load or filter changes, not on page changes
+        if (initialLoading) {
+          setPage(1);
+        }
       } catch (error) {
         console.error('Error fetching employee benefits data:', error);
         if (!isMounted) return;
         setBenefitData([]);
         setFilteredData([]);
         setTotalPages(1);
+        setTotalRecords(0);
+        setPaginationLimit(null);
         setPage(1);
       } finally {
         if (!isMounted) return;
@@ -273,9 +339,17 @@ const BenefitReport: React.FC = () => {
       isMounted = false;
     };
     // Note: selectedTenant and isSystemAdmin intentionally included so changes re-fetch
-  }, [isSystemAdmin, selectedTenant]);
+    // page is included to refetch when page changes
+  }, [isSystemAdmin, selectedTenant, page]);
 
   // local filtering (department / designation / tenant filtering for system admin)
+  // Use refs to track previous filter values to only reset page when filters actually change
+  const prevFiltersRef = useRef({
+    selectedDepartment,
+    selectedDesignation,
+    selectedTenant,
+  });
+
   useEffect(() => {
     let filtered = [...benefitData];
 
@@ -299,8 +373,23 @@ const BenefitReport: React.FC = () => {
     }
 
     setFilteredData(filtered);
-    setTotalPages(Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE)));
-    setPage(1);
+    const itemsPerPage = paginationLimit || 25;
+    setTotalPages(Math.max(1, Math.ceil(filtered.length / itemsPerPage)));
+
+    // Only reset page to 1 if filters actually changed, not when benefitData changes from pagination
+    const filtersChanged =
+      prevFiltersRef.current.selectedDepartment !== selectedDepartment ||
+      prevFiltersRef.current.selectedDesignation !== selectedDesignation ||
+      prevFiltersRef.current.selectedTenant !== selectedTenant;
+
+    if (filtersChanged) {
+      setPage(1);
+      prevFiltersRef.current = {
+        selectedDepartment,
+        selectedDesignation,
+        selectedTenant,
+      };
+    }
   }, [
     selectedDepartment,
     selectedDesignation,
@@ -308,11 +397,13 @@ const BenefitReport: React.FC = () => {
     departments,
     isSystemAdmin,
     selectedTenant,
+    paginationLimit,
   ]);
 
+  const itemsPerPage = paginationLimit || 25;
   const paginatedData = filteredData.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
   );
 
   const csvEscape = (value: unknown) => {
@@ -380,7 +471,13 @@ const BenefitReport: React.FC = () => {
         alignItems='center'
         mb={2}
       >
-        <Typography variant='h4' fontSize={{xs: '25px', sm: '34px',}}  fontWeight={600} gutterBottom mb={0}>
+        <Typography
+          variant='h4'
+          fontSize={{ xs: '25px', sm: '34px' }}
+          fontWeight={600}
+          gutterBottom
+          mb={0}
+        >
           Benefits Report
         </Typography>
 
@@ -445,47 +542,43 @@ const BenefitReport: React.FC = () => {
       </Box>
 
       <Box display='flex' justifyContent='space-between' alignItems='center'>
-        <Grid container spacing={2} mb={2}>
-          <Grid item>
-            <FormControl size='small' sx={{ minWidth: 220 }}>
-              <InputLabel>Department</InputLabel>
-              <Select
-                value={selectedDepartment}
-                onChange={e => {
-                  setSelectedDepartment(e.target.value as string);
-                  setSelectedDesignation('');
-                }}
-                label='Department'
-              >
-                <MenuItem value=''>All</MenuItem>
-                {departments.map(dept => (
-                  <MenuItem key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+        <Box display='flex' gap={2} mb={2}>
+          <FormControl size='small' sx={{ minWidth: 220 }}>
+            <InputLabel>Department</InputLabel>
+            <Select
+              value={selectedDepartment}
+              onChange={e => {
+                setSelectedDepartment(e.target.value as string);
+                setSelectedDesignation('');
+              }}
+              label='Department'
+            >
+              <MenuItem value=''>All</MenuItem>
+              {departments.map(dept => (
+                <MenuItem key={dept.id} value={dept.id}>
+                  {dept.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-          <Grid item>
-            <FormControl size='small' sx={{ minWidth: 220 }}>
-              <InputLabel>Designation</InputLabel>
-              <Select
-                value={selectedDesignation}
-                onChange={e => setSelectedDesignation(e.target.value as string)}
-                label='Designation'
-                disabled={!designations.length}
-              >
-                <MenuItem value=''>All</MenuItem>
-                {designations.map(des => (
-                  <MenuItem key={des.id} value={des.title}>
-                    {des.title}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
+          <FormControl size='small' sx={{ minWidth: 220 }}>
+            <InputLabel>Designation</InputLabel>
+            <Select
+              value={selectedDesignation}
+              onChange={e => setSelectedDesignation(e.target.value as string)}
+              label='Designation'
+              disabled={!designations.length}
+            >
+              <MenuItem value=''>All</MenuItem>
+              {designations.map(des => (
+                <MenuItem key={des.id} value={des.title}>
+                  {des.title}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
 
         <Tooltip title='Download CSV'>
           <IconButton
@@ -562,16 +655,14 @@ const BenefitReport: React.FC = () => {
         </Box>
       )}
 
-      <Box textAlign='center' mb={2}>
-        <Typography variant='body2' color='text.secondary'>
-          Showing{' '}
-          {filteredData.length === 0
-            ? 0
-            : Math.min((page - 1) * ITEMS_PER_PAGE + 1, filteredData.length)}
-          –{Math.min(page * ITEMS_PER_PAGE, filteredData.length)} of{' '}
-          {filteredData.length} records
-        </Typography>
-      </Box>
+      {filteredData.length > 0 && (
+        <Box textAlign='center' mb={2}>
+          <Typography variant='body2' color='text.secondary'>
+            Showing page {page} of {totalPages} ({filteredData.length} total
+            records{paginationLimit ? `, ${paginationLimit} per page` : ''})
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };

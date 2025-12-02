@@ -752,7 +752,6 @@ const PayrollRecords: React.FC = () => {
           p: 0,
           backgroundColor: cardBg,
           borderRadius: 1,
-
         }}
       >
         <Box
@@ -911,7 +910,7 @@ const PayrollRecords: React.FC = () => {
             />
           </Box>
         )}
-        {!loading && displayedRecords.length > 0 && (
+        {!loading && totalRecords > 0 && (
           <Box display='flex' justifyContent='center' pb={2}>
             <Typography variant='body2' color='textSecondary'>
               Showing page {currentPage} of {totalPages} ({totalRecords} total

@@ -62,10 +62,27 @@ class SystemDashboardApiService {
     }
   }
 
-  async getSystemLogs(page: number = 1): Promise<RecentLog[]> {
+  async getSystemLogs(
+    page: number = 1,
+    filters?: {
+      userRole?: string;
+      tenantId?: string;
+      method?: string;
+    }
+  ): Promise<RecentLog[]> {
     try {
+      const params: Record<string, string | number> = { page };
+      if (filters?.userRole) {
+        params.userRole = filters.userRole;
+      }
+      if (filters?.tenantId) {
+        params.tenantId = filters.tenantId;
+      }
+      if (filters?.method) {
+        params.method = filters.method;
+      }
       const response = await axiosInstance.get<RecentLog[]>(this.logsUrl, {
-        params: { page },
+        params,
       });
       return response.data;
     } catch (error) {
