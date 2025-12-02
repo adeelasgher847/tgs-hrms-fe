@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   Box,
   Table,
@@ -69,6 +70,29 @@ const SheetList: React.FC = () => {
       return '—';
     }
   };
+  const { language } = useLanguage();
+
+  const sheetLabels = {
+    en: {
+      employee: 'Employee',
+      startTime: 'Start Time',
+      endTime: 'End Time',
+      duration: 'Duration (hrs)',
+      noSessions: 'No timesheet sessions found.',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+    },
+    ar: {
+      employee: 'الموظف',
+      startTime: 'وقت البدء',
+      endTime: 'وقت الانتهاء',
+      duration: 'المدة (ساعات)',
+      noSessions: 'لا توجد جلسات في الجدول.',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
+    },
+  } as const;
+
   return (
     <Box>
       <Paper elevation={3} sx={{ boxShadow: 'none' }}>
@@ -76,10 +100,10 @@ const SheetList: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Employee</TableCell>
-                <TableCell>Start Time</TableCell>
-                <TableCell>End Time</TableCell>
-                <TableCell>Duration (hrs)</TableCell>
+                <TableCell>{sheetLabels[language].employee}</TableCell>
+                <TableCell>{sheetLabels[language].startTime}</TableCell>
+                <TableCell>{sheetLabels[language].endTime}</TableCell>
+                <TableCell>{sheetLabels[language].duration}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -105,7 +129,7 @@ const SheetList: React.FC = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={4} align='center'>
-                    <Typography>No timesheet sessions found.</Typography>
+                    <Typography>{sheetLabels[language].noSessions}</Typography>
                   </TableCell>
                 </TableRow>
               )}
@@ -132,8 +156,11 @@ const SheetList: React.FC = () => {
       {totalItems > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {totalPages} ({totalItems} total
-            records)
+            {sheetLabels[language].showingInfo(
+              currentPage,
+              totalPages,
+              totalItems
+            )}
           </Typography>
         </Box>
       )}

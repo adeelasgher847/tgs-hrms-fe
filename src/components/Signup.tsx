@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useLanguage } from '../hooks/useLanguage';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import {
@@ -28,7 +29,7 @@ import signupApi, { type PersonalDetailsRequest } from '../api/signupApi';
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
-  const [lang, setLang] = useState<'en' | 'ar'>('en');
+  const { language, setLanguage } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
@@ -44,6 +45,11 @@ const Signup: React.FC = () => {
     first_name: '',
     last_name: '',
     email: '',
+    sx: {
+      '& .MuiInputAdornment-root': {
+        direction: 'ltr',
+      },
+    },
     phone: '',
     password: '',
     confirmPassword: '',
@@ -149,12 +155,12 @@ const Signup: React.FC = () => {
     e: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
     e.preventDefault();
-    
+
     // Prevent duplicate submissions
     if (isSubmitting.current) {
       return;
     }
-    
+
     setError(null);
     setSuccess(null);
     setTermsError('');
@@ -180,7 +186,7 @@ const Signup: React.FC = () => {
       setSnackbar({
         open: true,
         message:
-          lang === 'ar'
+          language === 'ar'
             ? 'تم إنشاء الحساب بنجاح!'
             : 'Personal details saved successfully!',
         severity: 'success',
@@ -254,7 +260,7 @@ const Signup: React.FC = () => {
             height: '100%',
             justifyContent: 'center',
             alignItems: 'center',
-            direction: lang === 'ar' ? 'rtl' : 'ltr',
+            direction: language === 'ar' ? 'rtl' : 'ltr',
           }}
         >
           <Box
@@ -300,7 +306,7 @@ const Signup: React.FC = () => {
                   fontSize: '32px',
                 }}
               >
-                {lang === 'ar'
+                {language === 'ar'
                   ? 'إدارة مهام أفضل مع ماي-تاسك'
                   : "My-Task Let's Management Better"}
               </Typography>
@@ -308,7 +314,7 @@ const Signup: React.FC = () => {
                 component='img'
                 src='https://pixelwibes.com/template/my-task/react/static/media/login-img.b36c8fbd17b96828d9ba0900b843d21c.svg'
                 alt='Login Illustration'
-                loading="lazy"
+                loading='lazy'
                 sx={{ width: '100%', maxWidth: '400px' }}
               />
             </Box>
@@ -328,8 +334,8 @@ const Signup: React.FC = () => {
                 <Box sx={{ mb: 2, maxWidth: 100 }}>
                   <FormControl size='small' fullWidth>
                     <Select
-                      value={lang}
-                      onChange={e => setLang(e.target.value as 'en' | 'ar')}
+                      value={language}
+                      onChange={e => setLanguage(e.target.value as 'en' | 'ar')}
                       sx={{
                         bgcolor: theme => theme.palette.background.paper,
                         borderRadius: 1,
@@ -351,21 +357,9 @@ const Signup: React.FC = () => {
                       fontFamily: 'Open Sans, sans-serif',
                     }}
                   >
-                    {lang === 'ar' ? 'إنشاء حساب' : 'Create your account'}
+                    {language === 'ar' ? 'إنشاء حساب' : 'Create your account'}
                   </Typography>
-                  {/* <Typography
-                    sx={{
-                      fontSize: '14px',
-                      fontFamily: 'Open Sans, sans-serif',
-                    }}
-                  >
-                    {lang === 'ar'
-                      ? 'وصول مجاني إلى لوحة التحكم الخاصة بنا.'
-                      : 'Free access to our dashboard.'}
-                  </Typography> */}
                 </Box>
-
-                {/* Error Message */}
                 {error && (
                   <Alert severity='error' sx={{ mt: 2, mb: 2 }}>
                     {error}
@@ -381,7 +375,7 @@ const Signup: React.FC = () => {
                         htmlFor='first_name'
                         sx={{ fontWeight: 400, fontSize: '14px' }}
                       >
-                        {lang === 'ar' ? 'الاسم الأول' : 'First Name'}
+                        {language === 'ar' ? 'الاسم الأول' : 'First Name'}
                       </Typography>
                       <TextField
                         name='first_name'
@@ -394,6 +388,8 @@ const Signup: React.FC = () => {
                         disabled={loading}
                         error={Boolean(fieldErrors.first_name)}
                         helperText={fieldErrors.first_name}
+                        inputProps={{ dir: 'ltr' }}
+                        InputProps={{ sx: { direction: 'ltr' } }}
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             backgroundColor: '#eee',
@@ -425,7 +421,7 @@ const Signup: React.FC = () => {
                         htmlFor='last_name'
                         sx={{ fontWeight: 400, fontSize: '14px' }}
                       >
-                        {lang === 'ar' ? 'اسم العائلة' : 'Last Name'}
+                        {language === 'ar' ? 'اسم العائلة' : 'Last Name'}
                       </Typography>
                       <TextField
                         name='last_name'
@@ -437,6 +433,8 @@ const Signup: React.FC = () => {
                         disabled={loading}
                         error={Boolean(fieldErrors.last_name)}
                         helperText={fieldErrors.last_name}
+                        inputProps={{ dir: 'ltr' }}
+                        InputProps={{ sx: { direction: 'ltr' } }}
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             backgroundColor: '#eee',
@@ -473,7 +471,9 @@ const Signup: React.FC = () => {
                         htmlFor='email'
                         sx={{ fontWeight: 400, fontSize: '14px' }}
                       >
-                        {lang === 'ar' ? 'البريد الإلكتروني' : 'Email address'}
+                        {language === 'ar'
+                          ? 'البريد الإلكتروني'
+                          : 'Email address'}
                       </Typography>
                       <TextField
                         name='email'
@@ -486,6 +486,8 @@ const Signup: React.FC = () => {
                         disabled={loading}
                         error={Boolean(fieldErrors.email)}
                         helperText={fieldErrors.email}
+                        inputProps={{ dir: 'ltr' }}
+                        InputProps={{ sx: { direction: 'ltr' } }}
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             backgroundColor: '#eee',
@@ -511,13 +513,16 @@ const Signup: React.FC = () => {
                         }}
                       />
                     </Box>
-                    <Box sx={{ flex: 1, position: 'relative' }} className="signup-phone-input">
+                    <Box
+                      sx={{ flex: 1, position: 'relative' }}
+                      className='signup-phone-input'
+                    >
                       <Typography
                         component='label'
                         htmlFor='phone'
                         sx={{ fontWeight: 400, fontSize: '14px' }}
                       >
-                        {lang === 'ar' ? 'رقم الهاتف' : 'Phone number'}
+                        {language === 'ar' ? 'رقم الهاتف' : 'Phone number'}
                       </Typography>
                       <TextField
                         name='phone'
@@ -525,16 +530,24 @@ const Signup: React.FC = () => {
                         required
                         fullWidth
                         value={formData.phone}
-                        placeholder={lang === 'ar' ? 'أدخل رقم الهاتف' : 'Enter phone number'}
-                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        placeholder={
+                          language === 'ar'
+                            ? 'أدخل رقم الهاتف'
+                            : 'Enter phone number'
+                        }
+                        onChange={e => handlePhoneChange(e.target.value)}
                         disabled={loading}
                         error={Boolean(fieldErrors.phone)}
                         helperText={fieldErrors.phone}
                         InputProps={{
+                          sx: { direction: 'ltr' },
                           startAdornment: (
-                            <InputAdornment position="start" sx={{ margin: 0, padding: '28px 0px' }}>
+                            <InputAdornment
+                              position='start'
+                              sx={{ margin: 0, padding: '28px 0px' }}
+                            >
                               <PhoneInput
-                                defaultCountry="pk"
+                                defaultCountry='pk'
                                 value={formData.phone}
                                 onChange={handlePhoneChange}
                                 style={{
@@ -549,8 +562,10 @@ const Signup: React.FC = () => {
                                   padding: '0',
                                   margin: '0',
                                   fontSize: '1rem',
-                                  fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                                  fontFamily:
+                                    '"Roboto", "Helvetica", "Arial", sans-serif',
                                   backgroundColor: 'transparent',
+                                  direction: 'ltr',
                                   width: '100%',
                                   boxSizing: 'border-box',
                                   flex: 1,
@@ -570,7 +585,7 @@ const Signup: React.FC = () => {
                                     zIndex: 9999,
                                   },
                                 }}
-                                className="phone-input-textfield-adornment"
+                                className='phone-input-textfield-adornment'
                               />
                             </InputAdornment>
                           ),
@@ -623,7 +638,7 @@ const Signup: React.FC = () => {
                         htmlFor='password'
                         sx={{ fontWeight: 400, fontSize: '14px' }}
                       >
-                        {lang === 'ar' ? 'كلمة المرور' : 'Password'}
+                        {language === 'ar' ? 'كلمة المرور' : 'Password'}
                       </Typography>
                       <TextField
                         name='password'
@@ -636,30 +651,9 @@ const Signup: React.FC = () => {
                         disabled={loading}
                         error={Boolean(fieldErrors.password)}
                         helperText={fieldErrors.password}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            backgroundColor: '#eee',
-                            borderRadius: '8px',
-                            height: '46px',
-                            marginTop: '5px',
-                            '& fieldset': { border: 'none' },
-                            '&:hover fieldset': { border: 'none' },
-                            '&.Mui-focused fieldset': { border: 'none' },
-                            '&:hover': { backgroundColor: '#eee' },
-                            '&.Mui-focused': {
-                              backgroundColor: theme =>
-                                theme.palette.background.paper,
-                            },
-                          },
-                          '& input': {
-                            outline: 'none',
-                            boxShadow: 'none',
-                          },
-                          '& input:-webkit-autofill': {
-                            height: '10px',
-                          },
-                        }}
+                        inputProps={{ dir: 'ltr' }}
                         InputProps={{
+                          sx: { direction: 'ltr' },
                           endAdornment: (
                             <InputAdornment position='end'>
                               <IconButton
@@ -685,29 +679,6 @@ const Signup: React.FC = () => {
                             </InputAdornment>
                           ),
                         }}
-                      />
-                    </Box>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography
-                        component='label'
-                        htmlFor='confirmPassword'
-                        sx={{ fontWeight: 400, fontSize: '14px' }}
-                      >
-                        {lang === 'ar'
-                          ? 'تأكيد كلمة المرور'
-                          : 'Confirm Password'}
-                      </Typography>
-                      <TextField
-                        name='confirmPassword'
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        required
-                        fullWidth
-                        value={formData.confirmPassword}
-                        placeholder='8+ characters required'
-                        onChange={handleChange}
-                        disabled={loading}
-                        error={Boolean(fieldErrors.confirmPassword)}
-                        helperText={fieldErrors.confirmPassword}
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             backgroundColor: '#eee',
@@ -731,7 +702,32 @@ const Signup: React.FC = () => {
                             height: '10px',
                           },
                         }}
+                      />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        component='label'
+                        htmlFor='confirmPassword'
+                        sx={{ fontWeight: 400, fontSize: '14px' }}
+                      >
+                        {language === 'ar'
+                          ? 'تأكيد كلمة المرور'
+                          : 'Confirm Password'}
+                      </Typography>
+                      <TextField
+                        name='confirmPassword'
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        required
+                        fullWidth
+                        value={formData.confirmPassword}
+                        placeholder='8+ characters required'
+                        onChange={handleChange}
+                        disabled={loading}
+                        error={Boolean(fieldErrors.confirmPassword)}
+                        helperText={fieldErrors.confirmPassword}
+                        inputProps={{ dir: 'ltr' }}
                         InputProps={{
+                          sx: { direction: 'ltr' },
                           endAdornment: (
                             <InputAdornment position='end'>
                               <IconButton
@@ -756,6 +752,29 @@ const Signup: React.FC = () => {
                               </IconButton>
                             </InputAdornment>
                           ),
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: '#eee',
+                            borderRadius: '8px',
+                            height: '46px',
+                            marginTop: '5px',
+                            '& fieldset': { border: 'none' },
+                            '&:hover fieldset': { border: 'none' },
+                            '&.Mui-focused fieldset': { border: 'none' },
+                            '&:hover': { backgroundColor: '#eee' },
+                            '&.Mui-focused': {
+                              backgroundColor: theme =>
+                                theme.palette.background.paper,
+                            },
+                          },
+                          '& input': {
+                            outline: 'none',
+                            boxShadow: 'none',
+                          },
+                          '& input:-webkit-autofill': {
+                            height: '10px',
+                          },
                         }}
                       />
                     </Box>
@@ -791,6 +810,11 @@ const Signup: React.FC = () => {
                             height: 14,
                             minWidth: 14,
                             minHeight: 14,
+                            sx: {
+                              '& .MuiInputAdornment-root': {
+                                direction: 'ltr',
+                              },
+                            },
                             boxSizing: 'border-box',
                             '&:hover': {
                               bgcolor: 'transparent',
@@ -808,12 +832,12 @@ const Signup: React.FC = () => {
                       label={
                         <Typography
                           sx={{
-                            ...(lang === 'ar' ? { mr: 1 } : { ml: 1 }),
+                            ...(language === 'ar' ? { mr: 1 } : { ml: 1 }),
                             fontFamily: 'Open Sans',
                             fontSize: '14px',
                           }}
                         >
-                          {lang === 'ar' ? (
+                          {language === 'ar' ? (
                             'تذكرني'
                           ) : (
                             <>
@@ -861,9 +885,11 @@ const Signup: React.FC = () => {
                           sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                         >
                           <CircularProgress size={16} />
-                          {lang === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
+                          {language === 'ar'
+                            ? 'جاري المعالجة...'
+                            : 'Processing...'}
                         </Box>
-                      ) : lang === 'ar' ? (
+                      ) : language === 'ar' ? (
                         'تسجيل'
                       ) : (
                         'Sign up'
@@ -880,7 +906,7 @@ const Signup: React.FC = () => {
                       fontFamily: 'Open Sans, sans-serif',
                     }}
                   >
-                    {lang === 'ar'
+                    {language === 'ar'
                       ? 'هل لديك حساب؟ '
                       : 'Already have an account? '}
                     <Link
@@ -892,7 +918,7 @@ const Signup: React.FC = () => {
                         fontWeight: 500,
                       }}
                     >
-                      {lang === 'ar' ? 'تسجيل الدخول' : 'Login'}
+                      {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
                     </Link>
                   </Typography>
                 </Box>

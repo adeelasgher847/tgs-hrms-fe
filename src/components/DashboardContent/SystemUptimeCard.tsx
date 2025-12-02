@@ -4,6 +4,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import Chart from 'react-apexcharts';
 import ApexCharts from 'apexcharts';
 import { useOutletContext } from 'react-router-dom';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface SystemUptimeCardProps {
   uptimeSeconds?: number;
@@ -13,6 +14,12 @@ const SystemUptimeCard: React.FC<SystemUptimeCardProps> = ({
   uptimeSeconds = 0,
 }) => {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const { language } = useLanguage();
+
+  const labels = {
+    en: 'System Uptime',
+    ar: 'وقت التشغيل للنظام',
+  } as const;
 
   const bgColor = darkMode ? '#111' : '#fff';
   const textColor = darkMode ? '#8f8f8f' : '#000';
@@ -95,7 +102,7 @@ const SystemUptimeCard: React.FC<SystemUptimeCardProps> = ({
       elevation={3}
     >
       <Typography variant='h6' fontWeight='bold' color={textColor} mb={2}>
-        System Uptime
+        {labels[language]}
       </Typography>
 
       <Box

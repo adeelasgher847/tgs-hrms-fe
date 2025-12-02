@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../hooks/useLanguage';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -14,7 +15,7 @@ import {
 
 const CompanyDetails: React.FC = () => {
   const navigate = useNavigate();
-  const [lang] = useState<'en' | 'ar'>('en');
+  const { language } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -60,7 +61,7 @@ const CompanyDetails: React.FC = () => {
     if (file) {
       setSelectedImage(file);
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = e => {
         setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
@@ -136,7 +137,7 @@ const CompanyDetails: React.FC = () => {
       setSnackbar({
         open: true,
         message:
-          lang === 'ar'
+          language === 'ar'
             ? 'تم حفظ تفاصيل الشركة بنجاح!'
             : 'Company details saved successfully!',
         severity: 'success',
@@ -147,7 +148,6 @@ const CompanyDetails: React.FC = () => {
         navigate('/signup/select-plan');
       }, 2000);
     } catch (err: unknown) {
-
       if (err.response?.data?.message) {
         const errorData = err.response.data.message;
         if (
@@ -196,7 +196,7 @@ const CompanyDetails: React.FC = () => {
             height: '100%',
             justifyContent: 'center',
             alignItems: 'center',
-            direction: lang === 'ar' ? 'rtl' : 'ltr',
+            direction: language === 'ar' ? 'rtl' : 'ltr',
           }}
         >
           <Box
@@ -232,12 +232,12 @@ const CompanyDetails: React.FC = () => {
                         fontFamily: 'Open Sans, sans-serif',
                       }}
                     >
-                      {lang === 'ar' ? 'تفاصيل الشركة' : 'Company Details'}
+                      {language === 'ar' ? 'تفاصيل الشركة' : 'Company Details'}
                     </Typography>
                     <Typography
                       sx={{ fontSize: '14px', color: 'common.white' }}
                     >
-                      {lang === 'ar'
+                      {language === 'ar'
                         ? 'أخبرنا المزيد عن شركتك'
                         : 'Tell us more about your company'}
                     </Typography>
@@ -270,7 +270,7 @@ const CompanyDetails: React.FC = () => {
                         htmlFor='companyName'
                         sx={{ fontWeight: 400, fontSize: '14px' }}
                       >
-                        {lang === 'ar' ? 'اسم الشركة' : 'Company Name'}
+                        {language === 'ar' ? 'اسم الشركة' : 'Company Name'}
                       </Typography>
                       <TextField
                         id='companyName'
@@ -280,7 +280,7 @@ const CompanyDetails: React.FC = () => {
                         value={formData.companyName}
                         onChange={handleChange}
                         placeholder={
-                          lang === 'ar'
+                          language === 'ar'
                             ? 'أدخل اسم الشركة'
                             : 'Enter company name'
                         }
@@ -310,7 +310,7 @@ const CompanyDetails: React.FC = () => {
 
                     {/* <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
                       <Typography component='label' htmlFor='companyType' sx={{ fontWeight: 400, fontSize: '14px' }}>
-                        {lang === 'ar' ? 'نوع الشركة' : 'Company Type'}
+                        {language === 'ar' ? 'نوع الشركة' : 'Company Type'}
                       </Typography>
                       <FormControl fullWidth sx={{ mt: 1 }}>
                         <Select
@@ -334,7 +334,7 @@ const CompanyDetails: React.FC = () => {
                           }}
                         >
                           <MenuItem value='' disabled>
-                            {lang === 'ar' ? 'اختر نوع الشركة' : 'Select company type'}
+                            {language === 'ar' ? 'اختر نوع الشركة' : 'Select company type'}
                           </MenuItem>
                           <MenuItem value='Technology'>Technology</MenuItem>
                           <MenuItem value='Healthcare'>Healthcare</MenuItem>
@@ -358,7 +358,7 @@ const CompanyDetails: React.FC = () => {
                         htmlFor='domain'
                         sx={{ fontWeight: 400, fontSize: '14px' }}
                       >
-                        {lang === 'ar' ? 'النطاق' : 'Domain'}
+                        {language === 'ar' ? 'النطاق' : 'Domain'}
                       </Typography>
                       <TextField
                         id='domain'
@@ -368,7 +368,7 @@ const CompanyDetails: React.FC = () => {
                         value={formData.domain}
                         onChange={handleChange}
                         placeholder={
-                          lang === 'ar'
+                          language === 'ar'
                             ? 'أدخل النطاق (مثال: company.com)'
                             : 'Enter domain (e.g., Development)'
                         }
@@ -434,11 +434,16 @@ const CompanyDetails: React.FC = () => {
                     <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
                       <Typography
                         component='label'
-                        sx={{ fontWeight: 400, fontSize: '14px', display: 'block', mb: 1 }}
+                        sx={{
+                          fontWeight: 400,
+                          fontSize: '14px',
+                          display: 'block',
+                          mb: 1,
+                        }}
                       >
-                        {lang === 'ar' ? 'شعار الشركة' : 'Company Logo'}
+                        {language === 'ar' ? 'شعار الشركة' : 'Company Logo'}
                       </Typography>
-                      
+
                       {!imagePreview ? (
                         <Box
                           sx={{
@@ -452,7 +457,9 @@ const CompanyDetails: React.FC = () => {
                               backgroundColor: '#f0f0f0',
                             },
                           }}
-                          onClick={() => document.getElementById('logo-upload')?.click()}
+                          onClick={() =>
+                            document.getElementById('logo-upload')?.click()
+                          }
                         >
                           <input
                             id='logo-upload'
@@ -462,25 +469,27 @@ const CompanyDetails: React.FC = () => {
                             style={{ display: 'none' }}
                           />
                           <Typography sx={{ color: '#666', fontSize: '14px' }}>
-                            {lang === 'ar' 
-                              ? 'اضغط لرفع شعار الشركة' 
-                              : 'Click to upload company logo'
-                            }
+                            {language === 'ar'
+                              ? 'اضغط لرفع شعار الشركة'
+                              : 'Click to upload company logo'}
                           </Typography>
-                          <Typography sx={{ color: '#999', fontSize: '12px', mt: 1 }}>
-                            {lang === 'ar' 
-                              ? 'PNG, JPG, GIF حتى 10MB' 
-                              : 'PNG, JPG, GIF up to 10MB'
-                            }
+                          <Typography
+                            sx={{ color: '#999', fontSize: '12px', mt: 1 }}
+                          >
+                            {language === 'ar'
+                              ? 'PNG, JPG, GIF حتى 10MB'
+                              : 'PNG, JPG, GIF up to 10MB'}
                           </Typography>
                         </Box>
                       ) : (
-                        <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                        <Box
+                          sx={{ position: 'relative', display: 'inline-block' }}
+                        >
                           <Box
                             component='img'
                             src={imagePreview}
                             alt='Company Logo Preview'
-                            loading="lazy"
+                            loading='lazy'
                             sx={{
                               width: '120px',
                               height: '120px',
@@ -537,7 +546,7 @@ const CompanyDetails: React.FC = () => {
                         },
                       }}
                     >
-                      {lang === 'ar' ? 'رجوع' : 'Back'}
+                      {language === 'ar' ? 'رجوع' : 'Back'}
                     </Button>
                     <Button
                       variant='contained'
@@ -556,9 +565,11 @@ const CompanyDetails: React.FC = () => {
                           sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                         >
                           <CircularProgress size={16} />
-                          {lang === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
+                          {language === 'ar'
+                            ? 'جاري المعالجة...'
+                            : 'Processing...'}
                         </Box>
-                      ) : lang === 'ar' ? (
+                      ) : language === 'ar' ? (
                         'التالي'
                       ) : (
                         'Next'

@@ -17,9 +17,38 @@ import DownloadIcon from '@mui/icons-material/Download';
 import systemDashboardApiService, {
   type RecentLog,
 } from '../../api/systemDashboardApi';
+import { useLanguage } from '../../hooks/useLanguage';
 
 const AuditLogs: React.FC = () => {
   const theme = useTheme();
+  const { language } = useLanguage();
+  const labels = {
+    en: {
+      pageTitle: 'Audit Logs',
+      exportTooltip: 'Export Audit Logs (CSV)',
+      action: 'Action',
+      entity: 'Entity',
+      userRole: 'User Role',
+      tenantId: 'Tenant Id',
+      timestamp: 'Timestamp',
+      noLogs: 'No logs found',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+    },
+    ar: {
+      pageTitle: 'سجلات التدقيق',
+      exportTooltip: 'تصدير سجلات التدقيق (CSV)',
+      action: 'الإجراء',
+      entity: 'الكيان',
+      userRole: 'دور المستخدم',
+      tenantId: 'معرّف المستأجر',
+      timestamp: 'الطابع الزمني',
+      noLogs: 'لم يتم العثور على سجلات',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
+    },
+  } as const;
+  const L = labels[language] || labels.en;
 
   const [logs, setLogs] = useState<RecentLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
@@ -68,46 +97,84 @@ const AuditLogs: React.FC = () => {
 
   return (
     <Box sx={{ minHeight: '100vh' }}>
-      <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
-      <Typography
-        variant='h4'
-        sx={{
-          color: theme.palette.text.primary,
-          textAlign: { xs: 'center', md: 'left' },
-        }}
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        mb={2}
       >
-        Audit Logs
-      </Typography>
-        <Tooltip title='Export Audit Logs (CSV)'>
-          <IconButton
-            color='primary'
-            onClick={handleExportLogs}
-            sx={{
-              backgroundColor: 'primary.main',
-              color: 'white',
-              borderRadius: '6px',
-              '&:hover': { backgroundColor: 'primary.dark' },
-            }}
-          >
-            <DownloadIcon />
-          </IconButton>
-        </Tooltip>
-        </Box>
+        {language === 'ar' ? (
+          <>
+            <Tooltip title={L.exportTooltip}>
+              <IconButton
+                color='primary'
+                onClick={handleExportLogs}
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  borderRadius: '6px',
+                  '&:hover': { backgroundColor: 'primary.dark' },
+                }}
+              >
+                <DownloadIcon />
+              </IconButton>
+            </Tooltip>
+            <Typography
+              variant='h4'
+              dir='rtl'
+              sx={{
+                color: theme.palette.text.primary,
+                textAlign: { xs: 'center', md: 'right' },
+              }}
+            >
+              {L.pageTitle}
+            </Typography>
+          </>
+        ) : (
+          <>
+            <Typography
+              variant='h4'
+              dir='ltr'
+              sx={{
+                color: theme.palette.text.primary,
+                textAlign: { xs: 'center', md: 'left' },
+              }}
+            >
+              {L.pageTitle}
+            </Typography>
+            <Tooltip title={L.exportTooltip}>
+              <IconButton
+                color='primary'
+                onClick={handleExportLogs}
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  borderRadius: '6px',
+                  '&:hover': { backgroundColor: 'primary.dark' },
+                }}
+              >
+                <DownloadIcon />
+              </IconButton>
+            </Tooltip>
+          </>
+        )}
+      </Box>
 
       <Box
         sx={{
           overflowX: 'auto',
           backgroundColor: theme.palette.background.paper,
         }}
+        dir='ltr'
       >
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell>Action</TableCell>
-              <TableCell>Entity</TableCell>
-              <TableCell>User Role</TableCell>
-              <TableCell>Tenant Id</TableCell>
-              <TableCell>Timestamp</TableCell>
+              <TableCell>{L.action}</TableCell>
+              <TableCell>{L.entity}</TableCell>
+              <TableCell>{L.userRole}</TableCell>
+              <TableCell>{L.tenantId}</TableCell>
+              <TableCell>{L.timestamp}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -120,7 +187,7 @@ const AuditLogs: React.FC = () => {
             ) : logs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} align='center'>
-                  No logs found
+                  {L.noLogs}
                 </TableCell>
               </TableRow>
             ) : (
@@ -156,8 +223,11 @@ const AuditLogs: React.FC = () => {
       {logs.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {estimatedTotalPages} (
-            {estimatedTotalRecords} total records)
+            {L.showingInfo(
+              currentPage,
+              estimatedTotalPages,
+              estimatedTotalRecords
+            )}
           </Typography>
         </Box>
       )}

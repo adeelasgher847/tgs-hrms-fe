@@ -5,6 +5,7 @@ import { handleApiError } from '../utils/errorHandler';
 export interface BackendDesignation {
   id: string;
   title: string;
+  titleAr?: string;
   departmentId: string;
   tenantId?: string;
   createdAt?: string;
@@ -14,6 +15,7 @@ export interface BackendDesignation {
 export interface BackendDepartment {
   id: string;
   name: string;
+  nameAr?: string;
   description?: string;
   tenantId?: string;
   createdAt?: string;
@@ -41,6 +43,7 @@ export interface FrontendDepartment {
 export interface DesignationDto {
   title: string;
   departmentId: string;
+  titleAr?: string;
 }
 
 function normalizeDesignation(
@@ -49,6 +52,8 @@ function normalizeDesignation(
   return {
     id: raw?.id as string,
     title: raw?.title as string,
+    titleAr:
+      (raw?.titleAr as string) || (raw?.title_ar as string) || (raw?.title_arabic as string) || undefined,
     departmentId: (raw?.departmentId ?? raw?.department_id) as string,
     tenantId: (raw?.tenantId ?? raw?.tenant_id) as string | undefined,
     createdAt: (raw?.createdAt ?? raw?.created_at) as string | undefined,
@@ -60,6 +65,7 @@ function normalizeDepartment(raw: Record<string, unknown>): BackendDepartment {
   return {
     id: raw?.id as string,
     name: raw?.name as string,
+    nameAr: (raw?.nameAr as string) || (raw?.name_ar as string) || undefined,
     description: raw?.description as string | undefined,
     tenantId: (raw?.tenantId ?? raw?.tenant_id) as string | undefined,
     createdAt: (raw?.createdAt ?? raw?.created_at) as string | undefined,
@@ -190,10 +196,14 @@ class DesignationApiService {
   ): Promise<BackendDesignation> {
     try {
       // Backend expects snake_case: { title, department_id }
-      const payload = {
+      // Include Arabic title if provided (backend may accept title_ar)
+      const payload: Record<string, unknown> = {
         title: designationData.title,
         department_id: designationData.departmentId,
       };
+      if (designationData.titleAr) {
+        payload['title_ar'] = designationData.titleAr;
+      }
       const response = await axiosInstance.post<BackendDesignation>(
         this.baseUrl,
         payload
@@ -218,7 +228,10 @@ class DesignationApiService {
   ): Promise<BackendDesignation> {
     try {
       // Backend uses department_id from existing record; only title is relevant
-      const payload = { title: designationData.title };
+      const payload: Record<string, unknown> = { title: designationData.title };
+      if (designationData.titleAr) {
+        payload['title_ar'] = designationData.titleAr;
+      }
       const response = await axiosInstance.put<BackendDesignation>(
         `${this.baseUrl}/${id}`,
         payload
@@ -261,7 +274,7 @@ class DesignationApiService {
     return {
       id: backendDesignation.id,
       title: backendDesignation.title,
-      titleAr: '', // Arabic title is optional, empty by default
+      titleAr: backendDesignation.titleAr || '', // use backend-provided Arabic title when available
       departmentId: backendDesignation.departmentId,
     };
   }
@@ -273,9 +286,9 @@ class DesignationApiService {
     return {
       id: backendDepartment.id,
       name: backendDepartment.name,
-      nameAr: backendDepartment.name, // Use English name for Arabic display for now
+      nameAr: backendDepartment.nameAr || backendDepartment.name,
       description: backendDepartment.description,
-      descriptionAr: backendDepartment.description, // Use English description for Arabic display for now
+      descriptionAr: backendDepartment.description,
     };
   }
 
@@ -286,6 +299,7 @@ class DesignationApiService {
     return {
       title: frontendDesignation.title,
       departmentId: frontendDesignation.departmentId,
+      titleAr: frontendDesignation.titleAr || undefined,
     };
   }
 

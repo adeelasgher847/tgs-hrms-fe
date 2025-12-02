@@ -25,7 +25,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import UserAvatar from '../common/UserAvatar';
-import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
+import { Add as AddIcon, Person as PersonIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember, Team } from '../../api/teamApi';
@@ -83,6 +83,11 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
       error: 'Failed to load employees',
       search: 'Search employees...',
       employeeAdded: 'Employee added to team successfully',
+      selectTeamTitle: 'Select Team to Add Employee',
+      selectTeamPlaceholder: 'Select a team',
+      cancel: 'Cancel',
+      confirmTitle: 'Confirm Add to Team',
+      confirmMessage: 'Are you sure you want to add {first} {last} to team {team}?',
     },
     ar: {
       name: 'الاسم',
@@ -96,6 +101,11 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
       error: 'فشل في تحميل الموظفين',
       search: 'البحث عن الموظفين...',
       employeeAdded: 'تم إضافة الموظف للفريق بنجاح',
+      selectTeamTitle: 'اختر الفريق لإضافة الموظف',
+      selectTeamPlaceholder: 'اختر فريقًا',
+      cancel: 'إلغاء',
+      confirmTitle: 'تأكيد الإضافة إلى الفريق',
+      confirmMessage: 'هل أنت متأكد أنك تريد إضافة {first} {last} إلى الفريق {team}؟',
     },
   };
 
@@ -473,14 +483,31 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
         onClose={handleCloseTeamDialog}
         maxWidth='sm'
         fullWidth
+        PaperProps={{ sx: { direction: language === 'ar' ? 'rtl' : 'ltr' } }}
       >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
-          Select Team to Add Employee
+        <DialogTitle
+          sx={{ color: darkMode ? '#fff' : '#000', display: 'flex', flexDirection: 'row', direction: 'ltr', alignItems: 'center' }}
+        >
+          {language === 'ar' ? (
+            <>
+              <IconButton onClick={handleCloseTeamDialog} sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                <CloseIcon />
+              </IconButton>
+              <Box sx={{ flex: 1, textAlign: 'right' }}>{lang.selectTeamTitle}</Box>
+            </>
+          ) : (
+            <>
+              <Box sx={{ flex: 1, textAlign: 'left' }}>{lang.selectTeamTitle}</Box>
+              <IconButton onClick={handleCloseTeamDialog} sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                <CloseIcon />
+              </IconButton>
+            </>
+          )}
         </DialogTitle>
         <DialogContent>
           <FormControl fullWidth sx={{ mt: 2 }}>
             <InputLabel sx={{ color: darkMode ? '#ccc' : '#666' }}>
-              Select Team
+              {lang.selectTeamPlaceholder}
             </InputLabel>
             <Select
               value={selectedTeamId}
@@ -499,7 +526,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
               }}
             >
               <MenuItem value='' disabled>
-                Select a team
+                {lang.selectTeamPlaceholder}
               </MenuItem>
               {teams.map(team => (
                 <MenuItem key={team.id} value={team.id}>
@@ -509,15 +536,15 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
             </Select>
           </FormControl>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseTeamDialog}>Cancel</Button>
+        <DialogActions sx={{ justifyContent: 'flex-end' }}>
+          <Button onClick={handleCloseTeamDialog}>{lang.cancel}</Button>
           <Button
             onClick={handleConfirmAddToTeam}
             variant='contained'
             disabled={!selectedTeamId}
             sx={{ backgroundColor: '#484c7f' }}
           >
-            Add to Team
+            {lang.addToTeam}
           </Button>
         </DialogActions>
       </Dialog>
@@ -532,11 +559,26 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
           sx: {
             backgroundColor: darkMode ? '#2d2d2d' : '#fff',
             color: darkMode ? '#fff' : '#000',
+            direction: language === 'ar' ? 'rtl' : 'ltr',
           },
         }}
       >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
-          Confirm Add to Team
+        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000', display: 'flex', flexDirection: 'row', direction: 'ltr', alignItems: 'center' }}>
+          {language === 'ar' ? (
+            <>
+              <IconButton onClick={handleCloseConfirmDialog} sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                <CloseIcon />
+              </IconButton>
+              <Box sx={{ flex: 1, textAlign: 'right' }}>{lang.confirmTitle}</Box>
+            </>
+          ) : (
+            <>
+              <Box sx={{ flex: 1, textAlign: 'left' }}>{lang.confirmTitle}</Box>
+              <IconButton onClick={handleCloseConfirmDialog} sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                <CloseIcon />
+              </IconButton>
+            </>
+          )}
         </DialogTitle>
         <DialogContent>
           {selectedEmployee && (
@@ -545,8 +587,11 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
             >
               <Typography variant='body1'>
                 {isEmployeePool
-                  ? `Select a team to assign ${selectedEmployee.user?.first_name} ${selectedEmployee.user?.last_name}.`
-                  : `Are you sure you want to add ${selectedEmployee.user?.first_name} ${selectedEmployee.user?.last_name} to team ${selectedTeam?.name ?? ''}?`}
+                  ? `${lang.selectTeamTitle} ${selectedEmployee.user?.first_name} ${selectedEmployee.user?.last_name}.`
+                  : lang.confirmMessage
+                      .replace('{first}', selectedEmployee.user?.first_name || '')
+                      .replace('{last}', selectedEmployee.user?.last_name || '')
+                      .replace('{team}', selectedTeam?.name || '')}
               </Typography>
               <Box
                 sx={{
@@ -559,7 +604,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                   variant='body2'
                   sx={{ color: darkMode ? '#ccc' : '#666' }}
                 >
-                  <strong>Employee:</strong> {selectedEmployee.user?.first_name}{' '}
+                  <strong>{lang.name}:</strong> {selectedEmployee.user?.first_name}{' '}
                   {selectedEmployee.user?.last_name}
                 </Typography>
                 <Typography
@@ -572,7 +617,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                   variant='body2'
                   sx={{ color: darkMode ? '#ccc' : '#666' }}
                 >
-                  <strong>Designation:</strong>{' '}
+                  <strong>{lang.designation}:</strong>{' '}
                   {selectedEmployee.designation?.title}
                 </Typography>
                 <Typography
@@ -591,17 +636,17 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
               </Box>
               {(isEmployeePool || !teamId) && (
                 <FormControl fullWidth>
-                  <InputLabel>Select Team</InputLabel>
+                  <InputLabel>{lang.selectTeamPlaceholder}</InputLabel>
                   <Select
                     value={selectedTeamId}
-                    label='Select Team'
+                    label={lang.selectTeamPlaceholder}
                     onChange={event =>
                       handleTeamDropdownChange(event.target.value as string)
                     }
                     disabled={teams.length === 0 && !selectedTeamId}
                   >
                     <MenuItem value='' disabled>
-                      Select Team
+                      {lang.selectTeamPlaceholder}
                     </MenuItem>
                     {teams.length === 0 ? (
                       <MenuItem value='' disabled>
@@ -620,15 +665,15 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseConfirmDialog}>Cancel</Button>
+        <DialogActions sx={{ justifyContent: 'flex-end' }}>
+          <Button onClick={handleCloseConfirmDialog}>{lang.cancel}</Button>
           <Button
             onClick={handleConfirmAddToTeamFinal}
             variant='contained'
             disabled={!selectedTeamId}
             sx={{ backgroundColor: '#484c7f' }}
           >
-            Add to Team
+            {lang.addToTeam}
           </Button>
         </DialogActions>
       </Dialog>

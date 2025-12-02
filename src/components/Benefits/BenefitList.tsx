@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   Box,
   Typography,
@@ -45,6 +46,93 @@ interface Benefit {
 }
 
 const BenefitList: React.FC = () => {
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      title: 'Benefit Management',
+      allTypes: 'All Types',
+      allStatus: 'All Status',
+      create: 'Create',
+      export: 'Export Benefit List',
+      headers: {
+        name: 'Benefit Name',
+        type: 'Type',
+        description: 'Description',
+        eligibility: 'Eligibility',
+        status: 'Status',
+        actions: 'Actions',
+      },
+      noResults: 'No benefits found',
+      edit: 'Edit',
+      delete: 'Delete',
+      deleteDialog: {
+        title: 'Delete Benefit',
+        confirm: 'Delete',
+        cancel: 'Cancel',
+        body: (name: string) =>
+          `Are you sure you want to delete the benefit "${name}"? This action cannot be undone.`,
+      },
+      success: {
+        created: 'Benefit created successfully!',
+        updated: 'Benefit updated successfully!',
+        deleted: 'Benefit deleted successfully!',
+      },
+      failure: {
+        save: 'Failed to save benefit.',
+        delete: 'Failed to delete benefit.',
+      },
+    },
+    ar: {
+      title: 'إدارة المزايا',
+      allTypes: 'جميع الأنواع',
+      allStatus: 'جميع الحالات',
+      create: 'إنشاء',
+      export: 'تصدير قائمة المزايا',
+      headers: {
+        name: 'اسم الميزة',
+        type: 'النوع',
+        description: 'الوصف',
+        eligibility: 'معايير الأهلية',
+        status: 'الحالة',
+        actions: 'الإجراءات',
+      },
+      noResults: 'لم يتم العثور على مزايا',
+      edit: 'تعديل',
+      delete: 'حذف',
+      deleteDialog: {
+        title: 'حذف الميزة',
+        confirm: 'حذف',
+        cancel: 'إلغاء',
+        body: (name: string) =>
+          `هل أنت متأكد أنك تريد حذف الميزة "${name}"؟ لا يمكن التراجع عن هذا الإجراء.`,
+      },
+      success: {
+        created: 'تم إنشاء الميزة بنجاح!',
+        updated: 'تم تحديث الميزة بنجاح!',
+        deleted: 'تم حذف الميزة بنجاح!',
+      },
+      failure: {
+        save: 'فشل حفظ الميزة.',
+        delete: 'فشل حذف الميزة.',
+      },
+    },
+  } as const;
+
+  const L = labels[language as 'en' | 'ar'] || labels.en;
+
+  const pageLabels = {
+    en: {
+      showingInfo: (p: number, t: number, total: number) =>
+        `Showing page ${p} of ${t} (${total} total records)`,
+    },
+    ar: {
+      showingInfo: (p: number, t: number, total: number) =>
+        `عرض الصفحة ${p} من ${t} (${total} إجمالي السجلات)`,
+    },
+  } as const;
+
+  const PL = pageLabels[language as 'en' | 'ar'] || pageLabels.en;
   const [loading, setLoading] = useState(true);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [page, setPage] = useState(1);
@@ -124,10 +212,10 @@ const BenefitList: React.FC = () => {
 
       if (editingBenefit) {
         await benefitsApi.updateBenefit(editingBenefit.id, payload);
-        setToastMessage('Benefit updated successfully!');
+        setToastMessage(L.success.updated);
       } else {
         await benefitsApi.createBenefit(payload);
-        setToastMessage('Benefit created successfully!');
+        setToastMessage(L.success.created);
       }
 
       setToastSeverity('success');
@@ -153,7 +241,7 @@ const BenefitList: React.FC = () => {
     try {
       const res = await benefitsApi.deleteBenefit(selectedBenefit.id);
       if (res.deleted) {
-        setToastMessage('Benefit deleted successfully!');
+        setToastMessage(L.success.deleted);
         setToastSeverity('success');
         setShowToast(true);
         setDeleteDialogOpen(false);
@@ -167,7 +255,7 @@ const BenefitList: React.FC = () => {
       setToastSeverity('error');
       setToastMessage(
         (error as { response?: { data?: { message?: string } } }).response?.data
-          ?.message || 'Failed to delete benefit.'
+          ?.message || L.failure.delete
       );
       setShowToast(true);
     }
@@ -230,9 +318,23 @@ const BenefitList: React.FC = () => {
 
   return (
     <Box>
-      <Box display='flex' alignItems='center' gap={1} mb={2}>
-        <Typography variant='h4' fontWeight={600}>
-          Benefit Management
+      <Box
+        display='flex'
+        alignItems='center'
+        gap={1}
+        mb={2}
+        sx={{
+          width: '100%',
+          justifyContent: language === 'ar' ? 'flex-end' : 'flex-start',
+        }}
+      >
+        <Typography
+          variant='h4'
+          fontWeight={600}
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
+          {L.title}
         </Typography>
       </Box>
 
@@ -252,7 +354,7 @@ const BenefitList: React.FC = () => {
                 setPage(1);
               }}
             >
-              <MenuItem value='all'>All Types</MenuItem>
+              <MenuItem value='all'>{L.allTypes}</MenuItem>
               {types.map(type => (
                 <MenuItem key={type} value={type}>
                   {type}
@@ -269,7 +371,7 @@ const BenefitList: React.FC = () => {
                 setPage(1);
               }}
             >
-              <MenuItem value='all'>All Status</MenuItem>
+              <MenuItem value='all'>{L.allStatus}</MenuItem>
               {statuses.map(status => (
                 <MenuItem key={status} value={status}>
                   {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -289,10 +391,10 @@ const BenefitList: React.FC = () => {
               setModalOpen(true);
             }}
           >
-            Create
+            {L.create}
           </Button>
 
-          <Tooltip title='Export Benefit List'>
+          <Tooltip title={L.export}>
             <IconButton
               color='primary'
               onClick={handleDownload}
@@ -320,28 +422,28 @@ const BenefitList: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Paper sx={{ mt: 2,boxShadow: 'none' }}>
+        <Paper sx={{ mt: 2, boxShadow: 'none' }}>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>
-                    <b>Benefit Name</b>
+                    <b>{L.headers.name}</b>
                   </TableCell>
                   <TableCell>
-                    <b>Type</b>
+                    <b>{L.headers.type}</b>
                   </TableCell>
                   <TableCell>
-                    <b>Description</b>
+                    <b>{L.headers.description}</b>
                   </TableCell>
                   <TableCell>
-                    <b>Eligibility</b>
+                    <b>{L.headers.eligibility}</b>
                   </TableCell>
                   <TableCell align='center'>
-                    <b>Status</b>
+                    <b>{L.headers.status}</b>
                   </TableCell>
                   <TableCell align='center'>
-                    <b>Actions</b>
+                    <b>{L.headers.actions}</b>
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -349,7 +451,7 @@ const BenefitList: React.FC = () => {
                 {filteredBenefits.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align='center'>
-                      No benefits found
+                      {L.noResults}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -380,7 +482,7 @@ const BenefitList: React.FC = () => {
                       </TableCell>
                       <TableCell align='center'>
                         <Box display='flex' justifyContent='center' gap={1}>
-                          <Tooltip title='Edit'>
+                          <Tooltip title={L.edit}>
                             <IconButton
                               color='primary'
                               size='small'
@@ -392,7 +494,7 @@ const BenefitList: React.FC = () => {
                               <EditIcon />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title='Delete'>
+                          <Tooltip title={L.delete}>
                             <IconButton
                               color='error'
                               size='small'
@@ -428,7 +530,7 @@ const BenefitList: React.FC = () => {
       {benefits.length > 0 && (
         <Box display='flex' justifyContent='center' my={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {page} of {totalPages} ({totalRecords} total records)
+            {PL.showingInfo(page, totalPages, totalRecords)}
           </Typography>
         </Box>
       )}
@@ -437,24 +539,38 @@ const BenefitList: React.FC = () => {
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
       >
-        <DialogTitle>Delete Benefit</DialogTitle>
-        <DialogContent>
+        <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
+          {L.deleteDialog.title}
+        </DialogTitle>
+        <DialogContent sx={{ direction: 'ltr' }}>
           <DialogContentText>
-            {`Are you sure you want to delete the benefit "${
-              selectedBenefit?.name || ''
-            }"? This action cannot be undone.`}
+            {L.deleteDialog.body(selectedBenefit?.name || '')}
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} color='primary'>
-            Cancel
+        <DialogActions
+          sx={{
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+            p: 2,
+            direction: 'ltr',
+          }}
+        >
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            color='primary'
+            sx={{ order: 0 }}
+          >
+            {L.deleteDialog.cancel}
           </Button>
           <Button
             onClick={handleConfirmDelete}
             color='error'
             variant='contained'
+            sx={{ order: 1 }}
           >
-            Delete
+            {L.deleteDialog.confirm}
           </Button>
         </DialogActions>
       </Dialog>

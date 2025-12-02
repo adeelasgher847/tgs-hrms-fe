@@ -1,20 +1,38 @@
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Alert,
-} from '@mui/material';
+import { Box, Typography, Paper, Button, Alert } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';
+import { useLanguage } from '../../hooks/useLanguage';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
-import { isAdmin, isSystemAdmin, isNetworkAdmin, isHRAdmin } from '../../utils/roleUtils';
+import {
+  isAdmin,
+  isSystemAdmin,
+  isNetworkAdmin,
+  isHRAdmin,
+} from '../../utils/roleUtils';
 
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
 
 const AttendanceCheck = () => {
+  const { language } = useLanguage();
+
+  const attendanceCheckLabels = {
+    en: {
+      pageTitle: 'Attendance Management',
+      adminSubtitle: 'Admin - Track your daily attendance',
+      userSubtitle: 'Track your daily attendance',
+      checkIn: 'Check In',
+      checkOut: 'Check Out',
+    },
+    ar: {
+      pageTitle: 'إدارة الحضور',
+      adminSubtitle: 'مشرف - تتبع الحضور اليومي',
+      userSubtitle: 'تتبع الحضور اليومي',
+      checkIn: 'تسجيل الدخول',
+      checkOut: 'تسجيل الخروج',
+    },
+  } as const;
   const [status, setStatus] = useState<AttendanceStatus>('Not Checked In');
   const [punchInTime, setPunchInTime] = useState<string | null>(null);
   const [punchOutTime, setPunchOutTime] = useState<string | null>(null);
@@ -120,6 +138,7 @@ const AttendanceCheck = () => {
     <Box>
       {/* Header with Check In/Out Button */}
       <Box
+        dir={'ltr'}
         display='flex'
         flexDirection={{ xs: 'column', sm: 'row' }}
         justifyContent='space-between'
@@ -130,6 +149,7 @@ const AttendanceCheck = () => {
           backgroundColor: 'background.paper',
           p: 2,
           borderRadius: 1,
+          direction: 'ltr',
         }}
       >
         <Box>
@@ -137,18 +157,25 @@ const AttendanceCheck = () => {
             variant='h5'
             fontWeight='bold'
             color='var(--dark-color)'
-            sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            sx={{
+              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
           >
-            Attendance Management
+            {attendanceCheckLabels[language].pageTitle}
           </Typography>
           <Typography
             variant='body2'
             color='text.secondary'
             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
           >
-            {(isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser)
-              ? 'Admin - Track your daily attendance'
-              : 'Track your daily attendance'}
+            {isAdminUser ||
+            isSystemAdminUser ||
+            isNetworkAdminUser ||
+            isHRAdminUser
+              ? attendanceCheckLabels[language].adminSubtitle
+              : attendanceCheckLabels[language].userSubtitle}
           </Typography>
         </Box>
 
@@ -165,11 +192,12 @@ const AttendanceCheck = () => {
               fontWeight: 600,
               borderRadius: 1,
               px: { xs: 1, sm: 2 },
+              order: language === 'ar' ? -1 : 0,
             }}
             disabled={loading}
             startIcon={<LoginIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />}
           >
-            Check In
+            {attendanceCheckLabels[language].checkIn}
           </Button>
         ) : (
           <Button
@@ -183,11 +211,12 @@ const AttendanceCheck = () => {
               fontWeight: 600,
               borderRadius: 1,
               px: { xs: 1, sm: 2 },
+              order: language === 'ar' ? -1 : 0,
             }}
             disabled={loading}
             startIcon={<LogoutIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />}
           >
-            Check Out
+            {attendanceCheckLabels[language].checkOut}
           </Button>
         )}
       </Box>

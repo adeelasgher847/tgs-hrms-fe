@@ -4,6 +4,7 @@ import {
   systemPerformanceApiService,
   type SystemPerformanceKpi,
 } from '../../api/systemPerformanceApi';
+import { useLanguage } from '../../hooks/useLanguage';
 import KpiCard from '../DashboardContent/KPICard';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -16,6 +17,22 @@ interface KpiPerformanceOverviewProps {
 const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
   tenantId,
 }) => {
+  const { language } = useLanguage();
+  const kpiLabels = {
+    en: {
+      totalCategories: 'Total KPI Categories',
+      averageScore: 'Average Score',
+      topCategory: 'Top Category',
+      lowestCategory: 'Lowest Category',
+    },
+    ar: {
+      totalCategories: 'إجمالي فئات مؤشرات الأداء',
+      averageScore: 'متوسط النتيجة',
+      topCategory: 'أفضل فئة',
+      lowestCategory: 'أدنى فئة',
+    },
+  } as const;
+  const L = kpiLabels[language] || kpiLabels.en;
   const [data, setData] = useState<SystemPerformanceKpi[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +44,7 @@ const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
 
         const filteredData = tenantId
           ? kpiData.filter(item => item.tenantId === tenantId)
-          : kpiData; 
+          : kpiData;
 
         setData(filteredData);
       } catch (error) {
@@ -65,7 +82,12 @@ const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
 
   if (loading) {
     return (
-      <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight='200px'
+      >
         <CircularProgress />
       </Box>
     );
@@ -83,25 +105,65 @@ const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
       }}
     >
       <KpiCard
-        title='Total KPI Categories'
+        title={
+            <span
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+              style={{
+                display: 'block',
+                textAlign: language === 'ar' ? 'right' : 'left',
+              }}
+            >
+              {L.totalCategories}
+            </span>
+          }
         value={totalKpiCategories}
         icon={<AssessmentIcon />}
         contentFontSize='1.8rem'
       />
       <KpiCard
-        title='Average Score'
+        title={
+            <span
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+              style={{
+                display: 'block',
+                textAlign: language === 'ar' ? 'right' : 'left',
+              }}
+            >
+              {L.averageScore}
+            </span>
+          }
         value={`${avgKpiScore.toFixed(1)}%`}
         icon={<TrendingUpIcon />}
         contentFontSize='1.8rem'
       />
       <KpiCard
-        title='Top Category'
+       title={
+            <span
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+              style={{
+                display: 'block',
+                textAlign: language === 'ar' ? 'right' : 'left',
+              }}
+            >
+              {L.topCategory}
+            </span>
+          }
         value={bestCategory || '-'}
         icon={<TrendingUpIcon />}
         contentFontSize='1.8rem'
       />
       <KpiCard
-        title='Lowest Category'
+        title={
+            <span
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+              style={{
+                display: 'block',
+                textAlign: language === 'ar' ? 'right' : 'left',
+              }}
+            >
+              {L.lowestCategory}
+            </span>
+          }
         value={lowestCategory || '-'}
         icon={<WarningAmberIcon />}
         contentFontSize='1.8rem'

@@ -43,8 +43,26 @@ import { getCurrentUser } from '../utils/auth';
 import { isSystemAdmin } from '../utils/roleUtils';
 
 const labels = {
-  en: { title: 'Dashboard' },
-  ar: { title: 'لوحة تحكم الموارد البشرية' },
+  en: {
+    title: 'Dashboard',
+    activeEmployeesHeading: 'Active Employees per Tenant',
+    systemLogs: 'System Logs',
+    exportTooltip: 'Export Recent 1000 system logs',
+    noLogs: 'No logs found',
+    totalTenants: 'Total Tenants',
+    activeTenants: 'Active Tenants',
+    totalEmployees: 'Total Employees',
+  },
+  ar: {
+    title: 'لوحة تحكم الموارد البشرية',
+    activeEmployeesHeading: 'الموظفون النشطون لكل مستأجر',
+    systemLogs: 'سجلات النظام',
+    exportTooltip: 'تصدير أحدث 1000 سجل نظام',
+    noLogs: 'لم يتم العثور على سجلات',
+    totalTenants: 'إجمالي المستأجرين',
+    activeTenants: 'المستأجرون النشطون',
+    totalEmployees: 'إجمالي الموظفين',
+  },
 };
 
 const Dashboard: React.FC = () => {
@@ -52,6 +70,18 @@ const Dashboard: React.FC = () => {
   const { language } = useLanguage();
   const lang = labels[language];
   const theme = useTheme();
+
+  const pageHelpers = {
+    en: {
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+    },
+    ar: {
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
+    },
+  } as const;
+  const PH = pageHelpers[language] || pageHelpers.en;
 
   const currentUser = getCurrentUser();
   const userRole = currentUser?.role;
@@ -133,6 +163,23 @@ const Dashboard: React.FC = () => {
     : (currentPage - 1) * itemsPerPage + logs.length;
   const estimatedTotalPages = hasMorePages ? currentPage + 1 : currentPage;
 
+  const logsTableHeaders = {
+    en: {
+      action: 'Action',
+      entity: 'Entity',
+      userRole: 'User Role',
+      tenantId: 'Tenant Id',
+      timestamp: 'Timestamp',
+    },
+    ar: {
+      action: 'الإجراء',
+      entity: 'الكيان',
+      userRole: 'دور المستخدم',
+      tenantId: 'معرّف المستأجر',
+      timestamp: 'الطابع الزمني',
+    },
+  } as const;
+
   return (
     <Box
       sx={{
@@ -141,14 +188,14 @@ const Dashboard: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         gap: 3,
+        direction: language === 'ar' ? 'rtl' : 'ltr',
       }}
     >
       <Typography
         variant='h4'
         sx={{
-          direction: language === 'ar' ? 'rtl' : 'ltr',
           color: darkMode ? '#8f8f8f' : '#000',
-          textAlign: { xs: 'left'},
+          textAlign: language === 'ar' ? 'right' : 'left',
         }}
       >
         {lang.title}
@@ -175,7 +222,7 @@ const Dashboard: React.FC = () => {
             <Grid container spacing={3} sx={{ width: '100%' }}>
               <Grid item xs={6} sm={6} md={6} lg={6} flexGrow={1}>
                 <KPICard
-                  title='Total Tenants'
+                  title={lang.totalTenants}
                   value={dashboardData?.totalTenants ?? 0}
                   icon={<ApartmentIcon />}
                   color={theme.palette.primary.main}
@@ -183,7 +230,7 @@ const Dashboard: React.FC = () => {
               </Grid>
               <Grid item xs={6} sm={6} md={6} lg={6} flexGrow={1}>
                 <KPICard
-                  title='Active Tenants'
+                  title={lang.activeTenants}
                   value={dashboardData?.activeTenants ?? 0}
                   icon={<VerifiedUserIcon />}
                   color={theme.palette.success.main}
@@ -234,7 +281,7 @@ const Dashboard: React.FC = () => {
               >
                 <Box sx={{ flexShrink: 0 }}>
                   <KPICard
-                    title='Total Employees'
+                    title={lang.totalEmployees}
                     value={dashboardData?.totalEmployees ?? 0}
                     icon={<PeopleAltIcon />}
                     color={theme.palette.info.main}
@@ -258,7 +305,7 @@ const Dashboard: React.FC = () => {
                       pt: 2,
                     }}
                   >
-                    Active Employees per Tenant
+                    {lang.activeEmployeesHeading}
                   </Typography>
 
                   <Box
@@ -338,9 +385,9 @@ const Dashboard: React.FC = () => {
               }}
             >
               <Typography variant='h6' fontWeight='bold'>
-                System Logs
+                {lang.systemLogs}
               </Typography>
-              <Tooltip title='Export Recent 1000 system logs'>
+              <Tooltip title={lang.exportTooltip}>
                 <IconButton
                   color='primary'
                   onClick={handleExportLogs}
@@ -360,11 +407,13 @@ const Dashboard: React.FC = () => {
               <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Action</TableCell>
-                    <TableCell>Entity</TableCell>
-                    <TableCell>User Role</TableCell>
-                    <TableCell>Tenant Id</TableCell>
-                    <TableCell>Timestamp</TableCell>
+                    <TableCell>{logsTableHeaders[language].action}</TableCell>
+                    <TableCell>{logsTableHeaders[language].entity}</TableCell>
+                    <TableCell>{logsTableHeaders[language].userRole}</TableCell>
+                    <TableCell>{logsTableHeaders[language].tenantId}</TableCell>
+                    <TableCell>
+                      {logsTableHeaders[language].timestamp}
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -377,7 +426,7 @@ const Dashboard: React.FC = () => {
                   ) : logs.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} align='center'>
-                        No logs found
+                        {lang.noLogs}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -398,7 +447,14 @@ const Dashboard: React.FC = () => {
             </Box>
 
             {showPagination && (
-              <Box display='flex' justifyContent='center' mt={2}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  mt: 2,
+                  direction: 'ltr',
+                }}
+              >
                 <Pagination
                   count={estimatedTotalPages}
                   page={currentPage}
@@ -413,8 +469,11 @@ const Dashboard: React.FC = () => {
             {logs.length > 0 && (
               <Box display='flex' justifyContent='center' mt={1}>
                 <Typography variant='body2' color='textSecondary'>
-                  Showing page {currentPage} of {estimatedTotalPages} (
-                  {estimatedTotalRecords} total records)
+                  {PH.showingInfo(
+                    currentPage,
+                    estimatedTotalPages,
+                    estimatedTotalRecords
+                  )}
                 </Typography>
               </Box>
             )}

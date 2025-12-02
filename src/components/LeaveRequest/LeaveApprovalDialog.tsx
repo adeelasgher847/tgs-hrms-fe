@@ -8,6 +8,7 @@ import {
   Typography,
   TextField,
 } from '@mui/material';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface LeaveApprovalDialogProps {
   open: boolean;
@@ -24,25 +25,47 @@ const LeaveApprovalDialog = ({
 }: LeaveApprovalDialogProps) => {
   const [reason, setReason] = useState('');
 
+  const { language } = useLanguage();
+  const labels = {
+    en: {
+      approve: 'Approve',
+      reject: 'Reject',
+      confirmQuestion: (actionLabel: string) =>
+        `Are you sure you want to ${actionLabel.toLowerCase()} this leave request?`,
+      rejectionReason: 'Rejection Reason',
+      yes: 'Yes',
+      no: 'No',
+    },
+    ar: {
+      approve: 'الموافقة',
+      reject: 'رفض',
+      confirmQuestion: (actionLabel: string) =>
+        `هل أنت متأكد أنك تريد ${actionLabel} هذا الطلب؟`,
+      rejectionReason: 'سبب الرفض',
+      yes: 'نعم',
+      no: 'لا',
+    },
+  } as const;
+  const L = labels[language as 'en' | 'ar'] || labels.en;
+
   useEffect(() => {
     if (!open) setReason('');
   }, [open]);
 
-  const actionText = action === 'approved' ? 'Approve' : 'Reject';
-  const actionLower = action === 'approved' ? 'approve' : 'reject';
+  const actionText = action === 'approved' ? L.approve : L.reject;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth='xs' fullWidth>
       <DialogTitle sx={{ fontWeight: 600, textAlign: 'center' }}>
-        Confirm {actionText}
+        {`Confirm ${actionText}`}
       </DialogTitle>
       <DialogContent>
         <Typography align='center' sx={{ mb: 2 }}>
-          Are you sure you want to {actionLower} this leave request?
+          {L.confirmQuestion(actionText)}
         </Typography>
         {action === 'rejected' && (
           <TextField
-            label='Rejection Reason'
+            label={L.rejectionReason}
             value={reason}
             onChange={e => setReason(e.target.value)}
             fullWidth
@@ -59,10 +82,10 @@ const LeaveApprovalDialog = ({
           variant='contained'
           color={action === 'approved' ? 'success' : 'error'}
         >
-          Yes
+          {L.yes}
         </Button>
         <Button onClick={onClose} variant='outlined' color='inherit'>
-          No
+          {L.no}
         </Button>
       </DialogActions>
     </Dialog>

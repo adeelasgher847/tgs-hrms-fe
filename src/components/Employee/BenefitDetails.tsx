@@ -20,14 +20,55 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import employeeBenefitApi from '../../api/employeeBenefitApi';
 import BenefitCard from '../Benefits/BenefitCard';
 import { formatDate } from '../../utils/dateUtils';
+import { useLanguage } from '../../hooks/useLanguage';
 
 const ITEMS_PER_PAGE = 10;
 
 const BenefitDetails: React.FC = () => {
-  const [benefits, setBenefits] = useState<unknown[]>([]);
-  const [selectedBenefit, setSelectedBenefit] = useState<unknown | null>(null);
+  const [benefits, setBenefits] = useState<any[]>([]);
+  const [selectedBenefit, setSelectedBenefit] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      pageTitle: 'My Benefits',
+      downloadTooltip: 'Download My Benefits',
+      csvHeaders: ['Benefit Name', 'Type', 'Start Date', 'End Date', 'Status'],
+      benefitName: 'Benefit Name',
+      type: 'Type',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      status: 'Status',
+      details: 'Details',
+      noAssigned: 'No assigned benefits found.',
+      showingRecords: (start: number, end: number, total: number) =>
+        `Showing ${start}–${end} of ${total} records`,
+    },
+    ar: {
+      pageTitle: 'مزاياي',
+      downloadTooltip: 'تنزيل مزاياي',
+      csvHeaders: [
+        'اسم الميزة',
+        'النوع',
+        'تاريخ البدء',
+        'تاريخ الانتهاء',
+        'الحالة',
+      ],
+      benefitName: 'اسم الميزة',
+      type: 'النوع',
+      startDate: 'تاريخ البدء',
+      endDate: 'تاريخ الانتهاء',
+      status: 'الحالة',
+      details: 'تفاصيل',
+      noAssigned: 'لا توجد مزايا مخصصة.',
+      showingRecords: (start: number, end: number, total: number) =>
+        `عرض ${start}–${end} من ${total} سجلات`,
+    },
+  } as const;
+
+  const L = labels[language as 'en' | 'ar'] || labels.en;
 
   useEffect(() => {
     const fetchBenefits = async () => {
@@ -44,14 +85,15 @@ const BenefitDetails: React.FC = () => {
         console.log('Get Employee Benefits Response:', response);
 
         const employeeData = response.find(
-          (emp: { employeeId: string }) => emp.employeeId === employeeId
+          (emp: any) => emp.employeeId === employeeId
         );
 
-        if (employeeData && Array.isArray(employeeData.benefits)) {
-          setBenefits(employeeData.benefits);
-        } else {
-          setBenefits([]);
-        }
+        // response shape may vary between deployments; support both 'benefits' and 'benefit'
+        const list =
+          (employeeData && (employeeData.benefits || employeeData.benefit)) ||
+          [];
+        if (Array.isArray(list)) setBenefits(list);
+        else setBenefits([]);
       } catch (err) {
         console.error('Error fetching employee benefits:', err);
         setBenefits([]);
@@ -63,7 +105,6 @@ const BenefitDetails: React.FC = () => {
     fetchBenefits();
   }, [page]);
 
-
   const csvEscape = (value: unknown) => {
     if (value === null || value === undefined) return '';
     const s = String(value).replace(/"/g, '""');
@@ -72,33 +113,19 @@ const BenefitDetails: React.FC = () => {
 
   const handleDownload = () => {
     if (benefits.length === 0) {
-      alert('No data to download.');
+      alert(L.noAssigned);
       return;
     }
 
-    const csvHeader = [
-      'Benefit Name',
-      'Type',
-      'Start Date',
-      'End Date',
-      'Status',
-    ];
-    const rows = benefits.map(
-      (row: {
-        name?: string;
-        type?: string;
-        startDate?: string;
-        endDate?: string;
-        statusOfAssignment?: string;
-        status?: string;
-      }) =>
-        [
-          csvEscape(row.name),
-          csvEscape(row.type),
-          csvEscape(formatDate(row.startDate || '')),
-          csvEscape(formatDate(row.endDate || '')),
-          csvEscape(row.statusOfAssignment || row.status),
-        ].join(',')
+    const csvHeader = L.csvHeaders;
+    const rows = (benefits as any[]).map((row: any) =>
+      [
+        csvEscape(row.name),
+        csvEscape(row.type),
+        csvEscape(formatDate(row.startDate || '')),
+        csvEscape(formatDate(row.endDate || '')),
+        csvEscape(row.statusOfAssignment || row.status),
+      ].join(',')
     );
     const csvContent = [csvHeader.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -125,12 +152,22 @@ const BenefitDetails: React.FC = () => {
 
   return (
     <Box>
-      <Box display='flex' justifyContent='space-between' alignItems='center'>
-        <Typography variant='h4' gutterBottom>
-          My Benefits
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        sx={{ flexDirection: language === 'ar' ? 'row-reverse' : 'row' }}
+      >
+        <Typography
+          variant='h4'
+          gutterBottom
+          dir='ltr'
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
+          {L.pageTitle}
         </Typography>
 
-        <Tooltip title='Download My Benefits'>
+        <Tooltip title={L.downloadTooltip}>
           <IconButton
             color='primary'
             onClick={handleDownload}
@@ -157,77 +194,66 @@ const BenefitDetails: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Paper sx={{ mt: 2, overflowX: 'auto',boxShadow:'none' }}>
+        <Paper sx={{ mt: 2, overflowX: 'auto', boxShadow: 'none' }}>
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell>
-                  <b>Benefit Name</b>
+                  <b>{L.benefitName}</b>
                 </TableCell>
                 <TableCell>
-                  <b>Type</b>
+                  <b>{L.type}</b>
                 </TableCell>
                 <TableCell>
-                  <b>Start Date</b>
+                  <b>{L.startDate}</b>
                 </TableCell>
                 <TableCell>
-                  <b>End Date</b>
+                  <b>{L.endDate}</b>
                 </TableCell>
                 <TableCell>
-                  <b>Status</b>
+                  <b>{L.status}</b>
                 </TableCell>
                 <TableCell align='center'>
-                  <b>Details</b>
+                  <b>{L.details}</b>
                 </TableCell>
               </TableRow>
             </TableHead>
 
             <TableBody>
               {paginatedBenefits.length > 0 ? (
-                paginatedBenefits.map(
-                  (b: {
-                    benefitAssignmentId?: string;
-                    id?: string;
-                    name?: string;
-                    type?: string;
-                    startDate?: string;
-                    endDate?: string;
-                    statusOfAssignment?: string;
-                    status?: string;
-                  }) => (
-                    <TableRow key={b.benefitAssignmentId || b.id}>
-                      <TableCell>{b.name || '-'}</TableCell>
-                      <TableCell>{b.type || '-'}</TableCell>
-                      <TableCell>{formatDate(b.startDate || '')}</TableCell>
-                      <TableCell>{formatDate(b.endDate || '')}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={b.statusOfAssignment || b.status || '-'}
-                          color={
-                            (b.statusOfAssignment || b.status) === 'active'
-                              ? 'success'
-                              : 'default'
-                          }
-                          size='small'
-                        />
-                      </TableCell>
-                      <TableCell align='center'>
-                        <Tooltip title='View Details'>
-                          <IconButton
-                            color='primary'
-                            onClick={() => setSelectedBenefit(b)}
-                          >
-                            <InfoIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  )
-                )
+                (paginatedBenefits as any[]).map((b: any) => (
+                  <TableRow key={b.benefitAssignmentId || b.id}>
+                    <TableCell>{b.name || '-'}</TableCell>
+                    <TableCell>{b.type || '-'}</TableCell>
+                    <TableCell>{formatDate(b.startDate || '')}</TableCell>
+                    <TableCell>{formatDate(b.endDate || '')}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={b.statusOfAssignment || b.status || '-'}
+                        color={
+                          (b.statusOfAssignment || b.status) === 'active'
+                            ? 'success'
+                            : 'default'
+                        }
+                        size='small'
+                      />
+                    </TableCell>
+                    <TableCell align='center'>
+                      <Tooltip title='View Details'>
+                        <IconButton
+                          color='primary'
+                          onClick={() => setSelectedBenefit(b)}
+                        >
+                          <InfoIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={8} align='center'>
-                    No assigned benefits found.
+                    {L.noAssigned}
                   </TableCell>
                 </TableRow>
               )}
@@ -249,12 +275,13 @@ const BenefitDetails: React.FC = () => {
 
       <Box textAlign='center' my={2}>
         <Typography variant='body2' color='text.secondary'>
-          Showing{' '}
-          {totalRecords === 0
-            ? 0
-            : Math.min((page - 1) * ITEMS_PER_PAGE + 1, totalRecords)}
-          –{Math.min(page * ITEMS_PER_PAGE, totalRecords)} of {totalRecords}{' '}
-          records
+          {L.showingRecords(
+            totalRecords === 0
+              ? 0
+              : Math.min((page - 1) * ITEMS_PER_PAGE + 1, totalRecords),
+            Math.min(page * ITEMS_PER_PAGE, totalRecords),
+            totalRecords
+          )}
         </Typography>
       </Box>
 
@@ -262,29 +289,13 @@ const BenefitDetails: React.FC = () => {
         {selectedBenefit && (
           <Box>
             <BenefitCard
-              name={(selectedBenefit as { name?: string }).name || ''}
-              type={(selectedBenefit as { type?: string }).type || ''}
-              eligibilityCriteria={
-                (selectedBenefit as { eligibilityCriteria?: string })
-                  .eligibilityCriteria || ''
-              }
-              description={
-                (selectedBenefit as { description?: string }).description
-              }
-              startDate={formatDate(
-                (selectedBenefit as { startDate?: string }).startDate || ''
-              )}
-              endDate={formatDate(
-                (selectedBenefit as { endDate?: string }).endDate || ''
-              )}
+              name={selectedBenefit?.name || ''}
+              type={selectedBenefit?.type || ''}
+              eligibilityCriteria={selectedBenefit?.eligibilityCriteria || ''}
+              description={selectedBenefit?.description}
               status={
-                (
-                  selectedBenefit as {
-                    statusOfAssignment?: string;
-                    status?: string;
-                  }
-                ).statusOfAssignment ||
-                (selectedBenefit as { status?: string }).status ||
+                selectedBenefit?.statusOfAssignment ||
+                selectedBenefit?.status ||
                 ''
               }
             />

@@ -41,6 +41,7 @@ import {
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import { formatDate } from '../../utils/dateUtils';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface AssetCategory {
   id: string;
@@ -77,6 +78,70 @@ const SystemAdminAssets: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const itemsPerPage = 25;
+
+  const { language } = useLanguage();
+
+  const pageLabels = {
+    en: { title: 'Assets Overview' },
+    ar: { title: 'نظرة عامة على الأصول' },
+  } as const;
+  const labels = {
+    en: {
+      searchPlaceholder: 'Search assets...',
+      categoryLabel: 'Category',
+      tenantLabel: 'Tenant',
+      assignmentLabel: 'Assignment',
+      allCategories: 'All Categories',
+      allTenants: 'All Tenants',
+      all: 'All',
+      assigned: 'Assigned',
+      unassigned: 'Unassigned',
+      clearFilters: 'Clear Filters',
+    },
+    ar: {
+      searchPlaceholder: 'البحث عن الأصول...',
+      categoryLabel: 'الفئة',
+      tenantLabel: 'المستأجر',
+      assignmentLabel: 'التعيين',
+      allCategories: 'جميع الفئات',
+      allTenants: 'جميع المستأجرين',
+      all: 'الكل',
+      assigned: 'مُسنَد',
+      unassigned: 'غير مُسنَد',
+      clearFilters: 'مسح الفلاتر',
+    },
+  } as const;
+  const F = labels[language as 'en' | 'ar'] || labels.en;
+  const pageHelpers = {
+    en: {
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+    },
+    ar: {
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
+    },
+  } as const;
+  const PH = pageHelpers[language] || pageHelpers.en;
+
+  const assetTableHeaders = {
+    en: {
+      name: 'Asset Name',
+      category: 'Category',
+      tenant: 'Tenant',
+      assignedTo: 'Assigned To',
+      status: 'Status',
+      date: 'Date',
+    },
+    ar: {
+      name: 'اسم الأصل',
+      category: 'الفئة',
+      tenant: 'المستأجر',
+      assignedTo: 'مُعيّن إلى',
+      status: 'الحالة',
+      date: 'التاريخ',
+    },
+  } as const;
 
   const fetchCategories = async () => {
     try {
@@ -249,7 +314,6 @@ const SystemAdminAssets: React.FC = () => {
     setSearchTerm('');
   };
 
-
   if (initialLoading) {
     return (
       <Box
@@ -271,7 +335,7 @@ const SystemAdminAssets: React.FC = () => {
   }
 
   return (
-    <Box>
+    <Box dir={'ltr'} sx={{ direction: 'ltr' }}>
       <Box
         sx={{
           display: 'flex',
@@ -282,8 +346,16 @@ const SystemAdminAssets: React.FC = () => {
           gap: 2,
         }}
       >
-        <Typography variant='h4' fontWeight={600}>
-          Assets Overview
+        <Typography
+          variant='h4'
+          fontWeight={600}
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{
+            width: '100%',
+            textAlign: language === 'ar' ? 'right' : 'left',
+          }}
+        >
+          {pageLabels[language].title}
         </Typography>
       </Box>
 
@@ -662,7 +734,7 @@ const SystemAdminAssets: React.FC = () => {
               <TextField
                 fullWidth
                 size='small'
-                placeholder='Search assets...'
+                placeholder={F.searchPlaceholder}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -677,13 +749,13 @@ const SystemAdminAssets: React.FC = () => {
             </Box>
             <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
               <FormControl fullWidth size='small'>
-                <InputLabel>Category</InputLabel>
+                <InputLabel>{F.categoryLabel}</InputLabel>
                 <Select
                   value={categoryFilter}
                   onChange={e => setCategoryFilter(e.target.value)}
-                  label='Category'
+                  label={F.categoryLabel}
                 >
-                  <MenuItem value=''>All Categories</MenuItem>
+                  <MenuItem value=''>{F.allCategories}</MenuItem>
                   {categoryNames.map(cat => (
                     <MenuItem key={cat} value={cat}>
                       {cat}
@@ -694,13 +766,13 @@ const SystemAdminAssets: React.FC = () => {
             </Box>
             <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
               <FormControl fullWidth size='small'>
-                <InputLabel>Tenant</InputLabel>
+                <InputLabel>{F.tenantLabel}</InputLabel>
                 <Select
                   value={tenantFilter}
                   onChange={e => setTenantFilter(e.target.value)}
-                  label='Tenant'
+                  label={F.tenantLabel}
                 >
-                  <MenuItem value=''>All Tenants</MenuItem>
+                  <MenuItem value=''>{F.allTenants}</MenuItem>
                   {tenants.map(tenant => (
                     <MenuItem key={tenant.id} value={tenant.id}>
                       {tenant.name}
@@ -711,15 +783,15 @@ const SystemAdminAssets: React.FC = () => {
             </Box>
             <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
               <FormControl fullWidth size='small'>
-                <InputLabel>Assignment</InputLabel>
+                <InputLabel>{F.assignmentLabel}</InputLabel>
                 <Select
                   value={assignedFilter}
                   onChange={e => setAssignedFilter(e.target.value)}
-                  label='Assignment'
+                  label={F.assignmentLabel}
                 >
-                  <MenuItem value=''>All</MenuItem>
-                  <MenuItem value='assigned'>Assigned</MenuItem>
-                  <MenuItem value='unassigned'>Unassigned</MenuItem>
+                  <MenuItem value=''>{F.all}</MenuItem>
+                  <MenuItem value='assigned'>{F.assigned}</MenuItem>
+                  <MenuItem value='unassigned'>{F.unassigned}</MenuItem>
                 </Select>
               </FormControl>
             </Box>
@@ -730,7 +802,7 @@ const SystemAdminAssets: React.FC = () => {
                 onClick={handleClearFilters}
                 sx={{ p: 0.9 }}
               >
-                Clear Filters
+                {F.clearFilters}
               </Button>
             </Box>
           </Box>
@@ -742,29 +814,30 @@ const SystemAdminAssets: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Asset Name</TableCell>
-                <TableCell>Category</TableCell>
+                <TableCell>{assetTableHeaders[language].name}</TableCell>
+                <TableCell>{assetTableHeaders[language].category}</TableCell>
                 <TableCell
                   sx={{
                     display: { xs: 'none', md: 'table-cell' },
                   }}
                 >
-                  Tenant
+                  {assetTableHeaders[language].tenant}
                 </TableCell>
                 <TableCell
                   sx={{
                     display: { xs: 'none', lg: 'table-cell' },
                   }}
                 >
-                  Assigned To
+                  {assetTableHeaders[language].assignedTo}
                 </TableCell>
-                <TableCell>Status</TableCell>
+                <TableCell>{assetTableHeaders[language].status}</TableCell>
+
                 <TableCell
                   sx={{
                     display: { xs: 'none', sm: 'table-cell' },
                   }}
                 >
-                  Date
+                  {assetTableHeaders[language].date}
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -935,8 +1008,7 @@ const SystemAdminAssets: React.FC = () => {
         {!loading && filteredAssets.length > 0 && (
           <Box display='flex' justifyContent='center' pb={2}>
             <Typography variant='body2' color='textSecondary'>
-              Showing page {currentPage} of {totalPages} ({totalRecords} total
-              records)
+              {PH.showingInfo(currentPage, totalPages, totalRecords)}
             </Typography>
           </Box>
         )}

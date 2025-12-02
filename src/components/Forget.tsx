@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../hooks/useLanguage';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -20,7 +21,7 @@ import authApi from '../api/authApi';
 
 const Forget = () => {
   const navigate = useNavigate();
-  const [lang, setLang] = useState<'en' | 'ar'>('en');
+  const { language, setLanguage } = useLanguage();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = useState('');
@@ -42,7 +43,7 @@ const Forget = () => {
     if (value.length > 0 && !validateEmail(value)) {
       setEmailError(true);
       setEmailErrorMessage(
-        lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email'
+        language === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email'
       );
     } else {
       setEmailError(false);
@@ -55,7 +56,7 @@ const Forget = () => {
     if (!validateEmail(email)) {
       setEmailError(true);
       setEmailErrorMessage(
-        lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email address'
+        language === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email address'
       );
       return;
     }
@@ -71,7 +72,9 @@ const Forget = () => {
         setEmailError(true);
         setEmailErrorMessage(
           response.message ||
-            (lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email address')
+            (language === 'ar'
+              ? 'بريد إلكتروني غير صالح'
+              : 'Invalid email address')
         );
         return;
       }
@@ -98,14 +101,14 @@ const Forget = () => {
           setEmailError(true);
           if (apiError.response.status === 404) {
             setEmailErrorMessage(
-              lang === 'ar'
+              language === 'ar'
                 ? 'البريد الإلكتروني غير موجود'
                 : 'Email address not found'
             );
           } else {
             setEmailErrorMessage(
               apiError.response.data?.message ||
-                (lang === 'ar'
+                (language === 'ar'
                   ? 'بريد إلكتروني غير صالح'
                   : 'Invalid email address')
             );
@@ -145,7 +148,7 @@ const Forget = () => {
             justifyContent: 'center',
             alignItems: 'center',
             gap: { xs: 1 },
-            direction: lang === 'ar' ? 'rtl' : 'ltr',
+            direction: language === 'ar' ? 'rtl' : 'ltr',
           }}
         >
           <Box
@@ -194,7 +197,7 @@ const Forget = () => {
                   fontSize: '32px',
                 }}
               >
-                {lang === 'ar'
+                {language === 'ar'
                   ? 'إدارة مهام أفضل مع ماي-تاسك'
                   : "My-Task Let's Management Better"}
               </Typography>
@@ -224,7 +227,7 @@ const Forget = () => {
                   pt: { xs: 1, md: 1 },
                   pb: { xs: 1, md: 2 },
                   borderRadius: { xs: 2, lg: 0 },
-                  direction: lang === 'ar' ? 'rtl' : 'ltr',
+                  direction: language === 'ar' ? 'rtl' : 'ltr',
                 }}
               >
                 {/* Language Selector */}
@@ -232,8 +235,8 @@ const Forget = () => {
                   <FormControl size='small' fullWidth>
                     <Select
                       id='language-select'
-                      value={lang}
-                      onChange={e => setLang(e.target.value)}
+                      value={language}
+                      onChange={e => setLanguage(e.target.value as 'en' | 'ar')}
                       displayEmpty
                       sx={{
                         bgcolor: 'white',
@@ -300,7 +303,9 @@ const Forget = () => {
                           fontWeight: 500,
                         }}
                       >
-                        {lang === 'ar' ? 'تسجيل الدخول' : 'Forgot password?'}
+                        {language === 'ar'
+                          ? 'تسجيل الدخول'
+                          : 'Forgot password?'}
                       </Typography>
                       <Typography
                         sx={{
@@ -309,7 +314,7 @@ const Forget = () => {
                           textAlign: 'center',
                         }}
                       >
-                        {lang === 'ar'
+                        {language === 'ar'
                           ? 'وصول مجاني إلى لوحة التحكم الخاصة بنا.'
                           : 'Enter the email address you used when you joined and we shall send you instructions to reset your password.'}
                       </Typography>
@@ -320,7 +325,9 @@ const Forget = () => {
                       htmlFor='email'
                       sx={{ fontWeight: 400, fontSize: '14px' }}
                     >
-                      {lang === 'ar' ? 'البريد الإلكتروني' : 'Email address'}
+                      {language === 'ar'
+                        ? 'البريد الإلكتروني'
+                        : 'Email address'}
                     </Typography>
                     <TextField
                       fullWidth
@@ -332,6 +339,7 @@ const Forget = () => {
                       placeholder='name@example.com'
                       value={email}
                       onChange={handleEmailChange}
+                      inputProps={{ dir: 'ltr' }}
                       error={emailError}
                       helperText={emailErrorMessage}
                       FormHelperTextProps={{
@@ -394,7 +402,7 @@ const Forget = () => {
                       >
                         {loading ? (
                           <CircularProgress size={24} />
-                        ) : lang === 'ar' ? (
+                        ) : language === 'ar' ? (
                           'إرسال رابط إعادة التعيين'
                         ) : (
                           'Send Reset Link'
@@ -430,7 +438,7 @@ const Forget = () => {
                           },
                         }}
                       >
-                        {lang === 'ar' ? 'سجل هنا' : 'Back to Sign in'}
+                        {language === 'ar' ? 'سجل هنا' : 'Back to Sign in'}
                       </Link>
                     </Typography>
                   </Box>

@@ -17,6 +17,7 @@ import 'react-international-phone/style.css';
 import '../UserProfile/PhoneInput.css';
 import type { SxProps, Theme } from '@mui/system';
 import { useOutletContext } from 'react-router-dom';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { EmployeeDto } from '../../api/employeeApi';
 import {
   departmentApiService,
@@ -94,7 +95,6 @@ interface AddEmployeeFormProps {
 
 interface OutletContext {
   darkMode: boolean;
-  language: 'en' | 'ar';
 }
 
 // Component
@@ -105,7 +105,8 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
 }) => {
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down('sm'));
-  const { darkMode, language } = useOutletContext<OutletContext>();
+  const { darkMode } = useOutletContext<OutletContext>();
+  const { language } = useLanguage();
 
   const [values, setValues] = useState<FormValues>({
     first_name: initialData?.firstName ?? '',
@@ -295,7 +296,20 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     }
   };
 
-  const dir = language === 'ar' ? 'rtl' : 'ltr';
+  // Force input and form fields to LTR so DB-driven values and user inputs
+  // remain left-to-right even when the app language is Arabic. We still
+  // allow labels (static UI text) to be translated via the `label()` helper.
+  const inputsLtrSx: SxProps<Theme> = {
+    '& .MuiInputBase-input, & .MuiOutlinedInput-input, & input, & .MuiSelect-select, & .MuiInputLabel-root, & .MuiFormHelperText-root':
+      {
+        direction: 'ltr',
+        textAlign: 'left',
+      },
+    // Ensure adornments and select values also maintain LTR
+    '& .MuiInputAdornment-root, & .phone-input-textfield-adornment': {
+      direction: 'ltr',
+    },
+  };
   const label = (en: string, ar: string) => (language === 'ar' ? ar : en);
 
   // Dark‑mode
@@ -605,7 +619,14 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
   };
 
   return (
-    <Box component='form' onSubmit={handleSubmit} dir={dir}>
+    // Keep the dialog title and other parent-level decorations responsible
+    // for RTL/LTR. Force the form body to LTR so inputs and DB text don't flip.
+    <Box
+      component='form'
+      onSubmit={handleSubmit}
+      dir={'ltr'}
+      sx={{ mt: 0, ...inputsLtrSx }}
+    >
       {/* General Error Display */}
       {errors.general && (
         <Box
@@ -765,7 +786,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
               <MenuItem value=''>
                 {/* No gender selected */}
                 <span style={{ display: 'flex', alignItems: 'center' }}>
-                  Select Gender
+                  {label('Select Gender', 'اختر الجنس')}
                 </span>
               </MenuItem>
               <MenuItem value='male'>
@@ -782,7 +803,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                       fill='#1976d2'
                     />
                   </svg>
-                  Male
+                  {label('Male', 'ذكر')}
                 </span>
               </MenuItem>
               <MenuItem value='female'>
@@ -799,7 +820,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                       fill='#d81b60'
                     />
                   </svg>
-                  Female
+                  {label('Female', 'أنثى')}
                 </span>
               </MenuItem>
             </TextField>

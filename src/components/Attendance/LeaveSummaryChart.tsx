@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   Box,
   Typography,
@@ -45,6 +46,22 @@ const COLORS = ['#8884d8', '#82ca9d', '#ffc658'];
 
 const LeaveSummaryChart: React.FC = () => {
   const [selected, setSelected] = useState('Ali');
+  const { language } = useLanguage();
+
+  const leaveLabels = {
+    en: {
+      selectLabel: 'User / Department',
+      pageTitlePrefix: 'Leave Summary –',
+      hr: 'HR Department',
+      it: 'IT Department',
+    },
+    ar: {
+      selectLabel: 'المستخدم / القسم',
+      pageTitlePrefix: 'ملخص الإجازات –',
+      hr: 'قسم الموارد البشرية',
+      it: 'قسم تكنولوجيا المعلومات',
+    },
+  } as const;
 
   const handleChange = (event: SelectChangeEvent) =>
     setSelected(event.target.value as string);
@@ -55,11 +72,8 @@ const LeaveSummaryChart: React.FC = () => {
     <Box mt={4}>
       <Box width={{ xs: '100%', sm: '50%' }} mb={3}>
         <FormControl fullWidth size='small'>
-          <InputLabel
-            id='select-label'
-            sx={{ top: '-6px' }} 
-          >
-            User / Department
+          <InputLabel id='select-label' sx={{ top: '-6px' }}>
+            {leaveLabels[language].selectLabel}
           </InputLabel>
           <Select
             labelId='select-label'
@@ -68,14 +82,14 @@ const LeaveSummaryChart: React.FC = () => {
           >
             <MenuItem value='Ali'>Ali</MenuItem>
             <MenuItem value='Sara'>Sara</MenuItem>
-            <MenuItem value='HR'>HR Department</MenuItem>
-            <MenuItem value='IT'>IT Department</MenuItem>
+            <MenuItem value='HR'>{leaveLabels[language].hr}</MenuItem>
+            <MenuItem value='IT'>{leaveLabels[language].it}</MenuItem>
           </Select>
         </FormControl>
       </Box>
 
       <Typography variant='h6' gutterBottom>
-        Leave Summary – {selected}
+        {leaveLabels[language].pageTitlePrefix} {selected}
       </Typography>
 
       <Box height={300}>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   Box,
   Typography,
@@ -38,6 +39,107 @@ import type { EmployeeWithBenefits } from '../../api/employeeBenefitApi';
 const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 
 const EmployeeBenefits: React.FC = () => {
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      title: 'Employees Benefits',
+      noBenefitDetails: 'No benefit details available',
+      noDataToDownload: 'No data to download.',
+      csvHeaders: [
+        'Employee Name',
+        'Department',
+        'Designation',
+        'Benefit Name',
+        'Benefit Status',
+      ],
+      statusAll: 'All Benefits',
+      statusActive: 'Active',
+      statusExpired: 'Expired',
+      statusCancelled: 'Cancelled',
+      assign: 'Assign Benefit',
+      export: 'Download Employee Benefits',
+      headers: {
+        employee: 'Employee',
+        department: 'Department',
+        designation: 'Designation',
+        assignedBenefits: 'Assigned Benefits',
+      },
+      noResults: (statusLabel: string) =>
+        `No employees with ${statusLabel} benefits`,
+      dialogs: {
+        cancelTitle: 'Cancel Benefit',
+        cancelBody:
+          'Are you sure you want to cancel this benefit? This action cannot be undone.',
+        cancelNo: 'No',
+        cancelYes: 'Yes, Cancel',
+      },
+      success: {
+        cancelled: 'Benefit cancelled successfully!',
+        assigned: 'Benefit assigned successfully!',
+      },
+      failure: {
+        cancelled: 'Failed to cancel benefit.',
+        download: 'An error occurred while downloading the CSV.',
+      },
+    },
+    ar: {
+      title: 'مزايا الموظفين',
+      noBenefitDetails: 'لا توجد تفاصيل للميزة',
+      noDataToDownload: 'لا توجد بيانات للتنزيل.',
+      csvHeaders: [
+        'اسم الموظف',
+        'القسم',
+        'المسمى الوظيفي',
+        'اسم الميزة',
+        'حالة الميزة',
+      ],
+      statusAll: 'جميع المزايا',
+      statusActive: 'نشطة',
+      statusExpired: 'منتهية',
+      statusCancelled: 'ملغاة',
+      assign: 'تعيين ميزة',
+      export: 'تنزيل مزايا الموظفين',
+      headers: {
+        employee: 'الموظف',
+        department: 'القسم',
+        designation: 'المسمى الوظيفي',
+        assignedBenefits: 'المزايا المعينة',
+      },
+      noResults: (statusLabel: string) =>
+        `لا يوجد موظفون بمزايا ${statusLabel}`,
+      dialogs: {
+        cancelTitle: 'إلغاء الميزة',
+        cancelBody:
+          'هل أنت متأكد أنك تريد إلغاء هذه الميزة؟ لا يمكن التراجع عن هذا الإجراء.',
+        cancelNo: 'لا',
+        cancelYes: 'نعم، إلغاء',
+      },
+      success: {
+        cancelled: 'تم إلغاء الميزة بنجاح!',
+        assigned: 'تم تعيين الميزة بنجاح!',
+      },
+      failure: {
+        cancelled: 'فشل إلغاء الميزة.',
+        download: 'حدث خطأ أثناء تنزيل CSV.',
+      },
+    },
+  } as const;
+
+  const L = labels[language as 'en' | 'ar'] || labels.en;
+
+  const pageLabels = {
+    en: {
+      showingInfo: (p: number, t: number, total: number) =>
+        `Showing page ${p} of ${t} (${total} total records)`,
+    },
+    ar: {
+      showingInfo: (p: number, t: number, total: number) =>
+        `عرض الصفحة ${p} من ${t} (${total} إجمالي السجلات)`,
+    },
+  } as const;
+
+  const PL = pageLabels[language as 'en' | 'ar'] || pageLabels.en;
   const [openForm, setOpenForm] = useState(false);
   const [employees, setEmployees] = useState<EmployeeWithBenefits[]>([]);
   const [selectedBenefit, setSelectedBenefit] = useState<unknown | null>(null);
@@ -140,13 +242,13 @@ const EmployeeBenefits: React.FC = () => {
       await employeeBenefitApi.cancelEmployeeBenefit(
         selectedBenefit.benefitAssignmentId
       );
-      setSnackbarMessage('Benefit cancelled successfully!');
+      setSnackbarMessage(L.success.cancelled);
       setShowSnackbar(true);
       setOpenBenefitDialog(false);
       await fetchEmployees();
     } catch (error) {
       console.error('Error cancelling benefit:', error);
-      setSnackbarMessage('Failed to cancel benefit.');
+      setSnackbarMessage(L.failure.cancelled);
       setShowSnackbar(true);
     }
   };
@@ -179,17 +281,11 @@ const EmployeeBenefits: React.FC = () => {
   const handleDownload = () => {
     try {
       if (!filteredEmployees.length) {
-        alert('No data to download.');
+        alert(L.noDataToDownload);
         return;
       }
 
-      const csvHeader = [
-        'Employee Name',
-        'Department',
-        'Designation',
-        'Benefit Name',
-        'Benefit Status',
-      ];
+      const csvHeader = L.csvHeaders;
 
       const rows: string[] = [];
 
@@ -231,26 +327,36 @@ const EmployeeBenefits: React.FC = () => {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error while downloading CSV:', error);
-      alert('An error occurred while downloading the CSV.');
+      alert(L.failure.download);
     }
   };
 
   return (
     <Box sx={{ py: 3 }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant='h4' fontWeight={600} mb={1}>
-          Employees Benefits
+      <Box
+        sx={{
+          mb: 3,
+          display: 'flex',
+          flexDirection: {
+            xs: 'column',
+            sm: language === 'ar' ? 'row-reverse' : 'row',
+          },
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
+      >
+        <Typography
+          variant='h4'
+          fontWeight={600}
+          mb={1}
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
+          {L.title}
         </Typography>
 
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 2,
-          }}
-        >
+        <Box sx={{ display: 'flex', gap: 1 }} dir='ltr'>
           <TextField
             select
             size='small'
@@ -265,14 +371,15 @@ const EmployeeBenefits: React.FC = () => {
               displayEmpty: true,
               renderValue: value =>
                 value === 'all'
-                  ? 'All Benefits'
-                  : value.charAt(0).toUpperCase() + value.slice(1),
+                  ? L.statusAll
+                  : (value as string).charAt(0).toUpperCase() +
+                    (value as string).slice(1),
             }}
           >
-            <MenuItem value='all'>All Benefits</MenuItem>
-            <MenuItem value='active'>Active</MenuItem>
-            <MenuItem value='expired'>Expired</MenuItem>
-            <MenuItem value='cancelled'>Cancelled</MenuItem>
+            <MenuItem value='all'>{L.statusAll}</MenuItem>
+            <MenuItem value='active'>{L.statusActive}</MenuItem>
+            <MenuItem value='expired'>{L.statusExpired}</MenuItem>
+            <MenuItem value='cancelled'>{L.statusCancelled}</MenuItem>
           </TextField>
 
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -281,10 +388,10 @@ const EmployeeBenefits: React.FC = () => {
               startIcon={<AddIcon />}
               onClick={() => setOpenForm(true)}
             >
-              Assign Benefit
+              {L.assign}
             </Button>
 
-            <Tooltip title='Download Employee Benefits'>
+            <Tooltip title={L.export}>
               <IconButton
                 color='primary'
                 onClick={handleDownload}
@@ -320,11 +427,17 @@ const EmployeeBenefits: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow sx={{ backgroundColor: 'grey.100' }}>
-                  <TableCell sx={{ fontWeight: 600 }}>Employee</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Department</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Designation</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>
-                    Assigned Benefits
+                    {L.headers.employee}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>
+                    {L.headers.department}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>
+                    {L.headers.designation}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>
+                    {L.headers.assignedBenefits}
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -367,7 +480,15 @@ const EmployeeBenefits: React.FC = () => {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={4} align='center'>
-                      No employees with {selectedStatus} benefits
+                      {L.noResults(
+                        selectedStatus === 'all'
+                          ? L.statusAll
+                          : selectedStatus === 'active'
+                            ? L.statusActive
+                            : selectedStatus === 'expired'
+                              ? L.statusExpired
+                              : L.statusCancelled
+                      )}
                     </TableCell>
                   </TableRow>
                 )}
@@ -393,7 +514,7 @@ const EmployeeBenefits: React.FC = () => {
       {filteredEmployees.length > 0 && (
         <Box display='flex' justifyContent='center' my={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {page} of {totalPages} ({totalRecords} total records)
+            {PL.showingInfo(page, totalPages, totalRecords)}
           </Typography>
         </Box>
       )}
@@ -403,7 +524,7 @@ const EmployeeBenefits: React.FC = () => {
         onClose={() => setOpenForm(false)}
         onAssigned={() => {
           fetchEmployees();
-          setSnackbarMessage('Benefit assigned successfully!');
+          setSnackbarMessage(L.success.assigned);
           setShowSnackbar(true);
         }}
       />
@@ -431,7 +552,7 @@ const EmployeeBenefits: React.FC = () => {
             }
           />
         ) : (
-          <Typography sx={{ p: 2 }}>No benefit details available</Typography>
+          <Typography sx={{ p: 2 }}>{L.noBenefitDetails}</Typography>
         )}
       </Dialog>
 
@@ -439,23 +560,20 @@ const EmployeeBenefits: React.FC = () => {
         open={openDeleteDialog}
         onClose={() => setOpenDeleteDialog(false)}
       >
-        <DialogTitle>Cancel Benefit</DialogTitle>
+        <DialogTitle>{L.dialogs.cancelTitle}</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to cancel this benefit? This action cannot be
-            undone.
-          </DialogContentText>
+          <DialogContentText>{L.dialogs.cancelBody}</DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDeleteDialog(false)} color='primary'>
-            No
+            {L.dialogs.cancelNo}
           </Button>
           <Button
             onClick={handleConfirmDelete}
             color='error'
             variant='contained'
           >
-            Yes, Cancel
+            {L.dialogs.cancelYes}
           </Button>
         </DialogActions>
       </Dialog>

@@ -19,6 +19,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { Asset, MockUser } from '../../types/asset';
 import { assetApi, type AssetSubcategory } from '../../api/assetApi';
 
@@ -44,14 +45,7 @@ interface AssetModalProps {
   title?: string;
 }
 
-const schema = yup.object({
-  name: yup.string().required('Asset name is required'),
-  category: yup.string().required('Category is required'),
-  subcategory: yup.string().nullable(), // Make subcategory optional
-  purchaseDate: yup.date().required('Purchase date is required'),
-  warrantyExpiry: yup.date().nullable(),
-  assignedTo: yup.string().nullable(),
-});
+// moved schema into component so validation messages can be localized
 
 const AssetModal: React.FC<AssetModalProps> = ({
   open,
@@ -61,6 +55,56 @@ const AssetModal: React.FC<AssetModalProps> = ({
   loading = false,
   title,
 }) => {
+  const { language } = useLanguage();
+
+  const ASSET_MODAL_STRINGS = {
+    en: {
+      addTitle: 'Add New Asset',
+      editTitle: 'Edit Asset',
+      assetNameLabel: 'Asset Name',
+      categoryLabel: 'Category',
+      subcategoryLabel: 'Subcategory',
+      purchaseDateLabel: 'Purchase Date',
+      loadingSubcategories: 'Loading subcategories...',
+      noSubcategories: 'No subcategories available',
+      assetNameRequired: 'Asset name is required',
+      categoryRequired: 'Category is required',
+      purchaseDateRequired: 'Purchase date is required',
+      cancel: 'Cancel',
+      create: 'Create',
+      update: 'Update',
+      saving: 'Saving...',
+    },
+    ar: {
+      addTitle: 'إضافة أصل جديد',
+      editTitle: 'تعديل الأصل',
+      assetNameLabel: 'اسم الأصل',
+      categoryLabel: 'الفئة',
+      subcategoryLabel: 'الفئة الفرعية',
+      purchaseDateLabel: 'تاريخ الشراء',
+      loadingSubcategories: 'جارٍ تحميل الفئات الفرعية...',
+      noSubcategories: 'لا توجد فئات فرعية',
+      assetNameRequired: 'اسم الأصل مطلوب',
+      categoryRequired: 'الفئة مطلوبة',
+      purchaseDateRequired: 'تاريخ الشراء مطلوب',
+      cancel: 'إلغاء',
+      create: 'إنشاء',
+      update: 'تحديث',
+      saving: 'جارٍ الحفظ...',
+    },
+  } as const;
+
+  const L =
+    ASSET_MODAL_STRINGS[language as 'en' | 'ar'] || ASSET_MODAL_STRINGS.en;
+
+  const schema = yup.object({
+    name: yup.string().required(L.assetNameRequired),
+    category: yup.string().required(L.categoryRequired),
+    subcategory: yup.string().nullable(), // Make subcategory optional
+    purchaseDate: yup.date().required(L.purchaseDateRequired),
+    warrantyExpiry: yup.date().nullable(),
+    assignedTo: yup.string().nullable(),
+  });
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [, setSelectedWarrantyDate] = useState<Date | null>(null);
   const [categories, setCategories] = useState<AssetCategory[]>([]);
@@ -125,7 +169,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
       category: '',
       subcategory: '',
       purchaseDate: new Date(),
-      warrantyExpiry: null,
+      warrantyExpiry: undefined,
       assignedTo: '',
     },
   });
@@ -254,7 +298,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
         purchaseDate: new Date(purchaseDate),
         warrantyExpiry: asset.warrantyExpiry
           ? new Date(asset.warrantyExpiry)
-          : null,
+          : undefined,
         assignedTo: asset.assignedTo || '',
       });
       setSelectedDate(new Date(purchaseDate));
@@ -267,7 +311,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
         category: '',
         subcategory: '',
         purchaseDate: new Date(),
-        warrantyExpiry: null,
+        warrantyExpiry: undefined,
         assignedTo: '',
       });
       setSelectedDate(new Date());
@@ -321,14 +365,21 @@ const AssetModal: React.FC<AssetModalProps> = ({
           },
         }}
       >
-        <DialogTitle>
-          <Typography variant='h6' fontWeight={600}>
-            {title || (asset ? 'Edit Asset' : 'Add New Asset')}
+        <DialogTitle dir={language === 'ar' ? 'rtl' : 'ltr'} sx={{ pb: 1 }}>
+          <Typography
+            variant='h6'
+            fontWeight={600}
+            sx={{
+              width: '100%',
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
+          >
+            {title || (asset ? L.editTitle : L.addTitle)}
           </Typography>
         </DialogTitle>
 
         <form onSubmit={handleSubmit(handleFormSubmit)}>
-          <DialogContent>
+          <DialogContent sx={{ direction: 'ltr' }}>
             <Box sx={{ pt: 1 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
@@ -340,7 +391,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
                         <TextField
                           {...field}
                           fullWidth
-                          label='Asset Name'
+                          label={L.assetNameLabel}
                           error={!!errors.name}
                           helperText={errors.name?.message}
                           disabled={loading}
@@ -355,10 +406,10 @@ const AssetModal: React.FC<AssetModalProps> = ({
                       control={control}
                       render={({ field }) => (
                         <FormControl fullWidth error={!!errors.category}>
-                          <InputLabel>Category</InputLabel>
+                          <InputLabel>{L.categoryLabel}</InputLabel>
                           <Select
                             {...field}
-                            label='Category'
+                            label={L.categoryLabel}
                             disabled={loading || loadingData}
                             onChange={e => {
                               field.onChange(e);
@@ -396,10 +447,10 @@ const AssetModal: React.FC<AssetModalProps> = ({
                         control={control}
                         render={({ field }) => (
                           <FormControl fullWidth error={!!errors.subcategory}>
-                            <InputLabel>Subcategory</InputLabel>
+                            <InputLabel>{L.subcategoryLabel}</InputLabel>
                             <Select
                               {...field}
-                              label='Subcategory'
+                              label={L.subcategoryLabel}
                               disabled={
                                 loading || loadingData || !selectedCategoryId
                               }
@@ -407,7 +458,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
                               {loadingData ? (
                                 <MenuItem disabled value=''>
                                   <Typography variant='body2'>
-                                    Loading subcategories...
+                                    {L.loadingSubcategories}
                                   </Typography>
                                 </MenuItem>
                               ) : subcategories.length === 0 ? (
@@ -416,7 +467,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
                                     variant='body2'
                                     color='text.secondary'
                                   >
-                                    No subcategories available
+                                    {L.noSubcategories}
                                   </Typography>
                                 </MenuItem>
                               ) : (
@@ -461,7 +512,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                   <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
                     <DatePicker
-                      label='Purchase Date'
+                      label={L.purchaseDateLabel}
                       value={selectedDate}
                       onChange={date => {
                         if (date) {
@@ -488,22 +539,30 @@ const AssetModal: React.FC<AssetModalProps> = ({
             </Box>
           </DialogContent>
 
-          <DialogActions sx={{ padding: '16px 24px', gap: 1 }}>
+          <DialogActions
+            sx={{
+              padding: '16px 24px',
+              gap: 1,
+              display: 'flex',
+              justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+              direction: 'ltr',
+            }}
+          >
             <Button
               onClick={handleClose}
               variant='outlined'
               disabled={loading}
-              sx={{ minWidth: 80 }}
+              sx={{ minWidth: 80, order: 0 }}
             >
-              Cancel
+              {L.cancel}
             </Button>
             <Button
               type='submit'
               variant='contained'
               disabled={loading}
-              sx={{ minWidth: 80 }}
+              sx={{ minWidth: 80, order: 1 }}
             >
-              {loading ? 'Saving...' : asset ? 'Update' : 'Create'}
+              {loading ? L.saving : asset ? L.update : L.create}
             </Button>
           </DialogActions>
         </form>

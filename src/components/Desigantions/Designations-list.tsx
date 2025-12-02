@@ -76,7 +76,7 @@ export default function DesignationsList({
               },
             }}
           >
-            <CardContent sx={{ p: 2.5 }}>
+            <CardContent sx={{ p: 2.5, direction: 'ltr' }}>
               <Box
                 sx={{
                   display: 'flex',
@@ -116,7 +116,7 @@ export default function DesignationsList({
                         wordBreak: 'break-word',
                       }}
                     >
-                      {getText(designation.title, designation.titleAr)}
+                      {designation.title}
                     </Typography>
                   </Box>
                 </Box>

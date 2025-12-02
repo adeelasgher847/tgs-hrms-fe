@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, TextField, Button, MenuItem, Typography } from '@mui/material';
+import { useLanguage } from '../../hooks/useLanguage';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -25,7 +26,39 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  const { language } = useLanguage();
+  const labels = {
+    en: {
+      heading: 'Apply for Leave',
+      pleaseFill: 'Please fill in all required fields.',
+      success: 'Leave request submitted successfully.',
+      failed: 'Failed to submit leave request.',
+      leaveType: 'Leave Type',
+      noLeaveTypes: 'No leave types available',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      reason: 'Reason',
+      submitting: 'Submitting...',
+      apply: 'Apply',
+    },
+    ar: {
+      heading: 'تقديم طلب إجازة',
+      pleaseFill: 'يرجى ملء جميع الحقول المطلوبة.',
+      success: 'تم تقديم طلب الإجازة بنجاح.',
+      failed: 'فشل في إرسال طلب الإجازة.',
+      leaveType: 'نوع الإجازة',
+      noLeaveTypes: 'لا توجد أنواع إجازة متاحة',
+      startDate: 'تاريخ البدء',
+      endDate: 'تاريخ الانتهاء',
+      reason: 'السبب',
+      submitting: 'جاري الإرسال...',
+      apply: 'تقديم',
+    },
+  } as const;
+  const L = labels[language as 'en' | 'ar'] || labels.en;
+
   // ✅ Fetch leave types
+  const failedMsg = L.failed;
   useEffect(() => {
     const fetchLeaveTypes = async () => {
       try {
@@ -33,13 +66,15 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
         setLeaveTypes(response.items || []);
       } catch (error) {
         console.error('Failed to load leave types:', error);
-        setMessage('Failed to load leave types.');
+        setMessage(failedMsg);
       } finally {
         setLoadingLeaveTypes(false);
       }
     };
 
     fetchLeaveTypes();
+    // intentionally run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ✅ Allow same day leave
@@ -62,7 +97,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
     e.preventDefault();
 
     if (!leaveTypeId.trim() || !startDate || !endDate || !reason.trim()) {
-      setMessage('Please fill in all required fields.');
+      setMessage(L.pleaseFill);
       return;
     }
 
@@ -79,7 +114,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
     try {
       const response = await leaveApi.createLeave(payload);
       console.log('Leave created:', response);
-      setMessage('Leave request submitted successfully.');
+      setMessage(L.success);
 
       onSubmit?.(payload);
       setLeaveTypeId('');
@@ -89,7 +124,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
     } catch (error: unknown) {
       console.error('Error creating leave:', error);
 
-      let errorMessage = 'Failed to submit leave request.';
+      let errorMessage: string = L.failed;
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as {
           response?: { data?: { message?: string } };
@@ -121,8 +156,14 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
           gap: 2,
         }}
       >
-        <Typography variant='h5' color='primary' mb={2}>
-          Apply for Leave
+        <Typography
+          variant='h5'
+          color='primary'
+          mb={2}
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
+          {L.heading}
         </Typography>
 
         {message && (
@@ -139,7 +180,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
 
         <TextField
           select
-          label='Leave Type'
+          label={L.leaveType}
           value={leaveTypeId}
           onChange={e => setLeaveTypeId(e.target.value)}
           required
@@ -153,18 +194,18 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
               </MenuItem>
             ))
           ) : (
-            <MenuItem disabled>No leave types available</MenuItem>
+            <MenuItem disabled>{L.noLeaveTypes}</MenuItem>
           )}
         </TextField>
 
         {/* Start Date */}
         <DatePicker
-          label='Start Date'
+          label={L.startDate}
           value={startDate}
           onChange={newValue => {
-            setStartDate(newValue);
+            setStartDate(newValue as unknown as Date | null);
             if (newValue && endDate && newValue > endDate) {
-              setEndDate(newValue);
+              setEndDate(newValue as unknown as Date | null);
             }
           }}
           minDate={getToday()}
@@ -178,9 +219,9 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
 
         {/* End Date */}
         <DatePicker
-          label='End Date'
+          label={L.endDate}
           value={endDate}
-          onChange={newValue => setEndDate(newValue)}
+          onChange={newValue => setEndDate(newValue as unknown as Date | null)}
           minDate={startDate || getToday()}
           slotProps={{
             textField: {
@@ -191,7 +232,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
         />
 
         <TextField
-          label='Reason'
+          label={L.reason}
           multiline
           minRows={2}
           value={reason}
@@ -199,14 +240,19 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
           required
         />
 
-        <Button
-          type='submit'
-          variant='contained'
-          color='primary'
-          disabled={loading}
-        >
-          {loading ? 'Submitting...' : 'Apply'}
-        </Button>
+        <Box sx={{ display: 'flex' }}>
+          <Button
+            type='submit'
+            variant='contained'
+            color='primary'
+            disabled={loading}
+            sx={{
+              alignSelf: language === 'ar' ? 'flex-start' : 'flex-end',
+            }}
+          >
+            {loading ? L.submitting : L.apply}
+          </Button>
+        </Box>
       </Box>
     </LocalizationProvider>
   );

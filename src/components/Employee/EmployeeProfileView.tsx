@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   Box,
   Typography,
@@ -24,7 +25,45 @@ import type {
 import UserAvatar from '../common/UserAvatar';
 import { formatDate } from '../../utils/dateUtils';
 
+const EMPLOYEE_PROFILE_STRINGS = {
+  en: {
+    employeeDetails: 'Employee Details',
+    recentAttendance: 'Recent Attendance',
+    leaveHistory: 'Leave History',
+    date: 'Date',
+    checkIn: 'Check In',
+    checkOut: 'Check Out',
+    workedHours: 'Worked Hours',
+    type: 'Type',
+    from: 'From',
+    to: 'To',
+    status: 'Status',
+    joined: 'Joined',
+  },
+  ar: {
+    employeeDetails: 'تفاصيل الموظف',
+    recentAttendance: 'الحضور الأخير',
+    leaveHistory: 'تاريخ الإجازات',
+    date: 'التاريخ',
+    checkIn: 'تسجيل الدخول',
+    checkOut: 'تسجيل الخروج',
+    workedHours: 'ساعات العمل',
+    type: 'النوع',
+    from: 'من',
+    to: 'إلى',
+    status: 'الحالة',
+    joined: 'انضم:',
+  },
+} as const;
+
 const EmployeeProfileView: React.FC = () => {
+  const { language } = useLanguage();
+  const L = React.useMemo(
+    () =>
+      EMPLOYEE_PROFILE_STRINGS[language as 'en' | 'ar'] ||
+      EMPLOYEE_PROFILE_STRINGS.en,
+    [language]
+  );
   const [profile, setProfile] = useState<EmployeeFullProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,7 +160,6 @@ const EmployeeProfileView: React.FC = () => {
       : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-
   if (isLoading) {
     return (
       <Box py={3} display='flex' justifyContent='center'>
@@ -146,15 +184,23 @@ const EmployeeProfileView: React.FC = () => {
     <Box py={2}>
       <Paper
         elevation={1}
-        sx={{ borderRadius: 1, p: 3, bgcolor: 'background.paper', mb: 4,boxShadow:'none' }}
+        sx={{
+          borderRadius: 1,
+          p: 3,
+          bgcolor: 'background.paper',
+          mb: 4,
+          boxShadow: 'none',
+        }}
       >
         <Typography
           variant='h5'
           fontWeight={600}
           gutterBottom
           color='primary.main'
+          dir='ltr'
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
         >
-          Employee Details
+          {L.employeeDetails}
         </Typography>
         <Divider sx={{ mb: 3 }} />
         <Box display='flex' alignItems='center' mb={3}>
@@ -188,7 +234,7 @@ const EmployeeProfileView: React.FC = () => {
               <Email sx={{ fontSize: 16, mr: 0.5 }} /> {profile.email}
             </Typography>
             <Typography variant='body2' color='text.secondary'>
-              <CalendarToday sx={{ fontSize: 16, mr: 0.5 }} /> Joined:{' '}
+              <CalendarToday sx={{ fontSize: 16, mr: 0.5 }} /> {L.joined}{' '}
               {new Date(profile.joinedAt).toLocaleDateString()}
             </Typography>
           </Box>
@@ -198,25 +244,33 @@ const EmployeeProfileView: React.FC = () => {
       {/* Recent Attendance Table */}
       <Paper
         elevation={1}
-        sx={{ borderRadius: 1, p: 3, bgcolor: 'background.paper', mb: 4,boxShadow:'none' }}
+        sx={{
+          borderRadius: 1,
+          p: 3,
+          bgcolor: 'background.paper',
+          mb: 4,
+          boxShadow: 'none',
+        }}
       >
         <Typography
           variant='h6'
           fontWeight={600}
           gutterBottom
           color='primary.main'
+          dir='ltr'
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
         >
-          Recent Attendance
+          {L.recentAttendance}
         </Typography>
         <Divider sx={{ mb: 2 }} />
-        <TableContainer>
+        <TableContainer dir='ltr'>
           <Table size='small' sx={{ minWidth: 350 }}>
             <TableHead>
               <TableRow sx={{ backgroundColor: 'rgba(76, 175, 80, 0.08)' }}>
-                <TableCell>Date</TableCell>
-                <TableCell>Check In</TableCell>
-                <TableCell>Check Out</TableCell>
-                <TableCell>Worked Hours</TableCell>
+                <TableCell>{L.date}</TableCell>
+                <TableCell>{L.checkIn}</TableCell>
+                <TableCell>{L.checkOut}</TableCell>
+                <TableCell>{L.workedHours}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -249,25 +303,32 @@ const EmployeeProfileView: React.FC = () => {
       {/* Leave History Table */}
       <Paper
         elevation={1}
-        sx={{ borderRadius: 1, p: 3, bgcolor: 'background.paper',boxShadow:'none' }}
+        sx={{
+          borderRadius: 1,
+          p: 3,
+          bgcolor: 'background.paper',
+          boxShadow: 'none',
+        }}
       >
         <Typography
           variant='h6'
           fontWeight={600}
           gutterBottom
           color='primary.main'
+          dir='ltr'
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
         >
-          Leave History
+          {L.leaveHistory}
         </Typography>
         <Divider sx={{ mb: 2 }} />
-        <TableContainer>
+        <TableContainer dir='ltr'>
           <Table size='small' sx={{ minWidth: 350 }}>
             <TableHead>
               <TableRow sx={{ backgroundColor: 'rgba(33, 150, 243, 0.08)' }}>
-                <TableCell>Type</TableCell>
-                <TableCell>From</TableCell>
-                <TableCell>To</TableCell>
-                <TableCell>Status</TableCell>
+                <TableCell>{L.type}</TableCell>
+                <TableCell>{L.from}</TableCell>
+                <TableCell>{L.to}</TableCell>
+                <TableCell>{L.status}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

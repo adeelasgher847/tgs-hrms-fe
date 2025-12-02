@@ -18,6 +18,7 @@ import {
   Pagination,
   CircularProgress,
 } from '@mui/material';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   systemPerformanceApiService,
   type PromotionRecord,
@@ -30,8 +31,59 @@ interface PromotionsListProps {
   tenantId: string;
 }
 
-
 const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
+  const { language } = useLanguage();
+  const labels = {
+    en: {
+      title: 'Promotions Tracking',
+      statusLabel: 'Status',
+      all: 'All',
+      pending: 'Pending',
+      approved: 'Approved',
+      rejected: 'Rejected',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      applyFilters: 'Apply Filters',
+      statsTitle: 'Stats:',
+      approvedPrefix: 'Approved',
+      pendingPrefix: 'Pending',
+      rejectedPrefix: 'Rejected',
+      employeeCol: 'Employee',
+      prevDesignationCol: 'Previous Designation',
+      newDesignationCol: 'New Designation',
+      effectiveDateCol: 'Effective Date',
+      statusCol: 'Status',
+      tenantCol: 'Tenant',
+      noRecords: 'No promotions found.',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+    },
+    ar: {
+      title: 'تتبع الترقيات',
+      statusLabel: 'الحالة',
+      all: 'الكل',
+      pending: 'قيد الانتظار',
+      approved: 'موافقة',
+      rejected: 'مرفوضة',
+      startDate: 'تاريخ البدء',
+      endDate: 'تاريخ الانتهاء',
+      applyFilters: 'تطبيق المرشحات',
+      statsTitle: 'الإحصائيات:',
+      approvedPrefix: 'الموافق عليها',
+      pendingPrefix: 'قيد الانتظار',
+      rejectedPrefix: 'المرفوضة',
+      employeeCol: 'الموظف',
+      prevDesignationCol: 'المسمى الوظيفي السابق',
+      newDesignationCol: 'المسمى الوظيفي الجديد',
+      effectiveDateCol: 'تاريخ السريان',
+      statusCol: 'الحالة',
+      tenantCol: 'المستأجر',
+      noRecords: 'لم يتم العثور على ترقيات.',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
+    },
+  } as const;
+  const L = labels[language] || labels.en;
   const [promotions, setPromotions] = useState<PromotionRecord[]>([]);
   const [stats, setStats] = useState<PromotionStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,30 +219,36 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
 
   return (
     <Box>
-      <Typography variant='h5' fontWeight={600} gutterBottom>
-        Promotions Tracking
+      <Typography
+        variant='h5'
+        fontWeight={600}
+        gutterBottom
+        dir={language === 'ar' ? 'rtl' : 'ltr'}
+        sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+      >
+        {L.title}
       </Typography>
 
       <Box display='flex' gap={1.5} mb={1} flexWrap='wrap' alignItems='center'>
         <FormControl size='small' sx={{ minWidth: 200 }}>
-          <InputLabel>Status</InputLabel>
+          <InputLabel>{L.statusLabel}</InputLabel>
           <Select
             value={filters.status}
-            label='Status'
+            label={L.statusLabel}
             onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
           >
             <MenuItem value=''>
-              <em>All</em>
+              <em>{L.all}</em>
             </MenuItem>
-            <MenuItem value='pending'>Pending</MenuItem>
-            <MenuItem value='approved'>Approved</MenuItem>
-            <MenuItem value='rejected'>Rejected</MenuItem>
+            <MenuItem value='pending'>{L.pending}</MenuItem>
+            <MenuItem value='approved'>{L.approved}</MenuItem>
+            <MenuItem value='rejected'>{L.rejected}</MenuItem>
           </Select>
         </FormControl>
 
         <TextField
           size='small'
-          label='Start Date'
+          label={L.startDate}
           type='date'
           InputLabelProps={{ shrink: true }}
           value={filters.startDate}
@@ -199,15 +257,15 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
 
         <TextField
           size='small'
-          label='End Date'
+          label={L.endDate}
           type='date'
           InputLabelProps={{ shrink: true }}
           value={filters.endDate}
           onChange={e => setFilters(f => ({ ...f, endDate: e.target.value }))}
         />
 
-        <Button  variant='contained' onClick={() => setCurrentPage(1)}>
-          Apply Filters
+        <Button variant='contained' onClick={() => setCurrentPage(1)}>
+          {L.applyFilters}
         </Button>
       </Box>
 
@@ -223,13 +281,26 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
               boxShadow: 'none',
             }}
           >
-            <Typography variant='h6' sx={{ mb: 1 }}>
-              Stats:{' '}
+            <Typography
+              variant='h6'
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+              sx={{ mb: 1, textAlign: language === 'ar' ? 'right' : 'left' }}
+            >
+              {L.statsTitle}
             </Typography>
             <Box display='flex' gap={1}>
-              <Chip label={`Approved: ${s.approvedCount}`} color='success' />
-              <Chip label={`Pending: ${s.pendingCount}`} color='warning' />
-              <Chip label={`Rejected: ${s.rejectedCount}`} color='error' />
+              <Chip
+                label={`${L.approvedPrefix}: ${s.approvedCount}`}
+                color='success'
+              />
+              <Chip
+                label={`${L.pendingPrefix}: ${s.pendingCount}`}
+                color='warning'
+              />
+              <Chip
+                label={`${L.rejectedPrefix}: ${s.rejectedCount}`}
+                color='error'
+              />
             </Box>
           </Paper>
         ))}
@@ -249,12 +320,12 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
           <Table sx={{}}>
             <TableHead>
               <TableRow>
-                <TableCell>Employee</TableCell>
-                <TableCell>Previous Designation</TableCell>
-                <TableCell>New Designation</TableCell>
-                <TableCell>Effective Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Tenant</TableCell>
+                <TableCell>{L.employeeCol}</TableCell>
+                <TableCell>{L.prevDesignationCol}</TableCell>
+                <TableCell>{L.newDesignationCol}</TableCell>
+                <TableCell>{L.effectiveDateCol}</TableCell>
+                <TableCell>{L.statusCol}</TableCell>
+                <TableCell>{L.tenantCol}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -264,9 +335,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
                     <TableCell>{getEmployeeName(p.employee_id)}</TableCell>
                     <TableCell>{p.previousDesignation}</TableCell>
                     <TableCell>{p.newDesignation}</TableCell>
-                    <TableCell>
-                      {formatDate(p.effectiveDate)}
-                    </TableCell>
+                    <TableCell>{formatDate(p.effectiveDate)}</TableCell>
                     <TableCell>
                       <Chip label={p.status} color={statusColor(p.status)} />
                     </TableCell>
@@ -276,7 +345,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} align='center'>
-                    No promotions found.
+                    {L.noRecords}
                   </TableCell>
                 </TableRow>
               )}
@@ -303,8 +372,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
       {promotions.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {totalPages} ({totalRecords} total
-            records)
+            {L.showingInfo(currentPage, totalPages, totalRecords)}
           </Typography>
         </Box>
       )}

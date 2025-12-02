@@ -150,7 +150,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         flexDirection: 'column',
         gap: 3,
         mt: 2,
-        direction: isRtl ? 'rtl' : 'ltr',
+        direction: 'ltr',
         color: darkMode ? '#e0e0e0' : undefined,
       }}
     >
@@ -228,7 +228,8 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   );
 
   const paperSx: SxProps<Theme> = {
-    direction: isRtl ? 'rtl' : 'ltr',
+    // Force LTR layout for this modal while still allowing labels/text to be localized
+    direction: 'ltr',
     backgroundColor: darkMode ? '#1e1e1e' : '#fff',
     color: darkMode ? '#e0e0e0' : undefined,
   };
@@ -237,7 +238,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   if (isMobile) {
     return (
       <Drawer
-        anchor={isRtl ? 'right' : 'left'}
+        anchor={'left'}
         open={open}
         onClose={onClose}
         PaperProps={{ sx: { width: '100%', maxWidth: 400, ...paperSx } }}
@@ -250,17 +251,40 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
             scrollbarWidth: 'none',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <Typography variant='h6' sx={{ flexGrow: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              mb: 3,
+              // swap order for RTL: title right, close left
+            }}
+          >
+            <Typography
+              variant='h6'
+              sx={{
+                flexGrow: 1,
+                textAlign: isRtl ? 'right' : 'left',
+                order: isRtl ? 2 : 1,
+              }}
+            >
               {title}
             </Typography>
-            <IconButton onClick={onClose} size='small'>
+            <IconButton
+              onClick={onClose}
+              size='small'
+              sx={{ order: isRtl ? 1 : 2 }}
+            >
               <CloseIcon sx={{ color: darkMode ? '#fff' : undefined }} />
             </IconButton>
           </Box>
           {formContent}
           <Box
-            sx={{ display: 'flex', gap: 1, mt: 3, justifyContent: 'flex-end' }}
+            sx={{
+              display: 'flex',
+              gap: 1,
+              mt: 3,
+              justifyContent: isRtl ? 'flex-start' : 'flex-end',
+            }}
           >
             {actionButtons}
           </Box>
@@ -272,29 +296,37 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   /* ---------- DESKTOP dialog ---------- */
   return (
     <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
-      <DialogTitle sx={{ ...paperSx, position: 'relative' }}>
-        <Typography
+      <DialogTitle
+        sx={{
+          ...paperSx,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Box
           sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            order: isRtl ? 2 : 1,
             textAlign: isRtl ? 'right' : 'left',
-            fontWeight: 600,
-            fontSize: '1.25rem',
-            lineHeight: 1.6,
-            letterSpacing: '0.0075em',
           }}
         >
-          {title}
-        </Typography>
-        <IconButton
-          onClick={onClose}
-          sx={{
-            position: 'absolute',
-            right: isRtl ? 'auto' : 8,
-            left: isRtl ? 8 : 'auto',
-            top: 8,
-            color: darkMode ? '#fff' : undefined,
-          }}
-        >
-          <CloseIcon />
+          <Typography
+            sx={{
+              fontWeight: 600,
+              fontSize: '1.25rem',
+              lineHeight: 1.6,
+              letterSpacing: '0.0075em',
+            }}
+          >
+            {title}
+          </Typography>
+        </Box>
+
+        <IconButton onClick={onClose} sx={{ order: isRtl ? 1 : 2 }}>
+          <CloseIcon sx={{ color: darkMode ? '#fff' : undefined }} />
         </IconButton>
       </DialogTitle>
 
@@ -311,8 +343,15 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         {formContent}
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, pt: 2, ...paperSx }}>
-        {actionButtons}
+      <DialogActions
+        sx={{
+          p: 3,
+          pt: 2,
+          ...paperSx,
+          justifyContent: isRtl ? 'flex-start' : 'flex-end',
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 1 }}>{actionButtons}</Box>
       </DialogActions>
     </Dialog>
   );

@@ -29,7 +29,6 @@ import {
   Group as GroupIcon,
   Person as PersonIcon,
   Business as BusinessIcon,
-  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { AllTenantsTeamsResponse, TenantTeam } from '../../api/teamApi';
@@ -506,7 +505,13 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
         maxWidth='md'
         fullWidth
       >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+        <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{
+            color: darkMode ? '#fff' : '#000',
+            textAlign: language === 'ar' ? 'right' : 'left',
+          }}
+        >
           {selectedTeam?.name} - {lang.teamMembers}
         </DialogTitle>
         <DialogContent>
@@ -608,8 +613,17 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowMemberDialog(false)}>
+        <DialogActions
+          sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}
+        >
+          <Button
+            onClick={() => setShowMemberDialog(false)}
+            sx={{
+              order: language === 'ar' ? -1 : 0,
+              ml: language === 'en' ? 'auto' : 0,
+              mr: language === 'ar' ? 'auto' : 0,
+            }}
+          >
             {lang.cancel}
           </Button>
         </DialogActions>

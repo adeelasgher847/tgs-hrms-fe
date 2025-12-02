@@ -17,10 +17,7 @@ import {
 } from '@mui/material';
 import UserAvatar from '../common/UserAvatar';
 import { Avatar } from '@mui/material';
-import {
-  Group as GroupIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
+import { Group as GroupIcon, Close as CloseIcon } from '@mui/icons-material';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
 
@@ -44,7 +41,9 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
   darkMode = false,
 }) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [adminTeamMembers, setAdminTeamMembers] = useState<AdminTeamMember[]>([]);
+  const [adminTeamMembers, setAdminTeamMembers] = useState<AdminTeamMember[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [showAllMembersDialog, setShowAllMembersDialog] = useState(false);
 
@@ -118,10 +117,10 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
     const loadTeamMembers = async () => {
       try {
         setLoading(true);
-        
+
         if (isManager()) {
           // Load manager's team members
-        const response = await teamApiService.getMyTeamMembers(1);
+          const response = await teamApiService.getMyTeamMembers(1);
           setTeamMembers(response.items || []);
           setAdminTeamMembers([]);
         } else if (isAdmin()) {
@@ -513,16 +512,29 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           }}
         >
           <DialogTitle
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
             sx={{
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
               borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}`,
+              pb: 1,
+              flexDirection: language === 'ar' ? 'row-reverse' : 'row',
             }}
           >
-            <Typography variant='h6' sx={{ fontWeight: 600 }}>
-              {lang.teamMembers} ({teamMembers.length})
-            </Typography>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}
+            >
+              <Typography
+                variant='h6'
+                sx={{
+                  fontWeight: 600,
+                  width: '100%',
+                  textAlign: language === 'ar' ? 'right' : 'left',
+                }}
+              >
+                {lang.teamMembers} ({teamMembers.length})
+              </Typography>
+            </Box>
             <IconButton
               onClick={() => setShowAllMembersDialog(false)}
               sx={{ color: darkMode ? '#ccc' : '#666' }}
@@ -530,7 +542,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               <CloseIcon />
             </IconButton>
           </DialogTitle>
-          <DialogContent sx={{ p: 0 }}>
+          <DialogContent sx={{ p: 0, direction: 'ltr' }}>
             {teamMembers.length === 0 ? (
               <Box sx={{ p: 3, textAlign: 'center' }}>
                 <Typography
@@ -676,7 +688,9 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           spacing={-1}
           sx={{ display: { xs: 'none', md: 'flex' } }}
         >
-          {displayMembers.map(member => renderAdminAvatar(member)).filter(Boolean)}
+          {displayMembers
+            .map(member => renderAdminAvatar(member))
+            .filter(Boolean)}
 
           {remainingCount > 0 && (
             <Tooltip
@@ -746,16 +760,29 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           }}
         >
           <DialogTitle
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
             sx={{
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
               borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}`,
+              pb: 1,
+              flexDirection: language === 'ar' ? 'row-reverse' : 'row',
             }}
           >
-            <Typography variant='h6' sx={{ fontWeight: 600 }}>
-              {lang.allTeamMembers} ({adminTeamMembers.length})
-            </Typography>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}
+            >
+              <Typography
+                variant='h6'
+                sx={{
+                  fontWeight: 600,
+                  width: '100%',
+                  textAlign: language === 'ar' ? 'right' : 'left',
+                }}
+              >
+                {lang.allTeamMembers} ({adminTeamMembers.length})
+              </Typography>
+            </Box>
             <IconButton
               onClick={() => setShowAllMembersDialog(false)}
               sx={{ color: darkMode ? '#ccc' : '#666' }}
@@ -763,7 +790,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               <CloseIcon />
             </IconButton>
           </DialogTitle>
-          <DialogContent sx={{ p: 0 }}>
+          <DialogContent sx={{ p: 0, direction: 'ltr' }}>
             {adminTeamMembers.length === 0 ? (
               <Box sx={{ p: 3, textAlign: 'center' }}>
                 <Typography

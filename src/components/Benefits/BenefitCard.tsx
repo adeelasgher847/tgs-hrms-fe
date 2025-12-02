@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, Paper, Chip, Divider, Button } from '@mui/material';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface BenefitCardProps {
   name: string;
@@ -18,6 +19,26 @@ const BenefitCard: React.FC<BenefitCardProps> = ({
   status,
   onCancel,
 }) => {
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      typeLabel: 'Type:',
+      statusLabel: 'Status:',
+      eligibilityLabel: 'Eligibility:',
+      descriptionLabel: 'Description:',
+      cancel: 'Cancel Benefit',
+    },
+    ar: {
+      typeLabel: 'النوع:',
+      statusLabel: 'الحالة:',
+      eligibilityLabel: 'معايير الأهلية:',
+      descriptionLabel: 'الوصف:',
+      cancel: 'إلغاء الميزة',
+    },
+  } as const;
+
+  const L = labels[language as 'en' | 'ar'] || labels.en;
   const getStatusColor = () => {
     switch (status) {
       case 'active':
@@ -51,7 +72,7 @@ const BenefitCard: React.FC<BenefitCardProps> = ({
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography variant='subtitle2' color='text.secondary'>
-          Type:
+          {L.typeLabel}
         </Typography>
         <Chip
           label={type}
@@ -62,14 +83,14 @@ const BenefitCard: React.FC<BenefitCardProps> = ({
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography variant='subtitle2' color='text.secondary'>
-          Status:
+          {L.statusLabel}
         </Typography>
         <Chip label={status} color={getStatusColor()} size='small' />
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography variant='subtitle2' color='text.secondary'>
-          Eligibility:
+          {L.eligibilityLabel}
         </Typography>
         <Typography variant='body2'>{eligibilityCriteria}</Typography>
       </Box>
@@ -77,7 +98,7 @@ const BenefitCard: React.FC<BenefitCardProps> = ({
       {description && (
         <Box sx={{ mt: 1 }}>
           <Typography variant='subtitle2' color='text.secondary'>
-            Description:
+            {L.descriptionLabel}
           </Typography>
           <Typography variant='body2' sx={{ whiteSpace: 'pre-line' }}>
             {description}
@@ -93,7 +114,7 @@ const BenefitCard: React.FC<BenefitCardProps> = ({
             size='small'
             onClick={onCancel}
           >
-            Cancel Benefit
+            {L.cancel}
           </Button>
         </Box>
       )}

@@ -62,6 +62,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
       error: 'Failed to load team members',
       confirmRemove: 'Are you sure you want to remove this member?',
       memberRemoved: 'Member removed successfully',
+      cancel: 'Cancel',
     },
     ar: {
       name: 'الاسم',
@@ -75,6 +76,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
       error: 'فشل في تحميل أعضاء الفريق',
       confirmRemove: 'هل أنت متأكد من إزالة هذا العضو؟',
       memberRemoved: 'تم إزالة العضو بنجاح',
+      cancel: 'إلغاء',
     },
   };
 
@@ -244,7 +246,10 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
     <Box>
       <TableContainer
         component={Paper}
-        sx={{ backgroundColor: darkMode ? '#2d2d2d' : '#fff' , boxShadow:"none"}}
+        sx={{
+          backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+          boxShadow: 'none',
+        }}
       >
         <Table>
           <TableHead>
@@ -362,19 +367,24 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
           },
         }}
       >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
-          Confirm Remove Member
+        <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{
+            color: darkMode ? '#fff' : '#000',
+            textAlign: language === 'ar' ? 'right' : 'left',
+          }}
+        >
+          {lang.confirmRemove}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ direction: 'ltr' }}>
           {memberToDelete && (
             <Box sx={{ mt: 2 }}>
               <Typography variant='body1' sx={{ mb: 2 }}>
-                Are you sure you want to remove{' '}
+                {lang.confirmRemove}{' '}
                 <strong>
                   {memberToDelete.user?.first_name}{' '}
                   {memberToDelete.user?.last_name}
-                </strong>{' '}
-                from the team?
+                </strong>
               </Typography>
               <Box
                 sx={{
@@ -387,43 +397,59 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
                   variant='body2'
                   sx={{ color: darkMode ? '#ccc' : '#666' }}
                 >
-                  <strong>Employee:</strong> {memberToDelete.user?.first_name}{' '}
+                  <strong>{lang.name}:</strong>{' '}
+                  {memberToDelete.user?.first_name}{' '}
                   {memberToDelete.user?.last_name}
                 </Typography>
                 <Typography
                   variant='body2'
                   sx={{ color: darkMode ? '#ccc' : '#666' }}
                 >
-                  <strong>Email:</strong> {memberToDelete.user?.email}
+                  <strong>{lang.email}:</strong> {memberToDelete.user?.email}
                 </Typography>
                 <Typography
                   variant='body2'
                   sx={{ color: darkMode ? '#ccc' : '#666' }}
                 >
-                  <strong>Designation:</strong>{' '}
+                  <strong>{lang.designation}:</strong>{' '}
                   {memberToDelete.designation?.title}
                 </Typography>
                 <Typography
                   variant='body2'
                   sx={{ color: darkMode ? '#ccc' : '#666' }}
                 >
-                  <strong>Department:</strong>{' '}
+                  <strong>{lang.department}:</strong>{' '}
                   {memberToDelete.designation?.department?.name}
                 </Typography>
               </Box>
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowDeleteConfirmDialog(false)}>
-            Cancel
+        <DialogActions
+          sx={{
+            p: 2,
+            display: 'flex',
+            direction: 'ltr',
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+          }}
+        >
+          <Button
+            onClick={() => setShowDeleteConfirmDialog(false)}
+            sx={{ order: 0 }}
+          >
+            {lang.cancel}
           </Button>
           <Button
             onClick={handleConfirmRemoveMember}
             variant='contained'
-            sx={{ backgroundColor: '#d32f2f' }}
+            sx={{
+              backgroundColor: '#d32f2f',
+              order: 1,
+              ml: language === 'ar' ? 'auto' : 0,
+              mr: language === 'en' ? 'auto' : 0,
+            }}
           >
-            Remove Member
+            {lang.removeMember}
           </Button>
         </DialogActions>
       </Dialog>

@@ -37,6 +37,7 @@ import {
   CheckCircle as AvailableIcon,
 } from '@mui/icons-material';
 import type { AxiosError } from 'axios';
+import { useLanguage } from '../../hooks/useLanguage';
 import type {
   Asset,
   AssetFilters,
@@ -49,7 +50,7 @@ import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../Data/assetCategories';
-import { isHRAdmin } from '../../utils/roleUtils';
+// import role helper removed (not used here)
 import { formatDate } from '../../utils/dateUtils';
 
 // Extended interface for API asset response that may include additional user information
@@ -119,10 +120,7 @@ const AssetInventory: React.FC = () => {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
 
-  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const userRole = storedUser.role;
-
-  const hideActions = isHRAdmin(userRole);
+  // user information not required in this component
 
   const showSnackbar = (
     message: string,
@@ -140,6 +138,105 @@ const AssetInventory: React.FC = () => {
     limit: 25, // Backend returns 25 records per page
     totalPages: 1,
   });
+
+  const { language } = useLanguage();
+  const pageLabels = {
+    en: {
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+    },
+    ar: {
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
+    },
+  } as const;
+  const PL = pageLabels[language] || pageLabels.en;
+
+  const labels = {
+    en: {
+      pageTitle: 'Asset Inventory',
+      addAsset: 'Add Asset',
+      totalAssets: 'Total Assets',
+      available: 'Available',
+      assigned: 'Assigned',
+      maintenance: 'Maintenance',
+      retired: 'Retired',
+      searchPlaceholder: 'Search assets...',
+      status: 'Status',
+      category: 'Category',
+      clearFilters: 'Clear Filters',
+      assetName: 'Asset Name',
+      categoryHeader: 'Category',
+      statusHeader: 'Status',
+      assignedTo: 'Assigned To',
+      purchaseDate: 'Purchase Date',
+      actions: 'Actions',
+      noAssetsFound: 'No assets found',
+      all: 'All',
+      markAsMaintenance: 'Mark as Maintenance',
+      markAsAvailable: 'Mark as Available',
+      edit: 'Edit',
+      delete: 'Delete',
+      deleteAssetTitle: 'Delete Asset',
+      deleteAssetMessage: (name?: string) =>
+        name
+          ? `Are you sure you want to delete "${name}"? This action cannot be undone.`
+          : 'Are you sure you want to delete this asset? This action cannot be undone.',
+      deleteConfirm: 'Delete',
+      unassigned: 'Unassigned',
+      assetUpdated: 'Asset updated successfully',
+      assetCreated: 'Asset created successfully',
+      assetDeleted: 'Asset deleted successfully',
+      failedToLoad: 'Failed to load assets',
+      failedToSave: 'Failed to save asset',
+      failedToDelete: 'Failed to delete asset',
+      markUnderMaintenance: 'Asset marked as under maintenance',
+      markAvailable: 'Asset marked as available',
+      failedToUpdateStatus: 'Failed to update asset status',
+    },
+    ar: {
+      pageTitle: 'جرد الأصول',
+      addAsset: 'إضافة أصل',
+      totalAssets: 'إجمالي الأصول',
+      available: 'متاح',
+      assigned: 'مُسنَد',
+      maintenance: 'صيانة',
+      retired: 'متقاعد',
+      searchPlaceholder: 'البحث عن الأصول...',
+      status: 'الحالة',
+      category: 'الفئة',
+      clearFilters: 'مسح الفلاتر',
+      assetName: 'اسم الأصل',
+      categoryHeader: 'الفئة',
+      statusHeader: 'الحالة',
+      assignedTo: 'مُسند إلى',
+      purchaseDate: 'تاريخ الشراء',
+      actions: 'الإجراءات',
+      noAssetsFound: 'لم يتم العثور على أصول',
+      all: 'الكل',
+      markAsMaintenance: 'وضع للصيانة',
+      markAsAvailable: 'وضع كمُتاح',
+      edit: 'تعديل',
+      delete: 'حذف',
+      deleteAssetTitle: 'حذف الأصل',
+      deleteAssetMessage: (name?: string) =>
+        name
+          ? `هل أنت متأكد أنك تريد حذف "${name}"؟ لا يمكن التراجع عن هذا الإجراء.`
+          : 'هل أنت متأكد أنك تريد حذف هذا الأصل؟ لا يمكن التراجع عن هذا الإجراء.',
+      deleteConfirm: 'حذف',
+      unassigned: 'غير مُسند',
+      assetUpdated: 'تم تحديث الأصل بنجاح',
+      assetCreated: 'تم إنشاء الأصل بنجاح',
+      assetDeleted: 'تم حذف الأصل بنجاح',
+      failedToLoad: 'فشل تحميل الأصول',
+      failedToSave: 'فشل حفظ الأصل',
+      failedToDelete: 'فشل حذف الأصل',
+      markUnderMaintenance: 'تم وضع الأصل للصيانة',
+      markAvailable: 'تم وضع الأصل كمُتاح',
+      failedToUpdateStatus: 'فشل تحديث حالة الأصل',
+    },
+  } as const;
+  const L = labels[language as 'en' | 'ar'] || labels.en;
 
   // Mock data for users (these might need to be fetched from API later)
   const mockUsers: MockUser[] = [
@@ -321,7 +418,10 @@ const AssetInventory: React.FC = () => {
         setAssets(transformedAssets);
       } catch (error) {
         console.error('Failed to fetch assets:', error);
-        showSnackbar('Failed to load assets', 'error');
+        showSnackbar(
+          language === 'ar' ? 'فشل تحميل الأصول' : 'Failed to load assets',
+          'error'
+        );
       } finally {
         fetchingRef.current = false;
         // Only set initial loading to false on very first load
@@ -330,7 +430,7 @@ const AssetInventory: React.FC = () => {
         }
       }
     },
-    [transformApiAssets]
+    [transformApiAssets, language]
   );
 
   // Initial load: fetch paginated assets (counts are included in API response)
@@ -454,7 +554,7 @@ const AssetInventory: React.FC = () => {
         // User name will be fetched in the refresh
 
         // Assets will be refreshed from API
-        showSnackbar('Asset updated successfully', 'success');
+        showSnackbar(L.assetUpdated, 'success');
         // Refresh the current page to update counts (not initial load)
         fetchAssets(pagination.page, pagination.limit, false);
       } else {
@@ -480,7 +580,7 @@ const AssetInventory: React.FC = () => {
         // User name will be fetched in the refresh
 
         // Assets will be refreshed from API
-        showSnackbar('Asset created successfully', 'success');
+        showSnackbar(L.assetCreated, 'success');
         // Refresh the current page to update counts (not initial load)
         fetchAssets(pagination.page, pagination.limit, false);
       }
@@ -511,14 +611,14 @@ const AssetInventory: React.FC = () => {
     try {
       await assetApi.deleteAsset(assetToDelete.id);
 
-      showSnackbar('Asset deleted successfully', 'success');
+      showSnackbar(L.assetDeleted, 'success');
       setDeleteDialogOpen(false);
       setAssetToDelete(null);
       // Refresh the current page to update counts
       fetchAssets(pagination.page, pagination.limit, false);
     } catch (error) {
       console.error('Failed to delete asset:', error);
-      showSnackbar('Failed to delete asset', 'error');
+      showSnackbar(L.failedToDelete, 'error');
     } finally {
       setLoading(false);
     }
@@ -533,13 +633,13 @@ const AssetInventory: React.FC = () => {
         purchaseDate: resolvePurchaseDate(asset),
       });
 
-      showSnackbar('Asset marked as under maintenance', 'success');
+      showSnackbar(L.markUnderMaintenance, 'success');
       setAnchorEl(null);
       // Refresh the current page to update counts
       fetchAssets(pagination.page, pagination.limit, false);
     } catch (error) {
       console.error('Failed to update asset status:', error);
-      showSnackbar('Failed to update asset status', 'error');
+      showSnackbar(L.failedToUpdateStatus, 'error');
     } finally {
       setLoading(false);
     }
@@ -554,13 +654,13 @@ const AssetInventory: React.FC = () => {
         purchaseDate: resolvePurchaseDate(asset),
       });
 
-      showSnackbar('Asset marked as available', 'success');
+      showSnackbar(L.markAvailable, 'success');
       setAnchorEl(null);
       // Refresh the current page to update counts
       fetchAssets(pagination.page, pagination.limit, false);
     } catch (error) {
       console.error('Failed to update asset status:', error);
-      showSnackbar('Failed to update asset status', 'error');
+      showSnackbar(L.failedToUpdateStatus, 'error');
     } finally {
       setLoading(false);
     }
@@ -632,18 +732,51 @@ const AssetInventory: React.FC = () => {
           gap: 1,
         }}
       >
-        <Typography variant='h4' fontWeight={600}>
-          Asset Inventory
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          <Button
-            variant='contained'
-            startIcon={<AddIcon />}
-            onClick={handleAddAsset}
-          >
-            Add Asset
-          </Button>
-        </Box>
+        {language === 'ar' ? (
+          <>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button
+                variant='contained'
+                startIcon={<AddIcon />}
+                onClick={handleAddAsset}
+                dir='ltr'
+              >
+                {L.addAsset}
+              </Button>
+            </Box>
+
+            <Typography
+              variant='h4'
+              fontWeight={600}
+              dir='rtl'
+              sx={{ textAlign: { xs: 'center', md: 'right' } }}
+            >
+              {L.pageTitle}
+            </Typography>
+          </>
+        ) : (
+          <>
+            <Typography
+              variant='h4'
+              fontWeight={600}
+              dir='ltr'
+              sx={{ textAlign: { xs: 'center', md: 'left' } }}
+            >
+              {L.pageTitle}
+            </Typography>
+
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button
+                variant='contained'
+                startIcon={<AddIcon />}
+                onClick={handleAddAsset}
+                dir='ltr'
+              >
+                {L.addAsset}
+              </Button>
+            </Box>
+          </>
+        )}
       </Box>
 
       {/* Statistics Cards */}
@@ -652,7 +785,7 @@ const AssetInventory: React.FC = () => {
           <Card>
             <CardContent>
               <Typography color='textSecondary' gutterBottom>
-                Total Assets
+                {L.totalAssets}
               </Typography>
               <Typography variant='h4' fontWeight={600}>
                 {displayCounts.total}
@@ -664,7 +797,7 @@ const AssetInventory: React.FC = () => {
           <Card>
             <CardContent>
               <Typography color='textSecondary' gutterBottom>
-                Available
+                {L.available}
               </Typography>
               <Typography variant='h4' fontWeight={600} color='success.main'>
                 {displayCounts.available}
@@ -676,7 +809,7 @@ const AssetInventory: React.FC = () => {
           <Card>
             <CardContent>
               <Typography color='textSecondary' gutterBottom>
-                Assigned
+                {L.assigned}
               </Typography>
               <Typography variant='h4' fontWeight={600} color='info.main'>
                 {displayCounts.assigned}
@@ -688,7 +821,7 @@ const AssetInventory: React.FC = () => {
           <Card>
             <CardContent>
               <Typography color='textSecondary' gutterBottom>
-                Maintenance
+                {L.maintenance}
               </Typography>
               <Typography variant='h4' fontWeight={600} color='warning.main'>
                 {displayCounts.underMaintenance}
@@ -700,7 +833,7 @@ const AssetInventory: React.FC = () => {
           <Card>
             <CardContent>
               <Typography color='textSecondary' gutterBottom>
-                Retired
+                {L.retired}
               </Typography>
               <Typography variant='h4' fontWeight={600} color='text.secondary'>
                 {displayCounts.retired}
@@ -725,7 +858,7 @@ const AssetInventory: React.FC = () => {
               <TextField
                 fullWidth
                 size='small'
-                placeholder='Search assets...'
+                placeholder={L.searchPlaceholder}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -740,7 +873,7 @@ const AssetInventory: React.FC = () => {
             </Box>
             <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
               <FormControl fullWidth size='small'>
-                <InputLabel>Status</InputLabel>
+                <InputLabel>{L.status}</InputLabel>
                 <Select
                   open={statusDropdownOpen}
                   onOpen={() => setStatusDropdownOpen(true)}
@@ -754,21 +887,19 @@ const AssetInventory: React.FC = () => {
                     }));
                     setStatusDropdownOpen(false);
                   }}
-                  label='Status'
+                  label={L.status}
                 >
-                  <MenuItem value=''>All</MenuItem>
-                  <MenuItem value='available'>Available</MenuItem>
-                  <MenuItem value='assigned'>Assigned</MenuItem>
-                  <MenuItem value='under_maintenance'>
-                    Under Maintenance
-                  </MenuItem>
-                  <MenuItem value='retired'>Retired</MenuItem>
+                  <MenuItem value=''>{L.all}</MenuItem>
+                  <MenuItem value='available'>{L.available}</MenuItem>
+                  <MenuItem value='assigned'>{L.assigned}</MenuItem>
+                  <MenuItem value='under_maintenance'>{L.maintenance}</MenuItem>
+                  <MenuItem value='retired'>{L.retired}</MenuItem>
                 </Select>
               </FormControl>
             </Box>
             <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
               <FormControl fullWidth size='small'>
-                <InputLabel>Category</InputLabel>
+                <InputLabel>{L.category}</InputLabel>
                 <Select
                   open={categoryDropdownOpen}
                   onOpen={() => setCategoryDropdownOpen(true)}
@@ -782,9 +913,9 @@ const AssetInventory: React.FC = () => {
                     }));
                     setCategoryDropdownOpen(false);
                   }}
-                  label='Category'
+                  label={L.category}
                 >
-                  <MenuItem value=''>All</MenuItem>
+                  <MenuItem value=''>{L.all}</MenuItem>
                   {assetCategories.map(category => (
                     <MenuItem key={category.id} value={category.name}>
                       <Typography variant='body2'>{category.name}</Typography>
@@ -801,7 +932,7 @@ const AssetInventory: React.FC = () => {
                 onClick={() => setFilters({})}
                 sx={{ p: 0.9 }}
               >
-                Clear Filters
+                {L.clearFilters}
               </Button>
             </Box>
           </Box>
@@ -810,16 +941,16 @@ const AssetInventory: React.FC = () => {
 
       {/* Assets Table */}
       <Card>
-        <TableContainer>
+        <TableContainer dir='ltr'>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Asset Name</TableCell>
-                <TableCell>Category</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Assigned To</TableCell>
-                <TableCell>Purchase Date</TableCell>
-                {!hideActions && <TableCell align='right'>Actions</TableCell>}
+                <TableCell>{L.assetName}</TableCell>
+                <TableCell>{L.categoryHeader}</TableCell>
+                <TableCell>{L.statusHeader}</TableCell>
+                <TableCell>{L.assignedTo}</TableCell>
+                <TableCell>{L.purchaseDate}</TableCell>
+                <TableCell align='right'>{L.actions}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -827,7 +958,7 @@ const AssetInventory: React.FC = () => {
                 <TableRow>
                   <TableCell colSpan={6} align='center'>
                     <Typography variant='body2' color='text.secondary'>
-                      No assets found
+                      {L.noAssetsFound}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -877,71 +1008,62 @@ const AssetInventory: React.FC = () => {
                         </Box>
                       ) : (
                         <Typography variant='body2' color='text.secondary'>
-                          Unassigned
+                          {L.unassigned}
                         </Typography>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {formatDate(asset.purchaseDate)}
-                    </TableCell>
-                    {!hideActions && (
-                      <TableCell align='right'>
-                        <IconButton
-                          onClick={e => handleMenuClick(e, asset.id)}
-                          size='small'
-                        >
-                          <MoreVertIcon />
-                        </IconButton>
-                        <Menu
-                          anchorEl={anchorEl}
-                          open={
-                            Boolean(anchorEl) && selectedAssetId === asset.id
-                          }
-                          onClose={handleMenuClose}
-                        >
-                          <MenuItem onClick={() => handleEditAsset(asset)}>
-                            <ListItemIcon>
-                              <EditIcon fontSize='small' />
-                            </ListItemIcon>
-                            <ListItemText>Edit</ListItemText>
-                          </MenuItem>
-                          {asset.status !== 'under_maintenance' && (
-                            <MenuItem
-                              onClick={() => handleMarkAsMaintenance(asset)}
-                              sx={{ color: 'warning.main' }}
-                            >
-                              <ListItemIcon>
-                                <BuildIcon fontSize='small' color='warning' />
-                              </ListItemIcon>
-                              <ListItemText>Mark as Maintenance</ListItemText>
-                            </MenuItem>
-                          )}
-                          {asset.status === 'under_maintenance' && (
-                            <MenuItem
-                              onClick={() => handleMarkAsAvailable(asset)}
-                              sx={{ color: 'success.main' }}
-                            >
-                              <ListItemIcon>
-                                <AvailableIcon
-                                  fontSize='small'
-                                  color='success'
-                                />
-                              </ListItemIcon>
-                              <ListItemText>Mark as Available</ListItemText>
-                            </MenuItem>
-                          )}
+                    <TableCell>{formatDate(asset.purchaseDate)}</TableCell>
+                    <TableCell align='right'>
+                      <IconButton
+                        onClick={e => handleMenuClick(e, asset.id)}
+                        size='small'
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
+                      <Menu
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl) && selectedAssetId === asset.id}
+                        onClose={handleMenuClose}
+                      >
+                        <MenuItem onClick={() => handleEditAsset(asset)}>
+                          <ListItemIcon>
+                            <EditIcon fontSize='small' />
+                          </ListItemIcon>
+                          <ListItemText>{L.edit}</ListItemText>
+                        </MenuItem>
+                        {asset.status !== 'under_maintenance' && (
                           <MenuItem
-                            onClick={() => handleDeleteAsset(asset)}
-                            sx={{ color: 'error.main' }}
+                            onClick={() => handleMarkAsMaintenance(asset)}
+                            sx={{ color: 'warning.main' }}
                           >
                             <ListItemIcon>
-                              <DeleteIcon fontSize='small' color='error' />
+                              <BuildIcon fontSize='small' color='warning' />
                             </ListItemIcon>
-                            <ListItemText>Delete</ListItemText>
+                            <ListItemText>{L.markAsMaintenance}</ListItemText>
                           </MenuItem>
-                        </Menu>
-                      </TableCell>
-                    )}
+                        )}
+                        {asset.status === 'under_maintenance' && (
+                          <MenuItem
+                            onClick={() => handleMarkAsAvailable(asset)}
+                            sx={{ color: 'success.main' }}
+                          >
+                            <ListItemIcon>
+                              <AvailableIcon fontSize='small' color='success' />
+                            </ListItemIcon>
+                            <ListItemText>{L.markAsAvailable}</ListItemText>
+                          </MenuItem>
+                        )}
+                        <MenuItem
+                          onClick={() => handleDeleteAsset(asset)}
+                          sx={{ color: 'error.main' }}
+                        >
+                          <ListItemIcon>
+                            <DeleteIcon fontSize='small' color='error' />
+                          </ListItemIcon>
+                          <ListItemText>{L.delete}</ListItemText>
+                        </MenuItem>
+                      </Menu>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -968,8 +1090,11 @@ const AssetInventory: React.FC = () => {
       {assets.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {pagination.page} of {pagination.totalPages} (
-            {pagination.total} total records)
+            {PL.showingInfo(
+              pagination.page,
+              pagination.totalPages,
+              pagination.total
+            )}
           </Typography>
         </Box>
       )}
@@ -987,9 +1112,9 @@ const AssetInventory: React.FC = () => {
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         open={deleteDialogOpen}
-        title='Delete Asset'
-        message={`Are you sure you want to delete "${assetToDelete?.name}"? This action cannot be undone.`}
-        confirmText='Delete'
+        title={L.deleteAssetTitle}
+        message={L.deleteAssetMessage(assetToDelete?.name)}
+        confirmText={L.deleteConfirm}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
         severity='error'

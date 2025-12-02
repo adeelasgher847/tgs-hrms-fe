@@ -37,7 +37,8 @@ export const DeleteConfirmationModal: React.FC<
     : `Are you sure you want to delete the department "${department.name}"? This action cannot be undone.`;
 
   const content = (
-    <Box sx={{ textAlign: 'center', direction: isRtl ? 'rtl' : 'ltr' }}>
+    // Force LTR layout for the content while keeping localized messages
+    <Box sx={{ textAlign: 'center', direction: 'ltr' }}>
       <WarningIcon
         sx={{
           fontSize: 64,
@@ -49,7 +50,8 @@ export const DeleteConfirmationModal: React.FC<
         variant='body1'
         sx={{
           mb: 2,
-          textAlign: isRtl ? 'right' : 'left',
+          // keep body text left-aligned to maintain LTR layout
+          textAlign: 'left',
           lineHeight: 1.6,
           color: textColor,
         }}
@@ -67,8 +69,9 @@ export const DeleteConfirmationModal: React.FC<
         sx={{
           color: textColor,
           borderColor: borderColor,
-          mr: isRtl ? 0 : 1,
-          ml: isRtl ? 1 : 0,
+          // keep LTR spacing (right margin)
+          mr: 1,
+          ml: 0,
         }}
       >
         {isRtl ? 'إلغاء' : 'Cancel'}
@@ -88,7 +91,8 @@ export const DeleteConfirmationModal: React.FC<
       fullWidth
       PaperProps={{
         sx: {
-          direction: isRtl ? 'rtl' : 'ltr',
+          // force LTR layout for the modal container
+          direction: 'ltr',
           backgroundColor: bgColor,
           color: textColor,
           border: `1px solid ${borderColor}`,

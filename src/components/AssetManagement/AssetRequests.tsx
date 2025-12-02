@@ -47,6 +47,7 @@ import ConfirmationDialog from './ConfirmationDialog';
 import { Snackbar, Alert } from '@mui/material';
 import { type AssetSubcategory } from '../../api/assetApi';
 import { formatDate } from '../../utils/dateUtils';
+import { useLanguage } from '../../hooks/useLanguage';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
@@ -96,7 +97,6 @@ const getCurrentUserId = () => {
   }
   return '1'; // Default fallback
 };
-
 
 // Normalize status to ensure it matches expected values
 const normalizeRequestStatus = (
@@ -232,6 +232,76 @@ const AssetRequests: React.FC = () => {
       remarks: '',
     },
   });
+
+  const { language } = useLanguage();
+  const labels = {
+    en: {
+      pending: 'Pending',
+      approved: 'Approved',
+      rejected: 'Rejected',
+      cancelled: 'Cancelled',
+      searchPlaceholder: 'Search requests...',
+      tabAll: 'All Requests',
+      tabPending: 'Pending',
+      tabApproved: 'Approved',
+      tabRejected: 'Rejected',
+      assetCategory: 'Asset Category',
+      subcategory: 'Subcategory',
+      remarks: 'Remarks',
+      remarksOptional: 'Remarks (Optional)',
+      remarksPlaceholder:
+        'Please provide details about why you need this asset...',
+      status: 'Status',
+      requestedDate: 'Requested Date',
+      processedDate: 'Processed Date',
+      rejectionReason: 'Rejection Reason',
+      actions: 'Actions',
+      noRecordsFound: 'No records found',
+      pageTitle: 'My Asset Requests',
+      cancel: 'Cancel',
+      submitting: 'Submitting...',
+      submitRequest: 'Submit Request',
+      deleteRequestTitle: 'Delete Request',
+      deleteRequestConfirm: (name: string) =>
+        `Are you sure you want to delete your request for "${name}"? This action cannot be undone.`,
+      deleteRequestConfirmButton: 'Delete Request',
+      requestAsset: 'Request Asset',
+      requestModalTitle: 'Request New Asset',
+    },
+    ar: {
+      pending: 'قيد الانتظار',
+      approved: 'موافق',
+      rejected: 'مرفوض',
+      cancelled: 'ملغى',
+      searchPlaceholder: 'ابحث في الطلبات...',
+      tabAll: 'جميع الطلبات',
+      tabPending: 'في انتظار الموافقة',
+      tabApproved: 'موافق',
+      tabRejected: 'مرفوض',
+      assetCategory: 'فئة الأصل',
+      subcategory: 'الفئة الفرعية',
+      remarks: 'ملاحظات',
+      remarksOptional: 'ملاحظات (اختياري)',
+      remarksPlaceholder: 'يرجى تقديم تفاصيل حول سبب حاجتك لهذا الأصل...',
+      status: 'الحالة',
+      requestedDate: 'تاريخ الطلب',
+      processedDate: 'تاريخ المعالجة',
+      rejectionReason: 'سبب الرفض',
+      actions: 'الإجراءات',
+      noRecordsFound: 'لم يتم العثور على سجلات',
+      pageTitle: 'طلبات الأصول الخاصة بي',
+      cancel: 'إلغاء',
+      submitting: 'جارٍ الإرسال...',
+      submitRequest: 'إرسال الطلب',
+      deleteRequestTitle: 'حذف الطلب',
+      deleteRequestConfirm: (name: string) =>
+        `هل أنت متأكد من أنك تريد حذف طلبك لـ "${name}"؟ هذا الإجراء لا يمكن التراجع عنه.`,
+      deleteRequestConfirmButton: 'حذف الطلب',
+      requestAsset: 'طلب أصل',
+      requestModalTitle: 'طلب أصل جديد',
+    },
+  } as const;
+  const L = labels[language as 'en' | 'ar'] || labels.en;
 
   // Watch category changes to update subcategory options
   const watchedCategoryId = watch('category');
@@ -825,9 +895,7 @@ const AssetRequests: React.FC = () => {
       <TableCell>
         <StatusChip status={request.status} type='request' />
       </TableCell>
-      <TableCell>
-        {formatDate(request.requestedDate)}
-      </TableCell>
+      <TableCell>{formatDate(request.requestedDate)}</TableCell>
       <TableCell>
         {request.processedDate && formatDate(request.processedDate)}
       </TableCell>
@@ -846,7 +914,7 @@ const AssetRequests: React.FC = () => {
             onClick={() => handleCancelRequest(request)}
             size='small'
             color='error'
-            title='Delete Request'
+            title={L.deleteRequestTitle}
           >
             <DeleteIcon />
           </IconButton>
@@ -872,16 +940,23 @@ const AssetRequests: React.FC = () => {
           gap: 1,
         }}
       >
-        <Typography variant='h4' fontWeight={600}>
-          My Asset Requests
+        <Typography
+          variant='h4'
+          fontWeight={600}
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ flex: 1, textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
+          {L.pageTitle}
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box
+          sx={{ display: 'flex', gap: 1, order: language === 'ar' ? -1 : 0 }}
+        >
           <Button
             variant='contained'
             startIcon={<AddIcon />}
             onClick={handleOpenRequestModal}
           >
-            Request Asset
+            {L.requestAsset}
           </Button>
         </Box>
       </Box>
@@ -904,7 +979,7 @@ const AssetRequests: React.FC = () => {
           <Card>
             <CardContent>
               <Typography color='textSecondary' gutterBottom>
-                Pending
+                {L.pending}
               </Typography>
               <Typography variant='h4' fontWeight={600} color='warning.main'>
                 {displayCounts.pending}
@@ -916,7 +991,7 @@ const AssetRequests: React.FC = () => {
           <Card>
             <CardContent>
               <Typography color='textSecondary' gutterBottom>
-                Approved
+                {L.approved}
               </Typography>
               <Typography variant='h4' fontWeight={600} color='success.main'>
                 {displayCounts.approved}
@@ -928,7 +1003,7 @@ const AssetRequests: React.FC = () => {
           <Card>
             <CardContent>
               <Typography color='textSecondary' gutterBottom>
-                Rejected
+                {L.rejected}
               </Typography>
               <Typography variant='h4' fontWeight={600} color='error.main'>
                 {displayCounts.rejected}
@@ -943,7 +1018,7 @@ const AssetRequests: React.FC = () => {
         <CardContent>
           <TextField
             fullWidth
-            placeholder='Search requests...'
+            placeholder={L.searchPlaceholder}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             InputProps={{
@@ -964,10 +1039,10 @@ const AssetRequests: React.FC = () => {
             value={tabValue}
             onChange={(e, newValue) => setTabValue(newValue)}
           >
-            <Tab label='All Requests' />
-            <Tab label='Pending' />
-            <Tab label='Approved' />
-            <Tab label='Rejected' />
+            <Tab label={L.tabAll} />
+            <Tab label={L.tabPending} />
+            <Tab label={L.tabApproved} />
+            <Tab label={L.tabRejected} />
           </Tabs>
         </Box>
 
@@ -976,13 +1051,13 @@ const AssetRequests: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Asset Category</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Processed Date</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell>{L.assetCategory}</TableCell>
+                  <TableCell>{L.remarks}</TableCell>
+                  <TableCell>{L.status}</TableCell>
+                  <TableCell>{L.requestedDate}</TableCell>
+                  <TableCell>{L.processedDate}</TableCell>
+                  <TableCell>{L.rejectionReason}</TableCell>
+                  <TableCell align='right'>{L.actions}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -990,7 +1065,7 @@ const AssetRequests: React.FC = () => {
                   <TableRow>
                     <TableCell colSpan={7} align='center' sx={{ py: 4 }}>
                       <Typography variant='body2' color='text.secondary'>
-                        No records found
+                        {L.noRecordsFound}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -1007,13 +1082,13 @@ const AssetRequests: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Asset Category</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Processed Date</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell>{L.assetCategory}</TableCell>
+                  <TableCell>{L.remarks}</TableCell>
+                  <TableCell>{L.status}</TableCell>
+                  <TableCell>{L.requestedDate}</TableCell>
+                  <TableCell>{L.processedDate}</TableCell>
+                  <TableCell>{L.rejectionReason}</TableCell>
+                  <TableCell align='right'>{L.actions}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1021,7 +1096,7 @@ const AssetRequests: React.FC = () => {
                   <TableRow>
                     <TableCell colSpan={7} align='center' sx={{ py: 4 }}>
                       <Typography variant='body2' color='text.secondary'>
-                        No records found
+                        {L.noRecordsFound}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -1038,13 +1113,13 @@ const AssetRequests: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Asset Category</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Processed Date</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell>{L.assetCategory}</TableCell>
+                  <TableCell>{L.remarks}</TableCell>
+                  <TableCell>{L.status}</TableCell>
+                  <TableCell>{L.requestedDate}</TableCell>
+                  <TableCell>{L.processedDate}</TableCell>
+                  <TableCell>{L.rejectionReason}</TableCell>
+                  <TableCell align='right'>{L.actions}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1052,7 +1127,7 @@ const AssetRequests: React.FC = () => {
                   <TableRow>
                     <TableCell colSpan={7} align='center' sx={{ py: 4 }}>
                       <Typography variant='body2' color='text.secondary'>
-                        No records found
+                        {L.noRecordsFound}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -1069,13 +1144,13 @@ const AssetRequests: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Asset Category</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Processed Date</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell>{L.assetCategory}</TableCell>
+                  <TableCell>{L.remarks}</TableCell>
+                  <TableCell>{L.status}</TableCell>
+                  <TableCell>{L.requestedDate}</TableCell>
+                  <TableCell>{L.processedDate}</TableCell>
+                  <TableCell>{L.rejectionReason}</TableCell>
+                  <TableCell align='right'>{L.actions}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1083,7 +1158,7 @@ const AssetRequests: React.FC = () => {
                   <TableRow>
                     <TableCell colSpan={7} align='center' sx={{ py: 4 }}>
                       <Typography variant='body2' color='text.secondary'>
-                        No records found
+                        {L.noRecordsFound}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -1141,8 +1216,13 @@ const AssetRequests: React.FC = () => {
         }}
       >
         <DialogTitle>
-          <Typography variant='h6' fontWeight={600}>
-            Request New Asset
+          <Typography
+            variant='h6'
+            fontWeight={600}
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+          >
+            {L.requestModalTitle}
           </Typography>
         </DialogTitle>
 
@@ -1163,10 +1243,10 @@ const AssetRequests: React.FC = () => {
                     control={control}
                     render={({ field }) => (
                       <FormControl fullWidth error={!!errors.category}>
-                        <InputLabel>Asset Category</InputLabel>
+                        <InputLabel>{L.assetCategory}</InputLabel>
                         <Select
                           {...field}
-                          label='Asset Category'
+                          label={L.assetCategory}
                           disabled={loading || loadingData}
                           onChange={e => {
                             field.onChange(e);
@@ -1219,10 +1299,10 @@ const AssetRequests: React.FC = () => {
                       control={control}
                       render={({ field }) => (
                         <FormControl fullWidth>
-                          <InputLabel>Subcategory</InputLabel>
+                          <InputLabel>{L.subcategory}</InputLabel>
                           <Select
                             {...field}
-                            label='Subcategory'
+                            label={L.subcategory}
                             disabled={
                               loading || loadingData || !selectedCategoryId
                             }
@@ -1269,10 +1349,10 @@ const AssetRequests: React.FC = () => {
                       <TextField
                         {...field}
                         fullWidth
-                        label='Remarks (Optional)'
+                        label={L.remarksOptional}
                         multiline
                         rows={3}
-                        placeholder='Please provide details about why you need this asset...'
+                        placeholder={L.remarksPlaceholder}
                         disabled={loading}
                       />
                     )}
@@ -1282,14 +1362,20 @@ const AssetRequests: React.FC = () => {
             </Box>
           </DialogContent>
 
-          <DialogActions sx={{ padding: '16px 24px', gap: 1 }}>
+          <DialogActions
+            sx={{
+              padding: '16px 24px',
+              gap: 1,
+              flexDirection: language === 'ar' ? 'row-reverse' : 'row',
+            }}
+          >
             <Button
               onClick={() => setIsRequestModalOpen(false)}
               variant='outlined'
               disabled={loading}
               sx={{ minWidth: 80 }}
             >
-              Cancel
+              {L.cancel}
             </Button>
             <Button
               type='submit'
@@ -1297,7 +1383,7 @@ const AssetRequests: React.FC = () => {
               disabled={loading}
               sx={{ minWidth: 80 }}
             >
-              {loading ? 'Submitting...' : 'Submit Request'}
+              {loading ? L.submitting : L.submitRequest}
             </Button>
           </DialogActions>
         </form>
@@ -1306,9 +1392,15 @@ const AssetRequests: React.FC = () => {
       {/* Delete Request Confirmation Dialog */}
       <ConfirmationDialog
         open={isCancelDialogOpen}
-        title='Delete Request'
-        message={`Are you sure you want to delete your request for "${requestToCancel?.category.name}"? This action cannot be undone.`}
-        confirmText='Delete Request'
+        title={L.deleteRequestTitle}
+        message={
+          requestToCancel?.category?.name
+            ? (L.deleteRequestConfirm as (name: string) => string)(
+                requestToCancel.category.name
+              )
+            : (L.deleteRequestConfirm as (name: string) => string)('')
+        }
+        confirmText={L.deleteRequestConfirmButton}
         onConfirm={handleConfirmCancel}
         onCancel={() => setIsCancelDialogOpen(false)}
         severity='error'

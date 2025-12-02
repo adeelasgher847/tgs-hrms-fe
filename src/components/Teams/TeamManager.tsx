@@ -252,7 +252,12 @@ const TeamManager: React.FC<TeamManagerProps> = ({
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography variant='h4' gutterBottom>
+        <Typography
+          variant='h4'
+          gutterBottom
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
           {lang.title}
         </Typography>
         <Box
@@ -294,7 +299,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
   }
 
   return (
-    <Box>
+    <Box dir={'ltr'} sx={{ direction: 'ltr' }}>
       <Box
         sx={{
           display: 'flex',
@@ -307,10 +312,12 @@ const TeamManager: React.FC<TeamManagerProps> = ({
       >
         <Typography
           variant='h4'
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
           sx={{
+            flex: 1,
             color: theme => theme.palette.text.primary,
             fontSize: { xs: '1.5rem', sm: '2.125rem' },
-            textAlign: { xs: 'left', sm: 'left' },
+            textAlign: { xs: 'left', sm: language === 'ar' ? 'right' : 'left' },
           }}
         >
           {lang.title}

@@ -41,6 +41,7 @@ import {
   MoreVert as MoreVertIcon,
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
+import { useLanguage } from '../../hooks/useLanguage';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -135,7 +136,6 @@ const normalizeRequestStatus = (
   }
 };
 
-
 const schema = yup.object({
   action: yup.string().required('Action is required'),
   rejectionReason: yup.string().notRequired(),
@@ -210,7 +210,7 @@ const RequestManagement: React.FC = () => {
 
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 25, 
+    limit: 25,
     total: 0,
     totalPages: 0,
   });
@@ -232,6 +232,104 @@ const RequestManagement: React.FC = () => {
   });
 
   const selectedAction = watch('action');
+
+  const { language } = useLanguage();
+  const pageLabels = {
+    en: {
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+    },
+    ar: {
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
+    },
+  } as const;
+  const PL = pageLabels[language as 'en' | 'ar'] || pageLabels.en;
+
+  const labels = {
+    en: {
+      pageTitle: 'Asset Request Management',
+      totalRequests: 'Total Requests',
+      pending: 'Pending',
+      approved: 'Approved',
+      rejected: 'Rejected',
+      searchPlaceholder: 'Search requests by employee, category, or status...',
+      tabAll: 'All Requests',
+      tabPending: 'Pending Approval',
+      tabApproved: 'Approved',
+      tabRejected: 'Rejected',
+      employeeAsset: 'Employee & Asset',
+      status: 'Status',
+      requestedDate: 'Requested Date',
+      remarks: 'Remarks',
+      rejectionReason: 'Rejection Reason',
+      actions: 'Actions',
+      noRecordsFound: 'No records found',
+      viewDetails: 'View Details',
+      processRequest: 'Process Request',
+      processAssetRequest: 'Process Asset Request',
+      assignAsset: 'Assign Asset',
+      actionLabel: 'Action',
+      assignAssetLabel: 'Assign Asset',
+      rejectionReasonLabel: 'Rejection Reason (Optional)',
+      rejectionReasonPlaceholder:
+        'Optionally provide a reason for rejection...',
+      cancel: 'Cancel',
+      processing: 'Processing...',
+      approve: 'Approve',
+      reject: 'Reject',
+      requestDetails: 'Request Details',
+      employeeInformation: 'Employee Information',
+      requestInformation: 'Request Information',
+      employeeRemarks: 'Employee Remarks',
+      processingInformation: 'Processing Information',
+      close: 'Close',
+      failedToProcess: 'Failed to process request',
+      failedToApprove: 'Failed to approve request',
+      failedToReject: 'Failed to reject request',
+    },
+    ar: {
+      pageTitle: 'إدارة طلبات الأصول',
+      totalRequests: 'إجمالي الطلبات',
+      pending: 'قيد الانتظار',
+      approved: 'موافق',
+      rejected: 'مرفوض',
+      searchPlaceholder: 'ابحث في الطلبات حسب الموظف أو الفئة أو الحالة...',
+      tabAll: 'جميع الطلبات',
+      tabPending: 'في انتظار الموافقة',
+      tabApproved: 'موافق',
+      tabRejected: 'مرفوض',
+      employeeAsset: 'الموظف & الأصل',
+      status: 'الحالة',
+      requestedDate: 'تاريخ الطلب',
+      remarks: 'ملاحظات',
+      rejectionReason: 'سبب الرفض',
+      actions: 'الإجراءات',
+      noRecordsFound: 'لم يتم العثور على سجلات',
+      viewDetails: 'عرض التفاصيل',
+      processRequest: 'معالجة الطلب',
+      processAssetRequest: 'معالجة طلب الأصل',
+      assignAsset: 'تعيين أصل',
+      actionLabel: 'الإجراء',
+      assignAssetLabel: 'تعيين الأصل',
+      rejectionReasonLabel: 'سبب الرفض (اختياري)',
+      rejectionReasonPlaceholder: 'اختياريًا، اذكر سبب الرفض...',
+      cancel: 'إلغاء',
+      processing: 'جاري المعالجة...',
+      approve: 'الموافقة',
+      reject: 'رفض',
+      requestDetails: 'تفاصيل الطلب',
+      employeeInformation: 'معلومات الموظف',
+      requestInformation: 'معلومات الطلب',
+      employeeRemarks: 'ملاحظات الموظف',
+      processingInformation: 'معلومات المعالجة',
+      close: 'إغلاق',
+      failedToProcess: 'فشل معالجة الطلب',
+      failedToApprove: 'فشل الموافقة على الطلب',
+      failedToReject: 'فشل رفض الطلب',
+    },
+  } as const;
+  const L = labels[language as 'en' | 'ar'] || labels.en;
 
   const transformApiRequests = React.useCallback(
     (apiRequests: ApiAssetRequestExtended[]): AssetRequest[] => {
@@ -1159,7 +1257,7 @@ const RequestManagement: React.FC = () => {
       setSelectedRequest(null);
     } catch (error) {
       console.error('Failed to process request:', error);
-      showSnackbar('Failed to process request', 'error');
+      showSnackbar(L.failedToProcess, 'error');
     } finally {
       setLoading(false);
     }
@@ -1232,9 +1330,7 @@ const RequestManagement: React.FC = () => {
       <TableCell>
         <StatusChip status={request.status} type='request' />
       </TableCell>
-      <TableCell>
-        {formatDate(request.requestedDate)}
-      </TableCell>
+      <TableCell>{formatDate(request.requestedDate)}</TableCell>
       <TableCell>
         {request.remarks && (
           <Tooltip title={request.remarks} arrow>
@@ -1274,14 +1370,14 @@ const RequestManagement: React.FC = () => {
             <ListItemIcon>
               <ViewIcon fontSize='small' />
             </ListItemIcon>
-            <ListItemText>View Details</ListItemText>
+            <ListItemText>{L.viewDetails}</ListItemText>
           </MenuItem>
           {request.status === 'pending' && (
             <MenuItem onClick={() => handleProcessRequest(request)}>
               <ListItemIcon>
                 <AssignmentIcon fontSize='small' />
               </ListItemIcon>
-              <ListItemText>Process Request</ListItemText>
+              <ListItemText>{L.processRequest}</ListItemText>
             </MenuItem>
           )}
         </Menu>
@@ -1294,15 +1390,20 @@ const RequestManagement: React.FC = () => {
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: language === 'ar' ? 'flex-end' : 'flex-start',
           alignItems: 'center',
           mb: 3,
           flexWrap: 'wrap',
           gap: 1,
         }}
       >
-        <Typography variant='h4' fontWeight={600}>
-          Asset Request Management
+        <Typography
+          variant='h4'
+          fontWeight={600}
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
+          {L.pageTitle}
         </Typography>
       </Box>
 
@@ -1312,7 +1413,7 @@ const RequestManagement: React.FC = () => {
           <Card>
             <CardContent>
               <Typography color='textSecondary' gutterBottom>
-                Total Requests
+                {L.totalRequests}
               </Typography>
               <Typography variant='h4' fontWeight={600}>
                 {displayCounts.all}
@@ -1324,7 +1425,7 @@ const RequestManagement: React.FC = () => {
           <Card>
             <CardContent>
               <Typography color='textSecondary' gutterBottom>
-                Pending
+                {L.pending}
               </Typography>
               <Typography variant='h4' fontWeight={600} color='warning.main'>
                 {displayCounts.pending}
@@ -1336,7 +1437,7 @@ const RequestManagement: React.FC = () => {
           <Card>
             <CardContent>
               <Typography color='textSecondary' gutterBottom>
-                Approved
+                {L.approved}
               </Typography>
               <Typography variant='h4' fontWeight={600} color='success.main'>
                 {displayCounts.approved}
@@ -1348,7 +1449,7 @@ const RequestManagement: React.FC = () => {
           <Card>
             <CardContent>
               <Typography color='textSecondary' gutterBottom>
-                Rejected
+                {L.rejected}
               </Typography>
               <Typography variant='h4' fontWeight={600} color='error.main'>
                 {displayCounts.rejected}
@@ -1363,7 +1464,7 @@ const RequestManagement: React.FC = () => {
         <CardContent>
           <TextField
             fullWidth
-            placeholder='Search requests by employee, category, or status...'
+            placeholder={L.searchPlaceholder}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             InputProps={{
@@ -1385,10 +1486,10 @@ const RequestManagement: React.FC = () => {
             value={tabValue}
             onChange={(e, newValue) => setTabValue(newValue)}
           >
-            <Tab label='All Requests' />
-            <Tab label='Pending Approval' />
-            <Tab label='Approved' />
-            <Tab label='Rejected' />
+            <Tab label={L.tabAll} />
+            <Tab label={L.tabPending} />
+            <Tab label={L.tabApproved} />
+            <Tab label={L.tabRejected} />
           </Tabs>
         </Box>
 
@@ -1397,12 +1498,12 @@ const RequestManagement: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Employee & Asset</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell>{L.employeeAsset}</TableCell>
+                  <TableCell>{L.status}</TableCell>
+                  <TableCell>{L.requestedDate}</TableCell>
+                  <TableCell>{L.remarks}</TableCell>
+                  <TableCell>{L.rejectionReason}</TableCell>
+                  <TableCell align='right'>{L.actions}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1410,7 +1511,7 @@ const RequestManagement: React.FC = () => {
                   <TableRow>
                     <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
                       <Typography variant='body2' color='text.secondary'>
-                        No records found
+                        {L.noRecordsFound}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -1427,12 +1528,12 @@ const RequestManagement: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Employee & Asset</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell>{L.employeeAsset}</TableCell>
+                  <TableCell>{L.status}</TableCell>
+                  <TableCell>{L.requestedDate}</TableCell>
+                  <TableCell>{L.remarks}</TableCell>
+                  <TableCell>{L.rejectionReason}</TableCell>
+                  <TableCell align='right'>{L.actions}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1440,7 +1541,7 @@ const RequestManagement: React.FC = () => {
                   <TableRow>
                     <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
                       <Typography variant='body2' color='text.secondary'>
-                        No records found
+                        {L.noRecordsFound}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -1457,12 +1558,12 @@ const RequestManagement: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Employee & Asset</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell>{L.employeeAsset}</TableCell>
+                  <TableCell>{L.status}</TableCell>
+                  <TableCell>{L.requestedDate}</TableCell>
+                  <TableCell>{L.remarks}</TableCell>
+                  <TableCell>{L.rejectionReason}</TableCell>
+                  <TableCell align='right'>{L.actions}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1470,7 +1571,7 @@ const RequestManagement: React.FC = () => {
                   <TableRow>
                     <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
                       <Typography variant='body2' color='text.secondary'>
-                        No records found
+                        {L.noRecordsFound}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -1487,12 +1588,12 @@ const RequestManagement: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Employee & Asset</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell>{L.employeeAsset}</TableCell>
+                  <TableCell>{L.status}</TableCell>
+                  <TableCell>{L.requestedDate}</TableCell>
+                  <TableCell>{L.remarks}</TableCell>
+                  <TableCell>{L.rejectionReason}</TableCell>
+                  <TableCell align='right'>{L.actions}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1500,7 +1601,7 @@ const RequestManagement: React.FC = () => {
                   <TableRow>
                     <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
                       <Typography variant='body2' color='text.secondary'>
-                        No records found
+                        {L.noRecordsFound}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -1539,8 +1640,11 @@ const RequestManagement: React.FC = () => {
       {requests.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {pagination.page} of {pagination.totalPages} (
-            {pagination.total} total records)
+            {PL.showingInfo(
+              pagination.page,
+              pagination.totalPages,
+              pagination.total
+            )}
           </Typography>
         </Box>
       )}
@@ -1560,8 +1664,8 @@ const RequestManagement: React.FC = () => {
         <DialogTitle>
           <Typography variant='h6' fontWeight={600}>
             {selectedRequest?.status === 'approved'
-              ? 'Assign Asset'
-              : 'Process Asset Request'}
+              ? L.assignAsset
+              : L.processAssetRequest}
           </Typography>
           {selectedRequest && (
             <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
@@ -1610,8 +1714,12 @@ const RequestManagement: React.FC = () => {
                       control={control}
                       render={({ field }) => (
                         <FormControl fullWidth error={!!errors.action}>
-                          <InputLabel>Action</InputLabel>
-                          <Select {...field} label='Action' disabled={loading}>
+                          <InputLabel>{L.actionLabel}</InputLabel>
+                          <Select
+                            {...field}
+                            label={L.actionLabel}
+                            disabled={loading}
+                          >
                             <MenuItem value='approve'>
                               <Box
                                 sx={{
@@ -1621,7 +1729,7 @@ const RequestManagement: React.FC = () => {
                                 }}
                               >
                                 <ApproveIcon color='success' />
-                                Approve Request
+                                {L.approve}
                               </Box>
                             </MenuItem>
                             <MenuItem value='reject'>
@@ -1633,7 +1741,7 @@ const RequestManagement: React.FC = () => {
                                 }}
                               >
                                 <RejectIcon color='error' />
-                                Reject Request
+                                {L.reject}
                               </Box>
                             </MenuItem>
                           </Select>
@@ -1651,16 +1759,14 @@ const RequestManagement: React.FC = () => {
                       control={control}
                       render={({ field }) => (
                         <FormControl fullWidth error={!!errors.assignedAssetId}>
-                          <InputLabel>Assign Asset</InputLabel>
+                          <InputLabel>{L.assignAssetLabel}</InputLabel>
                           <Select
                             {...field}
-                            label='Assign Asset'
+                            label={L.assignAssetLabel}
                             disabled={loading || availableAssets.length === 0}
                           >
                             {availableAssets.length === 0 ? (
-                              <MenuItem disabled>
-                                No available assets found
-                              </MenuItem>
+                              <MenuItem disabled>{L.noRecordsFound}</MenuItem>
                             ) : (
                               availableAssets.map(asset => (
                                 <MenuItem key={asset.id} value={asset.id}>
@@ -1688,7 +1794,7 @@ const RequestManagement: React.FC = () => {
                     {availableAssets.length === 0 && (
                       <Alert severity='error' sx={{ mt: 1 }}>
                         <Typography variant='body2'>
-                          <strong>No available assets</strong>
+                          <strong>{L.noRecordsFound}</strong>
                         </Typography>
                       </Alert>
                     )}
@@ -1705,10 +1811,10 @@ const RequestManagement: React.FC = () => {
                           <TextField
                             {...field}
                             fullWidth
-                            label='Rejection Reason (Optional)'
+                            label={L.rejectionReasonLabel}
                             multiline
                             rows={3}
-                            placeholder='Optionally provide a reason for rejection...'
+                            placeholder={L.rejectionReasonPlaceholder}
                             error={!!errors.rejectionReason}
                             helperText={errors.rejectionReason?.message}
                             disabled={loading}
@@ -1722,7 +1828,7 @@ const RequestManagement: React.FC = () => {
                   <Box>
                     <Alert severity='info'>
                       <Typography variant='body2'>
-                        <strong>Employee Remarks:</strong>{' '}
+                        <strong>{L.employeeRemarks}:</strong>{' '}
                         {selectedRequest.remarks}
                       </Typography>
                     </Alert>
@@ -1739,7 +1845,7 @@ const RequestManagement: React.FC = () => {
               disabled={loading}
               sx={{ minWidth: 80 }}
             >
-              Cancel
+              {L.cancel}
             </Button>
             <Button
               type='submit'
@@ -1751,12 +1857,12 @@ const RequestManagement: React.FC = () => {
               sx={{ minWidth: 80 }}
             >
               {loading
-                ? 'Processing...'
+                ? L.processing
                 : selectedRequest?.status === 'approved'
-                  ? 'Assign Asset'
+                  ? L.assignAsset
                   : selectedAction === 'approve'
-                    ? 'Approve'
-                    : 'Reject'}
+                    ? L.approve
+                    : L.reject}
             </Button>
           </DialogActions>
         </form>
@@ -1773,7 +1879,7 @@ const RequestManagement: React.FC = () => {
           <Avatar sx={{ bgcolor: 'primary.main' }}>
             {selectedRequest?.employeeName.charAt(0)}
           </Avatar>
-          Request Details
+          {L.requestDetails}
         </DialogTitle>
         <DialogContent>
           {selectedRequest && (
@@ -1783,7 +1889,7 @@ const RequestManagement: React.FC = () => {
                 <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
                   <Card variant='outlined' sx={{ p: 2, height: '100%' }}>
                     <Typography variant='h6' gutterBottom color='primary'>
-                      Employee Information
+                      {L.employeeInformation}
                     </Typography>
                     <Box
                       sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
@@ -1799,7 +1905,7 @@ const RequestManagement: React.FC = () => {
                 <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
                   <Card variant='outlined' sx={{ p: 2, height: '100%' }}>
                     <Typography variant='h6' gutterBottom color='primary'>
-                      Request Information
+                      {L.requestInformation}
                     </Typography>
                     <Box
                       sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
@@ -1832,7 +1938,7 @@ const RequestManagement: React.FC = () => {
                   <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
                     <Card variant='outlined' sx={{ p: 2 }}>
                       <Typography variant='h6' gutterBottom color='primary'>
-                        Employee Remarks
+                        {L.employeeRemarks}
                       </Typography>
                       <Typography
                         variant='body2'
@@ -1851,7 +1957,7 @@ const RequestManagement: React.FC = () => {
                   <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
                     <Card variant='outlined' sx={{ p: 2 }}>
                       <Typography variant='h6' gutterBottom color='primary'>
-                        Processing Information
+                        {L.processingInformation}
                       </Typography>
                       <Box
                         sx={{
@@ -1906,7 +2012,7 @@ const RequestManagement: React.FC = () => {
             variant='contained'
             sx={{ minWidth: 80 }}
           >
-            Close
+            {L.close}
           </Button>
         </DialogActions>
       </Dialog>

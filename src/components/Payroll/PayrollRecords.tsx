@@ -28,6 +28,7 @@ import {
 import dayjs from 'dayjs';
 import { useTheme } from '@mui/material/styles';
 import { useOutletContext } from 'react-router-dom';
+import { useLanguage } from '../../hooks/useLanguage';
 import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
@@ -87,6 +88,139 @@ const formatCurrency = (value: number | string | undefined) => {
 const PayrollRecords: React.FC = () => {
   const theme = useTheme();
   const darkMode = useIsDarkMode();
+
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      title: 'Payroll Records',
+      month: 'Month',
+      year: 'Year',
+      employee: 'Employee',
+      allEmployees: 'All employees',
+      noEmployeesForPeriod: 'No employees for this period',
+      generatePayroll: 'Generate Payroll',
+      selectBothMonthYear: 'Select both month and year to generate payroll',
+      totalRecords: 'Total Records',
+      grossPayouts: 'Gross Payouts',
+      totalDeductions: 'Total Deductions',
+      netPayouts: 'Net Payouts',
+      noPayrollRecordsFound: 'No payroll records found.',
+      employeeSelectAll: 'All employees',
+      noEmployeesAvailableForGenerate:
+        'No employees available for payroll generation. All employees already have payroll records for the selected period or do not have active salary structures for the selected month/year.',
+      selectedEmployeeNotAvailable:
+        'Selected employee is not available for payroll generation. The employee may already have a payroll record for this period or may not have an active salary structure for the selected month/year.',
+      noRecordsGenerated:
+        'No payroll records were generated for the selected period',
+      generatedSuccessFor: (n: number) =>
+        `Payroll generated successfully for ${n} employee(s)`,
+      failedGenerate: 'Failed to generate payroll. Please try again.',
+      updateStatusDialogTitle: 'Update Payroll Status',
+      statusLabel: 'Status',
+      remarksLabel: 'Remarks',
+      remarksPlaceholder: 'Optional remarks (e.g. payment method)',
+      cancel: 'Cancel',
+      updating: 'Updating...',
+      updateStatusBtn: 'Update Status',
+      generateDialogTitle: 'Generate Payroll',
+      noEmployeesWithSalaryConfig: 'No employees with salary configuration',
+      allEmployeesAlreadyProcessed: 'All employees are already processed',
+      employeesAlreadyHaveRecordsAlert:
+        'All employees already have payroll records for the selected period. No new payroll can be generated to avoid duplicates.',
+      generating: 'Generating...',
+      employeeDetails: 'Employee Details',
+      nameLabel: 'Name',
+      emailLabel: 'Email',
+      grossSalaryLabel: 'Gross Salary',
+      totalDeductionsLabel: 'Total Deductions',
+      bonusesLabel: 'Bonuses',
+      netSalaryLabel: 'Net Salary',
+      allowancesLabel: 'Allowances',
+      deductionsLabel: 'Deductions',
+      payrollHistoryLabel: 'Payroll History',
+      table: {
+        employee: 'Employee',
+        period: 'Period',
+        gross: 'Gross',
+        deductions: 'Deductions',
+        net: 'Net',
+        status: 'Status',
+        actions: 'Actions',
+      },
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+      tooltipView: 'View breakdown',
+      tooltipUpdate: 'Update status',
+    },
+    ar: {
+      title: 'سجلات الرواتب',
+      month: 'الشهر',
+      year: 'السنة',
+      employee: 'الموظف',
+      allEmployees: 'جميع الموظفين',
+      noEmployeesForPeriod: 'لا يوجد موظفين لهذه الفترة',
+      generatePayroll: 'توليد الرواتب',
+      selectBothMonthYear: 'حدد كل من الشهر والسنة لتوليد الرواتب',
+      totalRecords: 'إجمالي السجلات',
+      grossPayouts: 'إجمالي المدفوعات',
+      totalDeductions: 'إجمالي الخصومات',
+      netPayouts: 'صافي المدفوعات',
+      noPayrollRecordsFound: 'لم يتم العثور على سجلات رواتب.',
+      employeeSelectAll: 'جميع الموظفين',
+      noEmployeesAvailableForGenerate:
+        'لا يوجد موظفين متاحين لتوليد الرواتب. جميع الموظفين لديهم سجلات بالفعل للفترة المحددة أو ليس لديهم هياكل رواتب نشطة للشهر/السنة المحددين.',
+      selectedEmployeeNotAvailable:
+        'الموظف المحدد غير متاح لتوليد الرواتب. قد يكون لدى الموظف بالفعل سجل رواتب لهذه الفترة أو قد لا يكون لديه هيكل راتب نشط للشهر/السنة المحددين.',
+      noRecordsGenerated: 'لم يتم توليد أي سجلات رواتب للفترة المحددة',
+      generatedSuccessFor: (n: number) =>
+        `تم توليد الرواتب بنجاح لـ ${n} موظف(ين)`,
+      failedGenerate: 'فشل في توليد الرواتب. حاول مرة أخرى.',
+      updateStatusDialogTitle: 'تحديث حالة الرواتب',
+      statusLabel: 'الحالة',
+      remarksLabel: 'ملاحظات',
+      remarksPlaceholder: 'ملاحظات اختيارية (مثال: طريقة الدفع)',
+      cancel: 'إلغاء',
+      updating: 'جارٍ التحديث...',
+      updateStatusBtn: 'تحديث الحالة',
+      generateDialogTitle: 'توليد الرواتب',
+      noEmployeesWithSalaryConfig: 'لا يوجد موظفين لديهم تكوين راتب',
+      allEmployeesAlreadyProcessed: 'تمت معالجة جميع الموظفين بالفعل',
+      employeesAlreadyHaveRecordsAlert:
+        'جميع الموظفين لديهم سجلات رواتب بالفعل للفترة المحددة. لا يمكن توليد سجلات جديدة لتجنب التكرار.',
+      generating: 'جارٍ التوليد...',
+      employeeDetails: 'تفاصيل الموظف',
+      nameLabel: 'الاسم',
+      emailLabel: 'البريد الإلكتروني',
+      grossSalaryLabel: 'الراتب الإجمالي',
+      totalDeductionsLabel: 'إجمالي الخصومات',
+      bonusesLabel: 'المكافآت',
+      netSalaryLabel: 'صافي الراتب',
+      allowancesLabel: 'البدلات',
+      deductionsLabel: 'الخصومات',
+      payrollHistoryLabel: 'تاريخ الرواتب',
+      table: {
+        employee: 'الموظف',
+        period: 'الفترة',
+        gross: 'الإجمالي',
+        deductions: 'الخصومات',
+        net: 'الصافي',
+        status: 'الحالة',
+        actions: 'الإجراءات',
+      },
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} إجمالي السجلات)`,
+      tooltipView: 'عرض التفاصيل',
+      tooltipUpdate: 'تحديث الحالة',
+    },
+  } as const;
+
+  const L = labels[language as 'en' | 'ar'] || labels.en;
+  const pageLabels = {
+    en: { showingInfo: labels.en.showingInfo },
+    ar: { showingInfo: labels.ar.showingInfo },
+  } as const;
+  const PL = pageLabels[language as 'en' | 'ar'] || pageLabels.en;
 
   const outletContext = useOutletContext<{ darkMode?: boolean }>();
   const outletDarkMode = outletContext?.darkMode;
@@ -504,7 +638,10 @@ const PayrollRecords: React.FC = () => {
 
   const handleGenerate = useCallback(async () => {
     if (!generateMonth || !generateYear) {
-      snackbar.error('Select both month and year to generate payroll');
+      snackbar.error(
+        L.selectBothMonthYear ||
+          'Select both month and year to generate payroll'
+      );
       return;
     }
 
@@ -513,16 +650,12 @@ const PayrollRecords: React.FC = () => {
         emp => emp.id === generateEmployeeId
       );
       if (!selectedEmployee) {
-        snackbar.error(
-          'Selected employee is not available for payroll generation. The employee may already have a payroll record for this period or may not have an active salary structure for the selected month/year.'
-        );
+        snackbar.error(L.selectedEmployeeNotAvailable);
         return;
       }
     } else {
       if (employeesForGenerateDialog.length === 0) {
-        snackbar.error(
-          'No employees available for payroll generation. All employees already have payroll records for the selected period or do not have active salary structures for the selected month/year.'
-        );
+        snackbar.error(L.noEmployeesAvailableForGenerate);
         return;
       }
     }
@@ -555,17 +688,11 @@ const PayrollRecords: React.FC = () => {
 
       if (newRecordsCount > previousRecordsCount) {
         const generatedCount = newRecordsCount - previousRecordsCount;
-        snackbar.success(
-          `Payroll generated successfully for ${generatedCount} employee(s)`
-        );
-      } else if (response && response.length > 0) {
-        snackbar.success(
-          `Payroll generated successfully for ${response.length} employee(s)`
-        );
+        snackbar.success(L.generatedSuccessFor(generatedCount));
+      } else if (response && Array.isArray(response) && response.length > 0) {
+        snackbar.success(L.generatedSuccessFor(response.length));
       } else {
-        snackbar.info(
-          'No payroll records were generated for the selected period'
-        );
+        snackbar.info(L.noRecordsGenerated);
       }
 
       setRecords(refreshedRecords);
@@ -575,7 +702,7 @@ const PayrollRecords: React.FC = () => {
       setGenerateEmployeeId('');
     } catch (error) {
       console.error('Failed to generate payroll:', error);
-      snackbar.error('Failed to generate payroll. Please try again.');
+      snackbar.error(L.failedGenerate);
     } finally {
       setGenerating(false);
     }
@@ -588,6 +715,7 @@ const PayrollRecords: React.FC = () => {
     employeesForGenerateDialog,
     records,
     employeeFilter,
+    L,
   ]);
 
   const openGenerateDialog = useCallback(() => {
@@ -608,7 +736,10 @@ const PayrollRecords: React.FC = () => {
       <Box
         sx={{
           display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
+          flexDirection: {
+            xs: 'column',
+            md: language === 'ar' ? 'row-reverse' : 'row',
+          },
           justifyContent: 'space-between',
           alignItems: { xs: 'flex-start', md: 'center' },
           gap: 2,
@@ -616,8 +747,16 @@ const PayrollRecords: React.FC = () => {
         }}
       >
         <Box>
-          <Typography variant='h4' sx={{ fontWeight: 600, color: textColor }}>
-            Payroll Records
+          <Typography
+            variant='h4'
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            sx={{
+              fontWeight: 600,
+              color: textColor,
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
+          >
+            {L.title}
           </Typography>
         </Box>
       </Box>
@@ -639,7 +778,7 @@ const PayrollRecords: React.FC = () => {
         >
           <TextField
             select
-            label='Month'
+            label={L.month}
             value={month}
             size='small'
             sx={{ minWidth: 160 }}
@@ -653,7 +792,7 @@ const PayrollRecords: React.FC = () => {
           </TextField>
 
           <TextField
-            label='Year'
+            label={L.year}
             type='number'
             size='small'
             sx={{ minWidth: 140 }}
@@ -670,7 +809,7 @@ const PayrollRecords: React.FC = () => {
             disabled={generating}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
-            Generate Payroll
+            {L.generatePayroll}
           </Button>
         )}
       </Box>
@@ -699,19 +838,19 @@ const PayrollRecords: React.FC = () => {
           >
             {[
               {
-                label: 'Total Records',
+                label: L.totalRecords,
                 value: records.length,
               },
               {
-                label: 'Gross Payouts',
+                label: L.grossPayouts,
                 value: formatCurrency(totals.gross),
               },
               {
-                label: 'Total Deductions',
+                label: L.totalDeductions,
                 value: formatCurrency(totals.deductions),
               },
               {
-                label: 'Net Payouts',
+                label: L.netPayouts,
                 value: formatCurrency(totals.net),
               },
             ].map(card => (
@@ -752,7 +891,6 @@ const PayrollRecords: React.FC = () => {
           p: 0,
           backgroundColor: cardBg,
           borderRadius: 1,
-
         }}
       >
         <Box
@@ -766,16 +904,16 @@ const PayrollRecords: React.FC = () => {
         >
           <TextField
             select
-            label='Employee'
+            label={L.employee}
             size='small'
             sx={{ minWidth: 220 }}
             value={employeeFilter}
             onChange={event => setEmployeeFilter(event.target.value)}
           >
-            <MenuItem value=''>All employees</MenuItem>
+            <MenuItem value=''>{L.allEmployees}</MenuItem>
             {recordEmployees.length === 0 ? (
               <MenuItem value='' disabled>
-                No employees for this period
+                {L.noEmployeesForPeriod}
               </MenuItem>
             ) : (
               recordEmployees.map(emp => (
@@ -793,7 +931,7 @@ const PayrollRecords: React.FC = () => {
         ) : displayedRecords.length === 0 ? (
           <Box sx={{ p: 4 }}>
             <Alert severity='info' sx={{ backgroundColor: 'transparent' }}>
-              No payroll records found.
+              {L.noPayrollRecordsFound}
             </Alert>
           </Box>
         ) : (
@@ -801,13 +939,13 @@ const PayrollRecords: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Employee</TableCell>
-                  <TableCell>Period</TableCell>
-                  <TableCell align='right'>Gross</TableCell>
-                  <TableCell align='right'>Deductions</TableCell>
-                  <TableCell align='right'>Net</TableCell>
-                  <TableCell align='center'>Status</TableCell>
-                  <TableCell align='center'>Actions</TableCell>
+                  <TableCell>{L.table.employee}</TableCell>
+                  <TableCell>{L.table.period}</TableCell>
+                  <TableCell align='right'>{L.table.gross}</TableCell>
+                  <TableCell align='right'>{L.table.deductions}</TableCell>
+                  <TableCell align='right'>{L.table.net}</TableCell>
+                  <TableCell align='center'>{L.table.status}</TableCell>
+                  <TableCell align='center'>{L.table.actions}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -872,7 +1010,7 @@ const PayrollRecords: React.FC = () => {
                         spacing={1}
                         justifyContent='center'
                       >
-                        <Tooltip title='View breakdown'>
+                        <Tooltip title={L.tooltipView || 'View breakdown'}>
                           <IconButton
                             size='small'
                             onClick={() => openDetails(record)}
@@ -880,7 +1018,7 @@ const PayrollRecords: React.FC = () => {
                             <VisibilityIcon fontSize='small' />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title='Update status'>
+                        <Tooltip title={L.tooltipUpdate || 'Update status'}>
                           <span>
                             <IconButton
                               size='small'
@@ -914,8 +1052,7 @@ const PayrollRecords: React.FC = () => {
         {!loading && displayedRecords.length > 0 && (
           <Box display='flex' justifyContent='center' pb={2}>
             <Typography variant='body2' color='textSecondary'>
-              Showing page {currentPage} of {totalPages} ({totalRecords} total
-              records)
+              {PL.showingInfo(currentPage, totalPages, totalRecords)}
             </Typography>
           </Box>
         )}
@@ -934,48 +1071,71 @@ const PayrollRecords: React.FC = () => {
         }}
       >
         <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            color: textColor,
+            pb: 2,
+            textAlign: language === 'ar' ? 'right' : 'left',
           }}
         >
-          <Typography variant='h6'>Payroll Breakdown</Typography>
-          <Button onClick={closeDetails} color='inherit'>
+          <Typography variant='h6' sx={{ fontWeight: 600 }}>
+            {L.employeeDetails}
+          </Typography>
+          <IconButton
+            onClick={closeDetails}
+            size='small'
+            sx={{
+              color: theme.palette.text.secondary,
+              '&:hover': {
+                color: theme.palette.text.primary,
+                backgroundColor: theme.palette.action.hover,
+              },
+            }}
+          >
             <CloseIcon />
-          </Button>
+          </IconButton>
         </DialogTitle>
         <DialogContent
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
           sx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
         >
           {selectedRecord && (
             <Stack spacing={3}>
               <Box>
                 <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
-                  Employee Details
+                  {L.employeeDetails}
                 </Typography>
                 <Typography
                   variant='body2'
                   sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
                 >
-                  Name:{' '}
-                  <strong>
+                  {L.nameLabel}:{' '}
+                  <Box component='span' dir='ltr' sx={{ fontWeight: 600 }}>
                     {selectedRecord.employee?.user
                       ? `${selectedRecord.employee.user.first_name} ${selectedRecord.employee.user.last_name}`
                       : selectedRecord.employee_id}
-                  </strong>
+                  </Box>
                 </Typography>
                 <Typography
                   variant='body2'
                   sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
                 >
-                  Email: {selectedRecord.employee?.user?.email || '—'}
+                  {L.emailLabel}:{' '}
+                  <Box component='span' dir='ltr'>
+                    {selectedRecord.employee?.user?.email || '—'}
+                  </Box>
                 </Typography>
                 <Typography
                   variant='body2'
                   sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
                 >
-                  PeriodYear: {selectedRecord.month}/{selectedRecord.year}
+                  {L.month}/{L.year}:{' '}
+                  <Box component='span' dir='ltr'>
+                    {selectedRecord.month}/{selectedRecord.year}
+                  </Box>
                 </Typography>
               </Box>
 
@@ -994,19 +1154,19 @@ const PayrollRecords: React.FC = () => {
               >
                 {[
                   {
-                    label: 'Gross Salary',
+                    label: L.grossSalaryLabel,
                     value: formatCurrency(selectedRecord.grossSalary),
                   },
                   {
-                    label: 'Total Deductions',
+                    label: L.totalDeductionsLabel,
                     value: formatCurrency(selectedRecord.totalDeductions),
                   },
                   {
-                    label: 'Bonuses',
+                    label: L.bonusesLabel,
                     value: formatCurrency(selectedRecord.bonuses || 0),
                   },
                   {
-                    label: 'Net Salary',
+                    label: L.netSalaryLabel,
                     value: formatCurrency(selectedRecord.netSalary),
                   },
                 ].map(card => (
@@ -1031,7 +1191,7 @@ const PayrollRecords: React.FC = () => {
                       variant='subtitle1'
                       sx={{ fontWeight: 600, mb: 1 }}
                     >
-                      Allowances
+                      {L.allowancesLabel}
                     </Typography>
                     <Table size='small'>
                       <TableHead>
@@ -1064,7 +1224,7 @@ const PayrollRecords: React.FC = () => {
                     variant='subtitle1'
                     sx={{ fontWeight: 600, mb: 1 }}
                   >
-                    Deductions
+                    {L.deductionsLabel}
                   </Typography>
                   <Table size='small'>
                     <TableBody>
@@ -1114,7 +1274,7 @@ const PayrollRecords: React.FC = () => {
                     variant='subtitle1'
                     sx={{ fontWeight: 600, mb: 1 }}
                   >
-                    Bonuses
+                    {L.bonusesLabel}
                   </Typography>
                   <Table size='small'>
                     <TableBody>
@@ -1152,7 +1312,7 @@ const PayrollRecords: React.FC = () => {
 
               <Box sx={{ mt: 4 }}>
                 <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
-                  Payroll History
+                  {L.payrollHistoryLabel}
                 </Typography>
                 {historyLoading ? (
                   <Box
@@ -1226,8 +1386,15 @@ const PayrollRecords: React.FC = () => {
             </Stack>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={closeDetails}>Close</Button>
+        <DialogActions
+          sx={{
+            p: 2,
+            justifyContent: language === 'ar' ? 'flex-end' : 'flex-start',
+          }}
+        >
+          <Box dir='ltr'>
+            <Button onClick={closeDetails}>{L.cancel}</Button>
+          </Box>
         </DialogActions>
       </Dialog>
 
@@ -1244,7 +1411,7 @@ const PayrollRecords: React.FC = () => {
           },
         }}
       >
-        <DialogTitle>Update Payroll Status</DialogTitle>
+        <DialogTitle>{L.updateStatusDialogTitle}</DialogTitle>
         <DialogContent>
           {statusRecord && (
             <Stack spacing={2}>
@@ -1259,7 +1426,7 @@ const PayrollRecords: React.FC = () => {
               </Typography>
               <TextField
                 select
-                label='Status'
+                label={L.statusLabel}
                 value={statusValue}
                 onChange={event =>
                   setStatusValue(event.target.value as 'unpaid' | 'paid')
@@ -1272,18 +1439,18 @@ const PayrollRecords: React.FC = () => {
                 ))}
               </TextField>
               <TextField
-                label='Remarks'
+                label={L.remarksLabel}
                 multiline
                 minRows={3}
                 value={statusRemarks}
                 onChange={event => setStatusRemarks(event.target.value)}
-                placeholder='Optional remarks (e.g. payment method)'
+                placeholder={L.remarksPlaceholder}
               />
             </Stack>
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={closeStatusDialog}>Cancel</Button>
+          <Button onClick={closeStatusDialog}>{L.cancel}</Button>
           <Button
             onClick={handleStatusUpdate}
             variant='contained'
@@ -1293,7 +1460,7 @@ const PayrollRecords: React.FC = () => {
             }
             sx={{ textTransform: 'none' }}
           >
-            {updatingStatus ? 'Updating...' : 'Update Status'}
+            {updatingStatus ? L.updating : L.updateStatusBtn}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1310,12 +1477,47 @@ const PayrollRecords: React.FC = () => {
           },
         }}
       >
-        <DialogTitle>Generate Payroll</DialogTitle>
-        <DialogContent>
+        <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexDirection: language === 'ar' ? 'row-reverse' : 'row',
+            color: textColor,
+            pb: 0,
+            pt: 1,
+            textAlign: language === 'ar' ? 'right' : 'left',
+          }}
+        >
+          <Box
+            component='span'
+            sx={{ fontWeight: 600, order: language === 'ar' ? 2 : 1 }}
+          >
+            {L.generateDialogTitle}
+          </Box>
+          <IconButton
+            onClick={() => setGenerateDialogOpen(false)}
+            size='small'
+            sx={{
+              order: language === 'ar' ? 1 : 2,
+              color: theme.palette.text.secondary,
+              '&:hover': {
+                color: theme.palette.text.primary,
+                backgroundColor: theme.palette.action.hover,
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent
+          sx={{ pt: 3, direction: 'ltr', maxHeight: '70vh', overflowY: 'auto' }}
+        >
           <Stack spacing={2} marginTop={2}>
             <TextField
               select
-              label='Month'
+              label={L.month}
               value={generateMonth}
               size='small'
               sx={{ minWidth: 160 }}
@@ -1328,7 +1530,7 @@ const PayrollRecords: React.FC = () => {
               ))}
             </TextField>
             <TextField
-              label='Year'
+              label={L.year}
               type='number'
               size='small'
               sx={{ minWidth: 140 }}
@@ -1339,18 +1541,18 @@ const PayrollRecords: React.FC = () => {
             />
             <TextField
               select
-              label='Employee'
+              label={L.employee}
               size='small'
               sx={{ minWidth: 220 }}
               value={generateEmployeeId}
               onChange={event => setGenerateEmployeeId(event.target.value)}
             >
-              <MenuItem value=''>All employees</MenuItem>
+              <MenuItem value=''>{L.allEmployees}</MenuItem>
               {employeesForGenerateDialog.length === 0 ? (
                 <MenuItem value='' disabled>
                   {employees.length === 0
-                    ? 'No employees with salary configuration'
-                    : 'All employees are already processed'}
+                    ? L.noEmployeesWithSalaryConfig
+                    : L.allEmployeesAlreadyProcessed}
                 </MenuItem>
               ) : (
                 employeesForGenerateDialog.map(emp => (
@@ -1363,29 +1565,43 @@ const PayrollRecords: React.FC = () => {
             {employeesForGenerateDialog.length === 0 &&
               employees.length > 0 && (
                 <Alert severity='warning' sx={{ m: 0 }}>
-                  All employees already have payroll records for the selected
-                  period ({generateMonth}/{generateYear}). No new payroll can be
-                  generated to avoid duplicates.
+                  {L.employeesAlreadyHaveRecordsAlert} ({generateMonth}/
+                  {generateYear}). No new payroll can be generated to avoid
+                  duplicates.
                 </Alert>
               )}
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setGenerateDialogOpen(false)}>Cancel</Button>
-          <Button
-            onClick={handleGenerate}
-            variant='contained'
-            disabled={generating || employeesForGenerateDialog.length === 0}
-            startIcon={generating ? <CircularProgress size={16} /> : undefined}
-            sx={{ textTransform: 'none' }}
-            title={
-              employeesForGenerateDialog.length === 0
-                ? 'No employees available for payroll generation'
-                : ''
-            }
-          >
-            {generating ? 'Generating...' : 'Generate Payroll'}
-          </Button>
+        <DialogActions
+          sx={{
+            p: 2,
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+          }}
+        >
+          <Box dir='ltr'>
+            <Button
+              onClick={() => setGenerateDialogOpen(false)}
+              sx={{ mr: language === 'ar' ? 1 : 0 }}
+            >
+              {L.cancel}
+            </Button>
+            <Button
+              onClick={handleGenerate}
+              variant='contained'
+              disabled={generating || employeesForGenerateDialog.length === 0}
+              startIcon={
+                generating ? <CircularProgress size={16} /> : undefined
+              }
+              sx={{ textTransform: 'none', ml: language === 'ar' ? 0 : 1 }}
+              title={
+                employeesForGenerateDialog.length === 0
+                  ? L.noEmployeesAvailableForGenerate
+                  : ''
+              }
+            >
+              {generating ? L.generating : L.generatePayroll}
+            </Button>
+          </Box>
         </DialogActions>
       </Dialog>
     </Box>

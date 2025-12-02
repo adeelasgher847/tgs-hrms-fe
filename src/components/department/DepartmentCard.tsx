@@ -38,7 +38,8 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
         px: 2,
         flexDirection: 'column',
         transition: 'all 0.3s ease',
-        direction: isRtl ? 'rtl' : 'ltr',
+        // Keep card layout fixed LTR so data blocks don't shift on language change
+        direction: 'ltr',
         backgroundColor: bgColor,
         color: textColor,
         border: `1px solid ${borderColor}`,
@@ -56,24 +57,24 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
             component='h2'
             sx={{
               fontWeight: 600,
-              textAlign: isRtl ? 'right' : 'left',
+              color: 'text.primary',
+              textAlign: 'left',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               maxWidth: '100%',
-              color: textColor,
             }}
           >
-            {isRtl ? department.nameAr : department.name}
+            {department.name}
           </Typography>
         </Box>
 
-        {(isRtl ? department.subtitleAr : department.subtitle) && (
+        {department.subtitle && (
           <Typography
             variant='body2'
             sx={{
-              color: darkMode ? '#8f8f8f' : 'text.secondary',
-              textAlign: isRtl ? 'right' : 'left',
+              color: 'text.secondary',
+              textAlign: 'left',
               mb: 2,
               fontWeight: 700,
               overflow: 'hidden',
@@ -81,23 +82,23 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               whiteSpace: 'nowrap',
             }}
           >
-            {isRtl ? department.subtitleAr : department.subtitle}
+            {department.subtitle}
           </Typography>
         )}
 
-        <Divider sx={{ mb: 2, borderColor: borderColor }} />
+        <Divider sx={{ mb: 2 }} />
 
-        {(isRtl ? department.descriptionAr : department.description) && (
+        {department.description && (
           <Typography
             variant='body2'
+            color='text.secondary'
             sx={{
               mb: 2,
               lineHeight: 1.6,
-              textAlign: isRtl ? 'right' : 'left',
-              color: darkMode ? '#8f8f8f' : 'text.secondary',
+              textAlign: 'left',
             }}
           >
-            {isRtl ? department.descriptionAr : department.description}
+            {department.description}
           </Typography>
         )}
       </CardContent>

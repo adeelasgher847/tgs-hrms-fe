@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import LeaveForm from './LeaveForm';
 import LeaveHistory from './LeaveHistory';
 import LeaveApprovalDialog from './LeaveApprovalDialog';
@@ -51,6 +52,50 @@ const LeaveRequestPage = () => {
   );
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { language } = useLanguage();
+  const labels = {
+    en: {
+      pageTitle: 'Leave Management System',
+      loggedInAs: 'Logged in as:',
+      applyLeave: 'Apply Leave',
+      leaveHistory: 'Leave History',
+      yourLeaves: 'Your Leaves',
+      teamLeaves: 'Team Leaves',
+      withdrawTitle: 'Withdraw Leave Request',
+      withdrawConfirm:
+        'Are you sure you want to withdraw this leave request? This action cannot be undone.',
+      cancel: 'Cancel',
+      withdraw: 'Withdraw',
+      appliedSuccess: 'Leave applied successfully!',
+      failedApply: 'Failed to apply leave',
+      approvedSuccess: 'Leave approved successfully!',
+      rejectedSuccess: 'Leave rejected successfully!',
+      actionFailed: 'Action failed',
+      withdrawSuccess: 'Leave withdrawn successfully!',
+      failedWithdraw: 'Failed to withdraw leave',
+    },
+    ar: {
+      pageTitle: 'نظام إدارة الإجازات',
+      loggedInAs: 'تسجيل الدخول باسم:',
+      applyLeave: 'تقديم إجازة',
+      leaveHistory: 'سجل الإجازات',
+      yourLeaves: 'إجازاتك',
+      teamLeaves: 'إجازات الفريق',
+      withdrawTitle: 'سحب طلب الإجازة',
+      withdrawConfirm:
+        'هل أنت متأكد أنك تريد سحب هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.',
+      cancel: 'إلغاء',
+      withdraw: 'سحب',
+      appliedSuccess: 'تم تقديم الإجازة بنجاح!',
+      failedApply: 'فشل في تقديم الإجازة',
+      approvedSuccess: 'تمت الموافقة على الإجازة بنجاح!',
+      rejectedSuccess: 'تم رفض الإجازة بنجاح!',
+      actionFailed: 'فشل الإجراء',
+      withdrawSuccess: 'تم سحب الإجازة بنجاح!',
+      failedWithdraw: 'فشل في سحب الإجازة',
+    },
+  } as const;
+  const L = labels[language as 'en' | 'ar'] || labels.en;
 
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
   const previousViewModeRef = useRef<'team' | 'you'>(viewMode);
@@ -201,7 +246,7 @@ const LeaveRequestPage = () => {
     try {
       setSnackbar({
         open: true,
-        message: 'Leave applied successfully!',
+        message: L.appliedSuccess,
         severity: 'success',
       });
       await loadLeaves();
@@ -209,7 +254,7 @@ const LeaveRequestPage = () => {
     } catch (error: unknown) {
       setSnackbar({
         open: true,
-        message: getErrorMessage(error) || 'Failed to apply leave',
+        message: getErrorMessage(error) || L.failedApply,
         severity: 'error',
       });
     }
@@ -239,15 +284,13 @@ const LeaveRequestPage = () => {
       setSnackbar({
         open: true,
         message:
-          actionType === 'approved'
-            ? 'Leave approved successfully!'
-            : 'Leave rejected successfully!',
+          actionType === 'approved' ? L.approvedSuccess : L.rejectedSuccess,
         severity: 'success',
       });
     } catch (error: unknown) {
       setSnackbar({
         open: true,
-        message: getErrorMessage(error) || 'Action failed',
+        message: getErrorMessage(error) || L.actionFailed,
         severity: 'error',
       });
     } finally {
@@ -264,7 +307,7 @@ const LeaveRequestPage = () => {
       await leaveApi.cancelLeave(selectedId);
       setSnackbar({
         open: true,
-        message: 'Leave withdrawn successfully!',
+        message: L.withdrawSuccess,
         severity: 'success',
       });
       setLeaves(prev =>
@@ -273,7 +316,7 @@ const LeaveRequestPage = () => {
     } catch (error: unknown) {
       setSnackbar({
         open: true,
-        message: getErrorMessage(error) || 'Failed to withdraw leave',
+        message: getErrorMessage(error) || L.failedWithdraw,
         severity: 'error',
       });
     } finally {
@@ -348,20 +391,42 @@ const LeaveRequestPage = () => {
         <Toolbar
           sx={{
             display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
+            // for Arabic, reverse the row order on larger screens so the heading shifts right
+            flexDirection: {
+              xs: 'column',
+              sm: language === 'ar' ? 'row-reverse' : 'row',
+            },
             alignItems: { xs: 'flex-start', sm: 'center' },
             justifyContent: 'space-between',
-            textAlign: { xs: 'start', sm: 'left' },
+            textAlign: {
+              xs: 'start',
+              sm: language === 'ar' ? 'right' : 'left',
+            },
             gap: { xs: 1, sm: 0 },
           }}
         >
           <Box>
-            <Typography variant='h6' fontWeight={700}>
-              Leave Management System
+            <Typography
+              variant='h6'
+              fontWeight={700}
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+              sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+            >
+              {L.pageTitle}
             </Typography>
+
             {currentUser && (
-              <Typography variant='caption'>
-                Logged in as: {userName} ({role})
+              <Typography
+                variant='caption'
+                // make the static label follow page direction, but keep the dynamic user/name LTR
+                sx={{ display: 'block' }}
+              >
+                <Box component='span' dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                  {L.loggedInAs}{' '}
+                </Box>
+                <Box component='span' dir='ltr'>
+                  {userName} ({role})
+                </Box>
               </Typography>
             )}
           </Box>
@@ -390,7 +455,7 @@ const LeaveRequestPage = () => {
                   borderColor: '#fff',
                 }}
               >
-                Apply Leave
+                {L.applyLeave}
               </Button>
 
               <Button
@@ -405,7 +470,7 @@ const LeaveRequestPage = () => {
                   borderColor: '#fff',
                 }}
               >
-                Leave History
+                {L.leaveHistory}
               </Button>
             </Stack>
           )}
@@ -436,7 +501,7 @@ const LeaveRequestPage = () => {
                       },
                     }}
                   >
-                    Your Leaves
+                    {L.yourLeaves}
                   </Button>
                   <Button
                     variant={viewMode === 'team' ? 'contained' : 'outlined'}
@@ -453,7 +518,7 @@ const LeaveRequestPage = () => {
                       },
                     }}
                   >
-                    Team Leaves
+                    {L.teamLeaves}
                   </Button>
                 </Box>
               )}
@@ -509,25 +574,22 @@ const LeaveRequestPage = () => {
         aria-labelledby='withdraw-dialog-title'
         aria-describedby='withdraw-dialog-description'
       >
-        <DialogTitle id='withdraw-dialog-title'>
-          Withdraw Leave Request
-        </DialogTitle>
+        <DialogTitle id='withdraw-dialog-title'>{L.withdrawTitle}</DialogTitle>
         <DialogContent>
           <DialogContentText id='withdraw-dialog-description'>
-            Are you sure you want to withdraw this leave request? This action
-            cannot be undone.
+            {L.withdrawConfirm}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setWithdrawDialogOpen(false)} color='primary'>
-            Cancel
+            {L.cancel}
           </Button>
           <Button
             onClick={handleConfirmWithdraw}
             color='warning'
             variant='contained'
           >
-            Withdraw
+            {L.withdraw}
           </Button>
         </DialogActions>
       </Dialog>

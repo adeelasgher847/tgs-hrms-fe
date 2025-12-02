@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -11,6 +11,9 @@ import {
   CircularProgress,
   InputAdornment,
 } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
+import { useLanguage } from '../../hooks/useLanguage';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import './PhoneInput.css';
@@ -29,12 +32,69 @@ interface EditProfileModalProps {
   onProfileUpdated: (updatedUser: UserProfile) => void;
 }
 
+const EDIT_PROFILE_STRINGS = {
+  en: {
+    dialogTitle: 'Edit Profile',
+    firstName: 'First Name',
+    lastName: 'Last Name',
+    phoneNumber: 'Phone Number',
+    emailAddress: 'Email Address',
+    phonePlaceholder: 'Enter phone number (optional)',
+    cancel: 'Cancel',
+    updateProfile: 'Update Profile',
+    updating: 'Updating...',
+    requestTimeout: 'Request timeout. Please try again.',
+    updateInProgressConfirm:
+      'Update is in progress. Are you sure you want to close?',
+    invalidPhone: 'Please enter a valid phone number',
+    firstNameRequired: 'First name is required',
+    firstNameMin: 'First name must be at least 2 characters',
+    firstNameMax: 'First name must be less than 50 characters',
+    lastNameRequired: 'Last name is required',
+    lastNameMin: 'Last name must be at least 2 characters',
+    lastNameMax: 'Last name must be less than 50 characters',
+    emailRequired: 'Email is required',
+    emailInvalid: 'Please enter a valid email address',
+    noChanges: 'No changes made',
+  },
+  ar: {
+    dialogTitle: 'تعديل الملف الشخصي',
+    firstName: 'الاسم الأول',
+    lastName: 'اسم العائلة',
+    phoneNumber: 'رقم الهاتف',
+    emailAddress: 'البريد الإلكتروني',
+    phonePlaceholder: 'أدخل رقم الهاتف (اختياري)',
+    cancel: 'إلغاء',
+    updateProfile: 'تحديث الملف',
+    updating: 'جارٍ التحديث...',
+    requestTimeout: 'انتهت مهلة الطلب. حاول مرة أخرى.',
+    updateInProgressConfirm: 'التحديث جارٍ. هل أنت متأكد أنك تريد الإغلاق؟',
+    invalidPhone: 'يرجى إدخال رقم هاتف صالح',
+    firstNameRequired: 'الاسم الأول مطلوب',
+    firstNameMin: 'يجب أن لا يقل الاسم الأول عن حرفين',
+    firstNameMax: 'يجب أن يكون الاسم الأول أقل من 50 حرفًا',
+    lastNameRequired: 'اسم العائلة مطلوب',
+    lastNameMin: 'يجب أن لا يقل اسم العائلة عن حرفين',
+    lastNameMax: 'يجب أن يكون اسم العائلة أقل من 50 حرفًا',
+    emailRequired: 'البريد الإلكتروني مطلوب',
+    emailInvalid: 'يرجى إدخال عنوان بريد إلكتروني صالح',
+    noChanges: 'لا توجد تغييرات',
+  },
+} as const;
+
 const EditProfileModal: React.FC<EditProfileModalProps> = ({
   open,
   onClose,
   user,
   onProfileUpdated,
 }) => {
+  const { language } = useLanguage();
+
+  const L = useMemo(
+    () =>
+      EDIT_PROFILE_STRINGS[language as 'en' | 'ar'] || EDIT_PROFILE_STRINGS.en,
+    [language]
+  );
   const { updateProfilePicture, clearProfilePicture } = useProfilePicture();
   const [formData, setFormData] = useState({
     first_name: '',
@@ -48,7 +108,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     Record<string, string>
   >({});
   const [hasChanges, setHasChanges] = useState(false);
-  const [selectedPictureFile, setSelectedPictureFile] = useState<File | null>(null);
+  const [selectedPictureFile, setSelectedPictureFile] = useState<File | null>(
+    null
+  );
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [removeRequested, setRemoveRequested] = useState(false);
 
@@ -93,27 +155,27 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
     // First name validation (matching backend DTO: MinLength(2), MaxLength(50))
     if (!formData.first_name.trim()) {
-      errors.first_name = 'First name is required';
+      errors.first_name = L.firstNameRequired;
     } else if (formData.first_name.trim().length < 2) {
-      errors.first_name = 'First name must be at least 2 characters';
+      errors.first_name = L.firstNameMin;
     } else if (formData.first_name.trim().length > 50) {
-      errors.first_name = 'First name must be less than 50 characters';
+      errors.first_name = L.firstNameMax;
     }
 
     // Last name validation (matching backend DTO: MinLength(2), MaxLength(50))
     if (!formData.last_name.trim()) {
-      errors.last_name = 'Last name is required';
+      errors.last_name = L.lastNameRequired;
     } else if (formData.last_name.trim().length < 2) {
-      errors.last_name = 'Last name must be at least 2 characters';
+      errors.last_name = L.lastNameMin;
     } else if (formData.last_name.trim().length > 50) {
-      errors.last_name = 'Last name must be less than 50 characters';
+      errors.last_name = L.lastNameMax;
     }
 
     // Email validation (matching backend DTO: @IsEmail())
     if (!formData.email.trim()) {
-      errors.email = 'Email is required';
+      errors.email = L.emailRequired;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
+      errors.email = L.emailInvalid;
     }
 
     // Phone number validation
@@ -121,7 +183,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       // Basic validation for phone number format
       const phoneRegex = /^\+[1-9]\d{1,14}$/;
       if (!phoneRegex.test(formData.phone)) {
-        errors.phone = 'Please enter a valid phone number';
+        errors.phone = L.invalidPhone;
       }
     }
 
@@ -182,12 +244,13 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     // Add timeout to prevent loader from getting stuck
     const timeoutId = setTimeout(() => {
       setLoading(false);
-      setError('Request timeout. Please try again.');
+      setError(L.requestTimeout);
     }, 30000); // 30 second timeout
 
     try {
       const token = localStorage.getItem('accessToken');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
       // 1) If delete requested, remove first and clear global picture context
       if (removeRequested) {
@@ -251,9 +314,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const handleClose = () => {
     if (loading) {
       // Allow closing even when loading, but show confirmation
-      if (
-        window.confirm('Update is in progress. Are you sure you want to close?')
-      ) {
+      if (window.confirm(L.updateInProgressConfirm)) {
         setLoading(false); // Reset loading state
         onClose();
       }
@@ -263,14 +324,39 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={handleClose} 
-      maxWidth='sm' 
-      fullWidth
-    >
-      <DialogTitle>Edit Profile</DialogTitle>
-      <DialogContent>
+    <Dialog open={open} onClose={handleClose} maxWidth='sm' fullWidth>
+      <DialogTitle
+        dir={language === 'ar' ? 'rtl' : 'ltr'}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexDirection: language === 'ar' ? 'row-reverse' : 'row',
+          textAlign: language === 'ar' ? 'right' : 'left',
+          px: 2,
+        }}
+      >
+        <Box
+          component='span'
+          sx={{
+            fontWeight: 600,
+            order: language === 'ar' ? 2 : 1,
+            flex: 1,
+            textAlign: language === 'ar' ? 'right' : 'left',
+          }}
+        >
+          {L.dialogTitle}
+        </Box>
+        <IconButton
+          onClick={handleClose}
+          size='small'
+          sx={{ order: language === 'ar' ? 1 : 2, color: 'inherit' }}
+          aria-label='close'
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent sx={{ direction: 'ltr' }}>
         <Box sx={{ pt: 1 }}>
           {error && (
             <Alert severity='error' sx={{ mb: 2 }}>
@@ -290,7 +376,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               onFileSelected={file => {
                 setSelectedPictureFile(file);
                 const reader = new FileReader();
-                reader.onload = e => setPreviewImageUrl(e.target?.result as string);
+                reader.onload = e =>
+                  setPreviewImageUrl(e.target?.result as string);
                 reader.readAsDataURL(file);
               }}
               previewImageOverride={previewImageUrl}
@@ -306,18 +393,19 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
-              label='First Name'
+              label={L.firstName}
               value={formData.first_name}
               onChange={handleInputChange('first_name')}
               error={!!validationErrors.first_name}
               helperText={validationErrors.first_name}
+              autoFocus={open}
               fullWidth
               disabled={loading}
               inputProps={{ maxLength: 50 }}
             />
 
             <TextField
-              label='Last Name'
+              label={L.lastName}
               value={formData.last_name}
               onChange={handleInputChange('last_name')}
               error={!!validationErrors.last_name}
@@ -326,20 +414,23 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               disabled={loading}
               inputProps={{ maxLength: 50 }}
             />
-                <TextField
-              label='Phone Number'
+            <TextField
+              label={L.phoneNumber}
               value={formData.phone}
-              onChange={(e) => handlePhoneChange(e.target.value)}
+              onChange={e => handlePhoneChange(e.target.value)}
               error={!!validationErrors.phone}
               helperText={validationErrors.phone}
               fullWidth
               disabled={loading}
-              placeholder='Enter phone number (optional)'
+              placeholder={L.phonePlaceholder}
               InputProps={{
                 startAdornment: (
-                  <InputAdornment position="start" sx={{ margin: 0, padding: '28px 0px' }}>
+                  <InputAdornment
+                    position='start'
+                    sx={{ margin: 0, padding: '28px 0px' }}
+                  >
                     <PhoneInput
-                      defaultCountry="pk"
+                      defaultCountry='pk'
                       value={formData.phone}
                       onChange={handlePhoneChange}
                       disabled={loading}
@@ -355,7 +446,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         padding: '0',
                         margin: '0',
                         fontSize: '1rem',
-                        fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                        fontFamily:
+                          '"Roboto", "Helvetica", "Arial", sans-serif',
                         backgroundColor: 'transparent',
                         width: '100%',
                         boxSizing: 'border-box',
@@ -372,12 +464,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                           display: 'flex',
                           alignItems: 'center',
                         },
-                        dropdownStyleProps: {
-                          zIndex: 9999,
-                          maxHeight: '140px',
-                        },
                       }}
-                      className="phone-input-textfield-adornment"
+                      className='phone-input-textfield-adornment'
                     />
                   </InputAdornment>
                 ),
@@ -400,7 +488,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             />
 
             <TextField
-              label='Email Address'
+              label={L.emailAddress}
               type='email'
               value={formData.email}
               onChange={handleInputChange('email')}
@@ -409,22 +497,37 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               fullWidth
               disabled={loading}
             />
-        
           </Box>
         </Box>
       </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={handleClose} disabled={loading}>
-          Cancel
+      <DialogActions
+        sx={{
+          p: 2,
+          justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+        }}
+      >
+        <Button
+          onClick={handleClose}
+          disabled={loading}
+          sx={{ mr: language === 'ar' ? 1 : 0 }}
+        >
+          {L.cancel}
         </Button>
         <Button
           onClick={handleSubmit}
           variant='contained'
-          disabled={loading || (!hasChanges && !selectedPictureFile && !removeRequested)}
+          disabled={
+            loading || (!hasChanges && !selectedPictureFile && !removeRequested)
+          }
           startIcon={loading ? <CircularProgress size={16} /> : null}
-          title={!hasChanges && !selectedPictureFile && !removeRequested ? 'No changes made' : ''}
+          title={
+            !hasChanges && !selectedPictureFile && !removeRequested
+              ? L.noChanges
+              : ''
+          }
+          sx={{ ml: language === 'ar' ? 0 : 1 }}
         >
-          {loading ? 'Updating...' : 'Update Profile'}
+          {loading ? L.updating : L.updateProfile}
         </Button>
       </DialogActions>
     </Dialog>

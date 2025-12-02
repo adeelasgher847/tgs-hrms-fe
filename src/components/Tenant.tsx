@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -32,6 +32,7 @@ import {
   Pagination,
   Avatar,
 } from '@mui/material';
+import { useLanguage } from '../hooks/useLanguage';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -45,7 +46,7 @@ import {
   type SystemTenant,
   type SystemTenantDetail,
 } from '../api/systemTenantApi';
-import companyApi from '../api/companyApi';
+// companyApi import removed (not used in this file)
 import { formatDate } from '../utils/dateUtils';
 
 type StatusFilterOption = 'All' | 'active' | 'suspended' | 'deleted';
@@ -57,6 +58,114 @@ const createEmptyTenantForm = () => ({
   adminName: '',
   adminEmail: '',
 });
+
+const TENANT_STRINGS = {
+  en: {
+    pageTitle: 'Tenant Management',
+    createTenant: 'Create Company',
+    failedFetch: 'Failed to fetch tenants',
+    selectImage: 'Please select an image file',
+    fileTooLarge: 'File size should be less than 5MB',
+    allFieldsRequired: 'All fields are required',
+    invalidAdminEmail: 'Please enter a valid admin email',
+    namesOnlyLetters: 'Names can only contain letters and spaces',
+    tenantCreated: 'Tenant created successfully',
+    failedCreate: 'Failed to create tenant',
+    tenantExists: 'Tenant already exists',
+    companyNameDomainRequired: 'Company name and domain are required',
+    failedUploadLogo: 'Failed to upload logo',
+    tenantUpdated: 'Tenant updated successfully',
+    failedUpdate: 'Failed to update tenant',
+    viewDetails: 'View Details',
+    editTenant: 'Edit Tenant',
+    delete: 'Delete',
+    restoreTenant: 'Restore Tenant',
+    noTenantsFound: 'No tenants found.',
+    tenantDetails: 'Tenant Details',
+    noLogo: 'No Logo',
+    tenantInformation: 'Tenant Information',
+    companyInformation: 'Company Information',
+    summary: 'Summary',
+    departments: 'Departments',
+    createdLabel: 'Created:',
+    planLabel: 'Plan',
+    paidLabelText: 'Paid',
+    employeesLabel: 'Employees',
+    domainLabel: 'Domain:',
+    statusLabel: 'Status:',
+    companyNameLabel: 'Company Name',
+    tenantNameLabel: 'Company Name',
+    adminNameLabel: 'Admin Name',
+    adminEmailLabel: 'Admin Email',
+    uploadLogo: 'Upload Company Logo',
+    changeLogo: 'Change Logo',
+    currentLogo: 'Current Logo',
+    uploadButtonUploading: 'Uploading...',
+    save: 'Save',
+    cancel: 'Cancel',
+    confirmDeleteTitle: 'Confirm Delete',
+    confirmDeleteText: (name: string) =>
+      `Are you sure you want to delete ${name}?`,
+    deleteConfirmButton: 'Delete',
+    close: 'Close',
+    updating: 'Updating...',
+    update: 'Update',
+    paidLabel: (isPaid: boolean) => (isPaid ? 'Paid' : 'Free'),
+    deletedLabel: 'Deleted',
+  },
+  ar: {
+    pageTitle: 'إدارة المستأجرين',
+    createTenant: 'إنشاء شركة',
+    failedFetch: 'فشل في جلب المستأجرين',
+    selectImage: 'يرجى اختيار ملف صورة',
+    fileTooLarge: 'يجب أن يكون حجم الملف أقل من 5 ميغابايت',
+    allFieldsRequired: 'جميع الحقول مطلوبة',
+    invalidAdminEmail: 'يرجى إدخال بريد إلكتروني صالح للمسؤول',
+    namesOnlyLetters: 'يمكن أن تحتوي الأسماء على أحرف ومسافات فقط',
+    tenantCreated: 'تم إنشاء المستأجر بنجاح',
+    failedCreate: 'فشل في إنشاء المستأجر',
+    tenantExists: 'المستأجر موجود بالفعل',
+    companyNameDomainRequired: 'اسم الشركة والنطاق مطلوبان',
+    failedUploadLogo: 'فشل في تحميل الشعار',
+    tenantUpdated: 'تم تحديث المستأجر بنجاح',
+    failedUpdate: 'فشل في تحديث المستأجر',
+    viewDetails: 'عرض التفاصيل',
+    editTenant: 'تعديل المستأجر',
+    delete: 'حذف',
+    restoreTenant: 'استعادة المستأجر',
+    noTenantsFound: 'لم يتم العثور على مستأجرين.',
+    tenantDetails: 'تفاصيل المستأجر',
+    noLogo: 'لا يوجد شعار',
+    tenantInformation: 'معلومات المستأجر',
+    companyInformation: 'معلومات الشركة',
+    summary: 'ملخص',
+    departments: 'الأقسام',
+    createdLabel: 'تاريخ الإنشاء:',
+    planLabel: 'الخطة',
+    paidLabelText: 'مدفوع',
+    employeesLabel: 'الموظفين',
+    domainLabel: 'النطاق:',
+    statusLabel: 'الحالة:',
+    companyNameLabel: 'اسم الشركة',
+    tenantNameLabel: 'اسم الشركة',
+    adminNameLabel: 'اسم المسؤول',
+    adminEmailLabel: 'البريد الإلكتروني للمسؤول',
+    uploadLogo: 'تحميل شعار الشركة',
+    changeLogo: 'تغيير الشعار',
+    currentLogo: 'الشعار الحالي',
+    uploadButtonUploading: 'جارٍ التحميل...',
+    save: 'حفظ',
+    cancel: 'إلغاء',
+    confirmDeleteTitle: 'تأكيد الحذف',
+    confirmDeleteText: (name: string) => `هل أنت متأكد من حذف ${name}؟`,
+    deleteConfirmButton: 'حذف',
+    close: 'إغلاق',
+    updating: 'جارٍ التحديث...',
+    update: 'تحديث',
+    paidLabel: (isPaid: boolean) => (isPaid ? 'مدفوع' : 'مجاني'),
+    deletedLabel: 'محذوف',
+  },
+} as const;
 
 export const TenantPage: React.FC = () => {
   const theme = useTheme();
@@ -101,59 +210,99 @@ export const TenantPage: React.FC = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const itemsPerPage = 25;
 
-  const fetchTenants = useCallback(async () => {
-    try {
-      setIsLoading(true);
+  const { language } = useLanguage();
 
-      const res = await SystemTenantApi.getAll({
-        page: 1,
-        limit: 'all',
-        includeDeleted: true,
-      });
+  const S = useMemo(
+    () => TENANT_STRINGS[language as 'en' | 'ar'] || TENANT_STRINGS.en,
+    [language]
+  );
 
-      let allTenants = res.data;
+  const fetchTenants = useCallback(
+    async (page: number = 1) => {
+      try {
+        setIsLoading(true);
+        const res = await SystemTenantApi.getAll({
+          page,
+          limit: itemsPerPage,
+          includeDeleted:
+            statusFilter === 'All' ? true : statusFilter === 'deleted',
+        });
+        let filtered = res.data;
+        if (statusFilter === 'active' || statusFilter === 'suspended') {
+          filtered = res.data.filter(
+            t => !t.isDeleted && t.status === statusFilter
+          );
+        } else if (statusFilter === 'deleted') {
+          filtered = res.data.filter(t => t.isDeleted);
+        }
 
-      let filtered = allTenants;
-
-      if (statusFilter === 'active') {
-        filtered = allTenants.filter(
-          t => !t.isDeleted && t.status === 'active'
-        );
-      } else if (statusFilter === 'suspended') {
-        filtered = allTenants.filter(
-          t => !t.isDeleted && t.status === 'suspended'
-        );
-      } else if (statusFilter === 'deleted') {
-        filtered = allTenants.filter(t => t.isDeleted);
+        setTenants(filtered);
+        const hasMorePages = res.data.length === itemsPerPage;
+        if (res.totalPages && res.total) {
+          setTotalPages(res.totalPages);
+          setTotalRecords(res.total);
+        } else {
+          setTotalPages(hasMorePages ? page + 1 : page);
+          setTotalRecords(
+            hasMorePages
+              ? page * itemsPerPage
+              : (page - 1) * itemsPerPage + res.data.length
+          );
+        }
+      } catch (err) {
+        console.error(err);
+        setSnackbar({
+          open: true,
+          message: S.failedFetch,
+          severity: 'error',
+        });
+      } finally {
+        setIsLoading(false);
       }
-
-      setTotalRecords(filtered.length);
-
-      const pages = Math.ceil(filtered.length / itemsPerPage);
-      setTotalPages(pages);
-
-      const start = (currentPage - 1) * itemsPerPage;
-      const end = start + itemsPerPage;
-      setTenants(filtered.slice(start, end));
-    } catch (err) {
-      console.error(err);
-      setSnackbar({
-        open: true,
-        message: 'Failed to fetch tenants',
-        severity: 'error',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [statusFilter, currentPage, itemsPerPage]);
+    },
+    [statusFilter, itemsPerPage, S]
+  );
 
   useEffect(() => {
-    fetchTenants();
-  }, [currentPage, statusFilter]);
+    fetchTenants(currentPage);
+  }, [currentPage, statusFilter, fetchTenants]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter]);
+
+  const labels = {
+    en: 'Tenant Management',
+    ar: 'إدارة المستأجرين',
+  } as const;
+
+  // Add pagination helper localized strings
+  const pageHelpers = {
+    en: {
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+    },
+    ar: {
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
+    },
+  } as const;
+  const PH = pageHelpers[language] || pageHelpers.en;
+
+  const tableHeaders = {
+    en: {
+      name: 'Name',
+      status: 'Status',
+      created: 'Created',
+      actions: 'Actions',
+    },
+    ar: {
+      name: 'الاسم',
+      status: 'الحالة',
+      created: 'تاريخ الإنشاء',
+      actions: 'الإجراءات',
+    },
+  } as const;
 
   const closeCreateModal = () => {
     setIsFormOpen(false);
@@ -172,7 +321,7 @@ export const TenantPage: React.FC = () => {
     if (!file.type.startsWith('image/')) {
       setSnackbar({
         open: true,
-        message: 'Please select an image file',
+        message: S.selectImage,
         severity: 'error',
       });
       return;
@@ -181,7 +330,7 @@ export const TenantPage: React.FC = () => {
     if (file.size > 5 * 1024 * 1024) {
       setSnackbar({
         open: true,
-        message: 'File size should be less than 5MB',
+        message: S.fileTooLarge,
         severity: 'error',
       });
       return;
@@ -213,7 +362,7 @@ export const TenantPage: React.FC = () => {
     ) {
       setSnackbar({
         open: true,
-        message: 'All fields are required',
+        message: S.allFieldsRequired,
         severity: 'error',
       });
       return;
@@ -223,7 +372,7 @@ export const TenantPage: React.FC = () => {
     if (!emailRegex.test(adminEmail.trim())) {
       setSnackbar({
         open: true,
-        message: 'Please enter a valid admin email',
+        message: S.invalidAdminEmail,
         severity: 'error',
       });
       return;
@@ -233,7 +382,7 @@ export const TenantPage: React.FC = () => {
     if (!nameRegex.test(name.trim()) || !nameRegex.test(adminName.trim())) {
       setSnackbar({
         open: true,
-        message: 'Names can only contain letters and spaces',
+        message: S.namesOnlyLetters,
         severity: 'error',
       });
       return;
@@ -270,14 +419,14 @@ export const TenantPage: React.FC = () => {
       fetchTenants();
       setSnackbar({
         open: true,
-        message: 'Tenant created successfully',
+        message: S.tenantCreated,
         severity: 'success',
       });
       closeCreateModal();
     } catch (error) {
       console.error('Error creating tenant:', error);
 
-      let errorMessage = 'Failed to create tenant';
+      let errorMessage: string = S.failedCreate;
 
       const maybeAxiosError = error as {
         response?: {
@@ -307,7 +456,7 @@ export const TenantPage: React.FC = () => {
           .includes('already');
 
       if (alreadyExists) {
-        errorMessage = 'Tenant already exists';
+        errorMessage = S.tenantExists;
       }
 
       setSnackbar({
@@ -323,7 +472,7 @@ export const TenantPage: React.FC = () => {
     if (!editTenantId || !editCompanyName.trim() || !editDomain.trim()) {
       setSnackbar({
         open: true,
-        message: 'Company name and domain are required',
+        message: S.companyNameDomainRequired,
         severity: 'error',
       });
       return;
@@ -357,7 +506,7 @@ export const TenantPage: React.FC = () => {
       );
       setSnackbar({
         open: true,
-        message: 'Tenant updated successfully',
+        message: S.tenantUpdated,
         severity: 'success',
       });
       setIsEditOpen(false);
@@ -376,7 +525,7 @@ export const TenantPage: React.FC = () => {
       console.error('Failed to update tenant:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to update tenant',
+        message: S.failedUpdate,
         severity: 'error',
       });
     } finally {
@@ -508,28 +657,33 @@ export const TenantPage: React.FC = () => {
     try {
       setEditTenantId(tenant.id);
       setEditCompanyName(tenant.name);
-      
+
       // Fetch tenant details to get domain and logo
       try {
         const tenantDetail = await SystemTenantApi.getById(tenant.id);
-        
+
         // Set domain from tenant detail
         if (tenantDetail.domain) {
           setEditDomain(tenantDetail.domain);
         } else if (tenantDetail.company?.domain) {
           setEditDomain(tenantDetail.company.domain);
         }
-        
+
         // Set logo from tenant detail
         let logoUrl = tenantDetail.logo || tenantDetail.company?.logo_url;
-        
+
         // Convert relative path to full URL if needed
         if (logoUrl && typeof logoUrl === 'string' && logoUrl.startsWith('/')) {
-          const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
+          const baseURL =
+            import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
           logoUrl = `${baseURL}${logoUrl}`;
         }
-        
-        if (logoUrl && typeof logoUrl === 'string' && logoUrl !== '[object Object]') {
+
+        if (
+          logoUrl &&
+          typeof logoUrl === 'string' &&
+          logoUrl !== '[object Object]'
+        ) {
           setEditLogo(logoUrl);
           setEditLogoPreview(logoUrl);
         }
@@ -551,7 +705,7 @@ export const TenantPage: React.FC = () => {
   };
 
   return (
-    <Box>
+    <Box sx={{ direction: 'ltr' }}>
       {/* Header */}
       <Box
         display='flex'
@@ -561,31 +715,73 @@ export const TenantPage: React.FC = () => {
         gap={2}
         mb={3}
       >
-        <Typography variant='h5' fontWeight={700}>
-          Tenant Management
-        </Typography>
+        {language === 'ar' ? (
+          <>
+            <Box display='flex' flexWrap='wrap' gap={2}>
+              <FormControl size='small' sx={{ minWidth: 140 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  label='Status'
+                  onChange={(event: SelectChangeEvent<StatusFilterOption>) => {
+                    const value = event.target.value as StatusFilterOption;
+                    setStatusFilter(value);
+                  }}
+                >
+                  <MenuItem value='All'>All</MenuItem>
+                  <MenuItem value='active'>Active</MenuItem>
+                  <MenuItem value='suspended'>Suspended</MenuItem>
+                  <MenuItem value='deleted'>Deleted</MenuItem>
+                </Select>
+              </FormControl>
+              <Button variant='contained' onClick={() => setIsFormOpen(true)}>
+                <AddIcon /> {S.createTenant}
+              </Button>
+            </Box>
 
-        <Box display='flex' flexWrap='wrap' gap={2}>
-          <FormControl size='small' sx={{ minWidth: 140 }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={statusFilter}
-              label='Status'
-              onChange={(event: SelectChangeEvent<StatusFilterOption>) => {
-                const value = event.target.value as StatusFilterOption;
-                setStatusFilter(value);
-              }}
+            <Typography
+              variant='h5'
+              fontWeight={700}
+              dir='rtl'
+              sx={{ textAlign: { xs: 'center', md: 'right' } }}
             >
-              <MenuItem value='All'>All</MenuItem>
-              <MenuItem value='active'>Active</MenuItem>
-              <MenuItem value='suspended'>Suspended</MenuItem>
-              <MenuItem value='deleted'>Deleted</MenuItem>
-            </Select>
-          </FormControl>
-          <Button variant='contained' onClick={() => setIsFormOpen(true)}>
-            <AddIcon /> Create Tenant
-          </Button>
-        </Box>
+              {labels[language]}
+            </Typography>
+          </>
+        ) : (
+          <>
+            <Typography
+              variant='h5'
+              fontWeight={700}
+              dir='ltr'
+              sx={{ textAlign: { xs: 'center', md: 'left' } }}
+            >
+              {labels[language]}
+            </Typography>
+
+            <Box display='flex' flexWrap='wrap' gap={2}>
+              <FormControl size='small' sx={{ minWidth: 140 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  label='Status'
+                  onChange={(event: SelectChangeEvent<StatusFilterOption>) => {
+                    const value = event.target.value as StatusFilterOption;
+                    setStatusFilter(value);
+                  }}
+                >
+                  <MenuItem value='All'>All</MenuItem>
+                  <MenuItem value='active'>Active</MenuItem>
+                  <MenuItem value='suspended'>Suspended</MenuItem>
+                  <MenuItem value='deleted'>Deleted</MenuItem>
+                </Select>
+              </FormControl>
+              <Button variant='contained' onClick={() => setIsFormOpen(true)}>
+                <AddIcon /> {S.createTenant}
+              </Button>
+            </Box>
+          </>
+        )}
       </Box>
 
       {/* Table */}
@@ -599,25 +795,25 @@ export const TenantPage: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>
-                    <strong>Name</strong>
+                  <TableCell sx={{ textAlign: 'left' }}>
+                    <strong>{tableHeaders[language].name}</strong>
                   </TableCell>
-                  <TableCell>
-                    <strong>Status</strong>
+                  <TableCell sx={{ textAlign: 'left' }}>
+                    <strong>{tableHeaders[language].status}</strong>
                   </TableCell>
-                  <TableCell>
-                    <strong>Created</strong>
+                  <TableCell sx={{ textAlign: 'left' }}>
+                    <strong>{tableHeaders[language].created}</strong>
                   </TableCell>
                   <TableCell align='center'>
-                    <strong>Actions</strong>
+                    <strong>{tableHeaders[language].actions}</strong>
                   </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {tenants.map(t => (
                   <TableRow key={t.id} hover>
-                    <TableCell>{t.name}</TableCell>
-                    <TableCell>
+                    <TableCell sx={{ textAlign: 'left' }}>{t.name}</TableCell>
+                    <TableCell sx={{ textAlign: 'left' }}>
                       {!t.isDeleted && (
                         <Switch
                           checked={t.status === 'active'}
@@ -630,18 +826,18 @@ export const TenantPage: React.FC = () => {
                         : t.status.charAt(0).toUpperCase() +
                           t.status.slice(1).toLowerCase()}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ textAlign: 'left' }}>
                       {formatDate(t.created_at)}
                     </TableCell>
                     <TableCell align='center'>
                       {!t.isDeleted ? (
                         <>
-                          <Tooltip title='View Details'>
+                          <Tooltip title={S.viewDetails}>
                             <IconButton onClick={() => handleViewDetails(t)}>
                               <VisibilityIcon />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title='Edit Tenant'>
+                          <Tooltip title={S.editTenant}>
                             <IconButton
                               color='primary'
                               onClick={() => handleOpenEdit(t)}
@@ -650,7 +846,7 @@ export const TenantPage: React.FC = () => {
                             </IconButton>
                           </Tooltip>
 
-                          <Tooltip title='Delete'>
+                          <Tooltip title={S.delete}>
                             <IconButton
                               color='error'
                               onClick={() => {
@@ -663,7 +859,7 @@ export const TenantPage: React.FC = () => {
                           </Tooltip>
                         </>
                       ) : (
-                        <Tooltip title='Restore Tenant'>
+                        <Tooltip title={S.restoreTenant}>
                           <IconButton
                             color='success'
                             onClick={() => handleRestore(t.id)}
@@ -680,7 +876,7 @@ export const TenantPage: React.FC = () => {
                   <TableRow>
                     <TableCell colSpan={4} align='center'>
                       <Alert severity='info' sx={{ my: 2, borderRadius: 2 }}>
-                        No tenants found.
+                        {S.noTenantsFound}
                       </Alert>
                     </TableCell>
                   </TableRow>
@@ -691,7 +887,12 @@ export const TenantPage: React.FC = () => {
         </Paper>
       )}
       {totalPages > 1 && (
-        <Box display='flex' justifyContent='center' mt={2}>
+        <Box
+          display='flex'
+          justifyContent='center'
+          mt={2}
+          sx={{ direction: 'ltr' }}
+        >
           <Pagination
             count={totalPages}
             page={currentPage}
@@ -705,8 +906,7 @@ export const TenantPage: React.FC = () => {
       {tenants.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {totalPages} ({totalRecords} total
-            records)
+            {PH.showingInfo(currentPage, totalPages, totalRecords)}
           </Typography>
         </Box>
       )}
@@ -718,10 +918,19 @@ export const TenantPage: React.FC = () => {
         maxWidth='md'
         fullWidth
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          Tenant Details
+        <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            textAlign: language === 'ar' ? 'right' : 'left',
+          }}
+          style={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
+          {S.tenantDetails}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ direction: 'ltr' }}>
           {tenantDetail ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               {/* Tenant + Logo Section */}
@@ -764,7 +973,9 @@ export const TenantPage: React.FC = () => {
                   }
 
                   const companyName =
-                    tenantDetail.company?.company_name || tenantDetail.name || '';
+                    tenantDetail.company?.company_name ||
+                    tenantDetail.name ||
+                    '';
                   const initials =
                     companyName
                       .trim()
@@ -828,14 +1039,14 @@ export const TenantPage: React.FC = () => {
                     color='primary'
                     fontWeight={600}
                   >
-                    Tenant Information
+                    {S.tenantInformation}
                   </Typography>
                   <Box sx={{ mt: 1 }}>
                     <Typography>
-                      <strong>Domain:</strong> {tenantDetail.domain}
+                      <strong>{S.domainLabel}</strong> {tenantDetail.domain}
                     </Typography>
                     <Typography>
-                      <strong>Status:</strong>{' '}
+                      <strong>{S.statusLabel}</strong>{' '}
                       <Chip
                         label={
                           tenantDetail.status.charAt(0).toUpperCase() +
@@ -853,7 +1064,7 @@ export const TenantPage: React.FC = () => {
                       />
                     </Typography>
                     <Typography>
-                      <strong>Created:</strong>{' '}
+                      <strong>{S.createdLabel}</strong>{' '}
                       {formatDate(tenantDetail.created_at)}
                     </Typography>
                   </Box>
@@ -867,20 +1078,21 @@ export const TenantPage: React.FC = () => {
                       color='primary'
                       fontWeight={600}
                     >
-                      Company Information
+                      {S.companyInformation}
                     </Typography>
                     <Box sx={{ mt: 1 }}>
                       <Typography>
-                        <strong>Name:</strong>{' '}
+                        <strong>{S.companyNameLabel}:</strong>{' '}
                         {tenantDetail.company.company_name}
                       </Typography>
                       <Typography>
-                        <strong>Plan:</strong> {tenantDetail.company.plan_id}
+                        <strong>{S.planLabel}:</strong>{' '}
+                        {tenantDetail.company.plan_id}
                       </Typography>
                       <Typography>
-                        <strong>Paid:</strong>{' '}
+                        <strong>{S.paidLabelText}:</strong>{' '}
                         <Chip
-                          label={tenantDetail.company.is_paid ? 'Paid' : 'Free'}
+                          label={S.paidLabel(tenantDetail.company.is_paid)}
                           color={
                             tenantDetail.company.is_paid ? 'success' : 'warning'
                           }
@@ -899,15 +1111,16 @@ export const TenantPage: React.FC = () => {
                     color='primary'
                     fontWeight={600}
                   >
-                    Summary
+                    {S.summary}
                   </Typography>
                   <Box sx={{ mt: 1 }}>
                     <Typography>
-                      <strong>Departments:</strong>{' '}
+                      <strong>{S.departments}:</strong>{' '}
                       {tenantDetail.departmentCount}
                     </Typography>
                     <Typography>
-                      <strong>Employees:</strong> {tenantDetail.employeeCount}
+                      <strong>{S.employeesLabel}:</strong>{' '}
+                      {tenantDetail.employeeCount}
                     </Typography>
                   </Box>
                 </Card>
@@ -921,7 +1134,7 @@ export const TenantPage: React.FC = () => {
                     color='primary'
                     fontWeight={600}
                   >
-                    Departments
+                    {S.departments}
                   </Typography>
                   <Box sx={{ mt: 1 }}>
                     {tenantDetail.departments.map(dep => (
@@ -943,13 +1156,20 @@ export const TenantPage: React.FC = () => {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ p: 2 }}>
+        <DialogActions
+          sx={{
+            p: 2,
+            // Mirror Close button: left in Arabic, right in English
+            direction: 'ltr',
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+          }}
+        >
           <Button
             onClick={() => setIsDetailOpen(false)}
             variant='contained'
             sx={{ minWidth: 80 }}
           >
-            Close
+            {S.close}
           </Button>
         </DialogActions>
       </Dialog>
@@ -961,10 +1181,16 @@ export const TenantPage: React.FC = () => {
         fullWidth
         maxWidth='sm'
       >
-        <DialogTitle>Create Tenant</DialogTitle>
-        <DialogContent dividers>
+        <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+          style={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
+          {S.createTenant}
+        </DialogTitle>
+        <DialogContent dividers sx={{ direction: 'ltr' }}>
           <TextField
-            label='Tenant Name'
+            label={S.tenantNameLabel}
             value={tenantForm.name}
             onChange={e => {
               const value = e.target.value;
@@ -976,11 +1202,14 @@ export const TenantPage: React.FC = () => {
             sx={{ mt: 2 }}
             inputProps={{
               maxLength: 50,
+              style: { direction: 'ltr', textAlign: 'left' },
             }}
-            helperText='Only alphabets and spaces are allowed'
+            InputLabelProps={{ sx: { textAlign: 'left', width: '100%' } }}
+            FormHelperTextProps={{ sx: { textAlign: 'left' } }}
+            helperText={S.namesOnlyLetters}
           />
           <TextField
-            label='Domain'
+            label={S.domainLabel}
             value={tenantForm.domain}
             onChange={e =>
               setTenantForm(prev => ({ ...prev, domain: e.target.value }))
@@ -988,6 +1217,15 @@ export const TenantPage: React.FC = () => {
             fullWidth
             sx={{ mt: 2 }}
             placeholder='example.com'
+            inputProps={{
+              style: { direction: 'ltr', textAlign: 'left' },
+            }}
+            InputLabelProps={{
+              sx: {
+                textAlign: 'left',
+                width: '100%',
+              },
+            }}
           />
 
           {/* Logo Upload Section */}
@@ -1007,7 +1245,7 @@ export const TenantPage: React.FC = () => {
                 fullWidth
                 sx={{ mb: 2 }}
               >
-                {selectedLogoFile ? 'Change Logo' : 'Upload Company Logo'}
+                {selectedLogoFile ? S.changeLogo : S.uploadLogo}
               </Button>
             </label>
             {logoPreview && (
@@ -1029,10 +1267,18 @@ export const TenantPage: React.FC = () => {
                   variant='rounded'
                 />
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant='body2' fontWeight='bold'>
+                  <Typography
+                    variant='body2'
+                    fontWeight='bold'
+                    sx={{ textAlign: 'left' }}
+                  >
                     {selectedLogoFile?.name}
                   </Typography>
-                  <Typography variant='caption' color='text.secondary'>
+                  <Typography
+                    variant='caption'
+                    color='text.secondary'
+                    sx={{ textAlign: 'left' }}
+                  >
                     {(selectedLogoFile?.size || 0) / 1024} KB
                   </Typography>
                 </Box>
@@ -1047,7 +1293,7 @@ export const TenantPage: React.FC = () => {
             )}
           </Box>
           <TextField
-            label='Admin Name'
+            label={S.adminNameLabel}
             value={tenantForm.adminName}
             onChange={e => {
               const value = e.target.value;
@@ -1059,11 +1305,14 @@ export const TenantPage: React.FC = () => {
             sx={{ mt: 2 }}
             inputProps={{
               maxLength: 50,
+              style: { direction: 'ltr', textAlign: 'left' },
             }}
-            helperText='Only alphabets and spaces are allowed'
+            InputLabelProps={{ sx: { textAlign: 'left', width: '100%' } }}
+            FormHelperTextProps={{ sx: { textAlign: 'left' } }}
+            helperText={S.namesOnlyLetters}
           />
           <TextField
-            label='Admin Email'
+            label={S.adminEmailLabel}
             value={tenantForm.adminEmail}
             onChange={e =>
               setTenantForm(prev => ({ ...prev, adminEmail: e.target.value }))
@@ -1071,11 +1320,27 @@ export const TenantPage: React.FC = () => {
             fullWidth
             sx={{ mt: 2 }}
             type='email'
+            inputProps={{
+              style: { direction: 'ltr', textAlign: 'left' },
+            }}
+            InputLabelProps={{
+              sx: {
+                textAlign: 'left',
+                width: '100%',
+              },
+            }}
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{
+            // Keep dialog content LTR for DB values, but align action buttons to the right
+            direction: language === 'ar' ? 'rtl' : 'ltr',
+            justifyContent: 'flex-end',
+          }}
+        >
           <Button onClick={closeCreateModal} disabled={uploadingLogo}>
-            Cancel
+            {S.cancel}
           </Button>
           <Button
             variant='contained'
@@ -1085,10 +1350,10 @@ export const TenantPage: React.FC = () => {
             {uploadingLogo ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CircularProgress size={16} />
-                Uploading...
+                {S.uploadButtonUploading}
               </Box>
             ) : (
-              'Save'
+              S.save
             )}
           </Button>
         </DialogActions>
@@ -1101,17 +1366,29 @@ export const TenantPage: React.FC = () => {
         fullWidth
         maxWidth='xs'
       >
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent dividers>
+        <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+          style={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
+          {S.confirmDeleteTitle}
+        </DialogTitle>
+        <DialogContent dividers sx={{ direction: 'ltr' }}>
           <Typography>
-            Are you sure you want to delete{' '}
-            <strong>{selectedTenant?.name}</strong>?
+            {S.confirmDeleteText(selectedTenant?.name || '')}
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+        <DialogActions
+          sx={{
+            p: 2,
+            // Mirror action buttons: left in Arabic, right in English
+            direction: 'ltr',
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+          }}
+        >
+          <Button onClick={() => setIsDeleteOpen(false)}>{S.cancel}</Button>
           <Button color='error' variant='contained' onClick={handleDelete}>
-            Delete
+            {S.deleteConfirmButton}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1134,10 +1411,16 @@ export const TenantPage: React.FC = () => {
         fullWidth
         maxWidth='sm'
       >
-        <DialogTitle>Edit Tenant</DialogTitle>
-        <DialogContent dividers>
+        <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+          style={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
+          {S.editTenant}
+        </DialogTitle>
+        <DialogContent dividers sx={{ direction: 'ltr' }}>
           <TextField
-            label='Company Name'
+            label={S.companyNameLabel}
             value={editCompanyName}
             onChange={e => {
               const value = e.target.value;
@@ -1147,18 +1430,32 @@ export const TenantPage: React.FC = () => {
             }}
             fullWidth
             sx={{ mt: 2 }}
-            inputProps={{ maxLength: 50 }}
-            helperText='Only alphabets and spaces are allowed'
+            inputProps={{
+              maxLength: 50,
+              style: { direction: 'ltr', textAlign: 'left' },
+            }}
+            InputLabelProps={{ sx: { textAlign: 'left', width: '100%' } }}
+            FormHelperTextProps={{ sx: { textAlign: 'left' } }}
+            helperText={S.namesOnlyLetters}
             required
           />
           <TextField
-            label='Domain'
+            label={S.domainLabel}
             value={editDomain}
             onChange={e => setEditDomain(e.target.value)}
             fullWidth
             sx={{ mt: 2 }}
             placeholder='example.com'
             required
+            inputProps={{
+              style: { direction: 'ltr', textAlign: 'left' },
+            }}
+            InputLabelProps={{
+              sx: {
+                textAlign: 'left',
+                width: '100%',
+              },
+            }}
           />
 
           {/* Logo Upload Section */}
@@ -1178,7 +1475,7 @@ export const TenantPage: React.FC = () => {
                 fullWidth
                 sx={{ mb: 2 }}
               >
-                {editLogoFile ? 'Change Logo' : 'Upload Company Logo'}
+                {editLogoFile ? S.changeLogo : S.uploadLogo}
               </Button>
             </label>
             {(editLogoPreview || editLogo) && (
@@ -1200,7 +1497,11 @@ export const TenantPage: React.FC = () => {
                   variant='rounded'
                 />
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant='body2' fontWeight='bold'>
+                  <Typography
+                    variant='body2'
+                    fontWeight='bold'
+                    sx={{ textAlign: 'left' }}
+                  >
                     {editLogoFile?.name || 'Current Logo'}
                   </Typography>
                   {editLogoFile && (
@@ -1222,7 +1523,14 @@ export const TenantPage: React.FC = () => {
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          sx={{
+            p: 2,
+            // Mirror action buttons: left in Arabic, right in English
+            direction: 'ltr',
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+          }}
+        >
           <Button
             onClick={() => {
               setIsEditOpen(false);
@@ -1239,7 +1547,7 @@ export const TenantPage: React.FC = () => {
             }}
             disabled={uploadingEditLogo}
           >
-            Cancel
+            {S.cancel}
           </Button>
           <Button
             variant='contained'
@@ -1249,10 +1557,10 @@ export const TenantPage: React.FC = () => {
             {uploadingEditLogo ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CircularProgress size={16} />
-                Updating...
+                {S.updating}
               </Box>
             ) : (
-              'Update'
+              S.update
             )}
           </Button>
         </DialogActions>

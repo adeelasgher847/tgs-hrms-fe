@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   Dialog,
   DialogTitle,
@@ -42,6 +43,42 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
   onSubmit,
   benefit,
 }) => {
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      titleCreate: 'Create Benefit',
+      titleEdit: 'Edit Benefit',
+      name: 'Benefit Name',
+      type: 'Benefit Type',
+      typePlaceholder: 'Health, Allowance, Voucher...',
+      description: 'Description',
+      eligibility: 'Eligibility',
+      eligibilityPlaceholder: 'e.g., All Employees / Full-time / etc.',
+      status: 'Status',
+      statusPlaceholder: 'Active / Inactive',
+      cancel: 'Cancel',
+      create: 'Create',
+      update: 'Update',
+    },
+    ar: {
+      titleCreate: 'إنشاء ميزة',
+      titleEdit: 'تعديل الميزة',
+      name: 'اسم الميزة',
+      type: 'نوع الميزة',
+      typePlaceholder: 'صحة، بدل، قسيمة...',
+      description: 'الوصف',
+      eligibility: 'معايير الأهلية',
+      eligibilityPlaceholder: 'مثل: جميع الموظفين / دوام كامل / الخ',
+      status: 'الحالة',
+      statusPlaceholder: 'نشط / غير نشط',
+      cancel: 'إلغاء',
+      create: 'إنشاء',
+      update: 'تحديث',
+    },
+  } as const;
+
+  const L = labels[language as 'en' | 'ar'] || labels.en;
   const {
     control,
     handleSubmit,
@@ -94,14 +131,20 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
       fullWidth
       PaperProps={{ sx: { borderRadius: 2 } }}
     >
-      <DialogTitle>
+      <DialogTitle
+        dir={language === 'ar' ? 'rtl' : 'ltr'}
+        sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+      >
         <Typography variant='h6' fontWeight={600}>
-          {benefit ? 'Edit Benefit' : 'Create Benefit'}
+          {benefit ? L.titleEdit : L.titleCreate}
         </Typography>
       </DialogTitle>
 
       <form onSubmit={handleSubmit(handleFormSubmit)}>
-        <DialogContent sx={{ px: 2, maxHeight: '60vh', overflowY: 'visible' }}>
+        <DialogContent
+          dir='ltr'
+          sx={{ px: 2, maxHeight: '60vh', overflowY: 'visible' }}
+        >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <Box sx={{ display: 'flex', gap: 3 }}>
               <Controller
@@ -111,7 +154,7 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
                   <TextField
                     {...field}
                     fullWidth
-                    label='Benefit Name'
+                    label={L.name}
                     error={!!errors.name}
                     helperText={errors.name?.message}
                   />
@@ -125,8 +168,8 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
                   <TextField
                     {...field}
                     fullWidth
-                    label='Benefit Type'
-                    placeholder='Health, Allowance, Voucher...'
+                    label={L.type}
+                    placeholder={L.typePlaceholder}
                     error={!!errors.type}
                     helperText={errors.type?.message}
                   />
@@ -141,7 +184,7 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
                 <TextField
                   {...field}
                   fullWidth
-                  label='Description'
+                  label={L.description}
                   multiline
                   rows={2}
                   error={!!errors.description}
@@ -157,8 +200,8 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
                 <TextField
                   {...field}
                   fullWidth
-                  label='Eligibility'
-                  placeholder='e.g., All Employees / Full-time / etc.'
+                  label={L.eligibility}
+                  placeholder={L.eligibilityPlaceholder}
                   error={!!errors.eligibilityCriteria}
                   helperText={errors.eligibilityCriteria?.message}
                 />
@@ -172,8 +215,8 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
                 <TextField
                   {...field}
                   fullWidth
-                  label='Status'
-                  placeholder='Active / Inactive'
+                  label={L.status}
+                  placeholder={L.statusPlaceholder}
                   error={!!errors.status}
                   helperText={errors.status?.message}
                 />
@@ -190,13 +233,14 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
             px: 2,
             py: 2,
             gap: 1,
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
           }}
         >
           <Button onClick={onClose} variant='outlined'>
-            Cancel
+            {L.cancel}
           </Button>
           <Button type='submit' variant='contained' disabled={!isFormValid}>
-            {benefit ? 'Update' : 'Create'}
+            {benefit ? L.update : L.create}
           </Button>
         </DialogActions>
       </form>

@@ -162,26 +162,46 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          backgroundColor: (theme) => theme.palette.background.paper,
+          backgroundColor: theme => theme.palette.background.paper,
           '&::-webkit-scrollbar': {
             display: 'none',
           },
         },
       }}
     >
-      <DialogTitle sx={{ color: (theme) => theme.palette.text.primary }}>
+      <DialogTitle
+        dir={language === 'ar' ? 'rtl' : 'ltr'}
+        sx={{
+          color: theme => theme.palette.text.primary,
+          textAlign: language === 'ar' ? 'right' : 'left',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         {lang.title}
       </DialogTitle>
 
       <form onSubmit={handleSubmit}>
-        <DialogContent>
+        <DialogContent sx={{ direction: 'ltr' }}>
           {error && (
             <Alert severity='error' sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              '& .MuiInputBase-input, & .MuiOutlinedInput-input, & input, & .MuiSelect-select, & .MuiInputLabel-root, & .MuiFormHelperText-root':
+                {
+                  direction: 'ltr',
+                  textAlign: 'left',
+                },
+            }}
+          >
             <TextField
               fullWidth
               label={lang.name}
@@ -190,14 +210,18 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
               required
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: (theme) => theme.palette.divider },
+                  '& fieldset': { borderColor: theme => theme.palette.divider },
                   '&:hover fieldset': {
-                    borderColor: (theme) => theme.palette.text.secondary,
+                    borderColor: theme => theme.palette.text.secondary,
                   },
-                  '&.Mui-focused fieldset': { borderColor: (theme) => theme.palette.primary.main },
+                  '&.Mui-focused fieldset': {
+                    borderColor: theme => theme.palette.primary.main,
+                  },
                 },
-                '& .MuiInputLabel-root': { color: (theme) => theme.palette.text.secondary },
-                '& input': { color: (theme) => theme.palette.text.primary },
+                '& .MuiInputLabel-root': {
+                  color: theme => theme.palette.text.secondary,
+                },
+                '& input': { color: theme => theme.palette.text.primary },
               }}
             />
 
@@ -210,24 +234,30 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
               rows={3}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: (theme) => theme.palette.divider },
+                  '& fieldset': { borderColor: theme => theme.palette.divider },
                   '&:hover fieldset': {
-                    borderColor: (theme) => theme.palette.text.secondary,
+                    borderColor: theme => theme.palette.text.secondary,
                   },
-                  '&.Mui-focused fieldset': { borderColor: (theme) => theme.palette.primary.main },
+                  '&.Mui-focused fieldset': {
+                    borderColor: theme => theme.palette.primary.main,
+                  },
                 },
-                '& .MuiInputLabel-root': { color: (theme) => theme.palette.text.secondary },
-                '& textarea': { color: (theme) => theme.palette.text.primary },
+                '& .MuiInputLabel-root': {
+                  color: theme => theme.palette.text.secondary,
+                },
+                '& textarea': { color: theme => theme.palette.text.primary },
               }}
             />
 
             <FormControl fullWidth>
               <InputLabel
                 sx={{
-                  color: (theme) => theme.palette.text.secondary,
-                  '&.Mui-focused': { color: (theme) => theme.palette.primary.main },
+                  color: theme => theme.palette.text.secondary,
+                  '&.Mui-focused': {
+                    color: theme => theme.palette.primary.main,
+                  },
                   '&.MuiInputLabel-shrink': {
-                    color: (theme) => theme.palette.text.secondary,
+                    color: theme => theme.palette.text.secondary,
                   },
                 }}
               >
@@ -240,16 +270,22 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
                 label={lang.manager}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: (theme) => theme.palette.divider },
-                    '&:hover fieldset': {
-                      borderColor: (theme) => theme.palette.text.secondary,
+                    '& fieldset': {
+                      borderColor: theme => theme.palette.divider,
                     },
-                    '&.Mui-focused fieldset': { borderColor: (theme) => theme.palette.primary.main },
+                    '&:hover fieldset': {
+                      borderColor: theme => theme.palette.text.secondary,
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: theme => theme.palette.primary.main,
+                    },
                   },
                   '& .MuiInputLabel-root': {
-                    color: (theme) => theme.palette.text.secondary,
+                    color: theme => theme.palette.text.secondary,
                   },
-                  '& .MuiSelect-select': { color: (theme) => theme.palette.text.primary },
+                  '& .MuiSelect-select': {
+                    color: theme => theme.palette.text.primary,
+                  },
                 }}
               >
                 <MenuItem value='' disabled>
@@ -270,30 +306,41 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
                 )}
               </Select>
             </FormControl>
-            <DialogActions sx={{ padding: 0 }}>
-          <Button onClick={handleClose} disabled={loading}>
-            {lang.cancel}
-          </Button>
-          <Button
-            type='submit'
-            variant='contained'
-            disabled={
-              loading ||
-              !hasChanges ||
-              !formData.name.trim() ||
-              !formData.manager_id
-            }
-            sx={{ backgroundColor: (theme) => theme.palette.primary.main }}
-            startIcon={loading ? <CircularProgress size={16} /> : null}
-          >
-            {loading ? lang.loading : lang.create}
-          </Button>
-        </DialogActions>
-          </Box>
-          
-        </DialogContent>
+            <DialogActions
+              sx={{
+                padding: 0,
+                justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+              }}
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+            >
+              <Button
+                onClick={handleClose}
+                disabled={loading}
+                sx={{ order: language === 'ar' ? 1 : 0 }}
+              >
+                {lang.cancel}
+              </Button>
 
-    
+              <Button
+                type='submit'
+                variant='contained'
+                disabled={
+                  loading ||
+                  !hasChanges ||
+                  !formData.name.trim() ||
+                  !formData.manager_id
+                }
+                sx={{
+                  backgroundColor: theme => theme.palette.primary.main,
+                  order: language === 'ar' ? 0 : 1,
+                }}
+                startIcon={loading ? <CircularProgress size={16} /> : null}
+              >
+                {loading ? lang.loading : lang.create}
+              </Button>
+            </DialogActions>
+          </Box>
+        </DialogContent>
       </form>
     </Dialog>
   );

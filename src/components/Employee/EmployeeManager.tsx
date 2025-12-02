@@ -28,6 +28,7 @@ import EmployeeList from './EmployeeList';
 import EmployeeViewModal from './EmployeeViewModal';
 import employeeApi from '../../api/employeeApi';
 import type { EmployeeDto } from '../../api/employeeApi';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   departmentApiService,
   type BackendDepartment,
@@ -77,7 +78,6 @@ interface Employee {
 
 interface OutletContext {
   darkMode: boolean;
-  language: 'en' | 'ar';
 }
 
 const EmployeeManager: React.FC = () => {
@@ -590,9 +590,9 @@ const EmployeeManager: React.FC = () => {
       const nextRoleName =
         updates.role_name && updates.role_name.trim() !== ''
           ? updates.role_name.trim()
-          : (updates.role && updates.role.trim() !== ''
-              ? updates.role.trim()
-              : editing.role_name);
+          : updates.role && updates.role.trim() !== ''
+            ? updates.role.trim()
+            : editing.role_name;
 
       const updatedEmployee = await employeeApi.updateEmployee(editing.id, {
         first_name: updates.first_name,
@@ -638,7 +638,8 @@ const EmployeeManager: React.FC = () => {
                 phone: updatedEmployee.phone,
                 departmentId: newDepartmentId,
                 designationId: nextDesignationId,
-                role_name: updatedEmployee.role_name || nextRoleName || emp.role_name,
+                role_name:
+                  updatedEmployee.role_name || nextRoleName || emp.role_name,
                 status: updatedEmployee.status || emp.status,
                 cnic_number: updatedEmployee.cnic_number || emp.cnic_number,
                 profile_picture:
@@ -787,19 +788,55 @@ const EmployeeManager: React.FC = () => {
 
   // Server-driven filtering; render employees as-is
 
-  const getLabel = (en: string, ar: string) => (direction === 'rtl' ? ar : en);
-
   // Delete modal texts
-  const deleteTitle = getLabel('Confirm Delete', 'تأكيد الحذف');
-  const deleteMessage = pendingDeleteName
-    ? getLabel(
-        `Are you sure you want to delete employee "${pendingDeleteName}"? This action cannot be undone.`,
-        `هل أنت متأكد أنك تريد حذف الموظف "${pendingDeleteName}"؟ لا يمكن التراجع عن هذا الإجراء.`
-      )
-    : getLabel(
-        'Are you sure you want to delete this employee? This action cannot be undone.',
-        'هل أنت متأكد أنك تريد حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.'
-      );
+  // Use LanguageContext for static UI labels (keep DB data unchanged)
+  const { language } = useLanguage();
+  const isRTL = language === 'ar';
+  const L = {
+    en: {
+      pageTitle: 'Employee List',
+      department: 'Department',
+      allDepartments: 'All Departments',
+      designation: 'Designation',
+      allDesignations: 'All Designations',
+      clearFilters: 'Clear Filters',
+      addEmployee: 'Add Employee',
+      exportTooltip: 'Export Employees CSV',
+      confirmDeleteTitle: 'Confirm Delete',
+      confirmDeleteMessage: (name?: string) =>
+        name
+          ? `Are you sure you want to delete employee "${name}"? This action cannot be undone.`
+          : 'Are you sure you want to delete this employee? This action cannot be undone.',
+      cancel: 'Cancel',
+      delete: 'Delete',
+      addNewEmployee: 'Add New Employee',
+      editEmployee: 'Edit Employee',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+    },
+    ar: {
+      pageTitle: 'قائمة الموظفين',
+      department: 'القسم',
+      allDepartments: 'كل الأقسام',
+      designation: 'المسمى الوظيفي',
+      allDesignations: 'كل المسميات',
+      clearFilters: 'مسح الفلاتر',
+      addEmployee: 'إضافة موظف',
+      exportTooltip: 'تصدير الموظفين (CSV)',
+      confirmDeleteTitle: 'تأكيد الحذف',
+      confirmDeleteMessage: (name?: string) =>
+        name
+          ? `هل أنت متأكد أنك تريد حذف الموظف "${name}"؟ لا يمكن التراجع عن هذا الإجراء.`
+          : 'هل أنت متأكد أنك تريد حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.',
+      cancel: 'إلغاء',
+      delete: 'حذف',
+      addNewEmployee: 'إضافة موظف جديد',
+      editEmployee: 'تعديل الموظف',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
+    },
+  } as const;
+  const LL = L[language] || L.en;
 
   const token = localStorage.getItem('token');
   const filters = { page: '1' };
@@ -819,9 +856,15 @@ const EmployeeManager: React.FC = () => {
   };
 
   return (
-    <Box>
-      <Typography variant='h6' gutterBottom>
-        Employee List
+    <Box dir='ltr' sx={{ direction: 'ltr' }}>
+      <Typography
+        dir={isRTL ? 'rtl' : 'ltr'}
+        variant='h6'
+        gutterBottom
+        sx={{ textAlign: isRTL ? 'right' : 'left' }}
+        style={{ textAlign: isRTL ? 'right' : 'left' }}
+      >
+        {LL.pageTitle}
       </Typography>
       {/* Add Employee Button */}
       <Box
@@ -845,7 +888,7 @@ const EmployeeManager: React.FC = () => {
           <TextField
             select
             fullWidth
-            label={getLabel('Department', 'القسم')}
+            label={LL.department}
             value={departmentFilter}
             onChange={e => {
               setDepartmentFilter(e.target.value);
@@ -870,9 +913,7 @@ const EmployeeManager: React.FC = () => {
               ...darkInputStyles,
             }}
           >
-            <MenuItem value=''>
-              {getLabel('All Departments', 'كل الأقسام')}
-            </MenuItem>
+            <MenuItem value=''>{LL.allDepartments}</MenuItem>
             {departmentList.map(dept => (
               <MenuItem key={dept.id} value={dept.id}>
                 {dept.name}
@@ -884,7 +925,7 @@ const EmployeeManager: React.FC = () => {
           <TextField
             select
             fullWidth
-            label={getLabel('Designation', 'المسمى الوظيفي')}
+            label={LL.designation}
             value={designationFilter}
             onChange={e => setDesignationFilter(e.target.value)}
             size='small'
@@ -906,9 +947,7 @@ const EmployeeManager: React.FC = () => {
               ...darkInputStyles,
             }}
           >
-            <MenuItem value=''>
-              {getLabel('All Designations', 'كل المسميات')}
-            </MenuItem>
+            <MenuItem value=''>{LL.allDesignations}</MenuItem>
             {designationList.map(des => (
               <MenuItem key={des.id} value={des.id}>
                 {des.title}
@@ -931,7 +970,7 @@ const EmployeeManager: React.FC = () => {
               },
             }}
           >
-            {getLabel('Clear Filters', 'مسح الفلاتر')}
+            {LL.clearFilters}
           </Button>
 
           {/* Add Employee Button */}
@@ -949,11 +988,11 @@ const EmployeeManager: React.FC = () => {
               },
             }}
           >
-            {getLabel('Add Employee', 'إضافة موظف')}
+            {LL.addEmployee}
           </Button>
         </Stack>
         <Box display='flex' justifyContent='flex-end'>
-          <Tooltip title='Export Employees CSV'>
+          <Tooltip title={LL.exportTooltip}>
             <IconButton
               color='primary'
               onClick={() =>
@@ -1012,10 +1051,7 @@ const EmployeeManager: React.FC = () => {
       {totalItems > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
-            {getLabel(
-              `Showing page ${currentPage} of ${totalPages} (${totalItems} total records)`,
-              `عرض الصفحة ${currentPage} من ${totalPages} (${totalItems} سجل إجمالي)`
-            )}
+            {LL.showingInfo(currentPage, totalPages, totalItems)}
           </Typography>
         </Box>
       )}
@@ -1067,7 +1103,7 @@ const EmployeeManager: React.FC = () => {
         }}
       >
         <DialogTitle sx={{ textAlign: 'center', pb: 1, color: textColor }}>
-          {deleteTitle}
+          {LL.confirmDeleteTitle}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ textAlign: 'center' }}>
@@ -1076,7 +1112,7 @@ const EmployeeManager: React.FC = () => {
               variant='body1'
               sx={{ mb: 2, lineHeight: 1.6, color: textColor }}
             >
-              {deleteMessage}
+              {LL.confirmDeleteMessage(pendingDeleteName || undefined)}
             </Typography>
           </Box>
         </DialogContent>
@@ -1086,10 +1122,10 @@ const EmployeeManager: React.FC = () => {
             variant='outlined'
             sx={{ color: textColor, borderColor }}
           >
-            {getLabel('Cancel', 'إلغاء')}
+            {LL.cancel}
           </Button>
           <Button onClick={confirmDelete} variant='contained' color='error'>
-            {getLabel('Delete', 'حذف')}
+            {LL.delete}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1111,28 +1147,32 @@ const EmployeeManager: React.FC = () => {
         }}
       >
         <DialogTitle
+          dir={isRTL ? 'rtl' : 'ltr'}
           sx={{
-            textAlign: direction === 'rtl' ? 'right' : 'left',
+            textAlign: isRTL ? 'right' : 'left',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            flexDirection: isRTL ? 'row-reverse' : 'row',
             color: textColor,
           }}
         >
-          {editing
-            ? getLabel('Edit Employee', 'تعديل الموظف')
-            : getLabel('Add New Employee', 'إضافة موظف جديد')}
-
+          <Box component='span' sx={{ fontWeight: 600, order: isRTL ? 2 : 1 }}>
+            {editing ? LL.editEmployee : LL.addNewEmployee}
+          </Box>
           <IconButton
             onClick={() => setOpen(false)}
-            sx={{ color: darkMode ? '#ccc' : theme.palette.grey[500] }}
+            sx={{
+              order: isRTL ? 1 : 2,
+              color: darkMode ? '#ccc' : theme.palette.grey[500],
+            }}
             aria-label='close'
           >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent>
+        <DialogContent sx={{ direction: 'ltr' }}>
           <AddEmployeeForm
             key={editing ? `edit-${editing.id}` : 'create'}
             onSubmit={editing ? handleUpdateEmployee : handleAddEmployee}

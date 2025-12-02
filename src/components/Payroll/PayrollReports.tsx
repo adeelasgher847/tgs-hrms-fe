@@ -20,6 +20,7 @@ import systemEmployeeApiService, {
 } from '../../api/systemEmployeeApi';
 import { useIsDarkMode } from '../../theme';
 import { snackbar } from '../../utils/snackbar';
+import { useLanguage } from '@/hooks/useLanguage';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -31,6 +32,37 @@ const formatCurrency = (value: number | string | undefined) => {
     minimumFractionDigits: 0,
   }).format(numberValue);
 };
+
+const PAYROLL_STRINGS = {
+  en: {
+    pageTitle: 'Payroll Reports',
+    tenantLabel: 'Tenant',
+    allTenants: 'All Tenants',
+    monthlyTrend: 'Monthly Trend',
+    departmentComparison: 'Department Comparison',
+    noStatistics: 'No statistics available for the selected filters.',
+    noTrendData: 'No trend data available for the selected date range.',
+    noDepartmentData: 'No department comparison data available.',
+    gross: 'Gross',
+    deductions: 'Deductions',
+    bonuses: 'Bonuses',
+    net: 'Net',
+  },
+  ar: {
+    pageTitle: 'تقارير الرواتب',
+    tenantLabel: 'المستأجر',
+    allTenants: 'جميع المستأجرين',
+    monthlyTrend: 'الاتجاه الشهري',
+    departmentComparison: 'مقارنة الأقسام',
+    noStatistics: 'لا توجد إحصاءات متاحة للمرشحات المحددة.',
+    noTrendData: 'لا توجد بيانات للاتجاه للفترة المحددة.',
+    noDepartmentData: 'لا توجد بيانات مقارنة للأقسام.',
+    gross: 'الإجمالي',
+    deductions: 'الاستقطاعات',
+    bonuses: 'المكافآت',
+    net: 'الصافي',
+  },
+} as const;
 
 const PayrollReports: React.FC = () => {
   const theme = useTheme();
@@ -46,6 +78,13 @@ const PayrollReports: React.FC = () => {
   const [tenants, setTenants] = useState<SystemEmployee[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('');
   const [loadingTenants, setLoadingTenants] = useState<boolean>(false);
+
+  const { language } = useLanguage();
+
+  const L = useMemo(
+    () => PAYROLL_STRINGS[language as 'en' | 'ar'] || PAYROLL_STRINGS.en,
+    [language]
+  );
 
   const bgColor = effectiveDarkMode
     ? '#121212'
@@ -103,7 +142,7 @@ const PayrollReports: React.FC = () => {
           tenantId: selectedTenantId,
         });
         setStatistics(stats);
-      } catch (error) {
+      } catch {
         snackbar.error('Failed to load payroll statistics');
       } finally {
         setStatsLoading(false);
@@ -118,27 +157,27 @@ const PayrollReports: React.FC = () => {
       return [];
     return [
       {
-        name: 'Gross',
+        name: L.gross,
         data: statistics.monthlyTrend.map(item => Number(item.totalGross) || 0),
       },
       {
-        name: 'Deductions',
+        name: L.deductions,
         data: statistics.monthlyTrend.map(
           item => Number(item.totalDeductions) || 0
         ),
       },
       {
-        name: 'Bonuses',
+        name: L.bonuses,
         data: statistics.monthlyTrend.map(
           item => Number(item.totalBonuses) || 0
         ),
       },
       {
-        name: 'Net',
+        name: L.net,
         data: statistics.monthlyTrend.map(item => Number(item.totalNet) || 0),
       },
     ];
-  }, [statistics]);
+  }, [statistics, L.gross, L.deductions, L.bonuses, L.net]);
 
   const trendOptions: ApexOptions = useMemo(() => {
     const categories =
@@ -162,31 +201,31 @@ const PayrollReports: React.FC = () => {
       return [];
     return [
       {
-        name: 'Gross',
+        name: L.gross,
         data: statistics.departmentComparison.map(
           item => Number(item.totalGross) || 0
         ),
       },
       {
-        name: 'Deductions',
+        name: L.deductions,
         data: statistics.departmentComparison.map(
           item => Number(item.totalDeductions) || 0
         ),
       },
       {
-        name: 'Bonuses',
+        name: L.bonuses,
         data: statistics.departmentComparison.map(
           item => Number(item.totalBonuses) || 0
         ),
       },
       {
-        name: 'Net',
+        name: L.net,
         data: statistics.departmentComparison.map(
           item => Number(item.totalNet) || 0
         ),
       },
     ];
-  }, [statistics]);
+  }, [statistics, L.gross, L.deductions, L.bonuses, L.net]);
 
   const departmentOptions: ApexOptions = useMemo(() => {
     if (
@@ -244,26 +283,70 @@ const PayrollReports: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant='h4' sx={{ fontWeight: 600 }}>
-          Payroll Reports
-        </Typography>
-        <Stack direction='row' spacing={2}>
-          <TextField
-            select
-            label='Tenant'
-            value={selectedTenantId}
-            onChange={e => setSelectedTenantId(e.target.value)}
-            size='small'
-            sx={{ minWidth: 200 }}
-            disabled={loadingTenants}
-          >
-            {tenants.map(t => (
-              <MenuItem key={t.id} value={t.id}>
-                {t.name}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Stack>
+        {language === 'ar' ? (
+          <>
+            <Box>
+              <TextField
+                select
+                label={L.tenantLabel}
+                value={selectedTenantId}
+                onChange={e => setSelectedTenantId(e.target.value)}
+                size='small'
+                sx={{ minWidth: 200 }}
+                disabled={loadingTenants}
+                dir='ltr'
+              >
+                <MenuItem value=''>{L.allTenants}</MenuItem>
+                {tenants.map(tenant => (
+                  <MenuItem key={tenant.id} value={tenant.id}>
+                    {tenant.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
+
+            <Box>
+              <Typography
+                variant='h4'
+                dir='rtl'
+                sx={{ fontWeight: 600, color: textColor, textAlign: 'right' }}
+              >
+                {L.pageTitle}
+              </Typography>
+            </Box>
+          </>
+        ) : (
+          <>
+            <Box>
+              <Typography
+                variant='h4'
+                dir='ltr'
+                sx={{ fontWeight: 600, color: textColor, textAlign: 'left' }}
+              >
+                {L.pageTitle}
+              </Typography>
+            </Box>
+
+            <Stack direction='row' spacing={2} alignItems='center'>
+              <TextField
+                select
+                label={L.tenantLabel}
+                value={selectedTenantId}
+                onChange={e => setSelectedTenantId(e.target.value)}
+                size='small'
+                sx={{ minWidth: 200 }}
+                disabled={loadingTenants}
+              >
+                <MenuItem value=''>{L.allTenants}</MenuItem>
+                {tenants.map(tenant => (
+                  <MenuItem key={tenant.id} value={tenant.id}>
+                    {tenant.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Stack>
+          </>
+        )}
       </Box>
 
       <Paper sx={{ backgroundColor:'unset',boxShadow:'none' }}>
@@ -274,15 +357,38 @@ const PayrollReports: React.FC = () => {
         ) : !statistics ? (
           <Alert severity='info'>No statistics available</Alert>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Paper sx={{ p: 2,boxShadow:'none' }}>
-              <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
-                Monthly Trend
+          <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                border: `1px solid ${theme.palette.divider}`,
+                backgroundColor: effectiveDarkMode ? '#121212' : '#fff',
+                width: '100%',
+              }}
+            >
+              <Typography
+                variant='subtitle1'
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  textAlign: language === 'ar' ? 'right' : 'left',
+                }}
+              >
+                {L.monthlyTrend}
               </Typography>
-              {trendSeries.length === 0 ? (
-                <Alert severity='info' sx={{ mt: 2 }}>
-                  No monthly trend data
-                </Alert>
+              {!statistics.monthlyTrend ||
+              statistics.monthlyTrend.length === 0 ? (
+                <Box sx={{ py: 4 }}>
+                  <Alert
+                    severity='info'
+                    sx={{ backgroundColor: 'transparent' }}
+                  >
+                    No trend data available for the selected date range.
+                  </Alert>
+                </Box>
               ) : (
                 <Chart
                   options={trendOptions}
@@ -292,15 +398,37 @@ const PayrollReports: React.FC = () => {
                 />
               )}
             </Paper>
-
-            <Paper sx={{ p: 2,boxShadow:'none' }}>
-              <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
-                Department Comparison
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                border: `1px solid ${theme.palette.divider}`,
+                backgroundColor: effectiveDarkMode ? '#121212' : '#fff',
+                width: '100%',
+              }}
+            >
+              <Typography
+                variant='subtitle1'
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  textAlign: language === 'ar' ? 'right' : 'left',
+                }}
+              >
+                {L.departmentComparison}
               </Typography>
-              {departmentSeries.length === 0 ? (
-                <Alert severity='info' sx={{ mt: 2 }}>
-                  No department data
-                </Alert>
+              {!statistics.departmentComparison ||
+              statistics.departmentComparison.length === 0 ? (
+                <Box sx={{ py: 4 }}>
+                  <Alert
+                    severity='info'
+                    sx={{ backgroundColor: 'transparent' }}
+                  >
+                    No department comparison data available.
+                  </Alert>
+                </Box>
               ) : (
                 <Chart
                   options={departmentOptions}

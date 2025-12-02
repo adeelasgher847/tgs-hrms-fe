@@ -15,6 +15,34 @@ import {
   IconButton,
 } from '@mui/material';
 import { useIsDarkMode } from '../../theme';
+import { useLanguage } from '../../hooks/useLanguage';
+
+const SETTINGS_STRINGS = {
+  en: {
+    pageTitle: 'Company Information',
+    editCompanyDetails: 'Edit Company Details',
+    companyDetailsTitle: 'Company Details',
+    companyNameLabel: 'Company Name',
+    companyDomainLabel: 'Company Domain',
+    uploadingLogo: 'Uploading logo...',
+    noCompanyDetails: 'No company details available',
+    update: 'Update',
+    updating: 'Updating...',
+    notSpecified: 'Not specified',
+  },
+  ar: {
+    pageTitle: 'معلومات الشركة',
+    editCompanyDetails: 'تعديل تفاصيل الشركة',
+    companyDetailsTitle: 'تفاصيل الشركة',
+    companyNameLabel: 'اسم الشركة',
+    companyDomainLabel: 'نطاق الشركة',
+    uploadingLogo: 'جارٍ تحميل الشعار...',
+    noCompanyDetails: 'لا توجد تفاصيل للشركة',
+    update: 'تحديث',
+    updating: 'جارٍ التحديث...',
+    notSpecified: 'غير محدد',
+  },
+} as const;
 import { useCompany } from '../../context/CompanyContext';
 import { useUser } from '../../hooks/useUser';
 import { isManager, isEmployee } from '../../utils/roleUtils';
@@ -38,8 +66,13 @@ const SettingsPage: React.FC = () => {
     companyName,
     companyLogo,
     refreshCompanyDetails,
-    loading: contextLoading,
   } = useCompany();
+
+  const { language } = useLanguage();
+  const L = React.useMemo(
+    () => SETTINGS_STRINGS[language as 'en' | 'ar'] || SETTINGS_STRINGS.en,
+    [language]
+  );
 
   const [companyModalOpen, setCompanyModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(true);
@@ -182,36 +215,45 @@ const SettingsPage: React.FC = () => {
         sx={{
           mb: 4,
           display: 'flex',
+          flexDirection: language === 'ar' ? 'row-reverse' : 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}
       >
         <Typography
           variant='h4'
-          sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000', mb: 1 }}
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{
+            fontWeight: 600,
+            color: darkMode ? '#fff' : '#000',
+            mb: 1,
+            textAlign: language === 'ar' ? 'right' : 'left',
+          }}
         >
-          Company Information
+          {L.pageTitle}
         </Typography>
         {!isManager(user?.role) && !isEmployee(user?.role) && (
-          <Button
-            onClick={handleEditCompanyDetails}
-            variant='outlined'
-            startIcon={<Edit />}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 500,
-              px: 2,
-              py: 1,
-              borderColor: theme.palette.divider,
-              color: theme.palette.text.primary,
-              '&:hover': {
-                borderColor: theme.palette.primary.main,
-                backgroundColor: theme.palette.action.hover,
-              },
-            }}
-          >
-            Edit Company Details
-          </Button>
+          <Box dir='ltr'>
+            <Button
+              onClick={handleEditCompanyDetails}
+              variant='outlined'
+              startIcon={<Edit />}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 500,
+                px: 2,
+                py: 1,
+                borderColor: theme.palette.divider,
+                color: theme.palette.text.primary,
+                '&:hover': {
+                  borderColor: theme.palette.primary.main,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              {L.editCompanyDetails}
+            </Button>
+          </Box>
         )}
       </Box>
 
@@ -224,153 +266,149 @@ const SettingsPage: React.FC = () => {
           boxShadow: 'none',
         }}
       >
-        {contextLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <Box>
-            {/* Logo */}
+        <Box>
+          {/* Logo */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              mb: 4,
+              pb: 4,
+              borderBottom: `1px solid ${darkMode ? '#333' : '#eee'}`,
+            }}
+          >
             <Box
               sx={{
+                width: 150,
+                height: 150,
+                borderRadius: '50%',
+                backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
+                border: `3px solid ${darkMode ? '#333' : '#e0e0e0'}`,
                 display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
-                alignItems: 'center',
-                mb: 4,
-                pb: 4,
-                borderBottom: `1px solid ${darkMode ? '#333' : '#eee'}`,
+                overflow: 'hidden',
               }}
             >
-              <Box
-                sx={{
-                  width: 150,
-                  height: 150,
-                  borderRadius: '50%',
-                  backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
-                  border: `3px solid ${darkMode ? '#333' : '#e0e0e0'}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                }}
-              >
-                {companyLogo ? (
-                  <Box
-                    component='img'
-                    src={companyLogo}
-                    alt='Company Logo'
-                    loading='lazy'
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                    }}
-                  />
-                ) : (
-                  <BusinessIcon
-                    sx={{ fontSize: 70, color: darkMode ? '#666' : '#999' }}
-                  />
-                )}
-              </Box>
-            </Box>
-
-            {/* Company Name */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                mb: 3,
-                pb: 3,
-                borderBottom: `1px solid ${darkMode ? '#333' : '#eee'}`,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 50,
-                  height: 50,
-                  borderRadius: '50%',
-                  backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mr: 3,
-                }}
-              >
+              {companyLogo ? (
+                <Box
+                  component='img'
+                  src={companyLogo}
+                  alt='Company Logo'
+                  loading='lazy'
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              ) : (
                 <BusinessIcon
-                  sx={{ fontSize: 28, color: darkMode ? '#666' : '#999' }}
+                  sx={{ fontSize: 70, color: darkMode ? '#666' : '#999' }}
                 />
-              </Box>
-              <Box sx={{ flex: 1 }}>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: darkMode ? '#8f8f8f' : '#666',
-                    mb: 0.5,
-                    fontSize: '12px',
-                    textTransform: 'uppercase',
-                    fontWeight: 500,
-                  }}
-                >
-                  Company Name
-                </Typography>
-                <Typography
-                  variant='h6'
-                  sx={{
-                    color: darkMode ? '#fff' : '#000',
-                    fontSize: '18px',
-                    fontWeight: 600,
-                  }}
-                >
-                  {companyName}
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Company Domain */}
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box
-                sx={{
-                  width: 50,
-                  height: 50,
-                  borderRadius: '50%',
-                  backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mr: 3,
-                }}
-              >
-                <LanguageIcon
-                  sx={{ fontSize: 28, color: darkMode ? '#666' : '#999' }}
-                />
-              </Box>
-              <Box sx={{ flex: 1 }}>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: darkMode ? '#8f8f8f' : '#666',
-                    mb: 0.5,
-                    fontSize: '12px',
-                    textTransform: 'uppercase',
-                    fontWeight: 500,
-                  }}
-                >
-                  Company Domain
-                </Typography>
-                <Typography
-                  variant='body1'
-                  sx={{
-                    color: darkMode ? '#fff' : '#000',
-                    fontSize: '16px',
-                    fontWeight: 500,
-                  }}
-                >
-                  {contextCompanyDetails?.domain || 'Not specified'}
-                </Typography>
-              </Box>
+              )}
             </Box>
           </Box>
-        )}
+
+          {/* Company Name */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              mb: 3,
+              pb: 3,
+              borderBottom: `1px solid ${darkMode ? '#333' : '#eee'}`,
+            }}
+          >
+            <Box
+              sx={{
+                width: 50,
+                height: 50,
+                borderRadius: '50%',
+                backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mr: 3,
+              }}
+            >
+              <BusinessIcon
+                sx={{ fontSize: 28, color: darkMode ? '#666' : '#999' }}
+              />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography
+                variant='body2'
+                sx={{
+                  color: darkMode ? '#8f8f8f' : '#666',
+                  mb: 0.5,
+                  fontSize: '12px',
+                  textTransform: 'uppercase',
+                  fontWeight: 500,
+                }}
+              >
+                {L.companyNameLabel}
+              </Typography>
+              <Typography
+                variant='h6'
+                dir='ltr'
+                sx={{
+                  color: darkMode ? '#fff' : '#000',
+                  fontSize: '18px',
+                  fontWeight: 600,
+                }}
+              >
+                {companyName}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Company Domain */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box
+              sx={{
+                width: 50,
+                height: 50,
+                borderRadius: '50%',
+                backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mr: 3,
+              }}
+            >
+              <LanguageIcon
+                sx={{ fontSize: 28, color: darkMode ? '#666' : '#999' }}
+              />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography
+                variant='body2'
+                sx={{
+                  color: darkMode ? '#8f8f8f' : '#666',
+                  mb: 0.5,
+                  fontSize: '12px',
+                  textTransform: 'uppercase',
+                  fontWeight: 500,
+                }}
+              >
+                {L.companyDomainLabel}
+              </Typography>
+              <Typography
+                variant='body1'
+                dir='ltr'
+                sx={{
+                  color: darkMode ? '#fff' : '#000',
+                  fontSize: '16px',
+                  fontWeight: 500,
+                }}
+              >
+                {contextCompanyDetails?.domain || L.notSpecified}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
       </Paper>
 
       {/* Company Details Modal */}
@@ -394,24 +432,35 @@ const SettingsPage: React.FC = () => {
             pb: 2,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BusinessCenter /> Company Details
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              order: language === 'ar' ? 2 : 1,
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
+          >
+            <BusinessCenter />
+            <Box component='span' dir={language === 'ar' ? 'rtl' : 'ltr'}>
+              {L.companyDetailsTitle}
+            </Box>
           </Box>
-          {!isEditing && (
-            <IconButton
-              onClick={handleCloseCompanyModal}
-              size='small'
-              sx={{
-                color: theme.palette.text.secondary,
-                '&:hover': {
-                  color: theme.palette.text.primary,
-                  backgroundColor: theme.palette.action.hover,
-                },
-              }}
-            >
-              <Close />
-            </IconButton>
-          )}
+
+          <IconButton
+            onClick={handleCloseCompanyModal}
+            size='small'
+            sx={{
+              color: theme.palette.text.secondary,
+              order: language === 'ar' ? 1 : 2,
+              '&:hover': {
+                color: theme.palette.text.primary,
+                backgroundColor: theme.palette.action.hover,
+              },
+            }}
+          >
+            <Close />
+          </IconButton>
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           {modalLogoLoading ? (
@@ -547,7 +596,7 @@ const SettingsPage: React.FC = () => {
                     variant='caption'
                     sx={{ mt: 1, color: theme.palette.text.secondary }}
                   >
-                    Uploading logo...
+                    {L.uploadingLogo}
                   </Typography>
                 )}
               </Box>
@@ -562,7 +611,7 @@ const SettingsPage: React.FC = () => {
                     fontWeight: 500,
                   }}
                 >
-                  Company Name
+                  {L.companyNameLabel}
                 </Typography>
                 {isEditing ? (
                   <TextField
@@ -570,6 +619,7 @@ const SettingsPage: React.FC = () => {
                     onChange={e =>
                       handleFormChange('company_name', e.target.value)
                     }
+                    autoFocus={isEditing && companyModalOpen}
                     fullWidth
                     size='small'
                     variant='outlined'
@@ -599,7 +649,7 @@ const SettingsPage: React.FC = () => {
                     fontWeight: 500,
                   }}
                 >
-                  Domain
+                  {L.companyDomainLabel}
                 </Typography>
                 {isEditing ? (
                   <TextField
@@ -626,12 +676,18 @@ const SettingsPage: React.FC = () => {
             </Box>
           ) : (
             <Typography sx={{ textAlign: 'center', py: 2 }}>
-              No company details available
+              {L.noCompanyDetails}
             </Typography>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 1, justifyContent: 'flex-end' }}>
-          <Box>
+        <DialogActions
+          sx={{
+            p: 3,
+            pt: 1,
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+          }}
+        >
+          <Box sx={{ order: language === 'ar' ? 1 : 2 }}>
             <Button
               onClick={handleSaveCompany}
               variant='contained'
@@ -641,7 +697,7 @@ const SettingsPage: React.FC = () => {
               disabled={editLoading}
               sx={{ textTransform: 'none', fontWeight: 500 }}
             >
-              {editLoading ? 'Updating...' : 'Update'}
+              {editLoading ? L.updating : L.update}
             </Button>
           </Box>
         </DialogActions>

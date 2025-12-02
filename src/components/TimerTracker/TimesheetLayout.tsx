@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Paper, Typography, IconButton } from '@mui/material';
+import { useLanguage } from '../../hooks/useLanguage';
 import { useOutletContext } from 'react-router-dom';
 import SheetList from './SheetList';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -8,6 +9,13 @@ import { useNavigate } from 'react-router-dom';
 const TimesheetLayout: React.FC = () => {
   const navigate = useNavigate();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+
+  const { language } = useLanguage();
+
+  const timesheetLabels = {
+    en: { pageTitle: 'My Timesheet' },
+    ar: { pageTitle: 'سجل الوقت الخاص بي' },
+  } as const;
 
   return (
     <Box>
@@ -19,13 +27,21 @@ const TimesheetLayout: React.FC = () => {
         <ArrowBackIcon />
       </IconButton>
       <Box display='flex' flexDirection='column' gap={2}>
-        <Box display='flex' justifyContent='space-between' alignItems='center'>
+        <Box
+          display='flex'
+          justifyContent={language === 'ar' ? 'flex-end' : 'flex-start'}
+          alignItems='center'
+        >
           <Typography
             variant='h5'
             component='h1'
-            sx={{ color: darkMode ? '#8f8f8f' : '#000' }}
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            sx={{
+              color: darkMode ? '#8f8f8f' : '#000',
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
           >
-            My Timesheet
+            {timesheetLabels[language].pageTitle}
           </Typography>
         </Box>
         <Paper
@@ -37,6 +53,7 @@ const TimesheetLayout: React.FC = () => {
             borderRadius: 0,
             bgcolor: 'unset',
           }}
+          dir='ltr'
         >
           <SheetList />
         </Paper>

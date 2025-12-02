@@ -29,12 +29,11 @@ import employeeBenefitApi from '../../api/employeeBenefitApi';
 import { departmentApiService } from '../../api/departmentApi';
 import { designationApiService } from '../../api/designationApi';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   getRoleName,
   isSystemAdmin as isSystemAdminFn,
 } from '../../utils/roleUtils';
-
-const ITEMS_PER_PAGE = 10;
 
 interface Tenant {
   id: string;
@@ -61,6 +60,8 @@ interface BenefitRow {
   status: string;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 const BenefitReport: React.FC = () => {
   const user = useMemo(() => {
     try {
@@ -73,6 +74,47 @@ const BenefitReport: React.FC = () => {
   const currentRoleName = getRoleName(userRoleValue);
   const isSystemAdmin = isSystemAdminFn(userRoleValue);
 
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      pageTitle: 'Benefits Report',
+      tenantLabel: 'Tenant',
+      totalActiveBenefits: 'Total Active Benefits',
+      mostCommonBenefitType: 'Most Common Benefit Type',
+      employeesCovered: 'Employees Covered',
+      department: 'Department',
+      designation: 'Designation',
+      all: 'All',
+      downloadCsv: 'Download CSV',
+      employeeName: 'Employee Name',
+      benefitType: 'Benefit Type',
+      status: 'Status',
+      noData: 'No data available',
+      noDataToDownload: 'No data to download.',
+      csvFileName: 'BenefitReport',
+    },
+    ar: {
+      pageTitle: 'تقرير المزايا',
+      tenantLabel: 'المؤجر',
+      totalActiveBenefits: 'إجمالي المزايا النشطة',
+      mostCommonBenefitType: 'النوع الأكثر شيوعًا',
+      employeesCovered: 'الموظفون المغطون',
+      department: 'القسم',
+      designation: 'المسمى',
+      all: 'الكل',
+      downloadCsv: 'تصدير CSV',
+      employeeName: 'اسم الموظف',
+      benefitType: 'نوع الميزة',
+      status: 'الحالة',
+      noData: 'لا توجد بيانات',
+      noDataToDownload: 'لا توجد بيانات للتنزيل.',
+      csvFileName: 'تقرير_المزايا',
+    },
+  } as const;
+
+  const L = labels[language as keyof typeof labels] || labels.en;
+
   const [summary, setSummary] = useState({
     tenant_id: 'all' as string,
     totalActiveBenefits: 0,
@@ -80,6 +122,7 @@ const BenefitReport: React.FC = () => {
     totalEmployeesCovered: 0,
   });
 
+  // using interfaces declared above for BenefitRow, Department, Designation
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [selectedTenant, setSelectedTenant] = useState<string>('');
 
@@ -94,9 +137,9 @@ const BenefitReport: React.FC = () => {
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [designations, setDesignations] = useState<Designation[]>([]);
-  const [selectedDepartment, setSelectedDepartment] = useState('');
-  const [selectedDesignation, setSelectedDesignation] = useState('');
-  const [page, setPage] = useState(1);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  const [selectedDesignation, setSelectedDesignation] = useState<string>('');
+  const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
 
   // Summary fetch (updates when selectedTenant changes for system admin)
@@ -323,17 +366,16 @@ const BenefitReport: React.FC = () => {
 
   const handleDownload = () => {
     if (filteredData.length === 0) {
-      alert('No data to download.');
+      alert(L.noDataToDownload);
       return;
     }
 
     const csvHeader = [
-      ...(isSystemAdmin ? ['Tenant'] : []),
-      'Department',
-      'Designation',
-      'Employee Name',
-      'Benefit Type',
-      'Status',
+      L.department,
+      L.designation,
+      L.employeeName,
+      L.benefitType,
+      L.status,
     ];
 
     const rows = filteredData.map(row =>
@@ -354,7 +396,7 @@ const BenefitReport: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.setAttribute('download', `BenefitReport.csv`);
+    a.setAttribute('download', `${L.csvFileName}.csv`);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -371,7 +413,7 @@ const BenefitReport: React.FC = () => {
   }
 
   return (
-    <Box py={3}>
+    <Box py={3} dir='ltr'>
       <Box
         display='flex'
         justifyContent='space-between'
@@ -379,33 +421,81 @@ const BenefitReport: React.FC = () => {
         flexWrap='wrap'
         alignItems='center'
         mb={2}
+        sx={{ gap: 2 }}
       >
-        <Typography variant='h4' fontSize={{xs: '25px', sm: '34px',}}  fontWeight={600} gutterBottom mb={0}>
-          Benefits Report
-        </Typography>
+        {/* Render order controls placement: English -> Title left, Dropdown right; Arabic -> Dropdown left, Title right */}
+        {language === 'ar' ? (
+          <>
+            {isSystemAdmin && (
+              <FormControl size='small' sx={{ minWidth: 220 }} dir='ltr'>
+                <InputLabel>{L.tenantLabel}</InputLabel>
+                <Select
+                  value={selectedTenant}
+                  onChange={e => {
+                    const val = e.target.value as string;
+                    setSelectedTenant(val);
+                    // reset dependent filters on tenant change
+                    setSelectedDepartment('');
+                    setSelectedDesignation('');
+                  }}
+                  label={L.tenantLabel}
+                >
+                  <MenuItem value=''>{L.all}</MenuItem>
+                  {tenants.map(t => (
+                    <MenuItem key={t.id} value={t.id}>
+                      {t.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
 
-        {isSystemAdmin && (
-          <FormControl size='small' sx={{ minWidth: 220 }}>
-            <InputLabel>Tenant</InputLabel>
-            <Select
-              value={selectedTenant}
-              onChange={e => {
-                const val = e.target.value as string;
-                setSelectedTenant(val);
-                // reset dependent filters on tenant change
-                setSelectedDepartment('');
-                setSelectedDesignation('');
-              }}
-              label='Tenant'
+            <Typography
+              dir='rtl'
+              sx={{ textAlign: 'right' }}
+              variant='h4'
+              fontWeight={600}
+              gutterBottom
             >
-              <MenuItem value=''>All</MenuItem>
-              {tenants.map(t => (
-                <MenuItem key={t.id} value={t.id}>
-                  {t.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              {L.pageTitle}
+            </Typography>
+          </>
+        ) : (
+          <>
+            <Typography
+              dir='ltr'
+              sx={{ textAlign: 'left' }}
+              variant='h4'
+              fontWeight={600}
+              gutterBottom
+            >
+              {L.pageTitle}
+            </Typography>
+
+            {isSystemAdmin && (
+              <FormControl size='small' sx={{ minWidth: 220 }} dir='ltr'>
+                <InputLabel>{L.tenantLabel}</InputLabel>
+                <Select
+                  value={selectedTenant}
+                  onChange={e => {
+                    const val = e.target.value as string;
+                    setSelectedTenant(val);
+                    // reset dependent filters on tenant change
+                    setSelectedDepartment('');
+                    setSelectedDesignation('');
+                  }}
+                  label={L.tenantLabel}
+                >
+                  <MenuItem value=''>{L.all}</MenuItem>
+                  {tenants.map(t => (
+                    <MenuItem key={t.id} value={t.id}>
+                      {t.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          </>
         )}
       </Box>
 
@@ -423,17 +513,17 @@ const BenefitReport: React.FC = () => {
       >
         {[
           {
-            title: 'Total Active Benefits',
+            title: L.totalActiveBenefits,
             value: summary.totalActiveBenefits,
             icon: <AccountBalanceWalletIcon color='primary' />,
           },
           {
-            title: 'Most Common Benefit Type',
+            title: L.mostCommonBenefitType,
             value: summary.mostCommonBenefitType,
             icon: <CardGiftcardIcon color='secondary' />,
           },
           {
-            title: 'Employees Covered',
+            title: L.employeesCovered,
             value: summary.totalEmployeesCovered,
             icon: <PeopleIcon color='primary' />,
           },
@@ -448,16 +538,16 @@ const BenefitReport: React.FC = () => {
         <Grid container spacing={2} mb={2}>
           <Grid item>
             <FormControl size='small' sx={{ minWidth: 220 }}>
-              <InputLabel>Department</InputLabel>
+              <InputLabel>{L.department}</InputLabel>
               <Select
                 value={selectedDepartment}
                 onChange={e => {
                   setSelectedDepartment(e.target.value as string);
                   setSelectedDesignation('');
                 }}
-                label='Department'
+                label={L.department}
               >
-                <MenuItem value=''>All</MenuItem>
+                <MenuItem value=''>{L.all}</MenuItem>
                 {departments.map(dept => (
                   <MenuItem key={dept.id} value={dept.id}>
                     {dept.name}
@@ -469,14 +559,14 @@ const BenefitReport: React.FC = () => {
 
           <Grid item>
             <FormControl size='small' sx={{ minWidth: 220 }}>
-              <InputLabel>Designation</InputLabel>
+              <InputLabel>{L.designation}</InputLabel>
               <Select
                 value={selectedDesignation}
-                onChange={e => setSelectedDesignation(e.target.value as string)}
-                label='Designation'
+                onChange={e => setSelectedDesignation(e.target.value)}
+                label={L.designation}
                 disabled={!designations.length}
               >
-                <MenuItem value=''>All</MenuItem>
+                <MenuItem value=''>{L.all}</MenuItem>
                 {designations.map(des => (
                   <MenuItem key={des.id} value={des.title}>
                     {des.title}
@@ -487,7 +577,7 @@ const BenefitReport: React.FC = () => {
           </Grid>
         </Grid>
 
-        <Tooltip title='Download CSV'>
+        <Tooltip title={L.downloadCsv}>
           <IconButton
             color='primary'
             onClick={handleDownload}
@@ -511,11 +601,11 @@ const BenefitReport: React.FC = () => {
                 {isSystemAdmin && (
                   <TableCell sx={{ fontWeight: 600 }}>Tenant</TableCell>
                 )}
-                <TableCell sx={{ fontWeight: 600 }}>Department</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Designation</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Employee Name</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Benefit Type</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{L.department}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{L.designation}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{L.employeeName}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{L.benefitType}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{L.status}</TableCell>
               </TableRow>
             </TableHead>
 
@@ -542,7 +632,7 @@ const BenefitReport: React.FC = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={isSystemAdmin ? 6 : 5} align='center'>
-                    No data available
+                    {L.noData}
                   </TableCell>
                 </TableRow>
               )}
@@ -564,12 +654,41 @@ const BenefitReport: React.FC = () => {
 
       <Box textAlign='center' mb={2}>
         <Typography variant='body2' color='text.secondary'>
-          Showing{' '}
-          {filteredData.length === 0
-            ? 0
-            : Math.min((page - 1) * ITEMS_PER_PAGE + 1, filteredData.length)}
-          –{Math.min(page * ITEMS_PER_PAGE, filteredData.length)} of{' '}
-          {filteredData.length} records
+          {(() => {
+            const total = filteredData.length;
+            const start =
+              total === 0
+                ? 0
+                : Math.min((page - 1) * ITEMS_PER_PAGE + 1, total);
+            const end = Math.min(page * ITEMS_PER_PAGE, total);
+
+            if (language === 'ar') {
+              return (
+                <>
+                  {'عرض '}
+                  <span dir='ltr'>{start}</span>
+                  {'–'}
+                  <span dir='ltr'>{end}</span>
+                  {' من '}
+                  <span dir='ltr'>{total}</span>
+                  {' سجلات'}
+                </>
+              );
+            }
+
+            // default English
+            return (
+              <>
+                {'Showing '}
+                <span dir='ltr'>{start}</span>
+                {'–'}
+                <span dir='ltr'>{end}</span>
+                {' of '}
+                <span dir='ltr'>{total}</span>
+                {' records'}
+              </>
+            );
+          })()}
         </Typography>
       </Box>
     </Box>

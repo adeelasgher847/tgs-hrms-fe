@@ -11,6 +11,7 @@ import {
   IconButton,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { useLanguage } from '../../hooks/useLanguage';
 
 import { departments, designations } from '../../Data/userMock';
 
@@ -45,6 +46,47 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [designationList, setDesignationList] = useState<string[]>([]);
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      createUser: 'Create User',
+      editUser: 'Edit User',
+      fullName: 'Full Name',
+      email: 'Email',
+      password: 'Password',
+      role: 'Role',
+      department: 'Department',
+      designation: 'Designation',
+      update: 'Update',
+      create: 'Create',
+      requiredFullName: 'Full Name is required',
+      requiredEmail: 'Email is required',
+      requiredPassword: 'Password is required',
+      requiredRole: 'Role is required',
+      requiredDepartment: 'Department is required',
+      requiredDesignation: 'Designation is required',
+    },
+    ar: {
+      createUser: 'إنشاء مستخدم',
+      editUser: 'تعديل مستخدم',
+      fullName: 'الاسم الكامل',
+      email: 'البريد الإلكتروني',
+      password: 'كلمة المرور',
+      role: 'الدور',
+      department: 'القسم',
+      designation: 'المسمى الوظيفي',
+      update: 'تحديث',
+      create: 'إنشاء',
+      requiredFullName: 'الاسم الكامل مطلوب',
+      requiredEmail: 'البريد الإلكتروني مطلوب',
+      requiredPassword: 'كلمة المرور مطلوبة',
+      requiredRole: 'الدور مطلوب',
+      requiredDepartment: 'القسم مطلوب',
+      requiredDesignation: 'المسمى الوظيفي مطلوب',
+    },
+  } as const;
+  const L = labels[language as 'en' | 'ar'] || labels.en;
 
   useEffect(() => {
     if (userData) {
@@ -72,14 +114,13 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.name) newErrors.name = 'Full Name is required';
-    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.name) newErrors.name = L.requiredFullName;
+    if (!formData.email) newErrors.email = L.requiredEmail;
     if (!userData && !formData.password)
-      newErrors.password = 'Password is required';
-    if (!formData.role) newErrors.role = 'Role is required';
-    if (!formData.department) newErrors.department = 'Department is required';
-    if (!formData.designation)
-      newErrors.designation = 'Designation is required';
+      newErrors.password = L.requiredPassword;
+    if (!formData.role) newErrors.role = L.requiredRole;
+    if (!formData.department) newErrors.department = L.requiredDepartment;
+    if (!formData.designation) newErrors.designation = L.requiredDesignation;
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -112,7 +153,7 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
           alignItems: 'center',
         }}
       >
-        {userData ? 'Edit User' : 'Create User'}
+        {userData ? L.editUser : L.createUser}
         <IconButton onClick={onClose}>
           <CloseIcon />
         </IconButton>
@@ -121,7 +162,7 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
         <Box display='flex' flexWrap='wrap' gap={2} mt={1}>
           <Box width={{ xs: '100%', sm: '48%' }}>
             <TextField
-              label='Full Name'
+              label={L.fullName}
               name='name'
               fullWidth
               value={formData.name}
@@ -132,7 +173,7 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
           </Box>
           <Box width={{ xs: '100%', sm: '48%' }}>
             <TextField
-              label='Email'
+              label={L.email}
               name='email'
               fullWidth
               value={formData.email}
@@ -144,7 +185,7 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
           {!userData && (
             <Box width={{ xs: '100%', sm: '48%' }}>
               <TextField
-                label='Password'
+                label={L.password}
                 name='password'
                 type='password'
                 fullWidth
@@ -158,7 +199,7 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
           <Box width={{ xs: '100%', sm: '48%' }}>
             <TextField
               select
-              label='Role'
+              label={L.role}
               name='role'
               fullWidth
               value={formData.role}
@@ -176,7 +217,7 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
           <Box width={{ xs: '100%', sm: '48%' }}>
             <TextField
               select
-              label='Department'
+              label={L.department}
               name='department'
               fullWidth
               value={formData.department}
@@ -194,7 +235,7 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
           <Box width={{ xs: '100%', sm: '48%' }}>
             <TextField
               select
-              label='Designation'
+              label={L.designation}
               name='designation'
               fullWidth
               value={formData.designation}
@@ -213,7 +254,7 @@ const UserForm: React.FC<Props> = ({ open, onClose, onSubmit, userData }) => {
         </Box>
         <DialogActions sx={{ justifyContent: 'flex-start', px: 0, pb: 2 }}>
           <Button variant='contained' onClick={handleSubmit}>
-            {userData ? 'Update' : 'Create'}
+            {userData ? L.update : L.create}
           </Button>
         </DialogActions>
       </DialogContent>

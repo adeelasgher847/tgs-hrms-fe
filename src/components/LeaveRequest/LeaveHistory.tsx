@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   Table,
   TableBody,
@@ -26,7 +27,7 @@ import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
 
-const ITEMS_PER_PAGE = 25; 
+const ITEMS_PER_PAGE = 25;
 
 const statusConfig: Record<
   string,
@@ -52,7 +53,6 @@ const statusConfig: Record<
     icon: <UndoIcon fontSize='small' sx={{ mr: 0.5 }} />,
   },
 };
-
 
 interface LeaveHistoryProps {
   leaves: Leave[];
@@ -80,7 +80,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   currentUserId,
   onAction,
   onWithdraw,
-  title = 'Leave History',
+  title,
   showNames = false,
   viewMode = 'you',
   currentPage: serverCurrentPage = 1,
@@ -91,6 +91,69 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   onExportAll,
   userRole,
 }) => {
+  const { language } = useLanguage();
+  const pageLabels = {
+    en: {
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+    },
+    ar: {
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
+    },
+  } as const;
+  const PL = pageLabels[language as 'en' | 'ar'] || pageLabels.en;
+
+  const labels = {
+    en: {
+      title: 'Leave History',
+      noHistoryTitle: 'No Leave History Found',
+      noHistoryYou: "You haven't applied for any leaves yet.",
+      noHistoryDefault: 'No leave requests available.',
+      allEmployees: 'All Employees',
+      exporting: 'Exporting...',
+      exportAll: 'Export All Leave History',
+      noExport: 'No leave history to export',
+      headers: {
+        name: 'Name',
+        type: 'Type',
+        from: 'From',
+        to: 'To',
+        applied: 'Applied',
+        reason: 'Reason',
+        status: 'Status',
+        actions: 'Actions / Remarks',
+      },
+      approve: 'Approve',
+      reject: 'Reject',
+      withdraw: 'Withdraw',
+    },
+    ar: {
+      title: 'سجل الإجازات',
+      noHistoryTitle: 'لم يتم العثور على سجلات الإجازات',
+      noHistoryYou: 'لم تقم بتقديم أي طلبات إجازة بعد.',
+      noHistoryDefault: 'لا توجد طلبات إجازة.',
+      allEmployees: 'جميع الموظفين',
+      exporting: 'جاري التصدير...',
+      exportAll: 'تصدير سجل الإجازات',
+      noExport: 'لا يوجد سجل إجازات للتصدير',
+      headers: {
+        name: 'الاسم',
+        type: 'النوع',
+        from: 'من',
+        to: 'إلى',
+        applied: 'تم التقديم',
+        reason: 'السبب',
+        status: 'الحالة',
+        actions: 'الإجراءات / الملاحظات',
+      },
+      approve: 'الموافقة',
+      reject: 'رفض',
+      withdraw: 'سحب',
+    },
+  } as const;
+  const L = labels[language as 'en' | 'ar'] || labels.en;
+
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [page, setPage] = useState(1);
 
@@ -206,16 +269,24 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           flexWrap: 'wrap',
           gap: 2,
           mb: 2,
+          // reverse the header row for RTL so the title appears on the right
+          flexDirection: language === 'ar' ? 'row-reverse' : 'row',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <AccessTimeIcon color='primary' sx={{ fontSize: 32, mr: 1 }} />
-          <Typography variant='h5' fontWeight={600}>
-            {title}
+          <Typography
+            variant='h5'
+            fontWeight={600}
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+          >
+            {title || L.title}
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }} dir='ltr'>
+          {/* controls must remain LTR so DB values (employee names) don't flip */}
           {!hideDropdown && (isAdmin || isManager) && (
             <TextField
               select
@@ -226,10 +297,10 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               SelectProps={{
                 displayEmpty: true,
                 renderValue: (value: unknown) =>
-                  value === '' ? 'All Employees' : String(value),
+                  value === '' ? L.allEmployees : String(value),
               }}
             >
-              <MenuItem value=''>All Employees</MenuItem>
+              <MenuItem value=''>{L.allEmployees}</MenuItem>
               {employeeNames.map(name => (
                 <MenuItem key={name} value={name}>
                   {name}
@@ -238,9 +309,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
             </TextField>
           )}
 
-          <Tooltip
-            title={exporting ? 'Exporting...' : 'Export All Leave History'}
-          >
+          <Tooltip title={exporting ? L.exporting : L.exportAll}>
             <IconButton
               color='primary'
               onClick={handleDownloadCSV}
@@ -277,30 +346,30 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
       ) : filteredLeaves.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant='h6' color='textSecondary' gutterBottom>
-            No Leave History Found
+            {L.noHistoryTitle}
           </Typography>
           <Typography variant='body2' color='textSecondary'>
             {isManager && viewMode === 'you'
-              ? "You haven't applied for any leaves yet."
-              : 'No leave requests available.'}
+              ? L.noHistoryYou
+              : L.noHistoryDefault}
           </Typography>
         </Box>
       ) : (
         <Paper elevation={1} sx={{ boxShadow: 'none' }}>
-          <TableContainer>
+          <TableContainer dir='ltr'>
             <Table>
               <TableHead>
                 <TableRow>
                   {!hideNameColumn && (isAdmin || isManager || showNames) && (
-                    <TableCell>Name</TableCell>
+                    <TableCell>{L.headers.name}</TableCell>
                   )}
-                  <TableCell>Type</TableCell>
-                  <TableCell>From</TableCell>
-                  <TableCell>To</TableCell>
-                  <TableCell>Applied</TableCell>
-                  <TableCell>Reason</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Actions / Remarks</TableCell>
+                  <TableCell>{L.headers.type}</TableCell>
+                  <TableCell>{L.headers.from}</TableCell>
+                  <TableCell>{L.headers.to}</TableCell>
+                  <TableCell>{L.headers.applied}</TableCell>
+                  <TableCell>{L.headers.reason}</TableCell>
+                  <TableCell>{L.headers.status}</TableCell>
+                  <TableCell>{L.headers.actions}</TableCell>
                 </TableRow>
               </TableHead>
 
@@ -381,13 +450,13 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                         {isAdmin && leave.status === 'pending' && onAction && (
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             <Chip
-                              label='Approve'
+                              label={L.approve}
                               color='success'
                               clickable
                               onClick={() => onAction(leave.id, 'approved')}
                             />
                             <Chip
-                              label='Reject'
+                              label={L.reject}
                               color='error'
                               clickable
                               onClick={() => onAction(leave.id, 'rejected')}
@@ -400,7 +469,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                           onWithdraw &&
                           leave.status === 'pending' && (
                             <Chip
-                              label='Withdraw'
+                              label={L.withdraw}
                               color='warning'
                               clickable
                               onClick={() => onWithdraw(leave.id)}
@@ -412,7 +481,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                           onWithdraw &&
                           leave.status === 'pending' && (
                             <Chip
-                              label='Withdraw'
+                              label={L.withdraw}
                               color='warning'
                               clickable
                               onClick={() => onWithdraw(leave.id)}
@@ -461,9 +530,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               mx: 'auto',
             }}
           >
-            {useServerPagination
-              ? `Showing page ${currentPage} of ${totalPages} (${totalItems} total records)`
-              : `Showing page ${page} of ${totalPages} (${totalItems} total records)`}
+            {PL.showingInfo(currentPage, totalPages, totalItems)}
           </Typography>
         )}
       </Box>

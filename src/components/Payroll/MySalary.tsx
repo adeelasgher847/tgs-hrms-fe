@@ -27,6 +27,7 @@ import { useOutletContext } from 'react-router-dom';
 import { payrollApi, type PayrollRecord } from '../../api/payrollApi';
 import { useIsDarkMode } from '../../theme';
 import { useUser } from '../../hooks/useUser';
+import { useLanguage } from '../../hooks/useLanguage';
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
 
 const formatCurrency = (value: number | string | undefined) => {
@@ -72,6 +73,66 @@ const MySalary: React.FC = () => {
   const effectiveDarkMode =
     typeof outletDarkMode === 'boolean' ? outletDarkMode : darkMode;
   const { user } = useUser();
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      pageTitle: 'My Salary',
+      noHistory: 'No payroll history available yet.',
+      selectPayslip: 'Select a payslip from your history to view its details.',
+      grossSalary: 'Gross Salary',
+      totalDeductions: 'Total Deductions',
+      bonuses: 'Bonuses',
+      netSalary: 'Net Salary',
+      allowancesHeading: 'Allowances',
+      deductionsHeading: 'Deductions',
+      remarksHeading: 'Remarks',
+      allowancesTable: {
+        type: 'Type',
+        description: 'Description',
+        amount: 'Amount',
+      },
+      period: 'Period',
+      gross: 'Gross',
+      net: 'Net',
+      status: 'Status',
+      actions: 'Actions',
+      viewPayslip: 'View payslip',
+      showingPage: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+      payslipDetailsTitle: 'Payslip Details',
+      close: 'Close',
+    },
+    ar: {
+      pageTitle: 'الراتب الخاص بي',
+      noHistory: 'لا يوجد تاريخ رواتب حتى الآن.',
+      selectPayslip: 'اختر قسيمة راتب من سجلك لعرض تفاصيلها.',
+      grossSalary: 'الراتب الإجمالي',
+      totalDeductions: 'إجمالي الخصومات',
+      bonuses: 'المكافآت',
+      netSalary: 'صافي الراتب',
+      allowancesHeading: 'البدلات',
+      deductionsHeading: 'الخصومات',
+      remarksHeading: 'ملاحظات',
+      allowancesTable: {
+        type: 'النوع',
+        description: 'الوصف',
+        amount: 'المبلغ',
+      },
+      period: 'الفترة',
+      gross: 'إجمالي',
+      net: 'صافي',
+      status: 'الحالة',
+      actions: 'إجراءات',
+      viewPayslip: 'عرض قسيمة الراتب',
+      showingPage: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} إجمالي السجلات)`,
+      payslipDetailsTitle: 'تفاصيل قسيمة الراتب',
+      close: 'إغلاق',
+    },
+  } as const;
+
+  const L = labels[language as 'en' | 'ar'] || labels.en;
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -235,23 +296,23 @@ const MySalary: React.FC = () => {
     if (!detailRecord) return [] as Array<{ label: string; value: string }>;
     return [
       {
-        label: 'Gross Salary',
+        label: L.grossSalary,
         value: formatCurrency(detailRecord.grossSalary),
       },
       {
-        label: 'Total Deductions',
+        label: L.totalDeductions,
         value: formatCurrency(detailRecord.totalDeductions),
       },
       {
-        label: 'Bonuses',
+        label: L.bonuses,
         value: formatCurrency(detailRecord.bonuses || 0),
       },
       {
-        label: 'Net Salary',
+        label: L.netSalary,
         value: formatCurrency(detailRecord.netSalary),
       },
     ];
-  }, [detailRecord]);
+  }, [detailRecord, L]);
 
   const breakdownContent = useMemo(() => {
     if (detailLoading) {
@@ -267,11 +328,7 @@ const MySalary: React.FC = () => {
     }
 
     if (!detailRecord) {
-      return (
-        <Alert severity='info'>
-          Select a payslip from your history to view its details.
-        </Alert>
-      );
+      return <Alert severity='info'>{L.selectPayslip}</Alert>;
     }
 
     return (
@@ -339,14 +396,16 @@ const MySalary: React.FC = () => {
           detailRecord.salaryBreakdown.allowances.length > 0 && (
             <Box>
               <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
-                Allowances
+                {L.allowancesHeading}
               </Typography>
               <Table size='small'>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Description</TableCell>
-                    <TableCell align='right'>Amount</TableCell>
+                    <TableCell>{L.allowancesTable.type}</TableCell>
+                    <TableCell>{L.allowancesTable.description}</TableCell>
+                    <TableCell align='right'>
+                      {L.allowancesTable.amount}
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -369,18 +428,18 @@ const MySalary: React.FC = () => {
         {detailRecord.deductionsBreakdown && (
           <Box>
             <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
-              Deductions
+              {L.deductionsHeading}
             </Typography>
             <Table size='small'>
               <TableBody>
                 <TableRow>
-                  <TableCell>Tax</TableCell>
+                  <TableCell>{L.tax || 'Tax'}</TableCell>
                   <TableCell align='right'>
                     {formatCurrency(detailRecord.deductionsBreakdown.tax || 0)}
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell>Insurance</TableCell>
+                  <TableCell>{L.insurance || 'Insurance'}</TableCell>
                   <TableCell align='right'>
                     {formatCurrency(
                       detailRecord.deductionsBreakdown.insurance || 0
@@ -388,7 +447,9 @@ const MySalary: React.FC = () => {
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell>Leave Deductions</TableCell>
+                  <TableCell>
+                    {L.leaveDeductions || 'Leave Deductions'}
+                  </TableCell>
                   <TableCell align='right'>
                     {formatCurrency(
                       detailRecord.deductionsBreakdown.leaveDeductions || 0
@@ -413,7 +474,7 @@ const MySalary: React.FC = () => {
         {detailRecord.remarks && (
           <Box>
             <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
-              Remarks
+              {L.remarksHeading}
             </Typography>
             <Typography variant='body2'>{detailRecord.remarks}</Typography>
           </Box>
@@ -427,22 +488,23 @@ const MySalary: React.FC = () => {
     summaryCards,
     effectiveDarkMode,
     theme.palette.divider,
+    L,
   ]);
 
   const historyTable = useMemo(() => {
     if (!history.length) {
-      return <Alert severity='info'>No payroll history available yet.</Alert>;
+      return <Alert severity='info'>{L.noHistory}</Alert>;
     }
 
     return (
       <Table size='small'>
         <TableHead>
           <TableRow>
-            <TableCell>Period</TableCell>
-            <TableCell align='right'>Gross</TableCell>
-            <TableCell align='right'>Net</TableCell>
-            <TableCell align='center'>Status</TableCell>
-            <TableCell align='center'>Actions</TableCell>
+            <TableCell>{L.period}</TableCell>
+            <TableCell align='right'>{L.gross}</TableCell>
+            <TableCell align='right'>{L.net}</TableCell>
+            <TableCell align='center'>{L.status}</TableCell>
+            <TableCell align='center'>{L.actions}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -471,7 +533,7 @@ const MySalary: React.FC = () => {
                   />
                 </TableCell>
                 <TableCell align='center'>
-                  <Tooltip title='View payslip'>
+                  <Tooltip title={L.viewPayslip}>
                     <span>
                       <IconButton
                         size='small'
@@ -491,7 +553,7 @@ const MySalary: React.FC = () => {
         </TableBody>
       </Table>
     );
-  }, [history, selectedRecordId, detailLoading, handleSelectRecord]);
+  }, [history, selectedRecordId, detailLoading, handleSelectRecord, L]);
 
   if (loading) {
     return (
@@ -527,9 +589,21 @@ const MySalary: React.FC = () => {
       }}
     >
       <Stack spacing={3}>
-        <Box>
-          <Typography variant='h4' sx={{ fontWeight: 600 }}>
-            My Salary
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: language === 'ar' ? 'flex-end' : 'flex-start',
+          }}
+        >
+          <Typography
+            variant='h4'
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            sx={{
+              fontWeight: 600,
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
+          >
+            {L.pageTitle}
           </Typography>
         </Box>
 
@@ -559,8 +633,7 @@ const MySalary: React.FC = () => {
                 variant='body2'
                 sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#666' }}
               >
-                Showing page {currentPage} of {totalPages} ({totalRecords} total
-                records)
+                {L.showingPage(currentPage, totalPages, totalRecords)}
               </Typography>
               {totalPages > 1 && (
                 <Pagination
@@ -584,10 +657,10 @@ const MySalary: React.FC = () => {
         maxWidth='md'
         fullWidth
       >
-        <DialogTitle>Payslip Details</DialogTitle>
+        <DialogTitle>{L.payslipDetailsTitle}</DialogTitle>
         <DialogContent dividers>{breakdownContent}</DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Close</Button>
+          <Button onClick={() => setDialogOpen(false)}>{L.close}</Button>
         </DialogActions>
       </Dialog>
     </Box>
