@@ -97,7 +97,7 @@ const EmployeeSalaryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25; 
+  const itemsPerPage = 25;
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] =
@@ -1415,7 +1415,14 @@ const EmployeeSalaryPage: React.FC = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ pt: 3, maxHeight: '70vh', overflowY: 'auto' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3,marginTop: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 3,
+              marginTop: 2,
+            }}
+          >
             {!selectedSalary && (
               <FormControl fullWidth>
                 <InputLabel sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>
@@ -1453,8 +1460,17 @@ const EmployeeSalaryPage: React.FC = () => {
               fullWidth
               label='Base Salary'
               type='number'
-              value={baseSalary}
-              onChange={e => setBaseSalary(parseFloat(e.target.value) || 0)}
+              value={baseSalary === 0 ? '' : baseSalary}
+              onChange={e => {
+                const val = e.target.value;
+                setBaseSalary(val === '' ? 0 : parseFloat(val) || 0);
+              }}
+              onBlur={e => {
+                const val = e.target.value;
+                if (val === '') {
+                  setBaseSalary(0);
+                }
+              }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   color: darkMode ? '#fff' : '#000',
@@ -1520,14 +1536,21 @@ const EmployeeSalaryPage: React.FC = () => {
                       fullWidth
                       label='Amount'
                       type='number'
-                      value={allowance.amount}
-                      onChange={e =>
+                      value={allowance.amount === 0 ? '' : allowance.amount}
+                      onChange={e => {
+                        const val = e.target.value;
                         handleUpdateAllowance(
                           index,
                           'amount',
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
+                          val === '' ? 0 : parseFloat(val) || 0
+                        );
+                      }}
+                      onBlur={e => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          handleUpdateAllowance(index, 'amount', 0);
+                        }
+                      }}
                       size='small'
                       sx={{
                         '& .MuiOutlinedInput-root': {
@@ -1542,14 +1565,23 @@ const EmployeeSalaryPage: React.FC = () => {
                       fullWidth
                       label='Percentage'
                       type='number'
-                      value={allowance.percentage}
-                      onChange={e =>
+                      value={
+                        allowance.percentage === 0 ? '' : allowance.percentage
+                      }
+                      onChange={e => {
+                        const val = e.target.value;
                         handleUpdateAllowance(
                           index,
                           'percentage',
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
+                          val === '' ? 0 : parseFloat(val) || 0
+                        );
+                      }}
+                      onBlur={e => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          handleUpdateAllowance(index, 'percentage', 0);
+                        }
+                      }}
                       size='small'
                       sx={{
                         '& .MuiOutlinedInput-root': {
@@ -1649,14 +1681,21 @@ const EmployeeSalaryPage: React.FC = () => {
                       fullWidth
                       label='Amount'
                       type='number'
-                      value={deduction.amount}
-                      onChange={e =>
+                      value={deduction.amount === 0 ? '' : deduction.amount}
+                      onChange={e => {
+                        const val = e.target.value;
                         handleUpdateDeduction(
                           index,
                           'amount',
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
+                          val === '' ? 0 : parseFloat(val) || 0
+                        );
+                      }}
+                      onBlur={e => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          handleUpdateDeduction(index, 'amount', 0);
+                        }
+                      }}
                       size='small'
                       sx={{
                         '& .MuiOutlinedInput-root': {
@@ -1671,14 +1710,23 @@ const EmployeeSalaryPage: React.FC = () => {
                       fullWidth
                       label='Percentage'
                       type='number'
-                      value={deduction.percentage}
-                      onChange={e =>
+                      value={
+                        deduction.percentage === 0 ? '' : deduction.percentage
+                      }
+                      onChange={e => {
+                        const val = e.target.value;
                         handleUpdateDeduction(
                           index,
                           'percentage',
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
+                          val === '' ? 0 : parseFloat(val) || 0
+                        );
+                      }}
+                      onBlur={e => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          handleUpdateDeduction(index, 'percentage', 0);
+                        }
+                      }}
                       size='small'
                       sx={{
                         '& .MuiOutlinedInput-root': {
@@ -1750,9 +1798,12 @@ const EmployeeSalaryPage: React.FC = () => {
                 label='Effective Year'
                 type='number'
                 value={effectiveYear}
-                onChange={e =>
-                  setEffectiveYear(Number(e.target.value) || effectiveYear)
-                }
+                onChange={e => {
+                  const val = e.target.value;
+                  setEffectiveYear(
+                    val === '' ? effectiveYear : Number(val) || effectiveYear
+                  );
+                }}
                 sx={{
                   width: '100%',
                   '& .MuiOutlinedInput-root': {

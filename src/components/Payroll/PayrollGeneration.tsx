@@ -207,7 +207,10 @@ const PayrollGeneration: React.FC = () => {
             size='small'
             sx={{ minWidth: 120 }}
             value={year}
-            onChange={event => setYear(Number(event.target.value) || year)}
+            onChange={event => {
+              const val = event.target.value;
+              setYear(val === '' ? year : Number(val) || year);
+            }}
           />
 
           <TextField

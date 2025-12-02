@@ -629,7 +629,14 @@ const PayrollConfiguration: React.FC = () => {
               </Alert>
             )}
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3,marginTop: 2 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3,
+                marginTop: 2,
+              }}
+            >
               <FormControl fullWidth>
                 <InputLabel
                   sx={{
@@ -656,7 +663,6 @@ const PayrollConfiguration: React.FC = () => {
                 >
                   <MenuItem value='monthly'>Monthly</MenuItem>
                   <MenuItem value='weekly'>Weekly</MenuItem>
-                  <MenuItem value='biweekly'>Bi-weekly</MenuItem>
                 </Select>
               </FormControl>
 
@@ -691,13 +697,23 @@ const PayrollConfiguration: React.FC = () => {
                         key.slice(1).replace(/([A-Z])/g, ' $1')
                       }
                       type='number'
-                      value={value}
-                      onChange={e =>
+                      value={value === 0 ? '' : value}
+                      onChange={e => {
+                        const val = e.target.value;
                         handleBasePayChange(
                           key as keyof typeof basePayComponents,
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
+                          val === '' ? 0 : parseFloat(val) || 0
+                        );
+                      }}
+                      onBlur={e => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          handleBasePayChange(
+                            key as keyof typeof basePayComponents,
+                            0
+                          );
+                        }
+                      }}
                       InputLabelProps={{
                         sx: { color: darkMode ? '#ccc' : undefined },
                       }}
@@ -837,14 +853,23 @@ const PayrollConfiguration: React.FC = () => {
                             fullWidth
                             label='Amount'
                             type='number'
-                            value={allowance.amount}
-                            onChange={e =>
+                            value={
+                              allowance.amount === 0 ? '' : allowance.amount
+                            }
+                            onChange={e => {
+                              const val = e.target.value;
                               handleAllowanceChange(
                                 index,
                                 'amount',
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
+                                val === '' ? 0 : parseFloat(val) || 0
+                              );
+                            }}
+                            onBlur={e => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                handleAllowanceChange(index, 'amount', 0);
+                              }
+                            }}
                             InputLabelProps={{
                               sx: { color: darkMode ? '#ccc' : undefined },
                             }}
@@ -862,14 +887,25 @@ const PayrollConfiguration: React.FC = () => {
                             fullWidth
                             label='Percentage (%)'
                             type='number'
-                            value={allowance.percentage}
-                            onChange={e =>
+                            value={
+                              allowance.percentage === 0
+                                ? ''
+                                : allowance.percentage
+                            }
+                            onChange={e => {
+                              const val = e.target.value;
                               handleAllowanceChange(
                                 index,
                                 'percentage',
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
+                                val === '' ? 0 : parseFloat(val) || 0
+                              );
+                            }}
+                            onBlur={e => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                handleAllowanceChange(index, 'percentage', 0);
+                              }
+                            }}
                             InputLabelProps={{
                               sx: { color: darkMode ? '#ccc' : undefined },
                             }}
@@ -917,13 +953,23 @@ const PayrollConfiguration: React.FC = () => {
                         .replace(/^./, str => str.toUpperCase())
                         .replace('Percentage', ' (%)')}
                       type='number'
-                      value={value}
-                      onChange={e =>
+                      value={value === 0 ? '' : value}
+                      onChange={e => {
+                        const val = e.target.value;
                         handleDeductionChange(
                           key as keyof typeof deductions,
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
+                          val === '' ? 0 : parseFloat(val) || 0
+                        );
+                      }}
+                      onBlur={e => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          handleDeductionChange(
+                            key as keyof typeof deductions,
+                            0
+                          );
+                        }
+                      }}
                       InputLabelProps={{
                         sx: { color: darkMode ? '#ccc' : undefined },
                       }}
@@ -989,13 +1035,24 @@ const PayrollConfiguration: React.FC = () => {
                         fullWidth
                         label='Rate Multiplier'
                         type='number'
-                        value={overtimePolicy.rateMultiplier}
-                        onChange={e =>
+                        value={
+                          overtimePolicy.rateMultiplier === 0
+                            ? ''
+                            : overtimePolicy.rateMultiplier
+                        }
+                        onChange={e => {
+                          const val = e.target.value;
                           handleOvertimeChange(
                             'rateMultiplier',
-                            parseFloat(e.target.value) || 0
-                          )
-                        }
+                            val === '' ? 0 : parseFloat(val) || 0
+                          );
+                        }}
+                        onBlur={e => {
+                          const val = e.target.value;
+                          if (val === '') {
+                            handleOvertimeChange('rateMultiplier', 0);
+                          }
+                        }}
                         InputLabelProps={{
                           sx: { color: darkMode ? '#ccc' : undefined },
                         }}
@@ -1013,13 +1070,24 @@ const PayrollConfiguration: React.FC = () => {
                         fullWidth
                         label='Max Hours Per Month'
                         type='number'
-                        value={overtimePolicy.maxHoursPerMonth}
-                        onChange={e =>
+                        value={
+                          overtimePolicy.maxHoursPerMonth === 0
+                            ? ''
+                            : overtimePolicy.maxHoursPerMonth
+                        }
+                        onChange={e => {
+                          const val = e.target.value;
                           handleOvertimeChange(
                             'maxHoursPerMonth',
-                            parseInt(e.target.value) || 0
-                          )
-                        }
+                            val === '' ? 0 : parseInt(val) || 0
+                          );
+                        }}
+                        onBlur={e => {
+                          const val = e.target.value;
+                          if (val === '') {
+                            handleOvertimeChange('maxHoursPerMonth', 0);
+                          }
+                        }}
                         InputLabelProps={{
                           sx: { color: darkMode ? '#ccc' : undefined },
                         }}
@@ -1078,13 +1146,24 @@ const PayrollConfiguration: React.FC = () => {
                     fullWidth
                     label='Half Day Deduction (%)'
                     type='number'
-                    value={leaveDeductionPolicy.halfDayDeduction}
-                    onChange={e =>
+                    value={
+                      leaveDeductionPolicy.halfDayDeduction === 0
+                        ? ''
+                        : leaveDeductionPolicy.halfDayDeduction
+                    }
+                    onChange={e => {
+                      const val = e.target.value;
                       handleLeaveDeductionChange(
                         'halfDayDeduction',
-                        parseFloat(e.target.value) || 0
-                      )
-                    }
+                        val === '' ? 0 : parseFloat(val) || 0
+                      );
+                    }}
+                    onBlur={e => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        handleLeaveDeductionChange('halfDayDeduction', 0);
+                      }
+                    }}
                     sx={{
                       maxWidth: 400,
                       '& .MuiOutlinedInput-root': {
@@ -1672,7 +1751,7 @@ const PayrollConfiguration: React.FC = () => {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-           Edit Payroll Configuration
+            Edit Payroll Configuration
           </Box>
           <IconButton
             onClick={handleCloseEditModal}
@@ -1699,7 +1778,14 @@ const PayrollConfiguration: React.FC = () => {
             </Alert>
           )}
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3,marginTop: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 3,
+              marginTop: 2,
+            }}
+          >
             <FormControl fullWidth>
               <InputLabel
                 sx={{
@@ -1726,7 +1812,6 @@ const PayrollConfiguration: React.FC = () => {
               >
                 <MenuItem value='monthly'>Monthly</MenuItem>
                 <MenuItem value='weekly'>Weekly</MenuItem>
-                <MenuItem value='biweekly'>Bi-weekly</MenuItem>
               </Select>
             </FormControl>
 
@@ -1761,13 +1846,23 @@ const PayrollConfiguration: React.FC = () => {
                       key.slice(1).replace(/([A-Z])/g, ' $1')
                     }
                     type='number'
-                    value={value}
-                    onChange={e =>
+                    value={value === 0 ? '' : value}
+                    onChange={e => {
+                      const val = e.target.value;
                       handleBasePayChange(
                         key as keyof typeof basePayComponents,
-                        parseFloat(e.target.value) || 0
-                      )
-                    }
+                        val === '' ? 0 : parseFloat(val) || 0
+                      );
+                    }}
+                    onBlur={e => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        handleBasePayChange(
+                          key as keyof typeof basePayComponents,
+                          0
+                        );
+                      }
+                    }}
                     InputLabelProps={{
                       sx: { color: darkMode ? '#ccc' : undefined },
                     }}
@@ -1901,14 +1996,21 @@ const PayrollConfiguration: React.FC = () => {
                           fullWidth
                           label='Amount'
                           type='number'
-                          value={allowance.amount}
-                          onChange={e =>
+                          value={allowance.amount === 0 ? '' : allowance.amount}
+                          onChange={e => {
+                            const val = e.target.value;
                             handleAllowanceChange(
                               index,
                               'amount',
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
+                              val === '' ? 0 : parseFloat(val) || 0
+                            );
+                          }}
+                          onBlur={e => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              handleAllowanceChange(index, 'amount', 0);
+                            }
+                          }}
                           InputLabelProps={{
                             sx: { color: darkMode ? '#ccc' : undefined },
                           }}
@@ -1926,14 +2028,25 @@ const PayrollConfiguration: React.FC = () => {
                           fullWidth
                           label='Percentage (%)'
                           type='number'
-                          value={allowance.percentage}
-                          onChange={e =>
+                          value={
+                            allowance.percentage === 0
+                              ? ''
+                              : allowance.percentage
+                          }
+                          onChange={e => {
+                            const val = e.target.value;
                             handleAllowanceChange(
                               index,
                               'percentage',
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
+                              val === '' ? 0 : parseFloat(val) || 0
+                            );
+                          }}
+                          onBlur={e => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              handleAllowanceChange(index, 'percentage', 0);
+                            }
+                          }}
                           InputLabelProps={{
                             sx: { color: darkMode ? '#ccc' : undefined },
                           }}
@@ -1981,13 +2094,23 @@ const PayrollConfiguration: React.FC = () => {
                       .replace(/^./, str => str.toUpperCase())
                       .replace('Percentage', ' (%)')}
                     type='number'
-                    value={value}
-                    onChange={e =>
+                    value={value === 0 ? '' : value}
+                    onChange={e => {
+                      const val = e.target.value;
                       handleDeductionChange(
                         key as keyof typeof deductions,
-                        parseFloat(e.target.value) || 0
-                      )
-                    }
+                        val === '' ? 0 : parseFloat(val) || 0
+                      );
+                    }}
+                    onBlur={e => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        handleDeductionChange(
+                          key as keyof typeof deductions,
+                          0
+                        );
+                      }
+                    }}
                     InputLabelProps={{
                       sx: { color: darkMode ? '#ccc' : undefined },
                     }}
@@ -2050,13 +2173,24 @@ const PayrollConfiguration: React.FC = () => {
                       fullWidth
                       label='Rate Multiplier'
                       type='number'
-                      value={overtimePolicy.rateMultiplier}
-                      onChange={e =>
+                      value={
+                        overtimePolicy.rateMultiplier === 0
+                          ? ''
+                          : overtimePolicy.rateMultiplier
+                      }
+                      onChange={e => {
+                        const val = e.target.value;
                         handleOvertimeChange(
                           'rateMultiplier',
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
+                          val === '' ? 0 : parseFloat(val) || 0
+                        );
+                      }}
+                      onBlur={e => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          handleOvertimeChange('rateMultiplier', 0);
+                        }
+                      }}
                       InputLabelProps={{
                         sx: { color: darkMode ? '#ccc' : undefined },
                       }}
@@ -2074,13 +2208,24 @@ const PayrollConfiguration: React.FC = () => {
                       fullWidth
                       label='Max Hours Per Month'
                       type='number'
-                      value={overtimePolicy.maxHoursPerMonth}
-                      onChange={e =>
+                      value={
+                        overtimePolicy.maxHoursPerMonth === 0
+                          ? ''
+                          : overtimePolicy.maxHoursPerMonth
+                      }
+                      onChange={e => {
+                        const val = e.target.value;
                         handleOvertimeChange(
                           'maxHoursPerMonth',
-                          parseInt(e.target.value) || 0
-                        )
-                      }
+                          val === '' ? 0 : parseInt(val) || 0
+                        );
+                      }}
+                      onBlur={e => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          handleOvertimeChange('maxHoursPerMonth', 0);
+                        }
+                      }}
                       InputLabelProps={{
                         sx: { color: darkMode ? '#ccc' : undefined },
                       }}
@@ -2139,13 +2284,24 @@ const PayrollConfiguration: React.FC = () => {
                   fullWidth
                   label='Half Day Deduction (%)'
                   type='number'
-                  value={leaveDeductionPolicy.halfDayDeduction}
-                  onChange={e =>
+                  value={
+                    leaveDeductionPolicy.halfDayDeduction === 0
+                      ? ''
+                      : leaveDeductionPolicy.halfDayDeduction
+                  }
+                  onChange={e => {
+                    const val = e.target.value;
                     handleLeaveDeductionChange(
                       'halfDayDeduction',
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
+                      val === '' ? 0 : parseFloat(val) || 0
+                    );
+                  }}
+                  onBlur={e => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      handleLeaveDeductionChange('halfDayDeduction', 0);
+                    }
+                  }}
                   sx={{
                     maxWidth: 400,
                     '& .MuiOutlinedInput-root': {

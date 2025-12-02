@@ -658,7 +658,10 @@ const PayrollRecords: React.FC = () => {
             size='small'
             sx={{ minWidth: 140 }}
             value={year}
-            onChange={event => setYear(Number(event.target.value) || year)}
+            onChange={event => {
+              const val = event.target.value;
+              setYear(val === '' ? year : Number(val) || year);
+            }}
           />
         </Stack>
 
@@ -752,7 +755,6 @@ const PayrollRecords: React.FC = () => {
           p: 0,
           backgroundColor: cardBg,
           borderRadius: 1,
-
         }}
       >
         <Box
@@ -911,7 +913,7 @@ const PayrollRecords: React.FC = () => {
             />
           </Box>
         )}
-        {!loading && displayedRecords.length > 0 && (
+        {!loading && totalRecords > 0 && (
           <Box display='flex' justifyContent='center' pb={2}>
             <Typography variant='body2' color='textSecondary'>
               Showing page {currentPage} of {totalPages} ({totalRecords} total
@@ -1333,9 +1335,12 @@ const PayrollRecords: React.FC = () => {
               size='small'
               sx={{ minWidth: 140 }}
               value={generateYear}
-              onChange={event =>
-                setGenerateYear(Number(event.target.value) || generateYear)
-              }
+              onChange={event => {
+                const val = event.target.value;
+                setGenerateYear(
+                  val === '' ? generateYear : Number(val) || generateYear
+                );
+              }}
             />
             <TextField
               select
