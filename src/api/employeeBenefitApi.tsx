@@ -208,7 +208,7 @@ const employeeBenefitApi = {
   },
 
   async getAllTenantsEmployeeBenefits(): Promise<{
-    tenants: Array<{
+    items: Array<{
       tenant_id: string;
       tenant_name: string;
       tenant_status: string;
@@ -238,18 +238,24 @@ const employeeBenefitApi = {
         }>;
       }>;
     }>;
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
   }> {
     try {
       const response = await axiosInstance.get(
         '/employee-benefits/all-tenants'
       );
+
       console.log('All Tenants Employee Benefits:', response.data);
+
+      // Return exactly what backend sends (no transformation)
       return response.data;
     } catch (error: unknown) {
       console.error(
         'All Tenants Employee Benefits API Error:',
-        (error as { response?: { data?: unknown }; message?: string }).response
-          ?.data || (error as { message?: string }).message
+        (error as any).response?.data || (error as any).message
       );
       throw error;
     }

@@ -668,7 +668,6 @@ const PayrollConfiguration: React.FC = () => {
                 >
                   <MenuItem value='monthly'>Monthly</MenuItem>
                   <MenuItem value='weekly'>Weekly</MenuItem>
-                  <MenuItem value='biweekly'>Bi-weekly</MenuItem>
                 </Select>
               </FormControl>
 
@@ -1841,7 +1840,6 @@ const PayrollConfiguration: React.FC = () => {
               >
                 <MenuItem value='monthly'>Monthly</MenuItem>
                 <MenuItem value='weekly'>Weekly</MenuItem>
-                <MenuItem value='biweekly'>Bi-weekly</MenuItem>
               </Select>
             </FormControl>
 
