@@ -10,8 +10,54 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import signupApi from '../api/signupApi';
-import axiosInstance from '../api/axiosInstance';
+import authApi, { type LoginResponse } from '../api/authApi';
 import { useUser } from '../hooks/useUser';
+import { getStoredUser, persistAuthSession } from '../utils/authSession';
+
+const isLoginResponsePayload = (
+  payload: Record<string, unknown> | null
+): payload is LoginResponse =>
+  !!payload && typeof payload.accessToken === 'string';
+
+const coerceLoginResponse = (
+  payload: Record<string, unknown> | null
+): LoginResponse | null => {
+  if (!isLoginResponsePayload(payload)) return null;
+  return {
+    accessToken: payload.accessToken,
+    refreshToken:
+      typeof payload.refreshToken === 'string'
+        ? payload.refreshToken
+        : undefined,
+    user: payload.user as Record<string, unknown> | undefined,
+    permissions: payload.permissions as unknown[] | undefined,
+    employee: payload.employee as { id?: string | number } | null | undefined,
+    requiresPayment:
+      typeof payload.requiresPayment === 'boolean'
+        ? payload.requiresPayment
+        : undefined,
+    session_id:
+      typeof payload.session_id === 'string' ? payload.session_id : undefined,
+    signupSessionId:
+      typeof payload.signupSessionId === 'string'
+        ? payload.signupSessionId
+        : undefined,
+    company: payload.company as Record<string, unknown> | undefined,
+  };
+};
+
+const cleanupPendingSignupData = () => {
+  try {
+    sessionStorage.removeItem('pendingSignupCredentials');
+  } catch {
+    // ignore
+  }
+  try {
+    localStorage.removeItem('signupSessionId');
+  } catch {
+    // ignore
+  }
+};
 
 const ConfirmPayment: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +67,53 @@ const ConfirmPayment: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const { updateUser, refreshUser } = useUser();
 
+  const loginWithPendingCredentials = useCallback(async () => {
+    const credsStr = sessionStorage.getItem('pendingSignupCredentials');
+    if (!credsStr) return null;
+    try {
+      const creds = JSON.parse(credsStr) as {
+        email?: string;
+        password?: string;
+      };
+      if (!creds.email || !creds.password) return null;
+      return await authApi.login({
+        email: creds.email,
+        password: creds.password,
+      });
+    } catch (err) {
+      console.warn('Auto login after payment failed', err);
+      return null;
+    }
+  }, []);
+
+  const hydrateUserContext = useCallback(
+    async (userPayload?: Record<string, unknown>) => {
+      if (userPayload && Object.keys(userPayload).length) {
+        try {
+          updateUser(userPayload as Parameters<typeof updateUser>[0]);
+        } catch {
+          // ignore, refreshUser will keep context consistent
+        }
+      }
+
+      try {
+        await refreshUser();
+      } catch (refreshErr) {
+        const stored = getStoredUser<Parameters<typeof updateUser>[0]>();
+        if (stored) {
+          try {
+            updateUser(stored);
+          } catch {
+            // ignore
+          }
+        } else {
+          console.warn('Failed to refresh user after payment', refreshErr);
+        }
+      }
+    },
+    [refreshUser, updateUser]
+  );
+
   const handlePaymentConfirmation = useCallback(async () => {
     try {
       setLoading(true);
@@ -29,9 +122,8 @@ const ConfirmPayment: React.FC = () => {
       const signupSessionId = searchParams.get('signupSessionId');
       const accessToken = localStorage.getItem('accessToken');
 
-      // Determine flow: signup flow has signupSessionId, login flow has accessToken but no signupSessionId
-      const isSignupFlow = signupSessionId;
-      const isLoginFlow = accessToken && !signupSessionId;
+      const isSignupFlow = Boolean(signupSessionId);
+      const isLoginFlow = Boolean(accessToken && !signupSessionId);
 
       if (!sessionId) {
         throw new Error('Missing payment session information');
@@ -41,246 +133,76 @@ const ConfirmPayment: React.FC = () => {
         throw new Error('Invalid payment session. Please try again.');
       }
 
-      // 1. Confirm payment with backend using Stripe checkout session id
-      const paymentConfirmRequest = {
-        signupSessionId: signupSessionId || null, // String for signup flow, null for login flow
+      const paymentResult = await signupApi.confirmPayment({
+        signupSessionId: signupSessionId || null,
         checkoutSessionId: sessionId,
-      };
+      });
 
-      const paymentResult = await signupApi.confirmPayment(
-        paymentConfirmRequest
-      );
+      if (paymentResult.status !== 'succeeded') {
+        throw new Error('Payment was not successful');
+      }
 
-      if (paymentResult.status === 'succeeded') {
-        if (isSignupFlow && signupSessionId) {
-          // Signup flow: Complete signup process
-          // Check if tenant already exists (e.g., created by system admin or during company details step)
-          // Only call completeSignup if tenant doesn't already exist
-          let signupResult: Record<string, unknown> | null = null;
-          
-          try {
-            const completeSignupRequest = {
-              signupSessionId,
-            } as const;
+      if (isSignupFlow && signupSessionId) {
+        let signupResult: Record<string, unknown> | null = null;
 
-            signupResult = (await signupApi.completeSignup(
-              completeSignupRequest
-            )) as unknown as Record<string, unknown>;
-          } catch (completeSignupError: unknown) {
-            // If completeSignup fails because tenant already exists, try to get user data from payment confirmation
-            const error = completeSignupError as { response?: { data?: { message?: string } } };
-            const errorMessage = error?.response?.data?.message || '';
-            
-            // Check if error is about tenant already existing
-            if (
-              errorMessage.toLowerCase().includes('tenant') &&
-              (errorMessage.toLowerCase().includes('already') ||
-                errorMessage.toLowerCase().includes('exists') ||
-                errorMessage.toLowerCase().includes('duplicate'))
-            ) {
-              console.log('Tenant already exists, skipping tenant creation');
-              // Try to get user data from payment confirmation response or login
-              // The payment confirmation might have already created/activated the user
-              try {
-                const credsStr = sessionStorage.getItem('pendingSignupCredentials');
-                if (credsStr) {
-                  const creds = JSON.parse(credsStr);
-                  // Try to login to get user data
-                  const loginRes = await axiosInstance.post('/auth/login', {
-                    email: creds.email,
-                    password: creds.password,
-                  });
-                  if (loginRes?.data) {
-                    signupResult = loginRes.data as Record<string, unknown>;
-                  }
-                }
-              } catch (loginErr) {
-                console.warn('Failed to login after tenant exists error:', loginErr);
-                // Continue with error handling below
-              }
-            } else {
-              // Re-throw if it's a different error
-              throw completeSignupError;
-            }
-          }
-
-          // First, clear all existing auth data to ensure clean state
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-          localStorage.removeItem('permissions');
-
-          // Now set the new user's data if available
+        try {
+          signupResult = (await signupApi.completeSignup({
+            signupSessionId,
+          })) as unknown as Record<string, unknown>;
+        } catch (completeSignupError: unknown) {
+          const errorPayload = completeSignupError as {
+            response?: { data?: { message?: string } };
+          };
+          const errorMessage = errorPayload?.response?.data?.message || '';
           if (
-            signupResult &&
-            (signupResult as Record<string, unknown>).accessToken &&
-            (signupResult as Record<string, unknown>).refreshToken
+            errorMessage.toLowerCase().includes('tenant') &&
+            (errorMessage.toLowerCase().includes('already') ||
+              errorMessage.toLowerCase().includes('exists') ||
+              errorMessage.toLowerCase().includes('duplicate'))
           ) {
-            const data = signupResult as Record<string, unknown>;
-            localStorage.setItem('accessToken', data.accessToken as string);
-            localStorage.setItem('refreshToken', data.refreshToken as string);
-            if (data.user) {
-              localStorage.setItem('user', JSON.stringify(data.user));
-
-              // Store tenant_id separately from login/signup response
-              const userData = data.user as Record<string, unknown>;
-              const tenantId = userData?.tenant_id;
-              if (tenantId) {
-                localStorage.setItem('tenant_id', String(tenantId));
-              }
-
-              if (data.permissions) {
-                localStorage.setItem(
-                  'permissions',
-                  JSON.stringify(data.permissions)
-                );
-              }
-              // Update UserContext immediately so dashboard shows user without refresh
-              try {
-                if (data.user && typeof data.user === 'object' && Object.keys(data.user).length > 0) {
-                  updateUser(data.user as Parameters<typeof updateUser>[0]);
-                }
-              } catch {
-                // If updateUser fails for any reason, fallback to refresh
-                try {
-                  await refreshUser();
-                } catch {
-                  // Ignore refresh errors
-                }
-              }
-            } else {
-              // If there's no user object in response, try refreshing the user
-              // Fallback: try to login using pending credentials saved in sessionStorage
-              try {
-                const credsStr = sessionStorage.getItem(
-                  'pendingSignupCredentials'
-                );
-                if (credsStr) {
-                  const creds = JSON.parse(credsStr);
-                  // Clear all existing auth data before attempting login
-                  localStorage.removeItem('accessToken');
-                  localStorage.removeItem('refreshToken');
-                  localStorage.removeItem('user');
-                  localStorage.removeItem('permissions');
-
-                  // Call login endpoint
-                  const res = await axiosInstance.post('/auth/login', {
-                    email: creds.email,
-                    password: creds.password,
-                  });
-                  if (res?.data) {
-                    localStorage.setItem('accessToken', res.data.accessToken);
-                    if (res.data.refreshToken)
-                      localStorage.setItem(
-                        'refreshToken',
-                        res.data.refreshToken
-                      );
-                    if (res.data.user) {
-                      localStorage.setItem(
-                        'user',
-                        JSON.stringify(res.data.user)
-                      );
-                      try {
-                        updateUser(res.data.user);
-                        // Wait a bit to ensure UserContext state is updated
-                        await new Promise(resolve => setTimeout(resolve, 300));
-                        // Then refresh from API to ensure we have the latest data
-                        try {
-                          await refreshUser();
-                        } catch {
-                          // Ignore refresh errors, updateUser already set the user
-                        }
-                      } catch {
-                        try {
-                          await refreshUser();
-                        } catch {
-                          // Ignore refresh error
-                        }
-                      }
-                    }
-                    if (res.data.permissions)
-                      localStorage.setItem(
-                        'permissions',
-                        JSON.stringify(res.data.permissions)
-                      );
-                  }
-                }
-              } catch (loginErr) {
-                console.warn('Auto-login after payment failed', loginErr);
-                // Don't block redirect; user can login manually
-              }
-            }
-          }
-
-          // Cleanup pending signup storage
-          try {
-            sessionStorage.removeItem('pendingSignupCredentials');
-          } catch {
-            // Ignore cleanup errors
-          }
-          try {
-            localStorage.removeItem('signupSessionId');
-          } catch {
-            // Ignore cleanup errors
-          }
-        } else if (isLoginFlow) {
-          // Login flow: User is already logged in, just refresh user data to get updated subscription status
-          try {
-            await refreshUser();
-            // Wait a bit to ensure user context is updated
-            await new Promise(resolve => setTimeout(resolve, 500));
-          } catch {
-            // Ignore refresh errors - user is already logged in
-            console.warn('Failed to refresh user after payment confirmation');
-          }
-
-          // Clean up payment-related data from localStorage for login flow
-          try {
-            localStorage.removeItem('signupSessionId');
-            localStorage.removeItem('company');
-            localStorage.removeItem('companyDetails');
-          } catch {
-            // Ignore cleanup errors
+            console.log('Tenant already exists, skipping tenant creation');
+          } else {
+            throw completeSignupError;
           }
         }
 
-        setSuccess(true);
+        let loginResponse =
+          (await loginWithPendingCredentials()) ||
+          coerceLoginResponse(signupResult);
 
-        // Wait for UserContext to be properly initialized before navigating
-        // Check user state in UserContext and wait if needed
-        const waitForUserContext = async () => {
-          let attempts = 0;
-          const maxAttempts = 20; // Maximum 4 seconds (20 * 200ms)
+        if (!loginResponse) {
+          throw new Error(
+            'We could not automatically sign you in. Please login manually with the credentials you used during signup.'
+          );
+        }
 
-          while (attempts < maxAttempts) {
-            const userFromStorage = localStorage.getItem('user');
-            const token = localStorage.getItem('accessToken');
-
-            // If we have both user and token, and UserContext should have been updated
-            if (userFromStorage && token) {
-              // Wait a bit more to ensure UserContext state is propagated
-              await new Promise(resolve => setTimeout(resolve, 200));
-              break;
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 200));
-            attempts++;
-          }
-        };
-
-        await waitForUserContext();
-
-        // Redirect to dashboard with replace to prevent back navigation issues
-        navigate('/dashboard', { replace: true });
-      } else {
-        throw new Error('Payment was not successful');
+        persistAuthSession(loginResponse);
+        await hydrateUserContext(
+          loginResponse.user as Record<string, unknown> | undefined
+        );
+        cleanupPendingSignupData();
+      } else if (isLoginFlow) {
+        await hydrateUserContext();
+        try {
+          localStorage.removeItem('signupSessionId');
+          localStorage.removeItem('company');
+          localStorage.removeItem('companyDetails');
+        } catch {
+          // ignore
+        }
       }
+
+      setSuccess(true);
+
+      // Give the dashboard a brief moment to mount after context is updated
+      await new Promise(resolve => setTimeout(resolve, 200));
+      navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       setError((err as Error)?.message || 'Payment confirmation failed');
     } finally {
       setLoading(false);
     }
-  }, [searchParams, navigate, updateUser, refreshUser]);
+  }, [searchParams, navigate, loginWithPendingCredentials, hydrateUserContext]);
 
   useEffect(() => {
     handlePaymentConfirmation();

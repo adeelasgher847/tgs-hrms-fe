@@ -110,7 +110,7 @@ export const TenantPage: React.FC = () => {
 
       const res = await SystemTenantApi.getAll({
         page: 1,
-        limit: 999999,
+        limit: 'all',
         includeDeleted: true,
       });
 

@@ -8,6 +8,17 @@ export type NormalizedRole =
   | 'user'
   | 'unknown';
 
+const ALL_ROLES: NormalizedRole[] = [
+  'system-admin',
+  'network-admin',
+  'hr-admin',
+  'admin',
+  'manager',
+  'employee',
+  'user',
+  'unknown',
+];
+
 export const normalizeRole = (role?: string): NormalizedRole => {
   if (!role) return 'unknown';
   const r = role.trim().toLowerCase();
@@ -45,14 +56,7 @@ export const getDefaultDashboardRoute = (role?: string): string => {
   }
 };
 
-export const isMenuVisibleForRole = (
-  menuLabel: string,
-  role?: string
-): boolean => {
-  const r = normalizeRole(role);
-  const label = (menuLabel || '').toLowerCase().replace(/\s+/g, '').trim();
-
-  const allowedByRole: Record<NormalizedRole, string[]> = {
+const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'system-admin': [
       'dashboard',
       'tenant',
@@ -105,384 +109,197 @@ export const isMenuVisibleForRole = (
       'report',
       'leave-analytics',
       'payroll',
-      'benefits'
-    ],
-    employee: [
-      'attendance',
-      'assets',
       'benefits',
-      'leave-analytics',
-      'payroll',
     ],
+  employee: ['attendance', 'assets', 'benefits', 'leave-analytics', 'payroll'],
     user: ['attendance', 'assets', 'benefits', 'payroll'],
     unknown: ['benefits'],
   };
 
-  const normalizedMenuKey = (() => {
-    if (label.includes('dashboard')) return 'dashboard';
-    if (label.includes('tenant')) return 'tenant';
-    if (label.includes('department')) return 'department';
-    if (label.includes('employee')) return 'employees';
-    if (label.includes('team')) return 'teams';
-    if (label.includes('asset')) return 'assets';
-    if (label.includes('benefit')) return 'benefits';
-    if (label.includes('attendance')) return 'attendance';
-    if (label.includes('leaveanalytics') || label.includes('leaveanalytics'))
-      return 'leave-analytics';
-    if (label.includes('report')) return 'report';
-    if (label.includes('benefits')) return 'benefits';
-    if (label.includes('auditlogs')) return 'audit logs';
-    if (label.includes('performance')) return 'performance';
-    if (label.includes('payroll')) return 'payroll';
-    return 'misc';
-  })();
+const normalizeLabel = (value: string) => (value || '').toLowerCase().trim();
 
-  const allowed = allowedByRole[r] ?? [];
-  return allowed.includes(normalizedMenuKey);
+const MENU_KEY_MATCHERS: Array<{ key: string; patterns: string[] }> = [
+  { key: 'dashboard', patterns: ['dashboard'] },
+  { key: 'tenant', patterns: ['tenant'] },
+  { key: 'department', patterns: ['department'] },
+  { key: 'employees', patterns: ['employee'] },
+  { key: 'teams', patterns: ['team'] },
+  { key: 'assets', patterns: ['asset'] },
+  { key: 'benefits', patterns: ['benefit'] },
+  { key: 'attendance', patterns: ['attendance'] },
+  { key: 'leave-analytics', patterns: ['leave analytics', 'leave-analytics'] },
+  { key: 'report', patterns: ['report'] },
+  { key: 'audit logs', patterns: ['audit logs'] },
+  { key: 'performance', patterns: ['performance'] },
+  { key: 'payroll', patterns: ['payroll'] },
+];
+
+const getMenuKey = (label: string) => {
+  const normalized = normalizeLabel(label).replace(/\s+/g, '');
+  for (const matcher of MENU_KEY_MATCHERS) {
+    if (
+      matcher.patterns.some(pattern =>
+        normalized.includes(pattern.replace(/\s+/g, ''))
+      )
+    ) {
+      return matcher.key;
+    }
+  }
+  return 'misc';
+};
+
+type ParentKey =
+  | 'attendance'
+  | 'benefits'
+  | 'department'
+  | 'leave-analytics'
+  | 'payroll'
+  | 'assets'
+  | 'employees'
+  | 'audit logs'
+  | 'misc';
+
+const PARENT_KEY_MATCHERS: Array<{ key: ParentKey; patterns: string[] }> = [
+  { key: 'attendance', patterns: ['attendance'] },
+  { key: 'benefits', patterns: ['benefit'] },
+  { key: 'department', patterns: ['department'] },
+  { key: 'leave-analytics', patterns: ['leave analytics', 'leave-analytics'] },
+  { key: 'payroll', patterns: ['payroll'] },
+  { key: 'assets', patterns: ['asset'] },
+  { key: 'employees', patterns: ['employee'] },
+  { key: 'audit logs', patterns: ['audit logs'] },
+];
+
+const getParentKey = (label: string): ParentKey => {
+  const normalized = normalizeLabel(label);
+  for (const matcher of PARENT_KEY_MATCHERS) {
+    if (matcher.patterns.some(pattern => normalized.includes(pattern))) {
+      return matcher.key;
+    }
+  }
+    return 'misc';
+};
+
+type SubmenuPolicy = {
+  allowOnly?: readonly string[];
+  deny?: readonly string[];
+  denyAll?: boolean;
+};
+
+const ROLE_SUBMENU_POLICIES: Record<
+  NormalizedRole,
+  Partial<Record<ParentKey, SubmenuPolicy>>
+> = {
+  'system-admin': {
+    department: { deny: ['user list', 'policies', 'holidays'] },
+    benefits: { allowOnly: ['benefits report'] },
+    'leave-analytics': { deny: ['report'] },
+    attendance: { deny: ['leave request'] },
+    payroll: { allowOnly: ['payroll reports'] },
+    assets: { allowOnly: ['assets overview'] },
+    employees: { deny: ['employee list'] },
+  },
+  'network-admin': {
+    employees: { deny: ['tenant employees'] },
+    department: { deny: ['user list', 'policies', 'holidays'] },
+    attendance: { deny: ['reports', 'leave request'] },
+    benefits: { deny: ['benefits report', 'benefit details'] },
+    'audit logs': { denyAll: true },
+    assets: { deny: ['asset requests', 'assets overview'] },
+  },
+  'hr-admin': {
+    employees: { deny: ['tenant employees'] },
+    attendance: { deny: ['reports'] },
+    'audit logs': { denyAll: true },
+    payroll: { deny: ['payroll reports', 'my salary'] },
+    department: { allowOnly: ['designation'] },
+    assets: { deny: ['assets overview', 'asset requests'] },
+    benefits: { deny: ['benefits report', 'benefit details'] },
+    'leave-analytics': { deny: ['cross tenant leaves'] },
+  },
+  admin: {
+    employees: { deny: ['tenant employees'] },
+    department: { deny: ['user list', 'policies', 'holidays'] },
+    'leave-analytics': { deny: ['cross tenant leaves'] },
+    attendance: { deny: ['reports'] },
+    'audit logs': { denyAll: true },
+    benefits: { deny: ['benefits report', 'benefit details'] },
+    payroll: { deny: ['payroll reports', 'my salary'] },
+    assets: { deny: ['assets overview', 'asset requests'] },
+  },
+  manager: {
+    employees: { deny: ['tenant employees'] },
+    attendance: { deny: ['reports', 'report'] },
+    'audit logs': { denyAll: true },
+    payroll: { allowOnly: ['my salary'] },
+    assets: { deny: ['assets overview', 'asset inventory', 'management'] },
+    benefits: { allowOnly: ['benefit details'] },
+    'leave-analytics': { deny: ['cross tenant leaves'] },
+  },
+  employee: {
+    employees: { deny: ['tenant employees'] },
+    attendance: { deny: ['report'] },
+    assets: { deny: ['asset inventory', 'management', 'assets overview'] },
+    benefits: { allowOnly: ['benefit details'] },
+    'leave-analytics': { allowOnly: ['report'] },
+    'audit logs': { denyAll: true },
+    payroll: { allowOnly: ['my salary'] },
+  },
+  user: {
+    employees: { deny: ['tenant employees'] },
+    attendance: { deny: ['report'] },
+    assets: { deny: ['asset inventory', 'management', 'assets overview'] },
+    benefits: { allowOnly: ['benefit details'] },
+    'leave-analytics': { allowOnly: ['report'] },
+    'audit logs': { denyAll: true },
+    payroll: { allowOnly: ['my salary'] },
+  },
+  unknown: {},
+};
+
+const matchesPattern = (value: string, patterns?: readonly string[]) =>
+  patterns?.some(pattern => value.includes(pattern)) ?? false;
+
+export const isMenuVisibleForRole = (
+  menuLabel: string,
+  role?: string
+): boolean => {
+  const r = normalizeRole(role);
+  const allowed = ROLE_MENU_ALLOWLIST[r] ?? [];
+  return allowed.includes(getMenuKey(menuLabel));
 };
 
 export const isSubMenuVisibleForRole = (
   parentMenuLabel: string,
   subLabel: string,
   role?: string
-): boolean => {
+) => {
   const r = normalizeRole(role);
-  const parent = parentMenuLabel.trim().toLowerCase();
-  const sub = subLabel.trim().toLowerCase();
+  const parentKey = getParentKey(parentMenuLabel);
+  const subKey = normalizeLabel(subLabel);
 
-  let visible = true;
-
-  if (r === 'system-admin') {
-    if (parent.includes('department')) {
-      if (
-        sub.includes('user list') ||
-        sub.includes('policies') ||
-        sub.includes('holidays')
-      ) {
-        visible = false;
-      }
-    }
-
-    if (parent.includes('benefits')) {
-      if (!sub.includes('benefits report')) {
-        visible = false;
-      }
-    }
-
-    if (
-      parent.includes('leave analytics') ||
-      parent.includes('leave-analytics')
-    ) {
-      if (sub.includes('report')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('attendance')) {
-      if (sub.includes('leave request')) {
-        visible = false;
-      }
-    }
-
-    if (parent.includes('payroll')) {
-      if (!sub.includes('payroll reports')) {
-        visible = false;
-      }
-    }
+  if (subKey === 'report') {
+    return r === 'admin';
   }
 
-  if (sub === 'report') {
-    visible = r === 'admin' || r === 'manager';
+  if (parentKey === 'assets' && subKey.includes('system assets overview')) {
+    return r === 'system-admin';
   }
 
-  if (r === 'network-admin') {
-    if (parent.includes('employees')) {
-      if (sub.includes('tenant employees')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('department')) {
-      if (
-        sub.includes('user list') ||
-        sub.includes('policies') ||
-        sub.includes('holidays')
-      ) {
-        visible = false;
-      }
-    }
-    if (parent.includes('attendance')) {
-      if (sub.includes('reports')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('benefits')) {
-      if (sub.includes('benefits report') || sub.includes('benefit details')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('audit logs')) {
-      visible = false;
-    }
-    if (parent.includes('assets')) {
-      if (sub.includes('asset requests') || sub.includes('assets overview')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('attendance')) {
-      if (sub.includes('leave request')) {
-        visible = false;
-      }
-    }
+  const policy = ROLE_SUBMENU_POLICIES[r]?.[parentKey];
+  if (!policy) return true;
+  if (policy.denyAll) return false;
+  if (policy.allowOnly) {
+    return matchesPattern(subKey, policy.allowOnly);
   }
-
-  if (r === 'hr-admin') {
-    if (parent.includes('employees')) {
-      if (sub.includes('tenant employees')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('attendance')) {
-      if (sub.includes('reports')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('audit logs')) {
-      visible = false;
-    }
-    if (parent.includes('payroll')) {
-      if (sub.includes('payroll reports') || sub.includes('my salary')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('department')) {
-      if (!sub.includes('add designation')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('assets')) {
-      if (sub.includes('assets overview') || sub.includes('asset requests')) {
-        visible = false;
-      }
-    }
+  if (matchesPattern(subKey, policy.deny)) {
+    return false;
   }
-
-  if (r === 'admin') {
-    if (parent.includes('employees')) {
-      if (sub.includes('tenant employees')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('department')) {
-      if (
-        sub.includes('user list') ||
-        sub.includes('policies') ||
-        sub.includes('holidays')
-      ) {
-        visible = false;
-      }
-    }
-    if (
-      parent.includes('leave analytics') ||
-      parent.includes('leave-analytics')
-    ) {
-      if (sub.includes('cross tenant leaves')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('attendance') && sub === 'reports') {
-      visible = false;
-    }
-    if (parent.includes('audit logs')) {
-      visible = false;
-    }
-    if (parent.includes('benefits')) {
-      if (sub.includes('benefits report') || sub.includes('benefit details')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('payroll')) {
-      if (sub.includes('payroll reports') || sub.includes('my salary')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('assets')) {
-      if (sub.includes('assets overview')) {
-        visible = false;
-      }
-    }
-  }
-
-  if (r === 'manager') {
-    if (parent.includes('employees')) {
-      if (sub.includes('tenant employees')) {
-        visible = false;
-      }
-    }
-    // manager sees only attendance summary (Report), not Reports
-    if (parent.includes('attendance') && sub === 'reports') {
-      visible = false;
-    }
-    if (parent.includes('audit logs')) {
-      visible = false;
-    }
-    if (parent.includes('attendance')) {
-      if (sub.includes('report')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('payroll')) {
-      if (!sub.includes('my salary')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('assets')) {
-      if (sub.includes('assets overview')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('benefits')) {
-      if (!sub.includes('benefit details')) {
-        visible = false;
-      }
-    }
-  }
-
-  if (r === 'employee' || r === 'user') {
-    if (parent.includes('employees')) {
-      if (sub.includes('tenant employees')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('attendance')) {
-      if (sub === 'report') {
-        visible = false;
-      }
-    }
-    if (parent.includes('assets')) {
-      if (sub.includes('asset inventory') || sub.includes('management') || sub.includes('assets overview')) {
-        visible = false;
-      }
-    }
-    if (parent.includes('benefits')) {
-      if (!sub.includes('benefit details')) {
-        visible = false;
-      }
-    }
-    if (
-      parent.includes('leave analytics') ||
-      parent.includes('leave-analytics')
-    ) {
-      visible = sub.includes('report');
-    }
-
-    if (parent.includes('audit logs')) {
-      visible = false;
-    }
-
-    if (parent.includes('payroll')) {
-      if (!sub.includes('my salary')) {
-        visible = false;
-      }
-    }
-  }
-
-  // System Admin: For Assets menu - only see System Assets Overview (hide all other asset pages)
-  if (r === 'system-admin') {
-    if (parent.includes('assets')) {
-      // Hide all asset submenus except System Assets Overview
-      if (
-        sub.includes('asset inventory') ||
-        sub.includes('asset requests') ||
-        sub.includes('management')
-      ) {
-        visible = false;
-      }
-      // Only system-admin sees System Assets Overview
-      if (sub.includes('system assets overview')) {
-        visible = true;
-      }
-    }
-    if (parent.includes('employees')) {
-      if (sub.includes('employee list')) {
-        visible = false;
-      }
-    }
-  } else {
-    // Hide System Assets Overview for non-system-admin roles
-    if (parent.includes('assets') && sub.includes('system assets overview')) {
-      visible = false;
-    }
-  }
-
-  if (r === 'hr-admin') {
-    if (parent.includes('benefits')) {
-      if (sub.includes('benefits report') || sub.includes('benefit details')) {
-        visible = false;
-      }
-    }
-    if (
-      parent.includes('leave analytics') ||
-      parent.includes('leave-analytics')
-    ) {
-      if (sub.includes('cross tenant leaves')) {
-        visible = false;
-      }
-    }
-  }
-
-  if (r === 'admin') {
-    if (parent.includes('assets')) {
-      if (sub.includes('asset requests')) {
-        visible = false;
-      }
-    }
-    // if (
-    //   parent.includes('leave analytics') ||
-    //   parent.includes('leave-analytics')
-    // ) {
-    //   if (sub.includes('reports')) {
-    //     visible = false;
-    //   }
-    // }
-  }
-
-  if (r === 'manager') {
-    if (parent.includes('assets')) {
-      if (sub.includes('asset inventory') || sub.includes('management') || sub.includes('assets overview')) {
-        visible = false;
-      }
-    }
-    if (
-      parent.includes('leave analytics') ||
-      parent.includes('leave-analytics')
-    ) {
-      if (sub.includes('cross tenant leaves')) {
-        visible = false;
-      }
-    }
-  }
-
-  return visible;
+  return true;
 };
 
-export const isDashboardPathAllowedForRole = (
-  pathAfterDashboard: string,
-  role?: string
-): boolean => {
-  const r = normalizeRole(role);
-  const p = (pathAfterDashboard || '').replace(/^\/+|\/+$/g, '');
-
-  if (p === '') {
-    return (
-      r === 'admin' ||
-      r === 'system-admin' ||
-      r === 'network-admin' ||
-      r === 'hr-admin'
-    );
-  }
-
-  const allowlists: Record<NormalizedRole, Set<string>> = {
-    'system-admin': new Set([
-      // Core
+const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
+  'system-admin': [
       '',
       'tenant',
       'departments',
@@ -491,18 +308,13 @@ export const isDashboardPathAllowedForRole = (
       'UserProfile',
       'AttendanceCheck',
       'AttendanceTable',
-      // 'Reports',
       'attendance-summary',
       'AttendanceCheck/TimesheetLayout',
-      'AttendanceCheck/TimesheetLayout',
       'CrossTenantLeaveManagement',
-      // Teams
       'teams',
       'assets/system-admin',
       'EmployeeProfileView',
-      // Settings
       'settings',
-      // Benefits
       'benefits',
       'benefits/assign',
       'benefits/reporting',
@@ -510,39 +322,31 @@ export const isDashboardPathAllowedForRole = (
       'cross-tenant-leaves',
       'audit-logs',
       'TenantEmployees',
-      'audit-logs',
       'performance-dashboard',
       'payroll-reports',
       'benefit-report',
-    ]),
-    'network-admin': new Set([
+  ],
+  'network-admin': [
       '',
       'departments',
       'Designations',
       'EmployeeManager',
       'UserList',
       'UserProfile',
-      // 'policies', 'holidays',
-      // 'leaves', // Hide Leave Request for network-admin
-      // Attendance - Allow AttendanceCheck for network-admin
       'AttendanceCheck',
       'AttendanceTable',
       'AttendanceCheck/TimesheetLayout',
-      // 'Reports',
       'teams',
-      // Assets - Network admin sees Inventory and Management only
       'assets',
       'assets/request-management',
       'EmployeeProfileView',
       'attendance-summary',
-      // Settings
       'settings',
-      // 'benefit-report',
       'benefits-list',
       'employee-benefit',
-    ]),
-    'hr-admin': new Set([
-      '', // Allow main dashboard
+  ],
+  'hr-admin': [
+    '',
       'Designations',
       'AttendanceCheck',
       'AttendanceTable',
@@ -550,9 +354,7 @@ export const isDashboardPathAllowedForRole = (
       'UserProfile',
       'assets',
       'assets/request-management',
-      // Assets - HR admin has no access
       'settings',
-      // Benefits
       'benefits',
       'benefits/assign',
       'benefits/reporting',
@@ -565,32 +367,27 @@ export const isDashboardPathAllowedForRole = (
       'payroll-configuration',
       'payroll-records',
       'employee-salary',
-    ]),
-    admin: new Set([
+  ],
+  admin: [
       '',
       'departments',
       'Designations',
       'EmployeeManager',
       'UserList',
       'UserProfile',
-      // 'policies', 'holidays',
       'leaves',
       'CrossTenantLeaveManagement',
       'cross-tenant-leaves',
-      // Attendance - Allow AttendanceCheck for admin
       'AttendanceCheck',
       'AttendanceTable',
       'AttendanceCheck/TimesheetLayout',
       'Reports',
       'teams',
-      // Assets - Admin sees Inventory and Management only
       'assets',
       'assets/request-management',
       'EmployeeProfileView',
       'attendance-summary',
-      // Settings
       'settings',
-      // Benefits
       'benefits',
       'benefits/assign',
       'benefits/reporting',
@@ -600,8 +397,8 @@ export const isDashboardPathAllowedForRole = (
       'payroll-configuration',
       'payroll-records',
       'employee-salary',
-    ]),
-    manager: new Set([
+  ],
+  manager: [
       'AttendanceCheck',
       'AttendanceTable',
       'Reports',
@@ -609,12 +406,9 @@ export const isDashboardPathAllowedForRole = (
       'teams',
       'leaves',
       'UserProfile',
-      // Assets - Manager sees only Requests
       'assets/requests',
       'attendance-summary',
-      // Settings
       'settings',
-      // Benefits
       'benefits',
       'benefits/assign',
       'benefits/reporting',
@@ -622,41 +416,51 @@ export const isDashboardPathAllowedForRole = (
       'benefit-details',
       'employee-salary',
       'my-salary',
-    ]),
-    employee: new Set([
+  ],
+  employee: [
       'AttendanceCheck',
       'AttendanceTable',
       'Reports',
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
-      // Assets - Employee sees only Requests
       'assets/requests',
-      // Settings
       'settings',
       'benefit-details',
       'my-salary',
-    ]),
-    user: new Set([
+  ],
+  user: [
       'AttendanceCheck',
       'AttendanceTable',
-      // 'Reports',
       'AttendanceCheck/TimesheetLayout',
       'leaves',
       'UserProfile',
-      // Assets - User sees only Requests
       'assets/requests',
-      // Settings
       'settings',
-      // Benefits
       'benefits',
       'benefits/assign',
       'benefits/reporting',
       'my-benefits',
       'my-salary',
-    ]),
-    unknown: new Set<string>(),
-  };
+  ],
+  unknown: [],
+};
 
-  return allowlists[r].has(p);
+const DASHBOARD_ALLOWLIST: Record<NormalizedRole, Set<string>> = Object.entries(
+  DASHBOARD_ALLOWLIST_ENTRIES
+).reduce(
+  (acc, [role, paths]) => {
+    acc[role as NormalizedRole] = new Set(paths);
+    return acc;
+  },
+  {} as Record<NormalizedRole, Set<string>>
+);
+
+export const isDashboardPathAllowedForRole = (
+  pathAfterDashboard: string,
+  role?: string
+): boolean => {
+  const r = normalizeRole(role);
+  const normalizedPath = (pathAfterDashboard || '').replace(/^\/+|\/+$/g, '');
+  return DASHBOARD_ALLOWLIST[r].has(normalizedPath);
 };

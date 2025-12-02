@@ -62,12 +62,7 @@ const LeaveRequestPage = () => {
 
   const fetchLeaveTypes = useCallback(async () => {
     try {
-      await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/leave-types?page=1&limit=50`,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        }
-      );
+      await leaveApi.getLeaveTypes({ page: 1, limit: 50 });
     } catch (err) {
       console.error('Error loading leave types:', err);
     }
@@ -488,6 +483,7 @@ const LeaveRequestPage = () => {
                     ? fetchAllLeavesForExport
                     : undefined
                 }
+                userRole={role}
               />
             </>
           )
@@ -503,6 +499,7 @@ const LeaveRequestPage = () => {
             onPageChange={setCurrentPage}
             isLoading={tableLoading}
             onExportAll={fetchAllLeavesForExport}
+            userRole={role}
           />
         )}
       </Box>
