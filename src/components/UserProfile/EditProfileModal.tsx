@@ -21,6 +21,7 @@ import {
 import type { UserProfile } from '../../api/profileApi';
 import ProfilePictureUpload from '../common/ProfilePictureUpload';
 import { useProfilePicture } from '../../context/ProfilePictureContext';
+import { validateEmailAddress } from '../../utils/validation';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -109,11 +110,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       errors.last_name = 'Last name must be less than 50 characters';
     }
 
-    // Email validation (matching backend DTO: @IsEmail())
-    if (!formData.email.trim()) {
+    // Email validation – reuse shared signup rules
+    if (formData.email.trim()) {
+      const emailError = validateEmailAddress(formData.email);
+      if (emailError) {
+        errors.email = emailError;
+      }
+    } else {
       errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
     }
 
     // Phone number validation

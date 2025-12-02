@@ -96,6 +96,9 @@ export const TenantPage: React.FC = () => {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
+  // Track logo load failure in details modal to fall back to initials
+  const [detailLogoFailed, setDetailLogoFailed] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -492,6 +495,7 @@ export const TenantPage: React.FC = () => {
 
   const handleViewDetails = async (tenant: SystemTenant) => {
     try {
+      setDetailLogoFailed(false);
       const detail = await SystemTenantApi.getById(tenant.id);
       setTenantDetail(detail);
       setIsDetailOpen(true);
@@ -508,28 +512,33 @@ export const TenantPage: React.FC = () => {
     try {
       setEditTenantId(tenant.id);
       setEditCompanyName(tenant.name);
-      
+
       // Fetch tenant details to get domain and logo
       try {
         const tenantDetail = await SystemTenantApi.getById(tenant.id);
-        
+
         // Set domain from tenant detail
         if (tenantDetail.domain) {
           setEditDomain(tenantDetail.domain);
         } else if (tenantDetail.company?.domain) {
           setEditDomain(tenantDetail.company.domain);
         }
-        
+
         // Set logo from tenant detail
         let logoUrl = tenantDetail.logo || tenantDetail.company?.logo_url;
-        
+
         // Convert relative path to full URL if needed
         if (logoUrl && typeof logoUrl === 'string' && logoUrl.startsWith('/')) {
-          const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
+          const baseURL =
+            import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
           logoUrl = `${baseURL}${logoUrl}`;
         }
-        
-        if (logoUrl && typeof logoUrl === 'string' && logoUrl !== '[object Object]') {
+
+        if (
+          logoUrl &&
+          typeof logoUrl === 'string' &&
+          logoUrl !== '[object Object]'
+        ) {
           setEditLogo(logoUrl);
           setEditLogoPreview(logoUrl);
         }
@@ -630,9 +639,7 @@ export const TenantPage: React.FC = () => {
                         : t.status.charAt(0).toUpperCase() +
                           t.status.slice(1).toLowerCase()}
                     </TableCell>
-                    <TableCell>
-                      {formatDate(t.created_at)}
-                    </TableCell>
+                    <TableCell>{formatDate(t.created_at)}</TableCell>
                     <TableCell align='center'>
                       {!t.isDeleted ? (
                         <>
@@ -690,19 +697,34 @@ export const TenantPage: React.FC = () => {
           </TableContainer>
         </Paper>
       )}
-      {totalPages > 1 && (
-        <Box display='flex' justifyContent='center' mt={2}>
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={(_, page) => setCurrentPage(page)}
-            color='primary'
-            showFirstButton
-            showLastButton
-          />
-        </Box>
-      )}
-      {tenants.length > 0 && (
+      {(() => {
+        // Get current page record count
+        const currentPageRowsCount = tenants.length;
+
+        // Pagination buttons logic:
+        // - On first page: Only show if current page has full limit (to indicate more pages exist)
+        // - On other pages (including last page): Always show if there are multiple pages
+        // This allows navigation between pages even from the last page
+        const shouldShowPagination =
+          totalPages > 1 &&
+          (currentPage === 1
+            ? currentPageRowsCount === itemsPerPage // First page: only show if full limit
+            : true); // Other pages: always show if totalPages > 1
+
+        return shouldShowPagination ? (
+          <Box display='flex' justifyContent='center' mt={2}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={(_, page) => setCurrentPage(page)}
+              color='primary'
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        ) : null;
+      })()}
+      {totalRecords > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
             Showing page {currentPage} of {totalPages} ({totalRecords} total
@@ -729,42 +751,34 @@ export const TenantPage: React.FC = () => {
                 sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 3 }}
               >
                 {(() => {
-                  // Check for logo in multiple places: direct logo property or company.logo_url
-                  let logoUrl =
-                    tenantDetail.logo || tenantDetail.company?.logo_url || null;
+                  // Prefer API-processed logo string; fall back to company logo_url only if it's a string
+                  const rawLogo =
+                    (typeof tenantDetail.logo === 'string'
+                      ? tenantDetail.logo
+                      : undefined) ??
+                    (typeof tenantDetail.company?.logo_url === 'string'
+                      ? tenantDetail.company.logo_url
+                      : undefined);
+
+                  let logoUrl: string | null = rawLogo ?? null;
 
                   // If logo is a relative path, convert it to full URL
-                  if (
-                    logoUrl &&
-                    typeof logoUrl === 'string' &&
-                    logoUrl.startsWith('/')
-                  ) {
+                  if (logoUrl && logoUrl.startsWith('/')) {
                     const baseURL =
                       import.meta.env.VITE_API_BASE_URL ||
                       'http://localhost:5173';
                     logoUrl = `${baseURL}${logoUrl}`;
                   }
 
-                  // Check if logoUrl is valid (not empty, not '[object Object]', and is a string)
                   const isValidLogo =
-                    logoUrl &&
+                    !detailLogoFailed &&
                     typeof logoUrl === 'string' &&
-                    logoUrl !== '[object Object]' &&
-                    logoUrl.trim() !== '' &&
-                    !logoUrl.includes('[object Object]');
-
-                  if (!isValidLogo) {
-                    console.log('Tenant Detail Logo Debug:', {
-                      tenantDetail,
-                      logoUrl,
-                      logoType: typeof logoUrl,
-                      companyLogoUrl: tenantDetail.company?.logo_url,
-                      processedLogo: tenantDetail.logo,
-                    });
-                  }
+                    logoUrl.trim() !== '';
 
                   const companyName =
-                    tenantDetail.company?.company_name || tenantDetail.name || '';
+                    tenantDetail.company?.company_name ||
+                    tenantDetail.name ||
+                    '';
                   const initials =
                     companyName
                       .trim()
@@ -784,10 +798,8 @@ export const TenantPage: React.FC = () => {
                         objectFit: 'cover',
                         border: '1px solid #ddd',
                       }}
-                      onError={e => {
-                        console.error('Failed to load logo image:', logoUrl);
-                        // Hide broken image
-                        (e.target as HTMLImageElement).style.display = 'none';
+                      onError={() => {
+                        setDetailLogoFailed(true);
                       }}
                     />
                   ) : (

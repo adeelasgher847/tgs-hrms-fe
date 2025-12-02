@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
+  Grid,
   Box,
   Typography,
-  Grid,
   Table,
   TableHead,
   TableBody,
@@ -31,7 +31,8 @@ import { designationApiService } from '../../api/designationApi';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import { getRoleName, isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
 
-const ITEMS_PER_PAGE = 10;
+const itemsPerPage = 25;
+const ITEMS_PER_PAGE= 25;
 
 interface Tenant { id: string; name: string; }
 interface Department { id: string; name: string; }
@@ -219,8 +220,8 @@ const BenefitReport: React.FC = () => {
 
   // ------------------- Pagination Slice -------------------
   const paginatedData = filteredData.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
   );
 
   // ------------------- CSV Export -------------------

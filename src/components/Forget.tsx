@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import ForgetImage from '../assets/icons/forget-image.svg';
 import authApi from '../api/authApi';
+import { validateEmailAddress } from '../utils/validation';
 
 const Forget = () => {
   const navigate = useNavigate();
@@ -27,23 +28,22 @@ const Forget = () => {
   const [loading, setLoading] = useState(false);
   const [openToast, setOpenToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>(
-    'success'
-  );
-
-  const validateEmail = (value: string) => {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(value);
-  };
+  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>('success');
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEmail(value);
-    if (value.length > 0 && !validateEmail(value)) {
+
+    if (!value) {
+      setEmailError(false);
+      setEmailErrorMessage('');
+      return;
+    }
+
+    const error = validateEmailAddress(value);
+    if (error) {
       setEmailError(true);
-      setEmailErrorMessage(
-        lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email'
-      );
+      setEmailErrorMessage(error);
     } else {
       setEmailError(false);
       setEmailErrorMessage('');
@@ -52,11 +52,11 @@ const Forget = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!validateEmail(email)) {
+
+    const error = validateEmailAddress(email);
+    if (error) {
       setEmailError(true);
-      setEmailErrorMessage(
-        lang === 'ar' ? 'بريد إلكتروني غير صالح' : 'Invalid email address'
-      );
+      setEmailErrorMessage(error);
       return;
     }
 

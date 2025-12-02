@@ -439,19 +439,25 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           mt: 3,
         }}
       >
-        {totalPages > 1 && (
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={(_, newPage) => handlePageChange(newPage)}
-            color='primary'
-            showFirstButton
-            showLastButton
-            sx={{ mb: 1 }}
-          />
-        )}
+        {(() => {
+          // Always show pagination if there are multiple pages
+          // This ensures users can always navigate between pages, even from the last page
+          const shouldShowPagination = totalPages > 1;
+          
+          return shouldShowPagination ? (
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={(_, newPage) => handlePageChange(newPage)}
+              color='primary'
+              showFirstButton
+              showLastButton
+              sx={{ mb: 1 }}
+            />
+          ) : null;
+        })()}
 
-        {filteredLeaves.length > 0 && (
+        {totalItems > 0 && (
           <Typography
             variant='body2'
             color='text.secondary'

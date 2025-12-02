@@ -6,6 +6,7 @@ import {
   FormControl,
   CircularProgress,
   TextField,
+  Tooltip,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
@@ -207,7 +208,13 @@ const EmployeeGrowthChart: React.FC = () => {
         </Typography>
 
         <Box display='flex' gap={2} flexWrap='wrap'>
-          <FormControl size='small' sx={{ minWidth: { xs: '100%', sm: 140 }, width: { xs: '100%', sm: 'auto' } }}>
+          <FormControl
+            size='small'
+            sx={{
+              minWidth: { xs: '100%', sm: 140 },
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          >
             <Select
               value={selectedTenant}
               onChange={e => setSelectedTenant(e.target.value)}
@@ -216,11 +223,30 @@ const EmployeeGrowthChart: React.FC = () => {
                 '.MuiOutlinedInput-notchedOutline': {
                   borderColor: borderColor,
                 },
+                '.MuiSelect-select': {
+                  display: 'flex',
+                  alignItems: 'center',
+                  maxWidth: { xs: '100%', sm: 200 },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                },
               }}
             >
               {tenants.map(tenant => (
                 <MenuItem key={tenant.id} value={tenant.id}>
-                  {tenant.name}
+                  <Tooltip title={tenant.name}>
+                    <Box
+                      sx={{
+                        maxWidth: 220,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {tenant.name}
+                    </Box>
+                  </Tooltip>
                 </MenuItem>
               ))}
             </Select>
