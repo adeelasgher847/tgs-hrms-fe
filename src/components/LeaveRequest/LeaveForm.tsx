@@ -3,14 +3,7 @@ import { Box, TextField, Button, MenuItem, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { leaveApi } from '../../api/leaveApi';
-import axiosInstance from '../../api/axiosInstance';
-
-interface LeaveType {
-  id: string;
-  name: string;
-  description?: string;
-}
+import { leaveApi, type LeaveType } from '../../api/leaveApi';
 
 interface LeaveFormProps {
   onSubmit?: (data: {
@@ -36,10 +29,8 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
   useEffect(() => {
     const fetchLeaveTypes = async () => {
       try {
-        const response = await axiosInstance.get('/leave-types', {
-          params: { page: 1, limit: 50 },
-        });
-        setLeaveTypes(response.data.items || []);
+        const response = await leaveApi.getLeaveTypes({ page: 1, limit: 50 });
+        setLeaveTypes(response.items || []);
       } catch (error) {
         console.error('Failed to load leave types:', error);
         setMessage('Failed to load leave types.');

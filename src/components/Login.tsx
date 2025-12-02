@@ -21,12 +21,14 @@ import {
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import GoogleIcon from '../assets/icons/google.svg';
-import axios from 'axios';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { type AlertProps } from '@mui/material/Alert';
 import { useUser } from '../hooks/useUser';
 import { getDefaultDashboardRoute } from '../utils/permissions';
 import { useGoogleScript } from '../hooks/useGoogleScript';
+import authApi from '../api/authApi';
+import signupApi from '../api/signupApi';
+import { persistAuthSession } from '../utils/authSession';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
   function Alert(props, ref) {
@@ -138,18 +140,15 @@ const Login: React.FC = () => {
           callback: async (response: { credential: string }) => {
             try {
               const idToken = response.credential;
-              const { data } = await axios.post(
-                `${import.meta.env.VITE_API_BASE_URL}/signup/google-init`,
-                { idToken }
-              );
-              if (data?.alreadyRegistered) {
-                localStorage.setItem('accessToken', data.accessToken);
-                localStorage.setItem('refreshToken', data.refreshToken);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                localStorage.setItem(
-                  'permissions',
-                  JSON.stringify(data.permissions || [])
-                );
+              const data = await signupApi.initGoogleSignup(idToken);
+              if (data?.alreadyRegistered && data.accessToken) {
+                persistAuthSession({
+                  accessToken: data.accessToken,
+                  refreshToken: data.refreshToken,
+                  user: data.user,
+                  permissions: data.permissions,
+                  signupSessionId: data.signupSessionId,
+                });
                 try {
                   updateUser(data.user);
                 } catch {
@@ -251,55 +250,21 @@ const Login: React.FC = () => {
     if (!valid) return;
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
-        {
-          email,
-          password,
-        }
-      );
+      const authPayload = await authApi.login({ email, password });
+      persistAuthSession(authPayload);
 
-      const {
-        accessToken,
-        refreshToken,
-        user,
-        permissions,
-        employee,
-        requiresPayment,
-        session_id,
-        signupSessionId,
-        company,
-      } = res.data;
+      const { user, employee, requiresPayment } = authPayload;
 
-      const employeeId = employee?.id || null;
-
-      const userWithTenant = user as { tenant_id?: string };
-      const tenantId = userWithTenant?.tenant_id || null;
-
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('permissions', JSON.stringify(permissions));
-
-      if (employeeId) {
-        localStorage.setItem('employeeId', employeeId);
-      } else {
+      if (!employee?.id) {
         console.warn('No employeeId found in response');
       }
 
-      if (session_id) {
-        localStorage.setItem('signupSessionId', session_id);
-      } else if (signupSessionId) {
-        localStorage.setItem('signupSessionId', signupSessionId);
-      }
-
-      if (company) {
-        localStorage.setItem('company', JSON.stringify(company));
-      }
-
-      if (tenantId) {
-        localStorage.setItem('tenant_id', tenantId);
-      } else {
+      if (
+        !(
+          (user as { tenant_id?: string } | undefined)?.tenant_id ??
+          (user as { tenantId?: string } | undefined)?.tenantId
+        )
+      ) {
         console.warn('No tenant_id found in login response');
       }
 
