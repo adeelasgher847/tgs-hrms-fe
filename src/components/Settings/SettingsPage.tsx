@@ -13,6 +13,7 @@ import {
   DialogActions,
   TextField,
   IconButton,
+  useMediaQuery,
 } from '@mui/material';
 import { useIsDarkMode } from '../../theme';
 import { useCompany } from '../../context/CompanyContext';
@@ -31,6 +32,7 @@ import {
 
 const SettingsPage: React.FC = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const darkMode = useIsDarkMode();
   const { user } = useUser();
   const {
@@ -174,6 +176,8 @@ const SettingsPage: React.FC = () => {
       setModalCompanyLogo(companyLogo);
     }
   }, [companyLogo, companyModalOpen, logoUploading]);
+
+  const domainText = contextCompanyDetails?.domain || 'Not specified';
 
   return (
     <Box>
@@ -320,8 +324,11 @@ const SettingsPage: React.FC = () => {
                     fontSize: '18px',
                     fontWeight: 600,
                   }}
+                  title={companyName || ''}
                 >
-                  {companyName}
+                  {isMobile && companyName && companyName.length > 30
+                    ? `${companyName.slice(0, 30)}...`
+                    : companyName}
                 </Typography>
               </Box>
             </Box>
@@ -364,8 +371,11 @@ const SettingsPage: React.FC = () => {
                     fontSize: '16px',
                     fontWeight: 500,
                   }}
+                  title={domainText}
                 >
-                  {contextCompanyDetails?.domain || 'Not specified'}
+                  {isMobile && domainText.length > 30
+                    ? `${domainText.slice(0, 30)}...`
+                    : domainText}
                 </Typography>
               </Box>
             </Box>
@@ -570,6 +580,7 @@ const SettingsPage: React.FC = () => {
                     onChange={e =>
                       handleFormChange('company_name', e.target.value)
                     }
+                    inputProps={{ maxLength: 50 }}
                     fullWidth
                     size='small'
                     variant='outlined'
@@ -605,6 +616,7 @@ const SettingsPage: React.FC = () => {
                   <TextField
                     value={editFormData.domain}
                     onChange={e => handleFormChange('domain', e.target.value)}
+                    inputProps={{ maxLength: 50 }}
                     fullWidth
                     size='small'
                     variant='outlined'

@@ -17,6 +17,7 @@ import {
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import ForgetImage from '../assets/icons/forget-image.svg';
 import authApi from '../api/authApi';
+import { validatePasswordStrength } from '../utils/validation';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -52,10 +53,15 @@ const ResetPassword = () => {
   const validateForm = () => {
     const newErrors: typeof errors = {};
 
-    if (!formData.password) {
+    const pwd = formData.password;
+
+    if (!pwd) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
+    } else {
+      const pwdError = validatePasswordStrength(pwd);
+      if (pwdError) {
+        newErrors.password = pwdError;
+      }
     }
 
     if (!formData.confirmPassword) {

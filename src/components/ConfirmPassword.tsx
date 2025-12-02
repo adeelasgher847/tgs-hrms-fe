@@ -13,6 +13,8 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import axiosInstance from '../api/axiosInstance';
+import { validatePasswordStrength } from '../utils/validation';
 import authApi from '../api/authApi';
 
 const PasswordReset: React.FC = () => {
@@ -41,8 +43,19 @@ const PasswordReset: React.FC = () => {
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
+    if (!password) {
+      setError('Password is required');
+      return;
+    }
+
+    const pwdError = validatePasswordStrength(password);
+    if (pwdError) {
+      setError(pwdError);
+      return;
+    }
+
+    if (!confirmPassword) {
+      setError('Please confirm your password');
       return;
     }
 

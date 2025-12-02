@@ -932,7 +932,7 @@ const SystemAdminAssets: React.FC = () => {
             />
           </Box>
         )}
-        {!loading && filteredAssets.length > 0 && (
+        {!loading && totalRecords > 0 && (
           <Box display='flex' justifyContent='center' pb={2}>
             <Typography variant='body2' color='textSecondary'>
               Showing page {currentPage} of {totalPages} ({totalRecords} total
