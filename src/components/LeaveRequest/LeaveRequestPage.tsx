@@ -54,6 +54,7 @@ const LeaveRequestPage = () => {
 
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
   const previousViewModeRef = useRef<'team' | 'you'>(viewMode);
+  const previousPageRef = useRef<number>(1);
 
   const currentUser = getCurrentUser();
   const currentUserId = currentUser?.id ?? '';
@@ -166,13 +167,19 @@ const LeaveRequestPage = () => {
   useEffect(() => {
     const effectiveViewMode = role === 'manager' ? viewMode : 'you';
 
+    // Always reload if page changed, even if going back to page 1
+    const pageChanged = previousPageRef.current !== currentPage;
+    const viewModeChanged = previousViewModeRef.current !== effectiveViewMode;
+
+    // Only skip loading if nothing has changed (initial load already happened)
     if (
       hasLoadedOnceRef.current &&
-      previousViewModeRef.current === effectiveViewMode &&
-      currentPage === 1
+      !pageChanged &&
+      !viewModeChanged
     )
       return;
 
+    // Use table loader (not full page loader) if we've loaded before and only the page changed
     const skipFullPageLoader =
       hasLoadedOnceRef.current &&
       previousViewModeRef.current === effectiveViewMode;
@@ -183,6 +190,7 @@ const LeaveRequestPage = () => {
       skipFullPageLoader,
     });
     previousViewModeRef.current = effectiveViewMode;
+    previousPageRef.current = currentPage;
   }, [currentPage, viewMode, role, loadLeaves]);
 
   const getErrorMessage = (error: unknown): string => {

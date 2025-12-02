@@ -425,7 +425,7 @@ const BenefitList: React.FC = () => {
         </Box>
       )}
 
-      {benefits.length > 0 && (
+      {totalRecords > 0 && (
         <Box display='flex' justifyContent='center' my={1}>
           <Typography variant='body2' color='textSecondary'>
             Showing page {page} of {totalPages} ({totalRecords} total records)

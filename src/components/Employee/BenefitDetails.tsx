@@ -247,16 +247,13 @@ const BenefitDetails: React.FC = () => {
         </Box>
       )}
 
-      <Box textAlign='center' my={2}>
-        <Typography variant='body2' color='text.secondary'>
-          Showing{' '}
-          {totalRecords === 0
-            ? 0
-            : Math.min((page - 1) * ITEMS_PER_PAGE + 1, totalRecords)}
-          –{Math.min(page * ITEMS_PER_PAGE, totalRecords)} of {totalRecords}{' '}
-          records
-        </Typography>
-      </Box>
+      {totalRecords > 0 && (
+        <Box textAlign='center' my={2}>
+          <Typography variant='body2' color='text.secondary'>
+            Showing page {page} of {totalPages} ({totalRecords} total records)
+          </Typography>
+        </Box>
+      )}
 
       <Dialog open={!!selectedBenefit} onClose={() => setSelectedBenefit(null)}>
         {selectedBenefit && (

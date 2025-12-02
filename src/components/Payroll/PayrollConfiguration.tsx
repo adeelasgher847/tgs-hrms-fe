@@ -629,7 +629,14 @@ const PayrollConfiguration: React.FC = () => {
               </Alert>
             )}
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3,marginTop: 2 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3,
+                marginTop: 2,
+              }}
+            >
               <FormControl fullWidth>
                 <InputLabel
                   sx={{
@@ -1672,7 +1679,7 @@ const PayrollConfiguration: React.FC = () => {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-           Edit Payroll Configuration
+            Edit Payroll Configuration
           </Box>
           <IconButton
             onClick={handleCloseEditModal}
@@ -1699,7 +1706,14 @@ const PayrollConfiguration: React.FC = () => {
             </Alert>
           )}
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3,marginTop: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 3,
+              marginTop: 2,
+            }}
+          >
             <FormControl fullWidth>
               <InputLabel
                 sx={{

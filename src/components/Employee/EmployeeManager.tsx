@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from 'react';
 import {
   Box,
   Button,
@@ -87,17 +93,47 @@ const EmployeeManager: React.FC = () => {
   const { darkMode } = useOutletContext<OutletContext>();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<null | Employee>(null);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [allEmployees, setAllEmployees] = useState<Employee[]>([]); // Store all employees
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Pagination state
+  // Pagination state - now for client-side pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 25; // Backend returns 25 records per page
+  const [paginationLimit, setPaginationLimit] = useState(25); // Backend limit, default 25
+
+  // Calculate pagination from all employees using backend limit
+  const totalItems = allEmployees.length;
+  const itemsPerPage = paginationLimit || 25; // Use backend limit
+
+  // Calculate total pages - only count pages that have actual data
+  // For example: 50 records / 25 limit = 2 pages (not 3)
+  // Ensure we only show pages with actual data - no empty pages
+  let totalPages = 1;
+  if (totalItems > 0 && itemsPerPage > 0) {
+    totalPages = Math.ceil(totalItems / itemsPerPage);
+    // Ensure totalPages is at least 1
+    totalPages = Math.max(1, totalPages);
+  }
+
+  // Get paginated employees for current page
+  const employees = useMemo(() => {
+    // Ensure current page doesn't exceed total pages
+    const validPage = Math.min(
+      currentPage,
+      Math.max(1, Math.ceil(allEmployees.length / itemsPerPage))
+    );
+    if (validPage !== currentPage && allEmployees.length > 0) {
+      // Reset to valid page if current page is invalid
+      setCurrentPage(validPage);
+      return [];
+    }
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return allEmployees.slice(startIndex, endIndex);
+  }, [allEmployees, currentPage, itemsPerPage]);
 
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [designationFilter, setDesignationFilter] = useState('');
@@ -169,149 +205,116 @@ const EmployeeManager: React.FC = () => {
     }
   }, []);
 
-  const loadEmployees = useCallback(
-    async (page: number = 1) => {
-      // Prevent duplicate calls
-      if (isLoadingRef.current) {
-        return;
-      }
+  // Helper function to convert BackendEmployee to Employee
+  const convertToEmployee = (emp: any): Employee => ({
+    id: emp.id,
+    user_id: emp.user_id,
+    name: emp.name,
+    firstName: emp.firstName,
+    lastName: emp.lastName,
+    email: emp.email,
+    phone: emp.phone,
+    departmentId: emp.departmentId,
+    designationId: emp.designationId,
+    role_name: emp.role_name,
+    status: emp.status,
+    cnic_number: emp.cnic_number,
+    profile_picture: emp.profile_picture,
+    cnic_picture: emp.cnic_picture,
+    cnic_back_picture: emp.cnic_back_picture,
+    department: emp.department || {
+      id: '',
+      name: '',
+      description: '',
+      tenantId: '',
+      createdAt: '',
+      updatedAt: '',
+    },
+    designation: emp.designation || {
+      id: '',
+      title: '',
+      tenantId: '',
+      departmentId: '',
+      createdAt: '',
+      updatedAt: '',
+    },
+    tenantId: emp.tenantId,
+    createdAt: emp.createdAt,
+    updatedAt: emp.updatedAt,
+  });
 
-      try {
-        isLoadingRef.current = true;
-        setLoading(true);
-        setError(null);
+  // Fetch all employees from all pages
+  const loadEmployees = useCallback(async () => {
+    // Prevent duplicate calls
+    if (isLoadingRef.current) {
+      return;
+    }
 
-        const filters = {
-          departmentId: departmentFilter || undefined,
-          designationId: designationFilter || undefined,
-        };
+    try {
+      isLoadingRef.current = true;
+      setLoading(true);
+      setError(null);
 
+      const filters = {
+        departmentId: departmentFilter || undefined,
+        designationId: designationFilter || undefined,
+      };
+
+      // Fetch all pages sequentially
+      const allEmployeesData: Employee[] = [];
+      let page = 1;
+      let hasMorePages = true;
+      let backendLimit = 25; // Default limit
+
+      while (hasMorePages) {
         const response = await employeeApi.getAllEmployees(filters, page);
 
-        // If requested page exceeds available totalPages (possible after filters), clamp and refetch
-        if (response.totalPages > 0 && page > response.totalPages) {
-          setCurrentPage(response.totalPages);
-          const retry = await employeeApi.getAllEmployees(
-            filters,
-            response.totalPages
-          );
-          const convertedEmployeesRetry: Employee[] = retry.items.map(emp => ({
-            id: emp.id,
-            user_id: emp.user_id,
-            name: emp.name,
-            firstName: emp.firstName,
-            lastName: emp.lastName,
-            email: emp.email,
-            phone: emp.phone,
-            departmentId: emp.departmentId,
-            designationId: emp.designationId,
-            role_name: emp.role_name,
-            status: emp.status,
-            cnic_number: emp.cnic_number,
-            profile_picture: emp.profile_picture,
-            cnic_picture: emp.cnic_picture,
-            cnic_back_picture: emp.cnic_back_picture,
-            department: emp.department || {
-              id: '',
-              name: '',
-              description: '',
-              tenantId: '',
-              createdAt: '',
-              updatedAt: '',
-            },
-            designation: emp.designation || {
-              id: '',
-              title: '',
-              tenantId: '',
-              departmentId: '',
-              createdAt: '',
-              updatedAt: '',
-            },
-            tenantId: emp.tenantId,
-            createdAt: emp.createdAt,
-            updatedAt: emp.updatedAt,
-          }));
-
-          setEmployees(convertedEmployeesRetry);
-          setTotalPages(retry.totalPages);
-          setTotalItems(retry.total);
-          return;
+        // Extract limit from first page response
+        if (page === 1 && response.limit) {
+          backendLimit = response.limit;
+          setPaginationLimit(backendLimit);
         }
 
-        // Convert BackendEmployee to Employee
-        const convertedEmployees: Employee[] = response.items.map(emp => ({
-          id: emp.id,
-          user_id: emp.user_id,
-          name: emp.name,
-          firstName: emp.firstName,
-          lastName: emp.lastName,
-          email: emp.email,
-          phone: emp.phone,
-          departmentId: emp.departmentId,
-          designationId: emp.designationId,
-          role_name: emp.role_name,
-          status: emp.status,
-          cnic_number: emp.cnic_number,
-          profile_picture: emp.profile_picture,
-          cnic_picture: emp.cnic_picture,
-          cnic_back_picture: emp.cnic_back_picture,
-          department: emp.department || {
-            id: '',
-            name: '',
-            description: '',
-            tenantId: '',
-            createdAt: '',
-            updatedAt: '',
-          },
-          designation: emp.designation || {
-            id: '',
-            title: '',
-            tenantId: '',
-            departmentId: '',
-            createdAt: '',
-            updatedAt: '',
-          },
-          tenantId: emp.tenantId,
-          createdAt: emp.createdAt,
-          updatedAt: emp.updatedAt,
-        }));
+        // Convert and add employees
+        const convertedEmployees: Employee[] =
+          response.items.map(convertToEmployee);
+        allEmployeesData.push(...convertedEmployees);
 
-        setEmployees(convertedEmployees);
-
-        // Backend returns 25 records per page (fixed page size)
-        // If we get 25 records, there might be more pages
-        // If we get less than 25, it's the last page
-        const hasMorePages = convertedEmployees.length === itemsPerPage;
-
-        // Use backend pagination info if available, otherwise estimate
-        if (response.totalPages && response.total) {
-          setCurrentPage(response.page);
-          setTotalPages(response.totalPages);
-          setTotalItems(response.total);
+        // Check if there are more pages
+        if (response.totalPages) {
+          // Use backend pagination info
+          hasMorePages = page < response.totalPages;
+          page++;
         } else {
-          // Fallback: estimate based on current page and records received
-          const actualPage = response.page || page;
-          setCurrentPage(actualPage);
-          setTotalPages(hasMorePages ? actualPage + 1 : actualPage);
-          setTotalItems(
-            hasMorePages
-              ? actualPage * itemsPerPage
-              : (actualPage - 1) * itemsPerPage + convertedEmployees.length
-          );
+          // Estimate: if we got less than backend limit, it's the last page
+          hasMorePages = convertedEmployees.length >= backendLimit;
+          page++;
         }
-      } catch (error: unknown) {
-        const errorResult = extractErrorMessage(error);
-        setError(errorResult.message);
-        setEmployees([]);
-        setTotalPages(1);
-        setTotalItems(0);
-      } finally {
-        setLoading(false);
-        isLoadingRef.current = false;
       }
-    },
-    [departmentFilter, designationFilter]
-  );
+
+      setAllEmployees(allEmployeesData);
+      // Reset to page 1 when data is loaded
+      setCurrentPage(1);
+
+      // Debug: Log pagination info
+      const calculatedTotalPages =
+        allEmployeesData.length > 0
+          ? Math.ceil(allEmployeesData.length / (backendLimit || 25))
+          : 1;
+      console.log('Employee pagination:', {
+        totalItems: allEmployeesData.length,
+        limit: backendLimit,
+        calculatedTotalPages,
+      });
+    } catch (error: unknown) {
+      const errorResult = extractErrorMessage(error);
+      setError(errorResult.message);
+      setAllEmployees([]);
+    } finally {
+      setLoading(false);
+      isLoadingRef.current = false;
+    }
+  }, [departmentFilter, designationFilter]);
 
   // Mark initial mount as complete after first render
   useEffect(() => {
@@ -324,24 +327,24 @@ const EmployeeManager: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-fetch from backend when filters change, reset to first page
+  // Load employees when filters change (fetches all records)
   useEffect(() => {
     // Skip on initial mount to prevent duplicate API call
     if (isInitialMount.current) {
       return;
     }
-    setCurrentPage(1);
-  }, [departmentFilter, designationFilter]);
+    setCurrentPage(1); // Reset to page 1 when filters change
+    loadEmployees();
+  }, [departmentFilter, designationFilter, loadEmployees]);
 
-  // Load employees when page or filters change
+  // Load employees on initial mount
   useEffect(() => {
-    loadEmployees(currentPage);
-  }, [currentPage, departmentFilter, designationFilter, loadEmployees]);
+    loadEmployees();
+  }, [loadEmployees]);
 
-  // Handle page change
+  // Handle page change (client-side pagination, no API call needed)
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // loadEmployees will be called automatically by useEffect when currentPage changes
   };
 
   const handleAddEmployee = async (
@@ -432,8 +435,7 @@ const EmployeeManager: React.FC = () => {
       };
 
       // Add to the beginning of the list (most recent first)
-      setEmployees(prev => [convertedEmployee, ...prev]);
-      setTotalItems(prev => prev + 1);
+      setAllEmployees(prev => [convertedEmployee, ...prev]);
 
       // Reload department and designation mappings
       await loadDepartmentsAndDesignations();
@@ -590,9 +592,9 @@ const EmployeeManager: React.FC = () => {
       const nextRoleName =
         updates.role_name && updates.role_name.trim() !== ''
           ? updates.role_name.trim()
-          : (updates.role && updates.role.trim() !== ''
-              ? updates.role.trim()
-              : editing.role_name);
+          : updates.role && updates.role.trim() !== ''
+            ? updates.role.trim()
+            : editing.role_name;
 
       const updatedEmployee = await employeeApi.updateEmployee(editing.id, {
         first_name: updates.first_name,
@@ -625,7 +627,7 @@ const EmployeeManager: React.FC = () => {
       const departmentName =
         departments[newDepartmentId] || 'Unknown Department';
 
-      setEmployees(prev =>
+      setAllEmployees(prev =>
         prev.map(emp =>
           emp.id === editing.id
             ? {
@@ -638,7 +640,8 @@ const EmployeeManager: React.FC = () => {
                 phone: updatedEmployee.phone,
                 departmentId: newDepartmentId,
                 designationId: nextDesignationId,
-                role_name: updatedEmployee.role_name || nextRoleName || emp.role_name,
+                role_name:
+                  updatedEmployee.role_name || nextRoleName || emp.role_name,
                 status: updatedEmployee.status || emp.status,
                 cnic_number: updatedEmployee.cnic_number || emp.cnic_number,
                 profile_picture:
@@ -717,8 +720,7 @@ const EmployeeManager: React.FC = () => {
     try {
       setError(null);
       await employeeApi.deleteEmployee(id);
-      setEmployees(prev => prev.filter(emp => emp.id !== id));
-      setTotalItems(prev => prev - 1);
+      setAllEmployees(prev => prev.filter(emp => emp.id !== id));
       setSuccessMessage('Employee deleted successfully!');
     } catch (error: unknown) {
       const errorResult = extractErrorMessage(error);
@@ -759,7 +761,7 @@ const EmployeeManager: React.FC = () => {
       setError(null);
 
       // Immediately update the status to "Invite Sent" in the local state
-      setEmployees(prev =>
+      setAllEmployees(prev =>
         prev.map(emp =>
           emp.id === employee.id ? { ...emp, status: 'Invite Sent' } : emp
         )
@@ -769,7 +771,7 @@ const EmployeeManager: React.FC = () => {
       setSuccessMessage(`Invite resent successfully to ${employee.name}!`);
     } catch (error: unknown) {
       // If API call fails, revert the status back to "Invite Expired"
-      setEmployees(prev =>
+      setAllEmployees(prev =>
         prev.map(emp =>
           emp.id === employee.id ? { ...emp, status: 'Invite Expired' } : emp
         )
@@ -995,18 +997,49 @@ const EmployeeManager: React.FC = () => {
       </Paper>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <Box display='flex' justifyContent='center' mt={2}>
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={(_, page) => handlePageChange(page)}
-            color='primary'
-            showFirstButton
-            showLastButton
-          />
-        </Box>
-      )}
+      {(() => {
+        // Get current page record count
+        const currentPageRowsCount = employees.length;
+
+        // Pagination buttons logic:
+        // - On first page: Only show if current page has full limit (to indicate more pages exist)
+        // - On other pages (including last page): Always show if there are multiple pages
+        // But don't show if current page has no records (invalid page)
+        const shouldShowPagination =
+          totalPages > 1 &&
+          currentPageRowsCount > 0 && // Don't show if current page has no records
+          (currentPage === 1
+            ? currentPageRowsCount === itemsPerPage // First page: only show if full limit
+            : true); // Other pages: always show if totalPages > 1 and has records
+
+        // Ensure we only show pages that have actual data
+        // For example: 50 records with limit 25 = exactly 2 pages (not 3)
+        // Recalculate to ensure accuracy - no empty pages
+        const exactTotalPages =
+          totalItems > 0 && itemsPerPage > 0
+            ? Math.ceil(totalItems / itemsPerPage)
+            : 1;
+
+        // Use the exact calculated pages (no rounding errors)
+        const finalTotalPages = exactTotalPages;
+
+        return shouldShowPagination && finalTotalPages > 1 ? (
+          <Box display='flex' justifyContent='center' mt={2}>
+            <Pagination
+              count={finalTotalPages}
+              page={Math.min(currentPage, finalTotalPages)}
+              onChange={(_, page) => {
+                // Ensure page doesn't exceed valid total pages
+                const validPage = Math.min(page, finalTotalPages);
+                handlePageChange(validPage);
+              }}
+              color='primary'
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        ) : null;
+      })()}
 
       {/* Pagination Info */}
       {totalItems > 0 && (

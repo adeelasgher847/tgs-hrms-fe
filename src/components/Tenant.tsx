@@ -512,28 +512,33 @@ export const TenantPage: React.FC = () => {
     try {
       setEditTenantId(tenant.id);
       setEditCompanyName(tenant.name);
-      
+
       // Fetch tenant details to get domain and logo
       try {
         const tenantDetail = await SystemTenantApi.getById(tenant.id);
-        
+
         // Set domain from tenant detail
         if (tenantDetail.domain) {
           setEditDomain(tenantDetail.domain);
         } else if (tenantDetail.company?.domain) {
           setEditDomain(tenantDetail.company.domain);
         }
-        
+
         // Set logo from tenant detail
         let logoUrl = tenantDetail.logo || tenantDetail.company?.logo_url;
-        
+
         // Convert relative path to full URL if needed
         if (logoUrl && typeof logoUrl === 'string' && logoUrl.startsWith('/')) {
-          const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
+          const baseURL =
+            import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
           logoUrl = `${baseURL}${logoUrl}`;
         }
-        
-        if (logoUrl && typeof logoUrl === 'string' && logoUrl !== '[object Object]') {
+
+        if (
+          logoUrl &&
+          typeof logoUrl === 'string' &&
+          logoUrl !== '[object Object]'
+        ) {
           setEditLogo(logoUrl);
           setEditLogoPreview(logoUrl);
         }
@@ -634,9 +639,7 @@ export const TenantPage: React.FC = () => {
                         : t.status.charAt(0).toUpperCase() +
                           t.status.slice(1).toLowerCase()}
                     </TableCell>
-                    <TableCell>
-                      {formatDate(t.created_at)}
-                    </TableCell>
+                    <TableCell>{formatDate(t.created_at)}</TableCell>
                     <TableCell align='center'>
                       {!t.isDeleted ? (
                         <>
@@ -694,19 +697,34 @@ export const TenantPage: React.FC = () => {
           </TableContainer>
         </Paper>
       )}
-      {totalPages > 1 && (
-        <Box display='flex' justifyContent='center' mt={2}>
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={(_, page) => setCurrentPage(page)}
-            color='primary'
-            showFirstButton
-            showLastButton
-          />
-        </Box>
-      )}
-      {tenants.length > 0 && (
+      {(() => {
+        // Get current page record count
+        const currentPageRowsCount = tenants.length;
+
+        // Pagination buttons logic:
+        // - On first page: Only show if current page has full limit (to indicate more pages exist)
+        // - On other pages (including last page): Always show if there are multiple pages
+        // This allows navigation between pages even from the last page
+        const shouldShowPagination =
+          totalPages > 1 &&
+          (currentPage === 1
+            ? currentPageRowsCount === itemsPerPage // First page: only show if full limit
+            : true); // Other pages: always show if totalPages > 1
+
+        return shouldShowPagination ? (
+          <Box display='flex' justifyContent='center' mt={2}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={(_, page) => setCurrentPage(page)}
+              color='primary'
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        ) : null;
+      })()}
+      {totalRecords > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
             Showing page {currentPage} of {totalPages} ({totalRecords} total
@@ -758,7 +776,9 @@ export const TenantPage: React.FC = () => {
                     logoUrl.trim() !== '';
 
                   const companyName =
-                    tenantDetail.company?.company_name || tenantDetail.name || '';
+                    tenantDetail.company?.company_name ||
+                    tenantDetail.name ||
+                    '';
                   const initials =
                     companyName
                       .trim()

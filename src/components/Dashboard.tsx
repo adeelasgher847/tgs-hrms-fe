@@ -397,20 +397,35 @@ const Dashboard: React.FC = () => {
               </Table>
             </Box>
 
-            {showPagination && (
-              <Box display='flex' justifyContent='center' mt={2}>
-                <Pagination
-                  count={estimatedTotalPages}
-                  page={currentPage}
-                  onChange={(_, page) => setCurrentPage(page)}
-                  color='primary'
-                  showFirstButton
-                  showLastButton
-                />
-              </Box>
-            )}
+            {(() => {
+              // Get current page record count
+              const currentPageRowsCount = logs.length;
+              
+              // Pagination buttons logic:
+              // - On first page: Only show if current page has full limit (to indicate more pages exist)
+              // - On other pages (including last page): Always show if there are multiple pages
+              // This allows navigation between pages even from the last page
+              const shouldShowPagination =
+                estimatedTotalPages > 1 &&
+                (currentPage === 1
+                  ? currentPageRowsCount === itemsPerPage // First page: only show if full limit
+                  : true); // Other pages: always show if totalPages > 1
+              
+              return shouldShowPagination ? (
+                <Box display='flex' justifyContent='center' mt={2}>
+                  <Pagination
+                    count={estimatedTotalPages}
+                    page={currentPage}
+                    onChange={(_, page) => setCurrentPage(page)}
+                    color='primary'
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              ) : null;
+            })()}
 
-            {logs.length > 0 && (
+            {estimatedTotalRecords > 0 && (
               <Box display='flex' justifyContent='center' mt={1}>
                 <Typography variant='body2' color='textSecondary'>
                   Showing page {currentPage} of {estimatedTotalPages} (
