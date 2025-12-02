@@ -297,9 +297,11 @@ export const payrollApi = {
     }
   },
 
-  getEmployeeSalary: async (employeeId: string): Promise<EmployeeSalary> => {
+  getEmployeeSalary: async (
+    employeeId: string
+  ): Promise<EmployeeSalaryResponse> => {
     try {
-      const response = await axiosInstance.get<EmployeeSalary>(
+      const response = await axiosInstance.get<EmployeeSalaryResponse>(
         `/payroll/salary/${employeeId}`
       );
       return response.data;
@@ -924,4 +926,16 @@ export interface EmployeeSalary {
   notes?: string | null;
   created_by?: string;
   updated_by?: string | null;
+}
+
+export interface EmployeeSalaryDefaults {
+  baseSalary: number;
+  allowances: EmployeeSalaryAllowance[];
+  deductions: EmployeeSalaryDeduction[];
+  effectiveDate: string;
+}
+
+export interface EmployeeSalaryResponse {
+  salary: EmployeeSalary | null;
+  defaults: EmployeeSalaryDefaults;
 }
