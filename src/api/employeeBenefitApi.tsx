@@ -287,6 +287,7 @@ const employeeBenefitApi = {
           params: params || {},
         }
       );
+
       console.log('All Tenants Employee Benefits:', response.data);
       
       // Check if response has pagination structure
@@ -324,8 +325,7 @@ const employeeBenefitApi = {
     } catch (error: unknown) {
       console.error(
         'All Tenants Employee Benefits API Error:',
-        (error as { response?: { data?: unknown }; message?: string }).response
-          ?.data || (error as { message?: string }).message
+        (error as any).response?.data || (error as any).message
       );
       throw error;
     }
