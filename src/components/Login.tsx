@@ -17,6 +17,7 @@ import {
   FormControl,
   IconButton,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -63,6 +64,7 @@ const Login: React.FC = () => {
     message: string;
     severity: 'success' | 'error';
   }>({ open: false, message: '', severity: 'success' });
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const rememberedStr = localStorage.getItem('rememberedLogin');
@@ -215,16 +217,16 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
+  const handleSubmit = async e => {
     e.preventDefault();
+
+    if (isLoading) return;
+    setIsLoading(true);
 
     let valid = true;
     setEmailError('');
     setPasswordError('');
 
-    // --- Validation ---
     if (!email) {
       setEmailError(
         language === 'ar'
@@ -236,7 +238,7 @@ const Login: React.FC = () => {
       setEmailError(
         language === 'ar'
           ? 'يرجى إدخال بريد إلكتروني صحيح'
-          : 'Please enter a valid email address'
+          : 'Please enter a valid email'
       );
       valid = false;
     }
@@ -250,32 +252,16 @@ const Login: React.FC = () => {
       valid = false;
     }
 
-    if (!valid) return;
+    if (!valid) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const authPayload = await authApi.login({ email, password });
       persistAuthSession(authPayload);
 
-      const { user, employee, requiresPayment } = authPayload;
-
-      if (!employee?.id) {
-        console.warn('No employeeId found in response');
-      }
-
-      if (
-        !(
-          (user as { tenant_id?: string } | undefined)?.tenant_id ??
-          (user as { tenantId?: string } | undefined)?.tenantId
-        )
-      ) {
-        console.warn('No tenant_id found in login response');
-      }
-
-      try {
-        updateUser(user);
-      } catch (err) {
-        console.warn('updateUser error (non-blocking):', err);
-      }
+      updateUser(authPayload.user);
 
       if (rememberMe) {
         localStorage.setItem(
@@ -294,34 +280,24 @@ const Login: React.FC = () => {
       });
 
       const role =
-        typeof user?.role === 'string' ? user.role : user?.role?.name;
-      if (requiresPayment) {
+        typeof authPayload.user?.role === 'string'
+          ? authPayload.user.role
+          : authPayload.user?.role?.name;
+
+      if (authPayload.requiresPayment) {
         navigate('/signup/select-plan', { replace: true });
       } else {
-        const target = getDefaultDashboardRoute(role);
-        navigate(target, { replace: true });
+        navigate(getDefaultDashboardRoute(role), { replace: true });
       }
-    } catch (err: unknown) {
+    } catch (err) {
       console.error('Login API error:', err);
 
-      const data =
-        err && typeof err === 'object' && 'response' in err
-          ? (
-              err as {
-                response: { data: { field?: string; message?: string } };
-              }
-            ).response.data
-          : null;
-      if (data?.field === 'email') {
-        setEmailError(data.message || '');
-        setPasswordError('');
-      } else if (data?.field === 'password') {
-        setPasswordError(data.message || '');
-        setEmailError('');
-      } else {
-        setEmailError('');
-        setPasswordError('');
-      }
+      const data = err?.response?.data ?? null;
+
+      if (data?.field === 'email') setEmailError(data.message);
+      else if (data?.field === 'password') setPasswordError(data.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -474,7 +450,11 @@ const Login: React.FC = () => {
                       fontWeight: 400,
                     }}
                   >
-                    {language === 'ar' ? 'تسجيل الدخول' : 'Sign in'}
+                    {isLoading
+                      ? 'Signing in...'
+                      : language === 'ar'
+                        ? 'تسجيل الدخول'
+                        : 'Sign in'}
                   </Typography>
                   <Typography
                     sx={{
@@ -819,7 +799,13 @@ const Login: React.FC = () => {
                       }}
                       disabled={!email || !password}
                     >
-                      {language === 'ar' ? 'تسجيل الدخول' : 'SIGN IN'}
+                      {isLoading ? (
+                        <CircularProgress size={22} sx={{ color: 'black' }} />
+                      ) : language === 'ar' ? (
+                        'تسجيل الدخول'
+                      ) : (
+                        'Sign In'
+                      )}
                     </Button>
                   </Box>
 

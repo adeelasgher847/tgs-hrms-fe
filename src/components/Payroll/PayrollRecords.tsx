@@ -239,7 +239,7 @@ const PayrollRecords: React.FC = () => {
 
   const currentDate = dayjs();
   const [month, setMonth] = useState<number>(currentDate.month() + 1);
-  const [year, setYear] = useState<number>(currentDate.year());
+  const [year, setYear] = useState<number | ''>(currentDate.year());
   const [employeeFilter, setEmployeeFilter] = useState<string>('');
   const [records, setRecords] = useState<PayrollRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -261,7 +261,9 @@ const PayrollRecords: React.FC = () => {
   const [generateMonth, setGenerateMonth] = useState<number>(
     currentDate.month() + 1
   );
-  const [generateYear, setGenerateYear] = useState<number>(currentDate.year());
+  const [generateYear, setGenerateYear] = useState<number | ''>(
+    currentDate.year()
+  );
   const [generateEmployeeId, setGenerateEmployeeId] = useState<string>('');
   const [generating, setGenerating] = useState<boolean>(false);
   const [generateDialogOpen, setGenerateDialogOpen] = useState<boolean>(false);
@@ -443,9 +445,13 @@ const PayrollRecords: React.FC = () => {
         limit: itemsPerPage,
         employee_id: employeeFilter || undefined,
       });
+      const yearNum =
+        typeof year === 'string' && year === ''
+          ? dayjs().year()
+          : year || dayjs().year();
       const response = await payrollApi.getPayrollRecords({
         month,
-        year,
+        year: yearNum,
         page: currentPage,
         limit: itemsPerPage,
         employee_id: employeeFilter || undefined,
@@ -664,13 +670,20 @@ const PayrollRecords: React.FC = () => {
       setGenerating(true);
       const response = await payrollApi.generatePayroll({
         month: generateMonth,
-        year: generateYear,
+        year:
+          typeof generateYear === 'string' && generateYear === ''
+            ? dayjs().year()
+            : generateYear || dayjs().year(),
         employee_id: generateEmployeeId || undefined,
       });
 
+      const yearNum =
+        typeof generateYear === 'string' && generateYear === ''
+          ? dayjs().year()
+          : generateYear || dayjs().year();
       const refreshedResponse = await payrollApi.getPayrollRecords({
         month: generateMonth,
-        year: generateYear,
+        year: yearNum,
         page: currentPage,
         limit: itemsPerPage,
         employee_id: employeeFilter || undefined,
@@ -697,7 +710,11 @@ const PayrollRecords: React.FC = () => {
 
       setRecords(refreshedRecords);
       setMonth(generateMonth);
-      setYear(generateYear);
+      setYear(
+        typeof generateYear === 'string' && generateYear === ''
+          ? dayjs().year()
+          : generateYear || dayjs().year()
+      );
       setGenerateDialogOpen(false);
       setGenerateEmployeeId('');
     } catch (error) {
@@ -794,10 +811,16 @@ const PayrollRecords: React.FC = () => {
           <TextField
             label={L.year}
             type='number'
+            inputProps={{ min: 0 }}
             size='small'
             sx={{ minWidth: 140 }}
-            value={year}
-            onChange={event => setYear(Number(event.target.value) || year)}
+            value={year === 0 ? '' : year}
+            onChange={event => {
+              const value = event.target.value;
+              const numValue =
+                value === '' ? '' : Math.max(0, Number(value) || 0);
+              setYear(numValue);
+            }}
           />
         </Stack>
 
@@ -1227,31 +1250,45 @@ const PayrollRecords: React.FC = () => {
                     {L.deductionsLabel}
                   </Typography>
                   <Table size='small'>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Type</TableCell>
+                        <TableCell>Description</TableCell>
+                        <TableCell align='right'>Amount</TableCell>
+                        <TableCell align='right'>Percentage</TableCell>
+                      </TableRow>
+                    </TableHead>
                     <TableBody>
                       <TableRow>
                         <TableCell>Tax</TableCell>
+                        <TableCell>—</TableCell>
                         <TableCell align='right'>
                           {formatCurrency(
                             selectedRecord.deductionsBreakdown.tax || 0
                           )}
                         </TableCell>
+                        <TableCell align='right'>—</TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell>Insurance</TableCell>
+                        <TableCell>—</TableCell>
                         <TableCell align='right'>
                           {formatCurrency(
                             selectedRecord.deductionsBreakdown.insurance || 0
                           )}
                         </TableCell>
+                        <TableCell align='right'>—</TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell>Leave Deductions</TableCell>
+                        <TableCell>—</TableCell>
                         <TableCell align='right'>
                           {formatCurrency(
                             selectedRecord.deductionsBreakdown
                               .leaveDeductions || 0
                           )}
                         </TableCell>
+                        <TableCell align='right'>—</TableCell>
                       </TableRow>
                       {selectedRecord.deductionsBreakdown.otherDeductions?.map(
                         (item, index) => (
@@ -1532,12 +1569,16 @@ const PayrollRecords: React.FC = () => {
             <TextField
               label={L.year}
               type='number'
+              inputProps={{ min: 0 }}
               size='small'
               sx={{ minWidth: 140 }}
-              value={generateYear}
-              onChange={event =>
-                setGenerateYear(Number(event.target.value) || generateYear)
-              }
+              value={generateYear === 0 ? '' : generateYear}
+              onChange={event => {
+                const value = event.target.value;
+                const numValue =
+                  value === '' ? '' : Math.max(0, Number(value) || 0);
+                setGenerateYear(numValue);
+              }}
             />
             <TextField
               select

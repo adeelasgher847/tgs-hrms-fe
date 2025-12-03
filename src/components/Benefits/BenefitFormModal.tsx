@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useLanguage } from '../../hooks/useLanguage';
 import {
   Dialog,
@@ -9,6 +9,10 @@ import {
   TextField,
   Box,
   Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -18,8 +22,11 @@ export interface BenefitFormValues {
   name: string;
   type: string;
   description: string;
-  eligibilityCriteria: string;
-  status: string;
+  eligibilityCriteria:
+    | 'All employees'
+    | 'Full time employees only'
+    | 'Part time employees only';
+  status: 'Active' | 'Inactive';
 }
 
 interface BenefitFormModalProps {
@@ -36,6 +43,12 @@ const schema = yup.object({
   eligibilityCriteria: yup.string().required('Eligibility is required'),
   status: yup.string().required('Status is required'),
 });
+const eligibilityOptions: BenefitFormValues['eligibilityCriteria'][] = [
+  'All employees',
+  'Full time employees only',
+  'Part time employees only',
+];
+const statusOptions: BenefitFormValues['status'][] = ['Active', 'Inactive'];
 
 const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
   open,
@@ -87,17 +100,45 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
     formState: { errors, isValid },
   } = useForm<BenefitFormValues>({
     resolver: yupResolver(schema),
-    mode: 'onChange', // Validate on change to enable/disable button
+    mode: 'onChange',
     defaultValues: {
       name: '',
       type: '',
       description: '',
-      eligibilityCriteria: '',
-      status: '',
+      eligibilityCriteria: 'All employees',
+      status: 'Active',
     },
   });
 
-  // Watch all form values to check if they're filled
+  const initialValues = useMemo(() => {
+    return benefit
+      ? {
+          name: benefit.name || '',
+          type: benefit.type || '',
+          description: benefit.description || '',
+          eligibilityCriteria:
+            eligibilityOptions.find(
+              opt =>
+                opt.toLowerCase() === benefit.eligibilityCriteria.toLowerCase()
+            ) || 'All employees',
+          status:
+            statusOptions.find(
+              opt => opt.toLowerCase() === benefit.status.toLowerCase()
+            ) || 'Active',
+        }
+      : {
+          name: '',
+          type: '',
+          description: '',
+          eligibilityCriteria: 'All employees',
+          status: 'Active',
+        };
+  }, [benefit]);
+
+  useEffect(() => {
+    reset(initialValues);
+  }, [initialValues, reset]);
+
   const watchedValues = watch();
   const isFormValid =
     watchedValues.name?.trim() &&
@@ -107,17 +148,15 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
     watchedValues.status?.trim() &&
     isValid;
 
-  useEffect(() => {
-    if (benefit) reset(benefit);
-    else
-      reset({
-        name: '',
-        type: '',
-        description: '',
-        eligibilityCriteria: '',
-        status: '',
-      });
-  }, [benefit, reset]);
+  const isChanged = useMemo(() => {
+    return (
+      watchedValues.name !== initialValues.name ||
+      watchedValues.type !== initialValues.type ||
+      watchedValues.description !== initialValues.description ||
+      watchedValues.eligibilityCriteria !== initialValues.eligibilityCriteria ||
+      watchedValues.status !== initialValues.status
+    );
+  }, [watchedValues, initialValues]);
 
   const handleFormSubmit = (data: BenefitFormValues) => {
     onSubmit(data);

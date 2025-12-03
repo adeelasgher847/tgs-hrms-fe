@@ -38,6 +38,8 @@ import {
   type EmployeeSalary,
   type EmployeeSalaryAllowance,
   type EmployeeSalaryDeduction,
+  type EmployeeSalaryResponse,
+  type PayrollConfig,
 } from '../../api/payrollApi';
 import { getCurrentUser, getUserRole } from '../../utils/auth';
 import { normalizeRole } from '../../utils/permissions';
@@ -143,6 +145,17 @@ const EmployeeSalaryPage: React.FC = () => {
       selectEmployeeRequired: 'Please select an employee',
       employeeIdRequired: 'Employee ID is required',
       loadFailure: 'Failed to load employee salaries',
+      preFilledConfig: 'Pre-filled with current payroll configuration defaults',
+      currentPayrollConfig: 'Current Payroll Configuration',
+      baseSalaryLabel: 'Base Salary',
+      allowancesLabel: 'Allowances',
+      deductionsLabel: 'Deductions',
+      basePayComponentsTitle: 'Base Pay Components',
+      basicLabel: 'Basic',
+      houseRentLabel: 'House Rent',
+      medicalLabel: 'Medical',
+      transportLabel: 'Transport',
+      totalBaseSalaryLabel: 'Total Base Salary',
     },
     ar: {
       title: 'هيكل راتب الموظف',
@@ -194,6 +207,17 @@ const EmployeeSalaryPage: React.FC = () => {
       selectEmployeeRequired: 'الرجاء اختيار موظف',
       employeeIdRequired: 'معرف الموظف مطلوب',
       loadFailure: 'فشل في تحميل رواتب الموظفين',
+      preFilledConfig: 'معبأة مسبقًا بإعدادات تكوين الرواتب الحالية',
+      currentPayrollConfig: 'تكوين الرواتب الحالي',
+      baseSalaryLabel: 'الراتب الأساسي',
+      allowancesLabel: 'البدلات',
+      deductionsLabel: 'الخصومات',
+      basePayComponentsTitle: 'مكونات الأجر الأساسي',
+      basicLabel: 'الأساسي',
+      houseRentLabel: 'بدل السكن',
+      medicalLabel: 'بدل طبي',
+      transportLabel: 'بدل النقل',
+      totalBaseSalaryLabel: 'إجمالي الراتب الأساسي',
     },
   } as const;
 
@@ -230,14 +254,31 @@ const EmployeeSalaryPage: React.FC = () => {
   );
   const [mySalary, setMySalary] = useState<EmployeeSalary | null>(null);
   const [mySalaryLoading, setMySalaryLoading] = useState(false);
+  const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(
+    null
+  );
+  const [configLoading, setConfigLoading] = useState(false);
 
-  const [baseSalary, setBaseSalary] = useState<number>(0);
+  const [baseSalary, setBaseSalary] = useState<number | ''>(0);
+  const [basePayComponents, setBasePayComponents] = useState<{
+    basic: number | '';
+    houseRent: number | '';
+    medical: number | '';
+    transport: number | '';
+  }>({
+    basic: 0,
+    houseRent: 0,
+    medical: 0,
+    transport: 0,
+  });
   const [allowances, setAllowances] = useState<EmployeeSalaryAllowance[]>([]);
   const [deductions, setDeductions] = useState<EmployeeSalaryDeduction[]>([]);
   const [effectiveMonth, setEffectiveMonth] = useState<number>(
     dayjs().month() + 1
   );
-  const [effectiveYear, setEffectiveYear] = useState<number>(dayjs().year());
+  const [effectiveYear, setEffectiveYear] = useState<number | ''>(
+    dayjs().year()
+  );
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [notes, setNotes] = useState<string>('');
@@ -292,8 +333,8 @@ const EmployeeSalaryPage: React.FC = () => {
         return;
       }
       setCurrentEmployeeId(employeeId);
-      const salary = await payrollApi.getEmployeeSalary(employeeId);
-      setMySalary(salary);
+      const response = await payrollApi.getEmployeeSalary(employeeId);
+      setMySalary(response.salary);
     } catch (error) {
       console.error('Failed to load my salary:', error);
       if (
@@ -353,13 +394,102 @@ const EmployeeSalaryPage: React.FC = () => {
     }
   };
 
-  const handleAddSalary = () => {
+  const handleAddSalary = async () => {
     setSelectedEmployee(null);
     setSelectedSalary(null);
     setSelectedEmployeeId('');
-    setBaseSalary(0);
-    setAllowances([]);
-    setDeductions([]);
+
+    // Load payroll configuration defaults
+    try {
+      setConfigLoading(true);
+      const config = await payrollApi.getConfig();
+      setPayrollConfig(config);
+
+      if (config) {
+        // Set base pay components from config
+        setBasePayComponents({
+          basic: config.basePayComponents?.basic || 0,
+          houseRent: config.basePayComponents?.houseRent || 0,
+          medical: config.basePayComponents?.medical || 0,
+          transport: config.basePayComponents?.transport || 0,
+        });
+
+        // Calculate total base salary for display/validation
+        const totalBaseSalary =
+          (config.basePayComponents?.basic || 0) +
+          (config.basePayComponents?.houseRent || 0) +
+          (config.basePayComponents?.medical || 0) +
+          (config.basePayComponents?.transport || 0);
+        setBaseSalary(totalBaseSalary || 0);
+
+        // Convert config allowances to employee salary allowances format
+        const configAllowances: EmployeeSalaryAllowance[] = (
+          config.allowances || []
+        ).map(allowance => ({
+          type: allowance.type || '',
+          amount: allowance.amount || 0,
+          percentage: allowance.percentage || 0,
+          description: allowance.description || '',
+        }));
+
+        // Convert config deductions to employee salary deductions format
+        // Note: Config has percentage-based deductions, we'll create deduction items
+        const configDeductions: EmployeeSalaryDeduction[] = [];
+        if (config.deductions?.taxPercentage) {
+          configDeductions.push({
+            type: 'Tax',
+            amount: 0,
+            percentage: config.deductions.taxPercentage,
+            description: 'Tax deduction percentage',
+          });
+        }
+        if (config.deductions?.insurancePercentage) {
+          configDeductions.push({
+            type: 'Insurance',
+            amount: 0,
+            percentage: config.deductions.insurancePercentage,
+            description: 'Insurance deduction percentage',
+          });
+        }
+        if (config.deductions?.providentFundPercentage) {
+          configDeductions.push({
+            type: 'Provident Fund',
+            amount: 0,
+            percentage: config.deductions.providentFundPercentage,
+            description: 'Provident fund deduction percentage',
+          });
+        }
+
+        setAllowances(configAllowances);
+        setDeductions(configDeductions);
+      } else {
+        // No config, use empty defaults
+        setBasePayComponents({
+          basic: 0,
+          houseRent: 0,
+          medical: 0,
+          transport: 0,
+        });
+        setBaseSalary(0);
+        setAllowances([]);
+        setDeductions([]);
+      }
+    } catch (error) {
+      console.error('Failed to load payroll config:', error);
+      // Use empty defaults if config fails to load
+      setBasePayComponents({
+        basic: 0,
+        houseRent: 0,
+        medical: 0,
+        transport: 0,
+      });
+      setBaseSalary(0);
+      setAllowances([]);
+      setDeductions([]);
+    } finally {
+      setConfigLoading(false);
+    }
+
     setEffectiveMonth(dayjs().month() + 1);
     setEffectiveYear(dayjs().year());
     setEndDate(null);
@@ -368,25 +498,123 @@ const EmployeeSalaryPage: React.FC = () => {
     setEditModalOpen(true);
   };
 
-  const handleEditSalary = (employee: EmployeeSalaryListItem) => {
-    if (!employee.salary) return;
+  const handleEditSalary = async (employee: EmployeeSalaryListItem) => {
     setSelectedEmployee(employee);
-    setSelectedSalary(employee.salary);
     setSelectedEmployeeId(employee.employee.id);
-    setBaseSalary(
-      typeof employee.salary.baseSalary === 'string'
-        ? parseFloat(employee.salary.baseSalary)
-        : employee.salary.baseSalary
-    );
-    setAllowances(employee.salary.allowances || []);
-    setDeductions(employee.salary.deductions || []);
-    const effectiveDateObj = dayjs(employee.salary.effectiveDate);
-    setEffectiveMonth(effectiveDateObj.month() + 1);
-    setEffectiveYear(effectiveDateObj.year());
-    setEndDate(employee.salary.endDate ? dayjs(employee.salary.endDate) : null);
-    setStatus(employee.salary.status);
-    setNotes(employee.salary.notes || '');
-    setEditModalOpen(true);
+
+    try {
+      // Fetch the latest salary data with defaults
+      const response = await payrollApi.getEmployeeSalary(employee.employee.id);
+
+      // Load payroll config to get basePayComponents structure
+      const config = await payrollApi.getConfig();
+      setPayrollConfig(config);
+
+      if (response.salary) {
+        // Employee has an active salary - use actual saved data
+        setSelectedSalary(response.salary);
+        const baseSalaryValue =
+          typeof response.salary.baseSalary === 'string'
+            ? parseFloat(response.salary.baseSalary)
+            : response.salary.baseSalary;
+
+        // If config exists, use its proportions to split baseSalary
+        // Otherwise, put entire baseSalary in basic
+        if (config && config.basePayComponents) {
+          const totalConfigBase =
+            (config.basePayComponents.basic || 0) +
+            (config.basePayComponents.houseRent || 0) +
+            (config.basePayComponents.medical || 0) +
+            (config.basePayComponents.transport || 0);
+
+          if (totalConfigBase > 0) {
+            // Split baseSalary proportionally based on config
+            const ratio = baseSalaryValue / totalConfigBase;
+            setBasePayComponents({
+              basic: Math.round((config.basePayComponents.basic || 0) * ratio),
+              houseRent: Math.round(
+                (config.basePayComponents.houseRent || 0) * ratio
+              ),
+              medical: Math.round(
+                (config.basePayComponents.medical || 0) * ratio
+              ),
+              transport: Math.round(
+                (config.basePayComponents.transport || 0) * ratio
+              ),
+            });
+          } else {
+            // Config has no base pay, put all in basic
+            setBasePayComponents({
+              basic: baseSalaryValue,
+              houseRent: 0,
+              medical: 0,
+              transport: 0,
+            });
+          }
+        } else {
+          // No config, put entire baseSalary in basic
+          setBasePayComponents({
+            basic: baseSalaryValue,
+            houseRent: 0,
+            medical: 0,
+            transport: 0,
+          });
+        }
+
+        setBaseSalary(baseSalaryValue);
+        setAllowances(response.salary.allowances || []);
+        setDeductions(response.salary.deductions || []);
+        const effectiveDateObj = dayjs(response.salary.effectiveDate);
+        setEffectiveMonth(effectiveDateObj.month() + 1);
+        setEffectiveYear(effectiveDateObj.year());
+        setEndDate(
+          response.salary.endDate ? dayjs(response.salary.endDate) : null
+        );
+        setStatus(response.salary.status);
+        setNotes(response.salary.notes || '');
+      } else {
+        // No salary assigned - use defaults from payroll config
+        setSelectedSalary(null);
+
+        // Load basePayComponents from config if available
+        if (config && config.basePayComponents) {
+          setBasePayComponents({
+            basic: config.basePayComponents.basic || 0,
+            houseRent: config.basePayComponents.houseRent || 0,
+            medical: config.basePayComponents.medical || 0,
+            transport: config.basePayComponents.transport || 0,
+          });
+          const totalBaseSalary =
+            (config.basePayComponents.basic || 0) +
+            (config.basePayComponents.houseRent || 0) +
+            (config.basePayComponents.medical || 0) +
+            (config.basePayComponents.transport || 0);
+          setBaseSalary(totalBaseSalary);
+        } else {
+          // Use defaults from API response
+          setBasePayComponents({
+            basic: response.defaults.baseSalary || 0,
+            houseRent: 0,
+            medical: 0,
+            transport: 0,
+          });
+          setBaseSalary(response.defaults.baseSalary);
+        }
+
+        setAllowances([...response.defaults.allowances]);
+        setDeductions([...response.defaults.deductions]);
+        const effectiveDateObj = dayjs(response.defaults.effectiveDate);
+        setEffectiveMonth(effectiveDateObj.month() + 1);
+        setEffectiveYear(effectiveDateObj.year());
+        setEndDate(null);
+        setStatus('active');
+        setNotes('');
+      }
+      setEditModalOpen(true);
+    } catch (error) {
+      console.error('Failed to load employee salary:', error);
+      snackbar.error('Failed to load salary information');
+    }
   };
 
   const handleSaveSalary = async () => {
@@ -402,14 +630,61 @@ const EmployeeSalaryPage: React.FC = () => {
         return;
       }
 
-      const effectiveDate = dayjs(
-        `${effectiveYear}-${effectiveMonth}-01`
-      ).format('YYYY-MM-DD');
+      const year =
+        typeof effectiveYear === 'string' && effectiveYear === ''
+          ? dayjs().year()
+          : effectiveYear || dayjs().year();
+      const effectiveDate = dayjs(`${year}-${effectiveMonth}-01`).format(
+        'YYYY-MM-DD'
+      );
+
+      // Only send allowances and deductions that are not deleted (have valid data)
+      const validAllowances = allowances
+        .filter(a => a.type && a.type.trim() !== '')
+        .map(a => ({
+          ...a,
+          amount:
+            typeof a.amount === 'string' && a.amount === '' ? 0 : a.amount || 0,
+          percentage:
+            typeof a.percentage === 'string' && a.percentage === ''
+              ? 0
+              : a.percentage || 0,
+        }));
+      const validDeductions = deductions
+        .filter(d => d.type && d.type.trim() !== '')
+        .map(d => ({
+          ...d,
+          amount:
+            typeof d.amount === 'string' && d.amount === '' ? 0 : d.amount || 0,
+          percentage:
+            typeof d.percentage === 'string' && d.percentage === ''
+              ? 0
+              : d.percentage || 0,
+        }));
+
+      // Calculate baseSalary from basePayComponents
+      const calculatedBaseSalary =
+        (typeof basePayComponents.basic === 'string' &&
+        basePayComponents.basic === ''
+          ? 0
+          : basePayComponents.basic || 0) +
+        (typeof basePayComponents.houseRent === 'string' &&
+        basePayComponents.houseRent === ''
+          ? 0
+          : basePayComponents.houseRent || 0) +
+        (typeof basePayComponents.medical === 'string' &&
+        basePayComponents.medical === ''
+          ? 0
+          : basePayComponents.medical || 0) +
+        (typeof basePayComponents.transport === 'string' &&
+        basePayComponents.transport === ''
+          ? 0
+          : basePayComponents.transport || 0);
 
       const salaryData = {
-        baseSalary,
-        allowances,
-        deductions,
+        baseSalary: calculatedBaseSalary,
+        allowances: validAllowances,
+        deductions: validDeductions,
         effectiveDate,
         endDate: endDate?.format('YYYY-MM-DD') || undefined,
         status,
@@ -428,6 +703,8 @@ const EmployeeSalaryPage: React.FC = () => {
       }
 
       setEditModalOpen(false);
+      setPayrollConfig(null);
+      setConfigLoading(false);
       if (isAdminRole) {
         loadAllEmployeeSalaries();
       } else {
@@ -453,7 +730,7 @@ const EmployeeSalaryPage: React.FC = () => {
   const handleUpdateAllowance = (
     index: number,
     field: keyof EmployeeSalaryAllowance,
-    value: string | number
+    value: string | number | ''
   ) => {
     const updated = [...allowances];
     updated[index] = { ...updated[index], [field]: value };
@@ -474,7 +751,7 @@ const EmployeeSalaryPage: React.FC = () => {
   const handleUpdateDeduction = (
     index: number,
     field: keyof EmployeeSalaryDeduction,
-    value: string | number
+    value: string | number | ''
   ) => {
     const updated = [...deductions];
     updated[index] = { ...updated[index], [field]: value };
@@ -499,28 +776,75 @@ const EmployeeSalaryPage: React.FC = () => {
     if (!selectedSalary && !selectedEmployeeId && !currentEmployeeId) {
       return false;
     }
-    if (baseSalary <= 0) {
+    // Check if at least basic component has a value
+    const basicValue =
+      typeof basePayComponents.basic === 'string' &&
+      basePayComponents.basic === ''
+        ? 0
+        : basePayComponents.basic || 0;
+    if (basicValue <= 0) {
       return false;
     }
-    if (!effectiveMonth || !effectiveYear) {
+    // Calculate total base salary
+    const totalBaseSalary =
+      (typeof basePayComponents.basic === 'string' &&
+      basePayComponents.basic === ''
+        ? 0
+        : basePayComponents.basic || 0) +
+      (typeof basePayComponents.houseRent === 'string' &&
+      basePayComponents.houseRent === ''
+        ? 0
+        : basePayComponents.houseRent || 0) +
+      (typeof basePayComponents.medical === 'string' &&
+      basePayComponents.medical === ''
+        ? 0
+        : basePayComponents.medical || 0) +
+      (typeof basePayComponents.transport === 'string' &&
+      basePayComponents.transport === ''
+        ? 0
+        : basePayComponents.transport || 0);
+    if (totalBaseSalary <= 0) {
+      return false;
+    }
+    const year =
+      typeof effectiveYear === 'string' && effectiveYear === ''
+        ? 0
+        : effectiveYear || 0;
+    if (!effectiveMonth || !year) {
       return false;
     }
     for (const allowance of allowances) {
+      const amount =
+        typeof allowance.amount === 'string' && allowance.amount === ''
+          ? 0
+          : allowance.amount || 0;
+      const percentage =
+        typeof allowance.percentage === 'string' && allowance.percentage === ''
+          ? 0
+          : allowance.percentage || 0;
       if (
         !allowance.type ||
         allowance.type.trim() === '' ||
-        allowance.amount < 0 ||
-        allowance.percentage < 0
+        amount < 0 ||
+        percentage < 0
       ) {
         return false;
       }
     }
     for (const deduction of deductions) {
+      const amount =
+        typeof deduction.amount === 'string' && deduction.amount === ''
+          ? 0
+          : deduction.amount || 0;
+      const percentage =
+        typeof deduction.percentage === 'string' && deduction.percentage === ''
+          ? 0
+          : deduction.percentage || 0;
       if (
         !deduction.type ||
         deduction.type.trim() === '' ||
-        deduction.amount < 0 ||
-        deduction.percentage < 0
+        amount < 0 ||
+        percentage < 0
       ) {
         return false;
       }
@@ -530,7 +854,7 @@ const EmployeeSalaryPage: React.FC = () => {
     selectedSalary,
     selectedEmployeeId,
     currentEmployeeId,
-    baseSalary,
+    basePayComponents,
     effectiveMonth,
     effectiveYear,
     allowances,
@@ -544,11 +868,33 @@ const EmployeeSalaryPage: React.FC = () => {
       typeof selectedSalary.baseSalary === 'string'
         ? parseFloat(selectedSalary.baseSalary)
         : selectedSalary.baseSalary;
-    if (currentBaseSalary !== baseSalary) return true;
+    // Calculate total from basePayComponents
+    const totalBaseSalary =
+      (typeof basePayComponents.basic === 'string' &&
+      basePayComponents.basic === ''
+        ? 0
+        : basePayComponents.basic || 0) +
+      (typeof basePayComponents.houseRent === 'string' &&
+      basePayComponents.houseRent === ''
+        ? 0
+        : basePayComponents.houseRent || 0) +
+      (typeof basePayComponents.medical === 'string' &&
+      basePayComponents.medical === ''
+        ? 0
+        : basePayComponents.medical || 0) +
+      (typeof basePayComponents.transport === 'string' &&
+      basePayComponents.transport === ''
+        ? 0
+        : basePayComponents.transport || 0);
+    if (currentBaseSalary !== totalBaseSalary) return true;
 
-    const currentEffectiveDate = dayjs(
-      `${effectiveYear}-${effectiveMonth}-01`
-    ).format('YYYY-MM-DD');
+    const year =
+      typeof effectiveYear === 'string' && effectiveYear === ''
+        ? dayjs().year()
+        : effectiveYear || dayjs().year();
+    const currentEffectiveDate = dayjs(`${year}-${effectiveMonth}-01`).format(
+      'YYYY-MM-DD'
+    );
     if (
       dayjs(selectedSalary.effectiveDate).format('YYYY-MM-DD') !==
       currentEffectiveDate
@@ -1104,19 +1450,44 @@ const EmployeeSalaryPage: React.FC = () => {
                           <Button
                             size='small'
                             variant='outlined'
-                            onClick={() => {
+                            onClick={async () => {
                               setSelectedEmployee(item);
-                              setSelectedSalary(null);
                               setSelectedEmployeeId(item.employee.id);
-                              setBaseSalary(0);
-                              setAllowances([]);
-                              setDeductions([]);
-                              setEffectiveMonth(dayjs().month() + 1);
-                              setEffectiveYear(dayjs().year());
-                              setEndDate(null);
-                              setStatus('active');
-                              setNotes('');
-                              setEditModalOpen(true);
+
+                              try {
+                                // Fetch defaults for this employee
+                                const response =
+                                  await payrollApi.getEmployeeSalary(
+                                    item.employee.id
+                                  );
+
+                                // Use defaults since salary is null
+                                setSelectedSalary(null);
+                                setBaseSalary(response.defaults.baseSalary);
+                                setAllowances([
+                                  ...response.defaults.allowances,
+                                ]);
+                                setDeductions([
+                                  ...response.defaults.deductions,
+                                ]);
+                                const effectiveDateObj = dayjs(
+                                  response.defaults.effectiveDate
+                                );
+                                setEffectiveMonth(effectiveDateObj.month() + 1);
+                                setEffectiveYear(effectiveDateObj.year());
+                                setEndDate(null);
+                                setStatus('active');
+                                setNotes('');
+                                setEditModalOpen(true);
+                              } catch (error) {
+                                console.error(
+                                  'Failed to load salary defaults:',
+                                  error
+                                );
+                                snackbar.error(
+                                  'Failed to load salary defaults'
+                                );
+                              }
                             }}
                           >
                             {L.assign}
@@ -1165,35 +1536,51 @@ const EmployeeSalaryPage: React.FC = () => {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             flexDirection: language === 'ar' ? 'row-reverse' : 'row',
             color: darkMode ? '#fff' : '#000',
             pb: 2,
             textAlign: language === 'ar' ? 'right' : 'left',
           }}
         >
-          <Typography
-            variant='h6'
-            sx={{ fontWeight: 600, order: language === 'ar' ? 2 : 1 }}
+          {language === 'ar' && (
+            <IconButton
+              onClick={() => setViewModalOpen(false)}
+              size='small'
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
+          <Box
+            sx={{ flex: 1, textAlign: language === 'ar' ? 'right' : 'left' }}
           >
-            {selectedEmployee
-              ? `${selectedEmployee.employee.user.first_name} ${selectedEmployee.employee.user.last_name} - ${L.salaryStructure}`
-              : L.salaryStructure}
-          </Typography>
-          <IconButton
-            onClick={() => setViewModalOpen(false)}
-            size='small'
-            sx={{
-              order: language === 'ar' ? 1 : 2,
-              color: theme.palette.text.secondary,
-              '&:hover': {
-                color: theme.palette.text.primary,
-                backgroundColor: theme.palette.action.hover,
-              },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
+            <Typography variant='h6' sx={{ fontWeight: 600 }}>
+              {selectedEmployee
+                ? `${selectedEmployee.employee.user.first_name} ${selectedEmployee.employee.user.last_name} - ${L.salaryStructure}`
+                : L.salaryStructure}
+            </Typography>
+          </Box>
+          {language !== 'ar' && (
+            <IconButton
+              onClick={() => setViewModalOpen(false)}
+              size='small'
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
         </DialogTitle>
         <DialogContent
           sx={{
@@ -1562,7 +1949,11 @@ const EmployeeSalaryPage: React.FC = () => {
 
       <Dialog
         open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
+        onClose={() => {
+          setEditModalOpen(false);
+          setPayrollConfig(null);
+          setConfigLoading(false);
+        }}
         maxWidth='md'
         fullWidth
         PaperProps={{
@@ -1574,33 +1965,62 @@ const EmployeeSalaryPage: React.FC = () => {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             flexDirection: language === 'ar' ? 'row-reverse' : 'row',
             color: darkMode ? '#fff' : '#000',
             pb: 2,
             textAlign: language === 'ar' ? 'right' : 'left',
           }}
         >
-          <Typography
-            variant='h6'
-            sx={{ fontWeight: 600, order: language === 'ar' ? 2 : 1 }}
+          {language === 'ar' && (
+            <IconButton
+              onClick={() => setEditModalOpen(false)}
+              size='small'
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
+          <Box
+            sx={{ flex: 1, textAlign: language === 'ar' ? 'right' : 'left' }}
           >
-            {selectedSalary ? L.editModalTitle : L.createModalTitle}
-          </Typography>
-          <IconButton
-            onClick={() => setEditModalOpen(false)}
-            size='small'
-            sx={{
-              order: language === 'ar' ? 1 : 2,
-              color: theme.palette.text.secondary,
-              '&:hover': {
-                color: theme.palette.text.primary,
-                backgroundColor: theme.palette.action.hover,
-              },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
+            <Typography variant='h6' sx={{ fontWeight: 600 }}>
+              {selectedSalary ? L.editModalTitle : L.createModalTitle}
+            </Typography>
+            {!selectedSalary && payrollConfig && (
+              <Typography
+                variant='caption'
+                sx={{
+                  color: darkMode ? '#8f8f8f' : '#666',
+                  mt: 0.5,
+                  display: 'block',
+                  fontStyle: 'italic',
+                }}
+              >
+                {L.preFilledConfig}
+              </Typography>
+            )}
+          </Box>
+          {language !== 'ar' && (
+            <IconButton
+              onClick={() => setEditModalOpen(false)}
+              size='small'
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
         </DialogTitle>
         <DialogContent
           sx={{
@@ -1618,6 +2038,39 @@ const EmployeeSalaryPage: React.FC = () => {
               marginTop: 2,
             }}
           >
+            {configLoading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            )}
+            {!selectedSalary && payrollConfig && (
+              <Alert
+                severity='info'
+                sx={{
+                  backgroundColor: darkMode ? '#1e3a5f' : '#e3f2fd',
+                  color: darkMode ? '#90caf9' : '#1976d2',
+                }}
+              >
+                <Typography variant='body2' sx={{ fontWeight: 600, mb: 0.5 }}>
+                  {L.currentPayrollConfig}
+                </Typography>
+                <Typography variant='caption' sx={{ display: 'block' }}>
+                  {L.baseSalaryLabel}:{' '}
+                  {formatCurrency(payrollConfig.basePayComponents?.basic || 0)}{' '}
+                  • {L.allowancesLabel}: {payrollConfig.allowances?.length || 0}{' '}
+                  • {L.deductionsLabel}:{' '}
+                  {
+                    [
+                      payrollConfig.deductions?.taxPercentage && 'Tax',
+                      payrollConfig.deductions?.insurancePercentage &&
+                        'Insurance',
+                      payrollConfig.deductions?.providentFundPercentage &&
+                        'Provident Fund',
+                    ].filter(Boolean).length
+                  }
+                </Typography>
+              </Alert>
+            )}
             {!selectedSalary && (
               <FormControl fullWidth>
                 <InputLabel sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>
@@ -1625,9 +2078,134 @@ const EmployeeSalaryPage: React.FC = () => {
                 </InputLabel>
                 <Select
                   value={selectedEmployeeId}
-                  onChange={e => setSelectedEmployeeId(e.target.value)}
-                  label={L.selectEmployeeLabel}
-                  dir={inputDir}
+                  onChange={async e => {
+                    const employeeId = e.target.value;
+                    setSelectedEmployeeId(employeeId);
+
+                    if (employeeId) {
+                      try {
+                        // Load defaults for the selected employee
+                        const response =
+                          await payrollApi.getEmployeeSalary(employeeId);
+
+                        // Load payroll config to get basePayComponents structure
+                        const config = await payrollApi.getConfig();
+                        setPayrollConfig(config);
+
+                        if (response.salary) {
+                          // Employee has an active salary - use actual saved data
+                          setSelectedSalary(response.salary);
+                          const baseSalaryValue =
+                            typeof response.salary.baseSalary === 'string'
+                              ? parseFloat(response.salary.baseSalary)
+                              : response.salary.baseSalary;
+
+                          // If config exists, use its proportions to split baseSalary
+                          if (config && config.basePayComponents) {
+                            const totalConfigBase =
+                              (config.basePayComponents.basic || 0) +
+                              (config.basePayComponents.houseRent || 0) +
+                              (config.basePayComponents.medical || 0) +
+                              (config.basePayComponents.transport || 0);
+
+                            if (totalConfigBase > 0) {
+                              const ratio = baseSalaryValue / totalConfigBase;
+                              setBasePayComponents({
+                                basic: Math.round(
+                                  (config.basePayComponents.basic || 0) * ratio
+                                ),
+                                houseRent: Math.round(
+                                  (config.basePayComponents.houseRent || 0) *
+                                    ratio
+                                ),
+                                medical: Math.round(
+                                  (config.basePayComponents.medical || 0) *
+                                    ratio
+                                ),
+                                transport: Math.round(
+                                  (config.basePayComponents.transport || 0) *
+                                    ratio
+                                ),
+                              });
+                            } else {
+                              setBasePayComponents({
+                                basic: baseSalaryValue,
+                                houseRent: 0,
+                                medical: 0,
+                                transport: 0,
+                              });
+                            }
+                          } else {
+                            setBasePayComponents({
+                              basic: baseSalaryValue,
+                              houseRent: 0,
+                              medical: 0,
+                              transport: 0,
+                            });
+                          }
+
+                          setBaseSalary(baseSalaryValue);
+                          setAllowances(response.salary.allowances || []);
+                          setDeductions(response.salary.deductions || []);
+                          const effectiveDateObj = dayjs(
+                            response.salary.effectiveDate
+                          );
+                          setEffectiveMonth(effectiveDateObj.month() + 1);
+                          setEffectiveYear(effectiveDateObj.year());
+                          setEndDate(
+                            response.salary.endDate
+                              ? dayjs(response.salary.endDate)
+                              : null
+                          );
+                          setStatus(response.salary.status);
+                          setNotes(response.salary.notes || '');
+                        } else {
+                          // No salary assigned - use defaults from payroll config
+                          setSelectedSalary(null);
+
+                          if (config && config.basePayComponents) {
+                            setBasePayComponents({
+                              basic: config.basePayComponents.basic || 0,
+                              houseRent:
+                                config.basePayComponents.houseRent || 0,
+                              medical: config.basePayComponents.medical || 0,
+                              transport:
+                                config.basePayComponents.transport || 0,
+                            });
+                            const totalBaseSalary =
+                              (config.basePayComponents.basic || 0) +
+                              (config.basePayComponents.houseRent || 0) +
+                              (config.basePayComponents.medical || 0) +
+                              (config.basePayComponents.transport || 0);
+                            setBaseSalary(totalBaseSalary);
+                          } else {
+                            setBasePayComponents({
+                              basic: response.defaults.baseSalary || 0,
+                              houseRent: 0,
+                              medical: 0,
+                              transport: 0,
+                            });
+                            setBaseSalary(response.defaults.baseSalary);
+                          }
+
+                          setAllowances([...response.defaults.allowances]);
+                          setDeductions([...response.defaults.deductions]);
+                          const effectiveDateObj = dayjs(
+                            response.defaults.effectiveDate
+                          );
+                          setEffectiveMonth(effectiveDateObj.month() + 1);
+                          setEffectiveYear(effectiveDateObj.year());
+                          setEndDate(null);
+                          setStatus('active');
+                          setNotes('');
+                        }
+                      } catch (error) {
+                        console.error('Failed to load employee salary:', error);
+                        snackbar.error('Failed to load salary information');
+                      }
+                    }
+                  }}
+                  label='Select Employee'
                   sx={{
                     color: darkMode ? '#fff' : '#000',
                     '& .MuiOutlinedInput-notchedOutline': {
@@ -1655,23 +2233,127 @@ const EmployeeSalaryPage: React.FC = () => {
               </FormControl>
             )}
 
-            <TextField
-              fullWidth
-              label={L.baseSalary}
-              type='number'
-              value={baseSalary}
-              onChange={e => setBaseSalary(parseFloat(e.target.value) || 0)}
-              dir={inputDir}
-              inputProps={{ style: { textAlign: inputTextAlign } }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
+            <Box>
+              <Typography
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                variant='h6'
+                sx={{
+                  mb: 2,
+                  fontWeight: 600,
                   color: darkMode ? '#fff' : '#000',
-                },
-                '& .MuiInputLabel-root': {
+                  textAlign: language === 'ar' ? 'right' : 'left',
+                }}
+              >
+                {L.basePayComponentsTitle}
+              </Typography>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, 1fr)',
+                    md: 'repeat(4, 1fr)',
+                  },
+                  gap: 2,
+                }}
+              >
+                {Object.entries(basePayComponents).map(([key, value]) => (
+                  <TextField
+                    key={key}
+                    fullWidth
+                    label={
+                      key === 'basic'
+                        ? L.basicLabel
+                        : key === 'houseRent'
+                          ? L.houseRentLabel
+                          : key === 'medical'
+                            ? L.medicalLabel
+                            : key === 'transport'
+                              ? L.transportLabel
+                              : key.charAt(0).toUpperCase() + key.slice(1)
+                    }
+                    type='number'
+                    dir={inputDir}
+                    inputProps={{
+                      min: 0,
+                      dir: inputDir,
+                      style: { textAlign: inputTextAlign },
+                    }}
+                    value={value === 0 ? '' : value}
+                    onChange={e => {
+                      const inputValue = e.target.value;
+                      const numValue =
+                        inputValue === ''
+                          ? ''
+                          : Math.max(0, parseFloat(inputValue) || 0);
+                      setBasePayComponents(prev => ({
+                        ...prev,
+                        [key]: numValue,
+                      }));
+                      // Update total base salary
+                      const updated = {
+                        ...basePayComponents,
+                        [key]: numValue,
+                      };
+                      const total =
+                        (typeof updated.basic === 'string' &&
+                        updated.basic === ''
+                          ? 0
+                          : updated.basic || 0) +
+                        (typeof updated.houseRent === 'string' &&
+                        updated.houseRent === ''
+                          ? 0
+                          : updated.houseRent || 0) +
+                        (typeof updated.medical === 'string' &&
+                        updated.medical === ''
+                          ? 0
+                          : updated.medical || 0) +
+                        (typeof updated.transport === 'string' &&
+                        updated.transport === ''
+                          ? 0
+                          : updated.transport || 0);
+                      setBaseSalary(total === 0 ? '' : total);
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        color: darkMode ? '#fff' : '#000',
+                      },
+                      '& .MuiInputLabel-root': {
+                        color: darkMode ? '#8f8f8f' : '#666',
+                      },
+                    }}
+                  />
+                ))}
+              </Box>
+              <Typography
+                variant='caption'
+                sx={{
                   color: darkMode ? '#8f8f8f' : '#666',
-                },
-              }}
-            />
+                  mt: 1,
+                  display: 'block',
+                }}
+              >
+                {L.totalBaseSalaryLabel}:{' '}
+                {formatCurrency(
+                  (typeof basePayComponents.basic === 'string' &&
+                  basePayComponents.basic === ''
+                    ? 0
+                    : basePayComponents.basic || 0) +
+                    (typeof basePayComponents.houseRent === 'string' &&
+                    basePayComponents.houseRent === ''
+                      ? 0
+                      : basePayComponents.houseRent || 0) +
+                    (typeof basePayComponents.medical === 'string' &&
+                    basePayComponents.medical === ''
+                      ? 0
+                      : basePayComponents.medical || 0) +
+                    (typeof basePayComponents.transport === 'string' &&
+                    basePayComponents.transport === ''
+                      ? 0
+                      : basePayComponents.transport || 0)
+                )}
+              </Typography>
+            </Box>
 
             <Box>
               <Box
@@ -1730,17 +2412,22 @@ const EmployeeSalaryPage: React.FC = () => {
                       fullWidth
                       label={L.amountLabel}
                       type='number'
-                      value={allowance.amount}
-                      onChange={e =>
-                        handleUpdateAllowance(
-                          index,
-                          'amount',
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
+                      value={allowance.amount === 0 ? '' : allowance.amount}
+                      onChange={e => {
+                        const value = e.target.value;
+                        const numValue =
+                          value === ''
+                            ? ''
+                            : Math.max(0, parseFloat(value) || 0);
+                        handleUpdateAllowance(index, 'amount', numValue);
+                      }}
                       size='small'
                       dir={inputDir}
-                      inputProps={{ style: { textAlign: inputTextAlign } }}
+                      inputProps={{
+                        min: 0,
+                        dir: inputDir,
+                        style: { textAlign: inputTextAlign },
+                      }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           color: darkMode ? '#fff' : '#000',
@@ -1754,17 +2441,24 @@ const EmployeeSalaryPage: React.FC = () => {
                       fullWidth
                       label={L.percentageLabel}
                       type='number'
-                      value={allowance.percentage}
-                      onChange={e =>
-                        handleUpdateAllowance(
-                          index,
-                          'percentage',
-                          parseFloat(e.target.value) || 0
-                        )
+                      value={
+                        allowance.percentage === 0 ? '' : allowance.percentage
                       }
+                      onChange={e => {
+                        const value = e.target.value;
+                        const numValue =
+                          value === ''
+                            ? ''
+                            : Math.max(0, parseFloat(value) || 0);
+                        handleUpdateAllowance(index, 'percentage', numValue);
+                      }}
                       size='small'
                       dir={inputDir}
-                      inputProps={{ style: { textAlign: inputTextAlign } }}
+                      inputProps={{
+                        min: 0,
+                        dir: inputDir,
+                        style: { textAlign: inputTextAlign },
+                      }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           color: darkMode ? '#fff' : '#000',
@@ -1867,17 +2561,22 @@ const EmployeeSalaryPage: React.FC = () => {
                       fullWidth
                       label={L.amountLabel}
                       type='number'
-                      value={deduction.amount}
-                      onChange={e =>
-                        handleUpdateDeduction(
-                          index,
-                          'amount',
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
+                      value={deduction.amount === 0 ? '' : deduction.amount}
+                      onChange={e => {
+                        const value = e.target.value;
+                        const numValue =
+                          value === ''
+                            ? ''
+                            : Math.max(0, parseFloat(value) || 0);
+                        handleUpdateDeduction(index, 'amount', numValue);
+                      }}
                       size='small'
                       dir={inputDir}
-                      inputProps={{ style: { textAlign: inputTextAlign } }}
+                      inputProps={{
+                        min: 0,
+                        dir: inputDir,
+                        style: { textAlign: inputTextAlign },
+                      }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           color: darkMode ? '#fff' : '#000',
@@ -1891,17 +2590,24 @@ const EmployeeSalaryPage: React.FC = () => {
                       fullWidth
                       label={L.percentageLabel}
                       type='number'
-                      value={deduction.percentage}
-                      onChange={e =>
-                        handleUpdateDeduction(
-                          index,
-                          'percentage',
-                          parseFloat(e.target.value) || 0
-                        )
+                      value={
+                        deduction.percentage === 0 ? '' : deduction.percentage
                       }
+                      onChange={e => {
+                        const value = e.target.value;
+                        const numValue =
+                          value === ''
+                            ? ''
+                            : Math.max(0, parseFloat(value) || 0);
+                        handleUpdateDeduction(index, 'percentage', numValue);
+                      }}
                       size='small'
                       dir={inputDir}
-                      inputProps={{ style: { textAlign: inputTextAlign } }}
+                      inputProps={{
+                        min: 0,
+                        dir: inputDir,
+                        style: { textAlign: inputTextAlign },
+                      }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           color: darkMode ? '#fff' : '#000',
@@ -1977,12 +2683,15 @@ const EmployeeSalaryPage: React.FC = () => {
               <TextField
                 label={L.effectiveYearLabel}
                 type='number'
-                value={effectiveYear}
-                onChange={e =>
-                  setEffectiveYear(Number(e.target.value) || effectiveYear)
-                }
                 dir={inputDir}
                 inputProps={{ style: { textAlign: inputTextAlign } }}
+                value={effectiveYear === 0 ? '' : effectiveYear}
+                onChange={e => {
+                  const value = e.target.value;
+                  const numValue =
+                    value === '' ? '' : Math.max(0, Number(value) || 0);
+                  setEffectiveYear(numValue);
+                }}
                 sx={{
                   width: '100%',
                   '& .MuiOutlinedInput-root': {
@@ -2097,7 +2806,11 @@ const EmployeeSalaryPage: React.FC = () => {
           }}
         >
           <Button
-            onClick={() => setEditModalOpen(false)}
+            onClick={() => {
+              setEditModalOpen(false);
+              setPayrollConfig(null);
+              setConfigLoading(false);
+            }}
             sx={{ mr: language === 'ar' ? 1 : 0 }}
           >
             {L.cancel}
