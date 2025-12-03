@@ -204,7 +204,7 @@ const LeaveRequestPage = () => {
     return '';
   };
 
-  // Handle apply leave
+  // Handle apply leave (called after successful API in form)
   const handleApply = async (data: CreateLeaveRequest) => {
     try {
       setSnackbar({
@@ -221,6 +221,14 @@ const LeaveRequestPage = () => {
         severity: 'error',
       });
     }
+  };
+
+  const handleApplyError = (message: string) => {
+    setSnackbar({
+      open: true,
+      message: message || 'Failed to apply leave',
+      severity: 'error',
+    });
   };
 
   // Handle approve/reject
@@ -423,7 +431,7 @@ const LeaveRequestPage = () => {
       <Box sx={{ py: 3 }}>
         {['employee', 'manager'].includes(role) ? (
           activeTab === 'apply' ? (
-            <LeaveForm onSubmit={handleApply} />
+            <LeaveForm onSubmit={handleApply} onError={handleApplyError} />
           ) : (
             <>
               {role === 'manager' && (

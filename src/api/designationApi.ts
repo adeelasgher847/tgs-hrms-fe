@@ -1,6 +1,6 @@
 import axiosInstance from './axiosInstance';
 import { handleApiError } from '../utils/errorHandler';
-
+import { getCurrentUser } from '../utils/auth';
 // Normalized types exposed to the rest of the app (camelCase)
 export interface BackendDesignation {
   id: string;
@@ -10,7 +10,6 @@ export interface BackendDesignation {
   createdAt?: string;
   updatedAt?: string;
 }
-
 export interface BackendDepartment {
   id: string;
   name: string;
@@ -19,16 +18,12 @@ export interface BackendDepartment {
   createdAt?: string;
   updatedAt?: string;
 }
-
-// Frontend Designation interface (your current structure)
 export interface FrontendDesignation {
   id: string;
   title: string;
   titleAr: string;
   departmentId: string;
 }
-
-// Frontend Department interface (for display)
 export interface FrontendDepartment {
   id: string;
   name: string;
@@ -36,13 +31,10 @@ export interface FrontendDepartment {
   description?: string;
   descriptionAr?: string;
 }
-
-// Create/Update DTO interface
 export interface DesignationDto {
   title: string;
   departmentId: string;
 }
-
 function normalizeDesignation(
   raw: Record<string, unknown>
 ): BackendDesignation {
@@ -55,7 +47,6 @@ function normalizeDesignation(
     updatedAt: (raw?.updatedAt ?? raw?.updated_at) as string | undefined,
   };
 }
-
 function normalizeDepartment(raw: Record<string, unknown>): BackendDepartment {
   return {
     id: raw?.id as string,
@@ -66,12 +57,9 @@ function normalizeDepartment(raw: Record<string, unknown>): BackendDepartment {
     updatedAt: (raw?.updatedAt ?? raw?.updated_at) as string | undefined,
   };
 }
-
 class DesignationApiService {
   private baseUrl = '/designations';
   private departmentUrl = '/departments';
-
-  // Get all departments
   async getAllDepartments(): Promise<BackendDepartment[]> {
     const response = await axiosInstance.get<BackendDepartment[]>(
       this.departmentUrl
@@ -81,8 +69,6 @@ class DesignationApiService {
       normalizeDepartment(item as Record<string, unknown>)
     );
   }
-
-  // Get all designations for a department with pagination
   async getDesignationsByDepartment(
     departmentId: string,
     page: number | null = 1
@@ -94,29 +80,23 @@ class DesignationApiService {
     totalPages: number;
   }> {
     try {
-      // Only add page parameter if it's not null (for dropdowns, pass null to get all records)
       const url =
         page === null
           ? `${this.baseUrl}/department/${departmentId}`
           : `${this.baseUrl}/department/${departmentId}?page=${page}`;
       const response = await axiosInstance.get(url);
-
-      // Handle both paginated and non-paginated responses
       let items: unknown[] = [];
       let total = 0;
       let currentPage = page ?? 1;
       let limit = 25;
       let totalPages = 1;
-
       if (response.data && response.data.items) {
-        // Paginated response
         items = response.data.items;
         total = response.data.total || items.length;
         currentPage = response.data.page || (page ?? 1);
         limit = response.data.limit || 25;
         totalPages = response.data.totalPages || Math.ceil(total / limit);
       } else if (Array.isArray(response.data)) {
-        // Direct array (non-paginated)
         items = response.data;
         total = items.length;
         totalPages = 1;
@@ -126,7 +106,6 @@ class DesignationApiService {
         total = 0;
         totalPages = 1;
       }
-
       return {
         items: items.map((item: unknown) =>
           normalizeDesignation(item as Record<string, unknown>)
@@ -147,15 +126,18 @@ class DesignationApiService {
       };
     }
   }
-
   // Get all designations from all departments
   async getAllDesignations(): Promise<BackendDesignation[]> {
     try {
+      // Get current user's tenant_id
+      const currentUser = getCurrentUser();
+      const userTenantId = currentUser?.tenant_id;
+      // Global tenant ID that should be shown for all tenants
+      const GLOBAL_TENANT_ID = '00000000-0000-0000-0000-000000000000';
       // Since your backend doesn't have a direct endpoint for all designations,
       // we'll need to fetch all departments first and then get designations for each
       const departments = await this.getAllDepartments();
       const allDesignations: BackendDesignation[] = [];
-
       for (const department of departments) {
         try {
           const response = await this.getDesignationsByDepartment(
@@ -167,13 +149,27 @@ class DesignationApiService {
           // Continue with other departments even if one fails
         }
       }
-
-      return allDesignations;
+      // Filter designations to include:
+      // 1. Global designations (tenant_id = "00000000-0000-0000-0000-000000000000")
+      // 2. Designations matching the logged-in user's tenant_id
+      const filteredDesignations = allDesignations.filter(designation => {
+        const designationTenantId = designation.tenantId;
+        // Include global designations
+        if (designationTenantId === GLOBAL_TENANT_ID) {
+          return true;
+        }
+        // Include designations matching user's tenant_id
+        if (userTenantId && designationTenantId === userTenantId) {
+          return true;
+        }
+        // If no user tenant_id is available, only show global designations
+        return false;
+      });
+      return filteredDesignations;
     } catch {
       throw new Error('Failed to fetch all designations');
     }
   }
-
   // Get designation by ID
   async getDesignationById(id: string): Promise<BackendDesignation> {
     const response = await axiosInstance.get<BackendDesignation>(
@@ -183,7 +179,6 @@ class DesignationApiService {
       response.data as unknown as Record<string, unknown>
     );
   }
-
   // Create new designation
   async createDesignation(
     designationData: DesignationDto
@@ -210,7 +205,6 @@ class DesignationApiService {
       throw new Error(errorResult.message);
     }
   }
-
   // Update designation
   async updateDesignation(
     id: string,
@@ -235,7 +229,6 @@ class DesignationApiService {
       throw new Error(errorResult.message);
     }
   }
-
   // Delete designation
   async deleteDesignation(id: string): Promise<{ deleted: true; id: string }> {
     try {
@@ -253,7 +246,6 @@ class DesignationApiService {
       throw new Error(errorResult.message);
     }
   }
-
   // Helper function to convert backend designation to frontend format
   convertBackendToFrontend(
     backendDesignation: BackendDesignation
@@ -265,7 +257,6 @@ class DesignationApiService {
       departmentId: backendDesignation.departmentId,
     };
   }
-
   // Helper function to convert backend department to frontend format
   convertBackendDepartmentToFrontend(
     backendDepartment: BackendDepartment
@@ -278,7 +269,6 @@ class DesignationApiService {
       descriptionAr: backendDepartment.description, // Use English description for Arabic display for now
     };
   }
-
   // Helper function to convert frontend designation to backend format
   convertFrontendToBackend(
     frontendDesignation: FrontendDesignation
@@ -288,7 +278,6 @@ class DesignationApiService {
       departmentId: frontendDesignation.departmentId,
     };
   }
-
   // Get all tenants with designations (for system admin)
   async getAllTenantsWithDesignations(tenantId?: string): Promise<{
     tenants: Array<{
@@ -331,5 +320,4 @@ class DesignationApiService {
     }
   }
 }
-
 export const designationApiService = new DesignationApiService();

@@ -68,7 +68,7 @@ const PayrollGeneration: React.FC = () => {
 
   const currentDate = dayjs();
   const [month, setMonth] = useState<number>(currentDate.month() + 1);
-  const [year, setYear] = useState<number>(currentDate.year());
+  const [year, setYear] = useState<number | ''>(currentDate.year());
   const [employeeId, setEmployeeId] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [records, setRecords] = useState<PayrollRecord[]>([]);
@@ -114,9 +114,13 @@ const PayrollGeneration: React.FC = () => {
   const handleGenerate = useCallback(async () => {
     try {
       setLoading(true);
+      const yearNum =
+        typeof year === 'string' && year === ''
+          ? dayjs().year()
+          : year || dayjs().year();
       const response = await payrollApi.generatePayroll({
         month,
-        year,
+        year: yearNum,
         employee_id: employeeId.trim() || undefined,
       });
       setRecords(response);
@@ -204,10 +208,16 @@ const PayrollGeneration: React.FC = () => {
           <TextField
             label='Year'
             type='number'
+            inputProps={{ min: 0 }}
             size='small'
             sx={{ minWidth: 120 }}
-            value={year}
-            onChange={event => setYear(Number(event.target.value) || year)}
+            value={year === 0 ? '' : year}
+            onChange={event => {
+              const value = event.target.value;
+              const numValue =
+                value === '' ? '' : Math.max(0, Number(value) || 0);
+              setYear(numValue);
+            }}
           />
 
           <TextField

@@ -12,9 +12,10 @@ interface LeaveFormProps {
     endDate: string;
     reason: string;
   }) => void;
+  onError?: (message: string) => void;
 }
 
-const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
+const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [loadingLeaveTypes, setLoadingLeaveTypes] = useState(true);
 
@@ -23,7 +24,6 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
 
   // ✅ Fetch leave types
   useEffect(() => {
@@ -33,7 +33,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
         setLeaveTypes(response.items || []);
       } catch (error) {
         console.error('Failed to load leave types:', error);
-        setMessage('Failed to load leave types.');
+        onError?.('Failed to load leave types.');
       } finally {
         setLoadingLeaveTypes(false);
       }
@@ -62,7 +62,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
     e.preventDefault();
 
     if (!leaveTypeId.trim() || !startDate || !endDate || !reason.trim()) {
-      setMessage('Please fill in all required fields.');
+      onError?.('Please fill in all required fields.');
       return;
     }
 
@@ -74,13 +74,10 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
     };
 
     setLoading(true);
-    setMessage(null);
 
     try {
       const response = await leaveApi.createLeave(payload);
       console.log('Leave created:', response);
-      setMessage('Leave request submitted successfully.');
-
       onSubmit?.(payload);
       setLeaveTypeId('');
       setStartDate(null);
@@ -99,7 +96,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
         }
       }
 
-      setMessage(errorMessage);
+      onError?.(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -124,18 +121,6 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit }) => {
         <Typography variant='h5' color='primary' mb={2}>
           Apply for Leave
         </Typography>
-
-        {message && (
-          <Typography
-            variant='body1'
-            sx={{
-              color: message.includes('successfully') ? 'green' : 'error.main',
-              mb: 1,
-            }}
-          >
-            {message}
-          </Typography>
-        )}
 
         <TextField
           select
