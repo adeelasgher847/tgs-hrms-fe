@@ -139,6 +139,13 @@ const PayrollRecords: React.FC = () => {
       allowancesLabel: 'Allowances',
       deductionsLabel: 'Deductions',
       payrollHistoryLabel: 'Payroll History',
+      typeLabel: 'Type',
+      descriptionLabel: 'Description',
+      amountLabel: 'Amount',
+      percentageLabel: 'Percentage',
+      periodLabel: 'Period',
+      grossLabel: 'Gross',
+      netLabel: 'Net',
       table: {
         employee: 'Employee',
         period: 'Period',
@@ -199,6 +206,13 @@ const PayrollRecords: React.FC = () => {
       allowancesLabel: 'البدلات',
       deductionsLabel: 'الخصومات',
       payrollHistoryLabel: 'تاريخ الرواتب',
+      typeLabel: 'النوع',
+      descriptionLabel: 'الوصف',
+      amountLabel: 'المبلغ',
+      percentageLabel: 'النسبة',
+      periodLabel: 'الفترة',
+      grossLabel: 'الإجمالي',
+      netLabel: 'الصافي',
       table: {
         employee: 'الموظف',
         period: 'الفترة',
@@ -1219,9 +1233,9 @@ const PayrollRecords: React.FC = () => {
                     <Table size='small'>
                       <TableHead>
                         <TableRow>
-                          <TableCell>Type</TableCell>
-                          <TableCell>Description</TableCell>
-                          <TableCell align='right'>Amount</TableCell>
+                          <TableCell>{L.typeLabel}</TableCell>
+                          <TableCell>{L.descriptionLabel}</TableCell>
+                          <TableCell align='right'>{L.amountLabel}</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -1252,10 +1266,10 @@ const PayrollRecords: React.FC = () => {
                   <Table size='small'>
                     <TableHead>
                       <TableRow>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Description</TableCell>
-                        <TableCell align='right'>Amount</TableCell>
-                        <TableCell align='right'>Percentage</TableCell>
+                        <TableCell>{L.typeLabel}</TableCell>
+                        <TableCell>{L.descriptionLabel}</TableCell>
+                        <TableCell align='right'>{L.amountLabel}</TableCell>
+                        <TableCell align='right'>{L.percentageLabel}</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -1365,10 +1379,10 @@ const PayrollRecords: React.FC = () => {
                   <Table size='small'>
                     <TableHead>
                       <TableRow>
-                        <TableCell>Period</TableCell>
-                        <TableCell align='right'>Gross</TableCell>
-                        <TableCell align='right'>Net</TableCell>
-                        <TableCell align='center'>Status</TableCell>
+                        <TableCell>{L.periodLabel}</TableCell>
+                        <TableCell align='right'>{L.grossLabel}</TableCell>
+                        <TableCell align='right'>{L.netLabel}</TableCell>
+                        <TableCell align='center'>{L.table.status}</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -1448,7 +1462,61 @@ const PayrollRecords: React.FC = () => {
           },
         }}
       >
-        <DialogTitle>{L.updateStatusDialogTitle}</DialogTitle>
+        <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexDirection: language === 'ar' ? 'row-reverse' : 'row',
+            color: textColor,
+            pb: 2,
+            textAlign: language === 'ar' ? 'right' : 'left',
+          }}
+        >
+          {language === 'ar' && (
+            <IconButton
+              onClick={closeStatusDialog}
+              size='small'
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
+
+          <Box
+            component='span'
+            sx={{
+              fontWeight: 600,
+              flex: 1,
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
+          >
+            {L.updateStatusDialogTitle}
+          </Box>
+
+          {language !== 'ar' && (
+            <IconButton
+              onClick={closeStatusDialog}
+              size='small'
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
+        </DialogTitle>
         <DialogContent>
           {statusRecord && (
             <Stack spacing={2}>
@@ -1486,19 +1554,31 @@ const PayrollRecords: React.FC = () => {
             </Stack>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={closeStatusDialog}>{L.cancel}</Button>
-          <Button
-            onClick={handleStatusUpdate}
-            variant='contained'
-            disabled={updatingStatus}
-            startIcon={
-              updatingStatus ? <CircularProgress size={16} /> : undefined
-            }
-            sx={{ textTransform: 'none' }}
-          >
-            {updatingStatus ? L.updating : L.updateStatusBtn}
-          </Button>
+        <DialogActions
+          sx={{
+            p: 2,
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+          }}
+        >
+          <Box dir='ltr'>
+            <Button
+              onClick={closeStatusDialog}
+              sx={{ mr: language === 'ar' ? 1 : 0 }}
+            >
+              {L.cancel}
+            </Button>
+            <Button
+              onClick={handleStatusUpdate}
+              variant='contained'
+              disabled={updatingStatus}
+              startIcon={
+                updatingStatus ? <CircularProgress size={16} /> : undefined
+              }
+              sx={{ textTransform: 'none', ml: language === 'ar' ? 0 : 1 }}
+            >
+              {updatingStatus ? L.updating : L.updateStatusBtn}
+            </Button>
+          </Box>
         </DialogActions>
       </Dialog>
 
