@@ -87,7 +87,10 @@ export default function DesignationManager() {
   const itemsPerPage = 25;
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
-  const getText = (en: string, ar: string) => (language === 'ar' ? ar : en);
+  // Return Arabic string when language is 'ar'. If Arabic value is missing/empty,
+  // fall back to English so the UI never renders an empty label.
+  const getText = (en: string, ar?: string) =>
+    language === 'ar' ? (ar && String(ar).trim() ? ar : en) : en;
 
   // Fetch tenants for system admin
   useEffect(() => {
@@ -199,10 +202,13 @@ export default function DesignationManager() {
           tenant.departments.forEach(dept => {
             // Add department to map if not already present
             if (!allDepartmentsMap.has(dept.department_id)) {
+              const deptRecord = dept as Record<string, unknown>;
+              const deptNameAr =
+                (deptRecord['department_name_ar'] as string) || '';
               allDepartmentsMap.set(dept.department_id, {
                 id: dept.department_id,
                 name: dept.department_name,
-                nameAr: '',
+                nameAr: deptNameAr || dept.department_name,
                 description: '',
                 descriptionAr: '',
               });
@@ -210,10 +216,16 @@ export default function DesignationManager() {
 
             // Add designations
             dept.designations.forEach(des => {
+              const desRecord = des as Record<string, unknown>;
+              const detectedTitleAr =
+                (desRecord['titleAr'] as string) ||
+                (desRecord['title_ar'] as string) ||
+                '';
+
               allDesignations.push({
                 id: des.id,
                 title: des.title,
-                titleAr: '',
+                titleAr: detectedTitleAr,
                 departmentId: dept.department_id,
               });
               // Store tenant info for this designation
@@ -307,6 +319,7 @@ export default function DesignationManager() {
         const designationDto = {
           title: data.title,
           departmentId: data.departmentId,
+          titleAr: data.titleAr || undefined,
         };
         const updatedBackendDesignation =
           await designationApiService.updateDesignation(
@@ -333,6 +346,7 @@ export default function DesignationManager() {
         const designationDto = {
           title: data.title,
           departmentId: data.departmentId,
+          titleAr: data.titleAr || undefined,
         };
         const newBackendDesignation =
           await designationApiService.createDesignation(designationDto);
@@ -385,10 +399,12 @@ export default function DesignationManager() {
   );
 
   return (
-    <Box dir={isRTL ? 'rtl' : 'ltr'}>
+    <Box dir={'ltr'}>
       <Box
         sx={{
           display: 'flex',
+          // On small screens stack vertically; on sm+ flip order for Arabic to move controls
+          flexDirection: { xs: 'column', sm: isRTL ? 'row-reverse' : 'row' },
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
@@ -396,7 +412,11 @@ export default function DesignationManager() {
           gap: 2,
         }}
       >
-        <Typography variant='h4' sx={{ fontWeight: 600 }}>
+        <Typography
+          variant='h4'
+          dir={isRTL ? 'rtl' : 'ltr'}
+          sx={{ fontWeight: 600, flex: 1, textAlign: isRTL ? 'right' : 'left' }}
+        >
           {getText('Designation', 'المسمى الوظيفي')}
         </Typography>
 
@@ -529,6 +549,41 @@ export default function DesignationManager() {
         </Box>
       </Box>
 
+      <Paper sx={{ mb: 3, boxShadow: 'none' }}>
+        <FormControl fullWidth>
+          <InputLabel id='dept-select'>
+            {getText('Filter by Department', 'تصفية حسب القسم')}
+          </InputLabel>
+          <Select
+            labelId='dept-select'
+            value={selectedDepartmentId}
+            label={getText('Filter by Department', 'تصفية حسب القسم')}
+            onChange={e => {
+              setSelectedDepartmentId(
+                e.target.value === 'all' ? 'all' : e.target.value
+              );
+              setCurrentPage(1);
+            }}
+            disabled={departmentsLoading}
+          >
+            <MenuItem value='all'>
+              {getText('All Departments', 'كل الأقسام')}
+            </MenuItem>
+            {departmentsLoading ? (
+              <MenuItem disabled>
+                {getText('Loading departments...', 'جاري تحميل الأقسام...')}
+              </MenuItem>
+            ) : (
+              departments.map(d => (
+                <MenuItem key={d.id} value={d.id}>
+                  {getText(d.name, d.nameAr)}
+                </MenuItem>
+              ))
+            )}
+          </Select>
+        </FormControl>
+      </Paper>
+
       <Paper variant='outlined' sx={{ bgcolor: 'unset', border: 'none' }}>
         <Box>
           <Typography variant='body2' sx={{ mb: 2, color: 'text.secondary' }}>
@@ -546,34 +601,22 @@ export default function DesignationManager() {
                 <TableRow>
                   {isSystemAdmin && (
                     <TableCell
-                      sx={{
-                        fontWeight: 'bold',
-                        ...(isRTL
-                          ? { textAlign: 'right' }
-                          : { textAlign: 'left' }),
-                      }}
+                      dir='ltr'
+                      sx={{ fontWeight: 'bold', textAlign: 'left' }}
                     >
                       {getText('Tenant', 'المستأجر')}
                     </TableCell>
                   )}
                   <TableCell
-                    sx={{
-                      fontWeight: 'bold',
-                      ...(isRTL
-                        ? { textAlign: 'right' }
-                        : { textAlign: 'left' }),
-                    }}
+                    dir='ltr'
+                    sx={{ fontWeight: 'bold', textAlign: 'left' }}
                   >
                     {getText('Designation Title', 'المسمى الوظيفي')}
                   </TableCell>
                   {(selectedDepartmentId === 'all' || isSystemAdmin) && (
                     <TableCell
-                      sx={{
-                        fontWeight: 'bold',
-                        ...(isRTL
-                          ? { textAlign: 'right' }
-                          : { textAlign: 'left' }),
-                      }}
+                      dir='ltr'
+                      sx={{ fontWeight: 'bold', textAlign: 'left' }}
                     >
                       {getText('Department', 'القسم')}
                     </TableCell>
@@ -652,33 +695,15 @@ export default function DesignationManager() {
                     return (
                       <TableRow key={designation.id} hover>
                         {isSystemAdmin && (
-                          <TableCell
-                            sx={{
-                              ...(isRTL
-                                ? { textAlign: 'right' }
-                                : { textAlign: 'left' }),
-                            }}
-                          >
+                          <TableCell dir='ltr' sx={{ textAlign: 'left' }}>
                             {tenantInfo?.tenantName || '-'}
                           </TableCell>
                         )}
-                        <TableCell
-                          sx={{
-                            ...(isRTL
-                              ? { textAlign: 'right' }
-                              : { textAlign: 'left' }),
-                          }}
-                        >
+                        <TableCell dir='ltr' sx={{ textAlign: 'left' }}>
                           {getText(designation.title, designation.titleAr)}
                         </TableCell>
                         {(selectedDepartmentId === 'all' || isSystemAdmin) && (
-                          <TableCell
-                            sx={{
-                              ...(isRTL
-                                ? { textAlign: 'right' }
-                                : { textAlign: 'left' }),
-                            }}
-                          >
+                          <TableCell dir='ltr' sx={{ textAlign: 'left' }}>
                             {departmentName}
                           </TableCell>
                         )}

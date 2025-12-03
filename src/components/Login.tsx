@@ -30,6 +30,7 @@ import { useGoogleScript } from '../hooks/useGoogleScript';
 import authApi from '../api/authApi';
 import signupApi from '../api/signupApi';
 import { persistAuthSession } from '../utils/authSession';
+import { useLanguage } from '../hooks/useLanguage';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
   function Alert(props, ref) {
@@ -45,7 +46,7 @@ const Login: React.FC = () => {
   const googleInitializedRef = useRef<boolean>(false);
   const googleButtonRenderedRef = useRef<boolean>(false);
 
-  const [lang, setLang] = useState<'en' | 'ar'>('en');
+  const { language, setLanguage } = useLanguage();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -228,14 +229,14 @@ const Login: React.FC = () => {
 
     if (!email) {
       setEmailError(
-        lang === 'ar'
+        language === 'ar'
           ? 'يرجى إدخال البريد الإلكتروني'
           : 'Please enter your email'
       );
       valid = false;
     } else if (!email.includes('@')) {
       setEmailError(
-        lang === 'ar'
+        language === 'ar'
           ? 'يرجى إدخال بريد إلكتروني صحيح'
           : 'Please enter a valid email'
       );
@@ -244,7 +245,9 @@ const Login: React.FC = () => {
 
     if (!password) {
       setPasswordError(
-        lang === 'ar' ? 'يرجى إدخال كلمة المرور' : 'Please enter your password'
+        language === 'ar'
+          ? 'يرجى إدخال كلمة المرور'
+          : 'Please enter your password'
       );
       valid = false;
     }
@@ -268,6 +271,13 @@ const Login: React.FC = () => {
       } else {
         localStorage.removeItem('rememberedLogin');
       }
+
+      setSnackbar({
+        open: true,
+        message:
+          language === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Login Successful!',
+        severity: 'success',
+      });
 
       const role =
         typeof authPayload.user?.role === 'string'
@@ -307,7 +317,8 @@ const Login: React.FC = () => {
             // display: "flex",
             justifyContent: 'center',
             alignItems: 'center',
-            direction: lang === 'ar' ? 'rtl' : 'ltr',
+            // Direction follows selected language (ltr for English, rtl for Arabic)
+            direction: language === 'ar' ? 'rtl' : 'ltr',
           }}
         >
           <Box
@@ -359,7 +370,7 @@ const Login: React.FC = () => {
                   fontSize: '32px',
                 }}
               >
-                {lang === 'ar'
+                {language === 'ar'
                   ? 'إدارة مهام أفضل مع ماي-تاسك'
                   : "My-Task Let's Management Better"}
               </Typography>
@@ -385,7 +396,8 @@ const Login: React.FC = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
-                  direction: lang === 'ar' ? 'rtl' : 'ltr',
+                  // Card direction follows selected language so text alignment updates
+                  direction: language === 'ar' ? 'rtl' : 'ltr',
                 }}
               >
                 {/* Language Selector */}
@@ -393,8 +405,8 @@ const Login: React.FC = () => {
                   <FormControl size='small' fullWidth>
                     <Select
                       id='language-select'
-                      value={lang}
-                      onChange={e => setLang(e.target.value as 'en' | 'ar')}
+                      value={language}
+                      onChange={e => setLanguage(e.target.value as 'en' | 'ar')}
                       displayEmpty
                       sx={{
                         bgcolor: 'white',
@@ -411,9 +423,9 @@ const Login: React.FC = () => {
                           borderColor: '#f19828',
                         },
                       }}
-                      renderValue={selected => {
-                        return selected === 'ar' ? 'عربى' : 'English';
-                      }}
+                      renderValue={selected =>
+                        selected === 'ar' ? 'عربى' : 'English'
+                      }
                     >
                       <MenuItem value='en'>English</MenuItem>
                       <MenuItem value='ar'>عربى</MenuItem>
@@ -440,7 +452,7 @@ const Login: React.FC = () => {
                   >
                     {isLoading
                       ? 'Signing in...'
-                      : lang === 'ar'
+                      : language === 'ar'
                         ? 'تسجيل الدخول'
                         : 'Sign in'}
                   </Typography>
@@ -450,7 +462,7 @@ const Login: React.FC = () => {
                       fontFamily: 'Open Sans, sans-serif',
                     }}
                   >
-                    {lang === 'ar'
+                    {language === 'ar'
                       ? 'وصول مجاني إلى لوحة التحكم الخاصة بنا.'
                       : 'Free access to our dashboard.'}
                   </Typography>
@@ -493,10 +505,12 @@ const Login: React.FC = () => {
                           height: 16,
                           width: 16,
                           minWidth: 16,
-                          ...(lang === 'ar' ? { ml: '8px' } : { mr: '8px' }),
+                          ...(language === 'ar'
+                            ? { ml: '8px' }
+                            : { mr: '8px' }),
                         }}
                       />
-                      {lang === 'ar'
+                      {language === 'ar'
                         ? 'تسجيل الدخول باستخدام جوجل'
                         : 'Sign in with Google'}
                     </Button>
@@ -512,7 +526,7 @@ const Login: React.FC = () => {
                       '&::before, &::after': { borderColor: '#f0f0f0' },
                     }}
                   >
-                    <Box px={1.5}>{lang === 'ar' ? 'أو' : 'OR'}</Box>
+                    <Box px={1.5}>{language === 'ar' ? 'أو' : 'OR'}</Box>
                   </Divider>
                 </Box>
                 <Box
@@ -560,9 +574,13 @@ const Login: React.FC = () => {
                   <Typography
                     component='label'
                     htmlFor='email'
-                    sx={{ fontWeight: 400, fontSize: '14px' }}
+                    sx={{
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      textAlign: language === 'ar' ? 'right' : 'left',
+                    }}
                   >
-                    {lang === 'ar' ? 'البريد الإلكتروني' : 'Email address'}
+                    {language === 'ar' ? 'البريد الإلكتروني' : 'Email address'}
                   </Typography>
                   <TextField
                     fullWidth
@@ -575,6 +593,7 @@ const Login: React.FC = () => {
                     sx={{ mt: 1 }}
                     value={email}
                     onChange={handleEmailChange}
+                    inputProps={{ dir: 'ltr' }}
                     error={Boolean(emailError)}
                     helperText={emailError}
                     FormHelperTextProps={{
@@ -604,9 +623,13 @@ const Login: React.FC = () => {
                       <Typography
                         component='label'
                         htmlFor='password'
-                        sx={{ fontWeight: 400, fontSize: '14px' }}
+                        sx={{
+                          fontWeight: 400,
+                          fontSize: '14px',
+                          textAlign: language === 'ar' ? 'right' : 'left',
+                        }}
                       >
-                        {lang === 'ar' ? 'كلمة المرور' : 'Password'}
+                        {language === 'ar' ? 'كلمة المرور' : 'Password'}
                       </Typography>
                       <Link
                         component={RouterLink}
@@ -625,7 +648,7 @@ const Login: React.FC = () => {
                           },
                         }}
                       >
-                        {lang === 'ar'
+                        {language === 'ar'
                           ? 'نسيت كلمة المرور؟'
                           : 'Forgot password?'}
                       </Link>
@@ -647,11 +670,11 @@ const Login: React.FC = () => {
                       FormHelperTextProps={{
                         style: { fontSize: '16px' }, // or any size you want
                       }}
-                      inputProps={{
-                        maxLength: 15,
-                      }}
+                      inputProps={{ maxLength: 15, dir: 'ltr' }}
                       InputProps={{
                         sx: {
+                          // Force the input root to LTR so the field and adornment don't flip
+                          direction: 'ltr',
                           backgroundColor: '#eee',
                           borderRadius: '8px',
                           '&.Mui-focused': {
@@ -668,7 +691,10 @@ const Login: React.FC = () => {
                           },
                         },
                         endAdornment: (
-                          <InputAdornment position='end'>
+                          <InputAdornment
+                            position='end'
+                            sx={{ direction: 'ltr' }}
+                          >
                             <IconButton
                               onClick={handleTogglePassword}
                               edge='end'
@@ -736,12 +762,12 @@ const Login: React.FC = () => {
                       label={
                         <Typography
                           sx={{
-                            ...(lang === 'ar' ? { mr: 1 } : { ml: 1 }),
+                            ...(language === 'ar' ? { mr: 1 } : { ml: 1 }),
                             fontFamily: 'Open Sans',
                             fontSize: '14px',
                           }}
                         >
-                          {lang === 'ar' ? 'تذكرني' : 'Remember me'}
+                          {language === 'ar' ? 'تذكرني' : 'Remember me'}
                         </Typography>
                       }
                     />
@@ -775,7 +801,7 @@ const Login: React.FC = () => {
                     >
                       {isLoading ? (
                         <CircularProgress size={22} sx={{ color: 'black' }} />
-                      ) : lang === 'ar' ? (
+                      ) : language === 'ar' ? (
                         'تسجيل الدخول'
                       ) : (
                         'Sign In'
@@ -793,7 +819,7 @@ const Login: React.FC = () => {
                       fontFamily: 'Open Sans, sans-serif',
                     }}
                   >
-                    {lang === 'ar'
+                    {language === 'ar'
                       ? 'ليس لديك حساب بعد؟ '
                       : "Don't have an account yet? "}
                     <Link
@@ -811,7 +837,7 @@ const Login: React.FC = () => {
                         },
                       }}
                     >
-                      {lang === 'ar' ? 'سجل هنا' : 'Sign up here'}
+                      {language === 'ar' ? 'سجل هنا' : 'Sign up here'}
                     </Link>
                   </Typography>
                 </Box>

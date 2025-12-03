@@ -28,12 +28,59 @@ import {
   type SystemEmployee,
 } from '../../api/systemEmployeeApi';
 import { formatDate } from '../../utils/dateUtils';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface PerformanceTrendProps {
   tenantId: string;
 }
 
 const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
+  const { language } = useLanguage();
+  const labels = {
+    en: {
+      cardTitle: 'Company Performance',
+      cardSub: 'Overview gauge by tenant',
+      selectEmployee: 'Select Employee',
+      allEmployees: 'All Employees',
+      statusLabel: 'Status',
+      allStatuses: 'All Statuses',
+      completed: 'Completed',
+      underReview: 'Under Review',
+      pending: 'Pending',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      employeeCol: 'Employee',
+      cycleCol: 'Cycle',
+      overallScoreCol: 'Overall Score',
+      statusCol: 'Status',
+      createdAtCol: 'Created At',
+      noRecords: 'No performance records found.',
+      employeeScorePrefix: 'Employee Score',
+      overallScorePrefix: 'Overall Score',
+    },
+    ar: {
+      cardTitle: 'أداء الشركة',
+      cardSub: 'مخطط نظرة عامة حسب المستأجر',
+      selectEmployee: 'اختر موظف',
+      allEmployees: 'جميع الموظفين',
+      statusLabel: 'الحالة',
+      allStatuses: 'جميع الحالات',
+      completed: 'مكتمل',
+      underReview: 'تحت المراجعة',
+      pending: 'قيد الانتظار',
+      startDate: 'تاريخ البدء',
+      endDate: 'تاريخ الانتهاء',
+      employeeCol: 'الموظف',
+      cycleCol: 'الدورة',
+      overallScoreCol: 'النتيجة الإجمالية',
+      statusCol: 'الحالة',
+      createdAtCol: 'تاريخ الإنشاء',
+      noRecords: 'لم يتم العثور على سجلات الأداء.',
+      employeeScorePrefix: 'درجة الموظف',
+      overallScorePrefix: 'النتيجة الكلية',
+    },
+  } as const;
+  const L = labels[language] || labels.en;
   const [records, setRecords] = useState<PerformanceRecord[]>([]);
   const [employees, setEmployees] = useState<SystemEmployee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
@@ -234,13 +281,15 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
       stroke: {
         lineCap: 'round' as const,
       },
-      labels: [selectedEmployee ? 'Employee Score' : 'Overall Score'],
+      labels: [selectedEmployee ? L.employeeScorePrefix : L.overallScorePrefix],
     }),
     [
       gaugeScore,
       selectedEmployee,
       theme.palette.mode,
       theme.palette.text.primary,
+      L.employeeScorePrefix,
+      L.overallScorePrefix,
     ]
   );
 
@@ -253,8 +302,28 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
     return (
       <Card>
         <CardHeader
-          title='Company Performance'
-          subheader='Overview gauge by tenant'
+          title={
+            <span
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+              style={{
+                display: 'block',
+                textAlign: language === 'ar' ? 'right' : 'left',
+              }}
+            >
+              {L.cardTitle}
+            </span>
+          }
+          subheader={
+            <span
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+              style={{
+                display: 'block',
+                textAlign: language === 'ar' ? 'right' : 'left',
+              }}
+            >
+              {L.cardSub}
+            </span>
+          }
           titleTypographyProps={{ variant: 'h5', fontWeight: 600 }}
         />
         <CardContent>
@@ -274,8 +343,28 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
   return (
     <Card>
       <CardHeader
-        title='Company Performance'
-        subheader='Overview gauge by tenant'
+        title={
+          <span
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            style={{
+              display: 'block',
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
+          >
+            {L.cardTitle}
+          </span>
+        }
+        subheader={
+          <span
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            style={{
+              display: 'block',
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
+          >
+            {L.cardSub}
+          </span>
+        }
         titleTypographyProps={{ variant: 'h5', fontWeight: 600 }}
       />
 
@@ -284,12 +373,12 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           <TextField
             select
             fullWidth
-            label='Select Employee'
+            label={L.selectEmployee}
             value={selectedEmployee}
             onChange={e => setSelectedEmployee(e.target.value)}
             size='small'
           >
-            <MenuItem value=''>All Employees</MenuItem>
+            <MenuItem value=''>{L.allEmployees}</MenuItem>
             {employees.map(emp => (
               <MenuItem key={emp.id} value={emp.id}>
                 {employeeMap[emp.id]}
@@ -300,21 +389,21 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           <TextField
             select
             fullWidth
-            label='Status'
+            label={L.statusLabel}
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
             size='small'
           >
-            <MenuItem value=''>All Statuses</MenuItem>
-            <MenuItem value='completed'>Completed</MenuItem>
-            <MenuItem value='under_review'>Under Review</MenuItem>
-            <MenuItem value='pending'>Pending</MenuItem>
+            <MenuItem value=''>{L.allStatuses}</MenuItem>
+            <MenuItem value='completed'>{L.completed}</MenuItem>
+            <MenuItem value='under_review'>{L.underReview}</MenuItem>
+            <MenuItem value='pending'>{L.pending}</MenuItem>
           </TextField>
 
           <TextField
             type='date'
             fullWidth
-            label='Start Date'
+            label={L.startDate}
             InputLabelProps={{ shrink: true }}
             value={startDate}
             onChange={e => setStartDate(e.target.value)}
@@ -324,7 +413,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           <TextField
             type='date'
             fullWidth
-            label='End Date'
+            label={L.endDate}
             InputLabelProps={{ shrink: true }}
             value={endDate}
             onChange={e => setEndDate(e.target.value)}
@@ -367,15 +456,18 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           </Grid>
 
           <Grid item xs={12} md={8}>
-            <Paper elevation={1} sx={{ width: '100%', overflow: 'auto',boxShadow: 'none' }}>
+            <Paper
+              elevation={1}
+              sx={{ width: '100%', overflow: 'auto', boxShadow: 'none' }}
+            >
               <Table size='small'>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Employee</TableCell>
-                    <TableCell>Cycle</TableCell>
-                    <TableCell>Overall Score</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Created At</TableCell>
+                    <TableCell>{L.employeeCol}</TableCell>
+                    <TableCell>{L.cycleCol}</TableCell>
+                    <TableCell>{L.overallScoreCol}</TableCell>
+                    <TableCell>{L.statusCol}</TableCell>
+                    <TableCell>{L.createdAtCol}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -388,15 +480,13 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
                         <TableCell>{row.cycle}</TableCell>
                         <TableCell>{row.overallScore}</TableCell>
                         <TableCell>{row.status}</TableCell>
-                        <TableCell>
-                          {formatDate(row.createdAt)}
-                        </TableCell>
+                        <TableCell>{formatDate(row.createdAt)}</TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
                       <TableCell colSpan={5} align='center'>
-                        No performance records found.
+                        {L.noRecords}
                       </TableCell>
                     </TableRow>
                   )}

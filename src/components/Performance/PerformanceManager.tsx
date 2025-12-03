@@ -15,6 +15,7 @@ import PerformanceTrendChart from './PerformanceTrend';
 import PromotionsList from './PromotionsTable';
 import { systemEmployeeApiService } from '../../api/systemEmployeeApi';
 import type { Tenant } from '../../types';
+import { useLanguage } from '../../hooks/useLanguage';
 
 const PerformanceDashboard: React.FC = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -63,32 +64,107 @@ const PerformanceDashboard: React.FC = () => {
     fetchTenants();
   }, [fetchTenants]);
 
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      pageTitle: 'Performance Dashboard',
+      loading: 'Loading...',
+      noTenants: 'No tenants available',
+      failedFetch: 'Failed to fetch tenants.',
+    },
+    ar: {
+      pageTitle: 'لوحة أداء',
+      loading: 'جارٍ التحميل...',
+      noTenants: 'لا توجد مستأجرين متاحين',
+      failedFetch: 'فشل في جلب المستأجرين.',
+    },
+  } as const;
+
+  const L = labels[language] || labels.en;
+
   return (
     <Box>
-      <Typography variant='h4' fontWeight={600} mb={2}>
-        Performance Dashboard
-      </Typography>
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        mb={2}
+        sx={{ gap: 2 }}
+      >
+        {language === 'ar' ? (
+          <>
+            <Box>
+              <FormControl
+                size='small'
+                sx={{ minWidth: 160, maxWidth: 220 }}
+                dir='ltr'
+              >
+                <Select
+                  value={selectedTenant || ''}
+                  onChange={e => setSelectedTenant(e.target.value)}
+                  disabled={loadingTenants || tenants.length === 0}
+                >
+                  {loadingTenants ? (
+                    <MenuItem disabled>{L.loading}</MenuItem>
+                  ) : tenants.length === 0 ? (
+                    <MenuItem disabled>{L.noTenants}</MenuItem>
+                  ) : (
+                    tenants.map(t => (
+                      <MenuItem key={t.id} value={t.id}>
+                        {t.name}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
+            </Box>
 
-      <Box display='flex' gap={2} mb={3} flexWrap='wrap'>
-        <FormControl size='small' sx={{ minWidth: 160, maxWidth: 220 }}>
-          <Select
-            value={selectedTenant || ''}
-            onChange={e => setSelectedTenant(e.target.value)}
-            disabled={loadingTenants || tenants.length === 0}
-          >
-            {loadingTenants ? (
-              <MenuItem disabled>Loading...</MenuItem>
-            ) : tenants.length === 0 ? (
-              <MenuItem disabled>No tenants available</MenuItem>
-            ) : (
-              tenants.map(t => (
-                <MenuItem key={t.id} value={t.id}>
-                  {t.name}
-                </MenuItem>
-              ))
-            )}
-          </Select>
-        </FormControl>
+            <Typography
+              variant='h4'
+              fontWeight={600}
+              mb={2}
+              dir='rtl'
+              sx={{ textAlign: 'right' }}
+            >
+              {L.pageTitle}
+            </Typography>
+          </>
+        ) : (
+          <>
+            <Typography
+              variant='h4'
+              fontWeight={600}
+              mb={2}
+              dir='ltr'
+              sx={{ textAlign: 'left' }}
+            >
+              {L.pageTitle}
+            </Typography>
+
+            <Box>
+              <FormControl size='small' sx={{ minWidth: 160, maxWidth: 220 }}>
+                <Select
+                  value={selectedTenant || ''}
+                  onChange={e => setSelectedTenant(e.target.value)}
+                  disabled={loadingTenants || tenants.length === 0}
+                >
+                  {loadingTenants ? (
+                    <MenuItem disabled>{L.loading}</MenuItem>
+                  ) : tenants.length === 0 ? (
+                    <MenuItem disabled>{L.noTenants}</MenuItem>
+                  ) : (
+                    tenants.map(t => (
+                      <MenuItem key={t.id} value={t.id}>
+                        {t.name}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
+            </Box>
+          </>
+        )}
       </Box>
 
       {loadingTenants || !selectedTenant ? (

@@ -20,6 +20,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -37,6 +38,167 @@ import { snackbar } from '../../utils/snackbar';
 const PayrollConfiguration: React.FC = () => {
   const theme = useTheme();
   const darkMode = useIsDarkMode();
+
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      title: 'Payroll Configuration',
+      createConfig: 'Create Configuration',
+      createModalTitle: 'Create Payroll Configuration',
+      editModalTitle: 'Edit Payroll Configuration',
+      noConfig: 'No payroll configuration found. Please create one.',
+      salaryCycle: 'Salary Cycle',
+      monthly: 'Monthly',
+      weekly: 'Weekly',
+      biweekly: 'Bi-weekly',
+      basePay: 'Base Pay Components',
+      basicLabel: 'Basic',
+      houseRentLabel: 'House Rent',
+      medicalLabel: 'Medical',
+      transportLabel: 'Transport',
+      allowances: 'Allowances',
+      addAllowance: 'Add Allowance',
+      noAllowances: 'No allowances added. Click "Add Allowance" to add one.',
+      deductions: 'Deductions',
+      overtimePolicy: 'Overtime Policy',
+      enableOvertime: 'Enable Overtime',
+      rateMultiplier: 'Rate Multiplier',
+      maxHours: 'Max Hours Per Month',
+      leaveDeductionPolicy: 'Leave Deduction Policy',
+      unpaidLeaveDeduction: 'Unpaid Leave Deduction',
+      halfDayDeduction: 'Half Day Deduction (%)',
+      customFields: 'Custom Fields',
+      typeLabel: 'Type',
+      amountLabel: 'Amount',
+      percentageLabel: 'Percentage (%)',
+      placeholderExample: 'e.g., travel, meal, etc.',
+      cancel: 'Cancel',
+      creating: 'Creating...',
+      updating: 'Updating...',
+      updateConfig: 'Update Configuration',
+      saveSuccessCreated: 'Payroll configuration created successfully',
+      saveSuccessUpdated: 'Payroll configuration updated successfully',
+      saveFailure: 'Failed to save payroll configuration',
+      allowanceLabel: 'Allowance',
+      seeMore: 'See More',
+      showLess: 'Show Less',
+      noCustomFields:
+        'No custom fields added. Click "Add Custom Field" to add one.',
+      addCustomField: 'Add Custom Field',
+      fieldNameLabel: 'Field Name (Key)',
+      valueLabel: 'Value',
+      textType: 'Text',
+      numberType: 'Number',
+      enterValuePlaceholder: 'Enter value',
+      taxPercentageLabel: 'Tax (%)',
+      insurancePercentageLabel: 'Insurance (%)',
+      providentFundPercentageLabel: 'Provident Fund (%)',
+      customField: 'Custom Field',
+      // validation / errors
+      errBasicSalary: 'Basic salary must be greater than 0',
+      errAllowanceType: 'All allowances must have a type',
+      errOvertimeMultiplier: 'Overtime rate multiplier must be greater than 0',
+      errMaxOvertimeHours:
+        'Max overtime hours per month must be greater than 0',
+      errFillAll: 'Please fill all required fields correctly',
+    },
+    ar: {
+      title: 'تكوين الرواتب',
+      createConfig: 'إنشاء التكوين',
+      createModalTitle: 'إنشاء تكوين الرواتب',
+      editModalTitle: 'تعديل تكوين الرواتب',
+      noConfig: 'لم يتم العثور على تكوين الرواتب. الرجاء إنشاء واحد.',
+      salaryCycle: 'دورة الراتب',
+      monthly: 'شهري',
+      weekly: 'أسبوعي',
+      biweekly: 'نصف شهري',
+      basePay: 'مكونات الراتب الأساسي',
+      basicLabel: 'الأساسي',
+      houseRentLabel: 'بدل السكن',
+      medicalLabel: 'بدل طبي',
+      transportLabel: 'بدل النقل',
+      allowances: 'البدلات',
+      addAllowance: 'إضافة بدل',
+      noAllowances: 'لم تتم إضافة بدلات. انقر "إضافة بدل" لإضافة واحد.',
+      deductions: 'الخصومات',
+      overtimePolicy: 'سياسة العمل الإضافي',
+      enableOvertime: 'تمكين العمل الإضافي',
+      rateMultiplier: 'معدل الضرب',
+      maxHours: 'أقصى ساعات في الشهر',
+      leaveDeductionPolicy: 'سياسة خصم الإجازة',
+      unpaidLeaveDeduction: 'خصم الإجازة غير المدفوعة',
+      halfDayDeduction: 'خصم نصف يوم (%)',
+      customFields: 'حقول مخصصة',
+      typeLabel: 'النوع',
+      amountLabel: 'المبلغ',
+      percentageLabel: 'النسبة (%)',
+      placeholderExample: 'مثل: سفر، وجبة، الخ',
+      cancel: 'إلغاء',
+      creating: 'جارٍ الإنشاء...',
+      updating: 'جارٍ التحديث...',
+      updateConfig: 'تحديث التكوين',
+      saveSuccessCreated: 'تم إنشاء تكوين الرواتب بنجاح',
+      saveSuccessUpdated: 'تم تحديث تكوين الرواتب بنجاح',
+      saveFailure: 'فشل في حفظ تكوين الرواتب',
+      allowanceLabel: 'بدل',
+      seeMore: 'المزيد',
+      showLess: 'إظهار أقل',
+      noCustomFields: 'لم تتم إضافة حقول مخصصة. انقر "إضافة حقل مخصص" لإضافته.',
+      addCustomField: 'إضافة حقل مخصص',
+      fieldNameLabel: 'اسم الحقل (المفتاح)',
+      valueLabel: 'القيمة',
+      textType: 'نص',
+      numberType: 'رقم',
+      enterValuePlaceholder: 'أدخل القيمة',
+      taxPercentageLabel: 'الضريبة (%)',
+      insurancePercentageLabel: 'التأمين (%)',
+      providentFundPercentageLabel: 'صندوق التقاعد (%)',
+      customField: 'حقل مخصص',
+      // validation / errors
+      errBasicSalary: 'يجب أن تكون قيمة الراتب الأساسي أكبر من 0',
+      errAllowanceType: 'يجب أن تحتوي جميع البدلات على نوع',
+      errOvertimeMultiplier: 'يجب أن يكون معدل العمل الإضافي أكبر من 0',
+      errMaxOvertimeHours:
+        'يجب أن تكون أقصى ساعات العمل الإضافي في الشهر أكبر من 0',
+      errFillAll: 'يرجى ملء جميع الحقول المطلوبة بشكل صحيح',
+    },
+  } as const;
+
+  const L = labels[language as 'en' | 'ar'] || labels.en;
+
+  const deductionLabelForKey = (key: string) => {
+    switch (key) {
+      case 'taxPercentage':
+        return L.taxPercentageLabel;
+      case 'insurancePercentage':
+        return L.insurancePercentageLabel;
+      case 'providentFundPercentage':
+        return L.providentFundPercentageLabel;
+      default:
+        return key
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/^./, str => str.toUpperCase())
+          .replace('Percentage', ' (%)');
+    }
+  };
+
+  const basePayLabelForKey = (key: string) => {
+    switch (key) {
+      case 'basic':
+        return L.basicLabel;
+      case 'houseRent':
+        return L.houseRentLabel;
+      case 'medical':
+        return L.medicalLabel;
+      case 'transport':
+        return L.transportLabel;
+      default:
+        return (
+          key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')
+        );
+    }
+  };
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -317,18 +479,18 @@ const PayrollConfiguration: React.FC = () => {
   const validateForm = (): boolean => {
     if (!isFormValid()) {
       if (basePayComponents.basic <= 0) {
-        setError('Basic salary must be greater than 0');
+        setError(L.errBasicSalary);
       } else if (allowances.some(a => !a.type.trim())) {
-        setError('All allowances must have a type');
+        setError(L.errAllowanceType);
       } else if (overtimePolicy.enabled && overtimePolicy.rateMultiplier <= 0) {
-        setError('Overtime rate multiplier must be greater than 0');
+        setError(L.errOvertimeMultiplier);
       } else if (
         overtimePolicy.enabled &&
         overtimePolicy.maxHoursPerMonth <= 0
       ) {
-        setError('Max overtime hours per month must be greater than 0');
+        setError(L.errMaxOvertimeHours);
       } else {
-        setError('Please fill all required fields correctly');
+        setError(L.errFillAll);
       }
       return false;
     }
@@ -412,11 +574,7 @@ const PayrollConfiguration: React.FC = () => {
       }
 
       setConfig(savedConfig);
-      snackbar.success(
-        config
-          ? 'Payroll configuration updated successfully'
-          : 'Payroll configuration created successfully'
-      );
+      snackbar.success(config ? L.saveSuccessUpdated : L.saveSuccessCreated);
       handleCloseEditModal();
     } catch (err) {
       console.error('Failed to save payroll config:', err);
@@ -547,29 +705,42 @@ const PayrollConfiguration: React.FC = () => {
           sx={{
             mb: 4,
             display: 'flex',
+            flexDirection: {
+              xs: 'column',
+              sm: language === 'ar' ? 'row-reverse' : 'row',
+            },
             justifyContent: 'space-between',
             alignItems: 'center',
+            gap: { xs: 1, sm: 0 },
           }}
         >
           <Typography
             variant='h4'
-            sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000', mb: 1 }}
-          >
-            Payroll Configuration
-          </Typography>
-          <Button
-            onClick={handleOpenCreateModal}
-            variant='contained'
-            startIcon={<AddIcon />}
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
             sx={{
-              textTransform: 'none',
               fontWeight: 600,
-              px: 2,
-              py: 1,
+              color: darkMode ? '#fff' : '#000',
+              mb: 1,
+              textAlign: language === 'ar' ? 'right' : 'left',
             }}
           >
-            Create Configuration
-          </Button>
+            {L.title}
+          </Typography>
+          <Box dir='ltr'>
+            <Button
+              onClick={handleOpenCreateModal}
+              variant='contained'
+              startIcon={<AddIcon />}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 2,
+                py: 1,
+              }}
+            >
+              {L.createConfig}
+            </Button>
+          </Box>
         </Box>
         <Paper
           sx={{
@@ -583,7 +754,7 @@ const PayrollConfiguration: React.FC = () => {
             variant='body1'
             sx={{ textAlign: 'center', color: darkMode ? '#8f8f8f' : '#666' }}
           >
-            No payroll configuration found. Please create one.
+            {L.noConfig}
           </Typography>
         </Paper>
 
@@ -597,22 +768,33 @@ const PayrollConfiguration: React.FC = () => {
           }}
         >
           <DialogTitle
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
             sx={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              flexDirection: language === 'ar' ? 'row-reverse' : 'row',
               color: darkMode ? '#fff' : '#000',
               borderRadius: 0,
               pb: 2,
+              textAlign: language === 'ar' ? 'right' : 'left',
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              Create Payroll Configuration
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                order: language === 'ar' ? 2 : 1,
+              }}
+            >
+              <AddIcon /> {L.createModalTitle}
             </Box>
             <IconButton
               onClick={handleCloseEditModal}
               size='small'
               sx={{
+                order: language === 'ar' ? 1 : 2,
                 color: theme.palette.text.secondary,
                 '&:hover': {
                   color: theme.palette.text.primary,
@@ -623,7 +805,14 @@ const PayrollConfiguration: React.FC = () => {
               <CloseIcon />
             </IconButton>
           </DialogTitle>
-          <DialogContent sx={{ pt: 3, maxHeight: '70vh', overflowY: 'auto' }}>
+          <DialogContent
+            sx={{
+              pt: 3,
+              maxHeight: '70vh',
+              overflowY: 'auto',
+              direction: 'ltr',
+            }}
+          >
             {error && (
               <Alert
                 severity='error'
@@ -648,7 +837,7 @@ const PayrollConfiguration: React.FC = () => {
                     color: darkMode ? '#ccc' : undefined,
                   }}
                 >
-                  Salary Cycle
+                  {L.salaryCycle}
                 </InputLabel>
                 <Select
                   value={salaryCycle}
@@ -657,7 +846,7 @@ const PayrollConfiguration: React.FC = () => {
                       e.target.value as 'monthly' | 'weekly' | 'biweekly'
                     )
                   }
-                  label='Salary Cycle'
+                  label={L.salaryCycle}
                   sx={{
                     backgroundColor: darkMode ? '#2d2d2d' : '#fff',
                     color: darkMode ? '#fff' : '#000',
@@ -666,21 +855,23 @@ const PayrollConfiguration: React.FC = () => {
                     },
                   }}
                 >
-                  <MenuItem value='monthly'>Monthly</MenuItem>
-                  <MenuItem value='weekly'>Weekly</MenuItem>
+                  <MenuItem value='monthly'>{L.monthly}</MenuItem>
+                  <MenuItem value='weekly'>{L.weekly}</MenuItem>
                 </Select>
               </FormControl>
 
               <Box>
                 <Typography
                   variant='h6'
+                  dir={language === 'ar' ? 'rtl' : 'ltr'}
                   sx={{
                     mb: 2,
                     fontWeight: 600,
                     color: darkMode ? '#fff' : '#000',
+                    textAlign: language === 'ar' ? 'right' : 'left',
                   }}
                 >
-                  Base Pay Components
+                  {L.basePay}
                 </Typography>
                 <Box
                   sx={{
@@ -697,10 +888,7 @@ const PayrollConfiguration: React.FC = () => {
                     <TextField
                       key={key}
                       fullWidth
-                      label={
-                        key.charAt(0).toUpperCase() +
-                        key.slice(1).replace(/([A-Z])/g, ' $1')
-                      }
+                      label={basePayLabelForKey(key)}
                       type='number'
                       inputProps={{ min: 0 }}
                       value={value === 0 ? '' : value}
@@ -736,33 +924,42 @@ const PayrollConfiguration: React.FC = () => {
                 <Box
                   sx={{
                     display: 'flex',
+                    flexDirection: {
+                      xs: 'column',
+                      sm: language === 'ar' ? 'row-reverse' : 'row',
+                    },
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     mb: 2,
+                    gap: { xs: 1, sm: 0 },
                   }}
                 >
                   <Typography
                     variant='h6'
+                    dir={language === 'ar' ? 'rtl' : 'ltr'}
                     sx={{
                       fontWeight: 600,
                       color: darkMode ? '#fff' : '#000',
+                      textAlign: language === 'ar' ? 'right' : 'left',
                     }}
                   >
-                    Allowances
+                    {L.allowances}
                   </Typography>
-                  <Button
-                    variant='outlined'
-                    size='small'
-                    startIcon={<AddIcon />}
-                    onClick={handleAddAllowance}
-                    sx={{
-                      textTransform: 'none',
-                      borderColor: theme.palette.divider,
-                      color: darkMode ? '#fff' : '#000',
-                    }}
-                  >
-                    Add Allowance
-                  </Button>
+                  <Box dir='ltr'>
+                    <Button
+                      variant='outlined'
+                      size='small'
+                      startIcon={<AddIcon />}
+                      onClick={handleAddAllowance}
+                      sx={{
+                        textTransform: 'none',
+                        borderColor: theme.palette.divider,
+                        color: darkMode ? '#fff' : '#000',
+                      }}
+                    >
+                      {L.addAllowance}
+                    </Button>
+                  </Box>
                 </Box>
                 {allowances.length === 0 ? (
                   <Typography
@@ -772,7 +969,7 @@ const PayrollConfiguration: React.FC = () => {
                       fontStyle: 'italic',
                     }}
                   >
-                    No allowances added. Click "Add Allowance" to add one.
+                    {L.noAllowances}
                   </Typography>
                 ) : (
                   <Box
@@ -803,7 +1000,7 @@ const PayrollConfiguration: React.FC = () => {
                               fontWeight: 600,
                             }}
                           >
-                            Allowance {index + 1}
+                            {L.allowanceLabel} {index + 1}
                           </Typography>
                           <IconButton
                             size='small'
@@ -827,7 +1024,7 @@ const PayrollConfiguration: React.FC = () => {
                         >
                           <TextField
                             fullWidth
-                            label='Type'
+                            label={L.typeLabel}
                             value={allowance.type}
                             onChange={e =>
                               handleAllowanceChange(
@@ -836,7 +1033,7 @@ const PayrollConfiguration: React.FC = () => {
                                 e.target.value
                               )
                             }
-                            placeholder='e.g., travel, meal, etc.'
+                            placeholder={L.placeholderExample}
                             InputLabelProps={{
                               sx: { color: darkMode ? '#ccc' : undefined },
                             }}
@@ -852,7 +1049,7 @@ const PayrollConfiguration: React.FC = () => {
                           />
                           <TextField
                             fullWidth
-                            label='Amount'
+                            label={L.amountLabel}
                             type='number'
                             inputProps={{ min: 0 }}
                             value={
@@ -881,7 +1078,7 @@ const PayrollConfiguration: React.FC = () => {
                           />
                           <TextField
                             fullWidth
-                            label='Percentage (%)'
+                            label={L.percentageLabel}
                             type='number'
                             inputProps={{ min: 0 }}
                             value={
@@ -952,13 +1149,15 @@ const PayrollConfiguration: React.FC = () => {
               <Box>
                 <Typography
                   variant='h6'
+                  dir={language === 'ar' ? 'rtl' : 'ltr'}
                   sx={{
                     mb: 2,
                     fontWeight: 600,
                     color: darkMode ? '#fff' : '#000',
+                    textAlign: language === 'ar' ? 'right' : 'left',
                   }}
                 >
-                  Deductions
+                  {L.deductions}
                 </Typography>
                 <Box
                   sx={{
@@ -971,10 +1170,7 @@ const PayrollConfiguration: React.FC = () => {
                     <TextField
                       key={key}
                       fullWidth
-                      label={key
-                        .replace(/([A-Z])/g, ' $1')
-                        .replace(/^./, str => str.toUpperCase())
-                        .replace('Percentage', ' (%)')}
+                      label={deductionLabelForKey(key)}
                       type='number'
                       inputProps={{ min: 0 }}
                       value={value === 0 ? '' : value}
@@ -1015,7 +1211,7 @@ const PayrollConfiguration: React.FC = () => {
                     color: darkMode ? '#fff' : '#000',
                   }}
                 >
-                  Overtime Policy
+                  {L.overtimePolicy}
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <FormControlLabel
@@ -1036,7 +1232,7 @@ const PayrollConfiguration: React.FC = () => {
                         }}
                       />
                     }
-                    label='Enable Overtime'
+                    label={L.enableOvertime}
                     sx={{ color: darkMode ? '#fff' : '#000' }}
                   />
                   {overtimePolicy.enabled && (
@@ -1052,7 +1248,7 @@ const PayrollConfiguration: React.FC = () => {
                     >
                       <TextField
                         fullWidth
-                        label='Rate Multiplier'
+                        label={L.rateMultiplier}
                         type='number'
                         inputProps={{ min: 0 }}
                         value={
@@ -1083,7 +1279,7 @@ const PayrollConfiguration: React.FC = () => {
                       />
                       <TextField
                         fullWidth
-                        label='Max Hours Per Month'
+                        label={L.maxHours}
                         type='number'
                         inputProps={{ min: 0 }}
                         value={
@@ -1126,7 +1322,7 @@ const PayrollConfiguration: React.FC = () => {
                     color: darkMode ? '#fff' : '#000',
                   }}
                 >
-                  Leave Deduction Policy
+                  {L.leaveDeductionPolicy}
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <FormControlLabel
@@ -1150,12 +1346,12 @@ const PayrollConfiguration: React.FC = () => {
                         }}
                       />
                     }
-                    label='Unpaid Leave Deduction'
+                    label={L.unpaidLeaveDeduction}
                     sx={{ color: darkMode ? '#fff' : '#000' }}
                   />
                   <TextField
                     fullWidth
-                    label='Half Day Deduction (%)'
+                    label={L.halfDayDeduction}
                     type='number'
                     inputProps={{ min: 0 }}
                     value={
@@ -1184,22 +1380,36 @@ const PayrollConfiguration: React.FC = () => {
               </Box>
             </Box>
           </DialogContent>
-          <DialogActions sx={{ p: 3, pt: 1, justifyContent: 'flex-end' }}>
+          <DialogActions
+            sx={{
+              p: 3,
+              pt: 1,
+              justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+            }}
+          >
             <Button
               onClick={handleCloseEditModal}
               variant='outlined'
-              sx={{ textTransform: 'none', fontWeight: 500 }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 500,
+                mr: language === 'ar' ? 1 : 0,
+              }}
             >
-              Cancel
+              {L.cancel}
             </Button>
             <Button
               onClick={handleSave}
               variant='contained'
               startIcon={saving ? <CircularProgress size={16} /> : <AddIcon />}
               disabled={saving || !isFormValid()}
-              sx={{ textTransform: 'none', fontWeight: 500 }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 500,
+                ml: language === 'ar' ? 0 : 1,
+              }}
             >
-              {saving ? 'Creating...' : 'Create Configuration'}
+              {saving ? L.creating : L.createConfig}
             </Button>
           </DialogActions>
         </Dialog>
@@ -1218,34 +1428,47 @@ const PayrollConfiguration: React.FC = () => {
         sx={{
           mb: 3,
           display: 'flex',
+          flexDirection: {
+            xs: 'column',
+            sm: language === 'ar' ? 'row-reverse' : 'row',
+          },
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: { xs: 1, sm: 0 },
         }}
       >
         <Typography
           variant='h4'
-          sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000', mb: 1 }}
-        >
-          Payroll Configuration
-        </Typography>
-        <Button
-          onClick={handleOpenEditModal}
-          variant='outlined'
-          startIcon={<EditIcon />}
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
           sx={{
-            textTransform: 'none',
-            fontWeight: 500,
-            px: 2,
-            py: 1,
-            color: theme.palette.text.primary,
-            '&:hover': {
-              borderColor: theme.palette.primary.main,
-              backgroundColor: theme.palette.action.hover,
-            },
+            fontWeight: 600,
+            color: darkMode ? '#fff' : '#000',
+            mb: 1,
+            textAlign: language === 'ar' ? 'right' : 'left',
           }}
         >
-          Update Configuration
-        </Button>
+          {L.title}
+        </Typography>
+        <Box dir='ltr'>
+          <Button
+            onClick={handleOpenEditModal}
+            variant='outlined'
+            startIcon={<EditIcon />}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 500,
+              px: 2,
+              py: 1,
+              color: theme.palette.text.primary,
+              '&:hover': {
+                borderColor: theme.palette.primary.main,
+                backgroundColor: theme.palette.action.hover,
+              },
+            }}
+          >
+            {L.updateConfig}
+          </Button>
+        </Box>
       </Box>
 
       <Box
@@ -1269,23 +1492,31 @@ const PayrollConfiguration: React.FC = () => {
         >
           <Typography
             variant='h6'
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
             sx={{
               mb: 2,
               fontWeight: 600,
               color: darkMode ? '#fff' : '#000',
+              textAlign: language === 'ar' ? 'right' : 'left',
             }}
           >
-            Salary Cycle
+            {L.salaryCycle}
           </Typography>
           <Typography
             variant='body1'
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
             sx={{
               color: darkMode ? '#fff' : '#000',
               textTransform: 'capitalize',
               fontSize: '16px',
+              textAlign: language === 'ar' ? 'right' : 'left',
             }}
           >
-            {config.salaryCycle}
+            {config.salaryCycle === 'monthly'
+              ? L.monthly
+              : config.salaryCycle === 'weekly'
+                ? L.weekly
+                : L.biweekly}
           </Typography>
         </Paper>
 
@@ -1300,13 +1531,15 @@ const PayrollConfiguration: React.FC = () => {
         >
           <Typography
             variant='h6'
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
             sx={{
               mb: 2,
               fontWeight: 600,
               color: darkMode ? '#fff' : '#000',
+              textAlign: language === 'ar' ? 'right' : 'left',
             }}
           >
-            Base Pay Components
+            {L.basePay}
           </Typography>
           <Box
             sx={{
@@ -1329,8 +1562,7 @@ const PayrollConfiguration: React.FC = () => {
                     fontSize: '12px',
                   }}
                 >
-                  {key.charAt(0).toUpperCase() +
-                    key.slice(1).replace(/([A-Z])/g, ' $1')}
+                  {basePayLabelForKey(key)}
                 </Typography>
                 <Typography
                   variant='body1'
@@ -1364,7 +1596,7 @@ const PayrollConfiguration: React.FC = () => {
               color: darkMode ? '#fff' : '#000',
             }}
           >
-            Allowances
+            {L.allowances}
           </Typography>
           {config.allowances && config.allowances.length > 0 ? (
             <>
@@ -1406,7 +1638,7 @@ const PayrollConfiguration: React.FC = () => {
                         mb: 1.5,
                       }}
                     >
-                      {allowance.type || `Allowance ${index + 1}`}
+                      {allowance.type || `${L.allowanceLabel} ${index + 1}`}
                     </Typography>
                     <Box
                       sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
@@ -1420,7 +1652,7 @@ const PayrollConfiguration: React.FC = () => {
                             fontSize: '12px',
                           }}
                         >
-                          Amount
+                          {L.amountLabel}
                         </Typography>
                         <Typography
                           variant='body1'
@@ -1441,7 +1673,7 @@ const PayrollConfiguration: React.FC = () => {
                             fontSize: '12px',
                           }}
                         >
-                          Percentage
+                          {L.percentageLabel}
                         </Typography>
                         <Typography
                           variant='body1'
@@ -1495,7 +1727,7 @@ const PayrollConfiguration: React.FC = () => {
                       },
                     }}
                   >
-                    See More ({(config.allowances || []).length - 6} more)
+                    {L.seeMore} ({(config.allowances || []).length - 6} more)
                   </Button>
                 </Box>
               )}
@@ -1527,7 +1759,7 @@ const PayrollConfiguration: React.FC = () => {
                 fontStyle: 'italic',
               }}
             >
-              No allowances added. Click "Add Allowance" to add one.
+              {L.noAllowances}
             </Typography>
           )}
         </Paper>
@@ -1543,13 +1775,15 @@ const PayrollConfiguration: React.FC = () => {
         >
           <Typography
             variant='h6'
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
             sx={{
               mb: 2,
               fontWeight: 600,
               color: darkMode ? '#fff' : '#000',
+              textAlign: language === 'ar' ? 'right' : 'left',
             }}
           >
-            Deductions
+            {L.deductions}
           </Typography>
           <Box
             sx={{
@@ -1568,10 +1802,7 @@ const PayrollConfiguration: React.FC = () => {
                     fontSize: '12px',
                   }}
                 >
-                  {key
-                    .replace(/([A-Z])/g, ' $1')
-                    .replace(/^./, str => str.toUpperCase())
-                    .replace('Percentage', ' (%)')}
+                  {deductionLabelForKey(key)}
                 </Typography>
                 <Typography
                   variant='body1'
@@ -1612,7 +1843,7 @@ const PayrollConfiguration: React.FC = () => {
                 color: darkMode ? '#fff' : '#000',
               }}
             >
-              Overtime Policy
+              {L.overtimePolicy}
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <FormControlLabel
@@ -1631,7 +1862,7 @@ const PayrollConfiguration: React.FC = () => {
                     }}
                   />
                 }
-                label='Enable Overtime'
+                label={L.enableOvertime}
                 sx={{ color: darkMode ? '#fff' : '#000' }}
               />
               {config.overtimePolicy.enabled && (
@@ -1651,7 +1882,7 @@ const PayrollConfiguration: React.FC = () => {
                         fontSize: '12px',
                       }}
                     >
-                      Rate Multiplier
+                      {L.rateMultiplier}
                     </Typography>
                     <Typography
                       variant='body1'
@@ -1673,7 +1904,7 @@ const PayrollConfiguration: React.FC = () => {
                         fontSize: '12px',
                       }}
                     >
-                      Max Hours Per Month
+                      {L.maxHours}
                     </Typography>
                     <Typography
                       variant='body1'
@@ -1708,7 +1939,7 @@ const PayrollConfiguration: React.FC = () => {
                 color: darkMode ? '#fff' : '#000',
               }}
             >
-              Leave Deduction Policy
+              {L.leaveDeductionPolicy}
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <FormControlLabel
@@ -1727,7 +1958,7 @@ const PayrollConfiguration: React.FC = () => {
                     }}
                   />
                 }
-                label='Unpaid Leave Deduction'
+                label={L.unpaidLeaveDeduction}
                 sx={{ color: darkMode ? '#fff' : '#000' }}
               />
               <Box>
@@ -1739,7 +1970,7 @@ const PayrollConfiguration: React.FC = () => {
                     fontSize: '12px',
                   }}
                 >
-                  Half Day Deduction (%)
+                  {L.halfDayDeduction}
                 </Typography>
                 <Typography
                   variant='body1'
@@ -1769,22 +2000,33 @@ const PayrollConfiguration: React.FC = () => {
         }}
       >
         <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexDirection: language === 'ar' ? 'row-reverse' : 'row',
             color: darkMode ? '#fff' : '#000',
             borderRadius: 0,
             pb: 2,
+            textAlign: language === 'ar' ? 'right' : 'left',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            Edit Payroll Configuration
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              order: language === 'ar' ? 2 : 1,
+            }}
+          >
+            {L.editModalTitle}
           </Box>
           <IconButton
             onClick={handleCloseEditModal}
             size='small'
             sx={{
+              order: language === 'ar' ? 1 : 2,
               color: theme.palette.text.secondary,
               '&:hover': {
                 color: theme.palette.text.primary,
@@ -1795,7 +2037,9 @@ const PayrollConfiguration: React.FC = () => {
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ pt: 3, maxHeight: '70vh', overflowY: 'auto' }}>
+        <DialogContent
+          sx={{ pt: 3, maxHeight: '70vh', overflowY: 'auto', direction: 'ltr' }}
+        >
           {error && (
             <Alert
               severity='error'
@@ -1816,11 +2060,13 @@ const PayrollConfiguration: React.FC = () => {
           >
             <FormControl fullWidth>
               <InputLabel
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
                 sx={{
                   color: darkMode ? '#ccc' : undefined,
+                  textAlign: language === 'ar' ? 'right' : 'left',
                 }}
               >
-                Salary Cycle
+                {L.salaryCycle}
               </InputLabel>
               <Select
                 value={salaryCycle}
@@ -1829,7 +2075,7 @@ const PayrollConfiguration: React.FC = () => {
                     e.target.value as 'monthly' | 'weekly' | 'biweekly'
                   )
                 }
-                label='Salary Cycle'
+                label={L.salaryCycle}
                 sx={{
                   backgroundColor: darkMode ? '#2d2d2d' : '#fff',
                   color: darkMode ? '#fff' : '#000',
@@ -1838,21 +2084,23 @@ const PayrollConfiguration: React.FC = () => {
                   },
                 }}
               >
-                <MenuItem value='monthly'>Monthly</MenuItem>
-                <MenuItem value='weekly'>Weekly</MenuItem>
+                <MenuItem value='monthly'>{L.monthly}</MenuItem>
+                <MenuItem value='weekly'>{L.weekly}</MenuItem>
               </Select>
             </FormControl>
 
             <Box>
               <Typography
                 variant='h6'
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
                 sx={{
                   mb: 2,
                   fontWeight: 600,
                   color: darkMode ? '#fff' : '#000',
+                  textAlign: language === 'ar' ? 'right' : 'left',
                 }}
               >
-                Base Pay Components
+                {L.basePay}
               </Typography>
               <Box
                 sx={{
@@ -1869,10 +2117,7 @@ const PayrollConfiguration: React.FC = () => {
                   <TextField
                     key={key}
                     fullWidth
-                    label={
-                      key.charAt(0).toUpperCase() +
-                      key.slice(1).replace(/([A-Z])/g, ' $1')
-                    }
+                    label={basePayLabelForKey(key)}
                     type='number'
                     inputProps={{ min: 0 }}
                     value={value}
@@ -1912,28 +2157,45 @@ const PayrollConfiguration: React.FC = () => {
                   mb: 2,
                 }}
               >
-                <Typography
-                  variant='h6'
+                <Box
                   sx={{
-                    fontWeight: 600,
-                    color: darkMode ? '#fff' : '#000',
+                    display: 'flex',
+                    flexDirection: {
+                      xs: 'column',
+                      sm: language === 'ar' ? 'row-reverse' : 'row',
+                    },
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: { xs: 1, sm: 0 },
                   }}
                 >
-                  Allowances
-                </Typography>
-                <Button
-                  variant='outlined'
-                  size='small'
-                  startIcon={<AddIcon />}
-                  onClick={handleAddAllowance}
-                  sx={{
-                    textTransform: 'none',
-                    borderColor: theme.palette.divider,
-                    color: darkMode ? '#fff' : '#000',
-                  }}
-                >
-                  Add Allowance
-                </Button>
+                  <Typography
+                    variant='h6'
+                    dir={language === 'ar' ? 'rtl' : 'ltr'}
+                    sx={{
+                      fontWeight: 600,
+                      color: darkMode ? '#fff' : '#000',
+                      textAlign: language === 'ar' ? 'right' : 'left',
+                    }}
+                  >
+                    {L.allowances}
+                  </Typography>
+                  <Box dir='ltr'>
+                    <Button
+                      variant='outlined'
+                      size='small'
+                      startIcon={<AddIcon />}
+                      onClick={handleAddAllowance}
+                      sx={{
+                        textTransform: 'none',
+                        borderColor: theme.palette.divider,
+                        color: darkMode ? '#fff' : '#000',
+                      }}
+                    >
+                      {L.addAllowance}
+                    </Button>
+                  </Box>
+                </Box>
               </Box>
               {allowances.length === 0 ? (
                 <Typography
@@ -1943,7 +2205,7 @@ const PayrollConfiguration: React.FC = () => {
                     fontStyle: 'italic',
                   }}
                 >
-                  No allowances added. Click "Add Allowance" to add one.
+                  {L.noAllowances}
                 </Typography>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -1996,12 +2258,12 @@ const PayrollConfiguration: React.FC = () => {
                       >
                         <TextField
                           fullWidth
-                          label='Type'
+                          label={L.typeLabel}
                           value={allowance.type}
                           onChange={e =>
                             handleAllowanceChange(index, 'type', e.target.value)
                           }
-                          placeholder='e.g., travel, meal, etc.'
+                          placeholder={L.placeholderExample}
                           InputLabelProps={{
                             sx: { color: darkMode ? '#ccc' : undefined },
                           }}
@@ -2017,7 +2279,7 @@ const PayrollConfiguration: React.FC = () => {
                         />
                         <TextField
                           fullWidth
-                          label='Amount'
+                          label={L.amountLabel}
                           type='number'
                           inputProps={{ min: 0 }}
                           value={allowance.amount === 0 ? '' : allowance.amount}
@@ -2044,7 +2306,7 @@ const PayrollConfiguration: React.FC = () => {
                         />
                         <TextField
                           fullWidth
-                          label='Percentage (%)'
+                          label={L.percentageLabel}
                           type='number'
                           inputProps={{ min: 0 }}
                           value={
@@ -2121,7 +2383,7 @@ const PayrollConfiguration: React.FC = () => {
                   color: darkMode ? '#fff' : '#000',
                 }}
               >
-                Deductions
+                {L.deductions}
               </Typography>
               <Box
                 sx={{
@@ -2134,10 +2396,7 @@ const PayrollConfiguration: React.FC = () => {
                   <TextField
                     key={key}
                     fullWidth
-                    label={key
-                      .replace(/([A-Z])/g, ' $1')
-                      .replace(/^./, str => str.toUpperCase())
-                      .replace('Percentage', ' (%)')}
+                    label={deductionLabelForKey(key)}
                     type='number'
                     inputProps={{ min: 0 }}
                     value={value === 0 ? '' : value}
@@ -2178,7 +2437,7 @@ const PayrollConfiguration: React.FC = () => {
                   color: darkMode ? '#fff' : '#000',
                 }}
               >
-                Overtime Policy
+                {L.overtimePolicy}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <FormControlLabel
@@ -2199,7 +2458,7 @@ const PayrollConfiguration: React.FC = () => {
                       }}
                     />
                   }
-                  label='Enable Overtime'
+                  label={L.enableOvertime}
                   sx={{ color: darkMode ? '#fff' : '#000' }}
                 />
                 {overtimePolicy.enabled && (
@@ -2212,7 +2471,7 @@ const PayrollConfiguration: React.FC = () => {
                   >
                     <TextField
                       fullWidth
-                      label='Rate Multiplier'
+                      label={L.rateMultiplier}
                       type='number'
                       inputProps={{ min: 0 }}
                       value={
@@ -2243,7 +2502,7 @@ const PayrollConfiguration: React.FC = () => {
                     />
                     <TextField
                       fullWidth
-                      label='Max Hours Per Month'
+                      label={L.maxHours}
                       type='number'
                       inputProps={{ min: 0 }}
                       value={
@@ -2284,7 +2543,7 @@ const PayrollConfiguration: React.FC = () => {
                   color: darkMode ? '#fff' : '#000',
                 }}
               >
-                Leave Deduction Policy
+                {L.leaveDeductionPolicy}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <FormControlLabel
@@ -2308,12 +2567,12 @@ const PayrollConfiguration: React.FC = () => {
                       }}
                     />
                   }
-                  label='Unpaid Leave Deduction'
+                  label={L.unpaidLeaveDeduction}
                   sx={{ color: darkMode ? '#fff' : '#000' }}
                 />
                 <TextField
                   fullWidth
-                  label='Half Day Deduction (%)'
+                  label={L.halfDayDeduction}
                   type='number'
                   inputProps={{ min: 0 }}
                   value={
@@ -2342,22 +2601,36 @@ const PayrollConfiguration: React.FC = () => {
             </Box>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 1, justifyContent: 'flex-end' }}>
+        <DialogActions
+          sx={{
+            p: 3,
+            pt: 1,
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+          }}
+        >
           <Button
             onClick={handleCloseEditModal}
             variant='outlined'
-            sx={{ textTransform: 'none', fontWeight: 500 }}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 500,
+              mr: language === 'ar' ? 1 : 0,
+            }}
           >
-            Cancel
+            {L.cancel}
           </Button>
           <Button
             onClick={handleSave}
             variant='contained'
             startIcon={saving ? <CircularProgress size={16} /> : <EditIcon />}
             disabled={saving || !isFormValid() || !hasChanges()}
-            sx={{ textTransform: 'none', fontWeight: 500 }}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 500,
+              ml: language === 'ar' ? 0 : 1,
+            }}
           >
-            {saving ? 'Updating...' : 'Update Configuration'}
+            {saving ? L.updating : L.updateConfig}
           </Button>
         </DialogActions>
       </Dialog>

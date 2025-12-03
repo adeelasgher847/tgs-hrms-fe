@@ -25,6 +25,7 @@ import { useTheme } from '@mui/material/styles';
 import systemEmployeeApiService, {
   type SystemEmployee,
 } from '../../api/systemEmployeeApi';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   designationApiService,
   type BackendDesignation,
@@ -221,7 +222,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
   const handleDownload = () => {
     if (employees.length === 0) {
-      alert('No data to download.');
+      alert(pageLabels[language].noDataToDownload);
       return;
     }
 
@@ -285,10 +286,68 @@ const TenantBasedEmployeeManager: React.FC = () => {
   const estimatedTotalPages =
     totalPages || (hasMorePages ? currentPage + 1 : currentPage);
 
+  const { language } = useLanguage();
+  const isRTL = language === 'ar';
+
+  const pageLabels = {
+    en: {
+      title: 'Employee List',
+      tenantLabel: 'Tenant',
+      departmentLabel: 'Department',
+      designationLabel: 'Designation',
+      exportTooltip: 'Export Employee List',
+      noEmployees: 'No employees found',
+      noDataToDownload: 'No data to download.',
+      clearFilters: 'Clear Filters',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+    },
+    ar: {
+      title: 'قائمة الموظفين',
+      tenantLabel: 'المستأجر',
+      departmentLabel: 'القسم',
+      designationLabel: 'المسمى الوظيفي',
+      exportTooltip: 'تصدير قائمة الموظفين',
+      noEmployees: 'لم يتم العثور على موظفين',
+      noDataToDownload: 'لا توجد بيانات للتنزيل.',
+      clearFilters: 'مسح الفلاتر',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
+    },
+  } as const;
+
+  const tableHeaders = {
+    en: {
+      name: 'Name',
+      tenant: 'Tenant',
+      department: 'Department',
+      designation: 'Designation',
+      status: 'Status',
+      createdAt: 'Created At',
+      actions: 'Actions',
+    },
+    ar: {
+      name: 'الاسم',
+      tenant: 'المستأجر',
+      department: 'القسم',
+      designation: 'المسمى الوظيفي',
+      status: 'الحالة',
+      createdAt: 'تاريخ الإنشاء',
+      actions: 'الإجراءات',
+    },
+  } as const;
+
   return (
-    <Box>
-      <Typography variant='h5' fontWeight='bold' mb={3}>
-        Employee List
+    <Box dir='ltr' sx={{ direction: 'ltr' }}>
+      <Typography
+        dir={isRTL ? 'rtl' : 'ltr'}
+        variant='h5'
+        fontWeight='bold'
+        mb={3}
+        sx={{ textAlign: isRTL ? 'right' : 'left' }}
+        style={{ textAlign: isRTL ? 'right' : 'left' }}
+      >
+        {pageLabels[language].title}
       </Typography>
 
       <Box
@@ -308,7 +367,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
           <TextField
             select
             fullWidth
-            label='Tenant'
+            label={pageLabels[language].tenantLabel}
             value={filters.tenantId}
             onChange={e => handleFilterChange('tenantId', e.target.value)}
             size='small'
@@ -325,7 +384,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
           <TextField
             select
             fullWidth
-            label='Department'
+            label={pageLabels[language].departmentLabel}
             value={filters.departmentId}
             onChange={e => handleFilterChange('departmentId', e.target.value)}
             size='small'
@@ -342,7 +401,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
           <TextField
             select
             fullWidth
-            label='Designation'
+            label={pageLabels[language].designationLabel}
             value={filters.designationId}
             onChange={e => handleFilterChange('designationId', e.target.value)}
             size='small'
@@ -362,11 +421,11 @@ const TenantBasedEmployeeManager: React.FC = () => {
             onClick={handleClearFilters}
             sx={{ borderColor: filterBtn, color: textColor }}
           >
-            Clear Filters
+            {pageLabels[language].clearFilters}
           </Button>
         </Stack>
 
-        <Tooltip title='Export Employee List'>
+        <Tooltip title={pageLabels[language].exportTooltip}>
           <IconButton
             color='primary'
             onClick={handleDownload}
@@ -388,13 +447,15 @@ const TenantBasedEmployeeManager: React.FC = () => {
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Tenant</TableCell>
-                <TableCell>Department</TableCell>
-                <TableCell>Designation</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Created At</TableCell>
-                <TableCell align='center'>Actions</TableCell>
+                <TableCell>{tableHeaders[language].name}</TableCell>
+                <TableCell>{tableHeaders[language].tenant}</TableCell>
+                <TableCell>{tableHeaders[language].department}</TableCell>
+                <TableCell>{tableHeaders[language].designation}</TableCell>
+                <TableCell>{tableHeaders[language].status}</TableCell>
+                <TableCell>{tableHeaders[language].createdAt}</TableCell>
+                <TableCell align='center'>
+                  {tableHeaders[language].actions}
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -425,7 +486,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} align='center'>
-                    No employees found
+                    {pageLabels[language].noEmployees}
                   </TableCell>
                 </TableRow>
               )}
@@ -461,8 +522,11 @@ const TenantBasedEmployeeManager: React.FC = () => {
       {employees.length > 0 && (
         <Box display='flex' justifyContent='center' mb={2}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {estimatedTotalPages} (
-            {estimatedTotalRecords} total records)
+            {pageLabels[language].showingInfo(
+              currentPage,
+              estimatedTotalPages,
+              estimatedTotalRecords
+            )}
           </Typography>
         </Box>
       )}

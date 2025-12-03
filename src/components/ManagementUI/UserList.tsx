@@ -24,6 +24,7 @@ import {
   designations,
   users as mockUsers,
 } from '../../Data/userMock';
+import { useLanguage } from '../../hooks/useLanguage';
 
 const UserList: React.FC = () => {
   const [users, setUsers] = useState<User[]>(mockUsers);
@@ -32,6 +33,37 @@ const UserList: React.FC = () => {
   const [filters, setFilters] = useState({ department: '', designation: '' });
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const theme = useTheme();
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      pageTitle: 'User Management UI',
+      department: 'Department',
+      designation: 'Designation',
+      all: 'All',
+      createUser: 'Create User',
+      name: 'Name',
+      email: 'Email',
+      role: 'Role',
+      actions: 'Actions',
+      edit: 'Edit',
+      delete: 'Delete',
+    },
+    ar: {
+      pageTitle: 'إدارة المستخدمين',
+      department: 'القسم',
+      designation: 'المسمى الوظيفي',
+      all: 'الكل',
+      createUser: 'إنشاء مستخدم',
+      name: 'الاسم',
+      email: 'البريد الإلكتروني',
+      role: 'الدور',
+      actions: 'الإجراءات',
+      edit: 'تعديل',
+      delete: 'حذف',
+    },
+  } as const;
+  const L = labels[language as 'en' | 'ar'] || labels.en;
 
   const filteredUsers = users.filter(user => {
     return (
@@ -72,7 +104,7 @@ const UserList: React.FC = () => {
         gutterBottom
         sx={{ color: darkMode ? '#8f8f8f' : '#000' }}
       >
-        User Management UI
+        {L.pageTitle}
       </Typography>
 
       <Box
@@ -86,7 +118,7 @@ const UserList: React.FC = () => {
         <TextField
           select
           size='small'
-          label=' Department'
+          label={L.department}
           value={filters.department}
           onChange={e =>
             setFilters({
@@ -97,7 +129,7 @@ const UserList: React.FC = () => {
           }
           sx={{ width: 180 }}
         >
-          <MenuItem value=''>All</MenuItem>
+          <MenuItem value=''>{L.all}</MenuItem>
           {departments.map(dept => (
             <MenuItem key={dept} value={dept}>
               {dept}
@@ -108,7 +140,7 @@ const UserList: React.FC = () => {
         <TextField
           select
           size='small'
-          label='Designation'
+          label={L.designation}
           value={filters.designation}
           onChange={e =>
             setFilters({ ...filters, designation: e.target.value })
@@ -116,7 +148,7 @@ const UserList: React.FC = () => {
           sx={{ width: 180 }}
           disabled={!filters.department}
         >
-          <MenuItem value=''>All</MenuItem>
+          <MenuItem value=''>{L.all}</MenuItem>
           {(designations[filters.department] || []).map(des => (
             <MenuItem key={des} value={des}>
               {des}
@@ -139,19 +171,19 @@ const UserList: React.FC = () => {
             marginLeft: { xs: '0', sm: 'auto' },
           }}
         >
-          Create User
+          {L.createUser}
         </Button>
       </Box>
       <Box sx={{ overflowX: 'auto', bgcolor: theme.palette.background.paper }}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Role</TableCell>
-              <TableCell>Department</TableCell>
-              <TableCell>Designation</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>{L.name}</TableCell>
+              <TableCell>{L.email}</TableCell>
+              <TableCell>{L.role}</TableCell>
+              <TableCell>{L.department}</TableCell>
+              <TableCell>{L.designation}</TableCell>
+              <TableCell>{L.actions}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -163,10 +195,14 @@ const UserList: React.FC = () => {
                 <TableCell>{user.department}</TableCell>
                 <TableCell>{user.designation}</TableCell>
                 <TableCell>
-                  <Button onClick={() => handleOpen(user)}>
+                  <Button onClick={() => handleOpen(user)} aria-label={L.edit}>
                     <Edit />
                   </Button>
-                  <Button color='error' onClick={() => handleDelete(user.id!)}>
+                  <Button
+                    color='error'
+                    onClick={() => handleDelete(user.id!)}
+                    aria-label={L.delete}
+                  >
                     <Delete />
                   </Button>
                 </TableCell>

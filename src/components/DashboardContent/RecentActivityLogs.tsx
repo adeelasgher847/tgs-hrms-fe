@@ -12,6 +12,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { useOutletContext } from 'react-router-dom';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { RecentLog } from '../../api/systemDashboardApi';
 
 const timeAgo = (dateString: string) => {
@@ -44,6 +45,12 @@ interface RecentActivityLogsProps {
 
 const RecentActivityLogs: React.FC<RecentActivityLogsProps> = ({ logs }) => {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  const { language } = useLanguage();
+
+  const labels = {
+    en: 'Recent Activity Logs',
+    ar: 'سجلات النشاط الأخيرة',
+  } as const;
 
   const bgColor = darkMode ? '#111' : '#fff';
   const textColor = darkMode ? '#8f8f8f' : '#000';
@@ -69,7 +76,7 @@ const RecentActivityLogs: React.FC<RecentActivityLogsProps> = ({ logs }) => {
         mb={2}
         sx={{ flexShrink: 0 }}
       >
-        Recent Activity Logs
+        {labels[language]}
       </Typography>
 
       {logs && logs.length > 0 ? (

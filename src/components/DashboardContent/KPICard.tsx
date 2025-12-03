@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 
 interface KpiCardProps {
-  title: string;
+  title: React.ReactNode;
   value: number | string;
   icon: React.ReactNode;
   color?: string;
@@ -36,7 +36,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        boxShadow:'none'
+        boxShadow: 'none',
       }}
     >
       <CardContent

@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from 'react';
 import {
   Card,
   CardContent,
@@ -37,10 +43,46 @@ import EmployeeProfileView from '../Employee/EmployeeProfileView';
 import EditProfileModal from './EditProfileModal';
 import { useIsDarkMode } from '../../theme';
 import { formatDate } from '../../utils/dateUtils';
+import { useLanguage } from '../../hooks/useLanguage';
+
+const USER_PROFILE_STRINGS = {
+  en: {
+    userProfileTitle: 'User Profile',
+    editProfile: 'Edit profile',
+    profileNotFound: 'Profile not found or failed to load.',
+    firstName: 'First Name',
+    lastName: 'Last Name',
+    emailAddress: 'Email Address',
+    phone: 'Phone',
+    role: 'Role',
+    tenant: 'Tenant',
+    joined: 'Joined',
+  },
+  ar: {
+    userProfileTitle: 'ملف المستخدم',
+    editProfile: 'تعديل الملف',
+    profileNotFound: 'الملف غير موجود أو فشل التحميل.',
+    firstName: 'الاسم الأول',
+    lastName: 'اسم العائلة',
+    emailAddress: 'البريد الإلكتروني',
+    phone: 'الهاتف',
+    role: 'الدور',
+    tenant: 'المستأجر',
+    joined: 'انضم',
+  },
+} as const;
 
 const UserProfileComponent = React.memo(() => {
   const { user: profile, loading, updateUser } = useUser();
   const { updateProfilePicture } = useProfilePicture();
+  const { language } = useLanguage();
+  const L = useMemo(
+    () =>
+      USER_PROFILE_STRINGS[language as 'en' | 'ar'] || USER_PROFILE_STRINGS.en,
+    [language]
+  );
+  // keep setError available for future error handling (may be used elsewhere)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const theme = useTheme();
@@ -50,17 +92,12 @@ const UserProfileComponent = React.memo(() => {
   // Silently fetch tenant if missing (without causing loading state)
   useEffect(() => {
     // Only fetch tenant if profile exists, tenant is missing, and we haven't fetched yet
-    if (
-      profile &&
-      !profile.tenant &&
-      !loading &&
-      !tenantFetchedRef.current
-    ) {
+    if (profile && !profile.tenant && !loading && !tenantFetchedRef.current) {
       tenantFetchedRef.current = true;
       // Fetch directly from API and update state without triggering loading
       profileApiService
         .getUserProfile()
-        .then((updatedProfile) => {
+        .then(updatedProfile => {
           // Update user state directly without going through refreshUser (which sets loading)
           updateUser(updatedProfile);
         })
@@ -115,57 +152,46 @@ const UserProfileComponent = React.memo(() => {
   // Determine if the user should see the employee profile view (managers included)
   const userIsEmployee = isEmployee(profile?.role) || isManager(profile?.role);
 
-  const profileItems = useMemo(
-    () => {
-      if (!profile) return [];
-      return [
-        {
-          icon: <Person sx={{ color: 'primary.main' }} />,
-          label: 'First Name',
-          value: profile.first_name,
-        },
-        {
-          icon: <Person sx={{ color: 'primary.main' }} />,
-          label: 'Last Name',
-          value: profile.last_name,
-        },
-        {
-          icon: <Email sx={{ color: 'primary.main' }} />,
-          label: 'Email Address',
-          value: profile.email,
-        },
-        {
-          icon: <Phone sx={{ color: 'primary.main' }} />,
-          label: 'Phone',
-          value: profile.phone,
-        },
-        {
-          icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
-          label: 'Role',
-          value: getRoleName(profile.role),
-        },
-        {
-          icon: <Business sx={{ color: 'primary.main' }} />,
-          label: 'Tenant',
-          value: profile.tenant,
-        },
-        {
-          icon: <CalendarToday sx={{ color: 'primary.main' }} />,
-          label: 'Joined',
-          value: formatDate(profile.created_at),
-        },
-      ];
-    },
-    [
-      profile?.first_name,
-      profile?.last_name,
-      profile?.email,
-      profile?.phone,
-      profile?.role,
-      profile?.tenant,
-      profile?.created_at,
-    ]
-  );
+  const profileItems = useMemo(() => {
+    if (!profile) return [];
+    return [
+      {
+        icon: <Person sx={{ color: 'primary.main' }} />,
+        label: L.firstName,
+        value: profile.first_name,
+      },
+      {
+        icon: <Person sx={{ color: 'primary.main' }} />,
+        label: L.lastName,
+        value: profile.last_name,
+      },
+      {
+        icon: <Email sx={{ color: 'primary.main' }} />,
+        label: L.emailAddress,
+        value: profile.email,
+      },
+      {
+        icon: <Phone sx={{ color: 'primary.main' }} />,
+        label: L.phone,
+        value: profile.phone,
+      },
+      {
+        icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
+        label: L.role,
+        value: getRoleName(profile.role),
+      },
+      {
+        icon: <Business sx={{ color: 'primary.main' }} />,
+        label: L.tenant,
+        value: profile.tenant,
+      },
+      {
+        icon: <CalendarToday sx={{ color: 'primary.main' }} />,
+        label: L.joined,
+        value: formatDate(profile.created_at),
+      },
+    ];
+  }, [profile, L]);
 
   // Only show loading if we truly don't have profile data and it's still loading
   // If we have profile data, show it even if loading is true (might be fetching tenant in background)
@@ -192,6 +218,7 @@ const UserProfileComponent = React.memo(() => {
         <Box
           sx={{
             display: 'flex',
+            flexDirection: language === 'ar' ? 'row-reverse' : 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
             mb: 4,
@@ -200,32 +227,36 @@ const UserProfileComponent = React.memo(() => {
           <Typography
             variant='h4'
             component='h1'
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
             sx={{
               fontWeight: 600,
               color: darkMode ? '#8f8f8f' : theme.palette.text.primary,
+              textAlign: language === 'ar' ? 'right' : 'left',
             }}
           >
-            User Profile
+            {L.userProfileTitle}
           </Typography>
-          <Button
-            onClick={handleEditProfile}
-            variant='outlined'
-            startIcon={<Edit />}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 500,
-              px: 2,
-              py: 1,
-              borderColor: theme.palette.divider,
-              color: theme.palette.text.primary,
-              '&:hover': {
-                borderColor: theme.palette.primary.main,
-                backgroundColor: theme.palette.action.hover,
-              },
-            }}
-          >
-            Edit profile
-          </Button>
+          <Box dir='ltr'>
+            <Button
+              onClick={handleEditProfile}
+              variant='outlined'
+              startIcon={<Edit />}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 500,
+                px: 2,
+                py: 1,
+                borderColor: theme.palette.divider,
+                color: theme.palette.text.primary,
+                '&:hover': {
+                  borderColor: theme.palette.primary.main,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              {L.editProfile}
+            </Button>
+          </Box>
         </Box>
         <Card
           elevation={1}
@@ -248,6 +279,7 @@ const UserProfileComponent = React.memo(() => {
                 <Typography
                   variant='h5'
                   component='h2'
+                  dir='ltr'
                   sx={{ fontWeight: 600, mb: 1 }}
                 >
                   {profile.first_name} {profile.last_name}
@@ -260,6 +292,7 @@ const UserProfileComponent = React.memo(() => {
                 />
                 <Typography
                   variant='body2'
+                  dir='ltr'
                   sx={{
                     mb: 0.5,
                     color: darkMode ? '#8f8f8f' : theme.palette.text.secondary,
@@ -270,6 +303,7 @@ const UserProfileComponent = React.memo(() => {
                 {profile.phone && (
                   <Typography
                     variant='body2'
+                    dir='ltr'
                     sx={{
                       color: darkMode
                         ? '#8f8f8f'

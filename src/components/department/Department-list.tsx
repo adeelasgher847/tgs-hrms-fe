@@ -259,7 +259,8 @@ export const DepartmentList: React.FC = () => {
     <Box
       sx={{
         flexGrow: 1,
-        direction: isRtl ? 'rtl' : 'ltr',
+        // Keep department layout fixed LTR regardless of selected language
+        direction: 'ltr',
         minHeight: '100vh',
         color: textPrimary,
         boxSizing: 'border-box',
@@ -273,6 +274,8 @@ export const DepartmentList: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          // respect language direction for header alignment only
+          direction: isRtl ? 'rtl' : 'ltr',
           flexWrap: 'wrap',
           gap: 2,
           backgroundColor: 'unset',
@@ -462,8 +465,7 @@ export const DepartmentList: React.FC = () => {
           sx={{
             position: 'fixed',
             bottom: 24,
-            right: isRtl ? 'auto' : 24,
-            left: isRtl ? 24 : 'auto',
+            right: 24,
             boxShadow: 'none', // Remove FAB shadow
           }}
         >

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   Box,
   Dialog,
@@ -61,6 +62,34 @@ const AssignEmployeeBenefit: React.FC<{
   onClose: () => void;
   onAssigned?: () => void;
 }> = ({ open, onClose, onAssigned }) => {
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      title: 'Assign Benefits to Employee',
+      selectEmployee: 'Select Employee',
+      selectBenefits: 'Select Benefits',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      cancel: 'Cancel',
+      assigning: 'Assigning...',
+      assign: 'Assign',
+      selectBenefitsLabel: 'Select Benefits',
+    },
+    ar: {
+      title: 'تعيين المزايا للموظف',
+      selectEmployee: 'اختر موظفًا',
+      selectBenefits: 'اختر المزايا',
+      startDate: 'تاريخ البدء',
+      endDate: 'تاريخ الانتهاء',
+      cancel: 'إلغاء',
+      assigning: 'جاري التعيين...',
+      assign: 'تعيين',
+      selectBenefitsLabel: 'اختر المزايا',
+    },
+  } as const;
+
+  const L = labels[language as 'en' | 'ar'] || labels.en;
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [assignedBenefitIds, setAssignedBenefitIds] = useState<string[]>([]);
@@ -263,9 +292,12 @@ const AssignEmployeeBenefit: React.FC<{
   return (
     <>
       <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
-        <DialogTitle>
+        <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
           <Typography variant='h6' fontWeight={600}>
-            Assign Benefits to Employee
+            {L.title}
           </Typography>
         </DialogTitle>
 
@@ -275,17 +307,17 @@ const AssignEmployeeBenefit: React.FC<{
           </Box>
         ) : (
           <form onSubmit={handleSubmit(handleFormSubmit)}>
-            <DialogContent>
+            <DialogContent dir='ltr'>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Controller
                   name='employeeId'
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.employeeId}>
-                      <InputLabel>Select Employee</InputLabel>
+                      <InputLabel>{L.selectEmployee}</InputLabel>
                       <Select
                         {...field}
-                        label='Select Employee'
+                        label={L.selectEmployee}
                         MenuProps={{
                           PaperProps: {
                             style: { maxHeight: 300, overflowY: 'auto' },
@@ -320,14 +352,14 @@ const AssignEmployeeBenefit: React.FC<{
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.benefitIds}>
-                      <InputLabel>Select Benefits</InputLabel>
+                      <InputLabel>{L.selectBenefits}</InputLabel>
                       <Select
                         {...field}
                         multiple
-                        label='Select Benefits'
-                        renderValue={selected =>
+                        label={L.selectBenefitsLabel}
+                        renderValue={(selected: any) =>
                           benefits
-                            .filter(b => selected.includes(b.id))
+                            .filter(b => (selected as string[]).includes(b.id))
                             .map(b => b.name)
                             .join(', ')
                         }
@@ -367,7 +399,7 @@ const AssignEmployeeBenefit: React.FC<{
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label='Start Date'
+                      label={L.startDate}
                       type='date'
                       fullWidth
                       InputLabelProps={{ shrink: true }}
@@ -384,7 +416,7 @@ const AssignEmployeeBenefit: React.FC<{
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label='End Date'
+                      label={L.endDate}
                       type='date'
                       fullWidth
                       InputLabelProps={{ shrink: true }}
@@ -397,16 +429,22 @@ const AssignEmployeeBenefit: React.FC<{
               </Box>
             </DialogContent>
 
-            <DialogActions sx={{ px: 3, pb: 2 }}>
+            <DialogActions
+              sx={{
+                px: 3,
+                pb: 2,
+                justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+              }}
+            >
               <Button onClick={onClose} variant='outlined'>
-                Cancel
+                {L.cancel}
               </Button>
               <Button
                 type='submit'
                 variant='contained'
                 disabled={loading || !isFormValid}
               >
-                {loading ? 'Assigning...' : 'Assign'}
+                {loading ? L.assigning : L.assign}
               </Button>
             </DialogActions>
           </form>

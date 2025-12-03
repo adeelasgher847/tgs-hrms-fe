@@ -39,6 +39,7 @@ const labels = {
     search: 'Search',
     members: 'Members',
     settings: 'Settings',
+    profile: 'Profile',
     signout: 'Sign Out',
     adminProfile: 'Admin Profile',
     dylan: 'Dylan Hunter',
@@ -48,6 +49,7 @@ const labels = {
     search: 'بحث',
     members: 'الأعضاء',
     settings: 'الإعدادات',
+    profile: 'الملف',
     signout: 'تسجيل الخروج',
     adminProfile: 'ملف المشرف',
     dylan: 'ديلان هنتر',
@@ -466,7 +468,7 @@ const Navbar: React.FC<NavbarProps> = ({
           <ListItemIcon>
             <AdminPanelSettings fontSize='small' sx={{ color: textColor }} />
           </ListItemIcon>
-          <Typography color={textColor}>Profile</Typography>
+          <Typography color={textColor}>{lang.profile || 'Profile'}</Typography>
         </MenuItem>
         <MenuItem
           onClick={() => {

@@ -252,7 +252,12 @@ const TeamManager: React.FC<TeamManagerProps> = ({
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography variant='h4' gutterBottom>
+        <Typography
+          variant='h4'
+          gutterBottom
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
           {lang.title}
         </Typography>
         <Box
@@ -294,7 +299,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
   }
 
   return (
-    <Box>
+    <Box dir={'ltr'} sx={{ direction: 'ltr' }}>
       <Box
         sx={{
           display: 'flex',
@@ -305,16 +310,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
           gap: { xs: 2, sm: 0 },
         }}
       >
-        <Typography
-          variant='h4'
-          sx={{
-            color: theme => theme.palette.text.primary,
-            fontSize: { xs: '1.5rem', sm: '2.125rem' },
-            textAlign: { xs: 'left', sm: 'left' },
-          }}
-        >
-          {lang.title}
-        </Typography>
+        {/* Create button and title order controlled with CSS order so we don't change markup flow on small screens */}
         {isAdmin() && !isHRAdmin() && !isSystemAdmin() && (
           <Button
             variant='contained'
@@ -324,11 +320,29 @@ const TeamManager: React.FC<TeamManagerProps> = ({
               backgroundColor: theme => theme.palette.primary.main,
               minWidth: { xs: '100%', sm: 'auto' },
               py: { xs: 1.5, sm: 1 },
+              // On small screens keep button below title (order 1).
+              // On larger screens: for Arabic place button before the title (sm: -1),
+              // for English place button after the title (sm: 1).
+              order: language === 'ar' ? { xs: 1, sm: -1 } : { xs: 1, sm: 1 },
             }}
           >
             {lang.createTeam}
           </Button>
         )}
+
+        <Typography
+          variant='h4'
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{
+            flex: 1,
+            color: theme => theme.palette.text.primary,
+            fontSize: { xs: '1.5rem', sm: '2.125rem' },
+            textAlign: { xs: 'left', sm: language === 'ar' ? 'right' : 'left' },
+            order: 0,
+          }}
+        >
+          {lang.title}
+        </Typography>
       </Box>
 
       {/* Stats Cards - Hide for system admin */}

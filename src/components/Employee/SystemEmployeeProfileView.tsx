@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -21,17 +21,24 @@ import {
   Divider,
   DialogActions,
 } from '@mui/material';
-import { Work, Business, Email, Star, Close } from '@mui/icons-material';
+import {
+  Work,
+  Business,
+  Email,
+  Star,
+  Close,
+  Visibility as VisibilityIcon,
+} from '@mui/icons-material';
 import systemEmployeeApiService, {
+  type Benefit,
   type EmployeeLeave,
   type EmployeeAsset,
-  type SystemEmployeeDetails,
   type EmployeePerformance,
-  type Benefit,
+  type SystemEmployeeDetails,
 } from '../../api/systemEmployeeApi';
 import UserAvatar from '../common/UserAvatar';
+import { useLanguage } from '../../hooks/useLanguage';
 import KpiDetailCard from '../KPI/KPICardDetail';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 
 interface Props {
   open: boolean;
@@ -44,6 +51,93 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
   onClose,
   employeeId,
 }) => {
+  const { language } = useLanguage();
+
+  const STRINGS = {
+    en: {
+      title: 'Employee Profile',
+      noProfile: 'No profile data available',
+      leaves: 'Leaves',
+      type: 'Type',
+      from: 'From',
+      to: 'To',
+      reason: 'Reason',
+      status: 'Status',
+      noLeaves: 'No leaves found',
+      assignedAssets: 'Assigned Assets',
+      assetName: 'Asset Name',
+      category: 'Category',
+      noAssets: 'No assets assigned',
+      assignedBenefits: 'Assigned Benefits',
+      benefitType: 'Type:',
+      benefitStatus: 'Status:',
+      eligibility: 'Eligibility:',
+      duration: 'Duration:',
+      assignedOn: 'Assigned on',
+      benefitDetailsTitle: 'Benefit Details',
+      noBenefitSelected: 'No benefit selected.',
+      close: 'Close',
+      kpisOverview: 'KPIs Overview',
+      noKpis: 'No KPI data available',
+      promotions: 'Promotions',
+      previousDesignation: 'Previous Designation',
+      newDesignation: 'New Designation',
+      effectiveDate: 'Effective Date',
+      remarks: 'Remarks',
+      noPromotions: 'No promotion records',
+      performanceReviews: 'Performance Reviews',
+      cycle: 'Cycle',
+      overallScore: 'Overall Score',
+      recommendation: 'Recommendation',
+      noPerformanceReviews: 'No performance reviews',
+      targetLabel: 'Target:',
+      achievedLabel: 'Achieved:',
+    },
+    ar: {
+      title: 'ملف الموظف',
+      noProfile: 'لا توجد بيانات للملف',
+      leaves: 'الإجازات',
+      type: 'النوع',
+      from: 'من',
+      to: 'إلى',
+      reason: 'السبب',
+      status: 'الحالة',
+      noLeaves: 'لا توجد إجازات',
+      assignedAssets: 'الموجودات المُخصصة',
+      assetName: 'اسم الأصل',
+      category: 'الفئة',
+      noAssets: 'لا توجد موجودات مُخصصة',
+      assignedBenefits: 'المزايا المخصصة',
+      benefitType: 'النوع:',
+      benefitStatus: 'الحالة:',
+      eligibility: 'الأهلية:',
+      duration: 'المدة:',
+      assignedOn: 'تاريخ التعيين',
+      benefitDetailsTitle: 'تفاصيل الميزة',
+      noBenefitSelected: 'لم يتم تحديد ميزة.',
+      close: 'إغلاق',
+      kpisOverview: 'نظرة عامة على مؤشرات الأداء',
+      noKpis: 'لا توجد بيانات لمؤشرات الأداء',
+      promotions: 'الترقيات',
+      previousDesignation: 'المسمى السابق',
+      newDesignation: 'المسمى الجديد',
+      effectiveDate: 'تاريخ السريان',
+      remarks: 'ملاحظات',
+      noPromotions: 'لا توجد سجلات ترقيات',
+      performanceReviews: 'مراجعات الأداء',
+      cycle: 'الدورة',
+      overallScore: 'المجموع الكلي',
+      recommendation: 'التوصية',
+      noPerformanceReviews: 'لا توجد مراجعات للأداء',
+      targetLabel: 'الهدف:',
+      achievedLabel: 'المنجز:',
+    },
+  } as const;
+
+  const L = useMemo(
+    () => STRINGS[language as keyof typeof STRINGS] || STRINGS.en,
+    [language]
+  );
   const [profile, setProfile] = useState<SystemEmployeeDetails | null>(null);
   const [leaves, setLeaves] = useState<EmployeeLeave[]>([]);
   const [assets, setAssets] = useState<EmployeeAsset[]>([]);
@@ -106,15 +200,28 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           pr: 2,
+          flexDirection: language === 'ar' ? 'row-reverse' : 'row',
         }}
       >
         <Typography
           component='span'
-          sx={{ fontSize: '1.25rem', fontWeight: 600, color: 'primary.main' }}
+          sx={{
+            fontSize: '1.25rem',
+            fontWeight: 600,
+            color: 'primary.main',
+            direction: 'ltr',
+            flex: 1,
+            textAlign: language === 'ar' ? 'right' : 'left',
+          }}
         >
-          Employee Profile
+          {L.title}
         </Typography>
-        <IconButton onClick={onClose} size='small'>
+        <IconButton
+          onClick={onClose}
+          size='small'
+          aria-label='close'
+          sx={language === 'ar' ? { ml: 0, mr: 1 } : { ml: 1, mr: 0 }}
+        >
           <Close />
         </IconButton>
       </DialogTitle>
@@ -130,7 +237,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
           </Box>
         ) : !profile ? (
           <Typography variant='body2' align='center' color='text.secondary'>
-            No profile data available
+            {L.noProfile}
           </Typography>
         ) : (
           <Box py={2} display='flex' flexDirection='column' gap={2}>
@@ -182,18 +289,20 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 fontWeight={600}
                 gutterBottom
                 color='primary.main'
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                textAlign={language === 'ar' ? 'right' : 'left'}
               >
-                Leaves
+                {L.leaves}
               </Typography>
               <TableContainer>
                 <Table size='small'>
                   <TableHead>
                     <TableRow sx={{ backgroundColor: 'rgba(33,150,243,0.08)' }}>
-                      <TableCell>Type</TableCell>
-                      <TableCell>From</TableCell>
-                      <TableCell>To</TableCell>
-                      <TableCell>Reason</TableCell>
-                      <TableCell>Status</TableCell>
+                      <TableCell>{L.type}</TableCell>
+                      <TableCell>{L.from}</TableCell>
+                      <TableCell>{L.to}</TableCell>
+                      <TableCell>{L.reason}</TableCell>
+                      <TableCell>{L.status}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -229,7 +338,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} align='center'>
-                          No leaves found
+                          {L.noLeaves}
                         </TableCell>
                       </TableRow>
                     )}
@@ -247,16 +356,18 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 fontWeight={600}
                 gutterBottom
                 color='primary.main'
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                textAlign={language === 'ar' ? 'right' : 'left'}
               >
-                Assigned Assets
+                {L.assignedAssets}
               </Typography>
               <TableContainer>
                 <Table size='small'>
                   <TableHead>
                     <TableRow sx={{ backgroundColor: 'rgba(255,152,0,0.08)' }}>
-                      <TableCell>Asset Name</TableCell>
-                      <TableCell>Category</TableCell>
-                      <TableCell>Status</TableCell>
+                      <TableCell>{L.assetName}</TableCell>
+                      <TableCell>{L.category}</TableCell>
+                      <TableCell>{L.status}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -284,7 +395,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                     ) : (
                       <TableRow>
                         <TableCell colSpan={3} align='center'>
-                          No assets assigned
+                          {L.noAssets}
                         </TableCell>
                       </TableRow>
                     )}
@@ -302,8 +413,10 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 fontWeight={600}
                 gutterBottom
                 color='primary.main'
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                textAlign={language === 'ar' ? 'right' : 'left'}
               >
-                Assigned Benefits
+                {L.assignedBenefits}
               </Typography>
 
               {profile.benefits?.length ? (
@@ -338,7 +451,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                         sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                       >
                         <Typography variant='subtitle2' color='text.secondary'>
-                          Type:
+                          {L.benefitType}
                         </Typography>
                         <Chip
                           label={b.benefit.type}
@@ -352,7 +465,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                         sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                       >
                         <Typography variant='subtitle2' color='text.secondary'>
-                          Status:
+                          {L.benefitStatus}
                         </Typography>
                         <Chip
                           label={b.status}
@@ -371,7 +484,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                         sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                       >
                         <Typography variant='subtitle2' color='text.secondary'>
-                          Eligibility:
+                          {L.eligibility}
                         </Typography>
                         <Typography variant='body2'>
                           {b.benefit.eligibilityCriteria}
@@ -382,7 +495,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                         sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                       >
                         <Typography variant='subtitle2' color='text.secondary'>
-                          Duration:
+                          {L.duration}
                         </Typography>
                         <Typography variant='body2'>
                           {new Date(b.startDate).toLocaleDateString()} -{' '}
@@ -397,7 +510,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                         justifyContent='space-between'
                       >
                         <Typography variant='caption' color='text.secondary'>
-                          Assigned on{' '}
+                          {L.assignedOn}{' '}
                           {new Date(b.createdAt).toLocaleDateString()}
                         </Typography>
 
@@ -433,7 +546,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 maxWidth='sm'
                 fullWidth
               >
-                <DialogTitle>Benefit Details</DialogTitle>
+                <DialogTitle>{L.benefitDetailsTitle}</DialogTitle>
                 <DialogContent dividers>
                   {selectedBenefit ? (
                     <>
@@ -494,12 +607,12 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                       </Typography>
                     </>
                   ) : (
-                    <Typography>No benefit selected.</Typography>
+                    <Typography>{L.noBenefitSelected}</Typography>
                   )}
                 </DialogContent>
                 <DialogActions>
                   <Button onClick={() => setOpenBenefitDialog(false)}>
-                    Close
+                    {L.close}
                   </Button>
                 </DialogActions>
               </Dialog>
@@ -514,8 +627,10 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 fontWeight={600}
                 gutterBottom
                 color='primary.main'
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                textAlign={language === 'ar' ? 'right' : 'left'}
               >
-                KPIs Overview
+                {L.kpisOverview}
               </Typography>
 
               {profile.kpis?.length ? (
@@ -528,7 +643,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                   }}
                   gap={2}
                 >
-                  {profile.kpis.map((kpi, idx) => {
+                  {(profile.kpis as EmployeePerformance[]).map((kpi, idx) => {
                     const achievedPercent =
                       kpi.targetValue && kpi.achievedValue
                         ? Math.min(
@@ -570,8 +685,8 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                           color='text.secondary'
                           mb={0.5}
                         >
-                          Target: {kpi.targetValue ?? '—'} | Achieved:{' '}
-                          {kpi.achievedValue ?? '—'}
+                          {L.targetLabel} {kpi.targetValue ?? '—'} |{' '}
+                          {L.achievedLabel} {kpi.achievedValue ?? '—'}
                         </Typography>
 
                         <Box
@@ -688,7 +803,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                   align='center'
                   mt={1}
                 >
-                  No KPI data available
+                  {L.noKpis}
                 </Typography>
               )}
 
@@ -708,18 +823,20 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 fontWeight={600}
                 gutterBottom
                 color='primary.main'
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                textAlign={language === 'ar' ? 'right' : 'left'}
               >
-                Promotions
+                {L.promotions}
               </Typography>
               <TableContainer>
                 <Table size='small'>
                   <TableHead>
                     <TableRow sx={{ backgroundColor: 'rgba(156,39,176,0.08)' }}>
-                      <TableCell>Previous Designation</TableCell>
-                      <TableCell>New Designation</TableCell>
-                      <TableCell>Effective Date</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Remarks</TableCell>
+                      <TableCell>{L.previousDesignation}</TableCell>
+                      <TableCell>{L.newDesignation}</TableCell>
+                      <TableCell>{L.effectiveDate}</TableCell>
+                      <TableCell>{L.status}</TableCell>
+                      <TableCell>{L.remarks}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -751,7 +868,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} align='center'>
-                          No promotion records
+                          {L.noPromotions}
                         </TableCell>
                       </TableRow>
                     )}
@@ -769,17 +886,19 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 fontWeight={600}
                 gutterBottom
                 color='primary.main'
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+                textAlign={language === 'ar' ? 'right' : 'left'}
               >
-                Performance Reviews
+                {L.performanceReviews}
               </Typography>
               <TableContainer>
                 <Table size='small'>
                   <TableHead>
                     <TableRow sx={{ backgroundColor: 'rgba(76,175,80,0.08)' }}>
-                      <TableCell>Cycle</TableCell>
-                      <TableCell>Overall Score</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Recommendation</TableCell>
+                      <TableCell>{L.cycle}</TableCell>
+                      <TableCell>{L.overallScore}</TableCell>
+                      <TableCell>{L.status}</TableCell>
+                      <TableCell>{L.recommendation}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -815,7 +934,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                     ) : (
                       <TableRow>
                         <TableCell colSpan={4} align='center'>
-                          No performance reviews
+                          {L.noPerformanceReviews}
                         </TableCell>
                       </TableRow>
                     )}

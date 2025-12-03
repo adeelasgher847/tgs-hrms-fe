@@ -27,6 +27,7 @@ import {
   Pagination,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useLanguage } from '../../hooks/useLanguage';
 import { useIsDarkMode } from '../../theme';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -91,6 +92,145 @@ interface EmployeeSalaryListItem {
 const EmployeeSalaryPage: React.FC = () => {
   const theme = useTheme();
   const darkMode = useIsDarkMode();
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      title: 'Employee Salary Structure',
+      addSalaryStructure: 'Add Salary Structure',
+      addAllowance: 'Add Allowance',
+      addDeduction: 'Add Deduction',
+      selectEmployeeLabel: 'Select Employee',
+      typeLabel: 'Type',
+      amountLabel: 'Amount',
+      percentageLabel: 'Percentage',
+      descriptionLabel: 'Description',
+      close: 'Close',
+      cancel: 'Cancel',
+      createBtn: 'Create',
+      updateBtn: 'Update',
+      statusLabel: 'Status',
+      activeLabel: 'Active',
+      inactiveLabel: 'Inactive',
+      notesLabel: 'Notes (Optional)',
+      employee: 'Employee',
+      department: 'Department',
+      designation: 'Designation',
+      baseSalary: 'Base Salary',
+      status: 'Status',
+      actions: 'Actions',
+      notAssigned: 'Not Assigned',
+      assign: 'Assign',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+      salaryStructure: 'Salary Structure',
+      baseSalaryHeading: 'Base Salary',
+      effectiveDateLabel: 'Effective Date',
+      endDateLabel: 'End Date',
+      effectiveMonthLabel: 'Effective Month',
+      effectiveYearLabel: 'Effective Year',
+      endDateOptional: 'End Date (Optional)',
+      effectiveDateNote:
+        'Effective date will be set to the 1st of the selected month',
+      salaryHistory: 'Salary History',
+      allowances: 'Allowances',
+      deductions: 'Deductions',
+      noSalaryAssigned: 'No salary structure assigned',
+      mySalaryTitle: 'My Salary Structure',
+      editModalTitle: 'Edit Salary Structure',
+      createModalTitle: 'Create Salary Structure',
+      saveSuccessUpdated: 'Salary structure updated successfully',
+      saveSuccessCreated: 'Salary structure created successfully',
+      saveFailure: 'Failed to save salary structure',
+      selectEmployeeRequired: 'Please select an employee',
+      employeeIdRequired: 'Employee ID is required',
+      loadFailure: 'Failed to load employee salaries',
+      preFilledConfig: 'Pre-filled with current payroll configuration defaults',
+      currentPayrollConfig: 'Current Payroll Configuration',
+      baseSalaryLabel: 'Base Salary',
+      allowancesLabel: 'Allowances',
+      deductionsLabel: 'Deductions',
+      basePayComponentsTitle: 'Base Pay Components',
+      basicLabel: 'Basic',
+      houseRentLabel: 'House Rent',
+      medicalLabel: 'Medical',
+      transportLabel: 'Transport',
+      totalBaseSalaryLabel: 'Total Base Salary',
+    },
+    ar: {
+      title: 'هيكل راتب الموظف',
+      addSalaryStructure: 'إضافة هيكل راتب',
+      addAllowance: 'إضافة بدل',
+      addDeduction: 'إضافة خصم',
+      selectEmployeeLabel: 'اختر موظفًا',
+      typeLabel: 'النوع',
+      amountLabel: 'المبلغ',
+      percentageLabel: 'النسبة',
+      descriptionLabel: 'الوصف',
+      close: 'إغلاق',
+      cancel: 'إلغاء',
+      createBtn: 'إنشاء',
+      updateBtn: 'تحديث',
+      statusLabel: 'الحالة',
+      activeLabel: 'نشط',
+      inactiveLabel: 'غير نشط',
+      notesLabel: 'ملاحظات (اختياري)',
+      employee: 'الموظف',
+      department: 'القسم',
+      designation: 'المسمى الوظيفي',
+      baseSalary: 'الراتب الأساسي',
+      status: 'الحالة',
+      actions: 'إجراءات',
+      notAssigned: 'غير معين',
+      assign: 'تعيين',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} إجمالي السجلات)`,
+      salaryStructure: 'هيكل الراتب',
+      baseSalaryHeading: 'الراتب الأساسي',
+      effectiveDateLabel: 'تاريخ السريان',
+      endDateLabel: 'تاريخ الانتهاء',
+      effectiveMonthLabel: 'شهر السريان',
+      effectiveYearLabel: 'سنة السريان',
+      endDateOptional: 'تاريخ الانتهاء (اختياري)',
+      effectiveDateNote:
+        'سيتم تعيين تاريخ السريان إلى اليوم الأول من الشهر المختار',
+      salaryHistory: 'سجل الرواتب',
+      allowances: 'البدلات',
+      deductions: 'الخصومات',
+      noSalaryAssigned: 'لم يتم تعيين هيكل راتب',
+      mySalaryTitle: 'هيكل راتبي',
+      editModalTitle: 'تعديل هيكل الراتب',
+      createModalTitle: 'إنشاء هيكل راتب',
+      saveSuccessUpdated: 'تم تحديث هيكل الراتب بنجاح',
+      saveSuccessCreated: 'تم إنشاء هيكل الراتب بنجاح',
+      saveFailure: 'فشل في حفظ هيكل الراتب',
+      selectEmployeeRequired: 'الرجاء اختيار موظف',
+      employeeIdRequired: 'معرف الموظف مطلوب',
+      loadFailure: 'فشل في تحميل رواتب الموظفين',
+      preFilledConfig: 'معبأة مسبقًا بإعدادات تكوين الرواتب الحالية',
+      currentPayrollConfig: 'تكوين الرواتب الحالي',
+      baseSalaryLabel: 'الراتب الأساسي',
+      allowancesLabel: 'البدلات',
+      deductionsLabel: 'الخصومات',
+      basePayComponentsTitle: 'مكونات الأجر الأساسي',
+      basicLabel: 'الأساسي',
+      houseRentLabel: 'بدل السكن',
+      medicalLabel: 'بدل طبي',
+      transportLabel: 'بدل النقل',
+      totalBaseSalaryLabel: 'إجمالي الراتب الأساسي',
+    },
+  } as const;
+
+  const L = labels[language as 'en' | 'ar'] || labels.en;
+  const pageLabels = {
+    en: { showingInfo: labels.en.showingInfo },
+    ar: { showingInfo: labels.ar.showingInfo },
+  } as const;
+  const PL = pageLabels[language as 'en' | 'ar'] || pageLabels.en;
+  // Keep form input fields LTR and left-aligned so entered values (numbers/text)
+  // don't shift when the UI language switches to Arabic.
+  const inputTextAlign = 'left';
+  const inputDir = 'ltr';
   const currentUser = getCurrentUser();
   const role = normalizeRole(getUserRole());
 
@@ -480,13 +620,13 @@ const EmployeeSalaryPage: React.FC = () => {
   const handleSaveSalary = async () => {
     try {
       if (!selectedEmployeeId && !currentEmployeeId) {
-        snackbar.error('Please select an employee');
+        snackbar.error(L.selectEmployeeRequired);
         return;
       }
 
       const employeeId = selectedEmployeeId || currentEmployeeId;
       if (!employeeId) {
-        snackbar.error('Employee ID is required');
+        snackbar.error(L.employeeIdRequired);
         return;
       }
 
@@ -553,13 +693,13 @@ const EmployeeSalaryPage: React.FC = () => {
 
       if (selectedSalary) {
         await payrollApi.updateEmployeeSalary(employeeId, salaryData);
-        snackbar.success('Salary structure updated successfully');
+        snackbar.success(L.saveSuccessUpdated);
       } else {
         await payrollApi.createEmployeeSalary({
           employee_id: employeeId,
           ...salaryData,
         });
-        snackbar.success('Salary structure created successfully');
+        snackbar.success(L.saveSuccessCreated);
       }
 
       setEditModalOpen(false);
@@ -572,7 +712,7 @@ const EmployeeSalaryPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to save salary:', error);
-      snackbar.error('Failed to save salary structure');
+      snackbar.error(L.saveFailure);
     }
   };
 
@@ -816,9 +956,7 @@ const EmployeeSalaryPage: React.FC = () => {
     if (!mySalary) {
       return (
         <Box sx={{ p: 3 }}>
-          <Alert severity='info'>
-            No salary structure has been assigned to you yet.
-          </Alert>
+          <Alert severity='info'>{L.noSalaryAssigned}</Alert>
         </Box>
       );
     }
@@ -834,15 +972,25 @@ const EmployeeSalaryPage: React.FC = () => {
           sx={{
             mb: 3,
             display: 'flex',
+            flexDirection: {
+              xs: 'column',
+              sm: language === 'ar' ? 'row-reverse' : 'row',
+            },
             justifyContent: 'space-between',
             alignItems: 'center',
+            gap: { xs: 1, sm: 0 },
           }}
         >
           <Typography
             variant='h4'
-            sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000' }}
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            sx={{
+              fontWeight: 600,
+              color: darkMode ? '#fff' : '#000',
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
           >
-            My Salary Structure
+            {L.mySalaryTitle}
           </Typography>
         </Box>
 
@@ -869,7 +1017,7 @@ const EmployeeSalaryPage: React.FC = () => {
               variant='h6'
               sx={{ mb: 2, fontWeight: 600, color: darkMode ? '#fff' : '#000' }}
             >
-              Base Salary
+              {L.baseSalaryHeading}
             </Typography>
             <Typography
               variant='h4'
@@ -897,7 +1045,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   color: darkMode ? '#fff' : '#000',
                 }}
               >
-                Allowances
+                {L.allowances}
               </Typography>
               <Box
                 sx={{
@@ -1142,17 +1290,27 @@ const EmployeeSalaryPage: React.FC = () => {
         sx={{
           mb: 3,
           display: 'flex',
+          flexDirection: {
+            xs: 'column',
+            sm: language === 'ar' ? 'row-reverse' : 'row',
+          },
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: { xs: 1, sm: 0 },
         }}
       >
         <Typography
           variant='h4'
-          sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000' }}
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{
+            fontWeight: 600,
+            color: darkMode ? '#fff' : '#000',
+            textAlign: language === 'ar' ? 'right' : 'left',
+          }}
         >
-          Employee Salary Structure
+          {L.title}
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box dir='ltr' sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <Button
             variant='contained'
             startIcon={<AddIcon />}
@@ -1164,7 +1322,7 @@ const EmployeeSalaryPage: React.FC = () => {
               },
             }}
           >
-            Add Salary Structure
+            {L.addSalaryStructure}
           </Button>
         </Box>
       </Box>
@@ -1187,32 +1345,32 @@ const EmployeeSalaryPage: React.FC = () => {
                   <TableCell
                     sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
                   >
-                    Employee
+                    {L.employee}
                   </TableCell>
                   <TableCell
                     sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
                   >
-                    Department
+                    {L.department}
                   </TableCell>
                   <TableCell
                     sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
                   >
-                    Designation
+                    {L.designation}
                   </TableCell>
                   <TableCell
                     sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
                   >
-                    Base Salary
+                    {L.baseSalary}
                   </TableCell>
                   <TableCell
                     sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
                   >
-                    Status
+                    {L.status}
                   </TableCell>
                   <TableCell
                     sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
                   >
-                    Actions
+                    {L.actions}
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -1252,7 +1410,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     >
                       {item.salary
                         ? formatCurrency(item.salary.baseSalary)
-                        : 'Not Assigned'}
+                        : L.notAssigned}
                     </TableCell>
                     <TableCell>
                       {item.salary ? (
@@ -1266,7 +1424,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           size='small'
                         />
                       ) : (
-                        <Chip label='inactive' size='small' />
+                        <Chip label={L.inactiveLabel} size='small' />
                       )}
                     </TableCell>
                     <TableCell>
@@ -1332,7 +1490,7 @@ const EmployeeSalaryPage: React.FC = () => {
                               }
                             }}
                           >
-                            Assign
+                            {L.assign}
                           </Button>
                         )}
                       </Stack>
@@ -1358,8 +1516,7 @@ const EmployeeSalaryPage: React.FC = () => {
         {!loading && employees.length > 0 && (
           <Box display='flex' justifyContent='center' pb={2}>
             <Typography variant='body2' color='textSecondary'>
-              Showing page {currentPage} of {totalPages} ({totalRecords} total
-              records)
+              {PL.showingInfo(currentPage, totalPages, totalRecords)}
             </Typography>
           </Box>
         )}
@@ -1375,34 +1532,64 @@ const EmployeeSalaryPage: React.FC = () => {
         }}
       >
         <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            flexDirection: language === 'ar' ? 'row-reverse' : 'row',
             color: darkMode ? '#fff' : '#000',
             pb: 2,
+            textAlign: language === 'ar' ? 'right' : 'left',
           }}
         >
-          <Typography variant='h6' sx={{ fontWeight: 600 }}>
-            {selectedEmployee
-              ? `${selectedEmployee.employee.user.first_name} ${selectedEmployee.employee.user.last_name} - Salary Structure`
-              : 'Salary Structure'}
-          </Typography>
-          <IconButton
-            onClick={() => setViewModalOpen(false)}
-            size='small'
-            sx={{
-              color: theme.palette.text.secondary,
-              '&:hover': {
-                color: theme.palette.text.primary,
-                backgroundColor: theme.palette.action.hover,
-              },
-            }}
+          {language === 'ar' && (
+            <IconButton
+              onClick={() => setViewModalOpen(false)}
+              size='small'
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
+          <Box
+            sx={{ flex: 1, textAlign: language === 'ar' ? 'right' : 'left' }}
           >
-            <CloseIcon />
-          </IconButton>
+            <Typography variant='h6' sx={{ fontWeight: 600 }}>
+              {selectedEmployee
+                ? `${selectedEmployee.employee.user.first_name} ${selectedEmployee.employee.user.last_name} - ${L.salaryStructure}`
+                : L.salaryStructure}
+            </Typography>
+          </Box>
+          {language !== 'ar' && (
+            <IconButton
+              onClick={() => setViewModalOpen(false)}
+              size='small'
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
         </DialogTitle>
-        <DialogContent sx={{ pt: 3, maxHeight: '70vh', overflowY: 'auto' }}>
+        <DialogContent
+          sx={{
+            pt: 3,
+            maxHeight: '70vh',
+            overflowY: 'auto',
+            direction: language === 'ar' ? 'rtl' : 'ltr',
+          }}
+        >
           {selectedSalary ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               <Paper
@@ -1413,10 +1600,15 @@ const EmployeeSalaryPage: React.FC = () => {
                 }}
               >
                 <Typography
+                  dir={language === 'ar' ? 'rtl' : 'ltr'}
                   variant='h6'
-                  sx={{ mb: 1, color: darkMode ? '#fff' : '#000' }}
+                  sx={{
+                    mb: 1,
+                    color: darkMode ? '#fff' : '#000',
+                    textAlign: language === 'ar' ? 'right' : 'left',
+                  }}
                 >
-                  Base Salary
+                  {L.baseSalaryHeading}
                 </Typography>
                 <Typography
                   variant='h4'
@@ -1430,10 +1622,15 @@ const EmployeeSalaryPage: React.FC = () => {
                 selectedSalary.allowances.length > 0 && (
                   <Box>
                     <Typography
+                      dir={language === 'ar' ? 'rtl' : 'ltr'}
                       variant='h6'
-                      sx={{ mb: 2, color: darkMode ? '#fff' : '#000' }}
+                      sx={{
+                        mb: 2,
+                        color: darkMode ? '#fff' : '#000',
+                        textAlign: language === 'ar' ? 'right' : 'left',
+                      }}
                     >
-                      Allowances
+                      {L.allowances}
                     </Typography>
                     <Box
                       sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
@@ -1460,8 +1657,9 @@ const EmployeeSalaryPage: React.FC = () => {
                             variant='body2'
                             sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
                           >
-                            Amount: {formatCurrency(allowance.amount)} |
-                            Percentage: {formatPercentage(allowance.percentage)}
+                            {L.amountLabel}: {formatCurrency(allowance.amount)}{' '}
+                            {'|'} {L.percentageLabel}:{' '}
+                            {formatPercentage(allowance.percentage)}
                           </Typography>
                           {allowance.description && (
                             <Typography
@@ -1484,10 +1682,15 @@ const EmployeeSalaryPage: React.FC = () => {
                 selectedSalary.deductions.length > 0 && (
                   <Box>
                     <Typography
+                      dir={language === 'ar' ? 'rtl' : 'ltr'}
                       variant='h6'
-                      sx={{ mb: 2, color: darkMode ? '#fff' : '#000' }}
+                      sx={{
+                        mb: 2,
+                        color: darkMode ? '#fff' : '#000',
+                        textAlign: language === 'ar' ? 'right' : 'left',
+                      }}
                     >
-                      Deductions
+                      {L.deductions}
                     </Typography>
                     <Box
                       sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
@@ -1514,8 +1717,9 @@ const EmployeeSalaryPage: React.FC = () => {
                             variant='body2'
                             sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
                           >
-                            Amount: {formatCurrency(deduction.amount)} |
-                            Percentage: {formatPercentage(deduction.percentage)}
+                            {L.amountLabel}: {formatCurrency(deduction.amount)}{' '}
+                            {'|'} {L.percentageLabel}:{' '}
+                            {formatPercentage(deduction.percentage)}
                           </Typography>
                           {deduction.description && (
                             <Typography
@@ -1546,7 +1750,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     variant='body2'
                     sx={{ color: darkMode ? '#8f8f8f' : '#666', mb: 0.5 }}
                   >
-                    Effective Date
+                    {L.effectiveDateLabel}
                   </Typography>
                   <Typography
                     variant='body1'
@@ -1561,7 +1765,7 @@ const EmployeeSalaryPage: React.FC = () => {
                       variant='body2'
                       sx={{ color: darkMode ? '#8f8f8f' : '#666', mb: 0.5 }}
                     >
-                      End Date
+                      {L.endDateLabel}
                     </Typography>
                     <Typography
                       variant='body1'
@@ -1576,10 +1780,14 @@ const EmployeeSalaryPage: React.FC = () => {
                     variant='body2'
                     sx={{ color: darkMode ? '#8f8f8f' : '#666', mb: 0.5 }}
                   >
-                    Status
+                    {L.statusLabel}
                   </Typography>
                   <Chip
-                    label={selectedSalary.status}
+                    label={
+                      selectedSalary.status === 'active'
+                        ? L.activeLabel
+                        : L.inactiveLabel
+                    }
                     color={
                       selectedSalary.status === 'active' ? 'success' : 'default'
                     }
@@ -1592,7 +1800,7 @@ const EmployeeSalaryPage: React.FC = () => {
                       variant='body2'
                       sx={{ color: darkMode ? '#8f8f8f' : '#666', mb: 0.5 }}
                     >
-                      Notes
+                      {L.notesLabel}
                     </Typography>
                     <Typography
                       variant='body1'
@@ -1608,14 +1816,16 @@ const EmployeeSalaryPage: React.FC = () => {
               {salaryHistory.length > 1 && (
                 <Box sx={{ mt: 4 }}>
                   <Typography
+                    dir={language === 'ar' ? 'rtl' : 'ltr'}
                     variant='h6'
                     sx={{
                       mb: 2,
                       color: darkMode ? '#fff' : '#000',
                       fontWeight: 600,
+                      textAlign: language === 'ar' ? 'right' : 'left',
                     }}
                   >
-                    Salary History
+                    {L.salaryHistory}
                   </Typography>
                   {historyLoading ? (
                     <Box
@@ -1640,7 +1850,7 @@ const EmployeeSalaryPage: React.FC = () => {
                                 fontWeight: 600,
                               }}
                             >
-                              Effective Date
+                              {L.effectiveDateLabel}
                             </TableCell>
                             <TableCell
                               sx={{
@@ -1648,7 +1858,7 @@ const EmployeeSalaryPage: React.FC = () => {
                                 fontWeight: 600,
                               }}
                             >
-                              End Date
+                              {L.endDateLabel}
                             </TableCell>
                             <TableCell
                               sx={{
@@ -1656,7 +1866,7 @@ const EmployeeSalaryPage: React.FC = () => {
                                 fontWeight: 600,
                               }}
                             >
-                              Base Salary
+                              {L.baseSalaryHeading}
                             </TableCell>
                             <TableCell
                               sx={{
@@ -1664,7 +1874,7 @@ const EmployeeSalaryPage: React.FC = () => {
                                 fontWeight: 600,
                               }}
                             >
-                              Status
+                              {L.statusLabel}
                             </TableCell>
                           </TableRow>
                         </TableHead>
@@ -1721,8 +1931,19 @@ const EmployeeSalaryPage: React.FC = () => {
             <Alert severity='info'>No salary structure assigned</Alert>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 2 }}>
-          <Button onClick={() => setViewModalOpen(false)}>Close</Button>
+        <DialogActions
+          sx={{
+            p: 3,
+            pt: 2,
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+          }}
+        >
+          <Button
+            sx={{ mr: language === 'ar' ? 1 : 0 }}
+            onClick={() => setViewModalOpen(false)}
+          >
+            {L.close}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -1740,19 +1961,36 @@ const EmployeeSalaryPage: React.FC = () => {
         }}
       >
         <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            flexDirection: language === 'ar' ? 'row-reverse' : 'row',
             color: darkMode ? '#fff' : '#000',
             pb: 2,
+            textAlign: language === 'ar' ? 'right' : 'left',
           }}
         >
-          <Box>
+          {language === 'ar' && (
+            <IconButton
+              onClick={() => setEditModalOpen(false)}
+              size='small'
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
+          <Box
+            sx={{ flex: 1, textAlign: language === 'ar' ? 'right' : 'left' }}
+          >
             <Typography variant='h6' sx={{ fontWeight: 600 }}>
-              {selectedSalary
-                ? 'Edit Salary Structure'
-                : 'Create Salary Structure'}
+              {selectedSalary ? L.editModalTitle : L.createModalTitle}
             </Typography>
             {!selectedSalary && payrollConfig && (
               <Typography
@@ -1764,25 +2002,34 @@ const EmployeeSalaryPage: React.FC = () => {
                   fontStyle: 'italic',
                 }}
               >
-                Pre-filled with current payroll configuration defaults
+                {L.preFilledConfig}
               </Typography>
             )}
           </Box>
-          <IconButton
-            onClick={() => setEditModalOpen(false)}
-            size='small'
-            sx={{
-              color: theme.palette.text.secondary,
-              '&:hover': {
-                color: theme.palette.text.primary,
-                backgroundColor: theme.palette.action.hover,
-              },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
+          {language !== 'ar' && (
+            <IconButton
+              onClick={() => setEditModalOpen(false)}
+              size='small'
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
         </DialogTitle>
-        <DialogContent sx={{ pt: 3, maxHeight: '70vh', overflowY: 'auto' }}>
+        <DialogContent
+          sx={{
+            pt: 3,
+            maxHeight: '70vh',
+            overflowY: 'auto',
+            direction: language === 'ar' ? 'rtl' : 'ltr',
+          }}
+        >
           <Box
             sx={{
               display: 'flex',
@@ -1805,13 +2052,13 @@ const EmployeeSalaryPage: React.FC = () => {
                 }}
               >
                 <Typography variant='body2' sx={{ fontWeight: 600, mb: 0.5 }}>
-                  Current Payroll Configuration
+                  {L.currentPayrollConfig}
                 </Typography>
                 <Typography variant='caption' sx={{ display: 'block' }}>
-                  Base Salary:{' '}
+                  {L.baseSalaryLabel}:{' '}
                   {formatCurrency(payrollConfig.basePayComponents?.basic || 0)}{' '}
-                  • Allowances: {payrollConfig.allowances?.length || 0} •
-                  Deductions:{' '}
+                  • {L.allowancesLabel}: {payrollConfig.allowances?.length || 0}{' '}
+                  • {L.deductionsLabel}:{' '}
                   {
                     [
                       payrollConfig.deductions?.taxPercentage && 'Tax',
@@ -1827,7 +2074,7 @@ const EmployeeSalaryPage: React.FC = () => {
             {!selectedSalary && (
               <FormControl fullWidth>
                 <InputLabel sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>
-                  Select Employee
+                  {L.selectEmployeeLabel}
                 </InputLabel>
                 <Select
                   value={selectedEmployeeId}
@@ -1964,6 +2211,9 @@ const EmployeeSalaryPage: React.FC = () => {
                     '& .MuiOutlinedInput-notchedOutline': {
                       borderColor: theme.palette.divider,
                     },
+                    '& .MuiSelect-select': {
+                      textAlign: inputTextAlign,
+                    },
                   }}
                 >
                   {employees
@@ -1985,14 +2235,16 @@ const EmployeeSalaryPage: React.FC = () => {
 
             <Box>
               <Typography
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
                 variant='h6'
                 sx={{
                   mb: 2,
                   fontWeight: 600,
                   color: darkMode ? '#fff' : '#000',
+                  textAlign: language === 'ar' ? 'right' : 'left',
                 }}
               >
-                Base Pay Components
+                {L.basePayComponentsTitle}
               </Typography>
               <Box
                 sx={{
@@ -2010,11 +2262,23 @@ const EmployeeSalaryPage: React.FC = () => {
                     key={key}
                     fullWidth
                     label={
-                      key.charAt(0).toUpperCase() +
-                      key.slice(1).replace(/([A-Z])/g, ' $1')
+                      key === 'basic'
+                        ? L.basicLabel
+                        : key === 'houseRent'
+                          ? L.houseRentLabel
+                          : key === 'medical'
+                            ? L.medicalLabel
+                            : key === 'transport'
+                              ? L.transportLabel
+                              : key.charAt(0).toUpperCase() + key.slice(1)
                     }
                     type='number'
-                    inputProps={{ min: 0 }}
+                    dir={inputDir}
+                    inputProps={{
+                      min: 0,
+                      dir: inputDir,
+                      style: { textAlign: inputTextAlign },
+                    }}
                     value={value === 0 ? '' : value}
                     onChange={e => {
                       const inputValue = e.target.value;
@@ -2069,7 +2333,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   display: 'block',
                 }}
               >
-                Total Base Salary:{' '}
+                {L.totalBaseSalaryLabel}:{' '}
                 {formatCurrency(
                   (typeof basePayComponents.basic === 'string' &&
                   basePayComponents.basic === ''
@@ -2104,14 +2368,14 @@ const EmployeeSalaryPage: React.FC = () => {
                   variant='h6'
                   sx={{ color: darkMode ? '#fff' : '#000' }}
                 >
-                  Allowances
+                  {L.allowances}
                 </Typography>
                 <Button
                   size='small'
                   startIcon={<AddIcon />}
                   onClick={handleAddAllowance}
                 >
-                  Add Allowance
+                  {L.addAllowance}
                 </Button>
               </Box>
               {allowances.map((allowance, index) => (
@@ -2127,12 +2391,14 @@ const EmployeeSalaryPage: React.FC = () => {
                   <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                     <TextField
                       fullWidth
-                      label='Type'
+                      label={L.typeLabel}
                       value={allowance.type}
                       onChange={e =>
                         handleUpdateAllowance(index, 'type', e.target.value)
                       }
                       size='small'
+                      dir={inputDir}
+                      inputProps={{ style: { textAlign: inputTextAlign } }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           color: darkMode ? '#fff' : '#000',
@@ -2144,9 +2410,8 @@ const EmployeeSalaryPage: React.FC = () => {
                     />
                     <TextField
                       fullWidth
-                      label='Amount'
+                      label={L.amountLabel}
                       type='number'
-                      inputProps={{ min: 0 }}
                       value={allowance.amount === 0 ? '' : allowance.amount}
                       onChange={e => {
                         const value = e.target.value;
@@ -2157,6 +2422,12 @@ const EmployeeSalaryPage: React.FC = () => {
                         handleUpdateAllowance(index, 'amount', numValue);
                       }}
                       size='small'
+                      dir={inputDir}
+                      inputProps={{
+                        min: 0,
+                        dir: inputDir,
+                        style: { textAlign: inputTextAlign },
+                      }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           color: darkMode ? '#fff' : '#000',
@@ -2168,9 +2439,8 @@ const EmployeeSalaryPage: React.FC = () => {
                     />
                     <TextField
                       fullWidth
-                      label='Percentage'
+                      label={L.percentageLabel}
                       type='number'
-                      inputProps={{ min: 0 }}
                       value={
                         allowance.percentage === 0 ? '' : allowance.percentage
                       }
@@ -2183,6 +2453,12 @@ const EmployeeSalaryPage: React.FC = () => {
                         handleUpdateAllowance(index, 'percentage', numValue);
                       }}
                       size='small'
+                      dir={inputDir}
+                      inputProps={{
+                        min: 0,
+                        dir: inputDir,
+                        style: { textAlign: inputTextAlign },
+                      }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           color: darkMode ? '#fff' : '#000',
@@ -2201,7 +2477,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   </Box>
                   <TextField
                     fullWidth
-                    label='Description'
+                    label={L.descriptionLabel}
                     value={allowance.description || ''}
                     onChange={e =>
                       handleUpdateAllowance(
@@ -2213,6 +2489,8 @@ const EmployeeSalaryPage: React.FC = () => {
                     multiline
                     rows={2}
                     size='small'
+                    dir={inputDir}
+                    inputProps={{ style: { textAlign: inputTextAlign } }}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         color: darkMode ? '#fff' : '#000',
@@ -2239,14 +2517,14 @@ const EmployeeSalaryPage: React.FC = () => {
                   variant='h6'
                   sx={{ color: darkMode ? '#fff' : '#000' }}
                 >
-                  Deductions
+                  {L.deductions}
                 </Typography>
                 <Button
                   size='small'
                   startIcon={<AddIcon />}
                   onClick={handleAddDeduction}
                 >
-                  Add Deduction
+                  {L.addDeduction}
                 </Button>
               </Box>
               {deductions.map((deduction, index) => (
@@ -2262,12 +2540,14 @@ const EmployeeSalaryPage: React.FC = () => {
                   <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                     <TextField
                       fullWidth
-                      label='Type'
+                      label={L.typeLabel}
                       value={deduction.type}
                       onChange={e =>
                         handleUpdateDeduction(index, 'type', e.target.value)
                       }
                       size='small'
+                      dir={inputDir}
+                      inputProps={{ style: { textAlign: inputTextAlign } }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           color: darkMode ? '#fff' : '#000',
@@ -2279,9 +2559,8 @@ const EmployeeSalaryPage: React.FC = () => {
                     />
                     <TextField
                       fullWidth
-                      label='Amount'
+                      label={L.amountLabel}
                       type='number'
-                      inputProps={{ min: 0 }}
                       value={deduction.amount === 0 ? '' : deduction.amount}
                       onChange={e => {
                         const value = e.target.value;
@@ -2292,6 +2571,12 @@ const EmployeeSalaryPage: React.FC = () => {
                         handleUpdateDeduction(index, 'amount', numValue);
                       }}
                       size='small'
+                      dir={inputDir}
+                      inputProps={{
+                        min: 0,
+                        dir: inputDir,
+                        style: { textAlign: inputTextAlign },
+                      }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           color: darkMode ? '#fff' : '#000',
@@ -2303,9 +2588,8 @@ const EmployeeSalaryPage: React.FC = () => {
                     />
                     <TextField
                       fullWidth
-                      label='Percentage'
+                      label={L.percentageLabel}
                       type='number'
-                      inputProps={{ min: 0 }}
                       value={
                         deduction.percentage === 0 ? '' : deduction.percentage
                       }
@@ -2318,6 +2602,12 @@ const EmployeeSalaryPage: React.FC = () => {
                         handleUpdateDeduction(index, 'percentage', numValue);
                       }}
                       size='small'
+                      dir={inputDir}
+                      inputProps={{
+                        min: 0,
+                        dir: inputDir,
+                        style: { textAlign: inputTextAlign },
+                      }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           color: darkMode ? '#fff' : '#000',
@@ -2336,7 +2626,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   </Box>
                   <TextField
                     fullWidth
-                    label='Description'
+                    label={L.descriptionLabel}
                     value={deduction.description || ''}
                     onChange={e =>
                       handleUpdateDeduction(
@@ -2348,6 +2638,8 @@ const EmployeeSalaryPage: React.FC = () => {
                     multiline
                     rows={2}
                     size='small'
+                    dir={inputDir}
+                    inputProps={{ style: { textAlign: inputTextAlign } }}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         color: darkMode ? '#fff' : '#000',
@@ -2364,16 +2656,20 @@ const EmployeeSalaryPage: React.FC = () => {
             <Box sx={{ display: 'flex', gap: 2 }}>
               <FormControl fullWidth>
                 <InputLabel sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>
-                  Effective Month
+                  {L.effectiveMonthLabel}
                 </InputLabel>
                 <Select
                   value={effectiveMonth}
                   onChange={e => setEffectiveMonth(Number(e.target.value))}
-                  label='Effective Month'
+                  label={L.effectiveMonthLabel}
+                  dir={inputDir}
                   sx={{
                     color: darkMode ? '#fff' : '#000',
                     '& .MuiOutlinedInput-notchedOutline': {
                       borderColor: theme.palette.divider,
+                    },
+                    '& .MuiSelect-select': {
+                      textAlign: inputTextAlign,
                     },
                   }}
                 >
@@ -2385,9 +2681,10 @@ const EmployeeSalaryPage: React.FC = () => {
                 </Select>
               </FormControl>
               <TextField
-                label='Effective Year'
+                label={L.effectiveYearLabel}
                 type='number'
-                inputProps={{ min: 0 }}
+                dir={inputDir}
+                inputProps={{ style: { textAlign: inputTextAlign } }}
                 value={effectiveYear === 0 ? '' : effectiveYear}
                 onChange={e => {
                   const value = e.target.value;
@@ -2408,14 +2705,19 @@ const EmployeeSalaryPage: React.FC = () => {
             </Box>
             <Typography
               variant='caption'
-              sx={{ color: darkMode ? '#8f8f8f' : '#666', mt: -1, mb: 1 }}
+              sx={{
+                color: darkMode ? '#8f8f8f' : '#666',
+                mt: -1,
+                mb: 1,
+                textAlign: language === 'ar' ? 'right' : 'left',
+              }}
             >
-              Effective date will be set to the 1st of the selected month
+              {L.effectiveDateNote}
             </Typography>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <Box sx={{ mt: 2 }}>
                 <DatePicker
-                  label='End Date (Optional)'
+                  label={L.endDateOptional}
                   value={endDate}
                   onChange={(newValue: unknown) => {
                     if (newValue === null) {
@@ -2426,48 +2728,65 @@ const EmployeeSalaryPage: React.FC = () => {
                       setEndDate(dayjs(newValue as string | Date));
                     }
                   }}
-                  sx={{
-                    width: '100%',
-                    '& .MuiOutlinedInput-root': {
-                      color: darkMode ? '#fff' : '#000',
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: darkMode ? '#8f8f8f' : '#666',
-                    },
-                  }}
+                  renderInput={params => (
+                    <TextField
+                      {...params}
+                      fullWidth
+                      dir={inputDir}
+                      inputProps={{
+                        ...(params.inputProps || {}),
+                        style: { textAlign: inputTextAlign },
+                      }}
+                      sx={{
+                        width: '100%',
+                        '& .MuiOutlinedInput-root': {
+                          color: darkMode ? '#fff' : '#000',
+                        },
+                        '& .MuiInputLabel-root': {
+                          color: darkMode ? '#8f8f8f' : '#666',
+                        },
+                      }}
+                    />
+                  )}
                 />
               </Box>
             </LocalizationProvider>
 
             <FormControl fullWidth>
               <InputLabel sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>
-                Status
+                {L.statusLabel}
               </InputLabel>
               <Select
                 value={status}
                 onChange={e =>
                   setStatus(e.target.value as 'active' | 'inactive')
                 }
-                label='Status'
+                label={L.statusLabel}
+                dir={inputDir}
                 sx={{
                   color: darkMode ? '#fff' : '#000',
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: theme.palette.divider,
                   },
+                  '& .MuiSelect-select': {
+                    textAlign: inputTextAlign,
+                  },
                 }}
               >
-                <MenuItem value='active'>Active</MenuItem>
-                <MenuItem value='inactive'>Inactive</MenuItem>
+                <MenuItem value='active'>{L.activeLabel}</MenuItem>
+                <MenuItem value='inactive'>{L.inactiveLabel}</MenuItem>
               </Select>
             </FormControl>
 
             <TextField
               fullWidth
-              label='Notes (Optional)'
+              label={L.notesLabel}
               value={notes}
               onChange={e => setNotes(e.target.value)}
               multiline
               rows={3}
+              dir={inputDir}
+              inputProps={{ style: { textAlign: inputTextAlign } }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   color: darkMode ? '#fff' : '#000',
@@ -2479,22 +2798,30 @@ const EmployeeSalaryPage: React.FC = () => {
             />
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 2 }}>
+        <DialogActions
+          sx={{
+            p: 3,
+            pt: 2,
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+          }}
+        >
           <Button
             onClick={() => {
               setEditModalOpen(false);
               setPayrollConfig(null);
               setConfigLoading(false);
             }}
+            sx={{ mr: language === 'ar' ? 1 : 0 }}
           >
-            Cancel
+            {L.cancel}
           </Button>
           <Button
             variant='contained'
             onClick={handleSaveSalary}
             disabled={!isFormValid() || (!!selectedSalary && !hasChanges())}
+            sx={{ ml: language === 'ar' ? 0 : 1 }}
           >
-            {selectedSalary ? 'Update' : 'Create'}
+            {selectedSalary ? L.updateBtn : L.createBtn}
           </Button>
         </DialogActions>
       </Dialog>
