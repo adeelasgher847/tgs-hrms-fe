@@ -195,8 +195,71 @@ const employeeBenefitApi = {
           params: { tenant_id: tenant_id || 'all' },
         }
       );
-      console.log('System Admin Benefit Summary:', response.data);
-      return response.data;
+      console.log('System Admin Benefit Summary (raw):', response.data);
+
+      let raw: any = response.data;
+
+      // Unwrap common envelope keys if present
+      if (raw && typeof raw === 'object') {
+        if ('data' in raw && raw.data) raw = raw.data;
+        else if ('summary' in raw && raw.summary) raw = raw.summary;
+        else if ('result' in raw && raw.result) raw = raw.result;
+      }
+
+      // If backend returns an array, use the first element
+      if (Array.isArray(raw)) {
+        raw = raw[0] || {};
+      }
+
+      const normalizedTenantId =
+        raw.tenant_id ?? raw.tenantId ?? tenant_id ?? 'all';
+
+      const totalActiveRaw =
+        raw.totalActiveBenefits ??
+        raw.total_active_benefits ??
+        raw.totalActive ??
+        raw.activeBenefits ??
+        raw.total_benefits ??
+        0;
+
+      const employeesCoveredRaw =
+        raw.totalEmployeesCovered ??
+        raw.total_employees_covered ??
+        raw.employeesCovered ??
+        raw.total_employees ??
+        0;
+
+      const mostCommonTypeRaw =
+        raw.mostCommonBenefitType ??
+        raw.most_common_benefit_type ??
+        raw.topBenefitType ??
+        raw.top_benefit_type ??
+        '-';
+
+      const totalActiveBenefits =
+        typeof totalActiveRaw === 'string'
+          ? Number.parseInt(totalActiveRaw, 10) || 0
+          : Number(totalActiveRaw) || 0;
+
+      const totalEmployeesCovered =
+        typeof employeesCoveredRaw === 'string'
+          ? Number.parseInt(employeesCoveredRaw, 10) || 0
+          : Number(employeesCoveredRaw) || 0;
+
+      const mostCommonBenefitType =
+        mostCommonTypeRaw == null || mostCommonTypeRaw === ''
+          ? '-'
+          : String(mostCommonTypeRaw);
+
+      const normalized = {
+        tenant_id: String(normalizedTenantId),
+        totalActiveBenefits,
+        mostCommonBenefitType,
+        totalEmployeesCovered,
+      };
+
+      console.log('System Admin Benefit Summary (normalized):', normalized);
+      return normalized;
     } catch (error: unknown) {
       console.error(
         'System Admin Benefit Summary API Error:',
@@ -210,6 +273,7 @@ const employeeBenefitApi = {
   async getAllTenantsEmployeeBenefits(params?: {
     page?: number;
     limit?: number;
+    tenant_id?: string;
   }): Promise<
     | {
         items: Array<{
@@ -281,15 +345,12 @@ const employeeBenefitApi = {
       }
   > {
     try {
-      const response = await axiosInstance.get(
-        '/employee-benefits/all-tenants',
-        {
-          params: params || {},
-        }
-      );
+      const response = await axiosInstance.get('/employee-benefits/all-tenants', {
+        params: params || {},
+      });
 
       console.log('All Tenants Employee Benefits:', response.data);
-      
+
       // Check if response has pagination structure
       if (
         response.data &&
@@ -307,12 +368,19 @@ const employeeBenefitApi = {
           totalPages: response.data.totalPages || 1,
         };
       }
-      
-      // Fallback for old structure (tenants)
+
+      // Fallback for old structure (tenants) – normalize to the same paginated shape
       if (response.data?.tenants) {
-        return response.data;
+        const tenants = response.data.tenants || [];
+        return {
+          items: tenants,
+          total: tenants.length,
+          page: params?.page || 1,
+          limit: params?.limit || 25,
+          totalPages: 1,
+        };
       }
-      
+
       // If response is array or has items but not paginated, wrap it
       const items = response.data?.items || (Array.isArray(response.data) ? response.data : []);
       return {

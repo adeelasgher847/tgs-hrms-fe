@@ -204,6 +204,8 @@ export const leaveReportApi = {
     const response = await axiosInstance.get('/reports/leave-balance', {
       params: { employeeId: userId },
     });
+
+    // Return backend values as‑is so negative remaining can also be shown
     return response.data;
   },
 
@@ -241,11 +243,17 @@ export const leaveReportApi = {
   },
 
   getAllLeaveReports: async (
-    page: number = 1
+    page: number = 1,
+    month?: number,
+    year?: number
   ): Promise<AllLeaveReportsResponse> => {
-    const response = await axiosInstance.get(
-      `/reports/all-leave-reports?page=${page}`
-    );
+    const params: { page: number; month?: number; year?: number } = { page };
+    if (month) params.month = month;
+    if (year) params.year = year;
+
+    const response = await axiosInstance.get('/reports/all-leave-reports', {
+      params,
+    });
     const data = response.data;
 
     if (!data) {
@@ -384,8 +392,11 @@ export const leaveReportApi = {
             const rejectedDays =
               stats?.rejectedDays ?? summary.rejectedDays ?? 0;
             const totalDays = approvedDays + pendingDays + rejectedDays;
-            // Remaining days = maxDays - approvedDays (pending leaves don't reduce remaining balance)
-            const remainingDays = (summary.maxDaysPerYear ?? 0) - approvedDays;
+
+            // Prefer backend remainingDays if provided (may be negative when over-used)
+            const remainingDays =
+              summary.remainingDays ??
+              (summary.maxDaysPerYear ?? 0) - approvedDays;
 
             return {
               ...summary,
@@ -393,7 +404,7 @@ export const leaveReportApi = {
               pendingDays,
               rejectedDays,
               totalDays,
-              remainingDays: Math.max(0, remainingDays),
+              remainingDays,
             };
           }
         );
