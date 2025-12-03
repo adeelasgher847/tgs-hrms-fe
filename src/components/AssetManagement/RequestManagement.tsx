@@ -1876,33 +1876,35 @@ const RequestManagement: React.FC = () => {
         maxWidth='md'
         fullWidth
       >
-          <DialogTitle
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            flexDirection: language === 'ar' ? 'row-reverse' : 'row',
+          }}
+        >
+          <Avatar sx={{ bgcolor: 'primary.main' }}>
+            {selectedRequest?.employeeName.charAt(0)}
+          </Avatar>
+          <Box
+            sx={{ flex: 1, textAlign: language === 'ar' ? 'right' : 'left' }}
+          >
+            <Typography variant='h6' fontWeight={600}>
+              {L.requestDetails}
+            </Typography>
+          </Box>
+          <IconButton
+            onClick={() => setIsViewModalOpen(false)}
+            aria-label={L.close}
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              flexDirection: language === 'ar' ? 'row-reverse' : 'row',
+              ml: language === 'en' ? 'auto' : 0,
+              mr: language === 'ar' ? 'auto' : 0,
             }}
           >
-            <Avatar sx={{ bgcolor: 'primary.main' }}>
-              {selectedRequest?.employeeName.charAt(0)}
-            </Avatar>
-            <Box sx={{ flex: 1, textAlign: language === 'ar' ? 'right' : 'left' }}>
-              <Typography variant='h6' fontWeight={600}>
-                {L.requestDetails}
-              </Typography>
-            </Box>
-            <IconButton
-              onClick={() => setIsViewModalOpen(false)}
-              aria-label={L.close}
-              sx={{
-                ml: language === 'en' ? 'auto' : 0,
-                mr: language === 'ar' ? 'auto' : 0,
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
           {selectedRequest && (
             <Box sx={{ mb: 2 }}>
@@ -2028,7 +2030,12 @@ const RequestManagement: React.FC = () => {
             </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 2, justifyContent: language === 'ar' ? 'flex-start' : 'flex-end' }}>
+        <DialogActions
+          sx={{
+            p: 2,
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+          }}
+        >
           <Button
             onClick={() => setIsViewModalOpen(false)}
             variant='contained'
