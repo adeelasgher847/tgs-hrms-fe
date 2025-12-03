@@ -309,14 +309,15 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
             <DialogActions
               sx={{
                 padding: 0,
-                justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+                // Align actions to the right for both languages so buttons appear on the right side
+                justifyContent: 'flex-end',
               }}
               dir={language === 'ar' ? 'rtl' : 'ltr'}
             >
               <Button
                 onClick={handleClose}
                 disabled={loading}
-                sx={{ order: language === 'ar' ? 1 : 0 }}
+                sx={{ order: 0 }}
               >
                 {lang.cancel}
               </Button>
@@ -332,7 +333,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
                 }
                 sx={{
                   backgroundColor: theme => theme.palette.primary.main,
-                  order: language === 'ar' ? 0 : 1,
+                  order: 1,
                 }}
                 startIcon={loading ? <CircularProgress size={16} /> : null}
               >

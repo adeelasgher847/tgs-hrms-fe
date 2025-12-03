@@ -97,6 +97,8 @@ const SystemAdminAssets: React.FC = () => {
       assigned: 'Assigned',
       unassigned: 'Unassigned',
       clearFilters: 'Clear Filters',
+      viewMoreTitle: 'All Tenants',
+      noAssetsFound: 'No assets found',
     },
     ar: {
       searchPlaceholder: 'البحث عن الأصول...',
@@ -109,6 +111,8 @@ const SystemAdminAssets: React.FC = () => {
       assigned: 'مُسنَد',
       unassigned: 'غير مُسنَد',
       clearFilters: 'مسح الفلاتر',
+      viewMoreTitle: 'جميع المستأجرين',
+      noAssetsFound: 'لم يتم العثور على أصول',
     },
   } as const;
   const F = labels[language as 'en' | 'ar'] || labels.en;
@@ -537,7 +541,9 @@ const SystemAdminAssets: React.FC = () => {
                 variant='outlined'
                 onClick={() => setViewMoreDialogOpen(true)}
               >
-                View More ({summary.length - 6} more)
+                {language === 'ar'
+                  ? `عرض المزيد (${summary.length - 6} أكثر)`
+                  : `View More (${summary.length - 6} more)`}
               </Button>
             </Box>
           )}
@@ -551,7 +557,12 @@ const SystemAdminAssets: React.FC = () => {
         maxWidth='lg'
         fullWidth
       >
-        <DialogTitle>All Tenants</DialogTitle>
+        <DialogTitle
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        >
+          {labels[language as 'en' | 'ar'].viewMoreTitle}
+        </DialogTitle>
         <DialogContent>
           <Grid container spacing={3} sx={{ mt: 1 }}>
             {summary.map(tenantSummary => (
@@ -715,8 +726,12 @@ const SystemAdminAssets: React.FC = () => {
             ))}
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setViewMoreDialogOpen(false)}>Close</Button>
+        <DialogActions
+          sx={{ justifyContent: language === 'ar' ? 'flex-start' : 'flex-end' }}
+        >
+          <Button onClick={() => setViewMoreDialogOpen(false)}>
+            {language === 'ar' ? 'إغلاق' : 'Close'}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -873,7 +888,7 @@ const SystemAdminAssets: React.FC = () => {
                     }}
                   >
                     <Typography variant='body2' color='text.secondary'>
-                      No assets found
+                      {F.noAssetsFound}
                     </Typography>
                   </TableCell>
                 </TableRow>

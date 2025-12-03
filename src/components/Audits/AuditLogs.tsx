@@ -42,6 +42,8 @@ const AuditLogs: React.FC = () => {
       userRole: 'User Role',
       tenantId: 'Tenant Id',
       timestamp: 'Timestamp',
+      allLabel: 'All',
+      httpMethod: 'HTTP Method',
       noLogs: 'No logs found',
       showingInfo: (page: number, totalPages: number, total: number) =>
         `Showing page ${page} of ${totalPages} (${total} total records)`,
@@ -54,6 +56,8 @@ const AuditLogs: React.FC = () => {
       userRole: 'دور المستخدم',
       tenantId: 'معرّف المستأجر',
       timestamp: 'الطابع الزمني',
+      allLabel: 'الكل',
+      httpMethod: 'طريقة HTTP',
       noLogs: 'لم يتم العثور على سجلات',
       showingInfo: (page: number, totalPages: number, total: number) =>
         `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
@@ -77,6 +81,13 @@ const AuditLogs: React.FC = () => {
 
   // HTTP methods
   const httpMethods = ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'];
+  const httpMethodLabels: Record<string, string> = {
+    GET: language === 'ar' ? 'جلب (GET)' : 'GET',
+    POST: language === 'ar' ? 'إرسال (POST)' : 'POST',
+    PATCH: language === 'ar' ? 'تحديث جزئي (PATCH)' : 'PATCH',
+    PUT: language === 'ar' ? 'تحديث (PUT)' : 'PUT',
+    DELETE: language === 'ar' ? 'حذف (DELETE)' : 'DELETE',
+  };
 
   // Fetch tenants for filter
   useEffect(() => {
@@ -193,29 +204,61 @@ const AuditLogs: React.FC = () => {
         alignItems='center'
         mb={2}
       >
-        <Typography
-          variant='h4'
-          sx={{
-            color: theme.palette.text.primary,
-            textAlign: { xs: 'center', md: 'left' },
-          }}
-        >
-          Audit Logs
-        </Typography>
-        <Tooltip title='Export Audit Logs (CSV)'>
-          <IconButton
-            color='primary'
-            onClick={handleExportLogs}
-            sx={{
-              backgroundColor: 'primary.main',
-              color: 'white',
-              borderRadius: '6px',
-              '&:hover': { backgroundColor: 'primary.dark' },
-            }}
-          >
-            <DownloadIcon />
-          </IconButton>
-        </Tooltip>
+        {language === 'ar' ? (
+          <>
+            <Tooltip title={L.exportTooltip}>
+              <IconButton
+                color='primary'
+                onClick={handleExportLogs}
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  borderRadius: '6px',
+                  '&:hover': { backgroundColor: 'primary.dark' },
+                }}
+              >
+                <DownloadIcon />
+              </IconButton>
+            </Tooltip>
+
+            <Typography
+              variant='h4'
+              dir='rtl'
+              sx={{
+                color: theme.palette.text.primary,
+                textAlign: { xs: 'center', md: 'right' },
+              }}
+            >
+              {L.pageTitle}
+            </Typography>
+          </>
+        ) : (
+          <>
+            <Typography
+              variant='h4'
+              sx={{
+                color: theme.palette.text.primary,
+                textAlign: { xs: 'center', md: 'left' },
+              }}
+            >
+              {L.pageTitle}
+            </Typography>
+            <Tooltip title={L.exportTooltip}>
+              <IconButton
+                color='primary'
+                onClick={handleExportLogs}
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  borderRadius: '6px',
+                  '&:hover': { backgroundColor: 'primary.dark' },
+                }}
+              >
+                <DownloadIcon />
+              </IconButton>
+            </Tooltip>
+          </>
+        )}
       </Box>
 
       {/* Filters */}
@@ -231,14 +274,14 @@ const AuditLogs: React.FC = () => {
         }}
       >
         <FormControl size='small'>
-          <InputLabel>User Role</InputLabel>
+          <InputLabel>{L.userRole}</InputLabel>
           <Select
             value={selectedUserRole}
             onChange={e => setSelectedUserRole(e.target.value)}
-            label='User Role'
+            label={L.userRole}
             disabled={rolesLoading}
           >
-            <MenuItem value=''>All</MenuItem>
+            <MenuItem value=''>{L.allLabel}</MenuItem>
             {roles.map(role => (
               <MenuItem key={role.id || role.name} value={role.name}>
                 {role.name}
@@ -248,14 +291,14 @@ const AuditLogs: React.FC = () => {
         </FormControl>
 
         <FormControl size='small'>
-          <InputLabel>Tenant</InputLabel>
+          <InputLabel>{L.tenantId}</InputLabel>
           <Select
             value={selectedTenantId}
             onChange={e => setSelectedTenantId(e.target.value)}
-            label='Tenant'
+            label={L.tenantId}
             disabled={tenantsLoading}
           >
-            <MenuItem value=''>All</MenuItem>
+            <MenuItem value=''>{L.allLabel}</MenuItem>
             {tenants.map(tenant => (
               <MenuItem key={tenant.id} value={tenant.id}>
                 {tenant.name}
@@ -265,16 +308,16 @@ const AuditLogs: React.FC = () => {
         </FormControl>
 
         <FormControl size='small'>
-          <InputLabel>HTTP Method</InputLabel>
+          <InputLabel>{L.httpMethod}</InputLabel>
           <Select
             value={selectedMethod}
             onChange={e => setSelectedMethod(e.target.value)}
-            label='HTTP Method'
+            label={L.httpMethod}
           >
-            <MenuItem value=''>All</MenuItem>
+            <MenuItem value=''>{L.allLabel}</MenuItem>
             {httpMethods.map(method => (
               <MenuItem key={method} value={method}>
-                {method}
+                {httpMethodLabels[method] || method}
               </MenuItem>
             ))}
           </Select>
