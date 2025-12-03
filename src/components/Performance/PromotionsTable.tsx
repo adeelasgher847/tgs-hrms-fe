@@ -355,18 +355,33 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
       </Paper>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <Box display='flex' justifyContent='center' mt={3}>
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={(_, page) => setCurrentPage(page)}
-            color='primary'
-            showFirstButton
-            showLastButton
-          />
-        </Box>
-      )}
+      {(() => {
+        // Get current page record count
+        const currentPageRowsCount = promotions.length;
+        
+        // Pagination buttons logic:
+        // - On first page: Only show if current page has full limit (to indicate more pages exist)
+        // - On other pages (including last page): Always show if there are multiple pages
+        // This allows navigation between pages even from the last page
+        const shouldShowPagination =
+          totalPages > 1 &&
+          (currentPage === 1
+            ? currentPageRowsCount === itemsPerPage // First page: only show if full limit
+            : true); // Other pages: always show if totalPages > 1
+        
+        return shouldShowPagination ? (
+          <Box display='flex' justifyContent='center' mt={3}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={(_, page) => setCurrentPage(page)}
+              color='primary'
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        ) : null;
+      })()}
 
       {/* Pagination Info */}
       {promotions.length > 0 && (

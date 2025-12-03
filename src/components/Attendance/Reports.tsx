@@ -18,7 +18,11 @@ import {
   Pagination,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { leaveReportApi, type EmployeeReport } from '../../api/leaveReportApi';
+import {
+  leaveReportApi,
+  type EmployeeReport,
+  type LeaveSummaryItem,
+} from '../../api/leaveReportApi';
 import { useIsDarkMode } from '../../theme';
 import { useLanguage } from '../../hooks/useLanguage';
 
@@ -128,13 +132,23 @@ const Reports: React.FC = () => {
   } as const;
 
   const L = labels[language as 'en' | 'ar'] || labels.en;
+  // Format numbers using western digits so numeric counts remain '14' even in Arabic
+  const formatNumber = (n: number) => new Intl.NumberFormat('en-US').format(n);
+
+  const formatLabel = (
+    tpl: string,
+    vars: Record<string, number | string>
+  ): string =>
+    tpl.replace(/{(\w+)}/g, (_, k) => {
+      const v = vars[k];
+      return typeof v === 'number' ? formatNumber(v) : String(v ?? '');
+    });
   const [tab, setTab] = useState(0);
   const [teamSummary, setTeamSummary] = useState<TeamMemberSummary[]>([]);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
   const [allLeaveReports, setAllLeaveReports] = useState<EmployeeReport[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
+  const [paginationLimit, setPaginationLimit] = useState(25); // Backend limit, default 25
   const [loading, setLoading] = useState(true);
   const [loadingTab, setLoadingTab] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -244,63 +258,115 @@ const Reports: React.FC = () => {
     }
   };
 
-  const fetchAllLeaveReports = async (pageNum: number) => {
+  const fetchAllLeaveReports = async () => {
     try {
       setLoadingTab(true);
-      const data = await leaveReportApi.getAllLeaveReports(pageNum);
 
-      // Handle both old and new API response structures
-      const employeeReports = Array.isArray(data.employeeReports)
-        ? data.employeeReports
-        : data.employeeReports &&
-            typeof data.employeeReports === 'object' &&
-            'items' in data.employeeReports
-          ? data.employeeReports.items || []
-          : [];
+      // First, fetch page 1 to get total pages and limit
+      let allEmployeeReports: EmployeeReport[] = [];
+      let paginationLimit = 25;
+      let totalPagesFromBackend = 1;
+      let leaveTypes: unknown[] = [];
 
-      setAllLeaveReports(employeeReports);
+      const firstPageData = await leaveReportApi.getAllLeaveReports(1);
 
-      // Extract pagination info from the correct location
-      let paginationTotalPages = data.totalPages;
-      let paginationTotal = data.total;
-      let paginationPage = data.page;
-
-      // If employeeReports is an object with pagination info, use that
+      // Extract limit and total pages from first page
       if (
-        data.employeeReports &&
-        typeof data.employeeReports === 'object' &&
-        'items' in data.employeeReports
+        firstPageData.employeeReports &&
+        typeof firstPageData.employeeReports === 'object' &&
+        'items' in firstPageData.employeeReports
       ) {
-        const reportsObj = data.employeeReports as {
-          items: unknown[];
+        const reportsObj = firstPageData.employeeReports as {
+          items: EmployeeReport[];
           total?: number;
           page?: number;
+          limit?: number;
           totalPages?: number;
         };
-        paginationTotalPages = reportsObj.totalPages ?? paginationTotalPages;
-        paginationTotal = reportsObj.total ?? paginationTotal;
-        paginationPage = reportsObj.page ?? paginationPage;
+        paginationLimit = reportsObj.limit || firstPageData.limit || 25;
+        totalPagesFromBackend =
+          reportsObj.totalPages || firstPageData.totalPages || 1;
+
+        // Get first page employees
+        if (reportsObj.items && reportsObj.items.length > 0) {
+          allEmployeeReports = [...reportsObj.items];
+        }
+      } else if (Array.isArray(firstPageData.employeeReports)) {
+        allEmployeeReports = [...firstPageData.employeeReports];
+        paginationLimit = firstPageData.limit || 25;
+        totalPagesFromBackend = firstPageData.totalPages || 1;
       }
 
-      // Ensure we have valid pagination values
-      const finalTotalPages =
-        paginationTotalPages && paginationTotalPages > 0
-          ? paginationTotalPages
-          : 1;
-      const finalTotal =
-        paginationTotal && paginationTotal > 0
-          ? paginationTotal
-          : employeeReports.length;
+      // Store organization stats and leave types from first page
+      // Store leave types from first page
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      leaveTypes = firstPageData.leaveTypes || [];
+      // Fetch all remaining pages if there are more pages
+      if (totalPagesFromBackend > 1) {
+        for (let page = 2; page <= totalPagesFromBackend; page++) {
+          try {
+            const pageData = await leaveReportApi.getAllLeaveReports(page);
 
-      setTotalPages(finalTotalPages);
-      setTotalRecords(finalTotal);
-      setPage(paginationPage || pageNum);
+            let pageEmployeeReports: EmployeeReport[] = [];
+            if (
+              pageData.employeeReports &&
+              typeof pageData.employeeReports === 'object' &&
+              'items' in pageData.employeeReports
+            ) {
+              const reportsObj = pageData.employeeReports as {
+                items: EmployeeReport[];
+              };
+              pageEmployeeReports = reportsObj.items || [];
+            } else if (Array.isArray(pageData.employeeReports)) {
+              pageEmployeeReports = pageData.employeeReports;
+            }
 
+            if (pageEmployeeReports.length > 0) {
+              allEmployeeReports = [
+                ...allEmployeeReports,
+                ...pageEmployeeReports,
+              ];
+            }
+          } catch (err) {
+            console.error(`Error fetching page ${page}:`, err);
+            // Continue with next page even if one fails
+          }
+        }
+      }
+
+      // Store all fetched records
+      setAllLeaveReports(allEmployeeReports);
+
+      // Store the limit in state so it can be used in pagination rendering
+      setPaginationLimit(paginationLimit);
+
+      // Calculate total leave type rows from all fetched employees
+      // Each employee can have multiple leave types, so we count all leave type rows
+      const totalLeaveTypeRows = allEmployeeReports.reduce((total, emp) => {
+        return (
+          total +
+          (emp.leaveSummary && emp.leaveSummary.length > 0
+            ? emp.leaveSummary.length
+            : 1)
+        );
+      }, 0);
+
+      // Calculate total pages based on leave type rows for frontend pagination
+      // We'll use the backend limit for frontend pagination
+      const ITEMS_PER_PAGE_LEAVE_ROWS = paginationLimit || 25;
+      const finalTotalPages = Math.ceil(
+        totalLeaveTypeRows / ITEMS_PER_PAGE_LEAVE_ROWS
+      );
+
+      // Store pagination info for frontend pagination
+      // Store pagination info for frontend pagination
+      setPage(1);
       console.log('Pagination info:', {
         totalPages: finalTotalPages,
-        total: finalTotal,
-        page: paginationPage || pageNum,
-        employeeReportsCount: employeeReports.length,
+        total: totalLeaveTypeRows,
+        totalEmployees: allEmployeeReports.length,
+        totalLeaveTypeRows: totalLeaveTypeRows,
+        paginationLimit: paginationLimit,
       });
 
       setError(null);
@@ -324,7 +390,8 @@ const Reports: React.FC = () => {
 
         if (isAdminView) {
           // fetchAllLeaveReports handles its own loading state
-          await fetchAllLeaveReports(page);
+          // Fetch all records from backend, then paginate leave type rows client-side
+          await fetchAllLeaveReports();
         } else {
           // For tab changes, use tab-specific loading instead of full page loading
           setLoadingTab(true);
@@ -350,7 +417,9 @@ const Reports: React.FC = () => {
     };
 
     fetchData();
-  }, [tab, userInfo, page, isAdminView, isManager]);
+    // Remove 'page' from dependencies - we use client-side pagination for leave type rows
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, userInfo, isAdminView, isManager]);
 
   if (!userInfo) {
     return (
@@ -533,11 +602,60 @@ const Reports: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  allLeaveReports.flatMap(emp =>
-                    emp.leaveSummary && emp.leaveSummary.length > 0 ? (
-                      emp.leaveSummary.map((summary, index) => (
+                  (() => {
+                    // Flatten all leave type rows first
+                    type LeaveTypeRow = {
+                      employeeId: string;
+                      employeeName: string;
+                      department: string;
+                      designation: string;
+                      summary: LeaveSummaryItem | null;
+                      index: number;
+                      key: string;
+                    };
+
+                    const allLeaveTypeRows: LeaveTypeRow[] =
+                      allLeaveReports.flatMap(emp => {
+                        if (emp.leaveSummary && emp.leaveSummary.length > 0) {
+                          return emp.leaveSummary.map(
+                            (summary, index): LeaveTypeRow => ({
+                              employeeId: emp.employeeId,
+                              employeeName: emp.employeeName,
+                              department: emp.department,
+                              designation: emp.designation,
+                              summary: summary,
+                              index,
+                              key: `${emp.employeeId}-${index}`,
+                            })
+                          );
+                        } else {
+                          return [
+                            {
+                              employeeId: emp.employeeId,
+                              employeeName: emp.employeeName,
+                              department: emp.department,
+                              designation: emp.designation,
+                              summary: null,
+                              index: -1,
+                              key: `${emp.employeeId}-no-leaves`,
+                            } as LeaveTypeRow,
+                          ];
+                        }
+                      });
+
+                    // Paginate the flattened leave type rows using backend limit
+                    const ITEMS_PER_PAGE = paginationLimit || 25;
+                    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+                    const endIndex = startIndex + ITEMS_PER_PAGE;
+                    const paginatedRows = allLeaveTypeRows.slice(
+                      startIndex,
+                      endIndex
+                    );
+
+                    return paginatedRows.map((row: LeaveTypeRow) =>
+                      row.summary ? (
                         <TableRow
-                          key={`${emp.employeeId}-${index}`}
+                          key={row.key}
                           sx={{
                             backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
                             '&:hover': {
@@ -546,134 +664,211 @@ const Reports: React.FC = () => {
                           }}
                         >
                           <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                            {emp.employeeName}
+                            {row.employeeName}
                           </TableCell>
                           <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                            {emp.department}
+                            {row.department}
                           </TableCell>
                           <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                            {emp.designation}
+                            {row.designation}
                           </TableCell>
                           <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                            {summary.leaveTypeName}
+                            {row.summary.leaveTypeName}
                           </TableCell>
                           <TableCell
                             align='center'
                             sx={{ color: darkMode ? '#ccc' : '#000' }}
                           >
-                            {summary.maxDaysPerYear}
+                            {row.summary.maxDaysPerYear}
                           </TableCell>
                           <TableCell
                             align='center'
                             sx={{ color: darkMode ? '#ccc' : '#000' }}
                           >
-                            {(summary.approvedDays ?? 0) +
-                              (summary.pendingDays ?? 0)}
+                            {(row.summary.approvedDays ?? 0) +
+                              (row.summary.pendingDays ?? 0)}
                           </TableCell>
                           <TableCell
                             align='center'
                             sx={{ color: darkMode ? '#ccc' : '#000' }}
                           >
-                            {summary.remainingDays ?? 0}
+                            {row.summary.remainingDays ?? 0}
                           </TableCell>
                           <TableCell
                             align='center'
                             sx={{ color: darkMode ? '#ccc' : '#000' }}
                           >
-                            {summary.approvedDays ?? 0}
+                            {row.summary.approvedDays ?? 0}
                           </TableCell>
                           <TableCell
                             align='center'
                             sx={{ color: darkMode ? '#ccc' : '#000' }}
                           >
-                            {summary.pendingDays ?? 0}
+                            {row.summary.pendingDays ?? 0}
                           </TableCell>
                           <TableCell
                             align='center'
                             sx={{ color: darkMode ? '#ccc' : '#000' }}
                           >
-                            {summary.rejectedDays ?? 0}
+                            {row.summary.rejectedDays ?? 0}
                           </TableCell>
                         </TableRow>
-                      ))
-                    ) : (
-                      <TableRow
-                        key={`${emp.employeeId}-no-leaves`}
-                        sx={{
-                          backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
-                        }}
-                      >
-                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                          {emp.employeeName}
-                        </TableCell>
-                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                          {emp.department}
-                        </TableCell>
-                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
-                          {emp.designation}
-                        </TableCell>
-                        <TableCell
-                          colSpan={8}
-                          align='center'
-                          sx={{ color: darkMode ? '#ccc' : '#000' }}
+                      ) : (
+                        <TableRow
+                          key={row.key}
+                          sx={{
+                            backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+                          }}
                         >
-                          {L.tableNoData}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  )
+                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                            {row.employeeName}
+                          </TableCell>
+                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                            {row.department}
+                          </TableCell>
+                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                            {row.designation}
+                          </TableCell>
+                          <TableCell
+                            colSpan={8}
+                            align='center'
+                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                          >
+                            No leave data available
+                          </TableCell>
+                        </TableRow>
+                      )
+                    );
+                  })()
                 )}
               </TableBody>
             </Table>
           </TableContainer>
 
-          {totalPages > 1 && (
-            <Box
-              display='flex'
-              flexDirection='column'
-              alignItems='center'
-              justifyContent='center'
-              mt={3}
-              gap={1}
-            >
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={(_, value) => setPage(value)}
-                color='primary'
-                shape='rounded'
-                size='small'
-                showFirstButton
-                showLastButton
-                sx={{
-                  '& .MuiPaginationItem-root': {
-                    borderRadius: '50%',
-                    minWidth: 32,
-                    height: 32,
-                  },
-                }}
-              />
-              <Typography
-                variant='body2'
-                sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
-              >
-                {L.showingPage
-                  .replace('{page}', String(page))
-                  .replace('{total}', String(totalPages))
-                  .replace('{records}', String(totalRecords))}
-              </Typography>
-            </Box>
-          )}
-          {totalPages === 1 && totalRecords > 0 && (
-            <Box display='flex' justifyContent='center' mt={2}>
-              <Typography
-                variant='body2'
-                sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
-              >
-                {L.showingAll.replace('{records}', String(totalRecords))}
-              </Typography>
-            </Box>
-          )}
+          {(() => {
+            // Calculate all leave type rows for pagination logic
+            type LeaveTypeRow = {
+              employeeId: string;
+              employeeName: string;
+              department: string;
+              designation: string;
+              summary: LeaveSummaryItem | null;
+              index: number;
+              key: string;
+            };
+
+            const allLeaveTypeRows: LeaveTypeRow[] = allLeaveReports.flatMap(
+              emp => {
+                if (emp.leaveSummary && emp.leaveSummary.length > 0) {
+                  return emp.leaveSummary.map(
+                    (summary, index): LeaveTypeRow => ({
+                      employeeId: emp.employeeId,
+                      employeeName: emp.employeeName,
+                      department: emp.department,
+                      designation: emp.designation,
+                      summary: summary,
+                      index,
+                      key: `${emp.employeeId}-${index}`,
+                    })
+                  );
+                } else {
+                  return [
+                    {
+                      employeeId: emp.employeeId,
+                      employeeName: emp.employeeName,
+                      department: emp.department,
+                      designation: emp.designation,
+                      summary: null,
+                      index: -1,
+                      key: `${emp.employeeId}-no-leaves`,
+                    } as LeaveTypeRow,
+                  ];
+                }
+              }
+            );
+
+            // Use backend limit (stored in state) or default to 25
+            const ITEMS_PER_PAGE = paginationLimit || 25;
+            const totalLeaveTypeRows = allLeaveTypeRows.length;
+            const calculatedTotalPages = Math.ceil(
+              totalLeaveTypeRows / ITEMS_PER_PAGE
+            );
+
+            // Get current page rows
+            const startIndex = (page - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const currentPageRows = allLeaveTypeRows.slice(
+              startIndex,
+              endIndex
+            );
+            const currentPageRowsCount = currentPageRows.length;
+
+            // Pagination buttons logic:
+            // - On first page: Only show if current page has full limit (to indicate more pages exist)
+            // - On other pages (including last page): Always show if there are multiple pages
+            // This allows navigation between pages even from the last page
+            const shouldShowPagination =
+              calculatedTotalPages > 1 &&
+              (page === 1
+                ? currentPageRowsCount === ITEMS_PER_PAGE // First page: only show if full limit
+                : true); // Other pages: always show if totalPages > 1
+
+            return (
+              <>
+                {shouldShowPagination && (
+                  <Box display='flex' justifyContent='center' mt={2}>
+                    <Pagination
+                      count={calculatedTotalPages}
+                      page={page}
+                      onChange={(_, value) => setPage(value)}
+                      color='primary'
+                      shape='rounded'
+                      size='small'
+                      showFirstButton
+                      showLastButton
+                      sx={{
+                        '& .MuiPaginationItem-root': {
+                          borderRadius: '50%',
+                          minWidth: 32,
+                          height: 32,
+                        },
+                      }}
+                    />
+                  </Box>
+                )}
+                {totalLeaveTypeRows > 0 && (
+                  <Box display='flex' justifyContent='center' mt={1}>
+                    <Typography
+                      variant='body2'
+                      dir={language === 'ar' ? 'rtl' : 'ltr'}
+                      sx={{
+                        color: darkMode ? '#ccc' : 'text.secondary',
+                        width: '100%',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {
+                        // If only one page show the 'showingAll' template, else show page template
+                        ((): string => {
+                          const ITEMS_PER_PAGE = paginationLimit || 25;
+                          if (totalLeaveTypeRows <= ITEMS_PER_PAGE) {
+                            return formatLabel(L.showingAll, {
+                              records: totalLeaveTypeRows,
+                            });
+                          }
+                          return formatLabel(L.showingPage, {
+                            page,
+                            total: calculatedTotalPages,
+                            records: totalLeaveTypeRows,
+                          });
+                        })()
+                      }
+                    </Typography>
+                  </Box>
+                )}
+              </>
+            );
+          })()}
         </Box>
       )}
 

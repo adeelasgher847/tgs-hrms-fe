@@ -1049,7 +1049,7 @@ const PayrollRecords: React.FC = () => {
             />
           </Box>
         )}
-        {!loading && displayedRecords.length > 0 && (
+        {!loading && totalRecords > 0 && (
           <Box display='flex' justifyContent='center' pb={2}>
             <Typography variant='body2' color='textSecondary'>
               {PL.showingInfo(currentPage, totalPages, totalRecords)}

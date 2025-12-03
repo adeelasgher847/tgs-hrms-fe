@@ -12,12 +12,23 @@ import {
   IconButton,
   Tooltip,
   Pagination,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import systemDashboardApiService, {
   type RecentLog,
 } from '../../api/systemDashboardApi';
 import { useLanguage } from '../../hooks/useLanguage';
+import { SystemTenantApi } from '../../api/systemTenantApi';
+import rolesApiService, { type Role } from '../../api/rolesApi';
+
+interface Tenant {
+  id: string;
+  name: string;
+}
 
 const AuditLogs: React.FC = () => {
   const theme = useTheme();
@@ -55,21 +66,100 @@ const AuditLogs: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25; // Backend returns 25 records per page
 
-  const fetchLogs = useCallback(async (page: number = 1) => {
-    try {
-      setLogsLoading(true);
-      const response = await systemDashboardApiService.getSystemLogs(page);
-      setLogs(response);
-    } catch (err) {
-      console.error('Error fetching system logs:', err);
-    } finally {
-      setLogsLoading(false);
-    }
+  // Filter states
+  const [selectedUserRole, setSelectedUserRole] = useState<string>('');
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('');
+  const [selectedMethod, setSelectedMethod] = useState<string>('');
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [tenantsLoading, setTenantsLoading] = useState(false);
+  const [rolesLoading, setRolesLoading] = useState(false);
+
+  // HTTP methods
+  const httpMethods = ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'];
+
+  // Fetch tenants for filter
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        setTenantsLoading(true);
+        const allTenants = await SystemTenantApi.getAllTenants(false);
+        const activeTenants = allTenants
+          .filter(t => t.status === 'active' && t.isDeleted === false)
+          .map(t => ({ id: t.id, name: t.name }));
+        setTenants(activeTenants);
+      } catch (error) {
+        console.error('Error fetching tenants:', error);
+        setTenants([]);
+      } finally {
+        setTenantsLoading(false);
+      }
+    };
+    fetchTenants();
   }, []);
+
+  // Fetch roles for filter
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        setRolesLoading(true);
+        const allRoles = await rolesApiService.getAllRoles();
+        // Convert role names to lowercase
+        const rolesWithLowercaseNames = allRoles.map(role => ({
+          ...role,
+          name: role.name.toLowerCase(),
+        }));
+        setRoles(rolesWithLowercaseNames);
+      } catch (error) {
+        console.error('Error fetching roles:', error);
+        setRoles([]);
+      } finally {
+        setRolesLoading(false);
+      }
+    };
+    fetchRoles();
+  }, []);
+
+  const fetchLogs = useCallback(
+    async (page: number = 1) => {
+      try {
+        setLogsLoading(true);
+        const filters: {
+          userRole?: string;
+          tenantId?: string;
+          method?: string;
+        } = {};
+        if (selectedUserRole) {
+          filters.userRole = selectedUserRole;
+        }
+        if (selectedTenantId) {
+          filters.tenantId = selectedTenantId;
+        }
+        if (selectedMethod) {
+          filters.method = selectedMethod;
+        }
+        const response = await systemDashboardApiService.getSystemLogs(
+          page,
+          filters
+        );
+        setLogs(response);
+      } catch (err) {
+        console.error('Error fetching system logs:', err);
+      } finally {
+        setLogsLoading(false);
+      }
+    },
+    [selectedUserRole, selectedTenantId, selectedMethod]
+  );
 
   useEffect(() => {
     fetchLogs(currentPage);
   }, [fetchLogs, currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedUserRole, selectedTenantId, selectedMethod]);
 
   const handleExportLogs = async () => {
     const blob = await systemDashboardApiService.exportSystemLogs();
@@ -103,61 +193,92 @@ const AuditLogs: React.FC = () => {
         alignItems='center'
         mb={2}
       >
-        {language === 'ar' ? (
-          <>
-            <Tooltip title={L.exportTooltip}>
-              <IconButton
-                color='primary'
-                onClick={handleExportLogs}
-                sx={{
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  borderRadius: '6px',
-                  '&:hover': { backgroundColor: 'primary.dark' },
-                }}
-              >
-                <DownloadIcon />
-              </IconButton>
-            </Tooltip>
-            <Typography
-              variant='h4'
-              dir='rtl'
-              sx={{
-                color: theme.palette.text.primary,
-                textAlign: { xs: 'center', md: 'right' },
-              }}
-            >
-              {L.pageTitle}
-            </Typography>
-          </>
-        ) : (
-          <>
-            <Typography
-              variant='h4'
-              dir='ltr'
-              sx={{
-                color: theme.palette.text.primary,
-                textAlign: { xs: 'center', md: 'left' },
-              }}
-            >
-              {L.pageTitle}
-            </Typography>
-            <Tooltip title={L.exportTooltip}>
-              <IconButton
-                color='primary'
-                onClick={handleExportLogs}
-                sx={{
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  borderRadius: '6px',
-                  '&:hover': { backgroundColor: 'primary.dark' },
-                }}
-              >
-                <DownloadIcon />
-              </IconButton>
-            </Tooltip>
-          </>
-        )}
+        <Typography
+          variant='h4'
+          sx={{
+            color: theme.palette.text.primary,
+            textAlign: { xs: 'center', md: 'left' },
+          }}
+        >
+          Audit Logs
+        </Typography>
+        <Tooltip title='Export Audit Logs (CSV)'>
+          <IconButton
+            color='primary'
+            onClick={handleExportLogs}
+            sx={{
+              backgroundColor: 'primary.main',
+              color: 'white',
+              borderRadius: '6px',
+              '&:hover': { backgroundColor: 'primary.dark' },
+            }}
+          >
+            <DownloadIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
+
+      {/* Filters */}
+      <Box
+        display='flex'
+        gap={2}
+        mb={3}
+        flexWrap='wrap'
+        sx={{
+          '& .MuiFormControl-root': {
+            minWidth: { xs: '100%', sm: '200px' },
+          },
+        }}
+      >
+        <FormControl size='small'>
+          <InputLabel>User Role</InputLabel>
+          <Select
+            value={selectedUserRole}
+            onChange={e => setSelectedUserRole(e.target.value)}
+            label='User Role'
+            disabled={rolesLoading}
+          >
+            <MenuItem value=''>All</MenuItem>
+            {roles.map(role => (
+              <MenuItem key={role.id || role.name} value={role.name}>
+                {role.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl size='small'>
+          <InputLabel>Tenant</InputLabel>
+          <Select
+            value={selectedTenantId}
+            onChange={e => setSelectedTenantId(e.target.value)}
+            label='Tenant'
+            disabled={tenantsLoading}
+          >
+            <MenuItem value=''>All</MenuItem>
+            {tenants.map(tenant => (
+              <MenuItem key={tenant.id} value={tenant.id}>
+                {tenant.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl size='small'>
+          <InputLabel>HTTP Method</InputLabel>
+          <Select
+            value={selectedMethod}
+            onChange={e => setSelectedMethod(e.target.value)}
+            label='HTTP Method'
+          >
+            <MenuItem value=''>All</MenuItem>
+            {httpMethods.map(method => (
+              <MenuItem key={method} value={method}>
+                {method}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
       <Box
@@ -180,13 +301,13 @@ const AuditLogs: React.FC = () => {
           <TableBody>
             {logsLoading ? (
               <TableRow>
-                <TableCell colSpan={7} align='center'>
+                <TableCell colSpan={5} align='center'>
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : logs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align='center'>
+                <TableCell colSpan={5} align='center'>
                   {L.noLogs}
                 </TableCell>
               </TableRow>

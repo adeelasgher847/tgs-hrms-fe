@@ -279,6 +279,15 @@ const CompanyDetails: React.FC = () => {
                         fullWidth
                         value={formData.companyName}
                         onChange={handleChange}
+                        inputProps={{
+                          maxLength: 50,
+                          title: formData.companyName,
+                          style: {
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          },
+                        }}
                         placeholder={
                           language === 'ar'
                             ? 'أدخل اسم الشركة'
@@ -367,6 +376,15 @@ const CompanyDetails: React.FC = () => {
                         fullWidth
                         value={formData.domain}
                         onChange={handleChange}
+                        inputProps={{
+                          maxLength: 50,
+                          title: formData.domain,
+                          style: {
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          },
+                        }}
                         placeholder={
                           language === 'ar'
                             ? 'أدخل النطاق (مثال: company.com)'

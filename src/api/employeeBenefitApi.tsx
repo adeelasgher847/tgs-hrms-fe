@@ -207,44 +207,120 @@ const employeeBenefitApi = {
     }
   },
 
-  async getAllTenantsEmployeeBenefits(): Promise<{
-    tenants: Array<{
-      tenant_id: string;
-      tenant_name: string;
-      tenant_status: string;
-      employees: Array<{
-        employeeId: string;
-        employeeName: string;
-        email: string;
-        profile_pic?: string | null;
-        department: string;
-        designation: string;
-        benefits: Array<{
-          id: string;
-          name: string;
-          description: string;
-          type: string;
-          eligibilityCriteria: string;
-          status: string;
+  async getAllTenantsEmployeeBenefits(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<
+    | {
+        items: Array<{
           tenant_id: string;
-          createdBy: string;
-          createdAt: string;
-          benefitAssignmentId: string;
-          statusOfAssignment: string;
-          startDate: string;
-          endDate: string;
-          assignedBy: string;
-          benefitCreatedAt: string;
+          tenant_name: string;
+          tenant_status: string;
+          employees: Array<{
+            employeeId: string;
+            employeeName: string;
+            email: string;
+            profile_pic?: string | null;
+            department: string;
+            designation: string;
+            benefits: Array<{
+              id: string;
+              name: string;
+              description: string;
+              type: string;
+              eligibilityCriteria: string;
+              status: string;
+              tenant_id: string;
+              createdBy: string;
+              createdAt: string;
+              benefitAssignmentId: string;
+              statusOfAssignment: string;
+              startDate: string;
+              endDate: string;
+              assignedBy: string;
+              benefitCreatedAt: string;
+            }>;
+          }>;
         }>;
-      }>;
-    }>;
-  }> {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }
+    | {
+        tenants: Array<{
+          tenant_id: string;
+          tenant_name: string;
+          tenant_status: string;
+          employees: Array<{
+            employeeId: string;
+            employeeName: string;
+            email: string;
+            profile_pic?: string | null;
+            department: string;
+            designation: string;
+            benefits: Array<{
+              id: string;
+              name: string;
+              description: string;
+              type: string;
+              eligibilityCriteria: string;
+              status: string;
+              tenant_id: string;
+              createdBy: string;
+              createdAt: string;
+              benefitAssignmentId: string;
+              statusOfAssignment: string;
+              startDate: string;
+              endDate: string;
+              assignedBy: string;
+              benefitCreatedAt: string;
+            }>;
+          }>;
+        }>;
+      }
+  > {
     try {
       const response = await axiosInstance.get(
-        '/employee-benefits/all-tenants'
+        '/employee-benefits/all-tenants',
+        {
+          params: params || {},
+        }
       );
       console.log('All Tenants Employee Benefits:', response.data);
-      return response.data;
+      
+      // Check if response has pagination structure
+      if (
+        response.data &&
+        typeof response.data === 'object' &&
+        !Array.isArray(response.data) &&
+        'items' in response.data &&
+        'total' in response.data &&
+        'totalPages' in response.data
+      ) {
+        return {
+          items: response.data.items || [],
+          total: response.data.total || 0,
+          page: response.data.page || params?.page || 1,
+          limit: response.data.limit || params?.limit || 25,
+          totalPages: response.data.totalPages || 1,
+        };
+      }
+      
+      // Fallback for old structure (tenants)
+      if (response.data?.tenants) {
+        return response.data;
+      }
+      
+      // If response is array or has items but not paginated, wrap it
+      const items = response.data?.items || (Array.isArray(response.data) ? response.data : []);
+      return {
+        items: items,
+        total: items.length,
+        page: params?.page || 1,
+        limit: params?.limit || 25,
+        totalPages: 1,
+      };
     } catch (error: unknown) {
       console.error(
         'All Tenants Employee Benefits API Error:',

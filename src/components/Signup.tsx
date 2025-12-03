@@ -26,6 +26,10 @@ import './UserProfile/PhoneInput.css';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import signupApi, { type PersonalDetailsRequest } from '../api/signupApi';
+import {
+  validateEmailAddress,
+  validatePasswordStrength,
+} from '../utils/validation';
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -68,9 +72,50 @@ const Signup: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error for this field while typing
-    setFieldErrors(prev => ({ ...prev, [name]: '' }));
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setFieldErrors(prev => {
+      const next = { ...prev, [name]: '' };
+
+      // Live password validation (min 8, 1 upper, 1 lower, 1 number, 1 special)
+      if (name === 'password') {
+        const pwd = value;
+        if (!pwd) {
+          // No inline "Password is required" message – keep it empty
+          next.password = '';
+        } else {
+          const pwdError = validatePasswordStrength(pwd);
+          next.password = pwdError ?? '';
+        }
+
+        // Keep confirmPassword in sync when user changes main password
+        if (formData.confirmPassword) {
+          next.confirmPassword =
+            pwd === formData.confirmPassword ? '' : 'Passwords do not match';
+        }
+      }
+
+      // Live confirm password validation
+      if (name === 'confirmPassword') {
+        const confirm = value;
+        const pwd = formData.password;
+
+        if (!confirm) {
+          next.confirmPassword = 'Please confirm your password';
+        } else if (confirm !== pwd) {
+          next.confirmPassword = 'Passwords do not match';
+        } else {
+          next.confirmPassword = '';
+        }
+      }
+
+      return next;
+    });
+
     setError(null);
     setSuccess(null);
   };
@@ -104,10 +149,11 @@ const Signup: React.FC = () => {
     if (!formData.last_name.trim()) {
       nextErrors.last_name = 'Last name is required';
     }
-    if (!formData.email.trim()) {
-      nextErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      nextErrors.email = 'Please enter a valid email address';
+    if (formData.email.trim()) {
+      const emailError = validateEmailAddress(formData.email);
+      if (emailError) {
+        nextErrors.email = emailError;
+      }
     }
     if (!formData.phone.trim()) {
       nextErrors.phone = 'Phone number is required';
@@ -118,10 +164,11 @@ const Signup: React.FC = () => {
         nextErrors.phone = 'Please enter a valid phone number';
       }
     }
-    if (!formData.password) {
-      nextErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      nextErrors.password = 'Password must be at least 8 characters long';
+    if (formData.password) {
+      const pwdError = validatePasswordStrength(formData.password);
+      if (pwdError) {
+        nextErrors.password = pwdError;
+      }
     }
     if (!formData.confirmPassword) {
       nextErrors.confirmPassword = 'Please confirm your password';
@@ -140,6 +187,10 @@ const Signup: React.FC = () => {
     return !hasErrors;
   };
 
+  const emailValidationError = formData.email.trim()
+    ? validateEmailAddress(formData.email)
+    : null;
+
   const isSubmitDisabled =
     loading ||
     !formData.first_name.trim() ||
@@ -148,6 +199,7 @@ const Signup: React.FC = () => {
     !formData.phone.trim() ||
     !formData.password ||
     !formData.confirmPassword ||
+    !!emailValidationError ||
     Object.values(fieldErrors).some(Boolean) ||
     !acceptedTerms;
 
@@ -483,6 +535,17 @@ const Signup: React.FC = () => {
                         value={formData.email}
                         placeholder='name@example.com'
                         onChange={handleChange}
+                        onBlur={e => {
+                          const value = e.target.value;
+                          const trimmed = value.trim();
+                          const emailError = trimmed
+                            ? validateEmailAddress(trimmed)
+                            : null;
+                          setFieldErrors(prev => ({
+                            ...prev,
+                            email: emailError ?? '',
+                          }));
+                        }}
                         disabled={loading}
                         error={Boolean(fieldErrors.email)}
                         helperText={fieldErrors.email}

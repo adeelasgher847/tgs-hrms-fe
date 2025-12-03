@@ -511,7 +511,7 @@ const EmployeeBenefits: React.FC = () => {
         </Box>
       )}
 
-      {filteredEmployees.length > 0 && (
+      {totalRecords > 0 && (
         <Box display='flex' justifyContent='center' my={1}>
           <Typography variant='body2' color='textSecondary'>
             {PL.showingInfo(page, totalPages, totalRecords)}

@@ -28,6 +28,7 @@ import {
   type BackendDesignation,
 } from '../../api/designationApi';
 import { rolesApiService, type Role } from '../../api/rolesApi';
+import { validateEmailAddress } from '../../utils/validation';
 
 // Types
 type FormValues = EmployeeDto & {
@@ -486,13 +487,14 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       );
     if (!values.last_name)
       newErrors.last_name = label('Last name is required', 'اسم العائلة مطلوب');
-    if (!values.email)
-      newErrors.email = label('Email is required', 'البريد الإلكتروني مطلوب');
-    else if (!/[^\s@]+@[^\s@]+\.[^\s@]+/.test(values.email))
-      newErrors.email = label(
-        'Invalid email address',
-        'عنوان البريد الإلكتروني غير صالح'
-      );
+    if (values.email.trim()) {
+      const emailError = validateEmailAddress(values.email);
+      if (emailError) {
+        newErrors.email = emailError;
+      }
+    } else {
+      newErrors.email = 'Email is required';
+    }
     if (!values.phone)
       newErrors.phone = label('Phone is required', 'رقم الهاتف مطلوب');
     else if (values.phone && values.phone.trim()) {
@@ -600,7 +602,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     if (!values.first_name.trim()) return false;
     if (!values.last_name.trim()) return false;
     if (!values.email.trim()) return false;
-    if (!/[\w.-]+@[\w.-]+\.[A-Za-z]{2,}/.test(values.email)) return false;
+    if (validateEmailAddress(values.email)) return false;
     if (!values.phone.trim()) return false;
     if (!values.designationId) return false;
     if (!values.departmentId) return false;

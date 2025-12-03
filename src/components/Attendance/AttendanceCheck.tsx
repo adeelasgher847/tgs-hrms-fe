@@ -44,6 +44,7 @@ const AttendanceCheck = () => {
   const [isSystemAdminUser, setIsSystemAdminUser] = useState(false);
   const [isNetworkAdminUser, setIsNetworkAdminUser] = useState(false);
   const [isHRAdminUser, setIsHRAdminUser] = useState(false);
+  const [attendanceRefreshToken, setAttendanceRefreshToken] = useState(0);
 
   const getCurrentUserId = () => {
     const userStr = localStorage.getItem('user');
@@ -112,6 +113,8 @@ const AttendanceCheck = () => {
       setPunchOutTime(null);
       setStatus('Checked In');
       await fetchToday();
+      // Inform MyTimeCard that attendance has changed so it can refresh immediately
+      setAttendanceRefreshToken(prev => prev + 1);
     } catch {
       setError('Check-in failed. Please try again.');
     } finally {
@@ -127,6 +130,8 @@ const AttendanceCheck = () => {
       // After checkout, both buttons become enabled again
       setStatus('Checked Out');
       await fetchToday();
+      // Also notify MyTimeCard on checkout in case it needs to update state
+      setAttendanceRefreshToken(prev => prev + 1);
     } catch {
       setError('Check-out failed. Please try again.');
     } finally {
@@ -343,7 +348,7 @@ const AttendanceCheck = () => {
 
         {/* Time Card */}
         <Box flex={1}>
-          <MyTimeCard />
+          <MyTimeCard attendanceRefreshToken={attendanceRefreshToken} />
         </Box>
       </Box>
     </Box>
