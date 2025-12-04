@@ -558,10 +558,10 @@ const EmployeeManager: React.FC = () => {
     }
   };
 
-  const handleEditOpen = (emp: Employee) => {
+  const handleEditOpen = useCallback((emp: Employee) => {
     setEditing(emp);
     setOpen(true);
-  };
+  }, []);
 
   const handleUpdateEmployee = async (
     updates: Partial<EmployeeDto> & {
@@ -729,13 +729,13 @@ const EmployeeManager: React.FC = () => {
   };
 
   // New: open confirmation before delete (accepts Employee or id)
-  const requestDeleteEmployee = (toDelete: Employee | string) => {
+  const requestDeleteEmployee = useCallback((toDelete: Employee | string) => {
     const id = typeof toDelete === 'string' ? toDelete : toDelete.id;
     const name = typeof toDelete === 'string' ? '' : toDelete.name;
     setPendingDeleteId(id);
     setPendingDeleteName(name || '');
     setConfirmOpen(true);
-  };
+  }, []);
 
   const confirmDelete = async () => {
     if (!pendingDeleteId) return;
@@ -756,7 +756,7 @@ const EmployeeManager: React.FC = () => {
     setDesignationFilter('');
   };
 
-  const handleResendInvite = async (employee: Employee) => {
+  const handleResendInvite = useCallback(async (employee: Employee) => {
     try {
       setError(null);
 
@@ -780,12 +780,12 @@ const EmployeeManager: React.FC = () => {
       const errorResult = extractErrorMessage(error);
       setError(errorResult.message);
     }
-  };
+  }, []);
 
-  const handleViewEmployee = (employee: Employee) => {
+  const handleViewEmployee = useCallback((employee: Employee) => {
     setViewingEmployee(employee);
     setViewModalOpen(true);
-  };
+  }, []);
 
   // Server-driven filtering; render employees as-is
 
