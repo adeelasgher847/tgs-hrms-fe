@@ -157,8 +157,15 @@ const BenefitReport: React.FC = () => {
         let backendTotalPages = 1;
 
         if (isSystemAdmin) {
-          const response = await employeeBenefitApi.getAllTenantsEmployeeBenefits();
-          flattened = (response.items || []).flatMap((tenant: any) =>
+          const response = await employeeBenefitApi.getAllTenantsEmployeeBenefits({
+            tenant_id: selectedTenant || undefined,
+            page,
+            limit: ITEMS_PER_PAGE,
+          } as any);
+
+          const items: any[] = (response as any)?.items || (response as any)?.tenants || [];
+
+          flattened = items.flatMap((tenant: any) =>
             (tenant.employees || []).flatMap((emp: any) =>
               (emp.benefits || []).map((b: any) => ({
                 tenantId: tenant.tenant_id,
@@ -171,7 +178,7 @@ const BenefitReport: React.FC = () => {
               }))
             )
           );
-          backendTotalPages = response.totalPages || 1;
+          backendTotalPages = (response as any)?.totalPages || 1;
         } else {
           const params: any = { page };
           if (selectedDepartment) params.department = selectedDepartment;
@@ -277,7 +284,7 @@ const BenefitReport: React.FC = () => {
       {/* Filters & CSV */}
       <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
         <Grid container spacing={2}>
-          <Grid item>
+          <Grid item xs={12} sm={6} md={4}>
             <FormControl size='small' sx={{ minWidth: 220 }}>
               <InputLabel>Department</InputLabel>
               <Select value={selectedDepartment} onChange={e => { setSelectedDepartment(e.target.value as string); setPage(1); }} label='Department'>
@@ -286,7 +293,7 @@ const BenefitReport: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item>
+          <Grid item xs={12} sm={6} md={4}>
             <FormControl size='small' sx={{ minWidth: 220 }}>
               <InputLabel>Designation</InputLabel>
               <Select value={selectedDesignation} onChange={e => { setSelectedDesignation(e.target.value as string); setPage(1); }} label='Designation' disabled={!designations.length}>
