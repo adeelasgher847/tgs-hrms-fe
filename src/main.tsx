@@ -1,12 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { LanguageProvider } from './context/LanguageContext';
+import ErrorBoundary from './components/Common/ErrorBoundary';
+import { initializeGlobalErrorHandling } from './utils/globalErrorHandler';
+
+initializeGlobalErrorHandling();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  // <React.StrictMode>
-    <LanguageProvider>
+  <React.StrictMode>
+    <ErrorBoundary>
       <App />
-    </LanguageProvider>
-  // </React.StrictMode>
+    </ErrorBoundary>
+  </React.StrictMode>
 );

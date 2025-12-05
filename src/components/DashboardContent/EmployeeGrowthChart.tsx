@@ -70,8 +70,8 @@ const EmployeeGrowthChart: React.FC = () => {
             setSelectedTenant(data[0].id);
           }
         }
-      } catch (error) {
-        console.error('Error fetching tenants:', error);
+      } catch {
+        // Ignore tenant dropdown errors; chart will just have no data
       } finally {
         setLoadingTenants(false);
       }
@@ -89,8 +89,7 @@ const EmployeeGrowthChart: React.FC = () => {
           selectedTenant
         );
         setTenantGrowthData(data);
-      } catch (error) {
-        console.error('Error fetching tenant growth:', error);
+      } catch {
         setTenantGrowthData([]);
       }
     };
@@ -111,14 +110,7 @@ const EmployeeGrowthChart: React.FC = () => {
     new Set(tenantGrowthData.map(d => d.month))
   ).sort();
 
-  const monthLabels = {
-    en: 'Month',
-    ar: 'الشهر',
-  };
-
-  const series = [
-    { name: 'Employees', data: employeesData },
-  ];
+  const series = [{ name: 'Employees', data: employeesData }];
 
   const options: ApexCharts.ApexOptions = {
     chart: {
@@ -252,7 +244,13 @@ const EmployeeGrowthChart: React.FC = () => {
             </Select>
           </FormControl>
 
-          <FormControl size='small' sx={{ minWidth: { xs: '100%', sm: 120 }, width: { xs: '100%', sm: 'auto' } }}>
+          <FormControl
+            size='small'
+            sx={{
+              minWidth: { xs: '100%', sm: 120 },
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          >
             <Select
               value={selectedMonth}
               onChange={e => setSelectedMonth(e.target.value)}
@@ -325,4 +323,3 @@ const EmployeeGrowthChart: React.FC = () => {
 };
 
 export default EmployeeGrowthChart;
-

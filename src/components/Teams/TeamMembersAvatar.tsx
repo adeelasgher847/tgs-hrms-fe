@@ -15,12 +15,9 @@ import {
   ListItemText,
   IconButton,
 } from '@mui/material';
-import UserAvatar from '../common/UserAvatar';
+import UserAvatar from '../Common/UserAvatar';
 import { Avatar } from '@mui/material';
-import {
-  Group as GroupIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
+import { Group as GroupIcon, Close as CloseIcon } from '@mui/icons-material';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
 
@@ -44,7 +41,9 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
   darkMode = false,
 }) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [adminTeamMembers, setAdminTeamMembers] = useState<AdminTeamMember[]>([]);
+  const [adminTeamMembers, setAdminTeamMembers] = useState<AdminTeamMember[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [showAllMembersDialog, setShowAllMembersDialog] = useState(false);
 
@@ -118,10 +117,10 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
     const loadTeamMembers = async () => {
       try {
         setLoading(true);
-        
+
         if (isManager()) {
           // Load manager's team members
-        const response = await teamApiService.getMyTeamMembers(1);
+          const response = await teamApiService.getMyTeamMembers(1);
           setTeamMembers(response.items || []);
           setAdminTeamMembers([]);
         } else if (isAdmin()) {
@@ -676,7 +675,9 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           spacing={-1}
           sx={{ display: { xs: 'none', md: 'flex' } }}
         >
-          {displayMembers.map(member => renderAdminAvatar(member)).filter(Boolean)}
+          {displayMembers
+            .map(member => renderAdminAvatar(member))
+            .filter(Boolean)}
 
           {remainingCount > 0 && (
             <Tooltip

@@ -1,8 +1,27 @@
-// Mock Data for Designation Management System
-import type { Department, Designation } from '../Data/mockData'; // Departments Mock Data
-// Export Asset Management Types
+// Consolidated Type Exports - Single Source of Truth
 export * from './asset';
-export const mockDepartments: Department[] = [
+export * from './availability';
+export * from './benefits';
+export * from './chart';
+export * from './context';
+export * from './interview';
+export * from './stat';
+export * from './user';
+
+// Employee types (exported explicitly to avoid conflicts with mock data)
+export type { Department, Designation, FormData, FormErrors } from './employee';
+
+// Additional consolidated types
+export * from './leave';
+export * from './holiday';
+export * from './policy';
+
+// Mock Data for Designation Management System
+import type {
+  Department as MockDepartment,
+  Designation as MockDesignation,
+} from '../Data/mockData';
+export const mockDepartments: MockDepartment[] = [
   {
     id: 1,
     name: 'Human Resources',
@@ -90,7 +109,7 @@ export const mockDepartments: Department[] = [
 ];
 
 // Designations Mock Data
-export const mockDesignations: Designation[] = [
+export const mockDesignations: MockDesignation[] = [
   // Human Resources Department (ID: 1)
   {
     id: 1,
@@ -845,18 +864,18 @@ export type DataStatistics = {
   totalDepartments: number;
   totalDesignations: number;
   averageDesignationsPerDepartment: number;
-  departmentWithMostDesignations: Department;
-  departmentWithLeastDesignations: Department;
+  departmentWithMostDesignations: MockDepartment;
+  departmentWithLeastDesignations: MockDepartment;
 };
 
 // Helper functions for data manipulation
-export const getDepartmentById = (id: number): Department | undefined => {
+export const getDepartmentById = (id: number): MockDepartment | undefined => {
   return mockDepartments.find(dept => dept.id === id);
 };
 
 export const getDesignationsByDepartmentId = (
   departmentId: number
-): Designation[] => {
+): MockDesignation[] => {
   return mockDesignations.filter(
     designation => designation.departmentId === departmentId
   );

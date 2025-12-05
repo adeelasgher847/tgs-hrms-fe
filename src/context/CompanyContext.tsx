@@ -33,8 +33,8 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
         const logoUrl = await companyApi.getCompanyLogo(tenantId);
         setCompanyLogo(logoUrl);
       }
-    } catch (err: unknown) {
-      console.error('Error fetching company details:', err);
+    } catch {
+      // Leave company context empty on failure; UI can handle missing branding
     }
   }, []);
   useEffect(() => {

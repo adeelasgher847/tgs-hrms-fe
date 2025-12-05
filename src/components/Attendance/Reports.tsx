@@ -1,17 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
-  Tabs,
-  Tab,
   CircularProgress,
   Tooltip,
   IconButton,
@@ -25,6 +19,8 @@ import {
   type LeaveSummaryItem,
 } from '../../api/leaveReportApi';
 import { useIsDarkMode } from '../../theme';
+import AppCard from '../Common/AppCard';
+import AppTable from '../Common/AppTable';
 
 const getCardStyle = (darkMode: boolean) => ({
   flex: '1 1 calc(33.33% - 16px)',
@@ -50,29 +46,12 @@ interface LeaveBalance {
   carryForward: boolean;
 }
 
-function TabPanel({
-  children,
-  value,
-  index,
-}: {
-  children?: React.ReactNode;
-  value: number;
-  index: number;
-}) {
-  return (
-    <div hidden={value !== index}>
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
 const Reports: React.FC = () => {
   const darkMode = useIsDarkMode();
   const [tab, setTab] = useState(0);
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-  const [teamSummary, setTeamSummary] = useState<TeamMemberSummary[]>([]);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
   const [allLeaveReports, setAllLeaveReports] = useState<EmployeeReport[]>([]);
   const [page, setPage] = useState(1);
@@ -94,8 +73,7 @@ const Reports: React.FC = () => {
     try {
       const info = leaveReportApi.getUserInfo();
       setUserInfo(info);
-    } catch (err) {
-      console.error('Error loading user info:', err);
+    } catch {
       setError('Failed to load user information');
       setUserInfo({
         userId: null,
@@ -116,9 +94,6 @@ const Reports: React.FC = () => {
   };
 
   const isAdminView = isHrAdmin || isAdmin || isSystemAdmin;
-
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) =>
-    setTab(newValue);
 
   const handleMonthChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -219,13 +194,12 @@ const Reports: React.FC = () => {
             days = calculateDays(record.startDate, record.endDate);
           }
 
-          const current =
-            statsMap.get(key) || {
-              approvedDays: 0,
-              pendingDays: 0,
-              rejectedDays: 0,
-              totalDays: 0,
-            };
+          const current = statsMap.get(key) || {
+            approvedDays: 0,
+            pendingDays: 0,
+            rejectedDays: 0,
+            totalDays: 0,
+          };
 
           if (record.status === 'approved') {
             current.approvedDays += days;
@@ -346,8 +320,8 @@ const Reports: React.FC = () => {
         link.download = `Leave_Report_${now.toISOString().slice(0, 10)}.csv`;
         link.click();
       }
-    } catch (err) {
-      console.error('Export failed:', err);
+    } catch {
+      // Silently fail export; user can retry
     }
   };
 
@@ -359,9 +333,6 @@ const Reports: React.FC = () => {
       let allEmployeeReports: EmployeeReport[] = [];
       let paginationLimit = 25;
       let totalPagesFromBackend = 1;
-      let organizationStats: any = null;
-      let leaveTypes: any[] = [];
-
       const firstPageData = await leaveReportApi.getAllLeaveReports(
         1,
         selectedMonth,
@@ -395,10 +366,6 @@ const Reports: React.FC = () => {
         totalPagesFromBackend = firstPageData.totalPages || 1;
       }
 
-      // Store organization stats and leave types from first page
-      organizationStats = firstPageData.organizationStats;
-      leaveTypes = firstPageData.leaveTypes || [];
-
       // Fetch all remaining pages if there are more pages
       if (totalPagesFromBackend > 1) {
         for (let page = 2; page <= totalPagesFromBackend; page++) {
@@ -429,8 +396,7 @@ const Reports: React.FC = () => {
                 ...pageEmployeeReports,
               ];
             }
-          } catch (err) {
-            console.error(`Error fetching page ${page}:`, err);
+          } catch {
             // Continue with next page even if one fails
           }
         }
@@ -466,17 +432,8 @@ const Reports: React.FC = () => {
       // Reset page to 1 when new data is loaded from backend (for client-side pagination)
       setPage(1);
 
-      console.log('Pagination info:', {
-        totalPages: finalTotalPages,
-        total: totalLeaveTypeRows,
-        totalEmployees: allEmployeeReports.length,
-        totalLeaveTypeRows: totalLeaveTypeRows,
-        paginationLimit: paginationLimit,
-      });
-
       setError(null);
     } catch (err: unknown) {
-      console.error('Error fetching reports:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch reports');
     } finally {
       setLoadingTab(false);
@@ -582,12 +539,7 @@ const Reports: React.FC = () => {
           Leave Reports
         </Typography>
         {(isAdminView || isManager) && (
-          <Box
-            display='flex'
-            alignItems='center'
-            gap={1}
-            flexWrap='wrap'
-          >
+          <Box display='flex' alignItems='center' gap={1} flexWrap='wrap'>
             <TextField
               label='Month'
               type='month'
@@ -618,14 +570,13 @@ const Reports: React.FC = () => {
       {isAdminView && (
         <Box>
           {error && <Typography color='error'>{error}</Typography>}
-          <TableContainer
-            component={Card}
+          <AppCard
+            noShadow
             sx={{
-              boxShadow: 'none',
               backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
             }}
           >
-            <Table>
+            <AppTable>
               <TableHead
                 sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5' }}
               >
@@ -801,7 +752,9 @@ const Reports: React.FC = () => {
                             align='center'
                             sx={{ color: darkMode ? '#ccc' : '#000' }}
                           >
-                            {row.summary.remaining ?? row.summary.remainingDays ?? 0}
+                            {row.summary.remaining ??
+                              row.summary.remainingDays ??
+                              0}
                           </TableCell>
                           <TableCell
                             align='center'
@@ -851,8 +804,8 @@ const Reports: React.FC = () => {
                   })()
                 )}
               </TableBody>
-            </Table>
-          </TableContainer>
+            </AppTable>
+          </AppCard>
 
           {(() => {
             // Calculate all leave type rows for pagination logic
@@ -893,8 +846,7 @@ const Reports: React.FC = () => {
                     } as LeaveTypeRow,
                   ];
                 }
-              }
-            );
+              });
 
             // Use backend limit (stored in state) or default to 25
             const ITEMS_PER_PAGE = paginationLimit || 25;
@@ -977,40 +929,37 @@ const Reports: React.FC = () => {
             <>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
                 {leaveBalance.map((item, idx) => (
-                  <Card key={idx} sx={getCardStyle(darkMode)}>
-                    <CardContent>
-                      <Typography
-                        sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
-                        gutterBottom
-                      >
-                        {item.leaveTypeName}
-                      </Typography>
-                      <Typography
-                        variant='h4'
-                        fontWeight={600}
-                        color='primary.main'
-                      >
-                        {item.remaining}
-                      </Typography>
-                      <Typography
-                        sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
-                        variant='body2'
-                      >
-                        Used: {item.used} / {item.maxDaysPerYear}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+                  <AppCard key={idx} compact sx={getCardStyle(darkMode)}>
+                    <Typography
+                      sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+                      gutterBottom
+                    >
+                      {item.leaveTypeName}
+                    </Typography>
+                    <Typography
+                      variant='h4'
+                      fontWeight={600}
+                      color='primary.main'
+                    >
+                      {item.remaining}
+                    </Typography>
+                    <Typography
+                      sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+                      variant='body2'
+                    >
+                      Used: {item.used} / {item.maxDaysPerYear}
+                    </Typography>
+                  </AppCard>
                 ))}
               </Box>
 
-              <TableContainer
-                component={Card}
+              <AppCard
+                noShadow
                 sx={{
-                  boxShadow: 'none',
                   backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
                 }}
               >
-                <Table>
+                <AppTable>
                   <TableHead>
                     <TableRow
                       sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#ffffff' }}
@@ -1059,8 +1008,8 @@ const Reports: React.FC = () => {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
-              </TableContainer>
+                </AppTable>
+              </AppCard>
             </>
           )}
         </>

@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Alert,
-} from '@mui/material';
+import { Box, Typography, Paper, Alert } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
-import { isAdmin, isSystemAdmin, isNetworkAdmin, isHRAdmin } from '../../utils/roleUtils';
+import AppButton from '../Common/AppButton';
+import {
+  isAdmin,
+  isSystemAdmin,
+  isNetworkAdmin,
+  isHRAdmin,
+} from '../../utils/roleUtils';
 
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
 
@@ -151,7 +151,10 @@ const AttendanceCheck = () => {
             color='text.secondary'
             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
           >
-            {(isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser)
+            {isAdminUser ||
+            isSystemAdminUser ||
+            isNetworkAdminUser ||
+            isHRAdminUser
               ? 'Admin - Track your daily attendance'
               : 'Track your daily attendance'}
           </Typography>
@@ -159,10 +162,19 @@ const AttendanceCheck = () => {
 
         {/* Single Check In / Check Out Button */}
         {status === 'Not Checked In' || status === 'Checked Out' ? (
-          <Button
+          <AppButton
             variant='contained'
             color='success'
+            text='Check In'
             onClick={handleCheckIn}
+            disabled={loading}
+            startIcon={
+              <LoginIcon
+                sx={{ fontSize: { xs: 18, sm: 20 } }}
+                aria-hidden='true'
+              />
+            }
+            aria-label={loading ? 'Checking in...' : 'Check in for attendance'}
             sx={{
               minWidth: { xs: 100, sm: 120, md: 140 },
               height: { xs: 36, sm: 40 },
@@ -171,16 +183,23 @@ const AttendanceCheck = () => {
               borderRadius: 1,
               px: { xs: 1, sm: 2 },
             }}
-            disabled={loading}
-            startIcon={<LoginIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />}
-          >
-            Check In
-          </Button>
+          />
         ) : (
-          <Button
+          <AppButton
             variant='contained'
             color='warning'
+            text='Check Out'
             onClick={handleCheckOut}
+            disabled={loading}
+            startIcon={
+              <LogoutIcon
+                sx={{ fontSize: { xs: 18, sm: 20 } }}
+                aria-hidden='true'
+              />
+            }
+            aria-label={
+              loading ? 'Checking out...' : 'Check out from attendance'
+            }
             sx={{
               minWidth: { xs: 100, sm: 120, md: 140 },
               height: { xs: 36, sm: 40 },
@@ -189,11 +208,7 @@ const AttendanceCheck = () => {
               borderRadius: 1,
               px: { xs: 1, sm: 2 },
             }}
-            disabled={loading}
-            startIcon={<LogoutIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />}
-          >
-            Check Out
-          </Button>
+          />
         )}
       </Box>
 

@@ -72,11 +72,9 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             setUser(parsedUser);
             setLoading(false); // Set loading to false immediately after loading from localStorage
             userLoadedFromStorage = true;
-          } catch (parseError) {
-            console.warn(
-              'Failed to parse user data from localStorage:',
-              parseError
-            );
+          } catch {
+            clearAuthData();
+            setUser(null);
           }
         }
 
@@ -95,26 +93,18 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             errorResponse?.response?.status === 401 ||
             errorResponse?.response?.status === 403
           ) {
-            console.warn(
-              'User profile fetch failed - user may have been deleted'
-            );
             clearAuthData();
             setUser(null);
             setLoading(false);
           } else {
             // For other errors (network, server issues), keep the localStorage data
-            console.warn(
-              'Failed to refresh user profile, keeping localStorage data:',
-              errorResponse?.message
-            );
             // Don't set loading to false here if we already loaded from localStorage
             if (!userLoadedFromStorage) {
               setLoading(false);
             }
           }
         }
-      } catch (error) {
-        console.error('Error loading user data:', error);
+      } catch {
         clearAuthData();
         setUser(null);
         setLoading(false);

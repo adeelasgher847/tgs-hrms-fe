@@ -1,5 +1,5 @@
 // data/mockHolidays.ts
-import type { Holiday } from '../type/Holiday';
+import type { Holiday } from '../types/holiday';
 
 export const mockHolidays: Holiday[] = [
   {

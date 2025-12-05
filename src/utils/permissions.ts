@@ -8,17 +8,6 @@ export type NormalizedRole =
   | 'user'
   | 'unknown';
 
-const ALL_ROLES: NormalizedRole[] = [
-  'system-admin',
-  'network-admin',
-  'hr-admin',
-  'admin',
-  'manager',
-  'employee',
-  'user',
-  'unknown',
-];
-
 export const normalizeRole = (role?: string): NormalizedRole => {
   if (!role) return 'unknown';
   const r = role.trim().toLowerCase();

@@ -30,7 +30,7 @@ import systemEmployeeApiService, {
   type Benefit,
 } from '../../api/systemEmployeeApi';
 import { leaveApi, type LeaveType } from '../../api/leaveApi';
-import UserAvatar from '../common/UserAvatar';
+import UserAvatar from '../../components/Common/UserAvatar';
 import KpiDetailCard from '../KPI/KPICardDetail';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
@@ -57,7 +57,6 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
   const [openBenefitDialog, setOpenBenefitDialog] = useState(false);
   const [selectedBenefit, setSelectedBenefit] = useState<Benefit | null>(null);
   const [leaveTypes, setLeaveTypes] = useState<Record<string, string>>({});
-  const [loadingLeaveTypes, setLoadingLeaveTypes] = useState(false);
 
   // Fetch leave types when modal opens
   useEffect(() => {
@@ -69,7 +68,6 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
 
     const fetchLeaveTypes = async () => {
       try {
-        setLoadingLeaveTypes(true);
         const response = await leaveApi.getLeaveTypes({ page: 1, limit: 100 });
         // Create a map of leaveTypeId to leaveType name
         const leaveTypesMap: Record<string, string> = {};
@@ -81,12 +79,8 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
           });
         }
         setLeaveTypes(leaveTypesMap);
-        console.log('Leave types loaded:', leaveTypesMap);
-      } catch (error) {
-        console.error('Failed to fetch leave types:', error);
+      } catch {
         // Don't set error state, just log it - leave types are not critical
-      } finally {
-        setLoadingLeaveTypes(false);
       }
     };
 

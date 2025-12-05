@@ -74,15 +74,10 @@ class SystemPerformanceApiService {
   private basePromotionsUrl = '/system/performance/promotions';
 
   async getSystemKpis(): Promise<SystemPerformanceKpi[]> {
-    try {
-      const response = await axiosInstance.get<SystemPerformanceKpi[]>(
-        `${this.baseUrl}/kpis`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Failed to fetch system performance KPIs:', error);
-      return [];
-    }
+    const response = await axiosInstance.get<SystemPerformanceKpi[]>(
+      `${this.baseUrl}/kpis`
+    );
+    return response.data;
   }
 
   async getPerformanceRecords(
@@ -103,52 +98,45 @@ class SystemPerformanceApiService {
     page?: number;
     totalPages?: number;
   }> {
-    try {
-      const requestParams: Record<string, string | number> = {};
-      if (params.tenantId) requestParams.tenantId = params.tenantId;
-      if (params.cycle) requestParams.cycle = params.cycle;
-      if (params.status) requestParams.status = params.status;
-      if (params.minScore !== undefined)
-        requestParams.minScore = params.minScore;
-      if (params.maxScore !== undefined)
-        requestParams.maxScore = params.maxScore;
-      if (params.startDate) requestParams.startDate = params.startDate;
-      if (params.endDate) requestParams.endDate = params.endDate;
-      if (params.page !== undefined && params.page !== null) {
-        requestParams.page = params.page;
-        requestParams.limit = params.limit ?? 25;
-      }
-
-      const response = await axiosInstance.get<
-        | PerformanceRecord[]
-        | {
-            items: PerformanceRecord[];
-            total?: number;
-            page?: number;
-            totalPages?: number;
-          }
-      >(`${this.baseUrl}/records`, { params: requestParams });
-
-      if (Array.isArray(response.data)) {
-        return {
-          items: response.data,
-          total: response.data.length,
-          page: 1,
-          totalPages: 1,
-        };
-      } else if (response.data && typeof response.data === 'object') {
-        return {
-          items: response.data.items || [],
-          total: response.data.total,
-          page: response.data.page || 1,
-          totalPages: response.data.totalPages || 1,
-        };
-      }
-      return { items: [], total: 0, page: 1, totalPages: 1 };
-    } catch (error) {
-      console.error('Failed to fetch performance records:', error);
-      return { items: [], total: 0, page: 1, totalPages: 1 };
+    const requestParams: Record<string, string | number> = {};
+    if (params.tenantId) requestParams.tenantId = params.tenantId;
+    if (params.cycle) requestParams.cycle = params.cycle;
+    if (params.status) requestParams.status = params.status;
+    if (params.minScore !== undefined) requestParams.minScore = params.minScore;
+    if (params.maxScore !== undefined) requestParams.maxScore = params.maxScore;
+    if (params.startDate) requestParams.startDate = params.startDate;
+    if (params.endDate) requestParams.endDate = params.endDate;
+    if (params.page !== undefined && params.page !== null) {
+      requestParams.page = params.page;
+      requestParams.limit = params.limit ?? 25;
     }
+
+    const response = await axiosInstance.get<
+      | PerformanceRecord[]
+      | {
+          items: PerformanceRecord[];
+          total?: number;
+          page?: number;
+          totalPages?: number;
+        }
+    >(`${this.baseUrl}/records`, { params: requestParams });
+
+    if (Array.isArray(response.data)) {
+      return {
+        items: response.data,
+        total: response.data.length,
+        page: 1,
+        totalPages: 1,
+      };
+    } else if (response.data && typeof response.data === 'object') {
+      return {
+        items: response.data.items || [],
+        total: response.data.total,
+        page: response.data.page || 1,
+        totalPages: response.data.totalPages || 1,
+      };
+    }
+    return { items: [], total: 0, page: 1, totalPages: 1 };
   }
 
   async getPromotions(
@@ -251,8 +239,7 @@ class SystemPerformanceApiService {
       }
 
       return { promotions: [], stats: [] };
-    } catch (error) {
-      console.error('Failed to fetch promotions:', error);
+    } catch {
       return { promotions: [], stats: [] };
     }
   }
