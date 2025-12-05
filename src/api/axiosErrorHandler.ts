@@ -8,12 +8,11 @@ export interface ErrorHandlerResult {
 }
 
 class AxiosErrorHandler {
-
   shouldTriggerLogout(error: unknown): boolean {
     return shouldLogout(error);
   }
 
-  handleLogout(error: unknown): void {
+  handleLogout(): void {
     forceLogout();
   }
 
@@ -61,7 +60,7 @@ class AxiosErrorHandler {
     originalRequest?: AxiosRequestConfig & { _retry?: boolean }
   ): ErrorHandlerResult {
     if (this.shouldTriggerLogout(error)) {
-      this.handleLogout(error);
+      this.handleLogout();
       return {
         shouldRetry: false,
         shouldLogout: true,

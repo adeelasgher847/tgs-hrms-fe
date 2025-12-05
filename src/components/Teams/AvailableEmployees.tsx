@@ -18,7 +18,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   FormControl,
   InputLabel,
   Select,
@@ -28,6 +27,8 @@ import UserAvatar from '../Common/UserAvatar';
 import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
+import AppButton from '../Common/AppButton';
+import { COLORS } from '../../constants/appConstants';
 import type { TeamMember, Team } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
 
@@ -510,15 +511,18 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseTeamDialog}>Cancel</Button>
-          <Button
-            onClick={handleConfirmAddToTeam}
+          <AppButton
+            variant='outlined'
+            text='Cancel'
+            onClick={handleCloseTeamDialog}
+          />
+          <AppButton
             variant='contained'
+            text='Add to Team'
+            onClick={handleConfirmAddToTeam}
             disabled={!selectedTeamId}
-            sx={{ backgroundColor: '#484c7f' }}
-          >
-            Add to Team
-          </Button>
+            sx={{ backgroundColor: COLORS.PRIMARY }}
+          />
         </DialogActions>
       </Dialog>
 
@@ -621,15 +625,18 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseConfirmDialog}>Cancel</Button>
-          <Button
-            onClick={handleConfirmAddToTeamFinal}
+          <AppButton
+            variant='outlined'
+            text='Cancel'
+            onClick={handleCloseConfirmDialog}
+          />
+          <AppButton
             variant='contained'
+            text='Add to Team'
+            onClick={handleConfirmAddToTeamFinal}
             disabled={!selectedTeamId}
-            sx={{ backgroundColor: '#484c7f' }}
-          >
-            Add to Team
-          </Button>
+            sx={{ backgroundColor: COLORS.PRIMARY }}
+          />
         </DialogActions>
       </Dialog>
     </Box>

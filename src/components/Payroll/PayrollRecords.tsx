@@ -40,13 +40,11 @@ import { snackbar } from '../../utils/snackbar';
 import { useIsDarkMode } from '../../theme';
 import dayjsPluginLocalizedFormat from 'dayjs/plugin/localizedFormat';
 import { isSystemAdmin, isHRAdmin, isAdmin } from '../../utils/roleUtils';
-import type { SelectChangeEvent } from '@mui/material/Select';
-import AppButton from '../Common/AppButton';
-import AppTextField from '../Common/AppTextField';
-import AppSelect from '../Common/AppSelect';
 import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../Common/AppTable';
 import AppCard from '../Common/AppCard';
+import AppSelect from '../Common/AppSelect';
+import AppButton from '../Common/AppButton';
 
 dayjs.extend(dayjsPluginLocalizedFormat);
 
@@ -263,7 +261,10 @@ const PayrollRecords: React.FC = () => {
           }>[] = [];
           for (let page = 2; page <= response.totalPages; page++) {
             promises.push(
-              payrollApi.getAllEmployeeSalaries({ page, limit: 25 })
+              payrollApi.getAllEmployeeSalaries({
+                page,
+                limit: PAGINATION.DEFAULT_PAGE_SIZE,
+              })
             );
           }
           const additionalResponses = await Promise.all(promises);
@@ -274,10 +275,10 @@ const PayrollRecords: React.FC = () => {
             allData = [...allData, ...additionalData];
           });
         }
-      } catch (error) {
+      } catch {
         const response = await payrollApi.getAllEmployeeSalaries({
           page: 1,
-          limit: 25,
+          limit: PAGINATION.DEFAULT_PAGE_SIZE,
         });
         const data = Array.isArray(response) ? response : response.items || [];
         allData = data;
@@ -299,7 +300,7 @@ const PayrollRecords: React.FC = () => {
           salary: item.salary,
         }));
       setEmployees(mapped);
-    } catch (error) {
+    } catch {
       setEmployees([]);
     }
   }, []);
@@ -330,7 +331,7 @@ const PayrollRecords: React.FC = () => {
         );
       }
       setTotalRecords(response.total || response.items?.length || 0);
-    } catch (error) {
+    } catch {
       snackbar.error('Failed to load payroll records');
       setRecords([]);
       setTotalPages(1);
@@ -386,7 +387,7 @@ const PayrollRecords: React.FC = () => {
         );
         setHistoryRecords(sorted);
       })
-      .catch(error => {
+      .catch(() => {
         setHistoryRecords([]);
         setHistoryError('Failed to load payroll history.');
       })
@@ -432,7 +433,7 @@ const PayrollRecords: React.FC = () => {
       );
       snackbar.success('Payroll status updated successfully');
       closeStatusDialog();
-    } catch (error) {
+    } catch {
       snackbar.error('Failed to update payroll status');
     } finally {
       setUpdatingStatus(false);
@@ -577,7 +578,7 @@ const PayrollRecords: React.FC = () => {
       );
       setGenerateDialogOpen(false);
       setGenerateEmployeeId('');
-    } catch (error) {
+    } catch {
       snackbar.error('Failed to generate payroll. Please try again.');
     } finally {
       setGenerating(false);
@@ -727,8 +728,8 @@ const PayrollRecords: React.FC = () => {
               <AppCard
                 key={card.label}
                 compact
-                noShadow
                 sx={{
+                  boxShadow: 'none',
                   textAlign: 'center',
                   backgroundColor: effectiveDarkMode ? '#121212' : '#f8f9fa',
                   border: effectiveDarkMode

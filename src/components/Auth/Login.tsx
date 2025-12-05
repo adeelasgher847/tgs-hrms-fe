@@ -22,20 +22,35 @@ import {
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import GoogleIcon from '../../assets/icons/google.svg';
-import Snackbar from '@mui/material/Snackbar';
-import MuiAlert, { type AlertProps } from '@mui/material/Alert';
 import { useUser } from '../../hooks/useUser';
 import { getDefaultDashboardRoute } from '../../utils/permissions';
 import { useGoogleScript } from '../../hooks/useGoogleScript';
 import authApi from '../../api/authApi';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 import signupApi from '../../api/signupApi';
 import { persistAuthSession } from '../../utils/authSession';
+import type { UserProfile } from '../../api/profileApi';
 
-const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
-  function Alert(props, ref) {
-    return <MuiAlert elevation={6} ref={ref} variant='filled' {...props} />;
+// Extend Window interface for Google Sign-In
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: {
+            client_id: string;
+            callback: (response: { credential: string }) => void;
+          }) => void;
+          renderButton: (
+            element: HTMLElement | null,
+            config: { theme?: string; size?: string }
+          ) => void;
+        };
+      };
+    };
   }
-);
+}
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -58,11 +73,7 @@ const Login: React.FC = () => {
 
   const [emailError, setEmailError] = useState<string>('');
   const [passwordError, setPasswordError] = useState<string>('');
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error';
-  }>({ open: false, message: '', severity: 'success' });
+  const { snackbar, showError, closeSnackbar } = useErrorHandler();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -126,16 +137,16 @@ const Login: React.FC = () => {
 
   const initGoogleButton = () => {
     if (!isLoaded) {
-      setSnackbar({
-        open: true,
-        message: 'Google script not loaded yet',
-        severity: 'error',
-      });
+      showError('Google script not loaded yet');
       return;
     }
     try {
       if (!googleInitializedRef.current) {
-        (window as Record<string, unknown>).google.accounts.id.initialize({
+        if (!window.google) {
+          showError('Google Sign-In not available');
+          return;
+        }
+        window.google.accounts.id.initialize({
           client_id:
             (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) ||
             '723870948758-ks4h9v6svagoptgt5vqj5hfbhacvcfn7.apps.googleusercontent.com',
@@ -152,18 +163,22 @@ const Login: React.FC = () => {
                   signupSessionId: data.signupSessionId,
                 });
                 try {
-                  updateUser(data.user);
+                  if (data.user) {
+                    updateUser(data.user as unknown as UserProfile);
+                  }
                 } catch {
                   // Ignore update error
                 }
                 const role =
                   typeof data.user?.role === 'string'
                     ? data.user?.role
-                    : data.user?.role?.name;
+                    : (data.user?.role as { name?: string } | undefined)?.name;
                 const target = getDefaultDashboardRoute(role);
                 navigate(target, { replace: true });
               } else {
-                localStorage.setItem('signupSessionId', data.signupSessionId);
+                if (data.signupSessionId) {
+                  localStorage.setItem('signupSessionId', data.signupSessionId);
+                }
                 localStorage.setItem(
                   'googleSignupPrefill',
                   JSON.stringify({
@@ -176,11 +191,7 @@ const Login: React.FC = () => {
                 navigate('/signup/company-details', { replace: true });
               }
             } catch {
-              setSnackbar({
-                open: true,
-                message: 'Google Sign-In failed, please try again',
-                severity: 'error',
-              });
+              showError('Google Sign-In failed, please try again');
             }
           },
         });
@@ -191,13 +202,14 @@ const Login: React.FC = () => {
         if (googleBtnRef.current) {
           googleBtnRef.current.innerHTML = '';
         }
-        (window as Record<string, unknown>).google.accounts.id.renderButton(
-          googleBtnRef.current,
-          {
-            theme: 'outline',
-            size: 'large',
-          }
-        );
+        if (!window.google) {
+          showError('Google Sign-In not available');
+          return;
+        }
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'outline',
+          size: 'large',
+        });
         googleButtonRenderedRef.current = true;
       }
 
@@ -208,15 +220,11 @@ const Login: React.FC = () => {
         nativeBtn.click();
       }
     } catch {
-      setSnackbar({
-        open: true,
-        message: 'Failed to initialize Google Sign-In',
-        severity: 'error',
-      });
+      showError('Failed to initialize Google Sign-In');
     }
   };
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (isLoading) return;
@@ -258,7 +266,9 @@ const Login: React.FC = () => {
       const authPayload = await authApi.login({ email, password });
       persistAuthSession(authPayload);
 
-      updateUser(authPayload.user);
+      if (authPayload.user) {
+        updateUser(authPayload.user as unknown as UserProfile);
+      }
 
       if (rememberMe) {
         localStorage.setItem(
@@ -272,20 +282,26 @@ const Login: React.FC = () => {
       const role =
         typeof authPayload.user?.role === 'string'
           ? authPayload.user.role
-          : authPayload.user?.role?.name;
+          : (authPayload.user?.role as { name?: string } | undefined)?.name;
 
       if (authPayload.requiresPayment) {
         navigate('/signup/select-plan', { replace: true });
       } else {
         navigate(getDefaultDashboardRoute(role), { replace: true });
       }
-    } catch (err) {
-      console.error('Login API error:', err);
-
-      const data = err?.response?.data ?? null;
-
-      if (data?.field === 'email') setEmailError(data.message);
-      else if (data?.field === 'password') setPasswordError(data.message);
+    } catch (err: unknown) {
+      const error = err as {
+        response?: {
+          data?: {
+            field?: string;
+            message?: string;
+          };
+        };
+      };
+      const data = error?.response?.data ?? null;
+      if (data?.field === 'email') setEmailError(data.message || '');
+      else if (data?.field === 'password')
+        setPasswordError(data.message || '');
     } finally {
       setIsLoading(false);
     }
@@ -820,20 +836,12 @@ const Login: React.FC = () => {
           </Box>
         </Box>
       </Box>
-      <Snackbar
+      <ErrorSnackbar
         open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%', fontSize: '1rem' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </div>
   );
 };

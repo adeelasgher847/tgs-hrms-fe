@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Button,
   Box,
   FormControl,
   InputLabel,
@@ -17,6 +16,8 @@ import {
 import { useLanguage } from '../../hooks/useLanguage';
 import type { UpdateTeamDto, Manager, Team } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
+import AppButton from '../Common/AppButton';
+import { COLORS } from '../../constants/appConstants';
 
 interface EditTeamFormProps {
   open: boolean;
@@ -109,7 +110,7 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
           }
 
           setManagers(managersData);
-        } catch (error) {
+        } catch {
           if (team && team.manager) {
             const currentManager: Manager = {
               id: team.manager_id,
@@ -368,22 +369,24 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>
-            {lang.cancel}
-          </Button>
-          <Button
+          <AppButton
+            variant='outlined'
+            text={lang.cancel}
+            onClick={handleClose}
+            disabled={loading}
+          />
+          <AppButton
             type='submit'
             variant='contained'
+            text={loading ? lang.loading : lang.update}
             disabled={
               loading || !hasChanges || !formData.name?.trim()
               // Note: manager_id is optional in UpdateTeamDto, so we don't require it
               // Button enables when name or description changes, even if manager is not selected
             }
-            sx={{ backgroundColor: theme => theme.palette.primary.main }}
+            sx={{ backgroundColor: COLORS.PRIMARY }}
             startIcon={loading ? <CircularProgress size={16} /> : null}
-          >
-            {loading ? lang.loading : lang.update}
-          </Button>
+          />
         </DialogActions>
       </form>
     </Dialog>

@@ -15,9 +15,12 @@ import { useUser } from '../../hooks/useUser';
 import { getStoredUser, persistAuthSession } from '../../utils/authSession';
 
 const isLoginResponsePayload = (
-  payload: Record<string, unknown> | null
+  payload: unknown
 ): payload is LoginResponse =>
-  !!payload && typeof payload.accessToken === 'string';
+  typeof payload === 'object' &&
+  payload !== null &&
+  'accessToken' in payload &&
+  typeof (payload as Record<string, unknown>).accessToken === 'string';
 
 const coerceLoginResponse = (
   payload: Record<string, unknown> | null
@@ -70,27 +73,22 @@ const ConfirmPayment: React.FC = () => {
   const loginWithPendingCredentials = useCallback(async () => {
     const credsStr = sessionStorage.getItem('pendingSignupCredentials');
     if (!credsStr) return null;
-    try {
-      const creds = JSON.parse(credsStr) as {
-        email?: string;
-        password?: string;
-      };
-      if (!creds.email || !creds.password) return null;
-      return await authApi.login({
-        email: creds.email,
-        password: creds.password,
-      });
-    } catch (err) {
-      console.warn('Auto login after payment failed', err);
-      return null;
-    }
+    const creds = JSON.parse(credsStr) as {
+      email?: string;
+      password?: string;
+    };
+    if (!creds.email || !creds.password) return null;
+    return await authApi.login({
+      email: creds.email,
+      password: creds.password,
+    });
   }, []);
 
   const hydrateUserContext = useCallback(
     async (userPayload?: Record<string, unknown>) => {
       if (userPayload && Object.keys(userPayload).length) {
         try {
-          updateUser(userPayload as Parameters<typeof updateUser>[0]);
+          updateUser(userPayload as unknown as Parameters<typeof updateUser>[0]);
         } catch {
           // ignore, refreshUser will keep context consistent
         }
@@ -107,7 +105,7 @@ const ConfirmPayment: React.FC = () => {
             // ignore
           }
         } else {
-          console.warn('Failed to refresh user after payment', refreshErr);
+          throw refreshErr;
         }
       }
     },
@@ -145,28 +143,11 @@ const ConfirmPayment: React.FC = () => {
       if (isSignupFlow && signupSessionId) {
         let signupResult: Record<string, unknown> | null = null;
 
-        try {
-          signupResult = (await signupApi.completeSignup({
-            signupSessionId,
-          })) as unknown as Record<string, unknown>;
-        } catch (completeSignupError: unknown) {
-          const errorPayload = completeSignupError as {
-            response?: { data?: { message?: string } };
-          };
-          const errorMessage = errorPayload?.response?.data?.message || '';
-          if (
-            errorMessage.toLowerCase().includes('tenant') &&
-            (errorMessage.toLowerCase().includes('already') ||
-              errorMessage.toLowerCase().includes('exists') ||
-              errorMessage.toLowerCase().includes('duplicate'))
-          ) {
-            console.log('Tenant already exists, skipping tenant creation');
-          } else {
-            throw completeSignupError;
-          }
-        }
+        signupResult = (await signupApi.completeSignup({
+          signupSessionId,
+        })) as unknown as Record<string, unknown>;
 
-        let loginResponse =
+        const loginResponse =
           (await loginWithPendingCredentials()) ||
           coerceLoginResponse(signupResult);
 

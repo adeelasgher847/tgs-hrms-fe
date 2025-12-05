@@ -1,4 +1,3 @@
-import { th } from 'date-fns/locale';
 import axiosInstance from './axiosInstance';
 
 // Role interface
@@ -15,24 +14,14 @@ class RolesApiService {
 
   // Get all roles
   async getAllRoles(): Promise<Role[]> {
-    try {
-      const response = await axiosInstance.get<Role[]>(this.baseUrl);
-      return response.data;
-    } catch (error) {
-      throw error;
-      return [];
-    }
+    const response = await axiosInstance.get<Role[]>(this.baseUrl);
+    return response.data;
   }
 
   // Get role by ID
   async getRoleById(id: string): Promise<Role | null> {
-    try {
-      const response = await axiosInstance.get<Role>(`${this.baseUrl}/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-      return null;
-    }
+    const response = await axiosInstance.get<Role>(`${this.baseUrl}/${id}`);
+    return response.data;
   }
 }
 

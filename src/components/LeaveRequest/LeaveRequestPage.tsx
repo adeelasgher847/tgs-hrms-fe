@@ -25,7 +25,9 @@ import HistoryIcon from '@mui/icons-material/History';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 
-const ITEMS_PER_PAGE = 25;
+import { PAGINATION } from '../../constants/appConstants';
+
+const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
 const LeaveRequestPage = () => {
   const [leaves, setLeaves] = useState<Leave[]>([]);
@@ -237,11 +239,7 @@ const LeaveRequestPage = () => {
           : 'Leave rejected successfully!'
       );
     } catch (error: unknown) {
-      setSnackbar({
-        open: true,
-        message: getErrorMessage(error) || 'Action failed',
-        severity: 'error',
-      });
+      showError(error);
     } finally {
       setDialogOpen(false);
       setActionType(null);
@@ -279,7 +277,7 @@ const LeaveRequestPage = () => {
   };
 
   // Fetch all leaves for export
-  const fetchAllLeavesForExport = useCallback(async (): Promise<Leave[]> => {
+  const _fetchAllLeavesForExport = useCallback(async (): Promise<Leave[]> => {
     try {
       const allLeaves: Leave[] = [];
       let pageNum = 1;
@@ -299,7 +297,30 @@ const LeaveRequestPage = () => {
           res = await leaveApi.getUserLeaves(currentUserId, pageNum);
         }
         totalPagesLocal = res.totalPages || 1;
-        allLeaves.push(...res.items);
+        allLeaves.push(
+          ...res.items.map((leave): Leave => {
+            const employeeId =
+              leave.employeeId ||
+              (
+                leave as unknown as {
+                  employee?: { id?: string };
+                  user?: { id?: string };
+                }
+              ).employee?.id ||
+              (
+                leave as unknown as {
+                  employee?: { id?: string };
+                  user?: { id?: string };
+                }
+              ).user?.id ||
+              '';
+            return {
+              ...leave,
+              employeeId,
+              leaveTypeId: leave.leaveTypeId || '',
+            };
+          })
+        );
         pageNum++;
       } while (pageNum <= totalPagesLocal);
 
@@ -456,7 +477,7 @@ const LeaveRequestPage = () => {
                 isLoading={tableLoading}
                 onExportAll={
                   ['manager'].includes(role)
-                    ? fetchAllLeavesForExport
+                    ? _fetchAllLeavesForExport
                     : undefined
                 }
                 userRole={role}
@@ -474,7 +495,7 @@ const LeaveRequestPage = () => {
             totalItems={totalItems}
             onPageChange={setCurrentPage}
             isLoading={tableLoading}
-            onExportAll={fetchAllLeavesForExport}
+            onExportAll={_fetchAllLeavesForExport}
             userRole={role}
           />
         )}

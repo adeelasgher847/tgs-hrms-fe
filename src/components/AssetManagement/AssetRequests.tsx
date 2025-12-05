@@ -43,11 +43,12 @@ import {
   type AssetRequest as ApiAssetRequest,
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
-import ConfirmationDialog from './ConfirmationDialog';
+import { DeleteConfirmationDialog } from '../Common/DeleteConfirmationDialog';
 import { type AssetSubcategory } from '../../api/assetApi';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
+import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
@@ -186,19 +187,12 @@ const AssetRequests: React.FC = () => {
     page: number;
     limit: number;
   } | null>(null); // Track last fetched page/limit
-  const {
-    snackbar,
-    showError,
-    showSuccess,
-    showWarning,
-    showInfo,
-    closeSnackbar,
-  } = useErrorHandler();
+  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   // Pagination state
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 25, // Backend returns 25 records per page
+    limit: PAGINATION.DEFAULT_PAGE_SIZE, // Backend returns records per page
     total: 0,
     totalPages: 0,
   });
@@ -435,7 +429,7 @@ const AssetRequests: React.FC = () => {
   const fetchRequests = React.useCallback(
     async (
       page: number = 1,
-      limit: number = 25,
+      limit: number = PAGINATION.DEFAULT_PAGE_SIZE,
       isInitialLoad: boolean = false
     ) => {
       if (!currentUserId) return;
@@ -1277,14 +1271,15 @@ const AssetRequests: React.FC = () => {
       </Dialog>
 
       {/* Delete Request Confirmation Dialog */}
-      <ConfirmationDialog
+      <DeleteConfirmationDialog
         open={isCancelDialogOpen}
         title='Delete Request'
         message={`Are you sure you want to delete your request for "${requestToCancel?.category.name}"? This action cannot be undone.`}
         confirmText='Delete Request'
+        cancelText='Cancel'
         onConfirm={handleConfirmCancel}
-        onCancel={() => setIsCancelDialogOpen(false)}
-        severity='error'
+        onClose={() => setIsCancelDialogOpen(false)}
+        itemName={requestToCancel?.category.name}
         loading={loading}
       />
 

@@ -8,17 +8,6 @@ export type NormalizedRole =
   | 'user'
   | 'unknown';
 
-const ALL_ROLES: NormalizedRole[] = [
-  'system-admin',
-  'network-admin',
-  'hr-admin',
-  'admin',
-  'manager',
-  'employee',
-  'user',
-  'unknown',
-];
-
 export const normalizeRole = (role?: string): NormalizedRole => {
   if (!role) return 'unknown';
   const r = role.trim().toLowerCase();
@@ -209,7 +198,6 @@ const ROLE_SUBMENU_POLICIES: Record<
   },
   'hr-admin': {
     employees: { deny: ['tenant employees'] },
-    attendance: { deny: ['reports'] },
     'audit logs': { denyAll: true },
     payroll: { deny: ['payroll reports', 'my salary'] },
     department: { allowOnly: ['designation'] },
@@ -277,6 +265,10 @@ export const isSubMenuVisibleForRole = (
   const r = normalizeRole(role);
   const parentKey = getParentKey(parentMenuLabel);
   const subKey = normalizeLabel(subLabel);
+
+  if (subKey === 'report' && parentKey === 'attendance') {
+    return r === 'admin' || r === 'hr-admin';
+  }
 
   if (subKey === 'report') {
     return r === 'admin';
@@ -349,6 +341,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     '',
       'Designations',
       'AttendanceCheck',
+      'attendance-summary',
       'AttendanceTable',
       'AttendanceCheck/TimesheetLayout',
       'UserProfile',

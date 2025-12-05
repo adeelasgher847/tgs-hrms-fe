@@ -75,7 +75,7 @@ const SettingsPage: React.FC = () => {
         });
         setModalCompanyLogo(contextCompanyDetails.logo_url || companyLogo);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load company details');
     } finally {
       setModalLogoLoading(false);
@@ -118,7 +118,7 @@ const SettingsPage: React.FC = () => {
       setCompanyModalOpen(false);
       setSelectedLogoFile(null); // clear after saving
       setError(null);
-    } catch (err) {
+    } catch {
       setError('Failed to update company details');
     } finally {
       setEditLoading(false);

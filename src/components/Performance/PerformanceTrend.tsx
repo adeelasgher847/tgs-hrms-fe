@@ -67,7 +67,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
       const response =
         await systemPerformanceApiService.getPerformanceRecords(params);
       setRecords(response.items || []);
-    } catch (error) {
+    } catch {
       setRecords([]);
     }
   }, [tenantId, currentPage, itemsPerPage, statusFilter, startDate, endDate]);
@@ -85,7 +85,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           ? data.items
           : [];
       setEmployees(employeesList);
-    } catch (error) {
+    } catch {
       setEmployees([]);
     }
   }, [tenantId]);

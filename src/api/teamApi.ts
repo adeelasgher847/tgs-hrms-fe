@@ -1,4 +1,3 @@
-import { th } from 'date-fns/locale';
 import axiosInstance from './axiosInstance';
 
 // Team Member interface
@@ -153,11 +152,7 @@ class TeamApiService {
     const newTeam = response.data;
 
     if (newTeam.id && teamData.manager_id) {
-      try {
-        await this.addMemberToTeam(newTeam.id, teamData.manager_id);
-      } catch (error) {
-        throw error;
-      }
+      await this.addMemberToTeam(newTeam.id, teamData.manager_id);
     }
 
     return newTeam;
@@ -207,14 +202,10 @@ class TeamApiService {
     const updatedTeam = response.data;
 
     if (teamData.manager_id && teamData.manager_id !== currentTeam.manager_id) {
-      try {
-        if (currentTeam.manager_id) {
-          await this.removeMemberFromTeam(id, currentTeam.manager_id);
-        }
-        await this.addMemberToTeam(id, teamData.manager_id);
-      } catch (error) {
-        throw error;
+      if (currentTeam.manager_id) {
+        await this.removeMemberFromTeam(id, currentTeam.manager_id);
       }
+      await this.addMemberToTeam(id, teamData.manager_id);
     }
 
     return updatedTeam;
@@ -291,7 +282,7 @@ class TeamApiService {
     employeeId: string,
     companyId?: string
   ): Promise<void> {
-    const payload: any = { employee_id: employeeId };
+    const payload: Record<string, string> = { employee_id: employeeId };
     if (companyId) payload.company_id = companyId;
 
     await axiosInstance.post(`${this.baseUrl}/${teamId}/add-member`, payload);
@@ -325,15 +316,11 @@ class TeamApiService {
   async getAllTenantsWithTeams(
     tenantId?: string
   ): Promise<AllTenantsTeamsResponse> {
-    try {
-      const params = tenantId ? `?tenant_id=${tenantId}` : '';
-      const response = await axiosInstance.get<AllTenantsTeamsResponse>(
-        `${this.baseUrl}/all-tenants${params}`
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const params = tenantId ? `?tenant_id=${tenantId}` : '';
+    const response = await axiosInstance.get<AllTenantsTeamsResponse>(
+      `${this.baseUrl}/all-tenants${params}`
+    );
+    return response.data;
   }
 }
 

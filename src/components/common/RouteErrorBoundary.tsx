@@ -1,7 +1,8 @@
 import React, { Component, type ReactNode } from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useNavigate } from 'react-router-dom';
+import AppButton from './AppButton';
 
 interface Props {
   children: ReactNode;
@@ -58,12 +59,16 @@ function ErrorFallback({ error }: { error: Error | null }) {
         {error?.message || 'An unexpected error occurred in this route.'}
       </Typography>
       <Box sx={{ display: 'flex', gap: 2 }}>
-        <Button variant='contained' onClick={() => navigate('/dashboard')}>
-          Go to Dashboard
-        </Button>
-        <Button variant='outlined' onClick={() => window.location.reload()}>
-          Reload Page
-        </Button>
+        <AppButton
+          variantType='contained'
+          text='Go to Dashboard'
+          onClick={() => navigate('/dashboard')}
+        />
+        <AppButton
+          variantType='outlined'
+          text='Reload Page'
+          onClick={() => window.location.reload()}
+        />
       </Box>
     </Box>
   );

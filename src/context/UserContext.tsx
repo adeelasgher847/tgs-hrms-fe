@@ -104,7 +104,7 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             }
           }
         }
-      } catch (error) {
+      } catch {
         clearAuthData();
         setUser(null);
         setLoading(false);

@@ -105,7 +105,7 @@ export default function DesignationModal({
         departmentApiService.convertBackendToFrontend(dept)
       );
       setDepartments(frontendDepartments);
-    } catch (error) {
+    } catch {
       setDepartments([]);
     } finally {
       // setLoadingDepartments(false);

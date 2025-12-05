@@ -58,9 +58,10 @@ import AppTextField from '../Common/AppTextField';
 import AppSelect from '../Common/AppSelect';
 import AppTable from '../Common/AppTable';
 import AppCard from '../Common/AppCard';
+import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset request response that may include additional fields
-interface ApiAssetRequestExtended extends ApiAssetRequest {
+interface ApiAssetRequestExtended extends Omit<ApiAssetRequest, 'category_id'> {
   category_id?: string;
   subcategory_id?: string | null;
   category?: {
@@ -69,13 +70,13 @@ interface ApiAssetRequestExtended extends ApiAssetRequest {
     description?: string | null;
     icon?: string | null;
   };
-  subcategory?: {
-    id: string;
-    name: string;
-    description?: string | null;
-  };
   subcategory_name?: string;
   subcategory?:
+    | {
+        id: string;
+        name: string;
+        description?: string | null;
+      }
     | string
     | {
         name?: string;
@@ -89,6 +90,10 @@ interface ApiAssetRequestExtended extends ApiAssetRequest {
   subcategoryName?: string;
   rejection_reason?: string | null;
   requestedByName?: string;
+  employee_id?: string;
+  employee_name?: string;
+  assigned_asset_id?: string | null;
+  assigned_asset_name?: string | null;
   requestedByUser?: {
     id: string;
     name: string;
@@ -186,7 +191,7 @@ const RequestManagement: React.FC = () => {
 
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 25,
+    limit: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
     totalPages: 0,
   });
@@ -419,7 +424,7 @@ const RequestManagement: React.FC = () => {
       );
 
       setAssets(transformedAssets);
-    } catch (error) {
+    } catch {
       assetsFetchedRef.current = false; // Reset on error so it can retry
     }
   }, []);
@@ -428,7 +433,7 @@ const RequestManagement: React.FC = () => {
   const fetchRequests = React.useCallback(
     async (
       page: number = 1,
-      limit: number = 25,
+      limit: number = PAGINATION.DEFAULT_PAGE_SIZE,
       isInitialLoad: boolean = false
     ) => {
       // Prevent duplicate calls
@@ -905,7 +910,7 @@ const RequestManagement: React.FC = () => {
           setIsProcessModalOpen(false);
           setLoading(false);
           return;
-        } catch (rejectError) {
+        } catch {
           showError('Failed to reject request');
           setLoading(false);
           return;
@@ -1022,15 +1027,40 @@ const RequestManagement: React.FC = () => {
       setAssets(transformedAssets);
 
       const transformedRequests: AssetRequest[] = apiResponse.items.map(
-        (apiRequest: ApiAssetRequest) => {
+        (apiRequest: ApiAssetRequestExtended) => {
+          // Guard against undefined asset_category
+          if (!apiRequest.asset_category) {
+            // Return a default/fallback request structure
+            return {
+              id: apiRequest.id,
+              employeeId:
+                apiRequest.employee_id || apiRequest.requested_by || '',
+              employeeName:
+                apiRequest.employee_name ||
+                apiRequest.requestedByName ||
+                'Unknown',
+              category: {
+                id: '',
+                name: 'Unknown Category',
+                nameAr: '',
+                description: '',
+              },
+              status: apiRequest.status || 'pending',
+              requestedDate:
+                apiRequest.requested_date || new Date().toISOString(),
+              assignedAssetId: apiRequest.assigned_asset_id || undefined,
+              assignedAssetName: apiRequest.assigned_asset_name || undefined,
+            };
+          }
+
           // Try to find matching category from our comprehensive list
           let matchingCategory = assetCategories.find(
             cat =>
               cat.name.toLowerCase() ===
-                apiRequest.asset_category.toLowerCase() ||
+                apiRequest.asset_category!.toLowerCase() ||
               cat.subcategories?.some(
                 sub =>
-                  sub.toLowerCase() === apiRequest.asset_category.toLowerCase()
+                  sub.toLowerCase() === apiRequest.asset_category!.toLowerCase()
               )
           );
 
@@ -1314,7 +1344,6 @@ const RequestManagement: React.FC = () => {
       {/* Search */}
       <AppCard sx={{ mb: 3 }}>
         <AppTextField
-          fullWidth
           placeholder='Search requests by employee, category, or status...'
           value={searchTerm}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -1327,7 +1356,7 @@ const RequestManagement: React.FC = () => {
               </InputAdornment>
             ),
           }}
-          sx={{ borderRadius: 2 }}
+          sx={{ borderRadius: 2, width: '100%' }}
         />
       </AppCard>
 
@@ -1648,8 +1677,8 @@ const RequestManagement: React.FC = () => {
                         render={({ field }) => (
                           <AppTextField
                             {...field}
-                            fullWidth
                             label='Rejection Reason (Optional)'
+                            sx={{ width: '100%' }}
                             multiline
                             rows={3}
                             placeholder='Optionally provide a reason for rejection...'

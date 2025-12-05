@@ -84,7 +84,7 @@ const PayrollConfiguration: React.FC = () => {
         if (existingConfig) {
           setConfig(existingConfig);
         }
-      } catch (err) {
+      } catch {
         setError('Failed to load payroll configuration');
       } finally {
         setLoading(false);
@@ -200,24 +200,6 @@ const PayrollConfiguration: React.FC = () => {
 
   const handleRemoveAllowance = (index: number) => {
     setAllowances(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleAddCustomField = () => {
-    setCustomFields(prev => [...prev, { key: '', value: '', type: 'text' }]);
-  };
-
-  const handleRemoveCustomField = (index: number) => {
-    setCustomFields(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleCustomFieldChange = (
-    index: number,
-    field: 'key' | 'value' | 'type',
-    value: string
-  ) => {
-    setCustomFields(prev =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-    );
   };
 
   const handleDeductionChange = (

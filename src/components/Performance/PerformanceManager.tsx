@@ -45,7 +45,7 @@ const PerformanceDashboard: React.FC = () => {
           }
         }
       }
-    } catch (err) {
+    } catch {
       showError('Failed to fetch tenants.');
     } finally {
       setLoadingTenants(false);

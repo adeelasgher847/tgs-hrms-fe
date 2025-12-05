@@ -38,7 +38,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
 import TeamMembersAvatar from '../Teams/TeamMembersAvatar';
 import TeamMembersModal from '../Teams/TeamMembersModal';
-import { COLORS } from '../../constants/appConstants';
 
 const labels = {
   en: {

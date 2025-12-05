@@ -12,12 +12,12 @@ import {
   MenuItem,
   FormControl,
   CircularProgress,
-  Snackbar,
-  Alert,
 } from '@mui/material';
 import ForgetImage from '../../assets/icons/forget-image.svg';
 import authApi from '../../api/authApi';
 import { validateEmailAddress } from '../../utils/validation';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 const Forget = () => {
   const navigate = useNavigate();
@@ -26,11 +26,7 @@ const Forget = () => {
   const [emailError, setEmailError] = useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [openToast, setOpenToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>(
-    'success'
-  );
+  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -80,9 +76,7 @@ const Forget = () => {
 
       // Check if has success message
       if (response && response.message && !response.errors) {
-        setToastMessage(response.message);
-        setToastSeverity('success');
-        setOpenToast(true);
+        showSuccess(response.message);
         setEmail('');
       } else {
         setEmail('');
@@ -115,11 +109,7 @@ const Forget = () => {
         }
       } else {
         // Only show toast for genuine network/connection errors
-        setToastMessage(
-          'Network error. Please check your connection and try again.'
-        );
-        setToastSeverity('error');
-        setOpenToast(true);
+        showError('Network error. Please check your connection and try again.');
       }
     } finally {
       setLoading(false);
@@ -442,28 +432,12 @@ const Forget = () => {
           </Box>
         </Box>
       </Box>
-      {/*Snackbar Toast */}
-      <Snackbar
-        open={openToast}
-        autoHideDuration={4000}
-        onClose={() => setOpenToast(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setOpenToast(false)}
-          severity={toastSeverity}
-          sx={{
-            width: '100%',
-            backgroundColor: '#2e7d32',
-            color: 'white !important',
-            '& .MuiAlert-icon': {
-              color: 'white',
-            },
-          }}
-        >
-          {toastMessage}
-        </Alert>
-      </Snackbar>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </div>
   );
 };

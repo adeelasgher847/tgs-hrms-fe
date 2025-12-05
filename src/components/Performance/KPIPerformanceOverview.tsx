@@ -30,7 +30,7 @@ const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
           : kpiData;
 
         setData(filteredData);
-      } catch (error) {
+      } catch {
         setData([]);
       } finally {
         setLoading(false);

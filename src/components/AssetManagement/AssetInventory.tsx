@@ -27,7 +27,6 @@ import {
   Build as BuildIcon,
   CheckCircle as AvailableIcon,
 } from '@mui/icons-material';
-import type { AxiosError } from 'axios';
 import type {
   Asset,
   AssetFilters,
@@ -37,7 +36,7 @@ import type {
 import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
 import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
-import ConfirmationDialog from './ConfirmationDialog';
+import { DeleteConfirmationDialog } from '../Common/DeleteConfirmationDialog';
 import { assetCategories } from '../../Data/assetCategories';
 import { isHRAdmin } from '../../utils/roleUtils';
 import { formatDate } from '../../utils/dateUtils';
@@ -48,6 +47,7 @@ import AppTextField from '../Common/AppTextField';
 import AppSelect from '../Common/AppSelect';
 import AppTable from '../Common/AppTable';
 import AppCard from '../Common/AppCard';
+import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset response that may include additional user information
 interface ApiAssetWithUser extends ApiAsset {
@@ -108,14 +108,7 @@ const AssetInventory: React.FC = () => {
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const {
-    snackbar,
-    showError,
-    showSuccess,
-    showWarning,
-    showInfo,
-    closeSnackbar,
-  } = useErrorHandler();
+  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
 
@@ -124,10 +117,15 @@ const AssetInventory: React.FC = () => {
 
   const hideActions = isHRAdmin(userRole);
 
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<{
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }>({
     total: 0,
     page: 1,
-    limit: 25, // Backend returns 25 records per page
+    limit: PAGINATION.DEFAULT_PAGE_SIZE, // Backend returns records per page
     totalPages: 1,
   });
 
@@ -236,7 +234,7 @@ const AssetInventory: React.FC = () => {
   const fetchAssets = React.useCallback(
     async (
       page: number = 1,
-      limit: number = 25,
+      limit: number = PAGINATION.DEFAULT_PAGE_SIZE,
       isInitialLoad: boolean = false
     ) => {
       // Prevent duplicate calls
@@ -255,7 +253,7 @@ const AssetInventory: React.FC = () => {
         // Ensure page and limit are always provided
         const response = await assetApi.getAllAssets({
           page: page || 1,
-          limit: limit || 25,
+          limit: limit || PAGINATION.DEFAULT_PAGE_SIZE,
         });
 
         const apiAssets = response.assets; // Extract assets from paginated response
@@ -282,7 +280,7 @@ const AssetInventory: React.FC = () => {
           setPagination({
             total: estimatedTotal,
             page: page,
-            limit: limit,
+            limit: (limit || PAGINATION.DEFAULT_PAGE_SIZE) as number,
             totalPages: estimatedTotalPages,
           });
         }
@@ -489,7 +487,7 @@ const AssetInventory: React.FC = () => {
     try {
       await assetApi.deleteAsset(assetToDelete.id);
 
-      showSnackbar('Asset deleted successfully', 'success');
+      showSuccess('Asset deleted successfully');
       setDeleteDialogOpen(false);
       setAssetToDelete(null);
       // Refresh the current page to update counts
@@ -510,7 +508,7 @@ const AssetInventory: React.FC = () => {
         purchaseDate: resolvePurchaseDate(asset),
       });
 
-      showSnackbar('Asset marked as under maintenance', 'success');
+      showSuccess('Asset marked as under maintenance');
       setAnchorEl(null);
       // Refresh the current page to update counts
       fetchAssets(pagination.page, pagination.limit, false);
@@ -530,7 +528,7 @@ const AssetInventory: React.FC = () => {
         purchaseDate: resolvePurchaseDate(asset),
       });
 
-      showSnackbar('Asset marked as available', 'success');
+      showSuccess('Asset marked as available');
       setAnchorEl(null);
       // Refresh the current page to update counts
       fetchAssets(pagination.page, pagination.limit, false);
@@ -689,8 +687,6 @@ const AssetInventory: React.FC = () => {
         >
           <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
             <AppTextField
-              fullWidth
-              size='small'
               placeholder='Search assets...'
               value={searchTerm}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -703,7 +699,11 @@ const AssetInventory: React.FC = () => {
                   </InputAdornment>
                 ),
               }}
-              sx={{ borderRadius: 2 }}
+              sx={{
+                borderRadius: 2,
+                width: '100%',
+                '& .MuiInputBase-root': { height: '40px' },
+              }}
             />
           </Box>
           <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
@@ -968,14 +968,15 @@ const AssetInventory: React.FC = () => {
       />
 
       {/* Delete Confirmation Dialog */}
-      <ConfirmationDialog
+      <DeleteConfirmationDialog
         open={deleteDialogOpen}
         title='Delete Asset'
         message={`Are you sure you want to delete "${assetToDelete?.name}"? This action cannot be undone.`}
         confirmText='Delete'
+        cancelText='Cancel'
         onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteDialogOpen(false)}
-        severity='error'
+        onClose={() => setDeleteDialogOpen(false)}
+        itemName={assetToDelete?.name}
         loading={loading}
       />
 

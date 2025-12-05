@@ -51,14 +51,10 @@ class SystemDashboardApiService {
   private tenantGrowthUrl = '/system/tenant-growth';
 
   async getSystemDashboard(): Promise<SystemDashboardResponse | null> {
-    try {
-      const response = await axiosInstance.get<SystemDashboardResponse>(
-        this.baseUrl
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosInstance.get<SystemDashboardResponse>(
+      this.baseUrl
+    );
+    return response.data;
   }
 
   async getSystemLogs(
@@ -69,52 +65,40 @@ class SystemDashboardApiService {
       method?: string;
     }
   ): Promise<RecentLog[]> {
-    try {
-      const params: Record<string, string | number> = { page };
-      if (filters?.userRole) {
-        params.userRole = filters.userRole;
-      }
-      if (filters?.tenantId) {
-        params.tenantId = filters.tenantId;
-      }
-      if (filters?.method) {
-        params.method = filters.method;
-      }
-      const response = await axiosInstance.get<RecentLog[]>(this.logsUrl, {
-        params,
-      });
-      return response.data;
-    } catch (error) {
-      throw error;
+    const params: Record<string, string | number> = { page };
+    if (filters?.userRole) {
+      params.userRole = filters.userRole;
     }
+    if (filters?.tenantId) {
+      params.tenantId = filters.tenantId;
+    }
+    if (filters?.method) {
+      params.method = filters.method;
+    }
+    const response = await axiosInstance.get<RecentLog[]>(this.logsUrl, {
+      params,
+    });
+    return response.data;
   }
 
   async exportSystemLogs(): Promise<Blob | null> {
-    try {
-      const response = await axiosInstance.get(`${this.logsUrl}/export`, {
-        responseType: 'blob',
-      });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosInstance.get(`${this.logsUrl}/export`, {
+      responseType: 'blob',
+    });
+    return response.data;
   }
 
   async getTenantGrowth(
     year: number,
     tenantId: string
   ): Promise<TenantGrowth[]> {
-    try {
-      const response = await axiosInstance.get<TenantGrowth[]>(
-        this.tenantGrowthUrl,
-        {
-          params: { year, tenantId },
-        }
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosInstance.get<TenantGrowth[]>(
+      this.tenantGrowthUrl,
+      {
+        params: { year, tenantId },
+      }
+    );
+    return response.data;
   }
 }
 

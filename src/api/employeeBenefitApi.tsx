@@ -88,12 +88,8 @@ const employeeBenefitApi = {
   async assignBenefit(
     data: AssignBenefitRequest
   ): Promise<EmployeeBenefitResponse> {
-    try {
-      const response = await axiosInstance.post('/employee-benefits', data);
-      return response.data;
-    } catch (error: unknown) {
-      throw error;
-    }
+    const response = await axiosInstance.post('/employee-benefits', data);
+    return response.data;
   },
 
   async getEmployeeBenefits(
@@ -130,19 +126,15 @@ const employeeBenefitApi = {
   },
 
   async getEmployeesWithBenefits(page = 1): Promise<EmployeeWithBenefits[]> {
-    try {
-      const response = await axiosInstance.get('/employee-benefits/employees', {
-        params: { page },
-      });
+    const response = await axiosInstance.get('/employee-benefits/employees', {
+      params: { page },
+    });
 
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-
-      return [];
-    } catch (error: unknown) {
-      throw error;
+    if (Array.isArray(response.data)) {
+      return response.data;
     }
+
+    return [];
   },
 
   async getFilteredEmployeeBenefits(params: {
@@ -151,34 +143,24 @@ const employeeBenefitApi = {
     designation?: string;
     page: number;
   }): Promise<EmployeeWithBenefits[]> {
-    try {
-      const response = await axiosInstance.get('/employee-benefits/employees', {
-        params,
-      });
+    const response = await axiosInstance.get('/employee-benefits/employees', {
+      params,
+    });
 
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-
-      if (response.data?.items && Array.isArray(response.data.items)) {
-        return response.data.items;
-      }
-
-      return [];
-    } catch (error: unknown) {
-      throw error;
+    if (Array.isArray(response.data)) {
+      return response.data;
     }
+
+    if (response.data?.items && Array.isArray(response.data.items)) {
+      return response.data.items;
+    }
+
+    return [];
   },
 
   async cancelEmployeeBenefit(id: string): Promise<{ message: string }> {
-    try {
-      const response = await axiosInstance.put(
-        `/employee-benefits/${id}/cancel`
-      );
-      return response.data;
-    } catch (error: unknown) {
-      throw error;
-    }
+    const response = await axiosInstance.put(`/employee-benefits/${id}/cancel`);
+    return response.data;
   },
 
   async getSystemAdminBenefitSummary(tenant_id?: string): Promise<{
@@ -187,22 +169,83 @@ const employeeBenefitApi = {
     mostCommonBenefitType: string;
     totalEmployeesCovered: number;
   }> {
-    try {
-      const response = await axiosInstance.get(
-        '/employee-benefits/system-admin/summary',
-        {
-          params: { tenant_id: tenant_id || 'all' },
-        }
-      );
-      return response.data;
-    } catch (error: unknown) {
-      throw error;
+    const response = await axiosInstance.get(
+      '/employee-benefits/system-admin/summary',
+      {
+        params: { tenant_id: tenant_id || 'all' },
+      }
+    );
+
+    let raw: Record<string, unknown> = response.data as Record<string, unknown>;
+
+    // Unwrap common envelope keys if present
+    if (raw && typeof raw === 'object') {
+      if ('data' in raw && raw.data) raw = raw.data as Record<string, unknown>;
+      else if ('summary' in raw && raw.summary)
+        raw = raw.summary as Record<string, unknown>;
+      else if ('result' in raw && raw.result)
+        raw = raw.result as Record<string, unknown>;
     }
+
+    // If backend returns an array, use the first element
+    if (Array.isArray(raw)) {
+      raw = raw[0] || {};
+    }
+
+    const normalizedTenantId =
+      raw.tenant_id ?? raw.tenantId ?? tenant_id ?? 'all';
+
+    const totalActiveRaw =
+      raw.totalActiveBenefits ??
+      raw.total_active_benefits ??
+      raw.totalActive ??
+      raw.activeBenefits ??
+      raw.total_benefits ??
+      0;
+
+    const employeesCoveredRaw =
+      raw.totalEmployeesCovered ??
+      raw.total_employees_covered ??
+      raw.employeesCovered ??
+      raw.total_employees ??
+      0;
+
+    const mostCommonTypeRaw =
+      raw.mostCommonBenefitType ??
+      raw.most_common_benefit_type ??
+      raw.topBenefitType ??
+      raw.top_benefit_type ??
+      '-';
+
+    const totalActiveBenefits =
+      typeof totalActiveRaw === 'string'
+        ? Number.parseInt(totalActiveRaw, 10) || 0
+        : Number(totalActiveRaw) || 0;
+
+    const totalEmployeesCovered =
+      typeof employeesCoveredRaw === 'string'
+        ? Number.parseInt(employeesCoveredRaw, 10) || 0
+        : Number(employeesCoveredRaw) || 0;
+
+    const mostCommonBenefitType =
+      mostCommonTypeRaw == null || mostCommonTypeRaw === ''
+        ? '-'
+        : String(mostCommonTypeRaw);
+
+    const normalized = {
+      tenant_id: String(normalizedTenantId),
+      totalActiveBenefits,
+      mostCommonBenefitType,
+      totalEmployeesCovered,
+    };
+
+    return normalized;
   },
 
   async getAllTenantsEmployeeBenefits(params?: {
     page?: number;
     limit?: number;
+    tenant_id?: string;
   }): Promise<
     | {
         items: TenantEmployeeWithBenefits[];
@@ -241,9 +284,16 @@ const employeeBenefitApi = {
         };
       }
 
-      // Fallback for old structure (tenants)
+      // Fallback for old structure (tenants) – normalize to the same paginated shape
       if (response.data?.tenants) {
-        return response.data as { tenants: TenantEmployeeWithBenefits[] };
+        const tenants = response.data.tenants || [];
+        return {
+          items: tenants,
+          total: tenants.length,
+          page: params?.page || 1,
+          limit: params?.limit || 25,
+          totalPages: 1,
+        };
       }
 
       // If response is array or has items but not paginated, wrap it
@@ -259,8 +309,14 @@ const employeeBenefitApi = {
         limit: params?.limit || 25,
         totalPages: 1,
       };
-    } catch (error: unknown) {
-      throw error;
+    } catch {
+      return {
+        items: [],
+        total: 0,
+        page: params?.page || 1,
+        limit: params?.limit || 25,
+        totalPages: 1,
+      };
     }
   },
 };

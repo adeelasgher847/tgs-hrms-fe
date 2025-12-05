@@ -97,7 +97,7 @@ export default function GenderPercentageChart() {
           },
         ];
         setGenderData(transformedData);
-      } catch (err) {
+      } catch {
         // If there's an error (including tenant with zero employees), render zeros
         setError(null);
         setGenderData([

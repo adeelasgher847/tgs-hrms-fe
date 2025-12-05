@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
-  Button,
   MenuItem,
   TextField,
   useMediaQuery,
@@ -28,6 +27,8 @@ import {
 } from '../../api/designationApi';
 import { rolesApiService, type Role } from '../../api/rolesApi';
 import { validateEmailAddress } from '../../utils/validation';
+import AppButton from '../Common/AppButton';
+import { COLORS } from '../../constants/appConstants';
 
 // Types
 type FormValues = EmployeeDto & {
@@ -288,7 +289,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       setLoadingRoles(true);
       const data = await rolesApiService.getAllRoles();
       setRoles(data);
-    } catch (error) {
+    } catch {
       // Handle error silently; role dropdown will just have no options
     } finally {
       setLoadingRoles(false);
@@ -910,14 +911,13 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                     onChange={handleImageUpload('profile')}
                   />
                   <label htmlFor='profile-picture-upload'>
-                    <Button
+                    <AppButton
                       variant='outlined'
                       component='span'
                       size='small'
+                      text={label('Upload', 'رفع')}
                       sx={{ textTransform: 'none' }}
-                    >
-                      {label('Upload', 'رفع')}
-                    </Button>
+                    />
                   </label>
                 </InputAdornment>
               ),
@@ -947,14 +947,13 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                     onChange={handleImageUpload('cnicFront')}
                   />
                   <label htmlFor='cnic-front-upload'>
-                    <Button
+                    <AppButton
                       variant='outlined'
                       component='span'
                       size='small'
+                      text={label('Upload', 'رفع')}
                       sx={{ textTransform: 'none' }}
-                    >
-                      {label('Upload', 'رفع')}
-                    </Button>
+                    />
                   </label>
                 </InputAdornment>
               ),
@@ -987,14 +986,13 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                     onChange={handleImageUpload('cnicBack')}
                   />
                   <label htmlFor='cnic-back-upload'>
-                    <Button
+                    <AppButton
                       variant='outlined'
                       component='span'
                       size='small'
+                      text={label('Upload', 'رفع')}
                       sx={{ textTransform: 'none' }}
-                    >
-                      {label('Upload', 'رفع')}
-                    </Button>
+                    />
                   </label>
                 </InputAdornment>
               ),
@@ -1182,11 +1180,11 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
             isSm ? 'center' : language === 'ar' ? 'flex-start' : 'flex-end'
           }
         >
-          <Button
+          <AppButton
             variant='contained'
             type='submit'
             disabled={!hasChanges || submitting || !isFormComplete()}
-            sx={{ backgroundColor: '#484c7f' }}
+            sx={{ backgroundColor: COLORS.PRIMARY }}
             startIcon={
               submitting ? (
                 <Box
@@ -1205,33 +1203,34 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                 />
               ) : null
             }
-          >
-            {submitting
-              ? label(
-                  initialData
-                    ? 'Updating...'
-                    : values.role === 'manager'
-                      ? 'Adding Manager...'
-                      : 'Adding Employee...',
-                  initialData
-                    ? 'جاري التحديث...'
-                    : values.role === 'manager'
-                      ? 'جاري إضافة المدير...'
-                      : 'جاري إضافة الموظف...'
-                )
-              : label(
-                  initialData
-                    ? 'Update Employee'
-                    : values.role === 'manager'
-                      ? 'Add Manager'
-                      : 'Add Employee',
-                  initialData
-                    ? 'تحديث الموظف'
-                    : values.role === 'manager'
-                      ? 'إضافة مدير'
-                      : 'إضافة موظف'
-                )}
-          </Button>
+            text={
+              submitting
+                ? label(
+                    initialData
+                      ? 'Updating...'
+                      : values.role === 'manager'
+                        ? 'Adding Manager...'
+                        : 'Adding Employee...',
+                    initialData
+                      ? 'جاري التحديث...'
+                      : values.role === 'manager'
+                        ? 'جاري إضافة المدير...'
+                        : 'جاري إضافة الموظف...'
+                  )
+                : label(
+                    initialData
+                      ? 'Update Employee'
+                      : values.role === 'manager'
+                        ? 'Add Manager'
+                        : 'Add Employee',
+                    initialData
+                      ? 'تحديث الموظف'
+                      : values.role === 'manager'
+                        ? 'إضافة مدير'
+                        : 'إضافة موظف'
+                  )
+            }
+          />
         </Box>
       </Box>
 

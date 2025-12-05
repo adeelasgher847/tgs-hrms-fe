@@ -1,7 +1,9 @@
 import React from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import AppButton from './AppButton';
+import { COLORS } from '../../constants/appConstants';
 
 const Error404: React.FC = () => {
   const navigate = useNavigate();
@@ -19,7 +21,7 @@ const Error404: React.FC = () => {
         p: 3,
       }}
     >
-      <ErrorOutlineIcon sx={{ fontSize: 120, color: '#f19828', mb: 2 }} />
+      <ErrorOutlineIcon sx={{ fontSize: 120, color: COLORS.ACCENT, mb: 2 }} />
       <Typography variant='h1' sx={{ fontWeight: 700, fontSize: 64, mb: 1 }}>
         404
       </Typography>
@@ -31,11 +33,12 @@ const Error404: React.FC = () => {
         <br />
         Please check the URL or return to the home page.
       </Typography>
-      <Button
-        variant='contained'
-        color='primary'
+      <AppButton
+        variantType='contained'
+        text='Go to Home'
+        onClick={() => navigate('/')}
         sx={{
-          bgcolor: '#45407A',
+          bgcolor: COLORS.PRIMARY,
           color: 'white',
           fontWeight: 600,
           borderRadius: 2,
@@ -43,10 +46,7 @@ const Error404: React.FC = () => {
           py: 1.5,
           fontSize: 16,
         }}
-        onClick={() => navigate('/')}
-      >
-        Go to Home
-      </Button>
+      />
     </Box>
   );
 };

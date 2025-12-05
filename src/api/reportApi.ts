@@ -14,19 +14,15 @@ class AttendanceSummaryApi {
     limit: number;
     totalPages: number;
   }> {
-    try {
-      const params = new URLSearchParams({
-        tenantId,
-        days: days.toString(),
-        page: page.toString(),
-      });
-      const response = await axiosInstance.get(
-        `${this.baseUrl}?${params.toString()}`
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const params = new URLSearchParams({
+      tenantId,
+      days: days.toString(),
+      page: page.toString(),
+    });
+    const response = await axiosInstance.get(
+      `${this.baseUrl}?${params.toString()}`
+    );
+    return response.data;
   }
 }
 

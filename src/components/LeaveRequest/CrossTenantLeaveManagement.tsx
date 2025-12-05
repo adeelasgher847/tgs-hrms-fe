@@ -16,7 +16,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Alert,
   Pagination,
   Table,
   TableHead,
@@ -32,7 +31,7 @@ import {
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import dayjs, { Dayjs } from 'dayjs';
+import type { Dayjs } from 'dayjs';
 import Chart from 'react-apexcharts';
 import { TenantLeaveApi } from '../../api/tenantLeaveApi';
 import type {
@@ -40,7 +39,6 @@ import type {
   SystemLeaveFilters,
   SystemLeaveResponse,
   SystemLeaveSummary,
-  TenantDepartment,
 } from '../../api/tenantLeaveApi';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
@@ -48,6 +46,7 @@ import { useUser } from '../../hooks/useUser';
 import { isSystemAdmin } from '../../utils/auth';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { PAGINATION } from '../../constants/appConstants';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 type LeaveStatus = '' | 'pending' | 'approved' | 'rejected' | 'withdrawn';
@@ -58,12 +57,6 @@ type FiltersState = {
   status: LeaveStatus;
   startDate: Dayjs | null;
   endDate: Dayjs | null;
-};
-
-type SnackbarState = {
-  open: boolean;
-  message: string;
-  severity: 'success' | 'error';
 };
 
 type DepartmentOption = Pick<ApiDepartment, 'id' | 'name' | 'tenant_id'>;
@@ -134,7 +127,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25; // Backend returns 25 records per page
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE; // Backend returns records per page
   const isInitialTenantSet = useRef(false);
   const isInitialLoad = useRef(true);
   const hasLoadedDataOnce = useRef(false);
@@ -271,7 +264,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
       } else {
         setDepartments([]);
       }
-    } catch (error) {
+    } catch {
       showError('Failed to load departments');
       setDepartments([]);
     }

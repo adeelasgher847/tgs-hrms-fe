@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -35,6 +35,8 @@ import {
 } from '../../api/departmentApi';
 import SystemEmployeeProfileView from './SystemEmployeeProfileView';
 import { formatDate } from '../../utils/dateUtils';
+import employeeApi from '../../api/employeeApi';
+import { PAGINATION } from '../../constants/appConstants';
 
 type EmployeeWithTenantName = SystemEmployee & {
   tenantName: string;
@@ -57,11 +59,14 @@ const TenantBasedEmployeeManager: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25;
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
 
   const [selectedEmployee, setSelectedEmployee] =
     useState<EmployeeWithTenantName | null>(null);
   const [openProfile, setOpenProfile] = useState(false);
+  const [tenantsLoaded, setTenantsLoaded] = useState(false);
+  const initialLoadDoneRef = useRef(false);
+  const isLoadingRef = useRef(false);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -76,7 +81,8 @@ const TenantBasedEmployeeManager: React.FC = () => {
       ]);
       setDepartments(deptRes || []);
       setTenants(tenantRes || []);
-    } catch (err) {
+      setTenantsLoaded(true); // Mark tenants as loaded - this will trigger employee fetch
+    } catch {
       // Leave filters empty if loading fails
     }
   };
@@ -93,13 +99,19 @@ const TenantBasedEmployeeManager: React.FC = () => {
         null
       );
       setDesignations(res.items || []);
-    } catch (err) {
+    } catch {
       // Leave designations empty if loading fails
     }
   };
 
-  // Fetch employees. Not memoized so it always uses latest tenants/filters/currentPage.
+  // Fetch employees - only when tenants are loaded and filters/page change
   const fetchEmployees = async () => {
+    // Prevent duplicate calls
+    if (isLoadingRef.current) {
+      return;
+    }
+
+    isLoadingRef.current = true;
     setLoading(true);
     try {
       const params: any = {
@@ -123,7 +135,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
         const matchedTenant = tenants.find(t => t.id === tenantId);
         return {
           ...emp,
-          tenantName: matchedTenant ? matchedTenant.name : '', // show empty until tenants loaded
+          tenantName: matchedTenant ? matchedTenant.name : '', // Tenant name if available
         };
       });
 
@@ -143,32 +155,20 @@ const TenantBasedEmployeeManager: React.FC = () => {
             : (currentPage - 1) * itemsPerPage + mapped.length
         );
       }
-    } catch (err) {
+    } catch {
       setEmployees([]);
       setTotalPages(1);
       setTotalRecords(0);
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
   };
 
-  // mount: load tenants & departments
+  // mount: load tenants & departments first
   useEffect(() => {
     fetchFiltersData();
   }, []);
-
-  // whenever tenants OR filters OR page changes, load employees
-  // -> guarantees that when tenants arrive, employees are fetched/mapped again to pick up tenant names
-  useEffect(() => {
-    fetchEmployees();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    tenants,
-    filters.tenantId,
-    filters.departmentId,
-    filters.designationId,
-    currentPage,
-  ]);
 
   useEffect(() => {
     if (filters.departmentId)
@@ -176,30 +176,65 @@ const TenantBasedEmployeeManager: React.FC = () => {
     else setDesignations([]);
   }, [filters.departmentId]);
 
-  // Update tenantName for currently shown employees when tenants array updates,
-  // but only if there is a change (prevents unnecessary rerenders).
-  useEffect(() => {
-    if (!tenants.length || !employees.length) return;
+  // No need to update tenant names separately - they're included when employees are fetched
 
-    setEmployees(prev => {
-      let changed = false;
-      const updated = prev.map(emp => {
-        const tenantId =
-          (emp as any).tenantId ||
-          (emp as any).tenant_id ||
-          (emp as any).tenant?.id;
-        const match = tenants.find(t => t.id === tenantId);
-        const name = match ? match.name : '';
-        if (emp.tenantName !== name) {
-          changed = true;
-          return { ...emp, tenantName: name };
-        }
-        return emp;
-      });
-      return changed ? updated : prev;
-    });
+  // Track previous filter values to detect actual changes
+  const prevFiltersRef = useRef({
+    tenantId: '',
+    departmentId: '',
+    designationId: '',
+    currentPage: 1,
+  });
+
+  // Load employees ONLY after tenants are loaded, and when filters/page change
+  // This prevents reload when tenants load
+  useEffect(() => {
+    // Wait for tenants to load first - don't fetch employees until tenants are ready
+    if (!tenantsLoaded) {
+      return;
+    }
+
+    // Check if filters or page actually changed
+    const filtersChanged =
+      prevFiltersRef.current.tenantId !== filters.tenantId ||
+      prevFiltersRef.current.departmentId !== filters.departmentId ||
+      prevFiltersRef.current.designationId !== filters.designationId ||
+      prevFiltersRef.current.currentPage !== currentPage;
+
+    // On initial load, fetch employees once
+    if (!initialLoadDoneRef.current) {
+      initialLoadDoneRef.current = true;
+      prevFiltersRef.current = {
+        tenantId: filters.tenantId,
+        departmentId: filters.departmentId,
+        designationId: filters.designationId,
+        currentPage: currentPage,
+      };
+      fetchEmployees();
+      return;
+    }
+
+    // When filters or page change, fetch employees
+    // But only if filters actually changed and not already loading
+    if (filtersChanged && !isLoadingRef.current) {
+      prevFiltersRef.current = {
+        tenantId: filters.tenantId,
+        departmentId: filters.departmentId,
+        designationId: filters.designationId,
+        currentPage: currentPage,
+      };
+      fetchEmployees();
+    }
+    // Note: We wait for tenantsLoaded before fetching employees
+    // Tenant names are included when employees are fetched
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenants]);
+  }, [
+    tenantsLoaded,
+    filters.tenantId,
+    filters.departmentId,
+    filters.designationId,
+    currentPage,
+  ]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -215,50 +250,27 @@ const TenantBasedEmployeeManager: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const csvEscape = (value: string | null | undefined): string => {
-    if (!value) return '';
-    const stringValue = String(value).replace(/"/g, '""');
-    return `"${stringValue}"`;
-  };
+  const handleDownload = async () => {
+    try {
+      // Use backend API to export employees CSV
+      const tenantId = filters.tenantId || undefined;
+      const blob = await employeeApi.exportSystemEmployeesCSV(tenantId);
 
-  const handleDownload = () => {
-    if (employees.length === 0) {
-      alert('No data to download.');
-      return;
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const filename = tenantId
+        ? `employees_tenant_${tenantId}.csv`
+        : 'employees_all_tenants.csv';
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to export employees. Please try again.');
     }
-
-    const csvHeader = [
-      'Name',
-      'Tenant',
-      'Department',
-      'Designation',
-      'Status',
-      'Created At',
-    ];
-
-    const rows = employees.map(emp =>
-      [
-        csvEscape(emp.name),
-        csvEscape(emp.tenantName),
-        csvEscape((emp as any).departmentName),
-        csvEscape((emp as any).designationTitle),
-        csvEscape(emp.status),
-        csvEscape(
-          emp.createdAt ? new Date(emp.createdAt).toLocaleDateString() : 'N/A'
-        ),
-      ].join(',')
-    );
-
-    const csvContent = [csvHeader.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.setAttribute('download', `EmployeeList_Page${currentPage}.csv`);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   const handleOpenProfile = (employee: EmployeeWithTenantName) => {

@@ -82,13 +82,15 @@ type RawTenant = {
 
 type TenantsResponse = { items?: RawTenant[] } | RawTenant[] | undefined;
 
-type LeavesResponse = {
-  items?: SystemLeaveResponse[];
-  total?: number;
-  page?: number;
-  limit?: number;
-  totalPages?: number;
-} | SystemLeaveResponse[];
+type LeavesResponse =
+  | {
+      items?: SystemLeaveResponse[];
+      total?: number;
+      page?: number;
+      limit?: number;
+      totalPages?: number;
+    }
+  | SystemLeaveResponse[];
 
 type SummaryResponseItem = {
   tenantId?: string;
@@ -119,7 +121,7 @@ export const TenantLeaveApi = {
       const rawTenantsResponse = data as TenantsResponse;
       const tenants = Array.isArray(rawTenantsResponse)
         ? rawTenantsResponse
-        : rawTenantsResponse?.items ?? [];
+        : (rawTenantsResponse?.items ?? []);
 
       return tenants.map((tenant: TenantListItem) => ({
         id: tenant.id,
@@ -164,7 +166,7 @@ export const TenantLeaveApi = {
 
       const tenantList = Array.isArray(tenantsData)
         ? tenantsData
-        : tenantsData?.items ?? [];
+        : (tenantsData?.items ?? []);
 
       const tenantMap: Record<string, string> = {};
       tenantList.forEach(t => {
@@ -173,7 +175,7 @@ export const TenantLeaveApi = {
 
       const items = Array.isArray(leavesData)
         ? leavesData
-        : leavesData?.items ?? [];
+        : (leavesData?.items ?? []);
 
       const enriched = items.map(leave => ({
         ...leave,
@@ -197,21 +199,20 @@ export const TenantLeaveApi = {
     } catch (error: unknown) {
       const axiosError = error as AxiosError<{ message?: string }>;
       const message =
-        axiosError.response?.data?.message || axiosError.message ||
+        axiosError.response?.data?.message ||
+        axiosError.message ||
         'Failed to fetch system leaves';
       throw new Error(message);
     }
   },
 
-  getTenantDetailsById: async (tenantId: string): Promise<TenantDetails | null> => {
-    try {
-      const { data } = await axiosInstance.get<TenantDetails | null>(
-        `/system/tenants/${tenantId}`
-      );
-      return data ?? null;
-    } catch (error) {
-      throw error;
-    }
+  getTenantDetailsById: async (
+    tenantId: string
+  ): Promise<TenantDetails | null> => {
+    const { data } = await axiosInstance.get<TenantDetails | null>(
+      `/system/tenants/${tenantId}`
+    );
+    return data ?? null;
   },
 
   getSystemLeaveSummary: async (
@@ -233,11 +234,13 @@ export const TenantLeaveApi = {
         params: filters,
       });
 
-      const rawSummary = (Array.isArray(data)
-        ? data
-        : Array.isArray((data as { items?: SummaryResponseItem[] })?.items)
-          ? (data as { items?: SummaryResponseItem[] }).items
-          : []) as SummaryResponseItem[];
+      const rawSummary = (
+        Array.isArray(data)
+          ? data
+          : Array.isArray((data as { items?: SummaryResponseItem[] })?.items)
+            ? (data as { items?: SummaryResponseItem[] }).items
+            : []
+      ) as SummaryResponseItem[];
 
       return rawSummary.map(item => ({
         tenantId: item.tenantId || 'system',
@@ -258,11 +261,11 @@ export const TenantLeaveApi = {
       const { data } = await axiosInstance.get<DepartmentsResponse>(
         '/departments',
         {
-        params: tenantId ? { tenantId } : {},
+          params: tenantId ? { tenantId } : {},
         }
       );
 
-      const list = Array.isArray(data) ? data : data?.items ?? [];
+      const list = Array.isArray(data) ? data : (data?.items ?? []);
 
       const filtered = tenantId
         ? list.filter(d => d.tenant_id === tenantId)

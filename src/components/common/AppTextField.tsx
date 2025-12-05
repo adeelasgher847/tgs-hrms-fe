@@ -29,23 +29,24 @@ const variantStyles: Record<AppTextFieldVariant, SxProps<Theme>> = {
   default: {},
 };
 
-export function AppTextField({
-  variantType = 'default',
-  sx,
-  ...rest
-}: AppTextFieldProps) {
-  const baseSx = variantStyles[variantType] || {};
+export const AppTextField = React.forwardRef<HTMLDivElement, AppTextFieldProps>(
+  ({ variantType = 'default', sx, ...rest }, ref) => {
+    const baseSx = variantStyles[variantType] || {};
 
-  return (
-    <TextField
-      {...rest}
-      sx={[
-        baseSx as SxProps<Theme>,
-        sx as SxProps<Theme>,
-      ]}
-    />
-  );
-}
+    return (
+      <TextField
+        ref={ref}
+        {...rest}
+        sx={[
+          baseSx as SxProps<Theme>,
+          sx as SxProps<Theme>,
+        ]}
+      />
+    );
+  }
+);
+
+AppTextField.displayName = 'AppTextField';
 
 export default AppTextField;
 

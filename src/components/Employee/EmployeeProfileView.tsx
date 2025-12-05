@@ -21,13 +21,16 @@ import type {
   EmployeeProfileAttendanceSummaryItem,
   EmployeeProfileLeaveHistoryItem,
 } from '../../api/employeeApi';
-import UserAvatar from '../Common/UserAvatar';
+import { leaveApi, type LeaveType } from '../../api/leaveApi';
+import UserAvatar from '../../components/Common/UserAvatar';
 import { formatDate } from '../../utils/dateUtils';
 
 const EmployeeProfileView: React.FC = () => {
   const [profile, setProfile] = useState<EmployeeFullProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [leaveTypes, setLeaveTypes] = useState<Record<string, string>>({});
+  const [loadingLeaveTypes, setLoadingLeaveTypes] = useState(false);
 
   const base64UrlDecode = (str: string): string => {
     let output = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -80,6 +83,32 @@ const EmployeeProfileView: React.FC = () => {
     }
     return null;
   };
+
+  // Fetch leave types on component mount
+  useEffect(() => {
+    const fetchLeaveTypes = async () => {
+      try {
+        setLoadingLeaveTypes(true);
+        const response = await leaveApi.getLeaveTypes({ page: 1, limit: 100 });
+        // Create a map of leaveTypeId to leaveType name
+        const leaveTypesMap: Record<string, string> = {};
+        if (response.items && Array.isArray(response.items)) {
+          response.items.forEach((leaveType: LeaveType) => {
+            if (leaveType.id && leaveType.name) {
+              leaveTypesMap[leaveType.id] = leaveType.name;
+            }
+          });
+        }
+        setLeaveTypes(leaveTypesMap);
+      } catch {
+        // Don't set error state, just log it - leave types are not critical
+      } finally {
+        setLoadingLeaveTypes(false);
+      }
+    };
+
+    fetchLeaveTypes();
+  }, []);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -289,35 +318,54 @@ const EmployeeProfileView: React.FC = () => {
             <TableBody>
               {(profile.leaveHistory || [])
                 .slice(0, 5)
-                .map((lv: EmployeeProfileLeaveHistoryItem, idx: number) => (
-                  <TableRow
-                    key={idx}
-                    sx={{
-                      backgroundColor:
-                        idx % 2 === 0 ? 'background.default' : 'grey.50',
-                    }}
-                  >
-                    <TableCell>{lv.type}</TableCell>
-                    <TableCell>{formatDate(lv.fromDate)}</TableCell>
-                    <TableCell>{formatDate(lv.toDate)}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={lv.status}
-                        sx={{
-                          bgcolor:
-                            lv.status === 'approved'
-                              ? 'success.main'
-                              : lv.status === 'Pending'
-                                ? 'primary.dark'
-                                : 'error.main',
-                          color: '#fff',
-                          fontWeight: 600,
-                        }}
-                        size='small'
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                .map((lv: EmployeeProfileLeaveHistoryItem, idx: number) => {
+                  // Check if lv.type is an ID (UUID format) or already a name
+                  // UUID format: contains hyphens and is 36 characters long
+                  const isUUID =
+                    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                      lv.type
+                    );
+                  const leaveTypeName =
+                    isUUID && leaveTypes[lv.type]
+                      ? leaveTypes[lv.type]
+                      : lv.type; // If not UUID or name not found, show original value
+
+                  return (
+                    <TableRow
+                      key={idx}
+                      sx={{
+                        backgroundColor:
+                          idx % 2 === 0 ? 'background.default' : 'grey.50',
+                      }}
+                    >
+                      <TableCell>
+                        {loadingLeaveTypes && isUUID ? (
+                          <CircularProgress size={16} />
+                        ) : (
+                          leaveTypeName
+                        )}
+                      </TableCell>
+                      <TableCell>{formatDate(lv.fromDate)}</TableCell>
+                      <TableCell>{formatDate(lv.toDate)}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={lv.status}
+                          sx={{
+                            bgcolor:
+                              lv.status === 'approved'
+                                ? 'success.main'
+                                : lv.status === 'Pending'
+                                  ? 'primary.dark'
+                                  : 'error.main',
+                            color: '#fff',
+                            fontWeight: 600,
+                          }}
+                          size='small'
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
             </TableBody>
           </Table>
         </TableContainer>

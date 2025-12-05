@@ -298,7 +298,7 @@ const SelectPlan: React.FC = () => {
             };
 
             await signupApi.uploadLogo(logoUploadData);
-          } catch (logoError: unknown) {
+          } catch {
             // Don't block the flow if logo upload fails
           }
         }
@@ -375,18 +375,12 @@ const SelectPlan: React.FC = () => {
             throw new Error('No checkout URL received from server');
           }
         } catch (paymentError: unknown) {
-          const error = paymentError as {
-            response?: { status?: number; data?: { message?: string } };
-            message?: string;
-          };
-
           throw paymentError;
         }
       } else {
         throw new Error('Invalid session. Please start over.');
       }
     } catch (err: unknown) {
-      showError(err);
       let errorMessage = 'Failed to create payment session. Please try again.';
 
       if (
@@ -423,6 +417,8 @@ const SelectPlan: React.FC = () => {
       } else if (err instanceof Error && err.message) {
         errorMessage = err.message;
       }
+      setError(errorMessage);
+      showError(err);
 
       setError(errorMessage);
     } finally {

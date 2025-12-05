@@ -203,6 +203,8 @@ class LeaveReportApiService {
       `${this.baseUrl}/leave-balance`,
       { params: { employeeId: userId } }
     );
+
+    // Return backend values as-is so negative remaining can also be shown
     return response.data;
   }
 
@@ -242,9 +244,18 @@ class LeaveReportApiService {
     return response.data;
   }
 
-  async getAllLeaveReports(page: number = 1): Promise<AllLeaveReportsResponse> {
+  async getAllLeaveReports(
+    page: number = 1,
+    month?: number,
+    year?: number
+  ): Promise<AllLeaveReportsResponse> {
+    const params: { page: number; month?: number; year?: number } = { page };
+    if (month) params.month = month;
+    if (year) params.year = year;
+
     const response = await axiosInstance.get<AllLeaveReportsResponse>(
-      `${this.baseUrl}/all-leave-reports?page=${page}`
+      `${this.baseUrl}/all-leave-reports`,
+      { params }
     );
     const data = response.data;
 
@@ -384,8 +395,11 @@ class LeaveReportApiService {
             const rejectedDays =
               stats?.rejectedDays ?? summary.rejectedDays ?? 0;
             const totalDays = approvedDays + pendingDays + rejectedDays;
-            // Remaining days = maxDays - approvedDays (pending leaves don't reduce remaining balance)
-            const remainingDays = (summary.maxDaysPerYear ?? 0) - approvedDays;
+
+            // Prefer backend remainingDays if provided (may be negative when over-used)
+            const remainingDays =
+              summary.remainingDays ??
+              (summary.maxDaysPerYear ?? 0) - approvedDays;
 
             return {
               ...summary,
@@ -393,7 +407,7 @@ class LeaveReportApiService {
               pendingDays,
               rejectedDays,
               totalDays,
-              remainingDays: Math.max(0, remainingDays),
+              remainingDays,
             };
           }
         );
@@ -488,15 +502,29 @@ class LeaveReportApiService {
     }
 
     // Fallback for other response structures
-    if (Array.isArray(data.items)) {
+    // Check if employeeReports is an object with items property
+    if (
+      data.employeeReports &&
+      typeof data.employeeReports === 'object' &&
+      !Array.isArray(data.employeeReports) &&
+      'items' in data.employeeReports &&
+      Array.isArray(data.employeeReports.items)
+    ) {
+      const reportsWithItems = data.employeeReports as {
+        items: EmployeeReport[];
+        total?: number;
+        page?: number;
+        limit?: number;
+        totalPages?: number;
+      };
       return {
         period: data.period,
         organizationStats: data.organizationStats,
-        employeeReports: data.items,
-        total: data.total || data.items.length,
-        page: data.page || page,
-        limit: data.limit || 25,
-        totalPages: data.totalPages || 1,
+        employeeReports: reportsWithItems.items,
+        total: reportsWithItems.total || reportsWithItems.items.length,
+        page: reportsWithItems.page || page,
+        limit: reportsWithItems.limit || 25,
+        totalPages: reportsWithItems.totalPages || 1,
         leaveTypes: data.leaveTypes,
       };
     }

@@ -45,7 +45,6 @@ import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
 import AppButton from '../Common/AppButton';
 import AppTable from '../Common/AppTable';
-import AppTextField from '../Common/AppTextField';
 
 type TenantOption = { id: string; name: string };
 
@@ -70,14 +69,7 @@ const formatLocalYMD = (d: Date) => {
 
 const AttendanceTable = () => {
   const { mode } = useTheme();
-  const {
-    snackbar,
-    showError,
-    showSuccess,
-    showWarning,
-    showInfo,
-    closeSnackbar,
-  } = useErrorHandler();
+  const { snackbar, showError, closeSnackbar } = useErrorHandler();
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [filteredData, setFilteredData] = useState<AttendanceRecord[]>([]);
   const [userRole, setUserRole] = useState<string>('');
@@ -126,7 +118,26 @@ const AttendanceTable = () => {
   const toDisplayTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString() : null;
   const token = localStorage.getItem('token');
-  const filters = { page: '1' };
+
+  // Build query params for CSV export based on current filters
+  const buildExportFilters = () => {
+    const params: Record<string, string> = {};
+
+    // Optional tenant filter (used by System Admin)
+    if (selectedTenant) {
+      params.tenantId = selectedTenant;
+    }
+
+    // Optional date range filters
+    if (startDate) {
+      params.startDate = startDate;
+    }
+    if (endDate) {
+      params.endDate = endDate;
+    }
+
+    return params;
+  };
   const buildFromSummaries = (
     summariesRaw: Record<string, unknown>[],
     currentUserId: string
@@ -616,7 +627,7 @@ const AttendanceTable = () => {
     }
   };
 
-  const fetchEmployeesFromAttendance = async (viewOverride?: 'my' | 'all') => {
+  const _fetchEmployeesFromAttendance = async (viewOverride?: 'my' | 'all') => {
     try {
       const currentView = viewOverride || adminView;
 
@@ -754,7 +765,7 @@ const AttendanceTable = () => {
       if (storedTenantId) {
         return storedTenantId.trim();
       }
-    } catch (error) {
+    } catch {
       // Ignore; fall back to user object
     }
 
@@ -763,7 +774,7 @@ const AttendanceTable = () => {
       if (tenantId) {
         return String(tenantId).trim();
       }
-    } catch (error) {
+    } catch {
       // Ignore; tenant id will remain undefined
     }
 
@@ -1078,16 +1089,6 @@ const AttendanceTable = () => {
         const isNotSuspended =
           statusLower !== 'suspended' && statusLower !== 'suspend';
         const shouldInclude = isActive && isNotDeleted && isNotSuspended;
-        if (!shouldInclude) {
-          const reason = !isActive
-            ? 'status is not active'
-            : !isNotDeleted
-              ? 'tenant is deleted'
-              : !isNotSuspended
-                ? 'tenant is suspended'
-                : 'unknown reason';
-        }
-
         return shouldInclude;
       });
 
@@ -1108,17 +1109,6 @@ const AttendanceTable = () => {
         }));
 
       setTenants(tenantOptions);
-
-      const excludedTenants = allTenants.filter((t: any) => {
-        const statusLower = String(t.status || '')
-          .toLowerCase()
-          .trim();
-        const isActive = statusLower === 'active';
-        const isNotDeleted =
-          !t.isDeleted && !t.deleted_at && statusLower !== 'deleted';
-        const isNotSuspended = statusLower !== 'suspended';
-        return !(isActive && isNotDeleted && isNotSuspended);
-      });
     } catch (error) {
       setTenants([]);
       showError(error);
@@ -1127,7 +1117,7 @@ const AttendanceTable = () => {
     }
   };
 
-  const fetchEmployeesFromSystemAttendance = async (tenantId?: string) => {
+  const _fetchEmployeesFromSystemAttendance = async (tenantId?: string) => {
     try {
       const response = await attendanceApi.getSystemAllAttendance();
       const uniqueEmployees = new Map<string, { id: string; name: string }>();
@@ -1151,7 +1141,7 @@ const AttendanceTable = () => {
       });
 
       setEmployees(Array.from(uniqueEmployees.values()));
-    } catch (error) {
+    } catch {
       setEmployees([]);
       showError(error);
     }
@@ -1614,88 +1604,69 @@ const AttendanceTable = () => {
             </Box>
 
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              {canViewAllAttendance && (
-                <Tooltip title='Export All Attendance'>
-                  <IconButton
-                    color='primary'
-                    onClick={() =>
+              {/* Single CSV export button - behavior changes based on view and role */}
+              <Tooltip
+                title={
+                  isSystemAdminUser && adminView === 'all'
+                    ? 'Export System Attendance'
+                    : isManager && !isAdminLike && managerView === 'team'
+                      ? 'Export Team Attendance'
+                      : 'Export My Attendance'
+                }
+              >
+                <IconButton
+                  color='primary'
+                  onClick={() => {
+                    // System Admin in "All Attendance" view → use /attendance/export/system
+                    if (isSystemAdminUser && adminView === 'all') {
+                      const params = buildExportFilters();
                       exportCSV(
-                        '/attendance/export/all',
-                        'attendance-all.csv',
+                        '/attendance/export/system',
+                        'attendance-system.csv',
                         token || '',
-                        filters
-                      )
+                        params
+                      );
                     }
-                    sx={{
-                      backgroundColor: 'primary.main',
-                      borderRadius: '6px',
-                      padding: '6px',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'primary.dark',
-                      },
-                    }}
-                  >
-                    <FileDownloadIcon />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {isManager && !isAdminLike && (
-                <Tooltip title='Export Team Attendance'>
-                  <IconButton
-                    color='primary'
-                    onClick={() =>
+                    // Manager in "Team Attendance" view → use /attendance/export/team
+                    else if (
+                      isManager &&
+                      !isAdminLike &&
+                      managerView === 'team'
+                    ) {
                       exportCSV(
                         '/attendance/export/team',
                         'attendance-team.csv',
                         token || '',
-                        filters
-                      )
+                        buildExportFilters()
+                      );
                     }
-                    sx={{
-                      backgroundColor: 'primary.main',
-                      borderRadius: '6px',
-                      padding: '6px',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'primary.dark',
-                      },
-                    }}
-                  >
-                    <FileDownloadIcon />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {!isAdminUser &&
-                !isSystemAdminUser &&
-                !isNetworkAdminUser &&
-                !isHRAdminUser &&
-                !isManager && (
-                  <Tooltip title='Export My Attendance'>
-                    <IconButton
-                      color='primary'
-                      onClick={() =>
-                        exportCSV(
-                          '/attendance/export/self',
-                          'attendance-self.csv',
-                          token || '',
-                          filters
-                        )
-                      }
-                      sx={{
-                        backgroundColor: 'primary.main',
-                        borderRadius: '6px',
-                        padding: '6px',
-                        color: 'white',
-                        '&:hover': {
-                          backgroundColor: 'primary.dark',
-                        },
-                      }}
-                    >
-                      <FileDownloadIcon />
-                    </IconButton>
-                  </Tooltip>
-                )}
+                    // Everyone else (including System Admin in "My Attendance") → use /attendance/export/self
+                    else {
+                      const selfParams: Record<string, string> = {};
+                      if (startDate) selfParams.startDate = startDate;
+                      if (endDate) selfParams.endDate = endDate;
+
+                      exportCSV(
+                        '/attendance/export/self',
+                        'attendance-self.csv',
+                        token || '',
+                        selfParams
+                      );
+                    }
+                  }}
+                  sx={{
+                    backgroundColor: 'primary.main',
+                    borderRadius: '6px',
+                    padding: '6px',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    },
+                  }}
+                >
+                  <FileDownloadIcon />
+                </IconButton>
+              </Tooltip>
             </Box>
           </Box>
           <AppTable>

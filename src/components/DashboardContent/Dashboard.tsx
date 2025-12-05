@@ -41,6 +41,7 @@ import SystemUptimeCard from './SystemUptimeCard';
 import RecentActivityLogs from './RecentActivityLogs';
 import { getCurrentUser } from '../../utils/auth';
 import { isSystemAdmin } from '../../utils/roleUtils';
+import { PAGINATION } from '../../constants/appConstants';
 
 const labels = {
   en: { title: 'Dashboard' },
@@ -64,7 +65,7 @@ const Dashboard: React.FC = () => {
   const [logs, setLogs] = useState<RecentLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 25; // Backend returns 25 records per page
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE; // Backend returns records per page
 
   useEffect(() => {
     const fetchData = async () => {
@@ -120,7 +121,6 @@ const Dashboard: React.FC = () => {
   }
 
   const hasMorePages = logs.length === itemsPerPage;
-  const showPagination = currentPage > 1 || hasMorePages;
   const estimatedTotalRecords = hasMorePages
     ? currentPage * itemsPerPage
     : (currentPage - 1) * itemsPerPage + logs.length;

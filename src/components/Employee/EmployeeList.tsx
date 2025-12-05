@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   Box,
   Table,
@@ -328,4 +328,4 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   );
 };
 
-export default EmployeeList;
+export default memo(EmployeeList);

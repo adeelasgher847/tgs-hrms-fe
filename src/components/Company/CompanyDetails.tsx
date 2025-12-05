@@ -8,9 +8,10 @@ import {
   Button,
   Alert,
   CircularProgress,
-  Snackbar,
 } from '@mui/material';
 // import signupApi, { type CompanyDetailsRequest, type LogoUploadRequest } from '../api/signupApi';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 const CompanyDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -18,11 +19,7 @@ const CompanyDetails: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error';
-  }>({ open: false, message: '', severity: 'success' });
+  const { snackbar, showSuccess, closeSnackbar } = useErrorHandler();
 
   const [formData, setFormData] = useState({
     companyName: '',
@@ -133,14 +130,11 @@ const CompanyDetails: React.FC = () => {
       localStorage.setItem('companyDetails', JSON.stringify(companyData));
 
       setSuccess('Company details saved successfully!');
-      setSnackbar({
-        open: true,
-        message:
-          lang === 'ar'
-            ? 'تم حفظ تفاصيل الشركة بنجاح!'
-            : 'Company details saved successfully!',
-        severity: 'success',
-      });
+      showSuccess(
+        lang === 'ar'
+          ? 'تم حفظ تفاصيل الشركة بنجاح!'
+          : 'Company details saved successfully!'
+      );
 
       // Redirect to plan selection after a short delay
       setTimeout(() => {
@@ -589,20 +583,12 @@ const CompanyDetails: React.FC = () => {
           </Box>
         </Box>
       </Box>
-      <Snackbar
+      <ErrorSnackbar
         open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </div>
   );
 };

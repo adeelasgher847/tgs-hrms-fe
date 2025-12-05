@@ -1,4 +1,3 @@
-import type { AxiosError } from 'axios';
 import axiosInstance from './axiosInstance';
 
 export interface Asset {
@@ -499,16 +498,12 @@ class AssetApiService {
           const url = `${this.assetRequestsUrl}/${id}/approve?asset_id=${assetId}`;
           const response = await axiosInstance.put(url, {});
           return response.data;
-        } catch (queryError: unknown) {
-          try {
-            const response = await axiosInstance.put(
-              `${this.assetRequestsUrl}/${id}/approve`,
-              { asset_id: assetId }
-            );
-            return response.data;
-          } catch (minimalError: unknown) {
-            throw minimalError;
-          }
+        } catch {
+          const response = await axiosInstance.put(
+            `${this.assetRequestsUrl}/${id}/approve`,
+            { asset_id: assetId }
+          );
+          return response.data;
         }
       }
       throw bodyError;

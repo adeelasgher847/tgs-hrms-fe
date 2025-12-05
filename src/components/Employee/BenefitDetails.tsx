@@ -50,7 +50,7 @@ const BenefitDetails: React.FC = () => {
         } else {
           setBenefits([]);
         }
-      } catch (err) {
+      } catch {
         setBenefits([]);
       } finally {
         setLoading(false);

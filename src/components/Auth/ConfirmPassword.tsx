@@ -4,7 +4,6 @@ import {
   Box,
   Paper,
   Typography,
-  Button,
   TextField,
   CircularProgress,
   Alert,
@@ -13,9 +12,10 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import axiosInstance from '../../api/axiosInstance';
 import { validatePasswordStrength } from '../../utils/validation';
 import authApi from '../../api/authApi';
+import AppButton from '../Common/AppButton';
+import { COLORS } from '../../constants/appConstants';
 
 const PasswordReset: React.FC = () => {
   const navigate = useNavigate();
@@ -124,13 +124,12 @@ const PasswordReset: React.FC = () => {
           <Typography variant='h5' color='error' gutterBottom>
             Invalid Reset Link
           </Typography>
-          <Button
+          <AppButton
             variant='contained'
+            text='Back to Login'
             onClick={() => navigate('/', { replace: true })}
-            sx={{ backgroundColor: '#484c7f' }}
-          >
-            Back to Login
-          </Button>
+            sx={{ backgroundColor: COLORS.PRIMARY }}
+          />
         </Paper>
       </Box>
     );
@@ -207,15 +206,15 @@ const PasswordReset: React.FC = () => {
             }}
           />
 
-          <Button
+          <AppButton
             type='submit'
             fullWidth
             variant='contained'
+            text={loading ? 'Resetting...' : 'Reset Password'}
             disabled={loading}
-            sx={{ mt: 2, mb: 2, backgroundColor: '#484c7f' }}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Reset Password'}
-          </Button>
+            sx={{ mt: 2, mb: 2, backgroundColor: COLORS.PRIMARY }}
+            startIcon={loading ? <CircularProgress size={24} /> : undefined}
+          />
         </Box>
       </Paper>
     </Box>

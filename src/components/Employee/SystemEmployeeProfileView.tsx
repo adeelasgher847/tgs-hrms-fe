@@ -29,7 +29,8 @@ import systemEmployeeApiService, {
   type EmployeePerformance,
   type Benefit,
 } from '../../api/systemEmployeeApi';
-import UserAvatar from '../Common/UserAvatar';
+import { leaveApi, type LeaveType } from '../../api/leaveApi';
+import UserAvatar from '../../components/Common/UserAvatar';
 import KpiDetailCard from '../KPI/KPICardDetail';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
@@ -55,6 +56,36 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
   const [openKpiDialog, setOpenKpiDialog] = useState(false);
   const [openBenefitDialog, setOpenBenefitDialog] = useState(false);
   const [selectedBenefit, setSelectedBenefit] = useState<Benefit | null>(null);
+  const [leaveTypes, setLeaveTypes] = useState<Record<string, string>>({});
+
+  // Fetch leave types when modal opens
+  useEffect(() => {
+    if (!open) {
+      // Reset leave types when modal closes
+      setLeaveTypes({});
+      return;
+    }
+
+    const fetchLeaveTypes = async () => {
+      try {
+        const response = await leaveApi.getLeaveTypes({ page: 1, limit: 100 });
+        // Create a map of leaveTypeId to leaveType name
+        const leaveTypesMap: Record<string, string> = {};
+        if (response.items && Array.isArray(response.items)) {
+          response.items.forEach((leaveType: LeaveType) => {
+            if (leaveType.id && leaveType.name) {
+              leaveTypesMap[leaveType.id] = leaveType.name;
+            }
+          });
+        }
+        setLeaveTypes(leaveTypesMap);
+      } catch {
+        // Don't set error state, just log it - leave types are not critical
+      }
+    };
+
+    fetchLeaveTypes();
+  }, [open]);
 
   useEffect(() => {
     if (!employeeId || !open) return;
@@ -198,34 +229,45 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                   </TableHead>
                   <TableBody>
                     {leaves.length ? (
-                      leaves.map((leave, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell>{leave.leaveTypeId || '—'}</TableCell>
-                          <TableCell>
-                            {new Date(leave.startDate).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(leave.endDate).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>{leave.reason || '—'}</TableCell>
-                          <TableCell>
-                            <Chip
-                              label={leave.status}
-                              size='small'
-                              sx={{
-                                bgcolor:
-                                  leave.status.toLowerCase() === 'approved'
-                                    ? 'success.main'
-                                    : leave.status.toLowerCase() === 'pending'
-                                      ? 'warning.main'
-                                      : 'error.main',
-                                color: '#fff',
-                                fontWeight: 600,
-                              }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      leaves.map((leave, idx) => {
+                        // Get leave type name from API response (leaveType object) or fallback to mapping
+                        const leaveTypeName =
+                          leave.leaveType?.name ||
+                          (leave.leaveTypeId && leaveTypes[leave.leaveTypeId]
+                            ? leaveTypes[leave.leaveTypeId]
+                            : null);
+
+                        return (
+                          <TableRow key={leave.id || idx}>
+                            <TableCell>
+                              {leaveTypeName || leave.leaveTypeId || '—'}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(leave.startDate).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(leave.endDate).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>{leave.reason || '—'}</TableCell>
+                            <TableCell>
+                              <Chip
+                                label={leave.status}
+                                size='small'
+                                sx={{
+                                  bgcolor:
+                                    leave.status.toLowerCase() === 'approved'
+                                      ? 'success.main'
+                                      : leave.status.toLowerCase() === 'pending'
+                                        ? 'warning.main'
+                                        : 'error.main',
+                                  color: '#fff',
+                                  fontWeight: 600,
+                                }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} align='center'>

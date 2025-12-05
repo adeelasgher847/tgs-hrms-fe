@@ -71,7 +71,7 @@ const TenantGrowthChart: React.FC = () => {
             setSelectedTenant(activeTenants[0].id);
           }
         }
-      } catch (error) {
+      } catch {
         // Ignore tenant dropdown errors; chart will just have no data
       } finally {
         setLoadingTenants(false);
@@ -90,7 +90,7 @@ const TenantGrowthChart: React.FC = () => {
           selectedTenant
         );
         setTenantGrowthData(data);
-      } catch (error) {
+      } catch {
         setTenantGrowthData([]);
       }
     };

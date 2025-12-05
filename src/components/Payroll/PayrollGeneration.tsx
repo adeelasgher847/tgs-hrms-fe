@@ -131,7 +131,7 @@ const PayrollGeneration: React.FC = () => {
           'No payroll records were generated for the selected period'
         );
       }
-    } catch (error) {
+    } catch {
       snackbar.error('Failed to generate payroll. Please try again.');
     } finally {
       setLoading(false);

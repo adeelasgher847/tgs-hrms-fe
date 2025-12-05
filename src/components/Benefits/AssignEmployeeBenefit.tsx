@@ -215,23 +215,6 @@ const AssignEmployeeBenefit: React.FC<{
       onClose();
       onAssigned?.();
     } catch (err: unknown) {
-      let errorMessage = 'Failed to assign benefits';
-      const responseData = (
-        err as {
-          response?: { data?: unknown };
-          message?: string;
-        }
-      ).response?.data;
-
-      if (responseData && typeof responseData === 'object') {
-        const message = (responseData as { message?: string }).message;
-        if (message) {
-          errorMessage = message;
-        }
-      } else if (err instanceof Error && err.message) {
-        errorMessage = err.message;
-      }
-
       showError(err);
     } finally {
       setLoading(false);

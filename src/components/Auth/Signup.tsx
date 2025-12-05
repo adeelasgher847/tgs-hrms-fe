@@ -15,7 +15,6 @@ import {
   Checkbox,
   Alert,
   CircularProgress,
-  Snackbar,
   IconButton,
   InputAdornment,
 } from '@mui/material';
@@ -29,6 +28,8 @@ import {
   validateEmailAddress,
   validatePasswordStrength,
 } from '../../utils/validation';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -39,11 +40,7 @@ const Signup: React.FC = () => {
     useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [, setSuccess] = useState<string | null>(null);
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error';
-  }>({ open: false, message: '', severity: 'success' });
+  const { snackbar, showSuccess, closeSnackbar } = useErrorHandler();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -229,14 +226,11 @@ const Signup: React.FC = () => {
       const response = await signupApi.createPersonalDetails(personalDetails);
 
       setSuccess('Personal details saved successfully!');
-      setSnackbar({
-        open: true,
-        message:
-          lang === 'ar'
-            ? 'تم إنشاء الحساب بنجاح!'
-            : 'Personal details saved successfully!',
-        severity: 'success',
-      });
+      showSuccess(
+        lang === 'ar'
+          ? 'تم إنشاء الحساب بنجاح!'
+          : 'Personal details saved successfully!'
+      );
 
       // Store signupSessionId in localStorage for next steps
       localStorage.setItem('signupSessionId', response.signupSessionId);
@@ -975,20 +969,12 @@ const Signup: React.FC = () => {
           </Box>
         </Box>
       </Box>
-      <Snackbar
+      <ErrorSnackbar
         open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </div>
   );
 };

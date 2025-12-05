@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Button, Alert } from '@mui/material';
+import { Box, Typography, Paper, Alert } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
+import AppButton from '../Common/AppButton';
 import {
   isAdmin,
   isSystemAdmin,
@@ -161,18 +162,11 @@ const AttendanceCheck = () => {
 
         {/* Single Check In / Check Out Button */}
         {status === 'Not Checked In' || status === 'Checked Out' ? (
-          <Button
+          <AppButton
             variant='contained'
             color='success'
+            text='Check In'
             onClick={handleCheckIn}
-            sx={{
-              minWidth: { xs: 100, sm: 120, md: 140 },
-              height: { xs: 36, sm: 40 },
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              fontWeight: 600,
-              borderRadius: 1,
-              px: { xs: 1, sm: 2 },
-            }}
             disabled={loading}
             startIcon={
               <LoginIcon
@@ -181,14 +175,6 @@ const AttendanceCheck = () => {
               />
             }
             aria-label={loading ? 'Checking in...' : 'Check in for attendance'}
-          >
-            Check In
-          </Button>
-        ) : (
-          <Button
-            variant='contained'
-            color='warning'
-            onClick={handleCheckOut}
             sx={{
               minWidth: { xs: 100, sm: 120, md: 140 },
               height: { xs: 36, sm: 40 },
@@ -197,6 +183,13 @@ const AttendanceCheck = () => {
               borderRadius: 1,
               px: { xs: 1, sm: 2 },
             }}
+          />
+        ) : (
+          <AppButton
+            variant='contained'
+            color='warning'
+            text='Check Out'
+            onClick={handleCheckOut}
             disabled={loading}
             startIcon={
               <LogoutIcon
@@ -207,9 +200,15 @@ const AttendanceCheck = () => {
             aria-label={
               loading ? 'Checking out...' : 'Check out from attendance'
             }
-          >
-            Check Out
-          </Button>
+            sx={{
+              minWidth: { xs: 100, sm: 120, md: 140 },
+              height: { xs: 36, sm: 40 },
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              fontWeight: 600,
+              borderRadius: 1,
+              px: { xs: 1, sm: 2 },
+            }}
+          />
         )}
       </Box>
 

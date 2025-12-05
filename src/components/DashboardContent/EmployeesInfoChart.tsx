@@ -52,7 +52,7 @@ export default function EmployeesInfoChart() {
           );
           setSelectedYear(years[0]); // Set most recent year as default
         }
-      } catch (err) {
+      } catch {
         // If API fails (including 401), show zero-values instead of an error block
         setError(null);
         const currentYear = new Date().getFullYear();

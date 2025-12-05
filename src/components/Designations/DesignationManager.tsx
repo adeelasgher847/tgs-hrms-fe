@@ -39,8 +39,8 @@ import {
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
 import {
-  getRoleName,
   isSystemAdmin as isSystemAdminFn,
+  isHRAdmin as isHRAdminFn,
 } from '../../utils/roleUtils';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
@@ -61,6 +61,7 @@ export default function DesignationManager() {
   }, []);
   const userRoleValue = user?.role;
   const isSystemAdmin = isSystemAdminFn(userRoleValue);
+  const isHRAdmin = isHRAdminFn(userRoleValue);
 
   const [designations, setDesignations] = useState<FrontendDesignation[]>([]);
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
@@ -104,7 +105,7 @@ export default function DesignationManager() {
         setAllTenants(activeTenants);
 
         // Default to "All Tenants" - no need to set selectedTenantId
-      } catch (error) {
+      } catch {
         // Ignore; tenant filter list will simply be empty
       } finally {
         setLoadingTenants(false);
@@ -704,21 +705,23 @@ export default function DesignationManager() {
                               >
                                 <EditIcon fontSize='small' aria-hidden='true' />
                               </IconButton>
-                              <IconButton
-                                color='error'
-                                size='small'
-                                onClick={() => {
-                                  setDesignationToDelete(designation);
-                                  setDeleteDialogOpen(true);
-                                }}
-                                title={getText('Delete', 'حذف')}
-                                aria-label={`Delete designation ${getText(designation.title, designation.titleAr)}`}
-                              >
-                                <DeleteIcon
-                                  fontSize='small'
-                                  aria-hidden='true'
-                                />
-                              </IconButton>
+                              {!isHRAdmin && (
+                                <IconButton
+                                  color='error'
+                                  size='small'
+                                  onClick={() => {
+                                    setDesignationToDelete(designation);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                  title={getText('Delete', 'حذف')}
+                                  aria-label={`Delete designation ${getText(designation.title, designation.titleAr)}`}
+                                >
+                                  <DeleteIcon
+                                    fontSize='small'
+                                    aria-hidden='true'
+                                  />
+                                </IconButton>
+                              )}
                             </Box>
                           </TableCell>
                         )}

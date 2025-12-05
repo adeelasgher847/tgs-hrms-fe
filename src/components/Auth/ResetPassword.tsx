@@ -9,8 +9,6 @@ import {
   TextField,
   Link,
   CircularProgress,
-  Snackbar,
-  Alert,
   IconButton,
   InputAdornment,
 } from '@mui/material';
@@ -18,6 +16,8 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import ForgetImage from '../../assets/icons/forget-image.svg';
 import authApi from '../../api/authApi';
 import { validatePasswordStrength } from '../../utils/validation';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -36,11 +36,7 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [openToast, setOpenToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>(
-    'success'
-  );
+  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   useEffect(() => {
     if (!token) {
@@ -101,18 +97,14 @@ const ResetPassword = () => {
       });
 
       if (response.message) {
-        setToastMessage(response.message);
-        setToastSeverity('success');
-        setOpenToast(true);
+        showSuccess(response.message);
 
         // Redirect to login page after successful reset
         setTimeout(() => {
           navigate('/');
         }, 2000);
       } else {
-        setToastMessage('Failed to reset password. Please try again.');
-        setToastSeverity('error');
-        setOpenToast(true);
+        showError('Failed to reset password. Please try again.');
       }
     } catch (error: unknown) {
       // Check if it's a validation error
@@ -122,11 +114,7 @@ const ResetPassword = () => {
             'This reset link has expired or is invalid. Please request a new one.',
         });
       } else {
-        setToastMessage(
-          'Network error. Please check your connection and try again.'
-        );
-        setToastSeverity('error');
-        setOpenToast(true);
+        showError('Network error. Please check your connection and try again.');
       }
     } finally {
       setLoading(false);
@@ -512,28 +500,12 @@ const ResetPassword = () => {
         </Box>
       </Box>
 
-      {/* Snackbar Toast */}
-      <Snackbar
-        open={openToast}
-        autoHideDuration={4000}
-        onClose={() => setOpenToast(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setOpenToast(false)}
-          severity={toastSeverity}
-          sx={{
-            width: '100%',
-            backgroundColor: '#2e7d32',
-            color: 'white !important',
-            '& .MuiAlert-icon': {
-              color: 'white',
-            },
-          }}
-        >
-          {toastMessage}
-        </Alert>
-      </Snackbar>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </div>
   );
 };

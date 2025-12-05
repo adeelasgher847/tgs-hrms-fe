@@ -319,7 +319,9 @@ class EmployeeApiService {
             return null;
           }
         })
-        .filter((e): e is BackendEmployee => e !== null);
+        .filter(
+          (e: BackendEmployee | null): e is BackendEmployee => e !== null
+        );
 
       return {
         items: normalizedItems,
@@ -334,23 +336,18 @@ class EmployeeApiService {
   }
 
   async getAllEmployeesWithoutPagination(): Promise<BackendEmployee[]> {
-    try {
-      let allEmployees: BackendEmployee[] = [];
-      let currentPage = 1;
-      let hasMore = true;
+    let allEmployees: BackendEmployee[] = [];
+    let currentPage = 1;
+    let hasMore = true;
 
-      while (hasMore) {
-        const res = await this.getAllEmployees({}, currentPage);
-        allEmployees = [...allEmployees, ...res.items];
-        hasMore = currentPage < res.totalPages;
-        currentPage++;
-      }
-
-      return allEmployees;
-    } catch (error) {
-      throw error;
-      return [];
+    while (hasMore) {
+      const res = await this.getAllEmployees({}, currentPage);
+      allEmployees = [...allEmployees, ...res.items];
+      hasMore = currentPage < res.totalPages;
+      currentPage++;
     }
+
+    return allEmployees;
   }
 
   async getEmployeeById(id: string): Promise<BackendEmployee> {
@@ -669,6 +666,19 @@ class EmployeeApiService {
   }
 
   // Image blob endpoints removed. Image paths should come directly from list/detail APIs.
+
+  // Export employees for all tenants as CSV (System-admin only)
+  async exportSystemEmployeesCSV(tenantId?: string): Promise<Blob> {
+    const params: Record<string, string> = {};
+    if (tenantId) {
+      params.tenantId = tenantId;
+    }
+    const response = await axiosInstance.get('/employees/system/export', {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  }
 }
 
 export const getEmployeeJoiningReport = async (): Promise<

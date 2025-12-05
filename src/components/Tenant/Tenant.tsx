@@ -36,13 +36,11 @@ import {
   type SystemTenant,
   type SystemTenantDetail,
 } from '../../api/systemTenantApi';
-import companyApi from '../../api/companyApi';
 import { formatDate } from '../../utils/dateUtils';
 import { env } from '../../config/env';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
 import AppButton from '../Common/AppButton';
-import AppTextField from '../Common/AppTextField';
 import AppSelect from '../Common/AppSelect';
 import AppTable from '../Common/AppTable';
 import AppCard from '../Common/AppCard';
@@ -110,7 +108,7 @@ export const TenantPage: React.FC = () => {
         includeDeleted: true,
       });
 
-      let allTenants = res.data;
+      const allTenants = res.data;
 
       let filtered = allTenants;
 
@@ -134,7 +132,7 @@ export const TenantPage: React.FC = () => {
       const start = (currentPage - 1) * itemsPerPage;
       const end = start + itemsPerPage;
       setTenants(filtered.slice(start, end));
-    } catch (err) {
+    } catch {
       showError('Failed to fetch tenants');
     } finally {
       setIsLoading(false);
@@ -319,7 +317,7 @@ export const TenantPage: React.FC = () => {
       }
       setEditLogoPreview(null);
       fetchTenants();
-    } catch (error) {
+    } catch {
       showError('Failed to update tenant');
     } finally {
       setUploadingEditLogo(false);
@@ -373,7 +371,7 @@ export const TenantPage: React.FC = () => {
           updatedTenant.status.slice(1).toLowerCase()
         }"`
       );
-    } catch (err) {
+    } catch {
       showError('Failed to update status');
     }
   };
@@ -450,7 +448,7 @@ export const TenantPage: React.FC = () => {
       }
 
       setIsEditOpen(true);
-    } catch (error) {
+    } catch {
       showError('Failed to load tenant details');
     }
   };

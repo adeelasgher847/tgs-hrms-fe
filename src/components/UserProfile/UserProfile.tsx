@@ -47,7 +47,6 @@ import AppCard from '../Common/AppCard';
 const UserProfileComponent = React.memo(() => {
   const { user: profile, loading, updateUser } = useUser();
   const { updateProfilePicture } = useProfilePicture();
-  const [error, setError] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const theme = useTheme();
   const darkMode = useIsDarkMode();
@@ -172,7 +171,6 @@ const UserProfileComponent = React.memo(() => {
       </Box>
     );
   }
-  if (error) return <Alert severity='error'>{error}</Alert>;
   if (!profile) return null;
 
   return (

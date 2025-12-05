@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -25,10 +25,7 @@ import employeeBenefitApi, {
 import { departmentApiService } from '../../api/departmentApi';
 import { designationApiService } from '../../api/designationApi';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
-import {
-  getRoleName,
-  isSystemAdmin as isSystemAdminFn,
-} from '../../utils/roleUtils';
+import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
 import AppSelect from '../Common/AppSelect';
 import AppTable from '../Common/AppTable';
 
@@ -184,7 +181,11 @@ const BenefitReport: React.FC = () => {
 
         if (isSystemAdmin) {
           const response =
-            await employeeBenefitApi.getAllTenantsEmployeeBenefits();
+            await employeeBenefitApi.getAllTenantsEmployeeBenefits({
+              tenant_id: selectedTenant || undefined,
+              page,
+              limit: ITEMS_PER_PAGE,
+            } as any);
 
           const tenants: TenantEmployeeWithBenefits[] =
             'items' in response ? response.items : (response.tenants ?? []);

@@ -24,7 +24,6 @@ import { snackbar } from '../../utils/snackbar';
 import TeamMemberList from './TeamMemberList';
 import AppButton from '../Common/AppButton';
 import AppCard from '../Common/AppCard';
-import AppTextField from '../Common/AppTextField';
 import AppSelect from '../Common/AppSelect';
 import { COLORS } from '../../constants/appConstants';
 
@@ -119,7 +118,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
           setLoadingEmployees(true);
           const response = await teamApiService.getAvailableEmployees(1, 25);
           setAvailableEmployees(response.items || []);
-        } catch (error) {
+        } catch {
           snackbar.error('Failed to load available employees.');
         } finally {
           setLoadingEmployees(false);

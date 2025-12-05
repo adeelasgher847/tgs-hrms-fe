@@ -93,7 +93,7 @@ const EmployeeBenefits: React.FC = () => {
             : (pageNum - 1) * ITEMS_PER_PAGE + employeesWithBenefitsCount
         );
       }
-    } catch (error) {
+    } catch {
       // Keep previous grid state if fetch fails
     } finally {
       setLoading(false);
@@ -120,7 +120,7 @@ const EmployeeBenefits: React.FC = () => {
       });
 
       setOpenBenefitDialog(true);
-    } catch (error) {
+    } catch {
       // Keep previous selection if details fetch fails
     } finally {
       setBenefitLoading(false);
@@ -142,7 +142,7 @@ const EmployeeBenefits: React.FC = () => {
       showSuccess('Benefit cancelled successfully!');
       setOpenBenefitDialog(false);
       await fetchEmployees();
-    } catch (error) {
+    } catch {
       showError('Failed to cancel benefit.');
     }
   };
@@ -225,7 +225,7 @@ const EmployeeBenefits: React.FC = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch {
       showError('An error occurred while downloading the CSV.');
     }
   };

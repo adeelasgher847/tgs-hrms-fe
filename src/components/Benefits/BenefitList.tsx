@@ -92,7 +92,7 @@ const BenefitList: React.FC = () => {
             : (page - 1) * ITEMS_PER_PAGE + items.length
         );
       }
-    } catch (err) {
+    } catch {
       setBenefits([]);
       setTypes([]);
       setStatuses([]);
@@ -126,7 +126,7 @@ const BenefitList: React.FC = () => {
       setModalOpen(false);
       setEditingBenefit(null);
       fetchBenefits();
-    } catch (error: unknown) {
+    } catch {
       showError('Failed to save benefit.');
     }
   };

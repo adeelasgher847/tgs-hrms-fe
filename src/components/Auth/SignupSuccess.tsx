@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Paper, Typography, Button } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import AppButton from '../Common/AppButton';
 
 const SignupSuccess: React.FC = () => {
   const navigate = useNavigate();
@@ -79,29 +80,25 @@ const SignupSuccess: React.FC = () => {
         </Typography>
 
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-          <Button
-            variant='contained'
-            size='large'
+          <AppButton
+            variantType='contained'
+            text='Go to Dashboard'
             onClick={handleGoToDashboard}
             sx={{
               px: 4,
               py: 1.5,
               fontWeight: 600,
             }}
-          >
-            Go to Dashboard
-          </Button>
-          <Button
-            variant='outlined'
-            size='large'
+          />
+          <AppButton
+            variantType='outlined'
+            text='Go Home'
             onClick={handleGoHome}
             sx={{
               px: 4,
               py: 1.5,
             }}
-          >
-            Go Home
-          </Button>
+          />
         </Box>
       </Paper>
     </Box>

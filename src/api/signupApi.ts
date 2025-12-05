@@ -141,16 +141,12 @@ class SignupApiService {
   async getStripePricesByPlanIds(
     planIds: string[]
   ): Promise<StripePriceInfo[]> {
-    try {
-      const params = new URLSearchParams();
-      params.set('planIds', planIds.join(','));
-      const response = await axiosInstance.get(
-        `/subscription-plans/prices-by-plans?${params.toString()}`
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const params = new URLSearchParams();
+    params.set('planIds', planIds.join(','));
+    const response = await axiosInstance.get(
+      `/subscription-plans/prices-by-plans?${params.toString()}`
+    );
+    return response.data;
   }
 
   // Step 2: Company Details

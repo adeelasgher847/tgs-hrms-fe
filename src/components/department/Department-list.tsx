@@ -30,7 +30,6 @@ import {
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
 import {
-  getRoleName,
   isSystemAdmin as isSystemAdminFn,
 } from '../../utils/roleUtils';
 import { SystemTenantApi } from '../../api/systemTenantApi';
@@ -106,7 +105,7 @@ export const DepartmentList: React.FC = () => {
         setAllTenants(activeTenants);
 
         // Default to "All Tenants" - no need to set selectedTenantId
-      } catch (error) {
+      } catch {
         // Leave tenant filter empty on failure
       } finally {
         setLoadingTenants(false);

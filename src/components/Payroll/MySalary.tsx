@@ -28,6 +28,7 @@ import { payrollApi, type PayrollRecord } from '../../api/payrollApi';
 import { useIsDarkMode } from '../../theme';
 import { useUser } from '../../hooks/useUser';
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
+import { PAGINATION } from '../../constants/appConstants';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -83,7 +84,7 @@ const MySalary: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25;
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
 
   const fetchPayslip = useCallback(async (recordId: string | null) => {
     if (!recordId) {
@@ -99,7 +100,7 @@ const MySalary: React.FC = () => {
       setDetailError(null);
       const data = await payrollApi.getPayrollPayslip(recordId);
       setDetailRecord(data);
-    } catch (err) {
+    } catch {
       setDetailRecord(null);
       setDetailError('Failed to load payslip details.');
     } finally {
@@ -174,7 +175,7 @@ const MySalary: React.FC = () => {
       setDetailError(null);
       setDetailLoading(false);
       setDialogOpen(false);
-    } catch (err) {
+    } catch {
       setError('Failed to load salary information.');
       setHistory([]);
       setSelectedRecordId(null);
