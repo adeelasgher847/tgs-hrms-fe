@@ -49,6 +49,19 @@ export type EmployeeLeave = {
   id: string;
   employeeId: string;
   leaveTypeId: string;
+  leaveType?: {
+    id: string;
+    name: string;
+    description?: string;
+    maxDaysPerYear?: number;
+    carryForward?: boolean;
+    isPaid?: boolean;
+    tenantId?: string;
+    createdBy?: string;
+    status?: string;
+    createdAt?: string;
+    updatedAt?: string;
+  };
   startDate: string;
   endDate: string;
   totalDays: number;
