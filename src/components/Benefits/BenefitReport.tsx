@@ -18,6 +18,7 @@ import {
   Pagination,
   Tooltip,
   IconButton,
+  Grid,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import SummaryCard from './SummaryCard';
@@ -230,9 +231,15 @@ const BenefitReport: React.FC = () => {
         let backendTotalPages = 1;
 
         if (isSystemAdmin) {
-          const response =
-            await employeeBenefitApi.getAllTenantsEmployeeBenefits();
-          flattened = (response.items || []).flatMap((tenant: any) =>
+          const response = await employeeBenefitApi.getAllTenantsEmployeeBenefits({
+            tenant_id: selectedTenant || undefined,
+            page,
+            limit: ITEMS_PER_PAGE,
+          } as any);
+
+          const items: any[] = (response as any)?.items || (response as any)?.tenants || [];
+
+          flattened = items.flatMap((tenant: any) =>
             (tenant.employees || []).flatMap((emp: any) =>
               (emp.benefits || []).map((b: any) => ({
                 tenantId: tenant.tenant_id,
@@ -245,7 +252,7 @@ const BenefitReport: React.FC = () => {
               }))
             )
           );
-          backendTotalPages = response.totalPages || 1;
+          backendTotalPages = (response as any)?.totalPages || 1;
         } else {
           const params: any = { page };
           if (selectedDepartment) params.department = selectedDepartment;
@@ -443,56 +450,26 @@ const BenefitReport: React.FC = () => {
         ))}
       </Box>
 
-      <Box display='flex' justifyContent='space-between' alignItems='center'>
-        <Box display='flex' gap={2} mb={2}>
+      {/* Filters & CSV */}
+      <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
+        <Box display='flex' gap={2} flexWrap='wrap'>
           <FormControl size='small' sx={{ minWidth: 220 }}>
-            <InputLabel>{L.department}</InputLabel>
-            <Select
-              value={selectedDepartment}
-              onChange={e => {
-                setSelectedDepartment(e.target.value as string);
-                setSelectedDesignation('');
-              }}
-              label={L.department}
-            >
-              <MenuItem value=''>{L.all}</MenuItem>
-              {departments.map(dept => (
-                <MenuItem key={dept.id} value={dept.id}>
-                  {dept.name}
-                </MenuItem>
-              ))}
+            <InputLabel>Department</InputLabel>
+            <Select value={selectedDepartment} onChange={e => { setSelectedDepartment(e.target.value as string); setPage(1); }} label='Department'>
+              <MenuItem value=''>All</MenuItem>
+              {departments.map(d => <MenuItem key={d.id} value={d.id}>{d.name}</MenuItem>)}
             </Select>
           </FormControl>
-
           <FormControl size='small' sx={{ minWidth: 220 }}>
-            <InputLabel>{L.designation}</InputLabel>
-            <Select
-              value={selectedDesignation}
-              onChange={e => setSelectedDesignation(e.target.value as string)}
-              label={L.designation}
-              disabled={!designations.length}
-            >
-              <MenuItem value=''>{L.all}</MenuItem>
-              {designations.map(des => (
-                <MenuItem key={des.id} value={des.title}>
-                  {des.title}
-                </MenuItem>
-              ))}
+            <InputLabel>Designation</InputLabel>
+            <Select value={selectedDesignation} onChange={e => { setSelectedDesignation(e.target.value as string); setPage(1); }} label='Designation' disabled={!designations.length}>
+              <MenuItem value=''>All</MenuItem>
+              {designations.map(d => <MenuItem key={d.id} value={d.title}>{d.title}</MenuItem>)}
             </Select>
           </FormControl>
         </Box>
-
-        <Tooltip title={L.downloadCsv}>
-          <IconButton
-            color='primary'
-            onClick={handleDownload}
-            sx={{
-              backgroundColor: 'primary.main',
-              color: 'white',
-              borderRadius: '6px',
-              '&:hover': { backgroundColor: 'primary.dark' },
-            }}
-          >
+        <Tooltip title='Download CSV'>
+          <IconButton color='primary' onClick={handleDownload} sx={{ backgroundColor: 'primary.main', color: 'white', borderRadius: '6px', '&:hover': { backgroundColor: 'primary.dark' } }}>
             <FileDownloadIcon />
           </IconButton>
         </Tooltip>

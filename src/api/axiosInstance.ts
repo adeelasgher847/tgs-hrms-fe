@@ -68,6 +68,26 @@ axiosInstance.interceptors.request.use(
       delete config.headers['Content-Type'];
     }
 
+    // Debug logging for payroll config requests
+    try {
+      if (
+        typeof config.url === 'string' &&
+        config.url.includes('/payroll/config') &&
+        config.method &&
+        ['post', 'put'].includes(config.method.toLowerCase())
+      ) {
+        // eslint-disable-next-line no-console
+        console.debug('Outgoing payroll config request:', {
+          url: config.url,
+          method: config.method,
+          data: config.data,
+          headers: config.headers,
+        });
+      }
+    } catch (e) {
+      // ignore logging errors
+    }
+
     // Debug logging
 
     return config;
@@ -138,6 +158,26 @@ axiosInstance.interceptors.response.use(undefined, async (error: unknown) => {
   
   // For all other errors, ensure the error object has proper structure
   if (error && typeof error === 'object' && 'response' in error) {
+    try {
+      const resp = (error as Record<string, unknown>).response as Record<string, unknown> | undefined;
+      if (resp && resp.config && typeof resp.config === 'object') {
+        const reqCfg = resp.config as Record<string, unknown>;
+        if (
+          typeof reqCfg.url === 'string' &&
+          reqCfg.url.includes('/payroll/config') &&
+          resp.data
+        ) {
+          // eslint-disable-next-line no-console
+          console.debug('Payroll config response error:', {
+            url: reqCfg.url,
+            status: (resp as any).status,
+            data: resp.data,
+          });
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
     const axiosError = error as Record<string, unknown>;
     
     // Ensure error response has proper structure for frontend handling

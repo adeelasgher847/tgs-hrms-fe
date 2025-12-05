@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -16,6 +16,7 @@ import {
   Tooltip,
   IconButton,
   Pagination,
+  TextField,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
@@ -144,6 +145,9 @@ const Reports: React.FC = () => {
       return typeof v === 'number' ? formatNumber(v) : String(v ?? '');
     });
   const [tab, setTab] = useState(0);
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [teamSummary, setTeamSummary] = useState<TeamMemberSummary[]>([]);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
   const [allLeaveReports, setAllLeaveReports] = useState<EmployeeReport[]>([]);
@@ -190,10 +194,171 @@ const Reports: React.FC = () => {
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) =>
     setTab(newValue);
 
+  const handleMonthChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const value = event.target.value; // format: "YYYY-MM"
+    if (!value) return;
+    const [yearStr, monthStr] = value.split('-');
+    const parsedYear = parseInt(yearStr, 10);
+    const parsedMonth = parseInt(monthStr, 10);
+
+    if (!Number.isNaN(parsedYear) && !Number.isNaN(parsedMonth)) {
+      setSelectedYear(parsedYear);
+      setSelectedMonth(parsedMonth);
+    }
+  };
+
+  const filteredEmployeeReports = useMemo(() => {
+    if (!allLeaveReports || allLeaveReports.length === 0) return [];
+
+    const monthStart = new Date(selectedYear, selectedMonth - 1, 1);
+    const monthEnd = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999);
+    const yearStart = new Date(selectedYear, 0, 1);
+
+    const calculateDays = (startDate: string, endDate: string): number => {
+      try {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diff = Math.floor(
+          (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        return diff >= 0 ? diff + 1 : 0;
+      } catch {
+        return 0;
+      }
+    };
+
+    return allLeaveReports
+      .map(emp => {
+        const leaveRecords = emp.leaveRecords || [];
+
+        // Records that overlap the selected month (for monthly stats)
+        const filteredRecords = leaveRecords.filter(record => {
+          if (!record.startDate || !record.endDate) return false;
+          const start = new Date(record.startDate);
+          const end = new Date(record.endDate);
+          if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+            return false;
+          }
+          return start <= monthEnd && end >= monthStart;
+        });
+
+        if (filteredRecords.length === 0) {
+          return null;
+        }
+
+        // Year‑to‑date approved days (from start of year up to end of selected month)
+        const ytdApprovedMap = new Map<string, number>();
+
+        leaveRecords.forEach(record => {
+          if (!record.startDate || !record.endDate) return;
+          const start = new Date(record.startDate);
+          const end = new Date(record.endDate);
+          if (
+            Number.isNaN(start.getTime()) ||
+            Number.isNaN(end.getTime()) ||
+            end < yearStart ||
+            start > monthEnd
+          ) {
+            return;
+          }
+
+          if (record.status !== 'approved') return;
+
+          let days = record.totalDays;
+          if (days === null || days === undefined) {
+            days = calculateDays(record.startDate, record.endDate);
+          }
+
+          const key = record.leaveTypeName?.toLowerCase() || 'unknown';
+          const current = ytdApprovedMap.get(key) ?? 0;
+          ytdApprovedMap.set(key, current + days);
+        });
+
+        const statsMap = new Map<
+          string,
+          {
+            approvedDays: number;
+            pendingDays: number;
+            rejectedDays: number;
+            totalDays: number;
+          }
+        >();
+
+        filteredRecords.forEach(record => {
+          const key = record.leaveTypeName?.toLowerCase() || 'unknown';
+          let days = record.totalDays;
+          if (days === null || days === undefined) {
+            days = calculateDays(record.startDate, record.endDate);
+          }
+
+          const current = statsMap.get(key) || {
+            approvedDays: 0,
+            pendingDays: 0,
+            rejectedDays: 0,
+            totalDays: 0,
+          };
+
+          if (record.status === 'approved') {
+            current.approvedDays += days;
+          } else if (record.status === 'pending') {
+            current.pendingDays += days;
+          } else if (record.status === 'rejected') {
+            current.rejectedDays += days;
+          }
+          current.totalDays += days;
+
+          statsMap.set(key, current);
+        });
+
+        const newLeaveSummary: LeaveSummaryItem[] = Array.from(
+          statsMap.entries()
+        ).map(([key, stats]) => {
+          const base = emp.leaveSummary?.find(
+            s => s.leaveTypeName.toLowerCase() === key
+          );
+
+          const matchingRecord = filteredRecords.find(
+            r => r.leaveTypeName?.toLowerCase() === key
+          );
+
+          const approvedYtd = ytdApprovedMap.get(key) ?? stats.approvedDays;
+          const maxPerYear = base?.maxDaysPerYear ?? 0;
+          // Allow negative remaining when over-used, to reflect backend behaviour
+          const remaining = maxPerYear - approvedYtd;
+
+          return {
+            leaveTypeId: base?.leaveTypeId ?? key,
+            leaveTypeName:
+              base?.leaveTypeName ?? matchingRecord?.leaveTypeName ?? 'Unknown',
+            maxDaysPerYear: base?.maxDaysPerYear ?? 0,
+            approvedDays: stats.approvedDays,
+            pendingDays: stats.pendingDays,
+            rejectedDays: stats.rejectedDays,
+            totalDays: stats.totalDays,
+            // Yearly-style remaining days
+            remainingDays: remaining,
+            // Fields from the simpler LeaveSummaryItem interface
+            type:
+              base?.leaveTypeName ?? matchingRecord?.leaveTypeName ?? 'Unknown',
+            used: approvedYtd,
+            remaining,
+          };
+        });
+
+        return {
+          ...emp,
+          leaveSummary: newLeaveSummary,
+          leaveRecords: filteredRecords,
+        };
+      })
+      .filter((emp): emp is EmployeeReport => emp !== null);
+  }, [allLeaveReports, selectedMonth, selectedYear]);
+
   const handleExport = async () => {
     try {
       let blob;
-      const now = new Date();
 
       if (isAdminView) {
         const headers = [
@@ -209,15 +374,16 @@ const Reports: React.FC = () => {
           'Rejected Days',
         ];
 
-        const rows = allLeaveReports.flatMap(emp =>
+        const rows = filteredEmployeeReports.flatMap(emp =>
           emp.leaveSummary.map(summary => [
             emp.employeeName,
             emp.department,
             emp.designation,
             summary.leaveTypeName,
             summary.maxDaysPerYear,
-            (summary.approvedDays ?? 0) + (summary.pendingDays ?? 0),
-            summary.remainingDays ?? 0,
+            summary.used ??
+              (summary.approvedDays ?? 0) + (summary.pendingDays ?? 0),
+            summary.remaining ?? summary.remainingDays ?? 0,
             summary.approvedDays ?? 0,
             summary.pendingDays ?? 0,
             summary.rejectedDays ?? 0,
@@ -242,8 +408,8 @@ const Reports: React.FC = () => {
         if (tab === 0) blob = await leaveReportApi.exportLeaveBalanceCSV();
         if (isManager && tab === 1)
           blob = await leaveReportApi.exportTeamLeaveSummaryCSV(
-            now.getMonth() + 1,
-            now.getFullYear()
+            selectedMonth,
+            selectedYear
           );
       }
 
@@ -268,7 +434,11 @@ const Reports: React.FC = () => {
       let totalPagesFromBackend = 1;
       let leaveTypes: unknown[] = [];
 
-      const firstPageData = await leaveReportApi.getAllLeaveReports(1);
+      const firstPageData = await leaveReportApi.getAllLeaveReports(
+        1,
+        selectedMonth,
+        selectedYear
+      );
 
       // Extract limit and total pages from first page
       if (
@@ -305,7 +475,11 @@ const Reports: React.FC = () => {
       if (totalPagesFromBackend > 1) {
         for (let page = 2; page <= totalPagesFromBackend; page++) {
           try {
-            const pageData = await leaveReportApi.getAllLeaveReports(page);
+            const pageData = await leaveReportApi.getAllLeaveReports(
+              page,
+              selectedMonth,
+              selectedYear
+            );
 
             let pageEmployeeReports: EmployeeReport[] = [];
             if (
@@ -399,10 +573,9 @@ const Reports: React.FC = () => {
             const data = await leaveReportApi.getLeaveBalance();
             setLeaveBalance(data.balances || []);
           } else if (isManager && tab === 1) {
-            const now = new Date();
             const data = await leaveReportApi.getTeamLeaveSummary(
-              now.getMonth() + 1,
-              now.getFullYear()
+              selectedMonth,
+              selectedYear
             );
             setTeamSummary(data.teamMembers || []);
           }
@@ -419,7 +592,7 @@ const Reports: React.FC = () => {
     fetchData();
     // Remove 'page' from dependencies - we use client-side pagination for leave type rows
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, userInfo, isAdminView, isManager]);
+  }, [tab, userInfo, isAdminView, isManager, selectedMonth, selectedYear]);
 
   if (!userInfo) {
     return (
@@ -488,22 +661,34 @@ const Reports: React.FC = () => {
         >
           {L.pageTitle}
         </Typography>
-
-        <Box dir='ltr'>
-          <Tooltip title={L.exportTooltip}>
-            <IconButton
-              color='primary'
-              onClick={handleExport}
-              sx={{
-                backgroundColor: 'primary.main',
-                borderRadius: '6px',
-                color: 'white',
-                '&:hover': { backgroundColor: 'primary.dark' },
-              }}
-            >
-              <FileDownloadIcon />
-            </IconButton>
-          </Tooltip>
+        <Box display='flex' alignItems='center' gap={1} flexWrap='wrap'>
+          {isAdminView && (
+            <TextField
+              label='Month'
+              type='month'
+              size='small'
+              value={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}`}
+              onChange={handleMonthChange}
+              InputLabelProps={{ shrink: true }}
+              sx={{ minWidth: 180 }}
+            />
+          )}
+          {(isAdminView || isManager) && (
+            <Tooltip title='Export CSV'>
+              <IconButton
+                color='primary'
+                onClick={handleExport}
+                sx={{
+                  backgroundColor: 'primary.main',
+                  borderRadius: '6px',
+                  color: 'white',
+                  '&:hover': { backgroundColor: 'primary.dark' },
+                }}
+              >
+                <FileDownloadIcon />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       </Box>
 
@@ -587,7 +772,7 @@ const Reports: React.FC = () => {
                       <CircularProgress size={24} />
                     </TableCell>
                   </TableRow>
-                ) : allLeaveReports.length === 0 ? (
+                ) : filteredEmployeeReports.length === 0 ? (
                   <TableRow
                     sx={{
                       backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
@@ -615,7 +800,7 @@ const Reports: React.FC = () => {
                     };
 
                     const allLeaveTypeRows: LeaveTypeRow[] =
-                      allLeaveReports.flatMap(emp => {
+                      filteredEmployeeReports.flatMap(emp => {
                         if (emp.leaveSummary && emp.leaveSummary.length > 0) {
                           return emp.leaveSummary.map(
                             (summary, index): LeaveTypeRow => ({
@@ -685,14 +870,17 @@ const Reports: React.FC = () => {
                             align='center'
                             sx={{ color: darkMode ? '#ccc' : '#000' }}
                           >
-                            {(row.summary.approvedDays ?? 0) +
-                              (row.summary.pendingDays ?? 0)}
+                            {row.summary.used ??
+                              (row.summary.approvedDays ?? 0) +
+                                (row.summary.pendingDays ?? 0)}
                           </TableCell>
                           <TableCell
                             align='center'
                             sx={{ color: darkMode ? '#ccc' : '#000' }}
                           >
-                            {row.summary.remainingDays ?? 0}
+                            {row.summary.remaining ??
+                              row.summary.remainingDays ??
+                              0}
                           </TableCell>
                           <TableCell
                             align='center'
@@ -757,8 +945,8 @@ const Reports: React.FC = () => {
               key: string;
             };
 
-            const allLeaveTypeRows: LeaveTypeRow[] = allLeaveReports.flatMap(
-              emp => {
+            const allLeaveTypeRows: LeaveTypeRow[] =
+              filteredEmployeeReports.flatMap(emp => {
                 if (emp.leaveSummary && emp.leaveSummary.length > 0) {
                   return emp.leaveSummary.map(
                     (summary, index): LeaveTypeRow => ({
@@ -784,8 +972,7 @@ const Reports: React.FC = () => {
                     } as LeaveTypeRow,
                   ];
                 }
-              }
-            );
+              });
 
             // Use backend limit (stored in state) or default to 25
             const ITEMS_PER_PAGE = paginationLimit || 25;

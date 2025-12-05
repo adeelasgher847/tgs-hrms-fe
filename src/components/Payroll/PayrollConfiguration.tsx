@@ -51,7 +51,6 @@ const PayrollConfiguration: React.FC = () => {
       salaryCycle: 'Salary Cycle',
       monthly: 'Monthly',
       weekly: 'Weekly',
-      biweekly: 'Bi-weekly',
       basePay: 'Base Pay Components',
       basicLabel: 'Basic',
       houseRentLabel: 'House Rent',
@@ -112,7 +111,6 @@ const PayrollConfiguration: React.FC = () => {
       salaryCycle: 'دورة الراتب',
       monthly: 'شهري',
       weekly: 'أسبوعي',
-      biweekly: 'نصف شهري',
       basePay: 'مكونات الراتب الأساسي',
       basicLabel: 'الأساسي',
       houseRentLabel: 'بدل السكن',
@@ -208,9 +206,9 @@ const PayrollConfiguration: React.FC = () => {
   const [showAllAllowances, setShowAllAllowances] = useState(false);
 
   // Form state for modal
-  const [salaryCycle, setSalaryCycle] = useState<
-    'monthly' | 'weekly' | 'biweekly'
-  >('monthly');
+  const [salaryCycle, setSalaryCycle] = useState<'monthly' | 'weekly'>(
+    'monthly'
+  );
   const [basePayComponents, setBasePayComponents] = useState({
     basic: 0,
     houseRent: 0,
@@ -348,17 +346,21 @@ const PayrollConfiguration: React.FC = () => {
     value: string | number | ''
   ) => {
     setAllowances(prev =>
-      prev.map((item, i) =>
-        i === index ? { ...item, [field]: value === '' ? 0 : value } : item
-      )
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        // For string field 'type' keep string values
+        if (field === 'type') {
+          return { ...item, [field]: String(value) } as Allowance;
+        }
+        // For numeric fields (amount, percentage) coerce empty to 0 and ensure number
+        const num = value === '' ? 0 : Number(value);
+        return { ...item, [field]: isNaN(num) ? 0 : num } as Allowance;
+      })
     );
   };
 
   const handleAddAllowance = () => {
-    setAllowances(prev => [
-      ...prev,
-      { type: '', amount: 0, percentage: 0, description: '' },
-    ]);
+    setAllowances(prev => [...prev, { type: '', amount: 0, percentage: 0 }]);
   };
 
   const handleRemoveAllowance = (index: number) => {
@@ -507,7 +509,7 @@ const PayrollConfiguration: React.FC = () => {
 
     try {
       interface PayloadType {
-        salaryCycle: 'monthly' | 'weekly' | 'biweekly';
+        salaryCycle: 'monthly' | 'weekly';
         basePayComponents: {
           basic: number;
           houseRent: number;
@@ -518,7 +520,6 @@ const PayrollConfiguration: React.FC = () => {
           type: string;
           amount: number;
           percentage: number;
-          description?: string;
         }>;
         deductions: {
           taxPercentage: number;
@@ -537,14 +538,26 @@ const PayrollConfiguration: React.FC = () => {
         customFields?: Record<string, string | number>;
       }
 
+      // Sanitize allowances to ensure types match backend expectations
+      const sanitizedAllowances = allowances.map(a => ({
+        type: String(a.type),
+        amount: Number(isNaN(Number(a.amount)) ? 0 : Number(a.amount)),
+        percentage: Number(
+          isNaN(Number(a.percentage)) ? 0 : Number(a.percentage)
+        ),
+      }));
+
       const payload: PayloadType = {
-        salaryCycle: salaryCycle as 'monthly' | 'weekly' | 'biweekly',
+        salaryCycle: salaryCycle as 'monthly' | 'weekly',
         basePayComponents,
-        allowances,
+        allowances: sanitizedAllowances,
         deductions,
         overtimePolicy,
         leaveDeductionPolicy,
       };
+
+      // Debug: show exact payload sent to backend (remove in production)
+      console.debug('Payroll payload:', payload);
 
       // Add custom fields if any exist
       if (customFields.length > 0) {
@@ -842,9 +855,7 @@ const PayrollConfiguration: React.FC = () => {
                 <Select
                   value={salaryCycle}
                   onChange={e =>
-                    setSalaryCycle(
-                      e.target.value as 'monthly' | 'weekly' | 'biweekly'
-                    )
+                    setSalaryCycle(e.target.value as 'monthly' | 'weekly')
                   }
                   label={L.salaryCycle}
                   sx={{
@@ -1112,34 +1123,7 @@ const PayrollConfiguration: React.FC = () => {
                             }}
                           />
                         </Box>
-                        <TextField
-                          fullWidth
-                          label='Description'
-                          value={allowance.description || ''}
-                          onChange={e =>
-                            handleAllowanceChange(
-                              index,
-                              'description',
-                              e.target.value
-                            )
-                          }
-                          placeholder='Optional description'
-                          multiline
-                          rows={2}
-                          InputLabelProps={{
-                            sx: { color: darkMode ? '#ccc' : undefined },
-                          }}
-                          sx={{
-                            mt: 2,
-                            '& .MuiOutlinedInput-root': {
-                              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                              color: darkMode ? '#fff' : '#000',
-                              '& fieldset': {
-                                borderColor: theme.palette.divider,
-                              },
-                            },
-                          }}
-                        />
+                        {/* Description removed: not sent to backend */}
                       </Box>
                     ))}
                   </Box>
@@ -1512,11 +1496,7 @@ const PayrollConfiguration: React.FC = () => {
               textAlign: language === 'ar' ? 'right' : 'left',
             }}
           >
-            {config.salaryCycle === 'monthly'
-              ? L.monthly
-              : config.salaryCycle === 'weekly'
-                ? L.weekly
-                : L.biweekly}
+            {config.salaryCycle === 'monthly' ? L.monthly : L.weekly}
           </Typography>
         </Paper>
 
@@ -1685,29 +1665,7 @@ const PayrollConfiguration: React.FC = () => {
                           {formatPercentage(allowance.percentage)}
                         </Typography>
                       </Box>
-                      {allowance.description && (
-                        <Box>
-                          <Typography
-                            variant='body2'
-                            sx={{
-                              color: darkMode ? '#8f8f8f' : '#666',
-                              mb: 0.5,
-                              fontSize: '12px',
-                            }}
-                          >
-                            Description
-                          </Typography>
-                          <Typography
-                            variant='body1'
-                            sx={{
-                              color: darkMode ? '#fff' : '#000',
-                              fontStyle: 'italic',
-                            }}
-                          >
-                            {allowance.description}
-                          </Typography>
-                        </Box>
-                      )}
+                      {/* description display removed */}
                     </Box>
                   </Paper>
                 ))}
@@ -2071,9 +2029,7 @@ const PayrollConfiguration: React.FC = () => {
               <Select
                 value={salaryCycle}
                 onChange={e =>
-                  setSalaryCycle(
-                    e.target.value as 'monthly' | 'weekly' | 'biweekly'
-                  )
+                  setSalaryCycle(e.target.value as 'monthly' | 'weekly')
                 }
                 label={L.salaryCycle}
                 sx={{
@@ -2340,34 +2296,7 @@ const PayrollConfiguration: React.FC = () => {
                           }}
                         />
                       </Box>
-                      <TextField
-                        fullWidth
-                        label='Description'
-                        value={allowance.description || ''}
-                        onChange={e =>
-                          handleAllowanceChange(
-                            index,
-                            'description',
-                            e.target.value
-                          )
-                        }
-                        placeholder='Optional description'
-                        multiline
-                        rows={2}
-                        InputLabelProps={{
-                          sx: { color: darkMode ? '#ccc' : undefined },
-                        }}
-                        sx={{
-                          mt: 2,
-                          '& .MuiOutlinedInput-root': {
-                            backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                            color: darkMode ? '#fff' : '#000',
-                            '& fieldset': {
-                              borderColor: theme.palette.divider,
-                            },
-                          },
-                        }}
-                      />
+                      {/* Description removed from edit modal */}
                     </Box>
                   ))}
                 </Box>
