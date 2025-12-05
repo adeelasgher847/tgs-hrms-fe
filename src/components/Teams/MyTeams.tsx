@@ -302,14 +302,22 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
         fullWidth
       >
         <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
-          {selectedTeam?.name} - {lang.teamMembers}
+          <Typography
+            variant='h6'
+            component='div'
+            fontWeight={600}
+            dir={'ltr'}
+            sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+          >
+            {selectedTeam?.name} - {lang.teamMembers}
+          </Typography>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent dir={'ltr'}>
           {selectedTeam && (
             <TeamMemberList teamId={selectedTeam.id} darkMode={darkMode} />
           )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ direction: 'ltr', justifyContent: language === 'ar' ? 'flex-start' : 'flex-end' }}>
           <Button onClick={() => setShowMemberDialog(false)}>
             {lang.cancel}
           </Button>
@@ -324,7 +332,15 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
         fullWidth
       >
         <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
-          {lang.addMemberToTeam}
+          <Typography
+            variant='h6'
+            component='div'
+            fontWeight={600}
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+          >
+            {lang.addMemberToTeam}
+          </Typography>
         </DialogTitle>
         <DialogContent>
           <TextField
@@ -362,7 +378,13 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
             ))}
           </TextField>
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          sx={{
+            flexDirection: language === 'ar' ? 'row-reverse' : 'row',
+            padding: '8px 16px',
+            gap: 1,
+          }}
+        >
           <Button onClick={() => setShowAddMemberDialog(false)}>
             {lang.cancel}
           </Button>

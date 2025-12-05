@@ -19,6 +19,7 @@ import {
   InputLabel,
   Select,
 } from '@mui/material';
+import { useLanguage } from '../../hooks/useLanguage';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import DatePicker from 'react-multi-date-picker';
 import 'react-multi-date-picker/styles/layouts/mobile.css';
@@ -68,6 +69,58 @@ const formatLocalYMD = (d: Date) => {
 
 const AttendanceTable = () => {
   const { mode } = useTheme();
+  const { language } = useLanguage();
+
+  const attendanceLabels = {
+    en: {
+      pageTitle: 'Attendance Management',
+      employee: 'Employee',
+      date: 'Date',
+      checkIn: 'Check In',
+      checkOut: 'Check Out',
+      workedHours: 'Worked Hours',
+      name: 'Name',
+      daysWorked: 'Days Worked',
+      hoursWorked: 'Hours Worked',
+      teamAttendanceTitle: 'Team Attendance',
+      noTeamRecords: 'No team attendance records found.',
+      myAttendance: 'My Attendance',
+      allAttendance: 'All Attendance',
+      selectEmployee: 'Select Employee',
+      allEmployees: 'All Employees',
+      dateRangePlaceholder: 'Start Date - End Date',
+      exportTeamTooltip: 'Export Team Attendance',
+      exportMyTooltip: 'Export My Attendance',
+      exportAllTooltip: 'Export All Attendance',
+      noAttendanceRecords: 'No attendance records found.',
+      clearFilters: 'Clear Filters',
+      showingAll: 'Showing all {records} records',
+    },
+    ar: {
+      pageTitle: 'إدارة الحضور',
+      employee: 'الموظف',
+      date: 'التاريخ',
+      checkIn: 'تسجيل الدخول',
+      checkOut: 'تسجيل الخروج',
+      workedHours: 'ساعات العمل',
+      name: 'الاسم',
+      daysWorked: 'أيام العمل',
+      hoursWorked: 'ساعات العمل',
+      teamAttendanceTitle: 'حضور الفريق',
+      noTeamRecords: 'لا توجد سجلات حضور للفريق.',
+      myAttendance: 'حضوري',
+      allAttendance: 'جميع الحضور',
+      selectEmployee: 'اختر موظف',
+      allEmployees: 'جميع الموظفين',
+      dateRangePlaceholder: 'تاريخ البدء - تاريخ الانتهاء',
+      exportTeamTooltip: 'تصدير حضور الفريق',
+      exportMyTooltip: 'تصدير حضوري',
+      exportAllTooltip: 'تصدير جميع الحضور',
+      noAttendanceRecords: 'لا توجد سجلات حضور.',
+      clearFilters: 'مسح الفلاتر',
+      showingAll: 'عرض جميع {records} سجلات',
+    },
+  } as const;
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [filteredData, setFilteredData] = useState<AttendanceRecord[]>([]);
   const [userRole, setUserRole] = useState<string>('');
@@ -110,6 +163,8 @@ const AttendanceTable = () => {
     useState('all');
   const [teamCurrentNavigationDate, setTeamCurrentNavigationDate] =
     useState('all');
+
+  // Date range filter state for Team Attendance
   const [teamStartDate, setTeamStartDate] = useState('');
   const [teamEndDate, setTeamEndDate] = useState('');
 
@@ -423,7 +478,9 @@ const AttendanceTable = () => {
                   att.date.match(/^\d{4}-\d{2}-\d{2}$/)
                 ) {
                   attDateStr = att.date;
-                } else if (
+                }
+                // If date is an ISO timestamp, extract YYYY-MM-DD
+                else if (
                   typeof att.date === 'string' &&
                   att.date.includes('T')
                 ) {
@@ -593,6 +650,8 @@ const AttendanceTable = () => {
         };
         const teamItems = (response.items as AttendanceEvent[]) || [];
         setTeamAttendance(teamItems);
+        // Apply client-side filtering by date immediately (in case API doesn't filter properly)
+        // This ensures empty array [] if no records exist for the selected date
 
         const selectedDateStr = date;
         const filteredItems = teamItems
@@ -1665,9 +1724,14 @@ const AttendanceTable = () => {
     isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser;
 
   return (
-    <Box>
-      <Typography variant='h4' gutterBottom>
-        Attendance Management
+    <Box dir={'ltr'} sx={{ direction: 'ltr' }}>
+      <Typography
+        variant='h4'
+        gutterBottom
+        dir={language === 'ar' ? 'rtl' : 'ltr'}
+        sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+      >
+        {attendanceLabels[language].pageTitle}
       </Typography>
       {!isManager && !isAdminLike && (
         <Box sx={{ mb: 3 }}>
@@ -1717,13 +1781,13 @@ const AttendanceTable = () => {
                     variant={adminView === 'my' ? 'contained' : 'outlined'}
                     onClick={handleMyAttendance}
                   >
-                    My Attendance
+                    {attendanceLabels[language].myAttendance}
                   </Button>
                   <Button
                     variant={adminView === 'all' ? 'contained' : 'outlined'}
                     onClick={handleAllAttendance}
                   >
-                    All Attendance
+                    {attendanceLabels[language].allAttendance}
                   </Button>
                 </>
               )}
@@ -1734,13 +1798,13 @@ const AttendanceTable = () => {
                     variant={managerView === 'my' ? 'contained' : 'outlined'}
                     onClick={handleManagerMyAttendance}
                   >
-                    My Attendance
+                    {attendanceLabels[language].myAttendance}
                   </Button>
                   <Button
                     variant={managerView === 'team' ? 'contained' : 'outlined'}
                     onClick={handleManagerTeamAttendance}
                   >
-                    Team Attendance
+                    {attendanceLabels[language].teamAttendanceTitle}
                   </Button>
                 </>
               )}
@@ -1770,13 +1834,15 @@ const AttendanceTable = () => {
               {canViewAllAttendance && adminView === 'all' && (
                 <TextField
                   select
-                  label='Select Employee'
+                  label={attendanceLabels[language].selectEmployee}
                   value={selectedEmployee}
                   onChange={e => handleEmployeeChange(e.target.value)}
                   sx={{ minWidth: 200 }}
                   size='small'
                 >
-                  <MenuItem value=''>All Employees</MenuItem>
+                  <MenuItem value=''>
+                    {attendanceLabels[language].allEmployees}
+                  </MenuItem>
                   {employees.map(emp => (
                     <MenuItem key={emp.id} value={emp.id}>
                       {emp.name}
@@ -1826,7 +1892,7 @@ const AttendanceTable = () => {
                     }
                   }}
                   format='MM/DD/YYYY'
-                  placeholder='Start Date - End Date'
+                  placeholder={attendanceLabels[language].dateRangePlaceholder}
                   style={{
                     width: '100%',
                     height: '40px',
@@ -1854,7 +1920,7 @@ const AttendanceTable = () => {
               </Box>
 
               <Button variant='contained' onClick={handleFilterChange}>
-                Clear Filters
+                {attendanceLabels[language].clearFilters}
               </Button>
             </Box>
 
@@ -1929,13 +1995,21 @@ const AttendanceTable = () => {
               <TableHead>
                 <TableRow>
                   {canViewAllAttendance && adminView === 'all' && (
-                    <TableCell sx={{ fontWeight: 'bold' }}>Employee</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>
+                      {attendanceLabels[language].employee}
+                    </TableCell>
                   )}
-                  <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>
-                    Worked Hours
+                    {attendanceLabels[language].date}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {attendanceLabels[language].checkIn}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {attendanceLabels[language].checkOut}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {attendanceLabels[language].workedHours}
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -1977,7 +2051,7 @@ const AttendanceTable = () => {
                       }
                       align='center'
                     >
-                      No attendance records found.
+                      {attendanceLabels[language].noAttendanceRecords}
                     </TableCell>
                   </TableRow>
                 )}
@@ -2006,7 +2080,13 @@ const AttendanceTable = () => {
           {totalItems > 0 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
               <Typography variant='body2' color='text.secondary'>
-                Showing all {totalItems} records
+                {attendanceLabels[language].showingAll.replace(
+                  '{records}',
+                  String(totalItems)
+                )}
+                {/* ensure numeric content remains LTR */}
+                {/* In case Arabic surrounding text flips, keep number readable */}
+                {/* but we already inserted number into the localized string; enforce LTR on number span */}
               </Typography>
             </Box>
           )}
@@ -2023,7 +2103,9 @@ const AttendanceTable = () => {
               mb: 2,
             }}
           >
-            <Typography variant='h6'>Team Attendance</Typography>
+            <Typography variant='h6'>
+              {attendanceLabels[language].teamAttendanceTitle}
+            </Typography>
           </Box>
 
           <Box
@@ -2087,7 +2169,7 @@ const AttendanceTable = () => {
                   }
                 }}
                 format='MM/DD/YYYY'
-                placeholder='Start Date - End Date'
+                placeholder={attendanceLabels[language].dateRangePlaceholder}
                 style={{
                   width: '100%',
                   height: '40px',
@@ -2141,7 +2223,7 @@ const AttendanceTable = () => {
                 fetchTeamAttendance(1);
               }}
             >
-              Clear Filters
+              {attendanceLabels[language].clearFilters}
             </Button>
           </Box>
 
@@ -2149,13 +2231,23 @@ const AttendanceTable = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Days Worked</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>
-                    Hours Worked
+                    {attendanceLabels[language].name}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {attendanceLabels[language].date}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {attendanceLabels[language].checkIn}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {attendanceLabels[language].checkOut}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {attendanceLabels[language].daysWorked}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {attendanceLabels[language].hoursWorked}
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -2169,7 +2261,7 @@ const AttendanceTable = () => {
                 ) : filteredTeamAttendance.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align='center'>
-                      No team attendance records found.
+                      {attendanceLabels[language].noTeamRecords}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -2321,7 +2413,7 @@ const AttendanceTable = () => {
                   }
                 }}
                 format='MM/DD/YYYY'
-                placeholder='Start Date - End Date'
+                placeholder={attendanceLabels[language].dateRangePlaceholder}
                 style={{
                   width: '100%',
                   height: '40px',
@@ -2375,7 +2467,7 @@ const AttendanceTable = () => {
                 fetchTeamAttendance(1);
               }}
             >
-              Clear Filters
+              {attendanceLabels[language].clearFilters}
             </Button>
           </Box>
 
@@ -2383,12 +2475,20 @@ const AttendanceTable = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>
-                    Hours Worked
+                    {attendanceLabels[language].name}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {attendanceLabels[language].date}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {attendanceLabels[language].checkIn}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {attendanceLabels[language].checkOut}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {attendanceLabels[language].hoursWorked}
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -2402,7 +2502,7 @@ const AttendanceTable = () => {
                 ) : filteredTeamAttendance.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align='center'>
-                      No team attendance records found.
+                      {attendanceLabels[language].noTeamRecords}
                     </TableCell>
                   </TableRow>
                 ) : (

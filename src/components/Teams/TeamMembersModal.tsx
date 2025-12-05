@@ -3,9 +3,11 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogActions,
   Typography,
   Box,
   IconButton,
+  Button,
   List,
   ListItem,
   ListItemAvatar,
@@ -48,7 +50,9 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
   darkMode = false,
 }) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [adminTeamMembers, setAdminTeamMembers] = useState<AdminTeamMember[]>([]);
+  const [adminTeamMembers, setAdminTeamMembers] = useState<AdminTeamMember[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { language } = useLanguage();
@@ -65,6 +69,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
       allTeamMembers: 'All Team Members',
       noMembers: 'No team members found',
       addMember: 'Add Member',
+      cancel: 'Cancel',
       loading: 'Loading team members...',
       error: 'Failed to load team members',
       team: 'Team',
@@ -74,6 +79,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
       allTeamMembers: 'جميع أعضاء الفريق',
       noMembers: 'لا يوجد أعضاء في الفريق',
       addMember: 'إضافة عضو',
+      cancel: 'إلغاء',
       loading: 'جاري تحميل الأعضاء...',
       error: 'فشل في تحميل الأعضاء',
       team: 'الفريق',
@@ -88,7 +94,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
       try {
         setLoading(true);
         setError(null);
-        
+
         if (checkIsManager()) {
           // Load manager's team members
           const response = await teamApiService.getMyTeamMembers(1);
@@ -138,17 +144,26 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
       }}
     >
       <DialogTitle
+        dir={language === 'ar' ? 'rtl' : 'ltr'}
         sx={{
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
           borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}`,
           pb: 2,
+          // Keep DOM order stable; flip visual order for icon/title with flexDirection
+          flexDirection: language === 'ar' ? 'row-reverse' : 'row',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
           <GroupIcon sx={{ color: darkMode ? '#ccc' : '#666' }} />
-          <Typography variant='h6' sx={{ fontWeight: 600 }}>
+          <Typography
+            variant='h6'
+            sx={{
+              fontWeight: 600,
+              width: '100%',
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
+          >
             {isAdmin()
               ? `${lang.allTeamMembers} (${adminTeamMembers.length})`
               : `${lang.title} (${teamMembers.length})`}
@@ -162,7 +177,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 0 }}>
+      <DialogContent sx={{ p: 0, direction: 'ltr' }}>
         {loading ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <CircularProgress />
@@ -177,7 +192,9 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
           <Box sx={{ p: 3 }}>
             <Alert severity='error'>{error}</Alert>
           </Box>
-        ) : (isAdmin() ? adminTeamMembers.length === 0 : teamMembers.length === 0) ? (
+        ) : (
+            isAdmin() ? adminTeamMembers.length === 0 : teamMembers.length === 0
+          ) ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <GroupIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
             <Typography
@@ -388,6 +405,35 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
           </>
         )}
       </DialogContent>
+
+      <DialogActions
+        sx={{
+          p: 2,
+          display: 'flex',
+          // Keep content LTR inside actions; button margins control exact placement
+          direction: 'ltr',
+          justifyContent: 'flex-end',
+        }}
+      >
+        <Button
+          onClick={onClose}
+          sx={{
+            order: language === 'ar' ? -1 : 0,
+            ml: language === 'en' ? 'auto' : 0,
+            mr: language === 'ar' ? 'auto' : 0,
+          }}
+        >
+          {lang.cancel}
+        </Button>
+        <Button
+          variant='contained'
+          onClick={handleAddMember}
+          startIcon={<AddIcon />}
+          sx={{ ml: 1 }}
+        >
+          {lang.addMember}
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 };

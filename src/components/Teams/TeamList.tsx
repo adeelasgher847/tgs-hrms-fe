@@ -23,6 +23,7 @@ import {
   Person as PersonIcon,
   Add as AddIcon,
   FileDownload as FileDownloadIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, UpdateTeamDto } from '../../api/teamApi';
@@ -69,6 +70,7 @@ const TeamList: React.FC<TeamListProps> = ({
   const labels = {
     en: {
       noTeams: 'No teams found.',
+      exportTooltip: 'Export Teams CSV',
       teamMembers: 'Team Members',
       manager: 'Manager',
       members: 'Members',
@@ -83,6 +85,7 @@ const TeamList: React.FC<TeamListProps> = ({
     },
     ar: {
       noTeams: 'لم يتم العثور على فرق.',
+      exportTooltip: 'تصدير الفرق (CSV)',
       teamMembers: 'أعضاء الفريق',
       manager: 'مدير',
       members: 'الأعضاء',
@@ -244,7 +247,7 @@ const TeamList: React.FC<TeamListProps> = ({
   // Export button always at the top
   const exportButton = (
     <Box mb={2} display='flex' justifyContent='flex-end'>
-      <Tooltip title='Export Teams CSV'>
+      <Tooltip title={lang.exportTooltip}>
         <IconButton
           color='primary'
           onClick={() =>
@@ -584,16 +587,36 @@ const TeamList: React.FC<TeamListProps> = ({
           maxWidth='md'
           fullWidth
         >
-          <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+          <DialogTitle
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            sx={{
+              color: darkMode ? '#fff' : '#000',
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
+          >
             {selectedTeam?.name} - {lang.teamMembers}
           </DialogTitle>
-          <DialogContent>
+          <DialogContent sx={{ direction: 'ltr' }}>
             {selectedTeam && (
               <TeamMemberList teamId={selectedTeam.id} darkMode={darkMode} />
             )}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setShowMemberDialog(false)}>
+          <DialogActions
+            sx={{
+              p: 2,
+              display: 'flex',
+              direction: 'ltr',
+              justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+            }}
+          >
+            <Button
+              onClick={() => setShowMemberDialog(false)}
+              sx={{
+                order: language === 'ar' ? -1 : 0,
+                ml: language === 'en' ? 'auto' : 0,
+                mr: language === 'ar' ? 'auto' : 0,
+              }}
+            >
               {lang.cancel}
             </Button>
           </DialogActions>
@@ -606,12 +629,18 @@ const TeamList: React.FC<TeamListProps> = ({
             maxWidth='lg'
             fullWidth
           >
-            <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+            <DialogTitle
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+              sx={{
+                color: darkMode ? '#fff' : '#000',
+                textAlign: language === 'ar' ? 'right' : 'left',
+              }}
+            >
               {employeePoolTeam?.name
                 ? `${employeePoolTeam.name} - ${lang.viewMembers}`
                 : lang.viewMembers}
             </DialogTitle>
-            <DialogContent>
+            <DialogContent sx={{ direction: 'ltr' }}>
               <AvailableEmployees
                 darkMode={darkMode}
                 isEmployeePool
@@ -620,8 +649,24 @@ const TeamList: React.FC<TeamListProps> = ({
                 teamDescription={employeePoolTeam?.description}
               />
             </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseEmployeePool}>{lang.cancel}</Button>
+            <DialogActions
+              sx={{
+                p: 2,
+                display: 'flex',
+                direction: 'ltr',
+                justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+              }}
+            >
+              <Button
+                onClick={handleCloseEmployeePool}
+                sx={{
+                  order: language === 'ar' ? -1 : 0,
+                  ml: language === 'en' ? 'auto' : 0,
+                  mr: language === 'ar' ? 'auto' : 0,
+                }}
+              >
+                {lang.cancel}
+              </Button>
             </DialogActions>
           </Dialog>
         )}
@@ -633,11 +678,46 @@ const TeamList: React.FC<TeamListProps> = ({
             onClose={() => setShowAddMemberDialog(false)}
             maxWidth='md'
             fullWidth
+            PaperProps={{
+              sx: { direction: language === 'ar' ? 'rtl' : 'ltr' },
+            }}
           >
-            <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
-              {lang.addMember} - {selectedTeam?.name}
+            <DialogTitle
+              sx={{
+                color: darkMode ? '#fff' : '#000',
+                display: 'flex',
+                flexDirection: 'row',
+                direction: 'ltr',
+                alignItems: 'center',
+              }}
+            >
+              {language === 'ar' ? (
+                <>
+                  <IconButton
+                    onClick={() => setShowAddMemberDialog(false)}
+                    sx={{ color: darkMode ? '#ccc' : '#666' }}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                  <Box sx={{ flex: 1, textAlign: 'right' }}>
+                    {lang.addMember} - {selectedTeam?.name}
+                  </Box>
+                </>
+              ) : (
+                <>
+                  <Box sx={{ flex: 1, textAlign: 'left' }}>
+                    {lang.addMember} - {selectedTeam?.name}
+                  </Box>
+                  <IconButton
+                    onClick={() => setShowAddMemberDialog(false)}
+                    sx={{ color: darkMode ? '#ccc' : '#666' }}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                </>
+              )}
             </DialogTitle>
-            <DialogContent>
+            <DialogContent sx={{ direction: 'ltr' }}>
               <AvailableEmployees
                 darkMode={darkMode}
                 teamId={selectedTeam?.id}
@@ -645,8 +725,11 @@ const TeamList: React.FC<TeamListProps> = ({
                 teamDescription={selectedTeam?.description}
               />
             </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setShowAddMemberDialog(false)}>
+            <DialogActions sx={{ justifyContent: 'flex-end', p: 2 }}>
+              <Button
+                onClick={() => setShowAddMemberDialog(false)}
+                sx={{ color: darkMode ? '#fff' : '#000' }}
+              >
                 {lang.cancel}
               </Button>
             </DialogActions>

@@ -18,6 +18,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import ReplayIcon from '@mui/icons-material/Replay';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useOutletContext } from 'react-router-dom';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface Employee {
   id: string;
@@ -67,7 +68,6 @@ interface EmployeeListProps {
 
 interface OutletContext {
   darkMode: boolean;
-  language: 'en' | 'ar';
 }
 
 const EmployeeList: React.FC<EmployeeListProps> = ({
@@ -81,8 +81,43 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   designations = {},
 }) => {
   const theme = useTheme();
-  const direction = theme.direction;
+  const { language } = useLanguage();
   const { darkMode } = useOutletContext<OutletContext>();
+
+  const labels = {
+    en: {
+      name: 'Name',
+      email: 'Email',
+      phone: 'Phone',
+      department: 'Department',
+      designation: 'Designation',
+      cnic: 'CNIC Number',
+      status: 'Status',
+      actions: 'Actions',
+      viewDetails: 'View Details',
+      resendInvite: 'Resend Invite',
+      editEmployee: 'Edit Employee',
+      deleteEmployee: 'Delete Employee',
+      noRecord: 'No record exists',
+    },
+    ar: {
+      name: 'الاسم',
+      email: 'البريد الإلكتروني',
+      phone: 'رقم الهاتف',
+      department: 'القسم',
+      designation: 'الوظيفة',
+      cnic: 'رقم الهوية',
+      status: 'الحالة',
+      actions: 'إجراءات',
+      viewDetails: 'عرض التفاصيل',
+      resendInvite: 'إعادة إرسال الدعوة',
+      editEmployee: 'تعديل الموظف',
+      deleteEmployee: 'حذف الموظف',
+      noRecord: 'لا توجد سجلات',
+    },
+  } as const;
+
+  const L = labels[language] || labels.en;
 
   // Dark mode styles
   const textColor = darkMode ? '#8f8f8f' : '#000';
@@ -104,19 +139,19 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           <TableHead>
             <TableRow>
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
-                {direction === 'rtl' ? 'الاسم' : 'Name'}
+                {L.name}
               </TableCell>
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
-                {direction === 'rtl' ? 'البريد الإلكتروني' : 'Email'}
+                {L.email}
               </TableCell>
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
-                {direction === 'rtl' ? 'رقم الهاتف' : 'Phone'}
+                {L.phone}
               </TableCell>
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
-                {direction === 'rtl' ? 'القسم' : 'Department'}
+                {L.department}
               </TableCell>
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
-                {direction === 'rtl' ? 'الوظيفة' : 'Designation'}
+                {L.designation}
               </TableCell>
               <TableCell
                 sx={{
@@ -125,16 +160,17 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                   whiteSpace: 'nowrap',
                 }}
               >
+                {L.cnic}
                 {direction === 'rtl' ? 'رقم الهوية' : 'CNIC Number'}
               </TableCell>
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
-                {direction === 'rtl' ? 'الحالة' : 'Status'}
+                {L.status}
               </TableCell>
               {(onDelete || onEdit || onResendInvite || onView) && (
                 <TableCell
                   sx={{ color: textColor, fontWeight: 'bold', width: '120px' }}
                 >
-                  {direction === 'rtl' ? 'إجراءات' : 'Actions'}
+                  {L.actions}
                 </TableCell>
               )}
             </TableRow>
@@ -164,9 +200,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                 >
                   <Box display='flex' justifyContent='center' py={4}>
                     <Typography variant='body1' color='textSecondary'>
-                      {direction === 'rtl'
-                        ? 'لا توجد سجلات'
-                        : 'No record exists'}
+                      {L.noRecord}
                     </Typography>
                   </Box>
                 </TableCell>
@@ -217,14 +251,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                         gap={1}
                       >
                         {onView && (
-                          <Tooltip
-                            title={
-                              direction === 'rtl'
-                                ? 'عرض التفاصيل'
-                                : 'View Details'
-                            }
-                            placement='bottom'
-                          >
+                          <Tooltip title={L.viewDetails} placement='bottom'>
                             <IconButton
                               onClick={() => onView(emp)}
                               disabled={loading}
@@ -235,21 +262,15 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                                     ? 'rgba(76,175,80,0.1)'
                                     : 'rgba(46,125,50,0.1)',
                                 },
-                              }}
+                              }
+                            }
                             >
                               <VisibilityIcon />
                             </IconButton>
                           </Tooltip>
                         )}
                         {onResendInvite && (
-                          <Tooltip
-                            title={
-                              direction === 'rtl'
-                                ? 'إعادة إرسال الدعوة'
-                                : 'Resend Invite'
-                            }
-                            placement='bottom'
-                          >
+                          <Tooltip title={L.resendInvite} placement='bottom'>
                             <span>
                               <IconButton
                                 sx={{
@@ -271,14 +292,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                           </Tooltip>
                         )}
                         {onEdit && (
-                          <Tooltip
-                            title={
-                              direction === 'rtl'
-                                ? 'تعديل الموظف'
-                                : 'Edit Employee'
-                            }
-                            placement='bottom'
-                          >
+                          <Tooltip title={L.editEmployee} placement='bottom'>
                             <IconButton
                               onClick={() => onEdit(emp)}
                               disabled={loading}
@@ -288,14 +302,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                           </Tooltip>
                         )}
                         {onDelete && (
-                          <Tooltip
-                            title={
-                              direction === 'rtl'
-                                ? 'حذف الموظف'
-                                : 'Delete Employee'
-                            }
-                            placement='bottom'
-                          >
+                          <Tooltip title={L.deleteEmployee} placement='bottom'>
                             <IconButton
                               onClick={() => onDelete(emp.id)}
                               disabled={loading}

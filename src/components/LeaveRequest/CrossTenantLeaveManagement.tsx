@@ -26,7 +26,7 @@ import {
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import dayjs, { Dayjs } from 'dayjs';
+import { Dayjs } from 'dayjs';
 import Chart from 'react-apexcharts';
 import { TenantLeaveApi } from '../../api/TenantLeaveApi';
 import type {
@@ -34,11 +34,11 @@ import type {
   SystemLeaveFilters,
   SystemLeaveResponse,
   SystemLeaveSummary,
-  TenantDepartment,
 } from '../../api/TenantLeaveApi';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { useUser } from '../../hooks/useUser';
+import { useLanguage } from '../../hooks/useLanguage';
 import { isSystemAdmin } from '../../utils/auth';
 import { formatDate } from '../../utils/dateUtils';
 
@@ -59,7 +59,6 @@ type SnackbarState = {
 };
 
 type DepartmentOption = Pick<ApiDepartment, 'id' | 'name' | 'tenant_id'>;
-
 
 const CrossTenantLeaveManagement: React.FC = () => {
   const { user } = useUser();
@@ -141,6 +140,72 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  const { language } = useLanguage();
+
+  const leaveUi = {
+    en: {
+      pageTitle: 'Tenant Leave Management',
+      chartTitle: 'Leave Summary',
+      tableTitle: 'Leave Management Table',
+      tenantLabel: 'Tenant',
+      departmentLabel: 'Department',
+      statusLabel: 'Status',
+      startDateLabel: 'Start Date',
+      endDateLabel: 'End Date',
+      all: 'All',
+      pending: 'Pending',
+      approved: 'Approved',
+      rejected: 'Rejected',
+      cancelled: 'Cancelled',
+      tableHeaders: {
+        employee: 'Employee',
+        department: 'Department',
+        leaveType: 'Leave Type',
+        startDate: 'Start Date',
+        endDate: 'End Date',
+        totalDays: 'Total Days',
+        status: 'Status',
+        reason: 'Reason',
+      },
+      noRecords: 'No records found',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `Showing page ${page} of ${totalPages} (${total} total records)`,
+      tenantNotFound: 'Your tenant is not found or inactive',
+      failedLoad: 'Failed to load tenant list',
+    },
+    ar: {
+      pageTitle: 'إدارة إجازات المستأجر',
+      chartTitle: 'ملخص الإجازات',
+      tableTitle: 'جدول إدارة الإجازات',
+      tenantLabel: 'المؤجر',
+      departmentLabel: 'القسم',
+      statusLabel: 'الحالة',
+      startDateLabel: 'تاريخ البدء',
+      endDateLabel: 'تاريخ الانتهاء',
+      all: 'الكل',
+      pending: 'قيد الانتظار',
+      approved: 'موافق',
+      rejected: 'مرفوض',
+      cancelled: 'ملغاة',
+      tableHeaders: {
+        employee: 'الموظف',
+        department: 'القسم',
+        leaveType: 'نوع الإجازة',
+        startDate: 'تاريخ البدء',
+        endDate: 'تاريخ الانتهاء',
+        totalDays: 'إجمالي الأيام',
+        status: 'الحالة',
+        reason: 'السبب',
+      },
+      noRecords: 'لم يتم العثور على سجلات',
+      showingInfo: (page: number, totalPages: number, total: number) =>
+        `عرض الصفحة ${page} من ${totalPages} (${total} سجلات)`,
+      tenantNotFound: 'المؤجر الخاص بك غير موجود أو غير نشط',
+      failedLoad: 'فشل في تحميل قائمة المستأجرين',
+    },
+  } as const;
+  const L = leaveUi[language] || leaveUi.en;
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLElement>): void => {
       if (e.key === 'Enter') {
@@ -191,7 +256,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
           );
           setSnackbar({
             open: true,
-            message: 'Your tenant is not found or inactive',
+            message: L.tenantNotFound,
             severity: 'error',
           });
         }
@@ -250,11 +315,11 @@ const CrossTenantLeaveManagement: React.FC = () => {
     } catch {
       setSnackbar({
         open: true,
-        message: 'Failed to load tenant list',
+        message: L.failedLoad,
         severity: 'error',
       });
     }
-  }, [isSystemAdminUser, userTenantId]);
+  }, [L.failedLoad, L.tenantNotFound, isSystemAdminUser, userTenantId]);
 
   const fetchDepartments = useCallback(async (tenantId: string | null) => {
     if (!tenantId) {
@@ -356,7 +421,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         severity: 'error',
       });
     }
-  }, [tenants, isSystemAdminUser, userTenantId]);
+  }, [isSystemAdminUser, userTenantId, filters.tenantId, tenants]);
 
   const fetchLeaves = useCallback(async () => {
     const shouldShowFullPageLoader =
@@ -506,7 +571,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         }));
       }
     }
-  }, [isSystemAdminUser, userTenantId, tenants]);
+  }, [isSystemAdminUser, userTenantId, tenants, filters.tenantId]);
 
   useEffect(() => {
     if (filters.tenantId) fetchDepartments(filters.tenantId);
@@ -591,8 +656,14 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   const ChartSection = memo(() => (
     <Paper sx={{ p: 3, mb: 3, overflowX: 'auto', boxShadow: 'none' }}>
-      <Typography variant='subtitle1' fontWeight={600} mb={2}>
-        Leave Summary
+      <Typography
+        dir={language === 'ar' ? 'rtl' : 'ltr'}
+        sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+        variant='subtitle1'
+        fontWeight={600}
+        mb={2}
+      >
+        {L.chartTitle}
       </Typography>
       <Chart
         options={chartOptions}
@@ -640,14 +711,20 @@ const CrossTenantLeaveManagement: React.FC = () => {
       ) => void;
     }) => (
       <Paper sx={{ p: 3, position: 'relative', boxShadow: 'none' }}>
-        <Typography variant='subtitle1' fontWeight={600} mb={2}>
-          Leave Management Table
+        <Typography
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+          variant='subtitle1'
+          fontWeight={600}
+          mb={2}
+        >
+          {L.tableTitle}
         </Typography>
         <Stack direction={isMobile ? 'column' : 'row'} spacing={2} mb={3}>
           <FormControl sx={{ minWidth: 180 }} size='small'>
-            <InputLabel>Department</InputLabel>
+            <InputLabel>{L.departmentLabel}</InputLabel>
             <Select
-              label='Department'
+              label={L.departmentLabel}
               value={filters.departmentId}
               onChange={e =>
                 handleFilterChange(
@@ -656,7 +733,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
                 )
               }
             >
-              <MenuItem value=''>All</MenuItem>
+              <MenuItem value=''>{L.all}</MenuItem>
               {departments.map(dep => (
                 <MenuItem key={dep.id} value={dep.id}>
                   {dep.name}
@@ -665,23 +742,23 @@ const CrossTenantLeaveManagement: React.FC = () => {
             </Select>
           </FormControl>
           <FormControl sx={{ minWidth: 160 }} size='small'>
-            <InputLabel>Status</InputLabel>
+            <InputLabel>{L.statusLabel}</InputLabel>
             <Select
-              label='Status'
+              label={L.statusLabel}
               value={filters.status}
               onChange={e =>
                 handleFilterChange('status', e.target.value as LeaveStatus)
               }
             >
-              <MenuItem value=''>All</MenuItem>
-              <MenuItem value='pending'>Pending</MenuItem>
-              <MenuItem value='approved'>Approved</MenuItem>
-              <MenuItem value='rejected'>Rejected</MenuItem>
-              <MenuItem value='withdrawn'>Withdrawn</MenuItem>
+              <MenuItem value=''>{L.all}</MenuItem>
+              <MenuItem value='pending'>{L.pending}</MenuItem>
+              <MenuItem value='approved'>{L.approved}</MenuItem>
+              <MenuItem value='rejected'>{L.rejected}</MenuItem>
+              <MenuItem value='cancelled'>{L.cancelled}</MenuItem>
             </Select>
           </FormControl>
           <DatePicker
-            label='Start Date'
+            label={L.startDateLabel}
             value={filters.startDate}
             onChange={date =>
               handleFilterChange('startDate', date as Dayjs | null)
@@ -689,7 +766,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
             slotProps={{ textField: { size: 'small' } }}
           />
           <DatePicker
-            label='End Date'
+            label={L.endDateLabel}
             value={filters.endDate}
             onChange={date =>
               handleFilterChange('endDate', date as Dayjs | null)
@@ -719,14 +796,14 @@ const CrossTenantLeaveManagement: React.FC = () => {
           <Table>
             <TableHead sx={{ backgroundColor: '#f0f0f0' }}>
               <TableRow>
-                <TableCell>Employee</TableCell>
-                <TableCell>Department</TableCell>
-                <TableCell>Leave Type</TableCell>
-                <TableCell>Start Date</TableCell>
-                <TableCell>End Date</TableCell>
-                <TableCell>Total Days</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Reason</TableCell>
+                <TableCell>{L.tableHeaders.employee}</TableCell>
+                <TableCell>{L.tableHeaders.department}</TableCell>
+                <TableCell>{L.tableHeaders.leaveType}</TableCell>
+                <TableCell>{L.tableHeaders.startDate}</TableCell>
+                <TableCell>{L.tableHeaders.endDate}</TableCell>
+                <TableCell>{L.tableHeaders.totalDays}</TableCell>
+                <TableCell>{L.tableHeaders.status}</TableCell>
+                <TableCell>{L.tableHeaders.reason}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -736,12 +813,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
                     <TableCell>{leave.employeeName}</TableCell>
                     <TableCell>{leave.departmentName || '-'}</TableCell>
                     <TableCell>{leave.leaveType}</TableCell>
-                    <TableCell>
-                      {formatDate(leave.startDate)}
-                    </TableCell>
-                    <TableCell>
-                      {formatDate(leave.endDate)}
-                    </TableCell>
+                    <TableCell>{formatDate(leave.startDate)}</TableCell>
+                    <TableCell>{formatDate(leave.endDate)}</TableCell>
                     <TableCell>{leave.totalDays}</TableCell>
                     <TableCell
                       sx={{
@@ -794,7 +867,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={8} align='center'>
-                    No records found
+                    {L.noRecords}
                   </TableCell>
                 </TableRow>
               )}
@@ -816,8 +889,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         {leaves.length > 0 && (
           <Box display='flex' justifyContent='center' mt={1}>
             <Typography variant='body2' color='textSecondary'>
-              Showing page {currentPage} of {totalPages} ({totalRecords} total
-              records)
+              {L.showingInfo(currentPage, totalPages, totalRecords)}
             </Typography>
           </Box>
         )}
@@ -839,13 +911,16 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Box
-        sx={{ minHeight: '100vh' }}
-        onKeyDown={handleKeyDown}
-      >
+      <Box dir='ltr' sx={{ minHeight: '100vh' }} onKeyDown={handleKeyDown}>
         <Paper sx={{ p: 3, mb: 3, boxShadow: 'none' }}>
-          <Typography variant='h6' fontWeight={700} mb={2}>
-            Tenant Leave Management
+          <Typography
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+            variant='h6'
+            fontWeight={700}
+            mb={2}
+          >
+            {L.pageTitle}
           </Typography>
           <Divider sx={{ mb: 2 }} />
           <Stack
@@ -855,9 +930,9 @@ const CrossTenantLeaveManagement: React.FC = () => {
           >
             {isSystemAdminUser && (
               <FormControl sx={{ minWidth: 160 }} size='small'>
-                <InputLabel>Tenant</InputLabel>
+                <InputLabel>{L.tenantLabel}</InputLabel>
                 <Select
-                  label='Tenant'
+                  label={L.tenantLabel}
                   value={filters.tenantId}
                   onChange={e => handleFilterChange('tenantId', e.target.value)}
                 >

@@ -53,27 +53,29 @@ export default function DepartmentCard({
           {department.icon}
         </Box>
 
-        <Typography
-          variant='subtitle1'
-          fontWeight='600'
-          sx={{
-            mb: 1,
-            color: isSelected ? department.color : 'text.primary',
-            lineHeight: 1.3,
-          }}
-        >
-          {getText(department.name, department.nameAr)}
-        </Typography>
+        <Box sx={{ direction: 'ltr', textAlign: 'left' }}>
+          <Typography
+            variant='subtitle1'
+            fontWeight='600'
+            sx={{
+              mb: 1,
+              color: isSelected ? department.color : 'text.primary',
+              lineHeight: 1.3,
+            }}
+          >
+            {department.name}
+          </Typography>
 
-        <Chip
-          label={`${designationCount} ${getText('positions', 'منصب')}`}
-          size='small'
-          sx={{
-            bgcolor: isSelected ? department.color : `${department.color}20`,
-            fontWeight: 500,
-            fontSize: '0.75rem',
-          }}
-        />
+          <Chip
+            label={`${designationCount} ${getText('positions', 'منصب')}`}
+            size='small'
+            sx={{
+              bgcolor: isSelected ? department.color : `${department.color}20`,
+              fontWeight: 500,
+              fontSize: '0.75rem',
+            }}
+          />
+        </Box>
       </CardContent>
     </Card>
   );

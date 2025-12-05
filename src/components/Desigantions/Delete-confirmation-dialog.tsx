@@ -20,7 +20,6 @@ interface Props {
   onClose: () => void;
   onConfirm: () => void;
   designationTitle: string;
-  isRTL: boolean;
 }
 
 export default function DeleteConfirmationDialog({
@@ -28,7 +27,6 @@ export default function DeleteConfirmationDialog({
   onClose,
   onConfirm,
   designationTitle,
-  isRTL,
 }: Props) {
   const { language } = useLanguage();
   const getText = (en: string, ar: string) => (language === 'ar' ? ar : en);
@@ -39,7 +37,8 @@ export default function DeleteConfirmationDialog({
       onClose={onClose}
       maxWidth='sm'
       fullWidth
-      dir={isRTL ? 'rtl' : 'ltr'}
+      // force LTR layout for this confirmation dialog while keeping localized text
+      dir={'ltr'}
     >
       <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
         <Box
@@ -58,8 +57,9 @@ export default function DeleteConfirmationDialog({
             size='small'
             sx={{
               position: 'absolute',
-              right: isRTL ? 'auto' : 8,
-              left: isRTL ? 8 : 'auto',
+              // keep close button on the right (LTR) regardless of language
+              right: 8,
+              left: 'auto',
             }}
           >
             <CloseIcon />

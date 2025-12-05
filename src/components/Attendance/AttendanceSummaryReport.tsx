@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
   Box,
   Typography,
@@ -272,10 +273,54 @@ const AttendanceSummaryReport: React.FC = () => {
     showToast('CSV file downloaded successfully.', 'success');
   };
 
+  const { language } = useLanguage();
+
+  const reportLabels = {
+    en: {
+      pageTitle: 'Attendance Summary Report',
+      thisMonth: 'This Month',
+      prevMonth: 'Previous Month',
+      last60: 'Last 60 Days',
+      last90: 'Last 90 Days',
+      exportTooltip: 'Export All Attendance',
+      employeeName: 'Employee Name',
+      department: 'Department',
+      designation: 'Designation',
+      workingDays: 'Working Days',
+      presents: 'Presents',
+      absents: 'Absents',
+      informedLeaves: 'Informed Leaves',
+      noData: 'No data found',
+      noDownload: 'No data to download.',
+    },
+    ar: {
+      pageTitle: 'تقرير ملخص الحضور',
+      thisMonth: 'هذا الشهر',
+      prevMonth: 'الشهر السابق',
+      last60: 'آخر 60 يومًا',
+      last90: 'آخر 90 يومًا',
+      exportTooltip: 'تصدير جميع الحضور',
+      employeeName: 'اسم الموظف',
+      department: 'القسم',
+      designation: 'المسمى الوظيفي',
+      workingDays: 'أيام العمل',
+      presents: 'حاضر',
+      absents: 'غائب',
+      informedLeaves: 'الإجازات المبلغ عنها',
+      noData: 'لم يتم العثور على بيانات',
+      noDownload: 'لا توجد بيانات للتنزيل.',
+    },
+  } as const;
+
   return (
     <Box>
-      <Typography variant='h4' gutterBottom>
-        Attendance Summary Report
+      <Typography
+        variant='h4'
+        gutterBottom
+        dir={language === 'ar' ? 'rtl' : 'ltr'}
+        sx={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+      >
+        {reportLabels[language].pageTitle}
       </Typography>
 
       <Box
@@ -297,14 +342,18 @@ const AttendanceSummaryReport: React.FC = () => {
               );
             }}
           >
-            <MenuItem value='thisMonth'>This Month</MenuItem>
-            <MenuItem value='prevMonth'>Previous Month</MenuItem>
-            <MenuItem value='60days'>Last 60 Days</MenuItem>
-            <MenuItem value='90days'>Last 90 Days</MenuItem>
+            <MenuItem value='thisMonth'>
+              {reportLabels[language].thisMonth}
+            </MenuItem>
+            <MenuItem value='prevMonth'>
+              {reportLabels[language].prevMonth}
+            </MenuItem>
+            <MenuItem value='60days'>{reportLabels[language].last60}</MenuItem>
+            <MenuItem value='90days'>{reportLabels[language].last90}</MenuItem>
           </Select>
         </FormControl>
 
-        <Tooltip title='Export All Attendance'>
+        <Tooltip title={reportLabels[language].exportTooltip}>
           <IconButton
             color='primary'
             onClick={handleDownload}
@@ -334,30 +383,30 @@ const AttendanceSummaryReport: React.FC = () => {
         </Box>
       ) : (
         <Paper sx={{ mt: 2, boxShadow: 'none' }}>
-          <TableContainer>
+          <TableContainer dir='ltr'>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>
-                    <b>Employee Name</b>
+                    <b>{reportLabels[language].employeeName}</b>
                   </TableCell>
                   <TableCell>
-                    <b>Department</b>
+                    <b>{reportLabels[language].department}</b>
                   </TableCell>
                   <TableCell>
-                    <b>Designation</b>
+                    <b>{reportLabels[language].designation}</b>
                   </TableCell>
                   <TableCell align='center'>
-                    <b>Working Days</b>
+                    <b>{reportLabels[language].workingDays}</b>
                   </TableCell>
                   <TableCell align='center'>
-                    <b>Presents</b>
+                    <b>{reportLabels[language].presents}</b>
                   </TableCell>
                   <TableCell align='center'>
-                    <b>Absents</b>
+                    <b>{reportLabels[language].absents}</b>
                   </TableCell>
                   <TableCell align='center'>
-                    <b>Informed Leaves</b>
+                    <b>{reportLabels[language].informedLeaves}</b>
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -385,7 +434,7 @@ const AttendanceSummaryReport: React.FC = () => {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={7} align='center'>
-                      No data found
+                      {reportLabels[language].noData}
                     </TableCell>
                   </TableRow>
                 )}
@@ -413,8 +462,27 @@ const AttendanceSummaryReport: React.FC = () => {
       {safeData.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1} mb={2}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {totalPages} ({totalRecords} total
-            records)
+            {language === 'ar' ? (
+              <>
+                {'عرض الصفحة '}
+                <span dir='ltr'>{currentPage}</span>
+                {' من '}
+                <span dir='ltr'>{totalPages}</span>
+                {' ('}
+                <span dir='ltr'>{totalRecords}</span>
+                {' إجمالي السجلات)'}
+              </>
+            ) : (
+              <>
+                {'Showing page '}
+                <span dir='ltr'>{currentPage}</span>
+                {' of '}
+                <span dir='ltr'>{totalPages}</span>
+                {' ('}
+                <span dir='ltr'>{totalRecords}</span>
+                {' total records)'}
+              </>
+            )}
           </Typography>
         </Box>
       )}

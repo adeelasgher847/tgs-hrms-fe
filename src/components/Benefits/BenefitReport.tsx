@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import {
-  Grid,
   Box,
   Typography,
   Table,
@@ -18,6 +18,7 @@ import {
   Pagination,
   Tooltip,
   IconButton,
+  Grid,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import SummaryCard from './SummaryCard';
@@ -29,14 +30,25 @@ import employeeBenefitApi from '../../api/employeeBenefitApi';
 import { departmentApiService } from '../../api/departmentApi';
 import { designationApiService } from '../../api/designationApi';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
-import { getRoleName, isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
+import {
+  getRoleName,
+  isSystemAdmin as isSystemAdminFn,
+} from '../../utils/roleUtils';
 
 const itemsPerPage = 25;
-const ITEMS_PER_PAGE= 25;
 
-interface Tenant { id: string; name: string; }
-interface Department { id: string; name: string; }
-interface Designation { id: string; title: string; }
+interface Tenant {
+  id: string;
+  name: string;
+}
+interface Department {
+  id: string;
+  name: string;
+}
+interface Designation {
+  id: string;
+  title: string;
+}
 interface BenefitRow {
   tenantId?: string;
   tenantName?: string;
@@ -47,13 +59,59 @@ interface BenefitRow {
   status: string;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 const BenefitReport: React.FC = () => {
   const user = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem('user') || '{}'); } 
-    catch { return {}; }
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}');
+    } catch {
+      return {};
+    }
   }, []);
   const userRoleValue = user?.role;
   const isSystemAdmin = isSystemAdminFn(userRoleValue);
+
+  const { language } = useLanguage();
+
+  const labels = {
+    en: {
+      pageTitle: 'Benefits Report',
+      tenantLabel: 'Tenant',
+      totalActiveBenefits: 'Total Active Benefits',
+      mostCommonBenefitType: 'Most Common Benefit Type',
+      employeesCovered: 'Employees Covered',
+      department: 'Department',
+      designation: 'Designation',
+      all: 'All',
+      downloadCsv: 'Download CSV',
+      employeeName: 'Employee Name',
+      benefitType: 'Benefit Type',
+      status: 'Status',
+      noData: 'No data available',
+      noDataToDownload: 'No data to download.',
+      csvFileName: 'BenefitReport',
+    },
+    ar: {
+      pageTitle: 'تقرير المزايا',
+      tenantLabel: 'المؤجر',
+      totalActiveBenefits: 'إجمالي المزايا النشطة',
+      mostCommonBenefitType: 'النوع الأكثر شيوعًا',
+      employeesCovered: 'الموظفون المغطون',
+      department: 'القسم',
+      designation: 'المسمى',
+      all: 'الكل',
+      downloadCsv: 'تصدير CSV',
+      employeeName: 'اسم الموظف',
+      benefitType: 'نوع الميزة',
+      status: 'الحالة',
+      noData: 'لا توجد بيانات',
+      noDataToDownload: 'لا توجد بيانات للتنزيل.',
+      csvFileName: 'تقرير_المزايا',
+    },
+  } as const;
+
+  const L = labels[language as keyof typeof labels] || labels.en;
 
   const [summary, setSummary] = useState({
     tenant_id: 'all' as string,
@@ -62,6 +120,7 @@ const BenefitReport: React.FC = () => {
     totalEmployeesCovered: 0,
   });
 
+  // using interfaces declared above for BenefitRow, Department, Designation
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [selectedTenant, setSelectedTenant] = useState<string>('');
 
@@ -73,9 +132,10 @@ const BenefitReport: React.FC = () => {
   const [designations, setDesignations] = useState<Designation[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedDesignation, setSelectedDesignation] = useState('');
-
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+  const [paginationLimit, setPaginationLimit] = useState<number | null>(null);
 
   // ------------------- Fetch Summary -------------------
   useEffect(() => {
@@ -83,7 +143,8 @@ const BenefitReport: React.FC = () => {
       try {
         if (isSystemAdmin) {
           const tenantParam = selectedTenant || 'all';
-          const data = await employeeBenefitApi.getSystemAdminBenefitSummary(tenantParam);
+          const data =
+            await employeeBenefitApi.getSystemAdminBenefitSummary(tenantParam);
           setSummary({
             tenant_id: data.tenant_id ?? tenantParam,
             totalActiveBenefits: data.totalActiveBenefits ?? 0,
@@ -99,7 +160,9 @@ const BenefitReport: React.FC = () => {
             totalEmployeesCovered: data.totalEmployeesCovered ?? 0,
           });
         }
-      } catch (error) { console.error('Error fetching summary data:', error); }
+      } catch (error) {
+        console.error('Error fetching summary data:', error);
+      }
     };
     fetchSummary();
   }, [isSystemAdmin, selectedTenant]);
@@ -111,7 +174,8 @@ const BenefitReport: React.FC = () => {
       try {
         const data = await systemEmployeeApiService.getAllTenants(true);
         setTenants(data || []);
-        if ((data || []).length > 0) setSelectedTenant(prev => prev || data[0].id);
+        if ((data || []).length > 0)
+          setSelectedTenant(prev => prev || data[0].id);
       } catch (error) {
         console.error('Error fetching tenants:', error);
         setTenants([]);
@@ -126,7 +190,10 @@ const BenefitReport: React.FC = () => {
       try {
         const data = await departmentApiService.getAllDepartments();
         setDepartments(data || []);
-      } catch (error) { console.error('Error fetching departments:', error); setDepartments([]); }
+      } catch (error) {
+        console.error('Error fetching departments:', error);
+        setDepartments([]);
+      }
     };
     fetchDepartments();
   }, []);
@@ -136,13 +203,20 @@ const BenefitReport: React.FC = () => {
     const fetchDesignations = async () => {
       try {
         if (selectedDepartment) {
-          const response = await designationApiService.getDesignationsByDepartment(selectedDepartment, null);
+          const response =
+            await designationApiService.getDesignationsByDepartment(
+              selectedDepartment,
+              null
+            );
           setDesignations(response.items || []);
         } else {
           const all = await designationApiService.getAllDesignations();
           setDesignations(all || []);
         }
-      } catch (error) { console.error('Error fetching designations:', error); setDesignations([]); }
+      } catch (error) {
+        console.error('Error fetching designations:', error);
+        setDesignations([]);
+      }
     };
     fetchDesignations();
   }, [selectedDepartment]);
@@ -185,7 +259,8 @@ const BenefitReport: React.FC = () => {
           if (selectedDesignation) params.designation = selectedDesignation;
           if (selectedTenant) params.tenant_id = selectedTenant;
 
-          const response = await employeeBenefitApi.getFilteredEmployeeBenefits(params);
+          const response =
+            await employeeBenefitApi.getFilteredEmployeeBenefits(params);
           flattened = (response || []).flatMap((emp: any) =>
             (emp.benefits || []).map((b: any) => ({
               tenantId: emp.tenantId ?? emp.tenant_id,
@@ -209,18 +284,29 @@ const BenefitReport: React.FC = () => {
         setBenefitData([]);
         setFilteredData([]);
         setTotalPages(1);
-      } finally { if (isMounted) setTableLoading(false); }
+      } finally {
+        if (isMounted) setTableLoading(false);
+      }
     };
 
     fetchEmployeeBenefits();
-    return () => { isMounted = false; };
-  }, [isSystemAdmin, selectedTenant, page, selectedDepartment, selectedDesignation]);
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    isSystemAdmin,
+    selectedTenant,
+    page,
+    selectedDepartment,
+    selectedDesignation,
+  ]);
 
   // ------------------- Local Filtering for Admin -------------------
   useEffect(() => {
     if (!isSystemAdmin) return;
     let filtered = [...benefitData];
-    if (selectedTenant) filtered = filtered.filter(r => r.tenantId === selectedTenant);
+    if (selectedTenant)
+      filtered = filtered.filter(r => r.tenantId === selectedTenant);
     setFilteredData(filtered);
     setTotalPages(Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE)));
   }, [benefitData, selectedTenant, isSystemAdmin]);
@@ -232,77 +318,156 @@ const BenefitReport: React.FC = () => {
   );
 
   // ------------------- CSV Export -------------------
-  const csvEscape = (value: unknown) => value == null ? '' : `"${String(value).replace(/"/g, '""')}"`;
+  const csvEscape = (value: unknown) =>
+    value == null ? '' : `"${String(value).replace(/"/g, '""')}"`;
   const handleDownload = () => {
-    if (!filteredData.length) { alert('No data to download.'); return; }
-    const csvHeader = [...(isSystemAdmin ? ['Tenant'] : []), 'Department','Designation','Employee Name','Benefit Type','Status'];
-    const rows = filteredData.map(row => [
-      ...(isSystemAdmin ? [csvEscape(row.tenantName ?? row.tenantId ?? '')] : []),
-      csvEscape(row.department),
-      csvEscape(row.designation),
-      csvEscape(row.employeeName),
-      csvEscape(row.benefitType),
-      csvEscape(row.status),
-    ].join(','));
+    if (filteredData.length === 0) {
+      alert('No data to download.');
+      return;
+    }
+
+    const csvHeader = [
+      ...(isSystemAdmin ? ['Tenant'] : []),
+      'Department',
+      'Designation',
+      'Employee Name',
+      'Benefit Type',
+      'Status',
+    ];
+
+    const rows = filteredData.map(row =>
+      [
+        ...(isSystemAdmin
+          ? [csvEscape(row.tenantName ?? row.tenantId ?? '')]
+          : []),
+        csvEscape(row.department),
+        csvEscape(row.designation),
+        csvEscape(row.employeeName),
+        csvEscape(row.benefitType),
+        csvEscape(row.status),
+      ].join(',')
+    );
+
     const csvContent = [csvHeader.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.setAttribute('download', `BenefitReport.csv`);
-    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.href = url;
+    a.setAttribute('download', `BenefitReport.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
-  if (tableLoading) return (<Box display='flex' justifyContent='center' mt={4}><CircularProgress /></Box>);
+  if (tableLoading)
+    return (
+      <Box display='flex' justifyContent='center' mt={4}>
+        <CircularProgress />
+      </Box>
+    );
 
   // ------------------- Render -------------------
   return (
     <Box py={3}>
-      {/* Header */}
-      <Box display='flex' justifyContent='space-between' gap={3} flexWrap='wrap' alignItems='center' mb={2}>
-        <Typography variant='h4' fontSize={{ xs: '25px', sm: '34px' }} fontWeight={600} gutterBottom mb={0}>
-          Benefits Report
+      <Box
+        display='flex'
+        flexDirection={language === 'ar' ? 'row-reverse' : 'row'}
+        justifyContent='space-between'
+        gap={3}
+        flexWrap='wrap'
+        alignItems='center'
+        mb={2}
+      >
+        <Typography
+          variant='h4'
+          fontSize={{ xs: '25px', sm: '34px' }}
+          fontWeight={600}
+          gutterBottom
+          mb={0}
+        >
+          {L.pageTitle}
         </Typography>
+
         {isSystemAdmin && (
           <FormControl size='small' sx={{ minWidth: 220 }}>
-            <InputLabel>Tenant</InputLabel>
-            <Select value={selectedTenant} onChange={e => { setSelectedTenant(e.target.value as string); setPage(1); }} label='Tenant'>
-              <MenuItem value=''>All</MenuItem>
-              {tenants.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+            <InputLabel>{L.tenantLabel}</InputLabel>
+            <Select
+              value={selectedTenant}
+              onChange={e => {
+                const val = e.target.value as string;
+                setSelectedTenant(val);
+                // reset dependent filters on tenant change
+                setSelectedDepartment('');
+                setSelectedDesignation('');
+              }}
+              label={L.tenantLabel}
+            >
+              <MenuItem value=''>{L.all}</MenuItem>
+              {tenants.map(t => (
+                <MenuItem key={t.id} value={t.id}>
+                  {t.name}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         )}
       </Box>
 
       {/* Summary Cards */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' }, gap: 2, mb: 3 }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: '1fr 1fr',
+            md: 'repeat(3, 1fr)',
+          },
+          gap: 2,
+          mb: 3,
+        }}
+      >
         {[
-          { title: 'Total Active Benefits', value: summary.totalActiveBenefits, icon: <AccountBalanceWalletIcon color='primary' /> },
-          { title: 'Most Common Benefit Type', value: summary.mostCommonBenefitType, icon: <CardGiftcardIcon color='secondary' /> },
-          { title: 'Employees Covered', value: summary.totalEmployeesCovered, icon: <PeopleIcon color='primary' /> },
-        ].map((card, index) => <Box key={index}><SummaryCard {...card} /></Box>)}
+          {
+            title: L.totalActiveBenefits,
+            value: summary.totalActiveBenefits,
+            icon: <AccountBalanceWalletIcon color='primary' />,
+          },
+          {
+            title: L.mostCommonBenefitType,
+            value: summary.mostCommonBenefitType,
+            icon: <CardGiftcardIcon color='secondary' />,
+          },
+          {
+            title: L.employeesCovered,
+            value: summary.totalEmployeesCovered,
+            icon: <PeopleIcon color='primary' />,
+          },
+        ].map((card, index) => (
+          <Box key={index}>
+            <SummaryCard {...card} />
+          </Box>
+        ))}
       </Box>
 
       {/* Filters & CSV */}
       <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl size='small' sx={{ minWidth: 220 }}>
-              <InputLabel>Department</InputLabel>
-              <Select value={selectedDepartment} onChange={e => { setSelectedDepartment(e.target.value as string); setPage(1); }} label='Department'>
-                <MenuItem value=''>All</MenuItem>
-                {departments.map(d => <MenuItem key={d.id} value={d.id}>{d.name}</MenuItem>)}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl size='small' sx={{ minWidth: 220 }}>
-              <InputLabel>Designation</InputLabel>
-              <Select value={selectedDesignation} onChange={e => { setSelectedDesignation(e.target.value as string); setPage(1); }} label='Designation' disabled={!designations.length}>
-                <MenuItem value=''>All</MenuItem>
-                {designations.map(d => <MenuItem key={d.id} value={d.title}>{d.title}</MenuItem>)}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
+        <Box display='flex' gap={2} flexWrap='wrap'>
+          <FormControl size='small' sx={{ minWidth: 220 }}>
+            <InputLabel>Department</InputLabel>
+            <Select value={selectedDepartment} onChange={e => { setSelectedDepartment(e.target.value as string); setPage(1); }} label='Department'>
+              <MenuItem value=''>All</MenuItem>
+              {departments.map(d => <MenuItem key={d.id} value={d.id}>{d.name}</MenuItem>)}
+            </Select>
+          </FormControl>
+          <FormControl size='small' sx={{ minWidth: 220 }}>
+            <InputLabel>Designation</InputLabel>
+            <Select value={selectedDesignation} onChange={e => { setSelectedDesignation(e.target.value as string); setPage(1); }} label='Designation' disabled={!designations.length}>
+              <MenuItem value=''>All</MenuItem>
+              {designations.map(d => <MenuItem key={d.id} value={d.title}>{d.title}</MenuItem>)}
+            </Select>
+          </FormControl>
+        </Box>
         <Tooltip title='Download CSV'>
           <IconButton color='primary' onClick={handleDownload} sx={{ backgroundColor: 'primary.main', color: 'white', borderRadius: '6px', '&:hover': { backgroundColor: 'primary.dark' } }}>
             <FileDownloadIcon />
@@ -316,27 +481,45 @@ const BenefitReport: React.FC = () => {
           <Table>
             <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
               <TableRow>
-                {isSystemAdmin && <TableCell sx={{ fontWeight: 600 }}>Tenant</TableCell>}
-                <TableCell sx={{ fontWeight: 600 }}>Department</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Designation</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Employee Name</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Benefit Type</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                {isSystemAdmin && (
+                  <TableCell sx={{ fontWeight: 600 }}>
+                    {L.tenantLabel}
+                  </TableCell>
+                )}
+                <TableCell sx={{ fontWeight: 600 }}>{L.department}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{L.designation}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{L.employeeName}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{L.benefitType}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{L.status}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedData.length === 0 ? (
-                <TableRow><TableCell colSpan={isSystemAdmin ? 6 : 5} align='center'>No data available</TableCell></TableRow>
-              ) : paginatedData.map((row, i) => (
-                <TableRow key={i}>
-                  {isSystemAdmin && <TableCell>{row.tenantName ?? row.tenantId}</TableCell>}
-                  <TableCell>{row.department}</TableCell>
-                  <TableCell>{row.designation}</TableCell>
-                  <TableCell>{row.employeeName}</TableCell>
-                  <TableCell>{row.benefitType}</TableCell>
-                  <TableCell>{row.status}</TableCell>
+              {tableLoading ? (
+                <TableRow>
+                  <TableCell colSpan={isSystemAdmin ? 6 : 5} align='center'>
+                    <CircularProgress size={28} />
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : paginatedData.length > 0 ? (
+                paginatedData.map((row, index) => (
+                  <TableRow key={index}>
+                    {isSystemAdmin && (
+                      <TableCell>{row.tenantName ?? row.tenantId}</TableCell>
+                    )}
+                    <TableCell>{row.department}</TableCell>
+                    <TableCell>{row.designation}</TableCell>
+                    <TableCell>{row.employeeName}</TableCell>
+                    <TableCell>{row.benefitType}</TableCell>
+                    <TableCell>{row.status}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={isSystemAdmin ? 6 : 5} align='center'>
+                    {L.noData}
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -345,15 +528,23 @@ const BenefitReport: React.FC = () => {
       {/* Pagination */}
       {totalPages > 1 && (
         <Box display='flex' justifyContent='center' my={2}>
-          <Pagination count={totalPages} page={page} onChange={(_, newPage) => setPage(newPage)} color='primary' />
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(_, newPage) => setPage(newPage)}
+            color='primary'
+          />
         </Box>
       )}
 
-      <Box textAlign='center' mb={2}>
-        <Typography variant='body2' color='text.secondary'>
-          Showing {filteredData.length === 0 ? 0 : Math.min((page - 1) * ITEMS_PER_PAGE + 1, filteredData.length)}–{Math.min(page * ITEMS_PER_PAGE, filteredData.length)} of {filteredData.length} records
-        </Typography>
-      </Box>
+      {filteredData.length > 0 && (
+        <Box textAlign='center' mb={2}>
+          <Typography variant='body2' color='text.secondary'>
+            Showing page {page} of {totalPages} ({filteredData.length} total
+            records{paginationLimit ? `, ${paginationLimit} per page` : ''})
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };

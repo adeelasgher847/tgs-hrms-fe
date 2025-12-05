@@ -104,7 +104,7 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
                 email: team.manager.email,
                 role: 'Manager',
               };
-              managersData.unshift(currentManager); 
+              managersData.unshift(currentManager);
             }
           }
 
@@ -253,19 +253,36 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
         },
       }}
     >
-      <DialogTitle sx={{ color: theme => theme.palette.text.primary }}>
+      <DialogTitle
+        dir={language === 'ar' ? 'rtl' : 'ltr'}
+        sx={{
+          color: theme => theme.palette.text.primary,
+          textAlign: language === 'ar' ? 'right' : 'left',
+        }}
+      >
         {lang.title}
       </DialogTitle>
 
       <form onSubmit={handleSubmit}>
-        <DialogContent>
+        <DialogContent sx={{ direction: 'ltr' }}>
           {error && (
             <Alert severity='error' sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              '& .MuiInputBase-input, & .MuiOutlinedInput-input, & input, & .MuiSelect-select, & .MuiInputLabel-root, & .MuiFormHelperText-root':
+                {
+                  direction: 'ltr',
+                  textAlign: 'left',
+                },
+            }}
+          >
             <TextField
               fullWidth
               label={lang.name}
@@ -368,8 +385,16 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
           </Box>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>
+        <DialogActions
+          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          sx={{
+            p: 2,
+            display: 'flex',
+            direction: 'ltr',
+            justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+          }}
+        >
+          <Button onClick={handleClose} disabled={loading} sx={{ order: 0 }}>
             {lang.cancel}
           </Button>
           <Button
@@ -380,7 +405,10 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
               // Note: manager_id is optional in UpdateTeamDto, so we don't require it
               // Button enables when name or description changes, even if manager is not selected
             }
-            sx={{ backgroundColor: theme => theme.palette.primary.main }}
+            sx={{
+              backgroundColor: theme => theme.palette.primary.main,
+              order: 1,
+            }}
             startIcon={loading ? <CircularProgress size={16} /> : null}
           >
             {loading ? lang.loading : lang.update}

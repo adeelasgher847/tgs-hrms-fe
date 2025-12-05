@@ -16,7 +16,10 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
-import { departmentApiService, type FrontendDepartment } from '../../api/departmentApi';
+import {
+  departmentApiService,
+  type FrontendDepartment,
+} from '../../api/departmentApi';
 
 interface Designation {
   id: string;
@@ -28,9 +31,12 @@ interface Designation {
 interface DesignationModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (data: { title: string; titleAr: string; departmentId: string }) => void;
+  onSave: (data: {
+    title: string;
+    titleAr: string;
+    departmentId: string;
+  }) => void;
   designation: Designation | null;
-  isRTL: boolean;
 }
 
 export default function DesignationModal({
@@ -38,7 +44,6 @@ export default function DesignationModal({
   onClose,
   onSave,
   designation,
-  isRTL,
 }: DesignationModalProps) {
   const { language } = useLanguage();
   const getText = (en: string, ar: string) => (language === 'ar' ? ar : en);
@@ -54,9 +59,11 @@ export default function DesignationModal({
   const [originalDepartmentId, setOriginalDepartmentId] = useState('');
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
   // const [loadingDepartments, setLoadingDepartments] = useState(false);
-  const [errors, setErrors] = useState<{ title?: string; titleAr?: string; departmentId?: string }>(
-    {}
-  );
+  const [errors, setErrors] = useState<{
+    title?: string;
+    titleAr?: string;
+    departmentId?: string;
+  }>({});
 
   // Load departments when modal opens
   useEffect(() => {
@@ -66,9 +73,7 @@ export default function DesignationModal({
   }, [open]);
 
   useEffect(() => {
-    if (open) {
-      departmentApiService.getAllDepartments().then(setDepartments);
-    }
+    // departments are loaded via loadDepartments when modal opens
     if (designation) {
       setTitle(designation.title);
       setTitleAr(designation.titleAr || '');
@@ -105,11 +110,17 @@ export default function DesignationModal({
 
   // Check if form has changes
   const hasChanges = designation
-    ? title !== originalTitle || titleAr !== originalTitleAr || departmentId !== originalDepartmentId
+    ? title !== originalTitle ||
+      titleAr !== originalTitleAr ||
+      departmentId !== originalDepartmentId
     : title.trim() !== '' || titleAr.trim() !== '' || departmentId !== '';
 
   const validateForm = () => {
-    const newErrors: { title?: string; titleAr?: string; departmentId?: string } = {};
+    const newErrors: {
+      title?: string;
+      titleAr?: string;
+      departmentId?: string;
+    } = {};
 
     if (!title.trim()) {
       newErrors.title = getText(
@@ -167,6 +178,8 @@ export default function DesignationModal({
       fullScreen={false} // ❌ force disable fullscreen
       PaperProps={{
         sx: {
+          // force LTR layout for this modal while keeping labels localized
+          direction: 'ltr',
           width: '100%',
           maxWidth: 600, // set a max width for mobile
           borderRadius: 1,
@@ -180,7 +193,7 @@ export default function DesignationModal({
           margin: '16px', // keeps it centered with spacing
         },
       }}
-      dir={isRTL ? 'rtl' : 'ltr'}
+      dir={'ltr'}
     >
       <DialogTitle>
         <Box
@@ -190,12 +203,23 @@ export default function DesignationModal({
             justifyContent: 'space-between',
           }}
         >
-          <Typography variant='h6'>
+          <Typography
+            variant='h6'
+            sx={{
+              order: language === 'ar' ? 2 : 1,
+              textAlign: language === 'ar' ? 'right' : 'left',
+            }}
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+          >
             {designation
               ? getText('Edit Designation', 'تعديل المسمى الوظيفي')
               : getText('Create New Designation', 'إنشاء مسمى وظيفي جديد')}
           </Typography>
-          <IconButton onClick={handleClose} size='small'>
+          <IconButton
+            onClick={handleClose}
+            size='small'
+            sx={{ order: language === 'ar' ? 1 : 2 }}
+          >
             <CloseIcon />
           </IconButton>
         </Box>
@@ -203,8 +227,6 @@ export default function DesignationModal({
 
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
-         
-
           <TextField
             select
             label={getText('Department', 'القسم')}
@@ -217,7 +239,7 @@ export default function DesignationModal({
           >
             {departments.map(dept => (
               <MenuItem key={dept.id} value={dept.id}>
-                {dept.name}
+                {getText(dept.name, dept.nameAr)}
               </MenuItem>
             ))}
           </TextField>
@@ -253,24 +275,56 @@ export default function DesignationModal({
               dir: 'rtl',
             }}
           /> */}
+
+          <TextField
+            label={getText(
+              'Designation Title (Arabic - Optional)',
+              'عنوان المسمى الوظيفي (بالعربية - اختياري)'
+            )}
+            value={titleAr}
+            onChange={e => setTitleAr(e.target.value)}
+            onKeyPress={handleKeyPress}
+            error={!!errors.titleAr}
+            helperText={errors.titleAr}
+            fullWidth
+            inputProps={{
+              dir: 'rtl',
+            }}
+          />
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, pt: 2 }}>
-        <Button onClick={handleClose} color='inherit' size='large'>
-          {getText('Cancel', 'إلغاء')}
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant='contained'
-          disabled={!hasChanges}
-          size='large'
-          sx={{ backgroundColor: '#464b8a' }}
-        >
-          {designation
-            ? getText('Update', 'تحديث')
-            : getText('Create', 'إنشاء')}
-        </Button>
+      <DialogActions
+        sx={{
+          p: 3,
+          pt: 2,
+          justifyContent: language === 'ar' ? 'flex-start' : 'flex-end',
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            onClick={handleClose}
+            color='inherit'
+            size='large'
+            sx={{ order: language === 'ar' ? 2 : 1 }}
+          >
+            {getText('Cancel', 'إلغاء')}
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant='contained'
+            disabled={!hasChanges}
+            size='large'
+            sx={{
+              backgroundColor: '#464b8a',
+              order: language === 'ar' ? 1 : 2,
+            }}
+          >
+            {designation
+              ? getText('Update', 'تحديث')
+              : getText('Create', 'إنشاء')}
+          </Button>
+        </Box>
       </DialogActions>
     </Dialog>
   );

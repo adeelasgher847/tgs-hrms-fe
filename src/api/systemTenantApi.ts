@@ -33,6 +33,17 @@ export interface SystemTenantDetail {
     id?: string;
     name?: string;
   }>;
+
+  // The API may also return additional details used by the UI
+  // (logo, domain and company information). Mark them optional to
+  // reflect variability across responses.
+  logo?: string | null;
+  domain?: string | null;
+  company?: {
+    company_name?: string;
+    plan_id?: string | null;
+    is_paid?: boolean;
+  } | null;
 }
 
 export interface SystemTenantFilters {
