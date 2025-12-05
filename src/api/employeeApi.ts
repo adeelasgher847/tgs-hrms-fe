@@ -348,7 +348,7 @@ class EmployeeApiService {
 
       return allEmployees;
     } catch (error) {
-      console.error('Error fetching all employees:', error);
+      throw error;
       return [];
     }
   }

@@ -33,16 +33,55 @@ export interface EmployeeBenefitResponse {
   benefit: Benefit;
 }
 
+export interface EmployeeBenefitDetail {
+  id: string;
+  name: string;
+  status: string;
+  type?: string;
+  statusOfAssignment?: string;
+}
+
 export interface EmployeeWithBenefits {
   employeeId: string;
   employeeName: string;
   department: string;
   designation: string;
-  benefits: {
-    id: string;
-    name: string;
-    status: string;
-  }[];
+  tenantId?: string;
+  tenant_id?: string;
+  tenantName?: string;
+  tenant_name?: string;
+  benefits: EmployeeBenefitDetail[];
+}
+
+export interface TenantEmployeeWithBenefits {
+  tenant_id: string;
+  tenant_name: string;
+  tenant_status: string;
+  employees: Array<{
+    employeeId: string;
+    employeeName: string;
+    email: string;
+    profile_pic?: string | null;
+    department: string;
+    designation: string;
+    benefits: Array<{
+      id: string;
+      name: string;
+      description: string;
+      type: string;
+      eligibilityCriteria: string;
+      status: string;
+      tenant_id: string;
+      createdBy: string;
+      createdAt: string;
+      benefitAssignmentId: string;
+      statusOfAssignment: string;
+      startDate: string;
+      endDate: string;
+      assignedBy: string;
+      benefitCreatedAt: string;
+    }>;
+  }>;
 }
 
 const employeeBenefitApi = {
@@ -51,14 +90,8 @@ const employeeBenefitApi = {
   ): Promise<EmployeeBenefitResponse> {
     try {
       const response = await axiosInstance.post('/employee-benefits', data);
-      console.log('Assign Benefit Response:', response.data);
       return response.data;
     } catch (error: unknown) {
-      console.error(
-        'Assign Benefit API Error:',
-        (error as { response?: { data?: unknown }; message?: string }).response
-          ?.data || (error as { message?: string }).message
-      );
       throw error;
     }
   },
@@ -69,7 +102,6 @@ const employeeBenefitApi = {
     try {
       const employeeId = localStorage.getItem('employeeId');
       if (!employeeId) {
-        console.error('Employee ID not found in localStorage.');
         return [];
       }
 
@@ -78,30 +110,21 @@ const employeeBenefitApi = {
       });
 
       if (Array.isArray(response.data)) {
-        console.log('Get Employee Benefits Response:', response.data);
         return response.data;
       }
 
       if (response.data?.items && Array.isArray(response.data.items)) {
-        console.log('Get Employee Benefits (items):', response.data.items);
         return response.data.items;
       }
 
-      console.warn('Unexpected response structure:', response.data);
       return [];
     } catch (error: unknown) {
       if (
         (error as { response?: { status?: number } }).response?.status === 404
       ) {
-        console.warn('No benefits found for logged-in employee.');
         return [];
       }
 
-      console.error(
-        'Get Employee Benefits API Error:',
-        (error as { response?: { data?: unknown }; message?: string }).response
-          ?.data || (error as { message?: string }).message
-      );
       throw error;
     }
   },
@@ -113,21 +136,11 @@ const employeeBenefitApi = {
       });
 
       if (Array.isArray(response.data)) {
-        console.log('Employees with Benefits:', response.data);
         return response.data;
       }
 
-      console.warn(
-        'Unexpected response structure for employees:',
-        response.data
-      );
       return [];
     } catch (error: unknown) {
-      console.error(
-        'Get Employees with Benefits API Error:',
-        (error as { response?: { data?: unknown }; message?: string }).response
-          ?.data || (error as { message?: string }).message
-      );
       throw error;
     }
   },
@@ -144,23 +157,15 @@ const employeeBenefitApi = {
       });
 
       if (Array.isArray(response.data)) {
-        console.log('Filtered Employee Benefits:', response.data);
         return response.data;
       }
 
       if (response.data?.items && Array.isArray(response.data.items)) {
-        console.log('Filtered Employee Benefits (items):', response.data.items);
         return response.data.items;
       }
 
-      console.warn('Unexpected filtered response:', response.data);
       return [];
     } catch (error: unknown) {
-      console.error(
-        'Get Filtered Employee Benefits API Error:',
-        (error as { response?: { data?: unknown }; message?: string }).response
-          ?.data || (error as { message?: string }).message
-      );
       throw error;
     }
   },
@@ -170,14 +175,8 @@ const employeeBenefitApi = {
       const response = await axiosInstance.put(
         `/employee-benefits/${id}/cancel`
       );
-      console.log('Cancel Employee Benefit Response:', response.data);
       return response.data;
     } catch (error: unknown) {
-      console.error(
-        'Cancel Employee Benefit API Error:',
-        (error as { response?: { data?: unknown }; message?: string }).response
-          ?.data || (error as { message?: string }).message
-      );
       throw error;
     }
   },
@@ -195,14 +194,8 @@ const employeeBenefitApi = {
           params: { tenant_id: tenant_id || 'all' },
         }
       );
-      console.log('System Admin Benefit Summary:', response.data);
       return response.data;
     } catch (error: unknown) {
-      console.error(
-        'System Admin Benefit Summary API Error:',
-        (error as { response?: { data?: unknown }; message?: string }).response
-          ?.data || (error as { message?: string }).message
-      );
       throw error;
     }
   },
@@ -212,72 +205,14 @@ const employeeBenefitApi = {
     limit?: number;
   }): Promise<
     | {
-        items: Array<{
-          tenant_id: string;
-          tenant_name: string;
-          tenant_status: string;
-          employees: Array<{
-            employeeId: string;
-            employeeName: string;
-            email: string;
-            profile_pic?: string | null;
-            department: string;
-            designation: string;
-            benefits: Array<{
-              id: string;
-              name: string;
-              description: string;
-              type: string;
-              eligibilityCriteria: string;
-              status: string;
-              tenant_id: string;
-              createdBy: string;
-              createdAt: string;
-              benefitAssignmentId: string;
-              statusOfAssignment: string;
-              startDate: string;
-              endDate: string;
-              assignedBy: string;
-              benefitCreatedAt: string;
-            }>;
-          }>;
-        }>;
+        items: TenantEmployeeWithBenefits[];
         total: number;
         page: number;
         limit: number;
         totalPages: number;
       }
     | {
-        tenants: Array<{
-          tenant_id: string;
-          tenant_name: string;
-          tenant_status: string;
-          employees: Array<{
-            employeeId: string;
-            employeeName: string;
-            email: string;
-            profile_pic?: string | null;
-            department: string;
-            designation: string;
-            benefits: Array<{
-              id: string;
-              name: string;
-              description: string;
-              type: string;
-              eligibilityCriteria: string;
-              status: string;
-              tenant_id: string;
-              createdBy: string;
-              createdAt: string;
-              benefitAssignmentId: string;
-              statusOfAssignment: string;
-              startDate: string;
-              endDate: string;
-              assignedBy: string;
-              benefitCreatedAt: string;
-            }>;
-          }>;
-        }>;
+        tenants: TenantEmployeeWithBenefits[];
       }
   > {
     try {
@@ -288,8 +223,6 @@ const employeeBenefitApi = {
         }
       );
 
-      console.log('All Tenants Employee Benefits:', response.data);
-      
       // Check if response has pagination structure
       if (
         response.data &&
@@ -307,14 +240,18 @@ const employeeBenefitApi = {
           totalPages: response.data.totalPages || 1,
         };
       }
-      
+
       // Fallback for old structure (tenants)
       if (response.data?.tenants) {
-        return response.data;
+        return response.data as { tenants: TenantEmployeeWithBenefits[] };
       }
-      
+
       // If response is array or has items but not paginated, wrap it
-      const items = response.data?.items || (Array.isArray(response.data) ? response.data : []);
+      const items =
+        (response.data?.items as TenantEmployeeWithBenefits[] | undefined) ||
+        (Array.isArray(response.data)
+          ? (response.data as TenantEmployeeWithBenefits[])
+          : []);
       return {
         items: items,
         total: items.length,
@@ -323,10 +260,6 @@ const employeeBenefitApi = {
         totalPages: 1,
       };
     } catch (error: unknown) {
-      console.error(
-        'All Tenants Employee Benefits API Error:',
-        (error as any).response?.data || (error as any).message
-      );
       throw error;
     }
   },

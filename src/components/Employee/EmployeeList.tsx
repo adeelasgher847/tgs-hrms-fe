@@ -118,7 +118,13 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
                 {direction === 'rtl' ? 'الوظيفة' : 'Designation'}
               </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+              <TableCell
+                sx={{
+                  color: textColor,
+                  fontWeight: 'bold',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {direction === 'rtl' ? 'رقم الهوية' : 'CNIC Number'}
               </TableCell>
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
@@ -136,7 +142,12 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           <TableBody>
             {loading && (
               <TableRow>
-                <TableCell colSpan={onDelete || onEdit || onResendInvite || onView ? 8 : 7} align='center'>
+                <TableCell
+                  colSpan={
+                    onDelete || onEdit || onResendInvite || onView ? 8 : 7
+                  }
+                  align='center'
+                >
                   <Box display='flex' justifyContent='center' py={4}>
                     <CircularProgress />
                   </Box>
@@ -145,7 +156,12 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             )}
             {!loading && employees.length === 0 && (
               <TableRow>
-                <TableCell colSpan={onDelete || onEdit || onResendInvite || onView ? 8 : 7} align='center'>
+                <TableCell
+                  colSpan={
+                    onDelete || onEdit || onResendInvite || onView ? 8 : 7
+                  }
+                  align='center'
+                >
                   <Box display='flex' justifyContent='center' py={4}>
                     <Typography variant='body1' color='textSecondary'>
                       {direction === 'rtl'
@@ -212,6 +228,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                             <IconButton
                               onClick={() => onView(emp)}
                               disabled={loading}
+                              aria-label={`View details for employee ${emp.name}`}
                               sx={{
                                 color: darkMode ? '#4caf50' : '#2e7d32',
                                 '&:hover': {
@@ -221,7 +238,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                                 },
                               }}
                             >
-                              <VisibilityIcon />
+                              <VisibilityIcon aria-hidden='true' />
                             </IconButton>
                           </Tooltip>
                         )}
@@ -238,15 +255,19 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                               <IconButton
                                 sx={{
                                   color: darkMode ? '#1976d2' : '#0288d1',
-                                  opacity: emp.status === 'Invite Expired' ? 1 : 0.5,
+                                  opacity:
+                                    emp.status === 'Invite Expired' ? 1 : 0.5,
                                 }}
                                 onClick={() =>
                                   emp.status === 'Invite Expired' &&
                                   handleResendInvite(emp)
                                 }
-                                disabled={loading || emp.status !== 'Invite Expired'}
+                                disabled={
+                                  loading || emp.status !== 'Invite Expired'
+                                }
+                                aria-label={`Resend invite to employee ${emp.name}`}
                               >
-                                <ReplayIcon />
+                                <ReplayIcon aria-hidden='true' />
                               </IconButton>
                             </span>
                           </Tooltip>
@@ -263,8 +284,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                             <IconButton
                               onClick={() => onEdit(emp)}
                               disabled={loading}
+                              aria-label={`Edit employee ${emp.name}`}
                             >
-                              <EditIcon />
+                              <EditIcon aria-hidden='true' />
                             </IconButton>
                           </Tooltip>
                         )}
@@ -280,6 +302,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                             <IconButton
                               onClick={() => onDelete(emp.id)}
                               disabled={loading}
+                              aria-label={`Delete employee ${emp.name}`}
                               sx={{
                                 color: darkMode ? '#ff6b6b' : '#d32f2f',
                                 '&:hover': {
@@ -289,7 +312,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                                 },
                               }}
                             >
-                              <DeleteIcon />
+                              <DeleteIcon aria-hidden='true' />
                             </IconButton>
                           </Tooltip>
                         )}

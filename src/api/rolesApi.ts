@@ -1,3 +1,4 @@
+import { th } from 'date-fns/locale';
 import axiosInstance from './axiosInstance';
 
 // Role interface
@@ -18,7 +19,7 @@ class RolesApiService {
       const response = await axiosInstance.get<Role[]>(this.baseUrl);
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch roles:', error);
+      throw error;
       return [];
     }
   }
@@ -29,7 +30,7 @@ class RolesApiService {
       const response = await axiosInstance.get<Role>(`${this.baseUrl}/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch role:', error);
+      throw error;
       return null;
     }
   }

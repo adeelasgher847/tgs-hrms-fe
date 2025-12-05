@@ -53,14 +53,10 @@ export default function EmployeesInfoChart() {
           setSelectedYear(years[0]); // Set most recent year as default
         }
       } catch (err) {
-        // If API fails (including 401), we want to show zero-values instead of an error block
-        // but preserve logging for debugging.
-        console.warn('EmployeesInfoChart fetch error:', err);
+        // If API fails (including 401), show zero-values instead of an error block
         setError(null);
-        // Provide empty dataset for the current year (or current year fallback)
         const currentYear = new Date().getFullYear();
         setJoiningData(
-          // 12 months with zero totals for a consistent chart appearance
           Array.from({ length: 12 }, (_, i) => ({
             month: i + 1,
             year: currentYear,

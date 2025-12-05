@@ -147,14 +147,8 @@ class SignupApiService {
       const response = await axiosInstance.get(
         `/subscription-plans/prices-by-plans?${params.toString()}`
       );
-      console.log('Get stripe prices by plans id response: ', response);
       return response.data;
-    } catch (error: unknown) {
-      console.error(
-        'Stripe prices by plan IDs API Error:',
-        (error as Record<string, unknown>)?.response?.data ||
-          (error as Record<string, unknown>)?.message
-      );
+    } catch (error) {
       throw error;
     }
   }
@@ -194,13 +188,6 @@ class SignupApiService {
     ) {
       throw new Error('planId is required and must be a non-empty string');
     }
-
-    console.log('Creating company details with:', {
-      signupSessionId: data.signupSessionId,
-      companyName: data.companyName,
-      domain: data.domain,
-      planId: data.planId,
-    });
 
     const response = await axiosInstance.post(
       `${this.baseUrl}/company-details`,

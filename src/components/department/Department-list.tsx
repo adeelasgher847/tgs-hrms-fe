@@ -20,21 +20,22 @@ import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
 import type { DepartmentFormData } from '../../types';
 import { DepartmentCard } from './DepartmentCard';
-import { DepartmentFormModal } from './Department-form-modal';
-import { DeleteConfirmationModal } from './Delete-confirmation-modal';
+import { DepartmentFormModal } from './DepartmentFormModal';
+import DeleteConfirmationDialog from '../Common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
 import {
   departmentApiService,
   type FrontendDepartment,
 } from '../../api/departmentApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 import {
   getRoleName,
   isSystemAdmin as isSystemAdminFn,
 } from '../../utils/roleUtils';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
+import { COLORS } from '../../constants/appConstants';
 
 const labels = {
   en: {
@@ -106,7 +107,7 @@ export const DepartmentList: React.FC = () => {
 
         // Default to "All Tenants" - no need to set selectedTenantId
       } catch (error) {
-        console.error('Error fetching tenants:', error);
+        // Leave tenant filter empty on failure
       } finally {
         setLoadingTenants(false);
       }
@@ -335,10 +336,10 @@ export const DepartmentList: React.FC = () => {
                 borderRadius: '0.375rem',
                 textTransform: 'none',
                 fontWeight: 600,
-                bgcolor: darkMode ? '#464b8a' : '#45407A',
+                bgcolor: darkMode ? COLORS.PRIMARY : COLORS.PRIMARY,
                 boxShadow: 'none', // Remove button shadow
                 '&:hover': {
-                  bgcolor: darkMode ? '#464b8a' : '#5b56a0',
+                  bgcolor: darkMode ? COLORS.PRIMARY : COLORS.PRIMARY,
                   boxShadow: 'none',
                 },
               }}
@@ -397,7 +398,7 @@ export const DepartmentList: React.FC = () => {
                 setIsFormModalOpen(true);
               }}
               sx={{
-                backgroundColor: '#464b8a',
+                backgroundColor: COLORS.PRIMARY,
                 boxShadow: 'none',
                 '&:hover': { boxShadow: 'none' },
               }}
@@ -485,15 +486,22 @@ export const DepartmentList: React.FC = () => {
         isRtl={isRtl}
       />
 
-      <DeleteConfirmationModal
+      <DeleteConfirmationDialog
         open={isDeleteModalOpen}
         onClose={() => {
           setIsDeleteModalOpen(false);
           setSelectedDepartment(null);
         }}
         onConfirm={handleDeleteDepartment}
-        department={selectedDepartment}
-        isRtl={isRtl}
+        message={
+          selectedDepartment
+            ? isRtl
+              ? `هل أنت متأكد من أنك تريد حذف قسم "${selectedDepartment.name}"؟ هذا الإجراء لا يمكن التراجع عنه.`
+              : `Are you sure you want to delete the department "${selectedDepartment.name}"? This action cannot be undone.`
+            : ''
+        }
+        itemName={selectedDepartment?.name}
+        isRTL={isRtl}
       />
 
       {/* Snackbar for notifications */}

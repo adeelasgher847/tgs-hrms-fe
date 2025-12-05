@@ -315,7 +315,6 @@ class DesignationApiService {
       }>(`${this.baseUrl}/all-tenants`, { params });
       return response.data;
     } catch (error) {
-      console.error('Error fetching all tenants with designations:', error);
       throw error;
     }
   }

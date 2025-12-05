@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -17,7 +16,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -42,6 +40,13 @@ import { snackbar } from '../../utils/snackbar';
 import { useIsDarkMode } from '../../theme';
 import dayjsPluginLocalizedFormat from 'dayjs/plugin/localizedFormat';
 import { isSystemAdmin, isHRAdmin, isAdmin } from '../../utils/roleUtils';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import AppButton from '../Common/AppButton';
+import AppTextField from '../Common/AppTextField';
+import AppSelect from '../Common/AppSelect';
+import { PAGINATION } from '../../constants/appConstants';
+import AppTable from '../Common/AppTable';
+import AppCard from '../Common/AppCard';
 
 dayjs.extend(dayjsPluginLocalizedFormat);
 
@@ -112,7 +117,7 @@ const PayrollRecords: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25;
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
   const [employees, setEmployees] = useState<
     Array<{
       id: string;
@@ -270,7 +275,6 @@ const PayrollRecords: React.FC = () => {
           });
         }
       } catch (error) {
-        console.error('Error fetching employees:', error);
         const response = await payrollApi.getAllEmployeeSalaries({
           page: 1,
           limit: 25,
@@ -296,7 +300,6 @@ const PayrollRecords: React.FC = () => {
         }));
       setEmployees(mapped);
     } catch (error) {
-      console.error('Failed to load employees:', error);
       setEmployees([]);
     }
   }, []);
@@ -304,13 +307,6 @@ const PayrollRecords: React.FC = () => {
   const loadRecords = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('Loading payroll records with pagination:', {
-        month,
-        year,
-        page: currentPage,
-        limit: itemsPerPage,
-        employee_id: employeeFilter || undefined,
-      });
       const yearNum =
         typeof year === 'string' && year === ''
           ? dayjs().year()
@@ -321,12 +317,6 @@ const PayrollRecords: React.FC = () => {
         page: currentPage,
         limit: itemsPerPage,
         employee_id: employeeFilter || undefined,
-      });
-      console.log('Payroll records response:', {
-        itemsCount: response.items?.length || 0,
-        total: response.total,
-        totalPages: response.totalPages,
-        page: response.page,
       });
       setRecords(response.items || []);
       if (response.totalPages !== undefined) {
@@ -341,7 +331,6 @@ const PayrollRecords: React.FC = () => {
       }
       setTotalRecords(response.total || response.items?.length || 0);
     } catch (error) {
-      console.error('Failed to load payroll records:', error);
       snackbar.error('Failed to load payroll records');
       setRecords([]);
       setTotalPages(1);
@@ -398,7 +387,6 @@ const PayrollRecords: React.FC = () => {
         setHistoryRecords(sorted);
       })
       .catch(error => {
-        console.error('Failed to load payroll history:', error);
         setHistoryRecords([]);
         setHistoryError('Failed to load payroll history.');
       })
@@ -445,7 +433,6 @@ const PayrollRecords: React.FC = () => {
       snackbar.success('Payroll status updated successfully');
       closeStatusDialog();
     } catch (error) {
-      console.error('Failed to update payroll status:', error);
       snackbar.error('Failed to update payroll status');
     } finally {
       setUpdatingStatus(false);
@@ -591,7 +578,6 @@ const PayrollRecords: React.FC = () => {
       setGenerateDialogOpen(false);
       setGenerateEmployeeId('');
     } catch (error) {
-      console.error('Failed to generate payroll:', error);
       snackbar.error('Failed to generate payroll. Please try again.');
     } finally {
       setGenerating(false);
@@ -654,8 +640,7 @@ const PayrollRecords: React.FC = () => {
           spacing={2}
           alignItems='flex-start'
         >
-          <TextField
-            select
+          <AppSelect
             label='Month'
             value={month}
             size='small'
@@ -667,7 +652,7 @@ const PayrollRecords: React.FC = () => {
                 {option.label}
               </MenuItem>
             ))}
-          </TextField>
+          </AppSelect>
 
           <TextField
             label='Year'
@@ -676,7 +661,7 @@ const PayrollRecords: React.FC = () => {
             size='small'
             sx={{ minWidth: 140 }}
             value={year === 0 ? '' : year}
-            onChange={event => {
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               const value = event.target.value;
               const numValue =
                 value === '' ? '' : Math.max(0, Number(value) || 0);
@@ -686,15 +671,16 @@ const PayrollRecords: React.FC = () => {
         </Stack>
 
         {canGeneratePayroll && (
-          <Button
+          <AppButton
             variant='contained'
+            variantType='primary'
             startIcon={<GenerateIcon />}
             onClick={openGenerateDialog}
             disabled={generating}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
             Generate Payroll
-          </Button>
+          </AppButton>
         )}
       </Box>
 
@@ -738,14 +724,13 @@ const PayrollRecords: React.FC = () => {
                 value: formatCurrency(totals.net),
               },
             ].map(card => (
-              <Paper
+              <AppCard
                 key={card.label}
-                elevation={0}
+                compact
+                noShadow
                 sx={{
-                  p: 2,
                   textAlign: 'center',
                   backgroundColor: effectiveDarkMode ? '#121212' : '#f8f9fa',
-                  borderRadius: 2,
                   border: effectiveDarkMode
                     ? `1px solid ${theme.palette.divider}`
                     : 'none',
@@ -763,7 +748,7 @@ const PayrollRecords: React.FC = () => {
                 >
                   {card.value}
                 </Typography>
-              </Paper>
+              </AppCard>
             ))}
           </Box>
         </Paper>
@@ -786,13 +771,12 @@ const PayrollRecords: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <TextField
-            select
+          <AppSelect
             label='Employee'
             size='small'
             sx={{ minWidth: 220 }}
             value={employeeFilter}
-            onChange={event => setEmployeeFilter(event.target.value)}
+            onChange={event => setEmployeeFilter(event.target.value as string)}
           >
             <MenuItem value=''>All employees</MenuItem>
             {recordEmployees.length === 0 ? (
@@ -806,7 +790,7 @@ const PayrollRecords: React.FC = () => {
                 </MenuItem>
               ))
             )}
-          </TextField>
+          </AppSelect>
         </Box>
         {loading ? (
           <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
@@ -819,107 +803,101 @@ const PayrollRecords: React.FC = () => {
             </Alert>
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Employee</TableCell>
-                  <TableCell>Period</TableCell>
-                  <TableCell align='right'>Gross</TableCell>
-                  <TableCell align='right'>Deductions</TableCell>
-                  <TableCell align='right'>Net</TableCell>
-                  <TableCell align='center'>Status</TableCell>
-                  <TableCell align='center'>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {displayedRecords.map(record => (
-                  <TableRow key={record.id} hover>
-                    <TableCell>
-                      <Typography variant='subtitle2' sx={{ color: textColor }}>
-                        {record.employee?.user
-                          ? `${record.employee.user.first_name} ${record.employee.user.last_name}`
-                          : record.employee_id}
-                      </Typography>
-                      <Typography
-                        variant='caption'
-                        sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#666' }}
-                      >
-                        {record.employee?.user?.email || '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      {record.month}/{record.year}
-                    </TableCell>
-                    <TableCell align='right'>
-                      {formatCurrency(record.grossSalary)}
-                    </TableCell>
-                    <TableCell align='right'>
-                      {formatCurrency(record.totalDeductions)}
-                    </TableCell>
-                    <TableCell align='right'>
-                      {formatCurrency(record.netSalary)}
-                    </TableCell>
-                    <TableCell align='center'>
-                      <Typography
-                        variant='caption'
-                        sx={{
-                          px: 1.5,
-                          py: 0.5,
-                          borderRadius: 1,
-                          textTransform: 'capitalize',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 600,
-                          backgroundColor:
-                            mapStatusFromBackend(record.status) === 'paid'
-                              ? theme.palette.success.light
-                              : theme.palette.error.light,
-                          color:
-                            mapStatusFromBackend(record.status) === 'paid'
-                              ? theme.palette.success.contrastText
-                              : theme.palette.error.contrastText,
-                        }}
-                      >
-                        {mapStatusFromBackend(record.status)
-                          .charAt(0)
-                          .toUpperCase() +
-                          mapStatusFromBackend(record.status).slice(1)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align='center'>
-                      <Stack
-                        direction='row'
-                        spacing={1}
-                        justifyContent='center'
-                      >
-                        <Tooltip title='View breakdown'>
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>Employee</TableCell>
+                <TableCell>Period</TableCell>
+                <TableCell align='right'>Gross</TableCell>
+                <TableCell align='right'>Deductions</TableCell>
+                <TableCell align='right'>Net</TableCell>
+                <TableCell align='center'>Status</TableCell>
+                <TableCell align='center'>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {displayedRecords.map(record => (
+                <TableRow key={record.id} hover>
+                  <TableCell>
+                    <Typography variant='subtitle2' sx={{ color: textColor }}>
+                      {record.employee?.user
+                        ? `${record.employee.user.first_name} ${record.employee.user.last_name}`
+                        : record.employee_id}
+                    </Typography>
+                    <Typography
+                      variant='caption'
+                      sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#666' }}
+                    >
+                      {record.employee?.user?.email || '—'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {record.month}/{record.year}
+                  </TableCell>
+                  <TableCell align='right'>
+                    {formatCurrency(record.grossSalary)}
+                  </TableCell>
+                  <TableCell align='right'>
+                    {formatCurrency(record.totalDeductions)}
+                  </TableCell>
+                  <TableCell align='right'>
+                    {formatCurrency(record.netSalary)}
+                  </TableCell>
+                  <TableCell align='center'>
+                    <Typography
+                      variant='caption'
+                      sx={{
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: 1,
+                        textTransform: 'capitalize',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 600,
+                        backgroundColor:
+                          mapStatusFromBackend(record.status) === 'paid'
+                            ? theme.palette.success.light
+                            : theme.palette.error.light,
+                        color:
+                          mapStatusFromBackend(record.status) === 'paid'
+                            ? theme.palette.success.contrastText
+                            : theme.palette.error.contrastText,
+                      }}
+                    >
+                      {mapStatusFromBackend(record.status)
+                        .charAt(0)
+                        .toUpperCase() +
+                        mapStatusFromBackend(record.status).slice(1)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <Stack direction='row' spacing={1} justifyContent='center'>
+                      <Tooltip title='View breakdown'>
+                        <IconButton
+                          size='small'
+                          onClick={() => openDetails(record)}
+                        >
+                          <VisibilityIcon fontSize='small' />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title='Update status'>
+                        <span>
                           <IconButton
                             size='small'
-                            onClick={() => openDetails(record)}
+                            onClick={() => openStatusDialog(record)}
+                            disabled={updatingStatus}
                           >
-                            <VisibilityIcon fontSize='small' />
+                            <EditIcon fontSize='small' />
                           </IconButton>
-                        </Tooltip>
-                        <Tooltip title='Update status'>
-                          <span>
-                            <IconButton
-                              size='small'
-                              onClick={() => openStatusDialog(record)}
-                              disabled={updatingStatus}
-                            >
-                              <EditIcon fontSize='small' />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                        </span>
+                      </Tooltip>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </AppTable>
         )}
         {!loading && totalPages > 1 && (
           <Box display='flex' justifyContent='center' p={2}>
@@ -963,9 +941,9 @@ const PayrollRecords: React.FC = () => {
           }}
         >
           <Typography variant='h6'>Payroll Breakdown</Typography>
-          <Button onClick={closeDetails} color='inherit'>
+          <AppButton onClick={closeDetails} variantType='ghost' color='inherit'>
             <CloseIcon />
-          </Button>
+          </AppButton>
         </DialogTitle>
         <DialogContent
           sx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
@@ -1263,7 +1241,13 @@ const PayrollRecords: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={closeDetails}>Close</Button>
+          <AppButton
+            onClick={closeDetails}
+            variantType='secondary'
+            variant='outlined'
+          >
+            Close
+          </AppButton>
         </DialogActions>
       </Dialog>
 
@@ -1293,8 +1277,7 @@ const PayrollRecords: React.FC = () => {
                   : statusRecord.employee_id}{' '}
                 — {statusRecord.month}/{statusRecord.year}
               </Typography>
-              <TextField
-                select
+              <AppSelect
                 label='Status'
                 value={statusValue}
                 onChange={event =>
@@ -1306,22 +1289,31 @@ const PayrollRecords: React.FC = () => {
                     {option.charAt(0).toUpperCase() + option.slice(1)}
                   </MenuItem>
                 ))}
-              </TextField>
+              </AppSelect>
               <TextField
                 label='Remarks'
                 multiline
                 minRows={3}
                 value={statusRemarks}
-                onChange={event => setStatusRemarks(event.target.value)}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  setStatusRemarks(event.target.value)
+                }
                 placeholder='Optional remarks (e.g. payment method)'
               />
             </Stack>
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={closeStatusDialog}>Cancel</Button>
-          <Button
+          <AppButton
+            onClick={closeStatusDialog}
+            variantType='secondary'
+            variant='outlined'
+          >
+            Cancel
+          </AppButton>
+          <AppButton
             onClick={handleStatusUpdate}
+            variantType='primary'
             variant='contained'
             disabled={updatingStatus}
             startIcon={
@@ -1330,7 +1322,7 @@ const PayrollRecords: React.FC = () => {
             sx={{ textTransform: 'none' }}
           >
             {updatingStatus ? 'Updating...' : 'Update Status'}
-          </Button>
+          </AppButton>
         </DialogActions>
       </Dialog>
 
@@ -1349,8 +1341,7 @@ const PayrollRecords: React.FC = () => {
         <DialogTitle>Generate Payroll</DialogTitle>
         <DialogContent>
           <Stack spacing={2} marginTop={2}>
-            <TextField
-              select
+            <AppSelect
               label='Month'
               value={generateMonth}
               size='small'
@@ -1362,7 +1353,7 @@ const PayrollRecords: React.FC = () => {
                   {option.label}
                 </MenuItem>
               ))}
-            </TextField>
+            </AppSelect>
             <TextField
               label='Year'
               type='number'
@@ -1370,20 +1361,21 @@ const PayrollRecords: React.FC = () => {
               size='small'
               sx={{ minWidth: 140 }}
               value={generateYear === 0 ? '' : generateYear}
-              onChange={event => {
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                 const value = event.target.value;
                 const numValue =
                   value === '' ? '' : Math.max(0, Number(value) || 0);
                 setGenerateYear(numValue);
               }}
             />
-            <TextField
-              select
+            <AppSelect
               label='Employee'
               size='small'
               sx={{ minWidth: 220 }}
               value={generateEmployeeId}
-              onChange={event => setGenerateEmployeeId(event.target.value)}
+              onChange={event =>
+                setGenerateEmployeeId(event.target.value as string)
+              }
             >
               <MenuItem value=''>All employees</MenuItem>
               {employeesForGenerateDialog.length === 0 ? (
@@ -1399,7 +1391,7 @@ const PayrollRecords: React.FC = () => {
                   </MenuItem>
                 ))
               )}
-            </TextField>
+            </AppSelect>
             {employeesForGenerateDialog.length === 0 &&
               employees.length > 0 && (
                 <Alert severity='warning' sx={{ m: 0 }}>
@@ -1411,9 +1403,16 @@ const PayrollRecords: React.FC = () => {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setGenerateDialogOpen(false)}>Cancel</Button>
-          <Button
+          <AppButton
+            onClick={() => setGenerateDialogOpen(false)}
+            variantType='secondary'
+            variant='outlined'
+          >
+            Cancel
+          </AppButton>
+          <AppButton
             onClick={handleGenerate}
+            variantType='primary'
             variant='contained'
             disabled={generating || employeesForGenerateDialog.length === 0}
             startIcon={generating ? <CircularProgress size={16} /> : undefined}
@@ -1425,7 +1424,7 @@ const PayrollRecords: React.FC = () => {
             }
           >
             {generating ? 'Generating...' : 'Generate Payroll'}
-          </Button>
+          </AppButton>
         </DialogActions>
       </Dialog>
     </Box>

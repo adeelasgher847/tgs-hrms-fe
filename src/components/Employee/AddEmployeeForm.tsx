@@ -289,8 +289,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       const data = await rolesApiService.getAllRoles();
       setRoles(data);
     } catch (error) {
-      console.error('Error loading roles:', error);
-      // Handle error silently
+      // Handle error silently; role dropdown will just have no options
     } finally {
       setLoadingRoles(false);
     }

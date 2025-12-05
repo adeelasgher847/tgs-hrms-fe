@@ -132,7 +132,6 @@ const PayrollGeneration: React.FC = () => {
         );
       }
     } catch (error) {
-      console.error('Failed to generate payroll:', error);
       snackbar.error('Failed to generate payroll. Please try again.');
     } finally {
       setLoading(false);

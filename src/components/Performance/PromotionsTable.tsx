@@ -30,7 +30,6 @@ interface PromotionsListProps {
   tenantId: string;
 }
 
-
 const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   const [promotions, setPromotions] = useState<PromotionRecord[]>([]);
   const [stats, setStats] = useState<PromotionStats[]>([]);
@@ -74,8 +73,8 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
       });
 
       setEmployeeNames(prev => ({ ...prev, ...namesMap }));
-    } catch (error) {
-      console.error('Failed to fetch employee names:', error);
+    } catch {
+      // Ignore name lookup failures; table will fall back to IDs
     }
   }, []);
 
@@ -125,8 +124,8 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
             : (currentPage - 1) * itemsPerPage + promotionsArray.length
         );
       }
-    } catch (error) {
-      console.error('Failed to fetch promotions:', error);
+    } catch {
+      // Leave previous promotions state if fetch fails
     } finally {
       setLoading(false);
     }
@@ -206,7 +205,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
           onChange={e => setFilters(f => ({ ...f, endDate: e.target.value }))}
         />
 
-        <Button  variant='contained' onClick={() => setCurrentPage(1)}>
+        <Button variant='contained' onClick={() => setCurrentPage(1)}>
           Apply Filters
         </Button>
       </Box>
@@ -235,7 +234,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         ))}
       </Box>
 
-      <Paper sx={{ p: 2,overflow: 'auto', boxShadow: 'none' }}>
+      <Paper sx={{ p: 2, overflow: 'auto', boxShadow: 'none' }}>
         {loading ? (
           <Box
             display='flex'
@@ -264,9 +263,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
                     <TableCell>{getEmployeeName(p.employee_id)}</TableCell>
                     <TableCell>{p.previousDesignation}</TableCell>
                     <TableCell>{p.newDesignation}</TableCell>
-                    <TableCell>
-                      {formatDate(p.effectiveDate)}
-                    </TableCell>
+                    <TableCell>{formatDate(p.effectiveDate)}</TableCell>
                     <TableCell>
                       <Chip label={p.status} color={statusColor(p.status)} />
                     </TableCell>
@@ -289,7 +286,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
       {(() => {
         // Get current page record count
         const currentPageRowsCount = promotions.length;
-        
+
         // Pagination buttons logic:
         // - On first page: Only show if current page has full limit (to indicate more pages exist)
         // - On other pages (including last page): Always show if there are multiple pages
@@ -299,7 +296,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
           (currentPage === 1
             ? currentPageRowsCount === itemsPerPage // First page: only show if full limit
             : true); // Other pages: always show if totalPages > 1
-        
+
         return shouldShowPagination ? (
           <Box display='flex' justifyContent='center' mt={3}>
             <Pagination

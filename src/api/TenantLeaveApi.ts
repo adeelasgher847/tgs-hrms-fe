@@ -210,8 +210,7 @@ export const TenantLeaveApi = {
       );
       return data ?? null;
     } catch (error) {
-      console.error('Failed to fetch tenant details:', error);
-      return null;
+      throw error;
     }
   },
 

@@ -77,7 +77,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
       setDepartments(deptRes || []);
       setTenants(tenantRes || []);
     } catch (err) {
-      console.error('Error fetching filter data:', err);
+      // Leave filters empty if loading fails
     }
   };
 
@@ -94,7 +94,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
       );
       setDesignations(res.items || []);
     } catch (err) {
-      console.error('Error fetching designations by department:', err);
+      // Leave designations empty if loading fails
     }
   };
 
@@ -144,7 +144,9 @@ const TenantBasedEmployeeManager: React.FC = () => {
         );
       }
     } catch (err) {
-      console.error('Error fetching system employees:', err);
+      setEmployees([]);
+      setTotalPages(1);
+      setTotalRecords(0);
     } finally {
       setLoading(false);
     }

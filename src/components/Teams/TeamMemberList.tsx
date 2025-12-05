@@ -28,7 +28,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
-import UserAvatar from '../common/UserAvatar';
+import UserAvatar from '../Common/UserAvatar';
 
 interface TeamMemberListProps {
   teamId: string;
@@ -244,7 +244,10 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
     <Box>
       <TableContainer
         component={Paper}
-        sx={{ backgroundColor: darkMode ? '#2d2d2d' : '#fff' , boxShadow:"none"}}
+        sx={{
+          backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+          boxShadow: 'none',
+        }}
       >
         <Table>
           <TableHead>

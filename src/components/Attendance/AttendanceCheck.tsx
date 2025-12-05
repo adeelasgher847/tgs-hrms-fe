@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Alert,
-} from '@mui/material';
+import { Box, Typography, Paper, Button, Alert } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
-import { isAdmin, isSystemAdmin, isNetworkAdmin, isHRAdmin } from '../../utils/roleUtils';
+import {
+  isAdmin,
+  isSystemAdmin,
+  isNetworkAdmin,
+  isHRAdmin,
+} from '../../utils/roleUtils';
 
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
 
@@ -151,7 +150,10 @@ const AttendanceCheck = () => {
             color='text.secondary'
             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
           >
-            {(isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser)
+            {isAdminUser ||
+            isSystemAdminUser ||
+            isNetworkAdminUser ||
+            isHRAdminUser
               ? 'Admin - Track your daily attendance'
               : 'Track your daily attendance'}
           </Typography>
@@ -172,7 +174,13 @@ const AttendanceCheck = () => {
               px: { xs: 1, sm: 2 },
             }}
             disabled={loading}
-            startIcon={<LoginIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />}
+            startIcon={
+              <LoginIcon
+                sx={{ fontSize: { xs: 18, sm: 20 } }}
+                aria-hidden='true'
+              />
+            }
+            aria-label={loading ? 'Checking in...' : 'Check in for attendance'}
           >
             Check In
           </Button>
@@ -190,7 +198,15 @@ const AttendanceCheck = () => {
               px: { xs: 1, sm: 2 },
             }}
             disabled={loading}
-            startIcon={<LogoutIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />}
+            startIcon={
+              <LogoutIcon
+                sx={{ fontSize: { xs: 18, sm: 20 } }}
+                aria-hidden='true'
+              />
+            }
+            aria-label={
+              loading ? 'Checking out...' : 'Check out from attendance'
+            }
           >
             Check Out
           </Button>

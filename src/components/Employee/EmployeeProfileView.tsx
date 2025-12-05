@@ -21,7 +21,7 @@ import type {
   EmployeeProfileAttendanceSummaryItem,
   EmployeeProfileLeaveHistoryItem,
 } from '../../api/employeeApi';
-import UserAvatar from '../common/UserAvatar';
+import UserAvatar from '../Common/UserAvatar';
 import { formatDate } from '../../utils/dateUtils';
 
 const EmployeeProfileView: React.FC = () => {
@@ -121,7 +121,6 @@ const EmployeeProfileView: React.FC = () => {
       : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-
   if (isLoading) {
     return (
       <Box py={3} display='flex' justifyContent='center'>
@@ -146,7 +145,13 @@ const EmployeeProfileView: React.FC = () => {
     <Box py={2}>
       <Paper
         elevation={1}
-        sx={{ borderRadius: 1, p: 3, bgcolor: 'background.paper', mb: 4,boxShadow:'none' }}
+        sx={{
+          borderRadius: 1,
+          p: 3,
+          bgcolor: 'background.paper',
+          mb: 4,
+          boxShadow: 'none',
+        }}
       >
         <Typography
           variant='h5'
@@ -198,7 +203,13 @@ const EmployeeProfileView: React.FC = () => {
       {/* Recent Attendance Table */}
       <Paper
         elevation={1}
-        sx={{ borderRadius: 1, p: 3, bgcolor: 'background.paper', mb: 4,boxShadow:'none' }}
+        sx={{
+          borderRadius: 1,
+          p: 3,
+          bgcolor: 'background.paper',
+          mb: 4,
+          boxShadow: 'none',
+        }}
       >
         <Typography
           variant='h6'
@@ -249,7 +260,12 @@ const EmployeeProfileView: React.FC = () => {
       {/* Leave History Table */}
       <Paper
         elevation={1}
-        sx={{ borderRadius: 1, p: 3, bgcolor: 'background.paper',boxShadow:'none' }}
+        sx={{
+          borderRadius: 1,
+          p: 3,
+          bgcolor: 'background.paper',
+          boxShadow: 'none',
+        }}
       >
         <Typography
           variant='h6'

@@ -250,6 +250,7 @@ const TeamList: React.FC<TeamListProps> = ({
           onClick={() =>
             exportCSV('/teams/export', 'teams.csv', token, filters)
           }
+          aria-label='Export teams to CSV'
           sx={{
             backgroundColor: 'primary.main',
             borderRadius: '6px',
@@ -260,7 +261,7 @@ const TeamList: React.FC<TeamListProps> = ({
             },
           }}
         >
-          <FileDownloadIcon />
+          <FileDownloadIcon aria-hidden='true' />
         </IconButton>
       </Tooltip>
     </Box>

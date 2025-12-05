@@ -76,7 +76,6 @@ const SettingsPage: React.FC = () => {
         setModalCompanyLogo(contextCompanyDetails.logo_url || companyLogo);
       }
     } catch (err) {
-      console.error('Failed to initialize modal:', err);
       setError('Failed to load company details');
     } finally {
       setModalLogoLoading(false);
@@ -120,7 +119,6 @@ const SettingsPage: React.FC = () => {
       setSelectedLogoFile(null); // clear after saving
       setError(null);
     } catch (err) {
-      console.error('Failed to update company details:', err);
       setError('Failed to update company details');
     } finally {
       setEditLoading(false);

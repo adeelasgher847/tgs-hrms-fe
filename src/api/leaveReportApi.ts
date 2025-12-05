@@ -1,6 +1,6 @@
 import axiosInstance from './axiosInstance';
 import { getRoleName } from '../utils/roleUtils';
-import type { Leave } from '../type/levetypes';
+import type { Leave } from '../types/leave';
 
 export interface LeaveSummaryItem {
   type: string;
@@ -159,8 +159,7 @@ const getUserFromLocalStorage = () => {
       isAdmin,
       isSystemAdmin,
     };
-  } catch (error) {
-    console.error('Error getting user from localStorage:', error);
+  } catch {
     return {
       userId: null,
       role: 'unknown',
@@ -172,79 +171,80 @@ const getUserFromLocalStorage = () => {
   }
 };
 
-export const leaveReportApi = {
-  getUserInfo: getUserFromLocalStorage,
+class LeaveReportApiService {
+  private baseUrl = '/reports';
 
-  getLeaveSummary: async (page: number): Promise<LeaveSummaryResponse> => {
+  getUserInfo = getUserFromLocalStorage;
+
+  async getLeaveSummary(page: number): Promise<LeaveSummaryResponse> {
     const { userId } = getUserFromLocalStorage();
-    const response = await axiosInstance.get('/reports/leave-summary', {
-      params: { userId, page },
-    });
+    const response = await axiosInstance.get<LeaveSummaryResponse>(
+      `${this.baseUrl}/leave-summary`,
+      { params: { userId, page } }
+    );
     return response.data;
-  },
+  }
 
-  getTeamLeaveSummary: async (
+  async getTeamLeaveSummary(
     month: number,
     year: number
-  ): Promise<TeamLeaveSummaryResponse> => {
+  ): Promise<TeamLeaveSummaryResponse> {
     const { userId: managerId } = getUserFromLocalStorage();
-    console.log('Sending Team Leave Summary Request:', {
-      managerId,
-      month,
-      year,
-    });
-    const response = await axiosInstance.get('/reports/team-leave-summary', {
-      params: { managerId, month, year },
-    });
+    const response = await axiosInstance.get<TeamLeaveSummaryResponse>(
+      `${this.baseUrl}/team-leave-summary`,
+      { params: { managerId, month, year } }
+    );
     return response.data;
-  },
+  }
 
-  getLeaveBalance: async (): Promise<LeaveBalanceResponse> => {
+  async getLeaveBalance(): Promise<LeaveBalanceResponse> {
     const { userId } = getUserFromLocalStorage();
-    const response = await axiosInstance.get('/reports/leave-balance', {
-      params: { employeeId: userId },
-    });
+    const response = await axiosInstance.get<LeaveBalanceResponse>(
+      `${this.baseUrl}/leave-balance`,
+      { params: { employeeId: userId } }
+    );
     return response.data;
-  },
+  }
 
-  exportLeaveSummaryCSV: async (year: number): Promise<Blob> => {
+  async exportLeaveSummaryCSV(year: number): Promise<Blob> {
     const { userId } = getUserFromLocalStorage();
-    const response = await axiosInstance.get('/reports/leave-summary/export', {
-      params: { employeeId: userId, year },
-      responseType: 'blob',
-    });
+    const response = await axiosInstance.get(
+      `${this.baseUrl}/leave-summary/export`,
+      {
+        params: { employeeId: userId, year },
+        responseType: 'blob',
+      }
+    );
     return response.data;
-  },
+  }
 
-  exportTeamLeaveSummaryCSV: async (
-    month: number,
-    year: number
-  ): Promise<Blob> => {
+  async exportTeamLeaveSummaryCSV(month: number, year: number): Promise<Blob> {
     const { userId: managerId } = getUserFromLocalStorage();
     const response = await axiosInstance.get(
-      '/reports/team-leave-summary/export',
+      `${this.baseUrl}/team-leave-summary/export`,
       {
         params: { managerId, month, year },
         responseType: 'blob',
       }
     );
     return response.data;
-  },
+  }
 
-  exportLeaveBalanceCSV: async (): Promise<Blob> => {
+  async exportLeaveBalanceCSV(): Promise<Blob> {
     const { userId } = getUserFromLocalStorage();
-    const response = await axiosInstance.get('/reports/leave-balance/export', {
-      params: { employeeId: userId },
-      responseType: 'blob',
-    });
-    return response.data;
-  },
-
-  getAllLeaveReports: async (
-    page: number = 1
-  ): Promise<AllLeaveReportsResponse> => {
     const response = await axiosInstance.get(
-      `/reports/all-leave-reports?page=${page}`
+      `${this.baseUrl}/leave-balance/export`,
+      {
+        params: { employeeId: userId },
+        responseType: 'blob',
+      }
+    );
+    return response.data;
+  }
+
+  async getAllLeaveReports(page: number = 1): Promise<AllLeaveReportsResponse> {
+    const response = await axiosInstance.get<AllLeaveReportsResponse>(
+      `${this.baseUrl}/all-leave-reports?page=${page}`
     );
     const data = response.data;
 
@@ -512,5 +512,10 @@ export const leaveReportApi = {
     }
 
     throw new Error('Unexpected response structure for all leave reports');
-  },
-};
+  }
+}
+
+export const leaveReportApiService = new LeaveReportApiService();
+
+// Maintain backward compatibility
+export const leaveReportApi = leaveReportApiService;

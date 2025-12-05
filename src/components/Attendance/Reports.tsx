@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Tabs,
@@ -24,6 +20,8 @@ import {
   type LeaveSummaryItem,
 } from '../../api/leaveReportApi';
 import { useIsDarkMode } from '../../theme';
+import AppCard from '../Common/AppCard';
+import AppTable from '../Common/AppTable';
 
 const getCardStyle = (darkMode: boolean) => ({
   flex: '1 1 calc(33.33% - 16px)',
@@ -91,7 +89,6 @@ const Reports: React.FC = () => {
       const info = leaveReportApi.getUserInfo();
       setUserInfo(info);
     } catch (err) {
-      console.error('Error loading user info:', err);
       setError('Failed to load user information');
       setUserInfo({
         userId: null,
@@ -180,7 +177,7 @@ const Reports: React.FC = () => {
         link.click();
       }
     } catch (err) {
-      console.error('Export failed:', err);
+      // Silently fail export; user can retry
     }
   };
 
@@ -255,7 +252,6 @@ const Reports: React.FC = () => {
               ];
             }
           } catch (err) {
-            console.error(`Error fetching page ${page}:`, err);
             // Continue with next page even if one fails
           }
         }
@@ -291,17 +287,8 @@ const Reports: React.FC = () => {
       // Reset page to 1 when new data is loaded from backend (for client-side pagination)
       setPage(1);
 
-      console.log('Pagination info:', {
-        totalPages: finalTotalPages,
-        total: totalLeaveTypeRows,
-        totalEmployees: allEmployeeReports.length,
-        totalLeaveTypeRows: totalLeaveTypeRows,
-        paginationLimit: paginationLimit,
-      });
-
       setError(null);
     } catch (err: unknown) {
-      console.error('Error fetching reports:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch reports');
     } finally {
       setLoadingTab(false);
@@ -426,14 +413,13 @@ const Reports: React.FC = () => {
       {isAdminView && (
         <Box>
           {error && <Typography color='error'>{error}</Typography>}
-          <TableContainer
-            component={Card}
+          <AppCard
+            noShadow
             sx={{
-              boxShadow: 'none',
               backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
             }}
           >
-            <Table>
+            <AppTable>
               <TableHead
                 sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5' }}
               >
@@ -658,8 +644,8 @@ const Reports: React.FC = () => {
                   })()
                 )}
               </TableBody>
-            </Table>
-          </TableContainer>
+            </AppTable>
+          </AppCard>
 
           {(() => {
             // Calculate all leave type rows for pagination logic
@@ -784,40 +770,37 @@ const Reports: React.FC = () => {
             <>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
                 {leaveBalance.map((item, idx) => (
-                  <Card key={idx} sx={getCardStyle(darkMode)}>
-                    <CardContent>
-                      <Typography
-                        sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
-                        gutterBottom
-                      >
-                        {item.leaveTypeName}
-                      </Typography>
-                      <Typography
-                        variant='h4'
-                        fontWeight={600}
-                        color='primary.main'
-                      >
-                        {item.remaining}
-                      </Typography>
-                      <Typography
-                        sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
-                        variant='body2'
-                      >
-                        Used: {item.used} / {item.maxDaysPerYear}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+                  <AppCard key={idx} compact sx={getCardStyle(darkMode)}>
+                    <Typography
+                      sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+                      gutterBottom
+                    >
+                      {item.leaveTypeName}
+                    </Typography>
+                    <Typography
+                      variant='h4'
+                      fontWeight={600}
+                      color='primary.main'
+                    >
+                      {item.remaining}
+                    </Typography>
+                    <Typography
+                      sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+                      variant='body2'
+                    >
+                      Used: {item.used} / {item.maxDaysPerYear}
+                    </Typography>
+                  </AppCard>
                 ))}
               </Box>
 
-              <TableContainer
-                component={Card}
+              <AppCard
+                noShadow
                 sx={{
-                  boxShadow: 'none',
                   backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
                 }}
               >
-                <Table>
+                <AppTable>
                   <TableHead>
                     <TableRow
                       sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#ffffff' }}
@@ -866,8 +849,8 @@ const Reports: React.FC = () => {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
-              </TableContainer>
+                </AppTable>
+              </AppCard>
             </>
           )}
         </>

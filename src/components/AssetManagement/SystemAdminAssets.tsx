@@ -90,7 +90,6 @@ const SystemAdminAssets: React.FC = () => {
       });
       setCategoryMap(map);
     } catch (error: unknown) {
-      console.error('Error fetching categories:', error);
       setCategories([]);
     }
   };
@@ -110,7 +109,7 @@ const SystemAdminAssets: React.FC = () => {
       });
       setSubcategoryMap(map);
     } catch (error: unknown) {
-      console.error('Error fetching subcategories:', error);
+      // Ignore; subcategory filter will just be empty
     }
   };
 
@@ -119,7 +118,6 @@ const SystemAdminAssets: React.FC = () => {
       const data = await assetApi.getSystemAssetsSummary();
       setSummary(Array.isArray(data) ? data : []);
     } catch (error: unknown) {
-      console.error('Error fetching asset summary:', error);
       setSummary([]);
     }
   };
@@ -154,7 +152,6 @@ const SystemAdminAssets: React.FC = () => {
       setTotalPages(response.totalPages || 1);
       setTotalRecords(response.total || 0);
     } catch (error: unknown) {
-      console.error('Error fetching system assets:', error);
       setAssets([]);
       setTotalPages(1);
       setTotalRecords(0);
@@ -248,7 +245,6 @@ const SystemAdminAssets: React.FC = () => {
     setAssignedFilter('');
     setSearchTerm('');
   };
-
 
   if (initialLoading) {
     return (

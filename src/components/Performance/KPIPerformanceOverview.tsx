@@ -27,11 +27,10 @@ const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
 
         const filteredData = tenantId
           ? kpiData.filter(item => item.tenantId === tenantId)
-          : kpiData; 
+          : kpiData;
 
         setData(filteredData);
       } catch (error) {
-        console.error('Error fetching KPI data:', error);
         setData([]);
       } finally {
         setLoading(false);
@@ -65,7 +64,12 @@ const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
 
   if (loading) {
     return (
-      <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight='200px'
+      >
         <CircularProgress />
       </Box>
     );

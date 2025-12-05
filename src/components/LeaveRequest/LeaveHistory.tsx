@@ -26,7 +26,7 @@ import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
 
-const ITEMS_PER_PAGE = 25; 
+const ITEMS_PER_PAGE = 25;
 
 const statusConfig: Record<
   string,
@@ -52,7 +52,6 @@ const statusConfig: Record<
     icon: <UndoIcon fontSize='small' sx={{ mr: 0.5 }} />,
   },
 };
-
 
 interface LeaveHistoryProps {
   leaves: Leave[];
@@ -154,7 +153,12 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
       // Determine which API to call based on user role and view mode
       const role = userRole || '';
-      const isAdminRole = ['hr-admin', 'system-admin', 'admin', 'network-admin'].includes(role);
+      const isAdminRole = [
+        'hr-admin',
+        'system-admin',
+        'admin',
+        'network-admin',
+      ].includes(role);
 
       if (isAdminRole) {
         // Admin/HR Admin/Network Admin - export all leaves for tenant
@@ -180,7 +184,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error exporting leave history:', error);
       alert('Failed to export leave history. Please try again.');
     } finally {
       setExporting(false);
@@ -326,8 +329,8 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                             sx: {
                               position: 'relative',
                               left: '-115px',
-                            }
-                          }
+                            },
+                          },
                         }}
                       >
                         <Typography
@@ -443,7 +446,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           // Always show pagination if there are multiple pages
           // This ensures users can always navigate between pages, even from the last page
           const shouldShowPagination = totalPages > 1;
-          
+
           return shouldShowPagination ? (
             <Pagination
               count={totalPages}

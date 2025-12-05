@@ -1,3 +1,4 @@
+import { th } from 'date-fns/locale';
 import axiosInstance from './axiosInstance';
 
 // Team Member interface
@@ -155,7 +156,7 @@ class TeamApiService {
       try {
         await this.addMemberToTeam(newTeam.id, teamData.manager_id);
       } catch (error) {
-        console.warn('Failed to add manager as team member:', error);
+        throw error;
       }
     }
 
@@ -212,7 +213,7 @@ class TeamApiService {
         }
         await this.addMemberToTeam(id, teamData.manager_id);
       } catch (error) {
-        console.warn('Failed to update manager:', error);
+        throw error;
       }
     }
 
@@ -331,8 +332,7 @@ class TeamApiService {
       );
       return response.data;
     } catch (error) {
-      console.error('Error fetching all tenant teams:', error);
-      return { tenants: [] };
+      throw error;
     }
   }
 }

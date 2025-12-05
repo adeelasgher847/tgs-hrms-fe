@@ -1,21 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
-  Button,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   IconButton,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
   MenuItem,
   InputAdornment,
   Menu,
@@ -47,10 +38,16 @@ import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
 import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
-import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../Data/assetCategories';
 import { isHRAdmin } from '../../utils/roleUtils';
 import { formatDate } from '../../utils/dateUtils';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
+import AppButton from '../Common/AppButton';
+import AppTextField from '../Common/AppTextField';
+import AppSelect from '../Common/AppSelect';
+import AppTable from '../Common/AppTable';
+import AppCard from '../Common/AppCard';
 
 // Extended interface for API asset response that may include additional user information
 interface ApiAssetWithUser extends ApiAsset {
@@ -111,11 +108,14 @@ const AssetInventory: React.FC = () => {
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error' | 'warning' | 'info';
-  }>({ open: false, message: '', severity: 'success' });
+  const {
+    snackbar,
+    showError,
+    showSuccess,
+    showWarning,
+    showInfo,
+    closeSnackbar,
+  } = useErrorHandler();
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
 
@@ -124,16 +124,6 @@ const AssetInventory: React.FC = () => {
 
   const hideActions = isHRAdmin(userRole);
 
-  const showSnackbar = (
-    message: string,
-    severity: 'success' | 'error' | 'warning' | 'info' = 'success'
-  ) => {
-    setSnackbar({ open: true, message, severity });
-  };
-
-  const handleSnackbarClose = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  };
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -320,8 +310,7 @@ const AssetInventory: React.FC = () => {
 
         setAssets(transformedAssets);
       } catch (error) {
-        console.error('Failed to fetch assets:', error);
-        showSnackbar('Failed to load assets', 'error');
+        showError(error);
       } finally {
         fetchingRef.current = false;
         // Only set initial loading to false on very first load
@@ -454,7 +443,7 @@ const AssetInventory: React.FC = () => {
         // User name will be fetched in the refresh
 
         // Assets will be refreshed from API
-        showSnackbar('Asset updated successfully', 'success');
+        showSuccess('Asset updated successfully');
         // Refresh the current page to update counts (not initial load)
         fetchAssets(pagination.page, pagination.limit, false);
       } else {
@@ -480,25 +469,14 @@ const AssetInventory: React.FC = () => {
         // User name will be fetched in the refresh
 
         // Assets will be refreshed from API
-        showSnackbar('Asset created successfully', 'success');
+        showSuccess('Asset created successfully');
         // Refresh the current page to update counts (not initial load)
         fetchAssets(pagination.page, pagination.limit, false);
       }
 
       setIsModalOpen(false);
     } catch (error: unknown) {
-      const axiosError = error as AxiosError<{ message?: string }> | undefined;
-      console.error('❌ Failed to save asset:', error);
-      console.error('❌ Error details:', {
-        message: axiosError?.message,
-        response: axiosError?.response?.data,
-        status: axiosError?.response?.status,
-      });
-      const errorMessage =
-        axiosError?.response?.data?.message ||
-        axiosError?.message ||
-        'Failed to save asset';
-      showSnackbar(errorMessage, 'error');
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -517,8 +495,7 @@ const AssetInventory: React.FC = () => {
       // Refresh the current page to update counts
       fetchAssets(pagination.page, pagination.limit, false);
     } catch (error) {
-      console.error('Failed to delete asset:', error);
-      showSnackbar('Failed to delete asset', 'error');
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -538,8 +515,7 @@ const AssetInventory: React.FC = () => {
       // Refresh the current page to update counts
       fetchAssets(pagination.page, pagination.limit, false);
     } catch (error) {
-      console.error('Failed to update asset status:', error);
-      showSnackbar('Failed to update asset status', 'error');
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -559,8 +535,7 @@ const AssetInventory: React.FC = () => {
       // Refresh the current page to update counts
       fetchAssets(pagination.page, pagination.limit, false);
     } catch (error) {
-      console.error('Failed to update asset status:', error);
-      showSnackbar('Failed to update asset status', 'error');
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -636,319 +611,327 @@ const AssetInventory: React.FC = () => {
           Asset Inventory
         </Typography>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          <Button
+          <AppButton
             variant='contained'
+            variantType='primary'
             startIcon={<AddIcon />}
             onClick={handleAddAsset}
           >
             Add Asset
-          </Button>
+          </AppButton>
         </Box>
       </Box>
 
       {/* Statistics Cards */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
         <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-          <Card>
-            <CardContent>
-              <Typography color='textSecondary' gutterBottom>
-                Total Assets
-              </Typography>
-              <Typography variant='h4' fontWeight={600}>
-                {displayCounts.total}
-              </Typography>
-            </CardContent>
-          </Card>
+          <AppCard compact>
+            <Typography color='textSecondary' gutterBottom>
+              Total Assets
+            </Typography>
+            <Typography variant='h4' fontWeight={600}>
+              {displayCounts.total}
+            </Typography>
+          </AppCard>
         </Box>
         <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-          <Card>
-            <CardContent>
-              <Typography color='textSecondary' gutterBottom>
-                Available
-              </Typography>
-              <Typography variant='h4' fontWeight={600} color='success.main'>
-                {displayCounts.available}
-              </Typography>
-            </CardContent>
-          </Card>
+          <AppCard compact>
+            <Typography color='textSecondary' gutterBottom>
+              Available
+            </Typography>
+            <Typography variant='h4' fontWeight={600} color='success.main'>
+              {displayCounts.available}
+            </Typography>
+          </AppCard>
         </Box>
         <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-          <Card>
-            <CardContent>
-              <Typography color='textSecondary' gutterBottom>
-                Assigned
-              </Typography>
-              <Typography variant='h4' fontWeight={600} color='info.main'>
-                {displayCounts.assigned}
-              </Typography>
-            </CardContent>
-          </Card>
+          <AppCard compact>
+            <Typography color='textSecondary' gutterBottom>
+              Assigned
+            </Typography>
+            <Typography variant='h4' fontWeight={600} color='info.main'>
+              {displayCounts.assigned}
+            </Typography>
+          </AppCard>
         </Box>
         <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-          <Card>
-            <CardContent>
-              <Typography color='textSecondary' gutterBottom>
-                Maintenance
-              </Typography>
-              <Typography variant='h4' fontWeight={600} color='warning.main'>
-                {displayCounts.underMaintenance}
-              </Typography>
-            </CardContent>
-          </Card>
+          <AppCard compact>
+            <Typography color='textSecondary' gutterBottom>
+              Maintenance
+            </Typography>
+            <Typography variant='h4' fontWeight={600} color='warning.main'>
+              {displayCounts.underMaintenance}
+            </Typography>
+          </AppCard>
         </Box>
         <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-          <Card>
-            <CardContent>
-              <Typography color='textSecondary' gutterBottom>
-                Retired
-              </Typography>
-              <Typography variant='h4' fontWeight={600} color='text.secondary'>
-                {displayCounts.retired}
-              </Typography>
-            </CardContent>
-          </Card>
+          <AppCard compact>
+            <Typography color='textSecondary' gutterBottom>
+              Retired
+            </Typography>
+            <Typography variant='h4' fontWeight={600} color='text.secondary'>
+              {displayCounts.retired}
+            </Typography>
+          </AppCard>
         </Box>
       </Box>
 
       {/* Filters and Search */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent sx={{ py: 2 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 2,
-              alignItems: 'center',
-            }}
-          >
-            <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-              <TextField
-                fullWidth
-                size='small'
-                placeholder='Search assets...'
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position='start'>
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ borderRadius: 2 }}
-              />
-            </Box>
-            <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  open={statusDropdownOpen}
-                  onOpen={() => setStatusDropdownOpen(true)}
-                  onClose={() => setStatusDropdownOpen(false)}
-                  value={filters.status || ''}
-                  onChange={e => {
-                    const value = e.target.value as string;
-                    setFilters((prev: AssetFilters) => ({
-                      ...prev,
-                      status: value === '' ? undefined : (value as AssetStatus),
-                    }));
-                    setStatusDropdownOpen(false);
-                  }}
-                  label='Status'
-                >
-                  <MenuItem value=''>All</MenuItem>
-                  <MenuItem value='available'>Available</MenuItem>
-                  <MenuItem value='assigned'>Assigned</MenuItem>
-                  <MenuItem value='under_maintenance'>
-                    Under Maintenance
-                  </MenuItem>
-                  <MenuItem value='retired'>Retired</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-            <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Category</InputLabel>
-                <Select
-                  open={categoryDropdownOpen}
-                  onOpen={() => setCategoryDropdownOpen(true)}
-                  onClose={() => setCategoryDropdownOpen(false)}
-                  value={filters.category || ''}
-                  onChange={e => {
-                    const value = e.target.value as string;
-                    setFilters((prev: AssetFilters) => ({
-                      ...prev,
-                      category: value === '' ? undefined : value,
-                    }));
-                    setCategoryDropdownOpen(false);
-                  }}
-                  label='Category'
-                >
-                  <MenuItem value=''>All</MenuItem>
-                  {assetCategories.map(category => (
-                    <MenuItem key={category.id} value={category.name}>
-                      <Typography variant='body2'>{category.name}</Typography>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-            <Box sx={{ flex: '0 0 auto' }}>
-              <Button
-                variant='outlined'
-                // size="small"
-                startIcon={<FilterIcon />}
-                onClick={() => setFilters({})}
-                sx={{ p: 0.9 }}
-              >
-                Clear Filters
-              </Button>
-            </Box>
+      <AppCard sx={{ mb: 3 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+            alignItems: 'center',
+            py: 2,
+          }}
+        >
+          <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
+            <AppTextField
+              fullWidth
+              size='small'
+              placeholder='Search assets...'
+              value={searchTerm}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setSearchTerm(e.target.value)
+              }
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position='start'>
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ borderRadius: 2 }}
+            />
           </Box>
-        </CardContent>
-      </Card>
+          <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
+            <AppSelect
+              label='Status'
+              size='small'
+              fullWidth
+              open={statusDropdownOpen}
+              onOpen={() => setStatusDropdownOpen(true)}
+              onClose={() => setStatusDropdownOpen(false)}
+              value={filters.status || ''}
+              onChange={e => {
+                const value = e.target.value as string;
+                setFilters((prev: AssetFilters) => ({
+                  ...prev,
+                  status: value === '' ? undefined : (value as AssetStatus),
+                }));
+                setStatusDropdownOpen(false);
+              }}
+            >
+              <MenuItem value=''>All</MenuItem>
+              <MenuItem value='available'>Available</MenuItem>
+              <MenuItem value='assigned'>Assigned</MenuItem>
+              <MenuItem value='under_maintenance'>Under Maintenance</MenuItem>
+              <MenuItem value='retired'>Retired</MenuItem>
+            </AppSelect>
+          </Box>
+          <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
+            <AppSelect
+              label='Category'
+              size='small'
+              fullWidth
+              open={categoryDropdownOpen}
+              onOpen={() => setCategoryDropdownOpen(true)}
+              onClose={() => setCategoryDropdownOpen(false)}
+              value={filters.category || ''}
+              onChange={e => {
+                const value = e.target.value as string;
+                setFilters((prev: AssetFilters) => ({
+                  ...prev,
+                  category: value === '' ? undefined : value,
+                }));
+                setCategoryDropdownOpen(false);
+              }}
+            >
+              <MenuItem value=''>All</MenuItem>
+              {assetCategories.map(category => (
+                <MenuItem key={category.id} value={category.name}>
+                  <Typography variant='body2'>{category.name}</Typography>
+                </MenuItem>
+              ))}
+            </AppSelect>
+          </Box>
+          <Box sx={{ flex: '0 0 auto' }}>
+            <AppButton
+              variant='outlined'
+              variantType='secondary'
+              startIcon={<FilterIcon />}
+              onClick={() => setFilters({})}
+              sx={{ p: 0.9 }}
+            >
+              Clear Filters
+            </AppButton>
+          </Box>
+        </Box>
+      </AppCard>
 
       {/* Assets Table */}
-      <Card>
-        <TableContainer>
-          <Table>
-            <TableHead>
+      <AppCard>
+        <AppTable>
+          <TableHead>
+            <TableRow>
+              <TableCell>Asset Name</TableCell>
+              <TableCell>Category</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Assigned To</TableCell>
+              <TableCell>Purchase Date</TableCell>
+              {!hideActions && <TableCell align='right'>Actions</TableCell>}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredAssets.length === 0 ? (
               <TableRow>
-                <TableCell>Asset Name</TableCell>
-                <TableCell>Category</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Assigned To</TableCell>
-                <TableCell>Purchase Date</TableCell>
-                {!hideActions && <TableCell align='right'>Actions</TableCell>}
+                <TableCell colSpan={6} align='center'>
+                  <Typography variant='body2' color='text.secondary'>
+                    No assets found
+                  </Typography>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredAssets.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align='center'>
-                    <Typography variant='body2' color='text.secondary'>
-                      No assets found
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredAssets.map(asset => (
-                  <TableRow key={asset.id} hover>
-                    <TableCell>
-                      <Box>
-                        <Typography variant='body2' fontWeight={500}>
-                          {asset.name}
-                        </Typography>
-                        {asset.description && (
-                          <Typography variant='caption' color='text.secondary'>
-                            {asset.description}
-                          </Typography>
-                        )}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box>
-                        <Typography variant='body2' fontWeight={500}>
-                          {resolveCategoryName(asset) || 'N/A'}
-                        </Typography>
-                        {resolveSubcategoryName(asset) && (
-                          <Typography
-                            variant='caption'
-                            color='text.secondary'
-                            sx={{ display: 'block', mt: 0.5 }}
-                          >
-                            {resolveSubcategoryName(asset)}
-                          </Typography>
-                        )}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <StatusChip status={asset.status} type='asset' />
-                    </TableCell>
-                    <TableCell>
-                      {asset.assignedToName ? (
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <PersonIcon fontSize='small' />
-                          <Typography variant='body2'>
-                            {asset.assignedToName}
-                          </Typography>
-                        </Box>
-                      ) : (
-                        <Typography variant='body2' color='text.secondary'>
-                          Unassigned
+            ) : (
+              filteredAssets.map(asset => (
+                <TableRow key={asset.id} hover>
+                  <TableCell>
+                    <Box>
+                      <Typography variant='body2' fontWeight={500}>
+                        {asset.name}
+                      </Typography>
+                      {asset.description && (
+                        <Typography variant='caption' color='text.secondary'>
+                          {asset.description}
                         </Typography>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      {formatDate(asset.purchaseDate)}
-                    </TableCell>
-                    {!hideActions && (
-                      <TableCell align='right'>
-                        <IconButton
-                          onClick={e => handleMenuClick(e, asset.id)}
-                          size='small'
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Box>
+                      <Typography variant='body2' fontWeight={500}>
+                        {resolveCategoryName(asset) || 'N/A'}
+                      </Typography>
+                      {resolveSubcategoryName(asset) && (
+                        <Typography
+                          variant='caption'
+                          color='text.secondary'
+                          sx={{ display: 'block', mt: 0.5 }}
                         >
-                          <MoreVertIcon />
-                        </IconButton>
-                        <Menu
-                          anchorEl={anchorEl}
-                          open={
-                            Boolean(anchorEl) && selectedAssetId === asset.id
-                          }
-                          onClose={handleMenuClose}
+                          {resolveSubcategoryName(asset)}
+                        </Typography>
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <StatusChip status={asset.status} type='asset' />
+                  </TableCell>
+                  <TableCell>
+                    {asset.assignedToName ? (
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      >
+                        <PersonIcon fontSize='small' />
+                        <Typography variant='body2'>
+                          {asset.assignedToName}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant='body2' color='text.secondary'>
+                        Unassigned
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>{formatDate(asset.purchaseDate)}</TableCell>
+                  {!hideActions && (
+                    <TableCell align='right'>
+                      <IconButton
+                        onClick={e => handleMenuClick(e, asset.id)}
+                        size='small'
+                        aria-label={`Actions menu for asset ${asset.name}`}
+                        aria-haspopup='true'
+                        aria-expanded={
+                          Boolean(anchorEl) && selectedAssetId === asset.id
+                        }
+                      >
+                        <MoreVertIcon aria-hidden='true' />
+                      </IconButton>
+                      <Menu
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl) && selectedAssetId === asset.id}
+                        onClose={handleMenuClose}
+                        role='menu'
+                        aria-label='Asset actions menu'
+                      >
+                        <MenuItem
+                          onClick={() => handleEditAsset(asset)}
+                          role='menuitem'
+                          aria-label={`Edit asset ${asset.name}`}
                         >
-                          <MenuItem onClick={() => handleEditAsset(asset)}>
-                            <ListItemIcon>
-                              <EditIcon fontSize='small' />
-                            </ListItemIcon>
-                            <ListItemText>Edit</ListItemText>
-                          </MenuItem>
-                          {asset.status !== 'under_maintenance' && (
-                            <MenuItem
-                              onClick={() => handleMarkAsMaintenance(asset)}
-                              sx={{ color: 'warning.main' }}
-                            >
-                              <ListItemIcon>
-                                <BuildIcon fontSize='small' color='warning' />
-                              </ListItemIcon>
-                              <ListItemText>Mark as Maintenance</ListItemText>
-                            </MenuItem>
-                          )}
-                          {asset.status === 'under_maintenance' && (
-                            <MenuItem
-                              onClick={() => handleMarkAsAvailable(asset)}
-                              sx={{ color: 'success.main' }}
-                            >
-                              <ListItemIcon>
-                                <AvailableIcon
-                                  fontSize='small'
-                                  color='success'
-                                />
-                              </ListItemIcon>
-                              <ListItemText>Mark as Available</ListItemText>
-                            </MenuItem>
-                          )}
+                          <ListItemIcon>
+                            <EditIcon fontSize='small' aria-hidden='true' />
+                          </ListItemIcon>
+                          <ListItemText>Edit</ListItemText>
+                        </MenuItem>
+                        {asset.status !== 'under_maintenance' && (
                           <MenuItem
-                            onClick={() => handleDeleteAsset(asset)}
-                            sx={{ color: 'error.main' }}
+                            onClick={() => handleMarkAsMaintenance(asset)}
+                            sx={{ color: 'warning.main' }}
+                            role='menuitem'
+                            aria-label={`Mark asset ${asset.name} as under maintenance`}
                           >
                             <ListItemIcon>
-                              <DeleteIcon fontSize='small' color='error' />
+                              <BuildIcon
+                                fontSize='small'
+                                color='warning'
+                                aria-hidden='true'
+                              />
                             </ListItemIcon>
-                            <ListItemText>Delete</ListItemText>
+                            <ListItemText>Mark as Maintenance</ListItemText>
                           </MenuItem>
-                        </Menu>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
+                        )}
+                        {asset.status === 'under_maintenance' && (
+                          <MenuItem
+                            onClick={() => handleMarkAsAvailable(asset)}
+                            sx={{ color: 'success.main' }}
+                            role='menuitem'
+                            aria-label={`Mark asset ${asset.name} as available`}
+                          >
+                            <ListItemIcon>
+                              <AvailableIcon
+                                fontSize='small'
+                                color='success'
+                                aria-hidden='true'
+                              />
+                            </ListItemIcon>
+                            <ListItemText>Mark as Available</ListItemText>
+                          </MenuItem>
+                        )}
+                        <MenuItem
+                          onClick={() => handleDeleteAsset(asset)}
+                          sx={{ color: 'error.main' }}
+                          role='menuitem'
+                          aria-label={`Delete asset ${asset.name}`}
+                        >
+                          <ListItemIcon>
+                            <DeleteIcon
+                              fontSize='small'
+                              color='error'
+                              aria-hidden='true'
+                            />
+                          </ListItemIcon>
+                          <ListItemText>Delete</ListItemText>
+                        </MenuItem>
+                      </Menu>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </AppTable>
+      </AppCard>
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
@@ -997,20 +980,12 @@ const AssetInventory: React.FC = () => {
       />
 
       {/* Snackbar for notifications */}
-      <Snackbar
+      <ErrorSnackbar
         open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };

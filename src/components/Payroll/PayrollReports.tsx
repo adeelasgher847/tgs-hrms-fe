@@ -82,7 +82,6 @@ const PayrollReports: React.FC = () => {
         });
         setStatistics(stats);
       } catch (error) {
-        console.error('Error loading initial payroll data:', error);
         snackbar.error('Failed to load payroll data');
       } finally {
         setLoadingTenants(false);

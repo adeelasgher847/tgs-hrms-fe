@@ -1,3 +1,4 @@
+import { th } from 'date-fns/locale';
 import axiosInstance from './axiosInstance';
 
 export interface KpiCategory {
@@ -80,8 +81,7 @@ class SystemPerformanceApiService {
       );
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch system performance KPIs:', error);
-      return [];
+      throw error;
     }
   }
 
@@ -146,8 +146,7 @@ class SystemPerformanceApiService {
       }
       return { items: [], total: 0, page: 1, totalPages: 1 };
     } catch (error) {
-      console.error('Failed to fetch performance records:', error);
-      return { items: [], total: 0, page: 1, totalPages: 1 };
+      throw error;
     }
   }
 
@@ -252,8 +251,7 @@ class SystemPerformanceApiService {
 
       return { promotions: [], stats: [] };
     } catch (error) {
-      console.error('Failed to fetch promotions:', error);
-      return { promotions: [], stats: [] };
+      throw error;
     }
   }
 }

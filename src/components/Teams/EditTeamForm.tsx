@@ -104,13 +104,12 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
                 email: team.manager.email,
                 role: 'Manager',
               };
-              managersData.unshift(currentManager); 
+              managersData.unshift(currentManager);
             }
           }
 
           setManagers(managersData);
         } catch (error) {
-          console.error('Failed to load managers:', error);
           if (team && team.manager) {
             const currentManager: Manager = {
               id: team.manager_id,

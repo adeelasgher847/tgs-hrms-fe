@@ -60,7 +60,6 @@ const AuditLogs: React.FC = () => {
           .map(t => ({ id: t.id, name: t.name }));
         setTenants(activeTenants);
       } catch (error) {
-        console.error('Error fetching tenants:', error);
         setTenants([]);
       } finally {
         setTenantsLoading(false);
@@ -82,7 +81,6 @@ const AuditLogs: React.FC = () => {
         }));
         setRoles(rolesWithLowercaseNames);
       } catch (error) {
-        console.error('Error fetching roles:', error);
         setRoles([]);
       } finally {
         setRolesLoading(false);
@@ -115,7 +113,7 @@ const AuditLogs: React.FC = () => {
         );
         setLogs(response);
       } catch (err) {
-        console.error('Error fetching system logs:', err);
+        // Keep previous logs if fetch fails
       } finally {
         setLogsLoading(false);
       }

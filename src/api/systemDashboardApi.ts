@@ -57,8 +57,7 @@ class SystemDashboardApiService {
       );
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch system dashboard data:', error);
-      return null;
+      throw error;
     }
   }
 
@@ -86,8 +85,7 @@ class SystemDashboardApiService {
       });
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch system logs:', error);
-      return [];
+      throw error;
     }
   }
 
@@ -98,8 +96,7 @@ class SystemDashboardApiService {
       });
       return response.data;
     } catch (error) {
-      console.error('Failed to export system logs:', error);
-      return null;
+      throw error;
     }
   }
 
@@ -116,8 +113,7 @@ class SystemDashboardApiService {
       );
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch tenant growth data:', error);
-      return [];
+      throw error;
     }
   }
 }

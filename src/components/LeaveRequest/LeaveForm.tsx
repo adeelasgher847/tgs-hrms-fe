@@ -32,7 +32,6 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
         const response = await leaveApi.getLeaveTypes({ page: 1, limit: 50 });
         setLeaveTypes(response.items || []);
       } catch (error) {
-        console.error('Failed to load leave types:', error);
         onError?.('Failed to load leave types.');
       } finally {
         setLoadingLeaveTypes(false);
@@ -77,15 +76,12 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
 
     try {
       const response = await leaveApi.createLeave(payload);
-      console.log('Leave created:', response);
       onSubmit?.(payload);
       setLeaveTypeId('');
       setStartDate(null);
       setEndDate(null);
       setReason('');
     } catch (error: unknown) {
-      console.error('Error creating leave:', error);
-
       let errorMessage = 'Failed to submit leave request.';
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as {

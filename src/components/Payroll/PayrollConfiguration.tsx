@@ -85,7 +85,6 @@ const PayrollConfiguration: React.FC = () => {
           setConfig(existingConfig);
         }
       } catch (err) {
-        console.error('Failed to load payroll config:', err);
         setError('Failed to load payroll configuration');
       } finally {
         setLoading(false);
@@ -419,7 +418,6 @@ const PayrollConfiguration: React.FC = () => {
       );
       handleCloseEditModal();
     } catch (err) {
-      console.error('Failed to save payroll config:', err);
       const errorMessage =
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response

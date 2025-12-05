@@ -33,6 +33,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { useTheme } from '../theme/hooks';
 import { useCompany } from '../context/CompanyContext';
+import { COLORS } from '../constants/appConstants';
 import {
   isMenuVisibleForRole,
   isSubMenuVisibleForRole,
@@ -290,7 +291,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
               minWidth: 60,
               minHeight: 60,
               bgcolor: 'white',
-              color: '#464b8a',
+              color: COLORS.PRIMARY,
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -337,6 +338,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                 textOverflow: 'ellipsis',
               }}
               title={companyName || 'Trans Global Services'}
+              aria-label={`Company name: ${companyName || 'Trans Global Services'}`}
             >
               {companyName.length > 15
                 ? companyName.slice(0, 18) + '...'
@@ -387,12 +389,15 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                       color: isActive ? 'orange' : 'white',
                       pl: 1,
                     }}
+                    aria-label={`Navigate to ${item.label}`}
+                    aria-current={isActive ? 'page' : undefined}
                   >
                     <ListItemIcon
                       sx={{
                         color: isActive ? 'orange' : 'white',
                         minWidth: '36px',
                       }}
+                      aria-hidden='true'
                     >
                       {item.icon}
                     </ListItemIcon>
@@ -442,12 +447,16 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                         color: isParentActive ? 'orange' : 'white',
                         pl: 1,
                       }}
+                      aria-label={`${item.label} menu`}
+                      aria-expanded={isParentActive}
+                      aria-controls={`${item.label}-submenu`}
                     >
                       <ListItemIcon
                         sx={{
                           color: isParentActive ? 'orange' : 'white',
                           minWidth: '36px',
                         }}
+                        aria-hidden='true'
                       >
                         {item.icon}
                       </ListItemIcon>
@@ -455,7 +464,8 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                       {item.subItems && item.subItems.length > 1 && (
                         <img
                           src={dotted}
-                          alt='dotted'
+                          alt=''
+                          aria-hidden='true'
                           style={{
                             width: 23,
                             height: 23,
@@ -466,8 +476,13 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                       )}
                     </ListItemButton>
 
-                    <Collapse in={isParentActive} timeout='auto' unmountOnExit>
-                      <List component='div' disablePadding>
+                    <Collapse
+                      in={isParentActive}
+                      timeout='auto'
+                      unmountOnExit
+                      id={`${item.label}-submenu`}
+                    >
+                      <List component='div' disablePadding role='menu'>
                         {item.subItems?.map(sub => (
                           <ListItemButton
                             key={sub.path}
@@ -484,6 +499,8 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                                   ? 'orange'
                                   : 'white',
                             }}
+                            role='menuitem'
+                            aria-label={`Navigate to ${sub.label}`}
                           >
                             <ListItemText primary={sub.label} />
                           </ListItemButton>
@@ -505,14 +522,28 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
           justifyContent='space-between'
           mb={1}
         >
-          <Typography variant='body2'>Enable Dark Mode!</Typography>
-          <Switch checked={darkMode} onChange={toggleTheme} />
+          <Typography
+            variant='body2'
+            component='label'
+            htmlFor='dark-mode-switch'
+          >
+            Enable Dark Mode!
+          </Typography>
+          <Switch
+            id='dark-mode-switch'
+            checked={darkMode}
+            onChange={toggleTheme}
+            aria-label='Toggle dark mode'
+            role='switch'
+            aria-checked={darkMode}
+          />
         </Box>
         <Box textAlign='center' mt={2}>
           <Box
             component='img'
             src={bubbleleft}
-            alt='bubble'
+            alt=''
+            aria-hidden='true'
             sx={{
               width: 40,
               height: 40,

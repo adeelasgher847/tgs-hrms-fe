@@ -29,7 +29,7 @@ import systemEmployeeApiService, {
   type EmployeePerformance,
   type Benefit,
 } from '../../api/systemEmployeeApi';
-import UserAvatar from '../common/UserAvatar';
+import UserAvatar from '../Common/UserAvatar';
 import KpiDetailCard from '../KPI/KPICardDetail';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 

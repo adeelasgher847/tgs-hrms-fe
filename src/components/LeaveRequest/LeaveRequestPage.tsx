@@ -11,8 +11,6 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Snackbar,
-  Alert,
   CircularProgress,
   Button,
   Stack,
@@ -24,6 +22,8 @@ import {
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import HistoryIcon from '@mui/icons-material/History';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 const ITEMS_PER_PAGE = 25;
 
@@ -33,11 +33,7 @@ const LeaveRequestPage = () => {
   const [tableLoading, setTableLoading] = useState(false);
   const hasLoadedOnceRef = useRef(false);
 
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'success' as 'success' | 'error',
-  });
+  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   const [activeTab, setActiveTab] = useState<'apply' | 'history'>('history');
 
@@ -64,8 +60,8 @@ const LeaveRequestPage = () => {
   const fetchLeaveTypes = useCallback(async () => {
     try {
       await leaveApi.getLeaveTypes({ page: 1, limit: 50 });
-    } catch (err) {
-      console.error('Error loading leave types:', err);
+    } catch {
+      // Ignore; form components will surface their own errors
     }
   }, []);
 
@@ -146,8 +142,8 @@ const LeaveRequestPage = () => {
         }
 
         hasLoadedOnceRef.current = true;
-      } catch (err) {
-        console.error('Error loading leaves:', err);
+      } catch {
+        // Keep previous table data if loading fails
       } finally {
         if (showFullPageLoader) setInitialLoading(false);
         else setTableLoading(false);
@@ -172,12 +168,7 @@ const LeaveRequestPage = () => {
     const viewModeChanged = previousViewModeRef.current !== effectiveViewMode;
 
     // Only skip loading if nothing has changed (initial load already happened)
-    if (
-      hasLoadedOnceRef.current &&
-      !pageChanged &&
-      !viewModeChanged
-    )
-      return;
+    if (hasLoadedOnceRef.current && !pageChanged && !viewModeChanged) return;
 
     // Use table loader (not full page loader) if we've loaded before and only the page changed
     const skipFullPageLoader =
@@ -207,28 +198,16 @@ const LeaveRequestPage = () => {
   // Handle apply leave (called after successful API in form)
   const handleApply = async (data: CreateLeaveRequest) => {
     try {
-      setSnackbar({
-        open: true,
-        message: 'Leave applied successfully!',
-        severity: 'success',
-      });
+      showSuccess('Leave applied successfully!');
       await loadLeaves();
       setActiveTab('history');
     } catch (error: unknown) {
-      setSnackbar({
-        open: true,
-        message: getErrorMessage(error) || 'Failed to apply leave',
-        severity: 'error',
-      });
+      showError(getErrorMessage(error) || 'Failed to apply leave');
     }
   };
 
   const handleApplyError = (message: string) => {
-    setSnackbar({
-      open: true,
-      message: message || 'Failed to apply leave',
-      severity: 'error',
-    });
+    showError(message || 'Failed to apply leave');
   };
 
   // Handle approve/reject
@@ -252,14 +231,11 @@ const LeaveRequestPage = () => {
           )
         );
       }
-      setSnackbar({
-        open: true,
-        message:
-          actionType === 'approved'
-            ? 'Leave approved successfully!'
-            : 'Leave rejected successfully!',
-        severity: 'success',
-      });
+      showSuccess(
+        actionType === 'approved'
+          ? 'Leave approved successfully!'
+          : 'Leave rejected successfully!'
+      );
     } catch (error: unknown) {
       setSnackbar({
         open: true,
@@ -278,20 +254,12 @@ const LeaveRequestPage = () => {
     if (!selectedId) return;
     try {
       await leaveApi.cancelLeave(selectedId);
-      setSnackbar({
-        open: true,
-        message: 'Leave withdrawn successfully!',
-        severity: 'success',
-      });
+      showSuccess('Leave withdrawn successfully!');
       setLeaves(prev =>
         prev.map(l => (l.id === selectedId ? { ...l, status: 'withdrawn' } : l))
       );
     } catch (error: unknown) {
-      setSnackbar({
-        open: true,
-        message: getErrorMessage(error) || 'Failed to withdraw leave',
-        severity: 'error',
-      });
+      showError(getErrorMessage(error) || 'Failed to withdraw leave');
     } finally {
       setWithdrawDialogOpen(false);
       setSelectedId(null);
@@ -337,7 +305,7 @@ const LeaveRequestPage = () => {
 
       return Array.from(new Map(allLeaves.map(l => [l.id, l])).values());
     } catch (error) {
-      console.error('Error fetching all leaves for export:', error);
+      // Propagate error to callers (export handlers) to show a UI message
       throw error;
     }
   }, [currentUserId, role, viewMode]);
@@ -548,16 +516,12 @@ const LeaveRequestPage = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <ErrorSnackbar
         open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };

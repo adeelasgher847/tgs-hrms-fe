@@ -66,7 +66,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
         );
         setAllTenants(activeTenants);
       } catch (error) {
-        console.error('Error fetching tenants:', error);
+        // Leave tenants list empty on failure
       } finally {
         setLoadingTenants(false);
       }

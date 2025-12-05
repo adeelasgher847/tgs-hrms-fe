@@ -16,6 +16,6 @@ export const exportCSV = async (endpoint: string, filename: string, token?: stri
     link.click();
     link.remove();
   } catch (error) {
-    console.error('Export failed:', error);
+    throw error;
   }
 };

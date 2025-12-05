@@ -57,8 +57,7 @@ const resolveEmployeeId = (): string | null => {
 
     const trimmed = raw.replace(/^"|"$/g, '').trim();
     return trimmed.length > 0 ? trimmed : null;
-  } catch (error) {
-    console.warn('Unable to read employeeId from localStorage:', error);
+  } catch {
     return null;
   }
 };
@@ -101,7 +100,6 @@ const MySalary: React.FC = () => {
       const data = await payrollApi.getPayrollPayslip(recordId);
       setDetailRecord(data);
     } catch (err) {
-      console.error('Failed to load payslip details:', err);
       setDetailRecord(null);
       setDetailError('Failed to load payslip details.');
     } finally {
@@ -171,32 +169,12 @@ const MySalary: React.FC = () => {
         );
       }
 
-      console.log('MySalary pagination state:', {
-        currentPage,
-        totalPages:
-          backendTotalPages !== undefined
-            ? backendTotalPages
-            : backendTotal !== undefined
-              ? Math.ceil(backendTotal / itemsPerPage) || 1
-              : historyRecords.length === itemsPerPage
-                ? currentPage + 1
-                : currentPage,
-        totalRecords:
-          backendTotal !== undefined
-            ? backendTotal
-            : historyRecords.length === itemsPerPage
-              ? currentPage * itemsPerPage
-              : (currentPage - 1) * itemsPerPage + historyRecords.length,
-        historyLength: historyRecords.length,
-      });
-
       setSelectedRecordId(null);
       setDetailRecord(null);
       setDetailError(null);
       setDetailLoading(false);
       setDialogOpen(false);
     } catch (err) {
-      console.error('Failed to load salary data:', err);
       setError('Failed to load salary information.');
       setHistory([]);
       setSelectedRecordId(null);

@@ -84,7 +84,6 @@ export default function AvailabilityCardsGrid() {
         setLeavesData(0);
       } else {
         // For other errors or empty tenants, show zero data instead of an error block.
-        console.warn('Availability fetch error:', err);
         setError(null);
         setAttendanceData(0);
         setLeavesData(0);

@@ -72,7 +72,7 @@ const TenantGrowthChart: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Error fetching tenants:', error);
+        // Ignore tenant dropdown errors; chart will just have no data
       } finally {
         setLoadingTenants(false);
       }
@@ -91,7 +91,6 @@ const TenantGrowthChart: React.FC = () => {
         );
         setTenantGrowthData(data);
       } catch (error) {
-        console.error('Error fetching tenant growth:', error);
         setTenantGrowthData([]);
       }
     };
