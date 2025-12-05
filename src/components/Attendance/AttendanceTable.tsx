@@ -116,7 +116,26 @@ const AttendanceTable = () => {
   const toDisplayTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString() : null;
   const token = localStorage.getItem('token');
-  const filters = { page: '1' };
+
+  // Build query params for CSV export based on current filters
+  const buildExportFilters = () => {
+    const params: Record<string, string> = {};
+
+    // Optional tenant filter (used by System Admin)
+    if (selectedTenant) {
+      params.tenantId = selectedTenant;
+    }
+
+    // Optional date range filters
+    if (startDate) {
+      params.startDate = startDate;
+    }
+    if (endDate) {
+      params.endDate = endDate;
+    }
+
+    return params;
+  };
   const buildFromSummaries = (
     summariesRaw: Record<string, unknown>[],
     currentUserId: string
@@ -206,7 +225,6 @@ const AttendanceTable = () => {
       const userId = ev.user_id as string;
 
       if (!isAllAttendance) {
-        
         if (userId && userId !== currentUserId) {
           // Skip events for other users when specific employee is selected
           console.log(
@@ -530,11 +548,11 @@ const AttendanceTable = () => {
         setTotalItems(filteredRows.length);
       } else if (view === 'my') {
         response = await attendanceApi.getAttendanceEvents(
-          currentUser.id, 
-          1, 
-          date, 
+          currentUser.id,
+          1,
           date,
-          selectedTenant || undefined 
+          date,
+          selectedTenant || undefined
         );
 
         const events: AttendanceEvent[] =
@@ -576,7 +594,6 @@ const AttendanceTable = () => {
         const teamItems = (response.items as AttendanceEvent[]) || [];
         setTeamAttendance(teamItems);
 
-        
         const selectedDateStr = date;
         const filteredItems = teamItems
           .map(member => {
@@ -591,14 +608,12 @@ const AttendanceTable = () => {
                   att.date.match(/^\d{4}-\d{2}-\d{2}$/)
                 ) {
                   attDateStr = att.date;
-                }
-                else if (
+                } else if (
                   typeof att.date === 'string' &&
                   att.date.includes('T')
                 ) {
                   attDateStr = att.date.split('T')[0];
-                }
-                else {
+                } else {
                   try {
                     const dateObj = new Date(att.date);
                     if (!isNaN(dateObj.getTime())) {
@@ -683,8 +698,8 @@ const AttendanceTable = () => {
           console.warn('Admin tenant_id not found');
         }
       }
-      const userIdMapByEmail = new Map<string, string>(); 
-      const userIdMapByName = new Map<string, string>(); 
+      const userIdMapByEmail = new Map<string, string>();
+      const userIdMapByName = new Map<string, string>();
 
       if (isSystemAdminFlag) {
         console.log(
@@ -692,7 +707,6 @@ const AttendanceTable = () => {
           tenantIdForEmployees
         );
 
-       
         const systemAttendanceResponse =
           await attendanceApi.getSystemAllAttendance();
 
@@ -712,7 +726,7 @@ const AttendanceTable = () => {
             if (emp.user_id && emp.first_name) {
               const fullName =
                 `${emp.first_name} ${emp.last_name || ''}`.trim();
-            
+
               if (emp.email) {
                 userIdMapByEmail.set(emp.email.toLowerCase(), emp.user_id);
               }
@@ -735,7 +749,7 @@ const AttendanceTable = () => {
 
       const response = await systemEmployeeApiService.getSystemEmployees({
         tenantId: tenantIdForEmployees,
-        page: null, 
+        page: null,
       });
 
       console.log('Employees API response:', response);
@@ -775,7 +789,6 @@ const AttendanceTable = () => {
 
           employeeEmail = userEmail || employeeEmail;
 
-
           let employeeUserId: string | undefined;
 
           if (userObj.id) {
@@ -784,15 +797,13 @@ const AttendanceTable = () => {
               ' Using user.id from employees API (correct user_id):',
               employeeUserId
             );
-          }
-          else if (employeeEmail && userIdMapByEmail.has(employeeEmail)) {
+          } else if (employeeEmail && userIdMapByEmail.has(employeeEmail)) {
             employeeUserId = userIdMapByEmail.get(employeeEmail);
             console.log(
               'Using user_id from attendance API (by email):',
               employeeUserId
             );
-          }
-          else if (
+          } else if (
             employeeName &&
             userIdMapByName.has(employeeName.toLowerCase())
           ) {
@@ -801,12 +812,10 @@ const AttendanceTable = () => {
               'Using user_id from attendance API (by name):',
               employeeUserId
             );
-          }
-          else if (emp.user_id) {
+          } else if (emp.user_id) {
             employeeUserId = emp.user_id;
             console.log('Using emp.user_id:', employeeUserId);
-          }
-          else {
+          } else {
             employeeUserId = emp.id;
             console.warn(
               'Using emp.id as fallback (may not match attendance):',
@@ -823,11 +832,11 @@ const AttendanceTable = () => {
           });
 
           return {
-            id: employeeUserId!, 
+            id: employeeUserId!,
             name: employeeName,
           };
         })
-        .filter(emp => emp.id && emp.name !== 'Unknown'); 
+        .filter(emp => emp.id && emp.name !== 'Unknown');
 
       console.log('Final employee options:', employeeOptions);
       setEmployees(employeeOptions);
@@ -916,9 +925,7 @@ const AttendanceTable = () => {
           effectiveSelectedEmployee || null
         );
       } else {
-        
         if (canViewAllAttendance && effectiveView === 'all') {
-         
           const tenantIdForFetch = isSystemAdminFlag
             ? selectedTenant || undefined
             : adminTenantId || selectedTenant || undefined;
@@ -954,22 +961,19 @@ const AttendanceTable = () => {
             );
             console.log('Attendance response for selected employee:', response);
           } else {
-          
             response = await attendanceApi.getAllAttendance(
               1,
               effectiveStartDate || undefined,
               effectiveEndDate || undefined,
-              undefined, 
-              tenantIdForFetch 
+              undefined,
+              tenantIdForFetch
             );
           }
         } else {
-          
           let myStartDate = effectiveStartDate;
           let myEndDate = effectiveEndDate;
 
           if (!myStartDate || !myEndDate) {
-            
             const today = new Date();
             const oneYearAgo = new Date();
             oneYearAgo.setFullYear(today.getFullYear() - 1);
@@ -979,11 +983,11 @@ const AttendanceTable = () => {
           }
 
           response = await attendanceApi.getAttendanceEvents(
-            currentUser.id, 
+            currentUser.id,
             1,
-            myStartDate, 
+            myStartDate,
             myEndDate,
-            selectedTenant || undefined 
+            selectedTenant || undefined
           );
         }
 
@@ -1027,7 +1031,7 @@ const AttendanceTable = () => {
           const isAllAttendanceView =
             canViewAllAttendance &&
             effectiveView === 'all' &&
-            !effectiveSelectedEmployee; 
+            !effectiveSelectedEmployee;
 
           console.log('🔨 Building from events:', {
             userIdForBuild,
@@ -1036,11 +1040,7 @@ const AttendanceTable = () => {
             selectedEmployee: effectiveSelectedEmployee,
           });
 
-          rows = buildFromEvents(
-            events,
-            userIdForBuild, 
-            isAllAttendanceView 
-          );
+          rows = buildFromEvents(events, userIdForBuild, isAllAttendanceView);
 
           console.log(' Built attendance records:', {
             rowsCount: rows.length,
@@ -1082,7 +1082,7 @@ const AttendanceTable = () => {
 
             if (!employeesFromAttendance.has(userId)) {
               employeesFromAttendance.set(userId, {
-                id: userId, 
+                id: userId,
                 name: fullName,
               });
             }
@@ -1157,7 +1157,6 @@ const AttendanceTable = () => {
   const handleMyAttendanceDateNavigationChange = (newDate: string) => {
     setMyAttendanceNavigationDate(newDate);
     if (newDate === 'all') {
-      
       fetchAttendance('my', undefined, '', '');
     } else {
       fetchAttendanceByDate(newDate, 'my');
@@ -1384,7 +1383,6 @@ const AttendanceTable = () => {
     setSelectedTenant(tenantId);
     setSelectedEmployee('');
     setCurrentPage(1);
-
   };
 
   const handleManagerMyAttendance = () => {
@@ -1500,11 +1498,12 @@ const AttendanceTable = () => {
                 att.date.match(/^\d{4}-\d{2}-\d{2}$/)
               ) {
                 attDateStr = att.date;
-              }
-              else if (typeof att.date === 'string' && att.date.includes('T')) {
+              } else if (
+                typeof att.date === 'string' &&
+                att.date.includes('T')
+              ) {
                 attDateStr = att.date.split('T')[0];
-              }
-              else {
+              } else {
                 try {
                   const dateObj = new Date(att.date);
                   if (!isNaN(dateObj.getTime())) {
@@ -1547,13 +1546,8 @@ const AttendanceTable = () => {
       const id = anyMember.user_id as string | undefined;
       if (!id) return;
       const firstName =
-        anyMember.first_name ||
-        anyMember.user?.first_name ||
-        '';
-      const lastName =
-        anyMember.last_name ||
-        anyMember.user?.last_name ||
-        '';
+        anyMember.first_name || anyMember.user?.first_name || '';
+      const lastName = anyMember.last_name || anyMember.user?.last_name || '';
       const name = `${firstName} ${lastName}`.trim() || 'Unknown';
       if (!unique.has(id)) {
         unique.set(id, { id, name });
@@ -1678,7 +1672,6 @@ const AttendanceTable = () => {
       {!isManager && !isAdminLike && (
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex' }}>
-           
             {isManager && (
               <Button
                 onClick={() => setTab(1)}
@@ -1866,88 +1859,69 @@ const AttendanceTable = () => {
             </Box>
 
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              {canViewAllAttendance && (
-                <Tooltip title='Export All Attendance'>
-                  <IconButton
-                    color='primary'
-                    onClick={() =>
+              {/* Single CSV export button - behavior changes based on view and role */}
+              <Tooltip
+                title={
+                  isSystemAdminUser && adminView === 'all'
+                    ? 'Export System Attendance'
+                    : isManager && !isAdminLike && managerView === 'team'
+                      ? 'Export Team Attendance'
+                      : 'Export My Attendance'
+                }
+              >
+                <IconButton
+                  color='primary'
+                  onClick={() => {
+                    // System Admin in "All Attendance" view → use /attendance/export/system
+                    if (isSystemAdminUser && adminView === 'all') {
+                      const params = buildExportFilters();
                       exportCSV(
-                        '/attendance/export/all',
-                        'attendance-all.csv',
+                        '/attendance/export/system',
+                        'attendance-system.csv',
                         token || '',
-                        filters
-                      )
+                        params
+                      );
                     }
-                    sx={{
-                      backgroundColor: 'primary.main',
-                      borderRadius: '6px',
-                      padding: '6px',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'primary.dark',
-                      },
-                    }}
-                  >
-                    <FileDownloadIcon />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {isManager && !isAdminLike && (
-                <Tooltip title='Export Team Attendance'>
-                  <IconButton
-                    color='primary'
-                    onClick={() =>
+                    // Manager in "Team Attendance" view → use /attendance/export/team
+                    else if (
+                      isManager &&
+                      !isAdminLike &&
+                      managerView === 'team'
+                    ) {
                       exportCSV(
                         '/attendance/export/team',
                         'attendance-team.csv',
                         token || '',
-                        filters
-                      )
+                        buildExportFilters()
+                      );
                     }
-                    sx={{
-                      backgroundColor: 'primary.main',
-                      borderRadius: '6px',
-                      padding: '6px',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'primary.dark',
-                      },
-                    }}
-                  >
-                    <FileDownloadIcon />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {!isAdminUser &&
-                !isSystemAdminUser &&
-                !isNetworkAdminUser &&
-                !isHRAdminUser &&
-                !isManager && (
-                  <Tooltip title='Export My Attendance'>
-                    <IconButton
-                      color='primary'
-                      onClick={() =>
-                        exportCSV(
-                          '/attendance/export/self',
-                          'attendance-self.csv',
-                          token || '',
-                          filters
-                        )
-                      }
-                      sx={{
-                        backgroundColor: 'primary.main',
-                        borderRadius: '6px',
-                        padding: '6px',
-                        color: 'white',
-                        '&:hover': {
-                          backgroundColor: 'primary.dark',
-                        },
-                      }}
-                    >
-                      <FileDownloadIcon />
-                    </IconButton>
-                  </Tooltip>
-                )}
+                    // Everyone else (including System Admin in "My Attendance") → use /attendance/export/self
+                    else {
+                      const selfParams: Record<string, string> = {};
+                      if (startDate) selfParams.startDate = startDate;
+                      if (endDate) selfParams.endDate = endDate;
+
+                      exportCSV(
+                        '/attendance/export/self',
+                        'attendance-self.csv',
+                        token || '',
+                        selfParams
+                      );
+                    }
+                  }}
+                  sx={{
+                    backgroundColor: 'primary.main',
+                    borderRadius: '6px',
+                    padding: '6px',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    },
+                  }}
+                >
+                  <FileDownloadIcon />
+                </IconButton>
+              </Tooltip>
             </Box>
           </Box>
           <TableContainer>
@@ -2081,7 +2055,11 @@ const AttendanceTable = () => {
                     setTeamCurrentNavigationDate('all'); // Reset date navigation
                     if (selectedTeamEmployee) {
                       // Apply date range + selected employee together
-                      handleTeamEmployeeChange(selectedTeamEmployee, start, end);
+                      handleTeamEmployeeChange(
+                        selectedTeamEmployee,
+                        start,
+                        end
+                      );
                     } else {
                       // No employee selected -> fetch full team attendance
                       fetchTeamAttendance(1, start, end);
@@ -2208,7 +2186,9 @@ const AttendanceTable = () => {
                                 {(member as any).last_name}
                               </TableCell>
                               <TableCell>
-                                {attendance.date ? formatDate(attendance.date) : '--'}
+                                {attendance.date
+                                  ? formatDate(attendance.date)
+                                  : '--'}
                               </TableCell>
                               <TableCell>
                                 {attendance.checkIn
@@ -2310,7 +2290,11 @@ const AttendanceTable = () => {
                     setTeamCurrentNavigationDate('all'); // Reset date navigation
                     if (selectedTeamEmployee) {
                       // Apply date range + selected employee together
-                      handleTeamEmployeeChange(selectedTeamEmployee, start, end);
+                      handleTeamEmployeeChange(
+                        selectedTeamEmployee,
+                        start,
+                        end
+                      );
                     } else {
                       fetchTeamAttendance(1, start, end);
                     }
@@ -2435,7 +2419,9 @@ const AttendanceTable = () => {
                                 {(member as any).last_name}
                               </TableCell>
                               <TableCell>
-                                {attendance.date ? formatDate(attendance.date) : '--'}
+                                {attendance.date
+                                  ? formatDate(attendance.date)
+                                  : '--'}
                               </TableCell>
                               <TableCell>
                                 {attendance.checkIn

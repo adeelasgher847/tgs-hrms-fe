@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   Box,
   Table,
@@ -118,7 +118,13 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
                 {direction === 'rtl' ? 'الوظيفة' : 'Designation'}
               </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+              <TableCell
+                sx={{
+                  color: textColor,
+                  fontWeight: 'bold',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {direction === 'rtl' ? 'رقم الهوية' : 'CNIC Number'}
               </TableCell>
               <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
@@ -136,7 +142,12 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           <TableBody>
             {loading && (
               <TableRow>
-                <TableCell colSpan={onDelete || onEdit || onResendInvite || onView ? 8 : 7} align='center'>
+                <TableCell
+                  colSpan={
+                    onDelete || onEdit || onResendInvite || onView ? 8 : 7
+                  }
+                  align='center'
+                >
                   <Box display='flex' justifyContent='center' py={4}>
                     <CircularProgress />
                   </Box>
@@ -145,7 +156,12 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             )}
             {!loading && employees.length === 0 && (
               <TableRow>
-                <TableCell colSpan={onDelete || onEdit || onResendInvite || onView ? 8 : 7} align='center'>
+                <TableCell
+                  colSpan={
+                    onDelete || onEdit || onResendInvite || onView ? 8 : 7
+                  }
+                  align='center'
+                >
                   <Box display='flex' justifyContent='center' py={4}>
                     <Typography variant='body1' color='textSecondary'>
                       {direction === 'rtl'
@@ -238,13 +254,16 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                               <IconButton
                                 sx={{
                                   color: darkMode ? '#1976d2' : '#0288d1',
-                                  opacity: emp.status === 'Invite Expired' ? 1 : 0.5,
+                                  opacity:
+                                    emp.status === 'Invite Expired' ? 1 : 0.5,
                                 }}
                                 onClick={() =>
                                   emp.status === 'Invite Expired' &&
                                   handleResendInvite(emp)
                                 }
-                                disabled={loading || emp.status !== 'Invite Expired'}
+                                disabled={
+                                  loading || emp.status !== 'Invite Expired'
+                                }
                               >
                                 <ReplayIcon />
                               </IconButton>
@@ -305,4 +324,4 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   );
 };
 
-export default EmployeeList;
+export default memo(EmployeeList);
