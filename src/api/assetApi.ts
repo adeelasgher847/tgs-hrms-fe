@@ -314,18 +314,20 @@ export const assetApi = {
   getAllAssetRequests: async (filters?: {
     requester?: string;
     tenant?: string;
+    status?: string;
     page?: number;
     limit?: number;
   }) => {
     const params = new URLSearchParams();
     if (filters?.requester) params.append('requester', filters.requester);
     if (filters?.tenant) params.append('tenant', filters.tenant);
+    if (filters?.status) params.append('status', filters.status);
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
-    const response = await axiosInstance.get(
-      `/asset-requests?${params.toString()}`
-    );
+    const url = `/asset-requests${params.toString() ? `?${params.toString()}` : ''}`;
+
+    const response = await axiosInstance.get(url);
 
     // Debug: Log individual request statuses
     const responseData = response.data;
@@ -422,7 +424,6 @@ export const assetApi = {
         const user = JSON.parse(userStr);
         currentUserId = user.id || user.user_id || '';
       } catch (error) {
-        console.error('Failed to parse user from localStorage:', error);
       }
     }
 
@@ -497,10 +498,6 @@ export const assetApi = {
       return response.data;
     } catch (bodyError: unknown) {
       const bodyAxiosError = bodyError as AxiosError | undefined;
-      console.error('❌ Approval with body failed:', {
-        error: bodyAxiosError?.response?.data,
-        status: bodyAxiosError?.response?.status,
-      });
 
       if (data?.asset_id || data?.assetId) {
         const assetId = data.asset_id || data.assetId;
@@ -510,10 +507,6 @@ export const assetApi = {
           return response.data;
         } catch (queryError: unknown) {
           const queryAxiosError = queryError as AxiosError | undefined;
-          console.error('❌ Approval with query param failed:', {
-            error: queryAxiosError?.response?.data,
-            status: queryAxiosError?.response?.status,
-          });
 
           try {
             const response = await axiosInstance.put(
@@ -522,7 +515,6 @@ export const assetApi = {
             );
             return response.data;
           } catch (minimalError: unknown) {
-            console.error('❌ All approval attempts failed');
             throw minimalError;
           }
         }
