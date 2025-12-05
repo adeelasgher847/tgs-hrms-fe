@@ -171,7 +171,26 @@ const AttendanceTable = () => {
   const toDisplayTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString() : null;
   const token = localStorage.getItem('token');
-  const filters = { page: '1' };
+
+  // Build query params for CSV export based on current filters
+  const buildExportFilters = () => {
+    const params: Record<string, string> = {};
+
+    // Optional tenant filter (used by System Admin)
+    if (selectedTenant) {
+      params.tenantId = selectedTenant;
+    }
+
+    // Optional date range filters
+    if (startDate) {
+      params.startDate = startDate;
+    }
+    if (endDate) {
+      params.endDate = endDate;
+    }
+
+    return params;
+  };
   const buildFromSummaries = (
     summariesRaw: Record<string, unknown>[],
     currentUserId: string
@@ -631,9 +650,9 @@ const AttendanceTable = () => {
         };
         const teamItems = (response.items as AttendanceEvent[]) || [];
         setTeamAttendance(teamItems);
-
         // Apply client-side filtering by date immediately (in case API doesn't filter properly)
         // This ensures empty array [] if no records exist for the selected date
+
         const selectedDateStr = date;
         const filteredItems = teamItems
           .map(member => {
@@ -738,8 +757,8 @@ const AttendanceTable = () => {
           console.warn('Admin tenant_id not found');
         }
       }
-      const userIdMapByEmail = new Map<string, string>(); 
-      const userIdMapByName = new Map<string, string>(); 
+      const userIdMapByEmail = new Map<string, string>();
+      const userIdMapByName = new Map<string, string>();
 
       if (isSystemAdminFlag) {
         console.log(
@@ -789,7 +808,7 @@ const AttendanceTable = () => {
 
       const response = await systemEmployeeApiService.getSystemEmployees({
         tenantId: tenantIdForEmployees,
-        page: null, 
+        page: null,
       });
 
       console.log('Employees API response:', response);
@@ -852,8 +871,7 @@ const AttendanceTable = () => {
               'Using user_id from attendance API (by name):',
               employeeUserId
             );
-          }
-          else if (emp.user_id) {
+          } else if (emp.user_id) {
             employeeUserId = emp.user_id;
             console.log('Using emp.user_id:', employeeUserId);
           } else {
@@ -1072,7 +1090,7 @@ const AttendanceTable = () => {
           const isAllAttendanceView =
             canViewAllAttendance &&
             effectiveView === 'all' &&
-            !effectiveSelectedEmployee; 
+            !effectiveSelectedEmployee;
 
           console.log('🔨 Building from events:', {
             userIdForBuild,
@@ -1198,7 +1216,6 @@ const AttendanceTable = () => {
   const handleMyAttendanceDateNavigationChange = (newDate: string) => {
     setMyAttendanceNavigationDate(newDate);
     if (newDate === 'all') {
-      
       fetchAttendance('my', undefined, '', '');
     } else {
       fetchAttendanceByDate(newDate, 'my');
@@ -1425,7 +1442,6 @@ const AttendanceTable = () => {
     setSelectedTenant(tenantId);
     setSelectedEmployee('');
     setCurrentPage(1);
-
   };
 
   const handleManagerMyAttendance = () => {
@@ -1541,11 +1557,12 @@ const AttendanceTable = () => {
                 att.date.match(/^\d{4}-\d{2}-\d{2}$/)
               ) {
                 attDateStr = att.date;
-              }
-              else if (typeof att.date === 'string' && att.date.includes('T')) {
+              } else if (
+                typeof att.date === 'string' &&
+                att.date.includes('T')
+              ) {
                 attDateStr = att.date.split('T')[0];
-              }
-              else {
+              } else {
                 try {
                   const dateObj = new Date(att.date);
                   if (!isNaN(dateObj.getTime())) {
@@ -1719,7 +1736,6 @@ const AttendanceTable = () => {
       {!isManager && !isAdminLike && (
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex' }}>
-           
             {isManager && (
               <Button
                 onClick={() => setTab(1)}
@@ -1909,88 +1925,69 @@ const AttendanceTable = () => {
             </Box>
 
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              {canViewAllAttendance && (
-                <Tooltip title={attendanceLabels[language].exportAllTooltip}>
-                  <IconButton
-                    color='primary'
-                    onClick={() =>
+              {/* Single CSV export button - behavior changes based on view and role */}
+              <Tooltip
+                title={
+                  isSystemAdminUser && adminView === 'all'
+                    ? 'Export System Attendance'
+                    : isManager && !isAdminLike && managerView === 'team'
+                      ? 'Export Team Attendance'
+                      : 'Export My Attendance'
+                }
+              >
+                <IconButton
+                  color='primary'
+                  onClick={() => {
+                    // System Admin in "All Attendance" view → use /attendance/export/system
+                    if (isSystemAdminUser && adminView === 'all') {
+                      const params = buildExportFilters();
                       exportCSV(
-                        '/attendance/export/all',
-                        'attendance-all.csv',
+                        '/attendance/export/system',
+                        'attendance-system.csv',
                         token || '',
-                        filters
-                      )
+                        params
+                      );
                     }
-                    sx={{
-                      backgroundColor: 'primary.main',
-                      borderRadius: '6px',
-                      padding: '6px',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'primary.dark',
-                      },
-                    }}
-                  >
-                    <FileDownloadIcon />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {isManager && !isAdminLike && (
-                <Tooltip title={attendanceLabels[language].exportTeamTooltip}>
-                  <IconButton
-                    color='primary'
-                    onClick={() =>
+                    // Manager in "Team Attendance" view → use /attendance/export/team
+                    else if (
+                      isManager &&
+                      !isAdminLike &&
+                      managerView === 'team'
+                    ) {
                       exportCSV(
                         '/attendance/export/team',
                         'attendance-team.csv',
                         token || '',
-                        filters
-                      )
+                        buildExportFilters()
+                      );
                     }
-                    sx={{
-                      backgroundColor: 'primary.main',
-                      borderRadius: '6px',
-                      padding: '6px',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'primary.dark',
-                      },
-                    }}
-                  >
-                    <FileDownloadIcon />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {!isAdminUser &&
-                !isSystemAdminUser &&
-                !isNetworkAdminUser &&
-                !isHRAdminUser &&
-                !isManager && (
-                  <Tooltip title={attendanceLabels[language].exportMyTooltip}>
-                    <IconButton
-                      color='primary'
-                      onClick={() =>
-                        exportCSV(
-                          '/attendance/export/self',
-                          'attendance-self.csv',
-                          token || '',
-                          filters
-                        )
-                      }
-                      sx={{
-                        backgroundColor: 'primary.main',
-                        borderRadius: '6px',
-                        padding: '6px',
-                        color: 'white',
-                        '&:hover': {
-                          backgroundColor: 'primary.dark',
-                        },
-                      }}
-                    >
-                      <FileDownloadIcon />
-                    </IconButton>
-                  </Tooltip>
-                )}
+                    // Everyone else (including System Admin in "My Attendance") → use /attendance/export/self
+                    else {
+                      const selfParams: Record<string, string> = {};
+                      if (startDate) selfParams.startDate = startDate;
+                      if (endDate) selfParams.endDate = endDate;
+
+                      exportCSV(
+                        '/attendance/export/self',
+                        'attendance-self.csv',
+                        token || '',
+                        selfParams
+                      );
+                    }
+                  }}
+                  sx={{
+                    backgroundColor: 'primary.main',
+                    borderRadius: '6px',
+                    padding: '6px',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    },
+                  }}
+                >
+                  <FileDownloadIcon />
+                </IconButton>
+              </Tooltip>
             </Box>
           </Box>
           <TableContainer>

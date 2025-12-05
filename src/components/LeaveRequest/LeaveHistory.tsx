@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../../hooks/useLanguage';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -156,43 +156,93 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [page, setPage] = useState(1);
+  const [allLeavesForFilter, setAllLeavesForFilter] = useState<Leave[]>([]);
+  const [loadingAllLeaves, setLoadingAllLeaves] = useState(false);
+
+  // Reset page to 1 when employee filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [selectedEmployee]);
+
+  // Fetch all leaves when employee filter is applied (for admin)
+  useEffect(() => {
+    const fetchAllLeavesForFilter = async () => {
+      if (isAdmin && selectedEmployee !== '' && onExportAll) {
+        try {
+          setLoadingAllLeaves(true);
+          const allLeaves = await onExportAll();
+          setAllLeavesForFilter(allLeaves);
+        } catch (error) {
+          console.error('Error fetching all leaves for filter:', error);
+          setAllLeavesForFilter([]);
+        } finally {
+          setLoadingAllLeaves(false);
+        }
+      } else {
+        setAllLeavesForFilter([]);
+      }
+    };
+
+    fetchAllLeavesForFilter();
+  }, [selectedEmployee, isAdmin, onExportAll]);
 
   const hideNameColumn = isManager && viewMode === 'you';
   const hideDropdown = isManager && viewMode === 'you';
 
+  // Use all leaves when employee is filtered, otherwise use current page leaves
+  const leavesToUse = useMemo(() => {
+    if (isAdmin && selectedEmployee !== '' && allLeavesForFilter.length > 0) {
+      return allLeavesForFilter;
+    }
+    return leaves;
+  }, [isAdmin, selectedEmployee, allLeavesForFilter, leaves]);
+
   const employeeNames = useMemo(() => {
     const names = new Set<string>();
-    leaves.forEach(l => {
+    leavesToUse.forEach(l => {
       const empId = l.employee?.id || l.employeeId;
       const name = l.employee?.first_name;
       if (empId && name && empId !== currentUserId) names.add(name);
     });
     return Array.from(names);
-  }, [leaves, currentUserId]);
+  }, [leavesToUse, currentUserId]);
 
   const filteredLeaves = useMemo(() => {
     if (isManager && viewMode === 'you') {
-      return leaves.filter(
+      return leavesToUse.filter(
         l => l.employee?.id === currentUserId || l.employeeId === currentUserId
       );
     }
 
-    if (selectedEmployee === '') return leaves;
+    if (selectedEmployee === '') return leavesToUse;
 
-    return leaves.filter(
+    return leavesToUse.filter(
       leave => leave.employee?.first_name === selectedEmployee
     );
-  }, [selectedEmployee, leaves, isManager, viewMode, currentUserId]);
+  }, [selectedEmployee, leavesToUse, isManager, viewMode, currentUserId]);
 
-  const useServerPagination = !!onPageChange && serverTotalPages > 0;
+  // Check if an employee is selected (for admin filtering)
+  const isEmployeeFiltered = isAdmin && selectedEmployee !== '';
+
+  // When employee is filtered, disable server pagination and use client-side filtering
+  // This ensures we can filter all available leaves, not just the current page
+  const useServerPagination = !isEmployeeFiltered && !!onPageChange && serverTotalPages > 0;
   const currentPage = useServerPagination ? serverCurrentPage : page;
+  
+  // When employee is filtered, calculate pagination based on filtered results
+  const filteredTotalItems = filteredLeaves.length;
   const totalPages = useServerPagination
     ? serverTotalPages
-    : Math.max(1, Math.ceil(filteredLeaves.length / ITEMS_PER_PAGE));
-  const totalItems = useServerPagination
+    : Math.max(1, Math.ceil(filteredTotalItems / ITEMS_PER_PAGE));
+  
+  // When employee is filtered, use filtered count; otherwise use server total
+  const totalItems = isEmployeeFiltered
+    ? filteredTotalItems
+    : useServerPagination
     ? serverTotalItems
-    : filteredLeaves.length;
+    : filteredTotalItems;
 
+  // Use normal pagination for all cases
   const paginatedLeaves = useServerPagination
     ? filteredLeaves
     : filteredLeaves.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
@@ -337,7 +387,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         </Box>
       </Box>
 
-      {isLoading ? (
+      {(isLoading || loadingAllLeaves) ? (
         <Paper elevation={1} sx={{ boxShadow: 'none', py: 6 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <CircularProgress />
@@ -509,9 +559,13 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         }}
       >
         {(() => {
-          // Always show pagination if there are multiple pages
-          // This ensures users can always navigate between pages, even from the last page
-          const shouldShowPagination = totalPages > 1;
+          // When admin filters by employee:
+          // - Hide pagination if filtered records are less than or equal to page limit
+          // - Show pagination only if filtered records exceed page limit
+          // Otherwise, show pagination if there are multiple pages
+          const shouldShowPagination = isEmployeeFiltered
+            ? filteredTotalItems > ITEMS_PER_PAGE
+            : totalPages > 1;
           
           return shouldShowPagination ? (
             <Pagination

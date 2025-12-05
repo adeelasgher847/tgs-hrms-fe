@@ -41,6 +41,7 @@ import ErrorSnackbar from '../common/ErrorSnackbar';
 import {
   getRoleName,
   isSystemAdmin as isSystemAdminFn,
+  isHRAdmin as isHRAdminFn,
 } from '../../utils/roleUtils';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
@@ -60,6 +61,7 @@ export default function DesignationManager() {
   }, []);
   const userRoleValue = user?.role;
   const isSystemAdmin = isSystemAdminFn(userRoleValue);
+  const isHRAdmin = isHRAdminFn(userRoleValue);
 
   const [designations, setDesignations] = useState<FrontendDesignation[]>([]);
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
@@ -727,17 +729,19 @@ export default function DesignationManager() {
                               >
                                 <EditIcon fontSize='small' />
                               </IconButton>
-                              <IconButton
-                                color='error'
-                                size='small'
-                                onClick={() => {
-                                  setDesignationToDelete(designation);
-                                  setDeleteDialogOpen(true);
-                                }}
-                                title={getText('Delete', 'حذف')}
-                              >
-                                <DeleteIcon fontSize='small' />
-                              </IconButton>
+                              {!isHRAdmin && (
+                                <IconButton
+                                  color='error'
+                                  size='small'
+                                  onClick={() => {
+                                    setDesignationToDelete(designation);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                  title={getText('Delete', 'حذف')}
+                                >
+                                  <DeleteIcon fontSize='small' />
+                                </IconButton>
+                              )}
                             </Box>
                           </TableCell>
                         )}
