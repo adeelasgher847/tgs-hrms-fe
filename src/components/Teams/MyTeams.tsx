@@ -265,8 +265,9 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   sx={{
                     borderColor: COLORS.PRIMARY,
                     color: COLORS.PRIMARY,
+                    backgroundColor: 'transparent',
                     '&:hover': {
-                      borderColor: '#3a3f5f',
+                      borderColor: COLORS.PRIMARY,
                       backgroundColor: 'rgba(72, 76, 127, 0.1)',
                     },
                   }}
@@ -282,8 +283,9 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   sx={{
                     borderColor: COLORS.PRIMARY,
                     color: COLORS.PRIMARY,
+                    backgroundColor: 'transparent',
                     '&:hover': {
-                      borderColor: '#3a3f5f',
+                      borderColor: COLORS.PRIMARY,
                       backgroundColor: 'rgba(72, 76, 127, 0.1)',
                     },
                   }}

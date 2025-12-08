@@ -465,12 +465,13 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                       sx={{
                         borderColor: theme => theme.palette.primary.main,
                         color: theme => theme.palette.primary.main,
+                        backgroundColor: 'transparent',
                         fontSize: { xs: '0.75rem', sm: '0.875rem' },
                         py: { xs: 0.5, sm: 0.75 },
                         px: { xs: 1, sm: 1.5 },
                         '&:hover': {
-                          borderColor: theme => theme.palette.primary.dark,
-                          backgroundColor: theme => theme.palette.action.hover,
+                          borderColor: theme => theme.palette.primary.main,
+                          backgroundColor: 'rgba(72, 76, 127, 0.1)',
                         },
                       }}
                     >
