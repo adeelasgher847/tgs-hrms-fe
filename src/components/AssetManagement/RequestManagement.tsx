@@ -179,15 +179,33 @@ const RequestManagement: React.FC = () => {
   const lastFetchedPageRef = React.useRef<{
     page: number;
     limit: number;
+    statusFilter?: string;
   } | null>(null);
   const assetsFetchedRef = React.useRef(false); // Track if assets have been fetched
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
+  const lastTabRef = React.useRef(0); // Track last tab to detect tab changes
   const [searchTerm, setSearchTerm] = useState('');
   const [tabValue, setTabValue] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
+
+  // Get status filter based on active tab
+  const getStatusFilter = (tabIndex: number): string | undefined => {
+    switch (tabIndex) {
+      case 0:
+        return undefined; // All requests
+      case 1:
+        return 'pending';
+      case 2:
+        return 'approved';
+      case 3:
+        return 'rejected';
+      default:
+        return undefined;
+    }
+  };
 
   const [pagination, setPagination] = useState({
     page: 1,
@@ -434,6 +452,7 @@ const RequestManagement: React.FC = () => {
     async (
       page: number = 1,
       limit: number = PAGINATION.DEFAULT_PAGE_SIZE,
+      statusFilter?: string,
       isInitialLoad: boolean = false
     ) => {
       // Prevent duplicate calls
@@ -448,50 +467,208 @@ const RequestManagement: React.FC = () => {
           setInitialLoading(true);
         }
 
-        const apiResponse: PaginatedResponse<ApiAssetRequest> =
-          await assetApi.getAllAssetRequests({
+        // If backend doesn't support filtering and we have a status filter,
+        // we need to fetch all pages to get all filtered records
+        // First, check if backend supports filtering by making a test call
+        let allFilteredRequests: AssetRequest[] = [];
+        let backendSupportsFiltering = false;
+        let finalTotal = 0;
+        let finalTotalPages = 1;
+        let backendLimit = limit;
+        let backendPage = page;
+
+        if (statusFilter) {
+          // First, fetch page 1 to check if backend filters
+          const testApiFilters: {
+            page: number;
+            limit: number;
+            status?: string;
+          } = {
+            page: 1,
+            limit: limit,
+            status: statusFilter,
+          };
+
+
+          const testResponse: PaginatedResponse<ApiAssetRequest> =
+            await assetApi.getAllAssetRequests(testApiFilters);
+
+          const testTransformed = transformApiRequests(
+            (testResponse.items || []) as ApiAssetRequestExtended[]
+          );
+
+          // Check if backend filtered correctly
+          const allMatchFilter = testTransformed.length === 0 || testTransformed.every(
+            req => req.status === statusFilter
+          );
+
+          if (allMatchFilter && testResponse.total && testResponse.totalPages) {
+            // Backend supports filtering - use normal pagination
+            backendSupportsFiltering = true;
+
+            // Build API filters for the requested page
+            const apiFilters: {
+              page: number;
+              limit: number;
+              status?: string;
+            } = {
+              page,
+              limit,
+              status: statusFilter,
+            };
+
+            const apiResponse: PaginatedResponse<ApiAssetRequest> =
+              await assetApi.getAllAssetRequests(apiFilters);
+
+            const transformedRequests = transformApiRequests(
+              (apiResponse.items || []) as ApiAssetRequestExtended[]
+            );
+
+            allFilteredRequests = transformedRequests;
+            finalTotal = apiResponse.total || 0;
+            finalTotalPages = apiResponse.totalPages || 1;
+            backendLimit = apiResponse.limit || limit;
+            backendPage = apiResponse.page || page;
+
+            // Update counts
+            if (apiResponse.counts) {
+              setStatusCounts({
+                total: apiResponse.counts.total || 0,
+                pending: apiResponse.counts.pending || 0,
+                approved: apiResponse.counts.approved || 0,
+                rejected: apiResponse.counts.rejected || 0,
+                cancelled: apiResponse.counts.cancelled || 0,
+              });
+            }
+          } else {
+            // Backend doesn't support filtering - fetch all pages and filter client-side
+            
+            let allRequests: AssetRequest[] = [];
+            let currentPage = 1;
+            let hasMorePages = true;
+            const maxPages = 100; // Safety limit
+            let totalFromBackend = testResponse.total || 0;
+            let totalPagesFromBackend = testResponse.totalPages || 1;
+
+            // Fetch all pages
+            while (hasMorePages && currentPage <= maxPages && currentPage <= totalPagesFromBackend) {
+              const pageApiFilters: {
+                page: number;
+                limit: number;
+              } = {
+                page: currentPage,
+                limit: limit,
+              };
+
+              const pageResponse: PaginatedResponse<ApiAssetRequest> =
+                await assetApi.getAllAssetRequests(pageApiFilters);
+
+              const pageTransformed = transformApiRequests(
+                (pageResponse.items || []) as ApiAssetRequestExtended[]
+              );
+
+              allRequests = [...allRequests, ...pageTransformed];
+
+              // Update totalPages if we got new info
+              if (pageResponse.totalPages) {
+                totalPagesFromBackend = pageResponse.totalPages;
+              }
+              if (pageResponse.total) {
+                totalFromBackend = pageResponse.total;
+              }
+
+              hasMorePages = currentPage < totalPagesFromBackend && pageTransformed.length === limit;
+              currentPage++;
+
+              // Update counts from first page
+              if (currentPage === 2 && pageResponse.counts) {
+                setStatusCounts({
+                  total: pageResponse.counts.total || 0,
+                  pending: pageResponse.counts.pending || 0,
+                  approved: pageResponse.counts.approved || 0,
+                  rejected: pageResponse.counts.rejected || 0,
+                  cancelled: pageResponse.counts.cancelled || 0,
+                });
+              }
+            }
+
+            // Filter client-side
+            allFilteredRequests = allRequests.filter(
+              req => req.status === statusFilter
+            );
+
+            // Calculate pagination for filtered results
+            finalTotal = allFilteredRequests.length;
+            finalTotalPages = Math.ceil(finalTotal / limit);
+            backendLimit = limit;
+            backendPage = page;
+
+            // Apply pagination to filtered results
+            const startIndex = (page - 1) * limit;
+            const endIndex = startIndex + limit;
+            allFilteredRequests = allFilteredRequests.slice(startIndex, endIndex);
+
+
+            // Update counts from test response if available
+            if (testResponse.counts) {
+              setStatusCounts({
+                total: testResponse.counts.total || 0,
+                pending: testResponse.counts.pending || 0,
+                approved: testResponse.counts.approved || 0,
+                rejected: testResponse.counts.rejected || 0,
+                cancelled: testResponse.counts.cancelled || 0,
+              });
+            }
+          }
+        } else {
+          // No filter - normal pagination
+          const apiFilters: {
+            page: number;
+            limit: number;
+          } = {
             page,
             limit,
-          });
+          };
 
-        const hasMorePages = (apiResponse.items || []).length === limit;
+          const apiResponse: PaginatedResponse<ApiAssetRequest> =
+            await assetApi.getAllAssetRequests(apiFilters);
 
-        // Use backend pagination info if available, otherwise estimate
-        if (apiResponse.total && apiResponse.totalPages) {
-          setPagination(prev => ({
-            ...prev,
-            total: apiResponse.total || 0,
-            totalPages: apiResponse.totalPages || 1,
-          }));
-        } else {
-          const estimatedTotal = hasMorePages
-            ? page * limit
-            : (page - 1) * limit + (apiResponse.items || []).length;
-          const estimatedTotalPages = hasMorePages ? page + 1 : page;
+          const transformedRequests = transformApiRequests(
+            (apiResponse.items || []) as ApiAssetRequestExtended[]
+          );
 
-          setPagination(prev => ({
-            ...prev,
-            total: estimatedTotal,
-            totalPages: estimatedTotalPages,
-          }));
+          allFilteredRequests = transformedRequests;
+          finalTotal = apiResponse.total || 0;
+          finalTotalPages = apiResponse.totalPages || 1;
+          backendLimit = apiResponse.limit || limit;
+          backendPage = apiResponse.page || page;
+
+          // Update counts
+          if (apiResponse.counts) {
+            setStatusCounts({
+              total: apiResponse.counts.total || 0,
+              pending: apiResponse.counts.pending || 0,
+              approved: apiResponse.counts.approved || 0,
+              rejected: apiResponse.counts.rejected || 0,
+              cancelled: apiResponse.counts.cancelled || 0,
+            });
+          }
         }
 
-        const transformedRequests = transformApiRequests(
-          (apiResponse.items || []) as ApiAssetRequestExtended[]
-        );
+        // Use the results we prepared
+        const finalRequests = allFilteredRequests;
 
-        setRequests(transformedRequests);
+        // Set pagination
+        setPagination(prev => ({
+          ...prev,
+          page: backendPage,
+          limit: backendLimit,
+          total: finalTotal,
+          totalPages: finalTotalPages,
+        }));
 
-        // Update counts from API response if available
-        if (apiResponse.counts) {
-          setStatusCounts({
-            total: apiResponse.counts.total || 0,
-            pending: apiResponse.counts.pending || 0,
-            approved: apiResponse.counts.approved || 0,
-            rejected: apiResponse.counts.rejected || 0,
-            cancelled: apiResponse.counts.cancelled || 0,
-          });
-        }
+
+        setRequests(finalRequests);
 
         let allAssets: Record<string, unknown>[] = [];
         let assetCurrentPage = 1;
@@ -625,56 +802,92 @@ const RequestManagement: React.FC = () => {
     [transformApiRequests]
   );
 
-  // Initial load: fetch paginated requests and assets (counts come from API response)
+  // Initial load effect
   React.useEffect(() => {
-    // Only run initial load once
-    if (initialLoadRef.current) {
+    if (initialLoadRef.current || fetchingRef.current) {
       return;
-    }
-    if (fetchingRef.current) {
-      return; // Don't fetch if already fetching
     }
 
     initialLoadRef.current = true;
+    lastTabRef.current = tabValue;
 
-    // Mark this page/limit as fetched
+    const statusFilter = getStatusFilter(tabValue);
     lastFetchedPageRef.current = {
-      page: pagination.page,
+      page: 1,
       limit: pagination.limit,
+      statusFilter: statusFilter,
     };
 
-    // Fetch paginated requests only (assets will be fetched when needed)
-    fetchRequests(pagination.page, pagination.limit, true);
+    fetchRequests(1, pagination.limit, statusFilter, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on initial mount
+  }, []); // Only on mount
 
-  // Handle page changes: fetch paginated requests (counts come from API response)
+  // Handle tab changes - separate effect to ensure it always runs
   React.useEffect(() => {
-    if (!initialLoadRef.current) return; // Don't fetch if initial load hasn't happened
-    if (fetchingRef.current) return; // Don't fetch if already fetching
+    if (!initialLoadRef.current) {
+      lastTabRef.current = tabValue; // Initialize
+      return;
+    }
+    if (fetchingRef.current) return;
 
-    // Check if page/limit actually changed
+    // Check if tab actually changed
+    if (lastTabRef.current === tabValue) {
+      return; // Tab hasn't changed
+    }
+
+
+    lastTabRef.current = tabValue;
+    const statusFilter = getStatusFilter(tabValue);
+
+    // Mark as fetched to prevent page change effect from running
+    lastFetchedPageRef.current = {
+      page: 1,
+      limit: pagination.limit,
+      statusFilter: statusFilter,
+    };
+
+    // Update pagination - this will trigger page change effect, but it will see it's already fetched
+    setPagination(prev => ({
+      ...prev,
+      page: 1,
+      total: 0,
+      totalPages: 0,
+    }));
+
+    // Fetch directly - page change effect will see it's already fetched and skip
+    fetchRequests(1, pagination.limit, statusFilter, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabValue]);
+
+  // Handle page/limit changes
+  React.useEffect(() => {
+    if (!initialLoadRef.current) return;
+    if (fetchingRef.current) return;
+
+    const statusFilter = getStatusFilter(tabValue);
     const lastFetched = lastFetchedPageRef.current;
+
+    // Check if already fetched this combination
     if (
       lastFetched &&
       lastFetched.page === pagination.page &&
-      lastFetched.limit === pagination.limit
+      lastFetched.limit === pagination.limit &&
+      lastFetched.statusFilter === statusFilter
     ) {
-      return; // Already fetched this page/limit combination
+      return;
     }
 
-    // Fetch paginated requests when page or limit changes (but not on initial load)
-    if (pagination.page > 0) {
-      lastFetchedPageRef.current = {
-        page: pagination.page,
-        limit: pagination.limit,
-      };
-      fetchRequests(pagination.page, pagination.limit, false);
-    }
+    lastFetchedPageRef.current = {
+      page: pagination.page,
+      limit: pagination.limit,
+      statusFilter: statusFilter,
+    };
+
+    fetchRequests(pagination.page, pagination.limit, statusFilter, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, pagination.limit]); // Removed fetchRequests from deps to prevent re-triggers
+  }, [pagination.page, pagination.limit]);
 
-  // Filter requests
+  // Filter requests by search term only (status filtering is done by backend)
   const filteredRequests = useMemo(() => {
     if (!searchTerm) return requests;
 
@@ -752,10 +965,9 @@ const RequestManagement: React.FC = () => {
     return filtered;
   }, [assets, selectedRequest]);
 
-  // Filter by tab
-  const getFilteredRequestsByTab = (statusFilter?: string) => {
-    if (!statusFilter) return filteredRequests;
-    return filteredRequests.filter(request => request.status === statusFilter);
+  // Get filtered requests for display (status filtering is done by backend, only search is client-side)
+  const getFilteredRequestsByTab = () => {
+    return filteredRequests;
   };
 
   const handleProcessRequest = (request: AssetRequest) => {
@@ -852,7 +1064,7 @@ const RequestManagement: React.FC = () => {
           );
 
           // Refresh paginated requests to update counts
-          fetchRequests(pagination.page, pagination.limit, false);
+          fetchRequests(pagination.page, pagination.limit, getStatusFilter(tabValue), false);
 
           // Show success message with asset assignment details
           showSuccess(
@@ -900,7 +1112,7 @@ const RequestManagement: React.FC = () => {
           );
 
           // Refresh paginated requests to update counts
-          fetchRequests(pagination.page, pagination.limit, false);
+          fetchRequests(pagination.page, pagination.limit, getStatusFilter(tabValue), false);
 
           showSuccess(
             `Request from ${selectedRequest.employeeName} has been rejected successfully`
@@ -917,11 +1129,22 @@ const RequestManagement: React.FC = () => {
         }
       }
 
+      const statusFilter = getStatusFilter(tabValue);
+      // Build API filters - only include status if it's defined
+      const apiFilters: {
+        page: number;
+        limit: number;
+        status?: string;
+      } = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
+      if (statusFilter) {
+        apiFilters.status = statusFilter;
+      }
+
       const apiResponse: PaginatedResponse<ApiAssetRequest> =
-        await assetApi.getAllAssetRequests({
-          page: pagination.page,
-          limit: pagination.limit,
-        });
+        await assetApi.getAllAssetRequests(apiFilters);
 
       // Refresh assets to reflect assignment status - fetch all assets with pagination
       let allAssets: Record<string, unknown>[] = [];
@@ -1126,11 +1349,18 @@ const RequestManagement: React.FC = () => {
 
       setRequests(transformedRequests);
 
-      // Update pagination info from API response
+      // Update pagination info from API response - use backend values
+      const backendLimit = apiResponse.limit || pagination.limit;
+      const backendTotal = apiResponse.total || 0;
+      const backendTotalPages = apiResponse.totalPages || 1;
+      const backendPage = apiResponse.page || pagination.page;
+
       setPagination(prev => ({
         ...prev,
-        total: apiResponse.total || 0,
-        totalPages: apiResponse.totalPages || 1,
+        page: backendPage,
+        limit: backendLimit,
+        total: backendTotal,
+        totalPages: backendTotalPages,
       }));
 
       setIsProcessModalOpen(false);
@@ -1361,7 +1591,7 @@ const RequestManagement: React.FC = () => {
       </AppCard>
 
       {/* Tabs */}
-      <AppCard>
+      <AppCard pading={0}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs
             value={tabValue}
@@ -1488,7 +1718,7 @@ const RequestManagement: React.FC = () => {
       </AppCard>
 
       {/* Pagination Controls */}
-      {pagination.totalPages > 1 && (
+      {pagination.total > pagination.limit && (
         <Box
           sx={{
             display: 'flex',

@@ -4,12 +4,14 @@ interface AppCardProps extends CardProps {
   compact?: boolean;
 }
 
-export function AppCard({ compact = false, sx, ...rest }: AppCardProps) {
+export function AppCard({ compact = false, sx, pading, ...rest }: AppCardProps) {
   const baseSx: SxProps<Theme> = compact
     ? {
+        padding: pading !== undefined ? pading : 1,
         boxShadow: 1,
       }
     : {
+        padding: pading !== undefined ? pading : 2,
         boxShadow: 2,
       };
 
@@ -21,4 +23,3 @@ export function AppCard({ compact = false, sx, ...rest }: AppCardProps) {
 }
 
 export default AppCard;
-
