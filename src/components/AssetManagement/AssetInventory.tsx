@@ -675,7 +675,7 @@ const AssetInventory: React.FC = () => {
       </Box>
 
       {/* Filters and Search */}
-      <AppCard sx={{ mb: 3 }}>
+      <AppCard sx={{ mb: 3 }} >
         <Box
           sx={{
             display: 'flex',
@@ -683,6 +683,7 @@ const AssetInventory: React.FC = () => {
             gap: 2,
             alignItems: 'center',
             py: 2,
+
           }}
         >
           <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
@@ -772,7 +773,7 @@ const AssetInventory: React.FC = () => {
       </AppCard>
 
       {/* Assets Table */}
-      <AppCard>
+      <AppCard pading={0}>
         <AppTable>
           <TableHead>
             <TableRow>

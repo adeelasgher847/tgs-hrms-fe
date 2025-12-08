@@ -314,12 +314,14 @@ class AssetApiService {
   async getAllAssetRequests(filters?: {
     requester?: string;
     tenant?: string;
+    status?: string;
     page?: number;
     limit?: number;
   }) {
     const params = new URLSearchParams();
     if (filters?.requester) params.append('requester', filters.requester);
     if (filters?.tenant) params.append('tenant', filters.tenant);
+    if (filters?.status) params.append('status', filters.status);
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
@@ -492,6 +494,7 @@ class AssetApiService {
       );
       return response.data;
     } catch (bodyError: unknown) {
+
       if (data?.asset_id || data?.assetId) {
         const assetId = data.asset_id || data.assetId;
         try {

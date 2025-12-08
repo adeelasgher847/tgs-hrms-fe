@@ -351,7 +351,7 @@ const BenefitReport: React.FC = () => {
               setSelectedTenant(e.target.value as string);
               setPage(1);
             }}
-            formControlProps={{ sx: { minWidth: 220 } }}
+            sx={{ minWidth: 220 }}
           >
             <MenuItem value=''>All</MenuItem>
             {tenants.map(t => (
@@ -415,7 +415,7 @@ const BenefitReport: React.FC = () => {
               setSelectedDepartment(e.target.value as string);
               setPage(1);
             }}
-            formControlProps={{ sx: { minWidth: 220 } }}
+            sx={{ width: 250 }}
           >
             <MenuItem value=''>All</MenuItem>
             {departments.map(d => (
@@ -433,7 +433,7 @@ const BenefitReport: React.FC = () => {
               setPage(1);
             }}
             disabled={!designations.length}
-            formControlProps={{ sx: { minWidth: 220 } }}
+            sx={{ width: 250 }}
           >
             <MenuItem value=''>All</MenuItem>
             {designations.map(d => (
@@ -460,7 +460,7 @@ const BenefitReport: React.FC = () => {
       </Box>
 
       {/* Table */}
-      <AppTable noShadow>
+      <AppTable>
         <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
           <TableRow>
             {isSystemAdmin && (
