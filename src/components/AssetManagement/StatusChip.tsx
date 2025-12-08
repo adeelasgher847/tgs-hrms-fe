@@ -41,12 +41,6 @@ const StatusChip: React.FC<StatusChipProps> = ({ status, type }) => {
             variant: 'filled' as const,
           };
         default:
-          console.warn(
-            'Unknown asset status:',
-            status,
-            'normalized to:',
-            normalizedStatus
-          );
           return {
             label: 'Unknown',
             color: 'default' as const,
@@ -81,12 +75,6 @@ const StatusChip: React.FC<StatusChipProps> = ({ status, type }) => {
             variant: 'filled' as const,
           };
         default:
-          console.warn(
-            'Unknown request status:',
-            status,
-            'normalized to:',
-            normalizedStatus
-          );
           return {
             label: 'Unknown',
             color: 'default' as const,

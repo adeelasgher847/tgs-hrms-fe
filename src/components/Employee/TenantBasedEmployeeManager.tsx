@@ -36,6 +36,7 @@ import {
 import SystemEmployeeProfileView from './SystemEmployeeProfileView';
 import { formatDate } from '../../utils/dateUtils';
 import employeeApi from '../../api/employeeApi';
+import { PAGINATION } from '../../constants/appConstants';
 
 type EmployeeWithTenantName = SystemEmployee & {
   tenantName: string;
@@ -58,7 +59,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25;
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
 
   const [selectedEmployee, setSelectedEmployee] =
     useState<EmployeeWithTenantName | null>(null);
@@ -81,9 +82,8 @@ const TenantBasedEmployeeManager: React.FC = () => {
       setDepartments(deptRes || []);
       setTenants(tenantRes || []);
       setTenantsLoaded(true); // Mark tenants as loaded - this will trigger employee fetch
-    } catch (err) {
-      console.error('Error fetching filter data:', err);
-      setTenantsLoaded(true); // Mark as loaded even on error to prevent blocking
+    } catch {
+      // Leave filters empty if loading fails
     }
   };
 
@@ -99,8 +99,8 @@ const TenantBasedEmployeeManager: React.FC = () => {
         null
       );
       setDesignations(res.items || []);
-    } catch (err) {
-      console.error('Error fetching designations by department:', err);
+    } catch {
+      // Leave designations empty if loading fails
     }
   };
 
@@ -155,8 +155,10 @@ const TenantBasedEmployeeManager: React.FC = () => {
             : (currentPage - 1) * itemsPerPage + mapped.length
         );
       }
-    } catch (err) {
-      console.error('Error fetching system employees:', err);
+    } catch {
+      setEmployees([]);
+      setTotalPages(1);
+      setTotalRecords(0);
     } finally {
       setLoading(false);
       isLoadingRef.current = false;
@@ -253,12 +255,12 @@ const TenantBasedEmployeeManager: React.FC = () => {
       // Use backend API to export employees CSV
       const tenantId = filters.tenantId || undefined;
       const blob = await employeeApi.exportSystemEmployeesCSV(tenantId);
-      
+
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      const filename = tenantId 
+      const filename = tenantId
         ? `employees_tenant_${tenantId}.csv`
         : 'employees_all_tenants.csv';
       link.setAttribute('download', filename);
@@ -266,8 +268,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error exporting employees CSV:', error);
+    } catch {
       alert('Failed to export employees. Please try again.');
     }
   };

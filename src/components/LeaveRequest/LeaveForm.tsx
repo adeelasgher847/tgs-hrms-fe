@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Button, MenuItem, Typography } from '@mui/material';
+import { Box, TextField, MenuItem, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { leaveApi, type LeaveType } from '../../api/leaveApi';
+import AppButton from '../Common/AppButton';
 
 interface LeaveFormProps {
   onSubmit?: (data: {
@@ -31,8 +32,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
       try {
         const response = await leaveApi.getLeaveTypes({ page: 1, limit: 50 });
         setLeaveTypes(response.items || []);
-      } catch (error) {
-        console.error('Failed to load leave types:', error);
+      } catch {
         onError?.('Failed to load leave types.');
       } finally {
         setLoadingLeaveTypes(false);
@@ -76,16 +76,13 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
     setLoading(true);
 
     try {
-      const response = await leaveApi.createLeave(payload);
-      console.log('Leave created:', response);
+      await leaveApi.createLeave(payload);
       onSubmit?.(payload);
       setLeaveTypeId('');
       setStartDate(null);
       setEndDate(null);
       setReason('');
     } catch (error: unknown) {
-      console.error('Error creating leave:', error);
-
       let errorMessage = 'Failed to submit leave request.';
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as {
@@ -184,14 +181,12 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
           required
         />
 
-        <Button
+        <AppButton
           type='submit'
-          variant='contained'
-          color='primary'
+          variantType='contained'
+          text={loading ? 'Submitting...' : 'Apply'}
           disabled={loading}
-        >
-          {loading ? 'Submitting...' : 'Apply'}
-        </Button>
+        />
       </Box>
     </LocalizationProvider>
   );

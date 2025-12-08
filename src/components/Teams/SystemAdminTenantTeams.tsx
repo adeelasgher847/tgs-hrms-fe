@@ -6,7 +6,6 @@ import {
   Typography,
   Avatar,
   Chip,
-  Button,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -24,12 +23,12 @@ import {
   CircularProgress,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import AppButton from '../Common/AppButton';
 
 import {
   Group as GroupIcon,
   Person as PersonIcon,
   Business as BusinessIcon,
-  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { AllTenantsTeamsResponse, TenantTeam } from '../../api/teamApi';
@@ -65,8 +64,8 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
           t => t.status === 'active' && t.isDeleted === false
         );
         setAllTenants(activeTenants);
-      } catch (error) {
-        console.error('Error fetching tenants:', error);
+      } catch {
+        // Leave tenants list empty on failure
       } finally {
         setLoadingTenants(false);
       }
@@ -454,9 +453,10 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                       borderTop: theme => `1px solid ${theme.palette.divider}`,
                     }}
                   >
-                    <Button
+                    <AppButton
                       variant='outlined'
                       size='small'
+                      text={lang.viewMembers}
                       startIcon={
                         <GroupIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
                       }
@@ -465,17 +465,18 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                       sx={{
                         borderColor: theme => theme.palette.primary.main,
                         color: theme => theme.palette.primary.main,
+                        backgroundColor: 'transparent',
                         fontSize: { xs: '0.75rem', sm: '0.875rem' },
                         py: { xs: 0.5, sm: 0.75 },
                         px: { xs: 1, sm: 1.5 },
                         '&:hover': {
-                          borderColor: theme => theme.palette.primary.dark,
-                          backgroundColor: theme => theme.palette.action.hover,
+                          borderColor: theme => theme.palette.primary.main,
+                          backgroundColor: 'rgba(72, 76, 127, 0.1)',
                         },
                       }}
                     >
                       {lang.viewMembers}
-                    </Button>
+                    </AppButton>
                   </Box>
                 </CardContent>
               </Card>
@@ -609,9 +610,11 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowMemberDialog(false)}>
-            {lang.cancel}
-          </Button>
+          <AppButton
+            variant='outlined'
+            text={lang.cancel}
+            onClick={() => setShowMemberDialog(false)}
+          />
         </DialogActions>
       </Dialog>
     </>

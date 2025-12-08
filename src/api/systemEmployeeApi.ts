@@ -40,9 +40,9 @@ export type SystemEmployee = {
 
 export type SystemEmployeeDetails = SystemEmployee & {
   benefits: Benefit[];
-  kpis: unknown[];
-  promotions: unknown[];
-  performanceReviews: unknown[];
+  kpis: EmployeePerformance[];
+  promotions: EmployeePromotion[];
+  performanceReviews: EmployeePerformanceReview[];
 };
 
 export type EmployeeLeave = {
@@ -91,22 +91,39 @@ export interface EmployeePerformance {
   id: string;
   employee_id: string;
   kpi_id: string;
-  targetValue: number;
-  achievedValue: number;
-  score: number;
-  reviewCycle: string;
+  targetValue?: number | null;
+  achievedValue?: number | null;
+  score?: number | null;
+  reviewCycle?: string | null;
   reviewedBy: string;
   remarks: string;
   tenant_id: string;
   createdAt: string;
-  kpi: {
+  kpi?: {
     id: string;
     title: string;
     description: string;
     weight: number;
     category: string;
     status: string;
-  };
+  } | null;
+}
+
+export interface EmployeePromotion {
+  id?: string;
+  previousDesignation: string;
+  newDesignation: string;
+  effectiveDate: string;
+  status: string;
+  remarks?: string | null;
+}
+
+export interface EmployeePerformanceReview {
+  id?: string;
+  cycle: string;
+  overallScore?: number | null;
+  status: string;
+  recommendation?: string | null;
 }
 
 export type GetEmployeesParams = {
@@ -148,7 +165,6 @@ class SystemEmployeeApiService {
     const res = await axiosInstance.get<
       SystemEmployee[] | PaginatedSystemEmployeeResponse
     >(BASE, { params: requestParams });
-    console.log('Get system employee api response: ', res);
 
     // Handle paginated response with items array
     if (
@@ -170,7 +186,6 @@ class SystemEmployeeApiService {
 
   async getSystemEmployeeById(id: string): Promise<SystemEmployeeDetails> {
     const res = await axiosInstance.get<SystemEmployeeDetails>(`${BASE}/${id}`);
-    console.log('Get system employee by id api response: ', res);
     return res.data;
   }
 
@@ -178,7 +193,6 @@ class SystemEmployeeApiService {
     const res = await axiosInstance.get<EmployeeLeave[]>(
       `${BASE}/${id}/leaves`
     );
-    console.log('Get system employee leaves api response: ', res);
     return res.data || [];
   }
 
@@ -188,7 +202,6 @@ class SystemEmployeeApiService {
     const res = await axiosInstance.get<EmployeePerformance[]>(
       `${BASE}/${id}/performance`
     );
-    console.log('Get system employee performance api response: ', res);
     return res.data || [];
   }
 
@@ -196,7 +209,6 @@ class SystemEmployeeApiService {
     const res = await axiosInstance.get<EmployeeAsset[]>(
       `${BASE}/${id}/assets`
     );
-    console.log('Get system employee assets api response: ', res);
     return res.data || [];
   }
 
@@ -207,21 +219,15 @@ class SystemEmployeeApiService {
     const res = await axiosInstance.get<SystemEmployee[]>('/system/tenants', {
       params: { page, includeDeleted },
     });
-    console.log('Get tenants API response:', res);
     return res.data || [];
   }
 
   async getAllTenants(includeDeleted = true): Promise<SystemEmployee[]> {
-    try {
-      const res = await axiosInstance.get('/system/tenants', {
-        params: { includeDeleted, limit: 'all' },
-      });
+    const res = await axiosInstance.get('/system/tenants', {
+      params: { includeDeleted, limit: 'all' },
+    });
 
-      return res.data?.items || [];
-    } catch (error) {
-      console.error('Error fetching tenants:', error);
-      return [];
-    }
+    return res.data?.items || [];
   }
 }
 

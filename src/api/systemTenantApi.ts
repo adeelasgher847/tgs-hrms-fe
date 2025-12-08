@@ -1,5 +1,6 @@
 import axiosInstance from './axiosInstance';
-import type { AxiosError, AxiosResponse } from 'axios';
+import type { AxiosResponse } from 'axios';
+import { env } from '../config/env';
 
 export interface SystemTenant {
   id: string;
@@ -62,110 +63,91 @@ export const SystemTenantApi = {
     page: number;
     totalPages: number;
   }> => {
-    try {
-      const response: AxiosResponse<
-        PaginatedSystemTenantsResponse | SystemTenant[]
-      > = await axiosInstance.get('/system/tenants', {
-        params: {
-          page: filters.page ?? 1,
-          limit: filters.limit ?? 25,
-          includeDeleted: filters.includeDeleted ?? false,
-        },
-      });
+    const response: AxiosResponse<
+      PaginatedSystemTenantsResponse | SystemTenant[]
+    > = await axiosInstance.get('/system/tenants', {
+      params: {
+        page: filters.page ?? 1,
+        limit: filters.limit ?? 25,
+        includeDeleted: filters.includeDeleted ?? false,
+      },
+    });
 
-      const payload = response.data;
+    const payload = response.data;
 
-      const totalFromResponse =
-        !Array.isArray(payload) && typeof payload?.total === 'number'
-          ? payload.total
-          : null;
-      const totalHeader = Number(response.headers['x-total-count']);
-      const total =
-        totalFromResponse ?? (!Number.isNaN(totalHeader) ? totalHeader : 0);
+    const totalFromResponse =
+      !Array.isArray(payload) && typeof payload?.total === 'number'
+        ? payload.total
+        : null;
+    const totalHeader = Number(response.headers['x-total-count']);
+    const total =
+      totalFromResponse ?? (!Number.isNaN(totalHeader) ? totalHeader : 0);
 
-      const page =
-        !Array.isArray(payload) && typeof payload?.page === 'number'
-          ? payload.page
-          : (filters.page ?? 1);
+    const page =
+      !Array.isArray(payload) && typeof payload?.page === 'number'
+        ? payload.page
+        : (filters.page ?? 1);
 
-      const totalPagesFromResponse =
-        !Array.isArray(payload) && typeof payload?.totalPages === 'number'
-          ? payload.totalPages
-          : null;
-      const totalPages =
-        totalPagesFromResponse ??
-        (total > 0 ? Math.ceil(total / (filters.limit ?? 25)) : 1);
+    const totalPagesFromResponse =
+      !Array.isArray(payload) && typeof payload?.totalPages === 'number'
+        ? payload.totalPages
+        : null;
+    const totalPages =
+      totalPagesFromResponse ??
+      (total > 0 ? Math.ceil(total / (filters.limit ?? 25)) : 1);
 
-      let tenants: SystemTenant[] = [];
-      if (Array.isArray(payload)) {
-        tenants = payload;
-      } else if (payload && typeof payload === 'object') {
-        tenants = (payload.items ?? payload.data ?? []) as SystemTenant[];
-      }
-
-      return {
-        data: tenants,
-        total,
-        page,
-        totalPages,
-      };
-    } catch (error) {
-      console.error(' Failed to fetch tenants:', error);
-      throw error;
+    let tenants: SystemTenant[] = [];
+    if (Array.isArray(payload)) {
+      tenants = payload;
+    } else if (payload && typeof payload === 'object') {
+      tenants = (payload.items ?? payload.data ?? []) as SystemTenant[];
     }
+
+    return {
+      data: tenants,
+      total,
+      page,
+      totalPages,
+    };
   },
 
   getById: async (id: string): Promise<SystemTenantDetail> => {
-    try {
-      const response: AxiosResponse<SystemTenantDetail> =
-        await axiosInstance.get(`/system/tenants/${id}`);
-      
-      const detail = response.data;
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
-      
-      // Helper function to convert relative path to full URL
-      const getFullLogoUrl = (logoPath: string | undefined | null): string | undefined => {
-        if (!logoPath || typeof logoPath !== 'string' || logoPath === '[object Object]') {
-          return undefined;
-        }
-        
-        // If it's already a full URL (starts with http:// or https://), return as is
-        if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
-          return logoPath;
-        }
-        
-        // If it's a relative path (starts with /), prepend base URL
-        if (logoPath.startsWith('/')) {
-          return `${baseURL}${logoPath}`;
-        }
-        
-        // Otherwise, assume it's a relative path and prepend base URL with /
-        return `${baseURL}/${logoPath}`;
-      };
-      
-      // Extract logo from direct logo property or company.logo_url
-      let logoUrl = detail.logo || detail.company?.logo_url;
-      logoUrl = getFullLogoUrl(logoUrl);
-      
-      // Set the processed logo URL
-      if (logoUrl) {
-        detail.logo = logoUrl;
+    const response: AxiosResponse<SystemTenantDetail> = await axiosInstance.get(
+      `/system/tenants/${id}`
+    );
+    const detail = response.data;
+    const baseURL = env.apiBaseUrl;
+    // Helper function to convert relative path to full URL
+    const getFullLogoUrl = (
+      logoPath: string | undefined | null
+    ): string | undefined => {
+      if (
+        !logoPath ||
+        typeof logoPath !== 'string' ||
+        logoPath === '[object Object]'
+      ) {
+        return undefined;
       }
-      
-      console.log('Tenant Detail API Response:', {
-        id: detail.id,
-        name: detail.name,
-        originalLogo: response.data.logo,
-        originalCompanyLogoUrl: response.data.company?.logo_url,
-        processedLogo: detail.logo,
-        baseURL,
-      });
-      
-      return detail;
-    } catch (error) {
-      console.error(` Failed to fetch tenant details (id=${id}):`, error);
-      throw error;
+      // If it's already a full URL (starts with http:// or https://), return as is
+      if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
+        return logoPath;
+      }
+      // If it's a relative path (starts with /), prepend base URL
+      if (logoPath.startsWith('/')) {
+        return `${baseURL}${logoPath}`;
+      }
+      // Otherwise, assume it's a relative path and prepend base URL with /
+      return `${baseURL}/${logoPath}`;
+    };
+    // Extract logo from direct logo property or company.logo_url
+    let logoUrl = detail.logo || detail.company?.logo_url;
+    logoUrl = getFullLogoUrl(logoUrl);
+    // Set the processed logo URL
+    if (logoUrl) {
+      detail.logo = logoUrl;
     }
+
+    return detail;
   },
 
   create: async (data: {
@@ -175,48 +157,30 @@ export const SystemTenantApi = {
     adminName?: string;
     adminEmail?: string;
   }): Promise<SystemTenant> => {
-    try {
-      if (data.logo instanceof File) {
-        const formData = new FormData();
-        // Append logo file first
-        formData.append('logo', data.logo);
-        // Append other fields as form fields
-        formData.append('name', data.name);
-        formData.append('domain', data.domain || '');
-        formData.append('adminName', data.adminName || '');
-        formData.append('adminEmail', data.adminEmail || '');
-
-        console.log('Sending FormData with logo as multipart:', {
-          logo: data.logo.name,
-          logoSize: data.logo.size,
-          logoType: data.logo.type,
-          name: data.name,
-          domain: data.domain,
-          adminName: data.adminName,
-          adminEmail: data.adminEmail,
-        });
-
-        const response: AxiosResponse<SystemTenant> = await axiosInstance.post(
-          '/system/tenants',
-          formData,
-          {
-            // Axios will automatically set Content-Type with boundary for FormData
-            // We don't need to set headers here
-          }
-        );
-        console.log(' Tenant created successfully:', response.data);
-        return response.data;
-      } else {
-        const response: AxiosResponse<SystemTenant> = await axiosInstance.post(
-          '/system/tenants',
-          data
-        );
-        console.log(' Tenant created successfully:', response.data);
-        return response.data;
-      }
-    } catch (error) {
-      console.error(' Failed to create tenant:', error);
-      throw error;
+    if (data.logo instanceof File) {
+      const formData = new FormData();
+      // Append logo file first
+      formData.append('logo', data.logo);
+      // Append other fields as form fields
+      formData.append('name', data.name);
+      formData.append('domain', data.domain || '');
+      formData.append('adminName', data.adminName || '');
+      formData.append('adminEmail', data.adminEmail || '');
+      const response: AxiosResponse<SystemTenant> = await axiosInstance.post(
+        '/system/tenants',
+        formData,
+        {
+          // Axios will automatically set Content-Type with boundary for FormData
+          // We don't need to set headers here
+        }
+      );
+      return response.data;
+    } else {
+      const response: AxiosResponse<SystemTenant> = await axiosInstance.post(
+        '/system/tenants',
+        data
+      );
+      return response.data;
     }
   },
 
@@ -224,49 +188,27 @@ export const SystemTenantApi = {
     id: string,
     status: 'active' | 'suspended'
   ): Promise<SystemTenant> => {
-    try {
-      const response = await axiosInstance.put(
-        `/system/tenants/${id}/status`,
-        {},
-        {
-          params: { status },
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-      console.log(' System tenant status updated:', response.data);
-      return response.data;
-    } catch (error) {
-      const axiosError = error as AxiosError<{ message?: string }>;
-      console.error(
-        ` Failed to update status (id=${id}):`,
-        axiosError.response?.data ?? axiosError.message
-      );
-      throw error;
-    }
+    const response = await axiosInstance.put(
+      `/system/tenants/${id}/status`,
+      {},
+      {
+        params: { status },
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    return response.data;
   },
 
   remove: async (id: string): Promise<{ deleted: boolean; id: string }> => {
-    try {
-      const response: AxiosResponse<{ deleted: boolean; id: string }> =
-        await axiosInstance.delete(`/system/tenants/${id}`);
-      console.log(' Tenant deleted:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error(` Failed to delete tenant (id=${id}):`, error);
-      throw error;
-    }
+    const response: AxiosResponse<{ deleted: boolean; id: string }> =
+      await axiosInstance.delete(`/system/tenants/${id}`);
+    return response.data;
   },
 
   restore: async (id: string): Promise<{ restored: boolean; id: string }> => {
-    try {
-      const response: AxiosResponse<{ restored: boolean; id: string }> =
-        await axiosInstance.put(`/system/tenants/${id}/restore`);
-      console.log(' Tenant restored successfully:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error(` Failed to restore tenant (id=${id}):`, error);
-      throw error;
-    }
+    const response: AxiosResponse<{ restored: boolean; id: string }> =
+      await axiosInstance.put(`/system/tenants/${id}/restore`);
+    return response.data;
   },
 
   update: async (data: {
@@ -288,21 +230,10 @@ export const SystemTenantApi = {
         }
         formData.append('logo', data.logo);
 
-        console.log('Sending FormData for tenant update with logo as multipart:', {
-          tenantId: data.tenantId,
-          companyName: data.companyName,
-          domain: data.domain,
-          logo: data.logo.name,
-          logoSize: data.logo.size,
-          logoType: data.logo.type,
-        });
-
         const response: AxiosResponse<SystemTenant> = await axiosInstance.put(
           '/system/tenants',
           formData
         );
-
-        console.log(' Tenant updated successfully:', response.data);
         return response.data;
       } else {
         // Use JSON when logo is a string or not provided
@@ -311,12 +242,10 @@ export const SystemTenantApi = {
           data
         );
 
-        console.log(' Tenant updated successfully:', response.data);
         return response.data;
       }
-    } catch (error) {
-      console.error(` Failed to update tenant (id=${data.tenantId}):`, error);
-      throw error;
+    } catch {
+      throw new Error('Failed to update tenant');
     }
   },
 
@@ -374,10 +303,8 @@ export const SystemTenantApi = {
           tenants = res.data.data;
         }
       }
-      console.log(`Fetched ${tenants.length} tenants`);
       return tenants;
-    } catch (error) {
-      console.error('Error fetching tenants:', error);
+    } catch {
       return [];
     }
   },

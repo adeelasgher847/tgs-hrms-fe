@@ -25,8 +25,9 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
+import { PAGINATION } from '../../constants/appConstants';
 
-const ITEMS_PER_PAGE = 25; 
+const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
 const statusConfig: Record<
   string,
@@ -52,7 +53,6 @@ const statusConfig: Record<
     icon: <UndoIcon fontSize='small' sx={{ mr: 0.5 }} />,
   },
 };
-
 
 interface LeaveHistoryProps {
   leaves: Leave[];
@@ -109,8 +109,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           setLoadingAllLeaves(true);
           const allLeaves = await onExportAll();
           setAllLeavesForFilter(allLeaves);
-        } catch (error) {
-          console.error('Error fetching all leaves for filter:', error);
+        } catch {
           setAllLeavesForFilter([]);
         } finally {
           setLoadingAllLeaves(false);
@@ -163,21 +162,22 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
   // When employee is filtered, disable server pagination and use client-side filtering
   // This ensures we can filter all available leaves, not just the current page
-  const useServerPagination = !isEmployeeFiltered && !!onPageChange && serverTotalPages > 0;
+  const useServerPagination =
+    !isEmployeeFiltered && !!onPageChange && serverTotalPages > 0;
   const currentPage = useServerPagination ? serverCurrentPage : page;
-  
+
   // When employee is filtered, calculate pagination based on filtered results
   const filteredTotalItems = filteredLeaves.length;
   const totalPages = useServerPagination
     ? serverTotalPages
     : Math.max(1, Math.ceil(filteredTotalItems / ITEMS_PER_PAGE));
-  
+
   // When employee is filtered, use filtered count; otherwise use server total
   const totalItems = isEmployeeFiltered
     ? filteredTotalItems
     : useServerPagination
-    ? serverTotalItems
-    : filteredTotalItems;
+      ? serverTotalItems
+      : filteredTotalItems;
 
   // Use normal pagination for all cases
   const paginatedLeaves = useServerPagination
@@ -204,7 +204,12 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
       // Determine which API to call based on user role and view mode
       const role = userRole || '';
-      const isAdminRole = ['hr-admin', 'system-admin', 'admin', 'network-admin'].includes(role);
+      const isAdminRole = [
+        'hr-admin',
+        'system-admin',
+        'admin',
+        'network-admin',
+      ].includes(role);
 
       if (isAdminRole) {
         // Admin/HR Admin/Network Admin - export all leaves for tenant
@@ -229,8 +234,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error exporting leave history:', error);
+    } catch {
       alert('Failed to export leave history. Please try again.');
     } finally {
       setExporting(false);
@@ -318,7 +322,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         </Box>
       </Box>
 
-      {(isLoading || loadingAllLeaves) ? (
+      {isLoading || loadingAllLeaves ? (
         <Paper elevation={1} sx={{ boxShadow: 'none', py: 6 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <CircularProgress />
@@ -376,8 +380,8 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                             sx: {
                               position: 'relative',
                               left: '-115px',
-                            }
-                          }
+                            },
+                          },
                         }}
                       >
                         <Typography
@@ -490,14 +494,10 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         }}
       >
         {(() => {
-          // When admin filters by employee:
-          // - Hide pagination if filtered records are less than or equal to page limit
-          // - Show pagination only if filtered records exceed page limit
-          // Otherwise, show pagination if there are multiple pages
-          const shouldShowPagination = isEmployeeFiltered
-            ? filteredTotalItems > ITEMS_PER_PAGE
-            : totalPages > 1;
-          
+          // Always show pagination if there are multiple pages
+          // This ensures users can always navigate between pages, even from the last page
+          const shouldShowPagination = totalPages > 1;
+
           return shouldShowPagination ? (
             <Pagination
               count={totalPages}

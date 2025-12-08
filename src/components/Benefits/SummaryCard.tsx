@@ -16,7 +16,6 @@ const SummaryCard = ({ title, value, icon }: SummaryCardProps) => {
 
   const bgColor = darkMode ? theme.palette.background.paper : '#fff';
   const textColor = darkMode ? '#ccc' : '#111';
-  const borderColor = darkMode ? '#333' : '#e0e0e0';
 
   const titleTranslations: Record<string, { en: string; ar: string }> = {
     'Total Active Benefits': {

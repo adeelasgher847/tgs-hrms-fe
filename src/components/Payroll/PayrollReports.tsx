@@ -50,7 +50,6 @@ const PayrollReports: React.FC = () => {
   const bgColor = effectiveDarkMode
     ? '#121212'
     : theme.palette.background.default;
-  const cardBg = effectiveDarkMode ? '#1a1a1a' : '#fff';
   const textColor = effectiveDarkMode ? '#fff' : '#000';
 
   useEffect(() => {
@@ -81,8 +80,7 @@ const PayrollReports: React.FC = () => {
           tenantId: defaultTenantId,
         });
         setStatistics(stats);
-      } catch (error) {
-        console.error('Error loading initial payroll data:', error);
+      } catch {
         snackbar.error('Failed to load payroll data');
       } finally {
         setLoadingTenants(false);
@@ -103,7 +101,7 @@ const PayrollReports: React.FC = () => {
           tenantId: selectedTenantId,
         });
         setStatistics(stats);
-      } catch (error) {
+      } catch {
         snackbar.error('Failed to load payroll statistics');
       } finally {
         setStatsLoading(false);
@@ -266,16 +264,16 @@ const PayrollReports: React.FC = () => {
         </Stack>
       </Box>
 
-      <Paper sx={{ backgroundColor:'unset',boxShadow:'none' }}>
+      <Paper sx={{ backgroundColor: 'unset', boxShadow: 'none' }}>
         {statsLoading ? (
-          <Box sx={{ textAlign: 'center', py: 4}}>
+          <Box sx={{ textAlign: 'center', py: 4 }}>
             <CircularProgress />
           </Box>
         ) : !statistics ? (
           <Alert severity='info'>No statistics available</Alert>
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Paper sx={{ p: 2,boxShadow:'none' }}>
+            <Paper sx={{ p: 2, boxShadow: 'none' }}>
               <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
                 Monthly Trend
               </Typography>
@@ -293,7 +291,7 @@ const PayrollReports: React.FC = () => {
               )}
             </Paper>
 
-            <Paper sx={{ p: 2,boxShadow:'none' }}>
+            <Paper sx={{ p: 2, boxShadow: 'none' }}>
               <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
                 Department Comparison
               </Typography>

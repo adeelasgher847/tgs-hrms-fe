@@ -20,7 +20,7 @@ import {
   Group as GroupIcon,
   Add as AddIcon,
 } from '@mui/icons-material';
-import UserAvatar from '../common/UserAvatar';
+import UserAvatar from '../Common/UserAvatar';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
 import { useLanguage } from '../../hooks/useLanguage';
@@ -48,7 +48,9 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
   darkMode = false,
 }) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [adminTeamMembers, setAdminTeamMembers] = useState<AdminTeamMember[]>([]);
+  const [adminTeamMembers, setAdminTeamMembers] = useState<AdminTeamMember[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { language } = useLanguage();
@@ -88,7 +90,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
       try {
         setLoading(true);
         setError(null);
-        
+
         if (checkIsManager()) {
           // Load manager's team members
           const response = await teamApiService.getMyTeamMembers(1);
@@ -177,7 +179,9 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
           <Box sx={{ p: 3 }}>
             <Alert severity='error'>{error}</Alert>
           </Box>
-        ) : (isAdmin() ? adminTeamMembers.length === 0 : teamMembers.length === 0) ? (
+        ) : (
+            isAdmin() ? adminTeamMembers.length === 0 : teamMembers.length === 0
+          ) ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <GroupIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
             <Typography

@@ -37,7 +37,6 @@ import {
   type EmployeeSalary,
   type EmployeeSalaryAllowance,
   type EmployeeSalaryDeduction,
-  type EmployeeSalaryResponse,
   type PayrollConfig,
 } from '../../api/payrollApi';
 import { getCurrentUser, getUserRole } from '../../utils/auth';
@@ -48,6 +47,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { type Dayjs } from 'dayjs';
 import employeeApi from '../../api/employeeApi';
+import { PAGINATION } from '../../constants/appConstants';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -99,7 +99,7 @@ const EmployeeSalaryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25;
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] =
@@ -160,8 +160,7 @@ const EmployeeSalaryPage: React.FC = () => {
       const allEmps = await employeeApi.getAllEmployees({}, null);
       const employee = allEmps.items.find(emp => emp.user_id === userId);
       return employee?.id || null;
-    } catch (error) {
-      console.error('Failed to get current employee ID:', error);
+    } catch {
       return null;
     }
   }, [currentUser?.id]);
@@ -176,8 +175,7 @@ const EmployeeSalaryPage: React.FC = () => {
       setEmployees(response.items || []);
       setTotalPages(response.totalPages || 1);
       setTotalRecords(response.total || 0);
-    } catch (error) {
-      console.error('Failed to load employee salaries:', error);
+    } catch {
       snackbar.error('Failed to load employee salaries');
     } finally {
       setLoading(false);
@@ -196,7 +194,6 @@ const EmployeeSalaryPage: React.FC = () => {
       const response = await payrollApi.getEmployeeSalary(employeeId);
       setMySalary(response.salary);
     } catch (error) {
-      console.error('Failed to load my salary:', error);
       if (
         error &&
         typeof error === 'object' &&
@@ -242,8 +239,7 @@ const EmployeeSalaryPage: React.FC = () => {
           sortedHistory[0] ||
           employee.salary;
         setSelectedSalary(activeSalary);
-      } catch (error) {
-        console.error('Failed to load salary history:', error);
+      } catch {
         setSalaryHistory([]);
         setSelectedSalary(employee.salary);
       } finally {
@@ -334,8 +330,7 @@ const EmployeeSalaryPage: React.FC = () => {
         setAllowances([]);
         setDeductions([]);
       }
-    } catch (error) {
-      console.error('Failed to load payroll config:', error);
+    } catch {
       // Use empty defaults if config fails to load
       setBasePayComponents({
         basic: 0,
@@ -471,8 +466,7 @@ const EmployeeSalaryPage: React.FC = () => {
         setNotes('');
       }
       setEditModalOpen(true);
-    } catch (error) {
-      console.error('Failed to load employee salary:', error);
+    } catch {
       snackbar.error('Failed to load salary information');
     }
   };
@@ -570,8 +564,7 @@ const EmployeeSalaryPage: React.FC = () => {
       } else {
         loadMySalary();
       }
-    } catch (error) {
-      console.error('Failed to save salary:', error);
+    } catch {
       snackbar.error('Failed to save salary structure');
     }
   };
@@ -1321,11 +1314,7 @@ const EmployeeSalaryPage: React.FC = () => {
                                 setStatus('active');
                                 setNotes('');
                                 setEditModalOpen(true);
-                              } catch (error) {
-                                console.error(
-                                  'Failed to load salary defaults:',
-                                  error
-                                );
+                              } catch {
                                 snackbar.error(
                                   'Failed to load salary defaults'
                                 );
@@ -1952,8 +1941,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           setStatus('active');
                           setNotes('');
                         }
-                      } catch (error) {
-                        console.error('Failed to load employee salary:', error);
+                      } catch {
                         snackbar.error('Failed to load salary information');
                       }
                     }
