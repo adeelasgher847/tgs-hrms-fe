@@ -23,6 +23,7 @@ import systemDashboardApiService, {
 } from '../../api/systemDashboardApi';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import rolesApiService, { type Role } from '../../api/rolesApi';
+import { PAGINATION } from '../../constants/appConstants';
 
 interface Tenant {
   id: string;
@@ -35,7 +36,7 @@ const AuditLogs: React.FC = () => {
   const [logs, setLogs] = useState<RecentLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 25; // Backend returns 25 records per page
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE; // Backend returns records per page
 
   // Filter states
   const [selectedUserRole, setSelectedUserRole] = useState<string>('');
@@ -59,8 +60,7 @@ const AuditLogs: React.FC = () => {
           .filter(t => t.status === 'active' && t.isDeleted === false)
           .map(t => ({ id: t.id, name: t.name }));
         setTenants(activeTenants);
-      } catch (error) {
-        console.error('Error fetching tenants:', error);
+      } catch {
         setTenants([]);
       } finally {
         setTenantsLoading(false);
@@ -81,8 +81,7 @@ const AuditLogs: React.FC = () => {
           name: role.name.toLowerCase(),
         }));
         setRoles(rolesWithLowercaseNames);
-      } catch (error) {
-        console.error('Error fetching roles:', error);
+      } catch {
         setRoles([]);
       } finally {
         setRolesLoading(false);
@@ -114,8 +113,8 @@ const AuditLogs: React.FC = () => {
           filters
         );
         setLogs(response);
-      } catch (err) {
-        console.error('Error fetching system logs:', err);
+      } catch {
+        // Keep previous logs if fetch fails
       } finally {
         setLogsLoading(false);
       }

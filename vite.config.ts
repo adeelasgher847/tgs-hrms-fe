@@ -40,11 +40,6 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
-    hmr: {
-      host: '192.168.0.141',
-      protocol: 'ws',
-      port: 5173,
-    },
   },
   test: {
     projects: [

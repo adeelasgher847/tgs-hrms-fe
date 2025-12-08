@@ -11,8 +11,6 @@ import {
   TableHead,
   TableRow,
   Chip,
-  Snackbar,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -34,6 +32,8 @@ import AssignEmployeeBenefit from './AssignEmployeeBenefit';
 import employeeBenefitApi from '../../api/employeeBenefitApi';
 import benefitsApi from '../../api/benefitApi';
 import type { EmployeeWithBenefits } from '../../api/employeeBenefitApi';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 
@@ -42,10 +42,9 @@ const EmployeeBenefits: React.FC = () => {
   const [employees, setEmployees] = useState<EmployeeWithBenefits[]>([]);
   const [selectedBenefit, setSelectedBenefit] = useState<unknown | null>(null);
   const [openBenefitDialog, setOpenBenefitDialog] = useState(false);
-  const [showSnackbar, setShowSnackbar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [benefitLoading, setBenefitLoading] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<
     'all' | 'active' | 'expired' | 'cancelled'
@@ -94,8 +93,8 @@ const EmployeeBenefits: React.FC = () => {
             : (pageNum - 1) * ITEMS_PER_PAGE + employeesWithBenefitsCount
         );
       }
-    } catch (error) {
-      console.error('Error fetching employee benefits:', error);
+    } catch {
+      // Keep previous grid state if fetch fails
     } finally {
       setLoading(false);
     }
@@ -121,8 +120,8 @@ const EmployeeBenefits: React.FC = () => {
       });
 
       setOpenBenefitDialog(true);
-    } catch (error) {
-      console.error('Error fetching benefit details:', error);
+    } catch {
+      // Keep previous selection if details fetch fails
     } finally {
       setBenefitLoading(false);
     }
@@ -140,14 +139,11 @@ const EmployeeBenefits: React.FC = () => {
       await employeeBenefitApi.cancelEmployeeBenefit(
         selectedBenefit.benefitAssignmentId
       );
-      setSnackbarMessage('Benefit cancelled successfully!');
-      setShowSnackbar(true);
+      showSuccess('Benefit cancelled successfully!');
       setOpenBenefitDialog(false);
       await fetchEmployees();
-    } catch (error) {
-      console.error('Error cancelling benefit:', error);
-      setSnackbarMessage('Failed to cancel benefit.');
-      setShowSnackbar(true);
+    } catch {
+      showError('Failed to cancel benefit.');
     }
   };
 
@@ -229,9 +225,8 @@ const EmployeeBenefits: React.FC = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error while downloading CSV:', error);
-      alert('An error occurred while downloading the CSV.');
+    } catch {
+      showError('An error occurred while downloading the CSV.');
     }
   };
 
@@ -288,6 +283,7 @@ const EmployeeBenefits: React.FC = () => {
               <IconButton
                 color='primary'
                 onClick={handleDownload}
+                aria-label='Download employee benefits CSV'
                 sx={{
                   backgroundColor: 'primary.main',
                   borderRadius: '6px',
@@ -296,7 +292,7 @@ const EmployeeBenefits: React.FC = () => {
                   '&:hover': { backgroundColor: 'primary.dark' },
                 }}
               >
-                <FileDownloadIcon />
+                <FileDownloadIcon aria-hidden='true' />
               </IconButton>
             </Tooltip>
           </Box>
@@ -403,8 +399,7 @@ const EmployeeBenefits: React.FC = () => {
         onClose={() => setOpenForm(false)}
         onAssigned={() => {
           fetchEmployees();
-          setSnackbarMessage('Benefit assigned successfully!');
-          setShowSnackbar(true);
+          showSuccess('Benefit assigned successfully!');
         }}
       />
 
@@ -460,20 +455,12 @@ const EmployeeBenefits: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={showSnackbar}
-        autoHideDuration={2500}
-        onClose={() => setShowSnackbar(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          severity={snackbarMessage.includes('Failed') ? 'error' : 'success'}
-          variant='filled'
-          onClose={() => setShowSnackbar(false)}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };

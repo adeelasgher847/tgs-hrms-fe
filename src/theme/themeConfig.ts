@@ -120,7 +120,9 @@ const darkPalette = {
 // Common options for both themes
 const commonThemeOptions: ThemeOptions = {
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    // Use global SF Pro Display font (loaded in App.css)
+    fontFamily:
+      '"SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     h1: { fontWeight: 700 },
     h2: { fontWeight: 700 },
     h3: { fontWeight: 600 },

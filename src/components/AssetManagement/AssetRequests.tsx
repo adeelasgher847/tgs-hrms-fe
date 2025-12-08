@@ -43,10 +43,12 @@ import {
   type AssetRequest as ApiAssetRequest,
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
-import ConfirmationDialog from './ConfirmationDialog';
-import { Snackbar, Alert } from '@mui/material';
+import { DeleteConfirmationDialog } from '../Common/DeleteConfirmationDialog';
 import { type AssetSubcategory } from '../../api/assetApi';
 import { formatDate } from '../../utils/dateUtils';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
+import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
@@ -97,7 +99,6 @@ const getCurrentUserId = () => {
   return '1'; // Default fallback
 };
 
-
 // Normalize status to ensure it matches expected values
 const normalizeRequestStatus = (
   status: string
@@ -114,12 +115,6 @@ const normalizeRequestStatus = (
     case 'canceled':
       return 'cancelled';
     default:
-      console.warn(
-        'Unknown status received from API:',
-        status,
-        'normalized to:',
-        normalized
-      );
       return 'pending'; // Default fallback
   }
 };
@@ -192,27 +187,12 @@ const AssetRequests: React.FC = () => {
     page: number;
     limit: number;
   } | null>(null); // Track last fetched page/limit
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error' | 'warning' | 'info';
-  }>({ open: false, message: '', severity: 'success' });
-
-  const showSnackbar = (
-    message: string,
-    severity: 'success' | 'error' | 'warning' | 'info' = 'success'
-  ) => {
-    setSnackbar({ open: true, message, severity });
-  };
-
-  const handleSnackbarClose = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  };
+  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   // Pagination state
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 25, // Backend returns 25 records per page
+    limit: PAGINATION.DEFAULT_PAGE_SIZE, // Backend returns records per page
     total: 0,
     totalPages: 0,
   });
@@ -275,7 +255,7 @@ const AssetRequests: React.FC = () => {
 
         setCategories(categoriesData);
       } catch (error) {
-        console.error('❌ AssetRequests - Failed to fetch categories:', error);
+        showError(error);
       } finally {
         setLoadingData(false);
       }
@@ -336,8 +316,8 @@ const AssetRequests: React.FC = () => {
 
         setSubcategories(filteredSubcategories);
       } catch (error) {
-        console.error('AssetRequests - Failed to fetch subcategories:', error);
         setSubcategories([]);
+        showError(error);
       } finally {
         setLoadingData(false);
       }
@@ -370,12 +350,6 @@ const AssetRequests: React.FC = () => {
         }
 
         if (!categoryName && categoryId) {
-          if (categories.length === 0) {
-            console.warn(
-              'Categories not loaded yet for category ID:',
-              categoryId
-            );
-          }
           categoryName = categoryId;
         }
 
@@ -455,7 +429,7 @@ const AssetRequests: React.FC = () => {
   const fetchRequests = React.useCallback(
     async (
       page: number = 1,
-      limit: number = 25,
+      limit: number = PAGINATION.DEFAULT_PAGE_SIZE,
       isInitialLoad: boolean = false
     ) => {
       if (!currentUserId) return;
@@ -517,7 +491,7 @@ const AssetRequests: React.FC = () => {
           });
         }
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        showError(error);
       } finally {
         fetchingRef.current = false;
         // Only set initial loading to false on very first load
@@ -675,21 +649,16 @@ const AssetRequests: React.FC = () => {
       fetchRequests(pagination.page, pagination.limit, false);
 
       // Show success snackbar
-      showSnackbar(
-        `Asset request for "${categoryName}" has been submitted successfully`,
-        'success'
+      showSuccess(
+        `Asset request for "${categoryName}" has been submitted successfully`
       );
 
       setIsRequestModalOpen(false);
       setSelectedCategoryId('');
       reset();
     } catch (error) {
-      console.error('Failed to submit request:', error);
       // Show error snackbar
-      showSnackbar(
-        'Failed to submit asset request. Please try again.',
-        'error'
-      );
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -733,20 +702,15 @@ const AssetRequests: React.FC = () => {
       fetchRequests(pagination.page, pagination.limit, false);
 
       // Show success snackbar
-      showSnackbar(
-        `Asset request for "${requestToCancel.category.name}" has been deleted successfully`,
-        'success'
+      showSuccess(
+        `Asset request for "${requestToCancel.category.name}" has been deleted successfully`
       );
 
       setIsCancelDialogOpen(false);
       setRequestToCancel(null);
     } catch (error) {
-      console.error('Failed to delete request:', error);
       // Show error snackbar
-      showSnackbar(
-        'Failed to delete asset request. Please try again.',
-        'error'
-      );
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -825,9 +789,7 @@ const AssetRequests: React.FC = () => {
       <TableCell>
         <StatusChip status={request.status} type='request' />
       </TableCell>
-      <TableCell>
-        {formatDate(request.requestedDate)}
-      </TableCell>
+      <TableCell>{formatDate(request.requestedDate)}</TableCell>
       <TableCell>
         {request.processedDate && formatDate(request.processedDate)}
       </TableCell>
@@ -846,14 +808,19 @@ const AssetRequests: React.FC = () => {
             onClick={() => handleCancelRequest(request)}
             size='small'
             color='error'
-            title='Delete Request'
+            aria-label={`Cancel request for ${request.category?.name || 'asset'}`}
           >
-            <DeleteIcon />
+            <DeleteIcon aria-hidden='true' />
           </IconButton>
         )}
         {request.status === 'approved' && request.assignedAssetName && (
-          <IconButton size='small' color='success'>
-            <CheckCircleIcon />
+          <IconButton
+            size='small'
+            color='success'
+            aria-label='Request approved'
+            disabled
+          >
+            <CheckCircleIcon aria-hidden='true' />
           </IconButton>
         )}
       </TableCell>
@@ -1304,32 +1271,25 @@ const AssetRequests: React.FC = () => {
       </Dialog>
 
       {/* Delete Request Confirmation Dialog */}
-      <ConfirmationDialog
+      <DeleteConfirmationDialog
         open={isCancelDialogOpen}
         title='Delete Request'
         message={`Are you sure you want to delete your request for "${requestToCancel?.category.name}"? This action cannot be undone.`}
         confirmText='Delete Request'
+        cancelText='Cancel'
         onConfirm={handleConfirmCancel}
-        onCancel={() => setIsCancelDialogOpen(false)}
-        severity='error'
+        onClose={() => setIsCancelDialogOpen(false)}
+        itemName={requestToCancel?.category.name}
         loading={loading}
       />
 
       {/* Snackbar for notifications */}
-      <Snackbar
+      <ErrorSnackbar
         open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };

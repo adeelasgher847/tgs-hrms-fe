@@ -152,8 +152,8 @@ const AssetModal: React.FC<AssetModalProps> = ({
         }
 
         setCategories(categoriesData);
-      } catch (error) {
-        console.error('❌ Failed to fetch categories:', error);
+      } catch {
+        // Leave categories empty on failure; dropdown will show no options
       } finally {
         setLoadingData(false);
       }
@@ -221,8 +221,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
 
         // Always use filtered subcategories to ensure only selected category's subcategories are shown
         setSubcategories(filteredSubcategories);
-      } catch (error) {
-        console.error('❌ Failed to fetch subcategories:', error);
+      } catch {
         setSubcategories([]);
       } finally {
         setLoadingData(false);

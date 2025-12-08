@@ -41,6 +41,7 @@ import {
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
 import { formatDate } from '../../utils/dateUtils';
+import { PAGINATION } from '../../constants/appConstants';
 
 interface AssetCategory {
   id: string;
@@ -49,9 +50,10 @@ interface AssetCategory {
   icon?: string | null;
 }
 
-interface ExtendedSystemAsset extends SystemAsset {
+interface ExtendedSystemAsset
+  extends Omit<SystemAsset, 'category_id' | 'subcategory_id'> {
   category_id?: string;
-  subcategory_id?: string;
+  subcategory_id?: string | undefined;
 }
 
 const SystemAdminAssets: React.FC = () => {
@@ -76,7 +78,7 @@ const SystemAdminAssets: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25;
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
 
   const fetchCategories = async () => {
     try {
@@ -89,8 +91,7 @@ const SystemAdminAssets: React.FC = () => {
         map.set(cat.id, cat.name);
       });
       setCategoryMap(map);
-    } catch (error: unknown) {
-      console.error('Error fetching categories:', error);
+    } catch {
       setCategories([]);
     }
   };
@@ -109,8 +110,8 @@ const SystemAdminAssets: React.FC = () => {
         map.set(subcat.id, subcat.name);
       });
       setSubcategoryMap(map);
-    } catch (error: unknown) {
-      console.error('Error fetching subcategories:', error);
+    } catch {
+      // Ignore; subcategory filter will just be empty
     }
   };
 
@@ -118,8 +119,7 @@ const SystemAdminAssets: React.FC = () => {
     try {
       const data = await assetApi.getSystemAssetsSummary();
       setSummary(Array.isArray(data) ? data : []);
-    } catch (error: unknown) {
-      console.error('Error fetching asset summary:', error);
+    } catch {
       setSummary([]);
     }
   };
@@ -153,8 +153,7 @@ const SystemAdminAssets: React.FC = () => {
       setAssets(response.items || []);
       setTotalPages(response.totalPages || 1);
       setTotalRecords(response.total || 0);
-    } catch (error: unknown) {
-      console.error('Error fetching system assets:', error);
+    } catch {
       setAssets([]);
       setTotalPages(1);
       setTotalRecords(0);

@@ -51,18 +51,18 @@ export interface UpdateLeaveStatusRequest {
   status: 'approved' | 'rejected';
 }
 
-export const leaveApi = {
-  createLeave: async (data: CreateLeaveRequest): Promise<LeaveResponse> => {
-    try {
-      const response = await axiosInstance.post('/leaves', data);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to create leave:', error);
-      throw error;
-    }
-  },
+class LeaveApiService {
+  private baseUrl = '/leaves';
 
-  getUserLeaves: async (
+  async createLeave(data: CreateLeaveRequest): Promise<LeaveResponse> {
+    const response = await axiosInstance.post<LeaveResponse>(
+      this.baseUrl,
+      data
+    );
+    return response.data;
+  }
+
+  async getUserLeaves(
     userId?: string,
     page = 1
   ): Promise<{
@@ -71,199 +71,156 @@ export const leaveApi = {
     page: number;
     limit: number;
     totalPages: number;
-  }> => {
-    try {
-      const params = userId ? { userId, page, limit: 25 } : { page, limit: 25 };
-      const response = await axiosInstance.get('/leaves', { params });
-      console.log('User leaves response:', response);
-      const data = response.data;
+  }> {
+    const params = userId ? { userId, page, limit: 25 } : { page, limit: 25 };
+    const response = await axiosInstance.get(this.baseUrl, { params });
+    const data = response.data;
 
-      if (data && data.items) return data;
-      if (Array.isArray(data)) {
-        return {
-          items: data,
-          total: data.length,
-          page: 1,
-          limit: 25,
-          totalPages: 1,
-        };
-      }
-      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
-    } catch (error) {
-      console.error('Failed to fetch user leaves:', error);
-      throw error;
+    if (data && data.items) return data;
+    if (Array.isArray(data)) {
+      return {
+        items: data,
+        total: data.length,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
     }
-  },
+    return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
+  }
 
-  getAllLeaves: async (
-    page = 1
-  ): Promise<{
+  async getAllLeaves(page = 1): Promise<{
     items: LeaveWithUser[];
     total: number;
     page: number;
     limit: number;
     totalPages: number;
-  }> => {
-    try {
-      const response = await axiosInstance.get('/leaves/all', {
-        params: { page, limit: 25 },
-      });
-      console.log('All leaves response:', response);
-      const data = response.data;
+  }> {
+    const response = await axiosInstance.get(`${this.baseUrl}/all`, {
+      params: { page, limit: 25 },
+    });
+    const data = response.data;
 
-      if (data && data.items) return data;
-      if (Array.isArray(data)) {
-        return {
-          items: data,
-          total: data.length,
-          page: 1,
-          limit: 25,
-          totalPages: 1,
-        };
-      }
-      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
-    } catch (error) {
-      console.error('Failed to fetch all leaves:', error);
-      throw error;
+    if (data && data.items) return data;
+    if (Array.isArray(data)) {
+      return {
+        items: data,
+        total: data.length,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
     }
-  },
+    return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
+  }
 
-  getTeamLeaves: async (
-    page = 1
-  ): Promise<{
+  async getTeamLeaves(page = 1): Promise<{
     items: LeaveWithUser[];
     total: number;
     page: number;
     limit: number;
     totalPages: number;
-  }> => {
-    try {
-      const response = await axiosInstance.get('/leaves/team', {
-        params: { page, limit: 25 },
-      });
-      console.log('Team leaves response:', response);
-      const data = response.data;
+  }> {
+    const response = await axiosInstance.get(`${this.baseUrl}/team`, {
+      params: { page, limit: 25 },
+    });
+    const data = response.data;
 
-      if (data && data.items) return data;
-      if (Array.isArray(data)) {
-        return {
-          items: data,
-          total: data.length,
-          page: 1,
-          limit: 25,
-          totalPages: 1,
-        };
-      }
-      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
-    } catch (error) {
-      console.error('Failed to fetch team leaves:', error);
-      throw error;
+    if (data && data.items) return data;
+    if (Array.isArray(data)) {
+      return {
+        items: data,
+        total: data.length,
+        page: 1,
+        limit: 25,
+        totalPages: 1,
+      };
     }
-  },
+    return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
+  }
 
-  updateLeaveStatus: async (
+  async updateLeaveStatus(
     id: string,
     status: 'approved' | 'rejected'
-  ): Promise<LeaveResponse> => {
-    try {
-      const response = await axiosInstance.patch(`/leaves/${id}`, { status });
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to update leave ${id} status:`, error);
-      throw error;
-    }
-  },
+  ): Promise<LeaveResponse> {
+    const response = await axiosInstance.patch<LeaveResponse>(
+      `${this.baseUrl}/${id}`,
+      { status }
+    );
+    return response.data;
+  }
 
-  cancelLeave: async (id: string): Promise<LeaveResponse> => {
-    try {
-      const response = await axiosInstance.patch(`/leaves/${id}/cancel`);
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to cancel leave ${id}:`, error);
-      throw error;
-    }
-  },
+  async cancelLeave(id: string): Promise<LeaveResponse> {
+    const response = await axiosInstance.patch<LeaveResponse>(
+      `${this.baseUrl}/${id}/cancel`
+    );
+    return response.data;
+  }
 
-  approveLeave: async (id: string): Promise<LeaveResponse> => {
-    try {
-      const response = await axiosInstance.put(`/leaves/${id}/approve`);
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to approve leave ${id}:`, error);
-      throw error;
-    }
-  },
+  async approveLeave(id: string): Promise<LeaveResponse> {
+    const response = await axiosInstance.put<LeaveResponse>(
+      `${this.baseUrl}/${id}/approve`
+    );
+    return response.data;
+  }
 
-  rejectLeave: async (
+  async rejectLeave(
     id: string,
     data?: { remarks?: string }
-  ): Promise<LeaveResponse> => {
-    try {
-      const response = await axiosInstance.put(`/leaves/${id}/reject`, data);
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to reject leave ${id}:`, error);
-      throw error;
-    }
-  },
+  ): Promise<LeaveResponse> {
+    const response = await axiosInstance.put<LeaveResponse>(
+      `${this.baseUrl}/${id}/reject`,
+      data
+    );
+    return response.data;
+  }
 
-  getLeaveTypes: async (
+  async getLeaveTypes(
     params: { page?: number; limit?: number } = { page: 1, limit: 50 }
-  ): Promise<LeaveTypeListResponse> => {
-    try {
-      const response = await axiosInstance.get('/leave-types', { params });
-      const data = response.data;
-      if (data && Array.isArray(data.items)) {
-        return data;
-      }
-      if (Array.isArray(data)) {
-        return {
-          items: data,
-          total: data.length,
-          page: 1,
-          limit: data.length,
-          totalPages: 1,
-        };
-      }
-      return { items: [] };
-    } catch (error) {
-      console.error('Failed to fetch leave types:', error);
-      throw error;
+  ): Promise<LeaveTypeListResponse> {
+    const response = await axiosInstance.get<LeaveTypeListResponse>(
+      '/leave-types',
+      { params }
+    );
+    const data = response.data;
+    if (data && Array.isArray(data.items)) {
+      return data;
     }
-  },
-  exportSelfLeavesCSV: async (): Promise<Blob> => {
-    try {
-      const response = await axiosInstance.get('/leaves/export/self', {
-        responseType: 'blob',
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to export self leaves CSV:', error);
-      throw error;
+    if (Array.isArray(data)) {
+      return {
+        items: data,
+        total: data.length,
+        page: 1,
+        limit: data.length,
+        totalPages: 1,
+      };
     }
-  },
+    return { items: [] };
+  }
 
-  exportTeamLeavesCSV: async (): Promise<Blob> => {
-    try {
-      const response = await axiosInstance.get('/leaves/export/team', {
-        responseType: 'blob',
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to export team leaves CSV:', error);
-      throw error;
-    }
-  },
+  async exportSelfLeavesCSV(): Promise<Blob> {
+    const response = await axiosInstance.get(`${this.baseUrl}/export/self`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
 
-  exportAllLeavesCSV: async (): Promise<Blob> => {
-    try {
-      const response = await axiosInstance.get('/leaves/export/all', {
-        responseType: 'blob',
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to export all leaves CSV:', error);
-      throw error;
-    }
-  },
-};
+  async exportTeamLeavesCSV(): Promise<Blob> {
+    const response = await axiosInstance.get(`${this.baseUrl}/export/team`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
+
+  async exportAllLeavesCSV(): Promise<Blob> {
+    const response = await axiosInstance.get(`${this.baseUrl}/export/all`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
+}
+
+export const leaveApiService = new LeaveApiService();
+
+// Maintain backward compatibility - export as leaveApi as well
+export const leaveApi = leaveApiService;

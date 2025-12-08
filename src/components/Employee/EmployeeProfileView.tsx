@@ -22,7 +22,7 @@ import type {
   EmployeeProfileLeaveHistoryItem,
 } from '../../api/employeeApi';
 import { leaveApi, type LeaveType } from '../../api/leaveApi';
-import UserAvatar from '../common/UserAvatar';
+import UserAvatar from '../../components/Common/UserAvatar';
 import { formatDate } from '../../utils/dateUtils';
 
 const EmployeeProfileView: React.FC = () => {
@@ -100,9 +100,7 @@ const EmployeeProfileView: React.FC = () => {
           });
         }
         setLeaveTypes(leaveTypesMap);
-        console.log('Leave types loaded:', leaveTypesMap);
-      } catch (error) {
-        console.error('Failed to fetch leave types:', error);
+      } catch {
         // Don't set error state, just log it - leave types are not critical
       } finally {
         setLoadingLeaveTypes(false);
@@ -152,7 +150,6 @@ const EmployeeProfileView: React.FC = () => {
       : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-
   if (isLoading) {
     return (
       <Box py={3} display='flex' justifyContent='center'>
@@ -177,7 +174,13 @@ const EmployeeProfileView: React.FC = () => {
     <Box py={2}>
       <Paper
         elevation={1}
-        sx={{ borderRadius: 1, p: 3, bgcolor: 'background.paper', mb: 4,boxShadow:'none' }}
+        sx={{
+          borderRadius: 1,
+          p: 3,
+          bgcolor: 'background.paper',
+          mb: 4,
+          boxShadow: 'none',
+        }}
       >
         <Typography
           variant='h5'
@@ -229,7 +232,13 @@ const EmployeeProfileView: React.FC = () => {
       {/* Recent Attendance Table */}
       <Paper
         elevation={1}
-        sx={{ borderRadius: 1, p: 3, bgcolor: 'background.paper', mb: 4,boxShadow:'none' }}
+        sx={{
+          borderRadius: 1,
+          p: 3,
+          bgcolor: 'background.paper',
+          mb: 4,
+          boxShadow: 'none',
+        }}
       >
         <Typography
           variant='h6'
@@ -280,7 +289,12 @@ const EmployeeProfileView: React.FC = () => {
       {/* Leave History Table */}
       <Paper
         elevation={1}
-        sx={{ borderRadius: 1, p: 3, bgcolor: 'background.paper',boxShadow:'none' }}
+        sx={{
+          borderRadius: 1,
+          p: 3,
+          bgcolor: 'background.paper',
+          boxShadow: 'none',
+        }}
       >
         <Typography
           variant='h6'
@@ -307,45 +321,49 @@ const EmployeeProfileView: React.FC = () => {
                 .map((lv: EmployeeProfileLeaveHistoryItem, idx: number) => {
                   // Check if lv.type is an ID (UUID format) or already a name
                   // UUID format: contains hyphens and is 36 characters long
-                  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lv.type);
-                  const leaveTypeName = isUUID && leaveTypes[lv.type]
-                    ? leaveTypes[lv.type]
-                    : lv.type; // If not UUID or name not found, show original value
-                  
+                  const isUUID =
+                    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                      lv.type
+                    );
+                  const leaveTypeName =
+                    isUUID && leaveTypes[lv.type]
+                      ? leaveTypes[lv.type]
+                      : lv.type; // If not UUID or name not found, show original value
+
                   return (
-                  <TableRow
-                    key={idx}
-                    sx={{
-                      backgroundColor:
-                        idx % 2 === 0 ? 'background.default' : 'grey.50',
-                    }}
-                  >
-                    <TableCell>
-                      {loadingLeaveTypes && isUUID ? (
-                        <CircularProgress size={16} />
-                      ) : (
-                        leaveTypeName
-                      )}
-                    </TableCell>
-                    <TableCell>{formatDate(lv.fromDate)}</TableCell>
-                    <TableCell>{formatDate(lv.toDate)}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={lv.status}
-                        sx={{
-                          bgcolor:
-                            lv.status === 'approved'
-                              ? 'success.main'
-                              : lv.status === 'Pending'
-                                ? 'primary.dark'
-                                : 'error.main',
-                          color: '#fff',
-                          fontWeight: 600,
-                        }}
-                        size='small'
-                      />
-                    </TableCell>
-                  </TableRow>
+                    <TableRow
+                      key={idx}
+                      sx={{
+                        backgroundColor:
+                          idx % 2 === 0 ? 'background.default' : 'grey.50',
+                      }}
+                    >
+                      <TableCell>
+                        {loadingLeaveTypes && isUUID ? (
+                          <CircularProgress size={16} />
+                        ) : (
+                          leaveTypeName
+                        )}
+                      </TableCell>
+                      <TableCell>{formatDate(lv.fromDate)}</TableCell>
+                      <TableCell>{formatDate(lv.toDate)}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={lv.status}
+                          sx={{
+                            bgcolor:
+                              lv.status === 'approved'
+                                ? 'success.main'
+                                : lv.status === 'Pending'
+                                  ? 'primary.dark'
+                                  : 'error.main',
+                            color: '#fff',
+                            fontWeight: 600,
+                          }}
+                          size='small'
+                        />
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
             </TableBody>

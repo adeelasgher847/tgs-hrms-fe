@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import HolidayTable from './HolidayTable';
 import AddHolidayDialog from './AddHolidayDialog';
 import HolidayCalendarView from './HolidayCalendarView';
 import UpcomingHolidayList from './UpcomingHolidayList';
+import AppButton from '../Common/AppButton';
+import { COLORS } from '../../constants/appConstants';
 
 export interface Holiday {
   id: string;
@@ -47,16 +49,18 @@ const HolidayList: React.FC = () => {
           mb: 2,
         }}
       >
-        <Typography variant='h5' sx={{ color: darkMode ? '#8f8f8f' : '#000' }}>
+        <Typography
+          variant='h5'
+          sx={{ color: darkMode ? COLORS.DARK_TEXT : COLORS.LIGHT_TEXT }}
+        >
           Holiday List
         </Typography>
-        <Button
+        <AppButton
           variant='contained'
+          text='Add Holiday'
           onClick={() => setOpen(true)}
-          sx={{ backgroundColor: '#464b8a' }}
-        >
-          Add Holiday
-        </Button>
+          sx={{ backgroundColor: COLORS.PRIMARY }}
+        />
       </Box>
       <Box
         sx={{
