@@ -356,7 +356,6 @@ const PayrollConfiguration: React.FC = () => {
           type: string;
           amount: number;
           percentage: number;
-          description?: string;
         }>;
         deductions: {
           taxPercentage: number;
@@ -375,10 +374,19 @@ const PayrollConfiguration: React.FC = () => {
         customFields?: Record<string, string | number>;
       }
 
+      // Sanitize allowances to ensure backend receives only expected fields
+      const sanitizedAllowances = allowances.map(a => ({
+        type: String(a.type),
+        amount: Number(isNaN(Number(a.amount)) ? 0 : Number(a.amount)),
+        percentage: Number(
+          isNaN(Number(a.percentage)) ? 0 : Number(a.percentage)
+        ),
+      }));
+
       const payload: PayloadType = {
         salaryCycle: salaryCycle as 'monthly' | 'weekly' | 'biweekly',
         basePayComponents,
-        allowances,
+        allowances: sanitizedAllowances,
         deductions,
         overtimePolicy,
         leaveDeductionPolicy,
@@ -915,34 +923,7 @@ const PayrollConfiguration: React.FC = () => {
                             }}
                           />
                         </Box>
-                        <TextField
-                          fullWidth
-                          label='Description'
-                          value={allowance.description || ''}
-                          onChange={e =>
-                            handleAllowanceChange(
-                              index,
-                              'description',
-                              e.target.value
-                            )
-                          }
-                          placeholder='Optional description'
-                          multiline
-                          rows={2}
-                          InputLabelProps={{
-                            sx: { color: darkMode ? '#ccc' : undefined },
-                          }}
-                          sx={{
-                            mt: 2,
-                            '& .MuiOutlinedInput-root': {
-                              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                              color: darkMode ? '#fff' : '#000',
-                              '& fieldset': {
-                                borderColor: theme.palette.divider,
-                              },
-                            },
-                          }}
-                        />
+                        {/* Description removed: not sent to backend */}
                       </Box>
                     ))}
                   </Box>
@@ -1453,29 +1434,7 @@ const PayrollConfiguration: React.FC = () => {
                           {formatPercentage(allowance.percentage)}
                         </Typography>
                       </Box>
-                      {allowance.description && (
-                        <Box>
-                          <Typography
-                            variant='body2'
-                            sx={{
-                              color: darkMode ? '#8f8f8f' : '#666',
-                              mb: 0.5,
-                              fontSize: '12px',
-                            }}
-                          >
-                            Description
-                          </Typography>
-                          <Typography
-                            variant='body1'
-                            sx={{
-                              color: darkMode ? '#fff' : '#000',
-                              fontStyle: 'italic',
-                            }}
-                          >
-                            {allowance.description}
-                          </Typography>
-                        </Box>
-                      )}
+                      {/* description display removed */}
                     </Box>
                   </Paper>
                 ))}
@@ -2078,34 +2037,7 @@ const PayrollConfiguration: React.FC = () => {
                           }}
                         />
                       </Box>
-                      <TextField
-                        fullWidth
-                        label='Description'
-                        value={allowance.description || ''}
-                        onChange={e =>
-                          handleAllowanceChange(
-                            index,
-                            'description',
-                            e.target.value
-                          )
-                        }
-                        placeholder='Optional description'
-                        multiline
-                        rows={2}
-                        InputLabelProps={{
-                          sx: { color: darkMode ? '#ccc' : undefined },
-                        }}
-                        sx={{
-                          mt: 2,
-                          '& .MuiOutlinedInput-root': {
-                            backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                            color: darkMode ? '#fff' : '#000',
-                            '& fieldset': {
-                              borderColor: theme.palette.divider,
-                            },
-                          },
-                        }}
-                      />
+                      {/* Description removed from edit modal */}
                     </Box>
                   ))}
                 </Box>

@@ -219,13 +219,12 @@ const Reports: React.FC = () => {
             days = calculateDays(record.startDate, record.endDate);
           }
 
-          const current =
-            statsMap.get(key) || {
-              approvedDays: 0,
-              pendingDays: 0,
-              rejectedDays: 0,
-              totalDays: 0,
-            };
+          const current = statsMap.get(key) || {
+            approvedDays: 0,
+            pendingDays: 0,
+            rejectedDays: 0,
+            totalDays: 0,
+          };
 
           if (record.status === 'approved') {
             current.approvedDays += days;
@@ -581,13 +580,9 @@ const Reports: React.FC = () => {
         >
           Leave Reports
         </Typography>
-        {(isAdminView || isManager) && (
-          <Box
-            display='flex'
-            alignItems='center'
-            gap={1}
-            flexWrap='wrap'
-          >
+        <Box display='flex' alignItems='center' gap={1} flexWrap='wrap'>
+          {/* Month picker should be visible only to admin roles (hide for managers and employees) */}
+          {isAdminView && (
             <TextField
               label='Month'
               type='month'
@@ -597,6 +592,9 @@ const Reports: React.FC = () => {
               InputLabelProps={{ shrink: true }}
               sx={{ minWidth: 180 }}
             />
+          )}
+
+          {(isAdminView || isManager) && (
             <Tooltip title='Export CSV'>
               <IconButton
                 color='primary'
@@ -611,8 +609,8 @@ const Reports: React.FC = () => {
                 <FileDownloadIcon />
               </IconButton>
             </Tooltip>
-          </Box>
-        )}
+          )}
+        </Box>
       </Box>
 
       {isAdminView && (
@@ -801,7 +799,9 @@ const Reports: React.FC = () => {
                             align='center'
                             sx={{ color: darkMode ? '#ccc' : '#000' }}
                           >
-                            {row.summary.remaining ?? row.summary.remainingDays ?? 0}
+                            {row.summary.remaining ??
+                              row.summary.remainingDays ??
+                              0}
                           </TableCell>
                           <TableCell
                             align='center'
@@ -893,8 +893,7 @@ const Reports: React.FC = () => {
                     } as LeaveTypeRow,
                   ];
                 }
-              }
-            );
+              });
 
             // Use backend limit (stored in state) or default to 25
             const ITEMS_PER_PAGE = paginationLimit || 25;
