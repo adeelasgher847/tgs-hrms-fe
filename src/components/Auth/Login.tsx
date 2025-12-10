@@ -290,18 +290,44 @@ const Login: React.FC = () => {
         navigate(getDefaultDashboardRoute(role), { replace: true });
       }
     } catch (err: unknown) {
-      const error = err as {
-        response?: {
-          data?: {
-            field?: string;
-            message?: string;
-          };
-        };
-      };
+      const error = err as any;
       const data = error?.response?.data ?? null;
-      if (data?.field === 'email') setEmailError(data.message || '');
-      else if (data?.field === 'password')
-        setPasswordError(data.message || '');
+
+      // API may return different shapes: { field, message }, { errors: [{field, message}] }, or { message }
+      if (data) {
+        if (data.field) {
+          if (data.field === 'email') setEmailError(data.message || '');
+          else if (data.field === 'password')
+            setPasswordError(data.message || '');
+          else showError(data.message || 'Login failed');
+        } else if (Array.isArray(data.errors)) {
+          // Map multiple field errors to corresponding inputs
+          data.errors.forEach((errItem: any) => {
+            if (errItem.field === 'email') setEmailError(errItem.message || '');
+            else if (errItem.field === 'password')
+              setPasswordError(errItem.message || '');
+          });
+          // If there is a top-level message, show it as snackbar
+          if (data.message) showError(data.message);
+        } else if (data.message) {
+          // Generic message (e.g., invalid credentials) - show under password if credentials issue
+          const msg = String(data.message);
+          // Heuristic: if message mentions credential or password, attach to password field
+          if (/password|credential|invalid/i.test(msg)) {
+            setPasswordError(msg);
+          } else if (/email/i.test(msg)) {
+            setEmailError(msg);
+          } else {
+            showError(msg);
+          }
+        } else {
+          showError(
+            'Login failed. Please check your credentials and try again.'
+          );
+        }
+      } else {
+        showError('Login failed. Please check your credentials and try again.');
+      }
     } finally {
       setIsLoading(false);
     }
