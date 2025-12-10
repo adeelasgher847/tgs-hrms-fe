@@ -35,10 +35,6 @@ export async function validateToken(): Promise<TokenValidationResult> {
       errorResponse?.response?.status === 401 ||
       errorResponse?.response?.status === 403
     ) {
-      console.warn(
-        'Token validation failed - authentication error:',
-        errorResponse?.response?.status
-      );
       return {
         isValid: false,
         error: 'Token is invalid or user has been deleted',
@@ -47,11 +43,6 @@ export async function validateToken(): Promise<TokenValidationResult> {
 
     // For other errors (404, 500, network issues), we'll assume the token is still valid
     // This prevents network issues from logging out users
-    console.warn(
-      'Token validation failed with non-auth error:',
-      errorResponse?.response?.status,
-      errorResponse?.message
-    );
     return {
       isValid: true,
       error: 'Network error during validation',
@@ -131,7 +122,6 @@ export function setupTokenValidation(intervalMinutes: number = 5): () => void {
     async () => {
       const result = await validateToken();
       if (!result.isValid) {
-        console.warn('Token validation failed, logging out user');
         forceLogout();
       }
     },

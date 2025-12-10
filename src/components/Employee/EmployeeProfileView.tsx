@@ -22,7 +22,7 @@ import type {
   EmployeeProfileLeaveHistoryItem,
 } from '../../api/employeeApi';
 import { leaveApi, type LeaveType } from '../../api/leaveApi';
-import UserAvatar from '../common/UserAvatar';
+import UserAvatar from '../../components/Common/UserAvatar';
 import { formatDate } from '../../utils/dateUtils';
 
 const EmployeeProfileView: React.FC = () => {
@@ -100,9 +100,7 @@ const EmployeeProfileView: React.FC = () => {
           });
         }
         setLeaveTypes(leaveTypesMap);
-        console.log('Leave types loaded:', leaveTypesMap);
-      } catch (error) {
-        console.error('Failed to fetch leave types:', error);
+      } catch {
         // Don't set error state, just log it - leave types are not critical
       } finally {
         setLoadingLeaveTypes(false);

@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
   Avatar,
   Chip,
-  Button,
   Stack,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   MenuItem,
 } from '@mui/material';
 
@@ -26,6 +22,10 @@ import type { Team, TeamMember } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
 import TeamMemberList from './TeamMemberList';
+import AppButton from '../Common/AppButton';
+import AppCard from '../Common/AppCard';
+import AppSelect from '../Common/AppSelect';
+import { COLORS } from '../../constants/appConstants';
 
 interface MyTeamsProps {
   teams: Team[];
@@ -117,10 +117,9 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
         try {
           setLoadingEmployees(true);
           const response = await teamApiService.getAvailableEmployees(1, 25);
-          console.log('🔍 Available employees (frontend):', response);
           setAvailableEmployees(response.items || []);
-        } catch (error) {
-          console.error('❌ Error loading available employees:', error);
+        } catch {
+          snackbar.error('Failed to load available employees.');
         } finally {
           setLoadingEmployees(false);
         }
@@ -189,7 +188,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
         }}
       >
         {teams.map(team => (
-          <Card
+          <AppCard
             key={team.id}
             sx={{
               backgroundColor: darkMode ? '#2d2d2d' : '#fff',
@@ -201,9 +200,10 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                 transform: 'translateY(-2px)',
                 transition: 'all 0.3s ease-in-out',
               },
+              p: 3,
             }}
           >
-            <CardContent sx={{ flexGrow: 1 }}>
+            <Box sx={{ flexGrow: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Avatar
                   sx={{
@@ -248,7 +248,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   size='small'
                   icon={<PersonIcon />}
                   sx={{
-                    backgroundColor: '#484c7f',
+                    backgroundColor: COLORS.PRIMARY,
                     color: 'white',
                     fontSize: '0.75rem',
                   }}
@@ -256,41 +256,45 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
               </Box>
 
               <Stack direction='row' spacing={1} sx={{ mt: 'auto' }}>
-                <Button
+                <AppButton
                   variant='outlined'
+                  variantType='secondary'
                   size='small'
                   startIcon={<GroupIcon />}
                   onClick={() => handleViewMembers(team)}
                   sx={{
-                    borderColor: '#484c7f',
-                    color: '#484c7f',
+                    borderColor: COLORS.PRIMARY,
+                    color: COLORS.PRIMARY,
+                    backgroundColor: 'transparent',
                     '&:hover': {
-                      borderColor: '#3a3f5f',
+                      borderColor: COLORS.PRIMARY,
                       backgroundColor: 'rgba(72, 76, 127, 0.1)',
                     },
                   }}
                 >
                   {lang.viewMembers}
-                </Button>
-                <Button
+                </AppButton>
+                <AppButton
                   variant='outlined'
+                  variantType='secondary'
                   size='small'
                   startIcon={<AddIcon />}
                   onClick={() => handleAddMember(team)}
                   sx={{
-                    borderColor: '#484c7f',
-                    color: '#484c7f',
+                    borderColor: COLORS.PRIMARY,
+                    color: COLORS.PRIMARY,
+                    backgroundColor: 'transparent',
                     '&:hover': {
-                      borderColor: '#3a3f5f',
+                      borderColor: COLORS.PRIMARY,
                       backgroundColor: 'rgba(72, 76, 127, 0.1)',
                     },
                   }}
                 >
                   {lang.addMember}
-                </Button>
+                </AppButton>
               </Stack>
-            </CardContent>
-          </Card>
+            </Box>
+          </AppCard>
         ))}
       </Box>
 
@@ -310,9 +314,13 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowMemberDialog(false)}>
+          <AppButton
+            onClick={() => setShowMemberDialog(false)}
+            variantType='secondary'
+            variant='outlined'
+          >
             {lang.cancel}
-          </Button>
+          </AppButton>
         </DialogActions>
       </Dialog>
 
@@ -327,12 +335,11 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
           {lang.addMemberToTeam}
         </DialogTitle>
         <DialogContent>
-          <TextField
-            select
-            fullWidth
+          <AppSelect
             label={lang.selectEmployee}
+            fullWidth
             value={selectedEmployeeId}
-            onChange={e => setSelectedEmployeeId(e.target.value)}
+            onChange={e => setSelectedEmployeeId(e.target.value as string)}
             disabled={loadingEmployees}
             sx={{ mt: 2 }}
             SelectProps={{
@@ -360,20 +367,25 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                 - {employee.designation?.title || 'N/A'}
               </MenuItem>
             ))}
-          </TextField>
+          </AppSelect>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowAddMemberDialog(false)}>
+          <AppButton
+            onClick={() => setShowAddMemberDialog(false)}
+            variantType='secondary'
+            variant='outlined'
+          >
             {lang.cancel}
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             onClick={handleAddMemberSubmit}
             variant='contained'
+            variantType='primary'
             disabled={!selectedEmployeeId}
             sx={{ backgroundColor: '#484c7f' }}
           >
             {lang.add}
-          </Button>
+          </AppButton>
         </DialogActions>
       </Dialog>
     </Box>

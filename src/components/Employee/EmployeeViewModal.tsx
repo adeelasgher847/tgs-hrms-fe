@@ -4,11 +4,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   Box,
   Typography,
-  Card,
-  CardContent,
   Avatar,
   IconButton,
   useTheme,
@@ -17,6 +14,9 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useOutletContext } from 'react-router-dom';
+import { env } from '../../config/env';
+import AppButton from '../Common/AppButton';
+import AppCard from '../Common/AppCard';
 
 interface Employee {
   id: string;
@@ -91,9 +91,7 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
   useEffect(() => {
     if (open && employee) {
       setLoadingImages(true);
-
-      const API_BASE_URL =
-        import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const API_BASE_URL = env.apiBaseUrl;
       const toAbsoluteUrl = (path?: string | null) => {
         if (!path) return '';
         const trimmed = path.trim();
@@ -113,8 +111,6 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
         setProfileImage(profileUrl);
         setCnicFrontImage(cnicFrontUrl);
         setCnicBackImage(cnicBackUrl);
-      } catch (error) {
-        console.error('Error resolving image URLs:', error);
       } finally {
         setLoadingImages(false);
       }
@@ -156,9 +152,10 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
         {getLabel('Employee Details', 'تفاصيل الموظف')}
         <IconButton
           onClick={onClose}
+          aria-label='Close employee details dialog'
           sx={{ color: darkMode ? '#ccc' : theme.palette.grey[500] }}
         >
-          <CloseIcon />
+          <CloseIcon aria-hidden='true' />
         </IconButton>
       </DialogTitle>
 
@@ -217,8 +214,10 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
             }}
           >
             <Box sx={{ flex: 1 }}>
-              <Card sx={{ backgroundColor: darkMode ? '#1e1e1e' : '#f5f5f5' }}>
-                <CardContent>
+              <AppCard
+                sx={{ backgroundColor: darkMode ? '#1e1e1e' : '#f5f5f5' }}
+              >
+                <Box sx={{ p: 2 }}>
                   <Typography variant='h6' sx={{ color: textColor, mb: 2 }}>
                     {getLabel('Personal Information', 'المعلومات الشخصية')}
                   </Typography>
@@ -278,13 +277,15 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
                       </Typography>
                     </Box>
                   </Box>
-                </CardContent>
-              </Card>
+                </Box>
+              </AppCard>
             </Box>
 
             <Box sx={{ flex: 1 }}>
-              <Card sx={{ backgroundColor: darkMode ? '#1e1e1e' : '#f5f5f5' }}>
-                <CardContent>
+              <AppCard
+                sx={{ backgroundColor: darkMode ? '#1e1e1e' : '#f5f5f5' }}
+              >
+                <Box sx={{ p: 2 }}>
                   <Typography variant='h6' sx={{ color: textColor, mb: 2 }}>
                     {getLabel('Work Information', 'معلومات العمل')}
                   </Typography>
@@ -344,8 +345,8 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
                       </Typography>
                     </Box>
                   </Box>
-                </CardContent>
-              </Card>
+                </Box>
+              </AppCard>
             </Box>
           </Box>
 
@@ -479,13 +480,14 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
         </Box>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'flex-end', p: 3 }}>
-        <Button
+        <AppButton
           onClick={onClose}
           variant='outlined'
+          variantType='secondary'
           sx={{ color: textColor, borderColor }}
         >
           {getLabel('Close', 'إغلاق')}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

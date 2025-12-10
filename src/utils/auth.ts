@@ -7,6 +7,7 @@ import {
   isManager as roleIsManager,
   isNetworkAdmin as roleIsNetworkAdmin,
   isSystemAdmin as roleIsSystemAdmin,
+  type UserRole,
 } from './roleUtils';
 
 export interface User {
@@ -14,15 +15,7 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
-  role:
-    | 'user'
-    | 'admin'
-    | 'system-admin'
-    | 'network-admin'
-    | 'hr-admin'
-    | 'hr admin'
-    | 'HR-Admin'
-    | { id: string; name: string; description: string };
+  role: UserRole;
   tenant_id?: string;
 }
 

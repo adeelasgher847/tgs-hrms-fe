@@ -80,8 +80,7 @@ const PayrollReports: React.FC = () => {
           tenantId: defaultTenantId,
         });
         setStatistics(stats);
-      } catch (error) {
-        console.error('Error loading initial payroll data:', error);
+      } catch {
         snackbar.error('Failed to load payroll data');
       } finally {
         setLoadingTenants(false);
@@ -102,8 +101,7 @@ const PayrollReports: React.FC = () => {
           tenantId: selectedTenantId,
         });
         setStatistics(stats);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (error) {
+      } catch {
         snackbar.error('Failed to load payroll statistics');
       } finally {
         setStatsLoading(false);

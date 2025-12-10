@@ -1,19 +1,12 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Grid,
   Box,
   Typography,
-  Table,
   TableHead,
   TableBody,
   TableCell,
   TableRow,
-  TableContainer,
-  Paper,
   CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
   MenuItem,
   Pagination,
   Tooltip,
@@ -25,17 +18,21 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import PeopleIcon from '@mui/icons-material/People';
 import benefitsApi from '../../api/benefitApi';
-import employeeBenefitApi from '../../api/employeeBenefitApi';
+import employeeBenefitApi, {
+  type EmployeeWithBenefits,
+  type TenantEmployeeWithBenefits,
+} from '../../api/employeeBenefitApi';
 import { departmentApiService } from '../../api/departmentApi';
 import { designationApiService } from '../../api/designationApi';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
-import {
-  getRoleName,
-  isSystemAdmin as isSystemAdminFn,
-} from '../../utils/roleUtils';
+import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
+import AppSelect from '../Common/AppSelect';
+import AppTable from '../Common/AppTable';
 
-const itemsPerPage = 25;
-const ITEMS_PER_PAGE = 25;
+import { PAGINATION } from '../../constants/appConstants';
+
+const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
+const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
 interface Tenant {
   id: string;
@@ -200,104 +197,58 @@ const BenefitReport: React.FC = () => {
               tenant_id: selectedTenant || undefined,
               page,
               limit: ITEMS_PER_PAGE,
-            });
+            } as any);
 
-          const respObj = isObject(response)
-            ? (response as Record<string, unknown>)
-            : {};
-          const items = asArray(respObj.items ?? respObj.tenants);
+          const tenants: TenantEmployeeWithBenefits[] =
+            'items' in response ? response.items : (response.tenants ?? []);
 
-          flattened = items.flatMap((tenantRaw: unknown) => {
-            if (!isObject(tenantRaw)) return [];
-            const tenant = tenantRaw as Record<string, unknown>;
-            const tenantId = toStringSafe(
-              tenant.tenant_id ?? tenant.tenantId ?? ''
-            );
-            const tenantName = toStringSafe(
-              tenant.tenant_name ?? tenant.tenantName ?? tenantId
-            );
-            const employees = asArray(tenant.employees);
-            return employees.flatMap((empRaw: unknown) => {
-              if (!isObject(empRaw)) return [];
-              const emp = empRaw as Record<string, unknown>;
-              const department = toStringSafe(emp.department, '-');
-              const designation = toStringSafe(emp.designation, '-');
-              const employeeName = toStringSafe(
-                emp.employeeName ?? emp.employee_name ?? '-'
-              );
-              const benefits = asArray(emp.benefits);
-              return benefits.map((bRaw: unknown) => {
-                const b = isObject(bRaw)
-                  ? (bRaw as Record<string, unknown>)
-                  : {};
-                const benefitType = toStringSafe(b.type ?? b.name, '-');
-                const status = toStringSafe(
-                  b.statusOfAssignment ?? b.status,
-                  '-'
-                );
-                return {
-                  tenantId,
-                  tenantName,
-                  department,
-                  designation,
-                  employeeName,
-                  benefitType,
-                  status,
-                } as BenefitRow;
-              });
-            });
-          });
+          flattened = tenants.flatMap(tenant =>
+            (tenant.employees ?? []).flatMap(emp =>
+              (emp.benefits ?? []).map(b => ({
+                tenantId: tenant.tenant_id,
+                tenantName: tenant.tenant_name,
+                department: emp.department || '-',
+                designation: emp.designation || '-',
+                employeeName: emp.employeeName || '-',
+                benefitType: b.type || b.name || '-',
+                status: b.statusOfAssignment || b.status || '-',
+              }))
+            )
+          );
 
-          backendTotalPages = asNumber(respObj.totalPages ?? 1, 1);
+          backendTotalPages =
+            ('totalPages' in response && response.totalPages) || 1;
         } else {
-          const params: Record<string, unknown> = { page };
+          const params: {
+            page: number;
+            department?: string;
+            designation?: string;
+            tenant_id?: string;
+          } = { page };
           if (selectedDepartment) params.department = selectedDepartment;
           if (selectedDesignation) params.designation = selectedDesignation;
           if (selectedTenant) params.tenant_id = selectedTenant;
 
-          const response =
+          const response: EmployeeWithBenefits[] =
             await employeeBenefitApi.getFilteredEmployeeBenefits(params);
-          const items = asArray(response);
-
-          flattened = items.flatMap((empRaw: unknown) => {
-            if (!isObject(empRaw)) return [];
-            const emp = empRaw as Record<string, unknown>;
-            const tenantId = toStringSafe(emp.tenantId ?? emp.tenant_id ?? '');
-            const tenantName = toStringSafe(
-              emp.tenantName ?? emp.tenant_name ?? tenantId
-            );
-            const department = toStringSafe(emp.department, '-');
-            const designation = toStringSafe(emp.designation, '-');
-            const employeeName = toStringSafe(
-              emp.employeeName ?? emp.employee_name ?? '-'
-            );
-            const benefits = asArray(emp.benefits);
-            return benefits.map((bRaw: unknown) => {
-              const b = isObject(bRaw) ? (bRaw as Record<string, unknown>) : {};
-              const benefitType = toStringSafe(b.type ?? b.name, '-');
-              const status = toStringSafe(
-                b.statusOfAssignment ?? b.status,
-                '-'
-              );
-              return {
-                tenantId,
-                tenantName,
-                department,
-                designation,
-                employeeName,
-                benefitType,
-                status,
-              } as BenefitRow;
-            });
-          });
+          flattened = (response || []).flatMap(emp =>
+            (emp.benefits || []).map(b => ({
+              tenantId: emp.tenantId ?? emp.tenant_id,
+              tenantName: emp.tenantName ?? emp.tenant_name,
+              department: emp.department || '-',
+              designation: emp.designation || '-',
+              employeeName: emp.employeeName || '-',
+              benefitType: b.type || b.name || '-',
+              status: b.statusOfAssignment || b.status || '-',
+            }))
+          );
         }
 
         if (!isMounted) return;
         setBenefitData(flattened);
         setFilteredData(flattened);
         setTotalPages(backendTotalPages);
-      } catch (error) {
-        console.error('Error fetching employee benefits:', error);
+      } catch {
         if (!isMounted) return;
         setBenefitData([]);
         setFilteredData([]);
@@ -404,24 +355,23 @@ const BenefitReport: React.FC = () => {
           Benefits Report
         </Typography>
         {isSystemAdmin && (
-          <FormControl size='small' sx={{ minWidth: 220 }}>
-            <InputLabel>Tenant</InputLabel>
-            <Select
-              value={selectedTenant}
-              onChange={e => {
-                setSelectedTenant(e.target.value as string);
-                setPage(1);
-              }}
-              label='Tenant'
-            >
-              <MenuItem value=''>All</MenuItem>
-              {tenants.map(t => (
-                <MenuItem key={t.id} value={t.id}>
-                  {t.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <AppSelect
+            label='Tenant'
+            size='small'
+            value={selectedTenant}
+            onChange={e => {
+              setSelectedTenant(e.target.value as string);
+              setPage(1);
+            }}
+            sx={{ minWidth: 220 }}
+          >
+            <MenuItem value=''>All</MenuItem>
+            {tenants.map(t => (
+              <MenuItem key={t.id} value={t.id}>
+                {t.name}
+              </MenuItem>
+            ))}
+          </AppSelect>
         )}
       </Box>
 
@@ -468,49 +418,43 @@ const BenefitReport: React.FC = () => {
         alignItems='center'
         mb={2}
       >
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl size='small' sx={{ minWidth: 220 }}>
-              <InputLabel>Department</InputLabel>
-              <Select
-                value={selectedDepartment}
-                onChange={e => {
-                  setSelectedDepartment(e.target.value as string);
-                  setPage(1);
-                }}
-                label='Department'
-              >
-                <MenuItem value=''>All</MenuItem>
-                {departments.map(d => (
-                  <MenuItem key={d.id} value={d.id}>
-                    {d.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl size='small' sx={{ minWidth: 220 }}>
-              <InputLabel>Designation</InputLabel>
-              <Select
-                value={selectedDesignation}
-                onChange={e => {
-                  setSelectedDesignation(e.target.value as string);
-                  setPage(1);
-                }}
-                label='Designation'
-                disabled={!designations.length}
-              >
-                <MenuItem value=''>All</MenuItem>
-                {designations.map(d => (
-                  <MenuItem key={d.id} value={d.title}>
-                    {d.title}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
+        <Box display='flex' gap={2} flexWrap='wrap'>
+          <AppSelect
+            label='Department'
+            size='small'
+            value={selectedDepartment}
+            onChange={e => {
+              setSelectedDepartment(e.target.value as string);
+              setPage(1);
+            }}
+            sx={{ width: 250 }}
+          >
+            <MenuItem value=''>All</MenuItem>
+            {departments.map(d => (
+              <MenuItem key={d.id} value={d.id}>
+                {d.name}
+              </MenuItem>
+            ))}
+          </AppSelect>
+          <AppSelect
+            label='Designation'
+            size='small'
+            value={selectedDesignation}
+            onChange={e => {
+              setSelectedDesignation(e.target.value as string);
+              setPage(1);
+            }}
+            disabled={!designations.length}
+            sx={{ width: 250 }}
+          >
+            <MenuItem value=''>All</MenuItem>
+            {designations.map(d => (
+              <MenuItem key={d.id} value={d.title}>
+                {d.title}
+              </MenuItem>
+            ))}
+          </AppSelect>
+        </Box>
         <Tooltip title='Download CSV'>
           <IconButton
             color='primary'
@@ -528,46 +472,42 @@ const BenefitReport: React.FC = () => {
       </Box>
 
       {/* Table */}
-      <Paper sx={{ borderRadius: 1, boxShadow: 'none' }}>
-        <TableContainer>
-          <Table>
-            <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableRow>
+      <AppTable>
+        <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+          <TableRow>
+            {isSystemAdmin && (
+              <TableCell sx={{ fontWeight: 600 }}>Tenant</TableCell>
+            )}
+            <TableCell sx={{ fontWeight: 600 }}>Department</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Designation</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Employee Name</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Benefit Type</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {paginatedData.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={isSystemAdmin ? 6 : 5} align='center'>
+                No data available
+              </TableCell>
+            </TableRow>
+          ) : (
+            paginatedData.map((row, i) => (
+              <TableRow key={i}>
                 {isSystemAdmin && (
-                  <TableCell sx={{ fontWeight: 600 }}>Tenant</TableCell>
+                  <TableCell>{row.tenantName ?? row.tenantId}</TableCell>
                 )}
-                <TableCell sx={{ fontWeight: 600 }}>Department</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Designation</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Employee Name</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Benefit Type</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                <TableCell>{row.department}</TableCell>
+                <TableCell>{row.designation}</TableCell>
+                <TableCell>{row.employeeName}</TableCell>
+                <TableCell>{row.benefitType}</TableCell>
+                <TableCell>{row.status}</TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={isSystemAdmin ? 6 : 5} align='center'>
-                    No data available
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedData.map((row, i) => (
-                  <TableRow key={i}>
-                    {isSystemAdmin && (
-                      <TableCell>{row.tenantName ?? row.tenantId}</TableCell>
-                    )}
-                    <TableCell>{row.department}</TableCell>
-                    <TableCell>{row.designation}</TableCell>
-                    <TableCell>{row.employeeName}</TableCell>
-                    <TableCell>{row.benefitType}</TableCell>
-                    <TableCell>{row.status}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+            ))
+          )}
+        </TableBody>
+      </AppTable>
 
       {/* Pagination */}
       {totalPages > 1 && (

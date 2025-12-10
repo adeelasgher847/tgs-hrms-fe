@@ -4,7 +4,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   Typography,
   Box,
   Alert,
@@ -12,6 +11,8 @@ import {
 import { Warning as WarningIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { Team } from '../../api/teamApi';
+import { COLORS } from '../../constants/appConstants';
+import AppButton from '../Common/AppButton';
 
 interface DeleteTeamDialogProps {
   open: boolean;
@@ -150,18 +151,19 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
-          {lang.cancel}
-        </Button>
-        <Button
-          onClick={handleConfirm}
-          variant='contained'
-          color='error'
+        <AppButton
+          variant='outlined'
+          text={lang.cancel}
+          onClick={onClose}
           disabled={loading}
-          sx={{ backgroundColor: theme => theme.palette.error.main }}
-        >
-          {loading ? lang.loading : lang.delete}
-        </Button>
+        />
+        <AppButton
+          variant='contained'
+          text={loading ? lang.loading : lang.delete}
+          onClick={handleConfirm}
+          disabled={loading}
+          sx={{ backgroundColor: COLORS.ERROR }}
+        />
       </DialogActions>
     </Dialog>
   );

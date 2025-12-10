@@ -295,29 +295,24 @@ class DesignationApiService {
       }>;
     }>;
   }> {
-    try {
-      const params = tenantId ? { tenant_id: tenantId } : {};
-      const response = await axiosInstance.get<{
-        tenants: Array<{
-          tenant_id: string;
-          tenant_name: string;
-          tenant_status: string;
-          departments: Array<{
-            department_id: string;
-            department_name: string;
-            designations: Array<{
-              id: string;
-              title: string;
-              created_at: string;
-            }>;
+    const params = tenantId ? { tenant_id: tenantId } : {};
+    const response = await axiosInstance.get<{
+      tenants: Array<{
+        tenant_id: string;
+        tenant_name: string;
+        tenant_status: string;
+        departments: Array<{
+          department_id: string;
+          department_name: string;
+          designations: Array<{
+            id: string;
+            title: string;
+            created_at: string;
           }>;
         }>;
-      }>(`${this.baseUrl}/all-tenants`, { params });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching all tenants with designations:', error);
-      throw error;
-    }
+      }>;
+    }>(`${this.baseUrl}/all-tenants`, { params });
+    return response.data;
   }
 }
 export const designationApiService = new DesignationApiService();

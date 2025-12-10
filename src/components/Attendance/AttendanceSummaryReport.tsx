@@ -15,12 +15,13 @@ import {
   MenuItem,
   Tooltip,
   IconButton,
-  Snackbar,
-  Alert,
   Pagination,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import attendanceSummaryApi from '../../api/reportApi';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
+import { PAGINATION } from '../../constants/appConstants';
 
 interface AttendanceSummaryItem {
   employeeName?: string;
@@ -41,24 +42,9 @@ const AttendanceSummaryReport: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25;
-  const [openToast, setOpenToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastSeverity, setToastSeverity] = useState<
-    'success' | 'error' | 'warning' | 'info'
-  >('success');
-
-  const showToast = useCallback(
-    (
-      message: string,
-      severity: 'success' | 'error' | 'warning' | 'info' = 'info'
-    ) => {
-      setToastMessage(message);
-      setToastSeverity(severity);
-      setOpenToast(true);
-    },
-    []
-  );
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
+  const { snackbar, showError, showSuccess, showWarning, closeSnackbar } =
+    useErrorHandler();
 
   // Calculate days range based on filter
   // Get tenant ID from localStorage - same pattern as other attendance pages
@@ -79,10 +65,9 @@ const AttendanceSummaryReport: React.FC = () => {
     async (page: number = 1) => {
       const tenantId = getTenantId();
       if (!tenantId) {
-        console.log('Attendance report: No tenant ID available');
         setSummaryData([]);
         setLoading(false);
-        showToast('User tenant not found. Please log in again.', 'error');
+        showError('User tenant not found. Please log in again.');
         return;
       }
 
@@ -110,14 +95,6 @@ const AttendanceSummaryReport: React.FC = () => {
           }
         };
         const days = getDaysRange();
-        console.log(
-          'Attendance report: Fetching summary for tenant:',
-          tenantId,
-          'days:',
-          days,
-          'page:',
-          page
-        );
         const resp = await attendanceSummaryApi.getAttendanceSummary(
           tenantId,
           days,
@@ -181,17 +158,15 @@ const AttendanceSummaryReport: React.FC = () => {
           );
         }
 
-        console.log('Attendance report: Data received:', items.length, 'items');
         setSummaryData(items);
       } catch (err) {
-        console.error('Attendance report: Error fetching summary:', err);
         setSummaryData([]);
-        showToast('Failed to fetch attendance summary.', 'error');
+        showError(err);
       } finally {
         setLoading(false);
       }
     },
-    [filter, itemsPerPage, showToast]
+    [filter, itemsPerPage, showError]
   );
 
   // Fetch when filter changes, reset to page 1
@@ -222,7 +197,7 @@ const AttendanceSummaryReport: React.FC = () => {
 
   const handleDownload = () => {
     if (safeData.length === 0) {
-      showToast('No data to download.', 'warning');
+      showWarning('No data to download.');
       return;
     }
 
@@ -269,7 +244,7 @@ const AttendanceSummaryReport: React.FC = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    showToast('CSV file downloaded successfully.', 'success');
+    showSuccess('CSV file downloaded successfully.');
   };
 
   return (
@@ -419,28 +394,12 @@ const AttendanceSummaryReport: React.FC = () => {
         </Box>
       )}
 
-      <Snackbar
-        open={openToast}
-        autoHideDuration={4000}
-        onClose={() => setOpenToast(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setOpenToast(false)}
-          severity={toastSeverity}
-          sx={{
-            width: '100%',
-            backgroundColor:
-              toastSeverity === 'success' ? '#2e7d32' : '#d32f2f',
-            color: 'white !important',
-            '& .MuiAlert-icon': {
-              color: 'white',
-            },
-          }}
-        >
-          {toastMessage}
-        </Alert>
-      </Snackbar>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };

@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   CircularProgress,
@@ -22,7 +18,10 @@ import {
   type EmployeeReport,
   type LeaveSummaryItem,
 } from '../../api/leaveReportApi';
+import employeeApi from '../../api/employeeApi';
 import { useIsDarkMode } from '../../theme';
+import AppCard from '../Common/AppCard';
+import AppTable from '../Common/AppTable';
 
 const getCardStyle = (darkMode: boolean) => ({
   flex: '1 1 calc(33.33% - 16px)',
@@ -48,29 +47,12 @@ interface LeaveBalance {
   carryForward: boolean;
 }
 
-function TabPanel({
-  children,
-  value,
-  index,
-}: {
-  children?: React.ReactNode;
-  value: number;
-  index: number;
-}) {
-  return (
-    <div hidden={value !== index}>
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
 const Reports: React.FC = () => {
   const darkMode = useIsDarkMode();
   const [tab] = useState(0);
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-  const [teamSummary, setTeamSummary] = useState<TeamMemberSummary[]>([]);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
   const [allLeaveReports, setAllLeaveReports] = useState<EmployeeReport[]>([]);
   const [page, setPage] = useState(1);
@@ -80,6 +62,9 @@ const Reports: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadingTab, setLoadingTab] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+  const [allEmployees, setAllEmployees] = useState<Array<{ id: string; name: string }>>([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [userInfo, setUserInfo] = useState<{
     userId: string | null;
     isManager: boolean;
@@ -92,8 +77,7 @@ const Reports: React.FC = () => {
     try {
       const info = leaveReportApi.getUserInfo();
       setUserInfo(info);
-    } catch (err) {
-      console.error('Error loading user info:', err);
+    } catch {
       setError('Failed to load user information');
       setUserInfo({
         userId: null,
@@ -115,7 +99,38 @@ const Reports: React.FC = () => {
 
   const isAdminView = isHrAdmin || isAdmin || isSystemAdmin;
 
-  // Tab change handled directly where Tabs are used (no separate handler required)
+  // Fetch all employees for admin/HR admin view
+  useEffect(() => {
+    const fetchAllEmployees = async () => {
+      if (!isAdminView) {
+        setAllEmployees([]);
+        return;
+      }
+
+      try {
+        setLoadingEmployees(true);
+        const employees = await employeeApi.getAllEmployeesWithoutPagination();
+        setAllEmployees(
+          employees.map(emp => ({
+            id: emp.id,
+            name: emp.name,
+          }))
+        );
+      } catch (err) {
+        console.error('Error fetching all employees:', err);
+        setAllEmployees([]);
+      } finally {
+        setLoadingEmployees(false);
+      }
+    };
+
+    if (userInfo) {
+      fetchAllEmployees();
+    }
+  }, [isAdminView, userInfo]);
+
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) =>
+    setTab(newValue);
 
   const handleMonthChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -131,6 +146,15 @@ const Reports: React.FC = () => {
       setSelectedMonth(parsedMonth);
     }
   };
+
+  // Extract employee names from fetched allEmployees for the filter dropdown
+  const availableEmployees = useMemo(() => {
+    if (!allEmployees || allEmployees.length === 0) return [];
+    return allEmployees
+      .map(emp => emp.name)
+      .filter((name): name is string => !!name)
+      .sort();
+  }, [allEmployees]);
 
   const filteredEmployeeReports = useMemo(() => {
     if (!allLeaveReports || allLeaveReports.length === 0) return [];
@@ -152,7 +176,15 @@ const Reports: React.FC = () => {
       }
     };
 
-    return allLeaveReports
+    // First filter by employee name if selected
+    let employeesToProcess = allLeaveReports;
+    if (selectedEmployee) {
+      employeesToProcess = allLeaveReports.filter(
+        emp => emp.employeeName === selectedEmployee
+      );
+    }
+
+    return employeesToProcess
       .map(emp => {
         const leaveRecords = emp.leaveRecords || [];
 
@@ -277,7 +309,7 @@ const Reports: React.FC = () => {
         };
       })
       .filter((emp): emp is EmployeeReport => emp !== null);
-  }, [allLeaveReports, selectedMonth, selectedYear]);
+  }, [allLeaveReports, selectedMonth, selectedYear, selectedEmployee]);
 
   const handleExport = async () => {
     try {
@@ -342,8 +374,8 @@ const Reports: React.FC = () => {
         link.download = `Leave_Report_${now.toISOString().slice(0, 10)}.csv`;
         link.click();
       }
-    } catch (err) {
-      console.error('Export failed:', err);
+    } catch {
+      // Silently fail export; user can retry
     }
   };
 
@@ -355,8 +387,6 @@ const Reports: React.FC = () => {
       let allEmployeeReports: EmployeeReport[] = [];
       let paginationLimit = 25;
       let totalPagesFromBackend = 1;
-      // organizationStats and leaveTypes removed (not used)
-
       const firstPageData = await leaveReportApi.getAllLeaveReports(
         1,
         selectedMonth,
@@ -390,8 +420,6 @@ const Reports: React.FC = () => {
         totalPagesFromBackend = firstPageData.totalPages || 1;
       }
 
-      // organizationStats and leaveTypes not needed here
-
       // Fetch all remaining pages if there are more pages
       if (totalPagesFromBackend > 1) {
         for (let page = 2; page <= totalPagesFromBackend; page++) {
@@ -422,8 +450,7 @@ const Reports: React.FC = () => {
                 ...pageEmployeeReports,
               ];
             }
-          } catch (err) {
-            console.error(`Error fetching page ${page}:`, err);
+          } catch {
             // Continue with next page even if one fails
           }
         }
@@ -459,17 +486,8 @@ const Reports: React.FC = () => {
       // Reset page to 1 when new data is loaded from backend (for client-side pagination)
       setPage(1);
 
-      console.log('Pagination info:', {
-        totalPages: finalTotalPages,
-        total: totalLeaveTypeRows,
-        totalEmployees: allEmployeeReports.length,
-        totalLeaveTypeRows: totalLeaveTypeRows,
-        paginationLimit: paginationLimit,
-      });
-
       setError(null);
     } catch (err: unknown) {
-      console.error('Error fetching reports:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch reports');
     } finally {
       setLoadingTab(false);
@@ -517,6 +535,12 @@ const Reports: React.FC = () => {
     // Remove 'page' from dependencies - we use client-side pagination for leave type rows
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, userInfo, isAdminView, isManager, selectedMonth, selectedYear]);
+
+  // Reset employee filter when month/year changes
+  useEffect(() => {
+    setSelectedEmployee(null);
+    setPage(1);
+  }, [selectedMonth, selectedYear]);
 
   if (!userInfo) {
     return (
@@ -610,14 +634,13 @@ const Reports: React.FC = () => {
       {isAdminView && (
         <Box>
           {error && <Typography color='error'>{error}</Typography>}
-          <TableContainer
-            component={Card}
+          <AppCard
+            pading={0}
             sx={{
-              boxShadow: 'none',
               backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
             }}
           >
-            <Table>
+            <AppTable>
               <TableHead
                 sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5' }}
               >
@@ -845,8 +868,8 @@ const Reports: React.FC = () => {
                   })()
                 )}
               </TableBody>
-            </Table>
-          </TableContainer>
+            </AppTable>
+          </AppCard>
 
           {(() => {
             // Calculate all leave type rows for pagination logic
@@ -970,40 +993,37 @@ const Reports: React.FC = () => {
             <>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
                 {leaveBalance.map((item, idx) => (
-                  <Card key={idx} sx={getCardStyle(darkMode)}>
-                    <CardContent>
-                      <Typography
-                        sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
-                        gutterBottom
-                      >
-                        {item.leaveTypeName}
-                      </Typography>
-                      <Typography
-                        variant='h4'
-                        fontWeight={600}
-                        color='primary.main'
-                      >
-                        {item.remaining}
-                      </Typography>
-                      <Typography
-                        sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
-                        variant='body2'
-                      >
-                        Used: {item.used} / {item.maxDaysPerYear}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+                  <AppCard key={idx} compact sx={getCardStyle(darkMode)}>
+                    <Typography
+                      sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+                      gutterBottom
+                    >
+                      {item.leaveTypeName}
+                    </Typography>
+                    <Typography
+                      variant='h4'
+                      fontWeight={600}
+                      color='primary.main'
+                    >
+                      {item.remaining}
+                    </Typography>
+                    <Typography
+                      sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+                      variant='body2'
+                    >
+                      Used: {item.used} / {item.maxDaysPerYear}
+                    </Typography>
+                  </AppCard>
                 ))}
               </Box>
 
-              <TableContainer
-                component={Card}
+              <AppCard
+                noShadow
                 sx={{
-                  boxShadow: 'none',
                   backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
                 }}
               >
-                <Table>
+                <AppTable>
                   <TableHead>
                     <TableRow
                       sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#ffffff' }}
@@ -1052,8 +1072,8 @@ const Reports: React.FC = () => {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
-              </TableContainer>
+                </AppTable>
+              </AppCard>
             </>
           )}
         </>

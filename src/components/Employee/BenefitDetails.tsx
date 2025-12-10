@@ -35,13 +35,11 @@ const BenefitDetails: React.FC = () => {
       try {
         const employeeId = localStorage.getItem('employeeId');
         if (!employeeId) {
-          console.warn('No employeeId found in localStorage');
           setLoading(false);
           return;
         }
 
         const response = await employeeBenefitApi.getEmployeeBenefits(page);
-        console.log('Get Employee Benefits Response:', response);
 
         const employeeData = response.find(
           (emp: { employeeId: string }) => emp.employeeId === employeeId
@@ -52,8 +50,7 @@ const BenefitDetails: React.FC = () => {
         } else {
           setBenefits([]);
         }
-      } catch (err) {
-        console.error('Error fetching employee benefits:', err);
+      } catch {
         setBenefits([]);
       } finally {
         setLoading(false);

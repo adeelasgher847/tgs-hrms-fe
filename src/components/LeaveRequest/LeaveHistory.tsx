@@ -25,8 +25,9 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
+import { PAGINATION } from '../../constants/appConstants';
 
-const ITEMS_PER_PAGE = 25;
+const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
 const statusConfig: Record<
   string,
@@ -108,8 +109,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           setLoadingAllLeaves(true);
           const allLeaves = await onExportAll();
           setAllLeavesForFilter(allLeaves);
-        } catch (error) {
-          console.error('Error fetching all leaves for filter:', error);
+        } catch {
           setAllLeavesForFilter([]);
         } finally {
           setLoadingAllLeaves(false);
@@ -234,8 +234,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error exporting leave history:', error);
+    } catch {
       alert('Failed to export leave history. Please try again.');
     } finally {
       setExporting(false);

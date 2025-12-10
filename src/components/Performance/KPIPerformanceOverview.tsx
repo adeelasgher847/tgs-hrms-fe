@@ -30,8 +30,7 @@ const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
           : kpiData;
 
         setData(filteredData);
-      } catch (error) {
-        console.error('Error fetching KPI data:', error);
+      } catch {
         setData([]);
       } finally {
         setLoading(false);

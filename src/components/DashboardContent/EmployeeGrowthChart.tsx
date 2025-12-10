@@ -70,8 +70,8 @@ const EmployeeGrowthChart: React.FC = () => {
             setSelectedTenant(data[0].id);
           }
         }
-      } catch (error) {
-        console.error('Error fetching tenants:', error);
+      } catch {
+        // Ignore tenant dropdown errors; chart will just have no data
       } finally {
         setLoadingTenants(false);
       }
@@ -89,8 +89,7 @@ const EmployeeGrowthChart: React.FC = () => {
           selectedTenant
         );
         setTenantGrowthData(data);
-      } catch (error) {
-        console.error('Error fetching tenant growth:', error);
+      } catch {
         setTenantGrowthData([]);
       }
     };

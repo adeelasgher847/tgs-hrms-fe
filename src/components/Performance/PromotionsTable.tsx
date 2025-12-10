@@ -25,6 +25,7 @@ import {
 } from '../../api/systemPerformanceApi';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import { formatDate } from '../../utils/dateUtils';
+import { PAGINATION } from '../../constants/appConstants';
 
 interface PromotionsListProps {
   tenantId: string;
@@ -45,7 +46,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
   const [employeeNames, setEmployeeNames] = useState<Record<string, string>>(
     {}
   );
-  const itemsPerPage = 25;
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
 
   const fetchEmployeeNames = useCallback(async (employeeIds: string[]) => {
     if (employeeIds.length === 0) return;
@@ -73,8 +74,8 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
       });
 
       setEmployeeNames(prev => ({ ...prev, ...namesMap }));
-    } catch (error) {
-      console.error('Failed to fetch employee names:', error);
+    } catch {
+      // Ignore name lookup failures; table will fall back to IDs
     }
   }, []);
 
@@ -124,8 +125,8 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
             : (currentPage - 1) * itemsPerPage + promotionsArray.length
         );
       }
-    } catch (error) {
-      console.error('Failed to fetch promotions:', error);
+    } catch {
+      // Leave previous promotions state if fetch fails
     } finally {
       setLoading(false);
     }

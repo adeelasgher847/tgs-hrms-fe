@@ -17,6 +17,7 @@ import PolicyForm from './PolicyForm';
 import edit from '../../assets/dashboardIcon/edit.svg';
 import deleteIcon from '../../assets/dashboardIcon/ui-delete.svg';
 import { useOutletContext } from 'react-router-dom';
+import { COLORS } from '../../constants/appConstants';
 
 const PolicyList: React.FC = () => {
   const [policies, setPolicies] = useState<Policy[]>(mockPolicies);
@@ -61,7 +62,7 @@ const PolicyList: React.FC = () => {
             setSelected(null);
             setOpenForm(true);
           }}
-          sx={{ backgroundColor: '#464b8a' }}
+          sx={{ backgroundColor: COLORS.PRIMARY }}
         >
           Add Policy
         </Button>
@@ -112,6 +113,7 @@ const PolicyList: React.FC = () => {
                     }}
                     color='success'
                     size='small'
+                    aria-label={`Edit policy ${policy.name}`}
                     sx={{
                       border: '1px solid #f0f0f0',
                       borderTopLeftRadius: '3px',
@@ -126,7 +128,8 @@ const PolicyList: React.FC = () => {
                   >
                     <img
                       src={edit}
-                      alt='Edit'
+                      alt=''
+                      aria-hidden='true'
                       style={{
                         width: 15,
                         height: 15,
@@ -141,6 +144,7 @@ const PolicyList: React.FC = () => {
                     onClick={() => setConfirmDeleteId(policy.id)}
                     color='error'
                     size='small'
+                    aria-label={`Delete policy ${policy.name}`}
                     sx={{
                       border: '1px solid #f0f0f0',
                       borderTopLeftRadius: '0px',
@@ -155,7 +159,8 @@ const PolicyList: React.FC = () => {
                   >
                     <img
                       src={deleteIcon}
-                      alt='Delete'
+                      alt=''
+                      aria-hidden='true'
                       style={{
                         width: 15,
                         height: 15,

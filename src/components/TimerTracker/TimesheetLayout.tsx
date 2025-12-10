@@ -4,6 +4,7 @@ import { useOutletContext } from 'react-router-dom';
 import SheetList from './SheetList';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
+import { COLORS } from '../../constants/appConstants';
 
 const TimesheetLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const TimesheetLayout: React.FC = () => {
           <Typography
             variant='h5'
             component='h1'
-            sx={{ color: darkMode ? '#8f8f8f' : '#000' }}
+            sx={{ color: darkMode ? COLORS.DARK_TEXT : COLORS.LIGHT_TEXT }}
           >
             My Timesheet
           </Typography>

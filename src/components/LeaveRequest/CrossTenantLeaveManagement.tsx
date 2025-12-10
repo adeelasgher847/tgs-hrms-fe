@@ -16,8 +16,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Snackbar,
-  Alert,
   Pagination,
   Table,
   TableHead,
@@ -33,21 +31,23 @@ import {
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import dayjs, { Dayjs } from 'dayjs';
+import type { Dayjs } from 'dayjs';
 import Chart from 'react-apexcharts';
-import { TenantLeaveApi } from '../../api/TenantLeaveApi';
+import { TenantLeaveApi } from '../../api/tenantLeaveApi';
 import type {
   Department as ApiDepartment,
   SystemLeaveFilters,
   SystemLeaveResponse,
   SystemLeaveSummary,
-  TenantDepartment,
-} from '../../api/TenantLeaveApi';
+} from '../../api/tenantLeaveApi';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { useUser } from '../../hooks/useUser';
 import { isSystemAdmin } from '../../utils/auth';
 import { formatDate } from '../../utils/dateUtils';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { PAGINATION } from '../../constants/appConstants';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 type LeaveStatus = '' | 'pending' | 'approved' | 'rejected' | 'withdrawn';
 
@@ -57,12 +57,6 @@ type FiltersState = {
   status: LeaveStatus;
   startDate: Dayjs | null;
   endDate: Dayjs | null;
-};
-
-type SnackbarState = {
-  open: boolean;
-  message: string;
-  severity: 'success' | 'error';
 };
 
 type DepartmentOption = Pick<ApiDepartment, 'id' | 'name' | 'tenant_id'>;
@@ -77,8 +71,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
       if (storedTenantId) {
         return String(storedTenantId).trim();
       }
-    } catch (error) {
-      console.warn('Failed to get tenant_id from localStorage:', error);
+    } catch {
+      // Ignore; fall through to other sources
     }
 
     // Fallback: Get from user object in localStorage (login response format)
@@ -89,8 +83,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
         const tenantId = userFromStorage?.tenant_id || '';
         if (tenantId) return String(tenantId).trim();
       }
-    } catch (error) {
-      console.warn('Failed to get tenant_id from user object:', error);
+    } catch {
+      // Ignore; fall through to user context
     }
 
     // Last fallback: Get from user context
@@ -128,16 +122,12 @@ const CrossTenantLeaveManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState<SnackbarState>({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
+  const { snackbar, showError, closeSnackbar } = useErrorHandler();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25; // Backend returns 25 records per page
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE; // Backend returns records per page
   const isInitialTenantSet = useRef(false);
   const isInitialLoad = useRef(true);
   const hasLoadedDataOnce = useRef(false);
@@ -192,14 +182,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         );
 
         if (filteredTenants.length === 0) {
-          console.warn(
-            `Admin's tenant ID (${userTenantId}) not found in tenants list`
-          );
-          setSnackbar({
-            open: true,
-            message: 'Your tenant is not found or inactive',
-            severity: 'error',
-          });
+          showError('Your tenant is not found or inactive');
         }
       }
 
@@ -212,12 +195,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
           defaultTenant = filteredTenants.find(
             t => String(t.id).trim() === userTenantId
           );
-
-          if (!defaultTenant) {
-            console.error(
-              `Failed to match admin tenant ID: ${userTenantId} with any tenant`
-            );
-          }
         } else if (isSystemAdminUser) {
           // System Admin: Select default (ibex or first) only if no tenant is selected
           const currentTenantId = currentTenantIdRef.current;
@@ -254,13 +231,9 @@ const CrossTenantLeaveManagement: React.FC = () => {
         }
       }
     } catch {
-      setSnackbar({
-        open: true,
-        message: 'Failed to load tenant list',
-        severity: 'error',
-      });
+      showError('Failed to load tenant list');
     }
-  }, [isSystemAdminUser, userTenantId]);
+  }, [isSystemAdminUser, userTenantId, showError]);
 
   const fetchDepartments = useCallback(
     async (tenantId: string | null) => {
@@ -268,6 +241,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         setDepartments([]);
         return;
       }
+
       try {
         const tenantDetails = await SystemTenantApi.getById(tenantId);
         const tenantIdStr = String(tenantId).trim();
@@ -291,17 +265,17 @@ const CrossTenantLeaveManagement: React.FC = () => {
         } else {
           setDepartments([]);
         }
-      } catch (error) {
-        console.error('Failed to fetch departments:', error);
-        setSnackbar({
-          open: true,
-          message: 'Failed to load departments',
-          severity: 'error',
-        });
+      } catch {
+        // Centralized error handling
+        try {
+          showError('Failed to load departments');
+        } catch {
+          // ignore
+        }
         setDepartments([]);
       }
     },
-    [setDepartments, setSnackbar]
+    [showError]
   );
 
   const fetchSummary = useCallback(
@@ -311,13 +285,10 @@ const CrossTenantLeaveManagement: React.FC = () => {
         if (!isSystemAdminUser && userTenantId) {
           tenantIdToUse = userTenantId;
         } else {
-          // System Admin: Use selected tenant ID from filters
           tenantIdToUse = tenantId || filters.tenantId || undefined;
         }
 
-        if (!tenantIdToUse) {
-          return; // Don't fetch if no tenant ID
-        }
+        if (!tenantIdToUse) return;
 
         const summaryData = await TenantLeaveApi.getSystemLeaveSummary({
           tenantId: tenantIdToUse,
@@ -363,14 +334,10 @@ const CrossTenantLeaveManagement: React.FC = () => {
           }))
         );
       } catch {
-        setSnackbar({
-          open: true,
-          message: 'Failed to load summary',
-          severity: 'error',
-        });
+        showError('Failed to load summary');
       }
     },
-    [tenants, isSystemAdminUser, userTenantId, filters.tenantId, setSnackbar]
+    [tenants, isSystemAdminUser, userTenantId, filters.tenantId, showError]
   );
 
   const fetchLeaves = useCallback(async () => {
@@ -409,8 +376,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
         limit: itemsPerPage,
       };
 
-      console.log('Fetching leaves with filters:', apiFilters);
-
       const response = await TenantLeaveApi.getSystemLeaves(apiFilters);
 
       const departmentMap: Record<string, string> = {};
@@ -441,8 +406,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
         );
       }
 
-      console.log('Filtered leaves after department filter:', mappedLeaves);
-
       setLeaves(mappedLeaves);
 
       // Backend returns 25 records per page (fixed page size)
@@ -468,11 +431,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
       if (isInitialLoad.current) isInitialLoad.current = false;
       if (isInitialMount.current) isInitialMount.current = false;
     } catch {
-      setSnackbar({
-        open: true,
-        message: 'Failed to load leave data',
-        severity: 'error',
-      });
+      showError('Failed to load leave data');
       if (isInitialLoad.current) isInitialLoad.current = false;
     } finally {
       if (shouldShowFullPageLoader) {
@@ -493,7 +452,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
     userTenantId,
     departments,
     itemsPerPage,
-    setSnackbar,
+    showError,
   ]);
 
   // Fetch tenants only once on mount
@@ -561,9 +520,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
     currentPage,
     fetchLeaves,
   ]);
-
-  const handleCloseSnackbar = () =>
-    setSnackbar(prev => ({ ...prev, open: false }));
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, page: number) =>
     setCurrentPage(page);
@@ -901,14 +857,12 @@ const CrossTenantLeaveManagement: React.FC = () => {
           handlePageChange={handlePageChange}
         />
 
-        <Snackbar
+        <ErrorSnackbar
           open={snackbar.open}
-          autoHideDuration={3000}
-          onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
-          <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
-        </Snackbar>
+          message={snackbar.message}
+          severity={snackbar.severity}
+          onClose={closeSnackbar}
+        />
       </Box>
     </LocalizationProvider>
   );

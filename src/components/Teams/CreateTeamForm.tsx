@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Button,
   Box,
   FormControl,
   InputLabel,
@@ -17,6 +16,8 @@ import {
 import { useLanguage } from '../../hooks/useLanguage';
 import type { CreateTeamDto, Manager } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
+import AppButton from '../Common/AppButton';
+import { COLORS } from '../../constants/appConstants';
 
 interface CreateTeamFormProps {
   open: boolean;
@@ -43,7 +44,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
   // Check if form has changes (for create, check if any field has content)
   const hasChanges =
     formData.name.trim() !== '' ||
-    formData.description.trim() !== '' ||
+    (formData.description?.trim() ?? '') !== '' ||
     formData.manager_id !== '';
   const { language } = useLanguage();
 
@@ -287,23 +288,25 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
               </Select>
             </FormControl>
             <DialogActions sx={{ padding: 0 }}>
-              <Button onClick={handleClose} disabled={loading}>
-                {lang.cancel}
-              </Button>
-              <Button
+              <AppButton
+                variant='outlined'
+                text={lang.cancel}
+                onClick={handleClose}
+                disabled={loading}
+              />
+              <AppButton
                 type='submit'
                 variant='contained'
+                text={loading ? lang.loading : lang.create}
                 disabled={
                   loading ||
                   !hasChanges ||
                   !formData.name.trim() ||
                   !formData.manager_id
                 }
-                sx={{ backgroundColor: theme => theme.palette.primary.main }}
+                sx={{ backgroundColor: COLORS.PRIMARY }}
                 startIcon={loading ? <CircularProgress size={16} /> : null}
-              >
-                {loading ? lang.loading : lang.create}
-              </Button>
+              />
             </DialogActions>
           </Box>
         </DialogContent>

@@ -2,22 +2,16 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  Paper,
-  Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
-  TableContainer,
   CircularProgress,
   FormControl,
   Select,
   MenuItem,
-  Button,
   Tooltip,
   IconButton,
-  Snackbar,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -32,6 +26,10 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import BenefitFormModal from './BenefitFormModal';
 import type { BenefitFormValues } from './BenefitFormModal';
 import benefitsApi from '../../api/benefitApi';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
+import AppButton from '../Common/AppButton';
+import AppTable from '../Common/AppTable';
 
 const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 
@@ -54,11 +52,7 @@ const BenefitList: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBenefit, setEditingBenefit] = useState<Benefit | null>(null);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>(
-    'success'
-  );
+  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
   const [types, setTypes] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<string[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -98,8 +92,7 @@ const BenefitList: React.FC = () => {
             : (page - 1) * ITEMS_PER_PAGE + items.length
         );
       }
-    } catch (err) {
-      console.error('Error fetching benefits:', err);
+    } catch {
       setBenefits([]);
       setTypes([]);
       setStatuses([]);
@@ -124,22 +117,17 @@ const BenefitList: React.FC = () => {
 
       if (editingBenefit) {
         await benefitsApi.updateBenefit(editingBenefit.id, payload);
-        setToastMessage('Benefit updated successfully!');
+        showSuccess('Benefit updated successfully!');
       } else {
         await benefitsApi.createBenefit(payload);
-        setToastMessage('Benefit created successfully!');
+        showSuccess('Benefit created successfully!');
       }
 
-      setToastSeverity('success');
-      setShowToast(true);
       setModalOpen(false);
       setEditingBenefit(null);
       fetchBenefits();
-    } catch (error: unknown) {
-      console.error('Error saving benefit:', error);
-      setToastSeverity('error');
-      setToastMessage('Failed to save benefit.');
-      setShowToast(true);
+    } catch {
+      showError('Failed to save benefit.');
     }
   };
 
@@ -153,9 +141,7 @@ const BenefitList: React.FC = () => {
     try {
       const res = await benefitsApi.deleteBenefit(selectedBenefit.id);
       if (res.deleted) {
-        setToastMessage('Benefit deleted successfully!');
-        setToastSeverity('success');
-        setShowToast(true);
+        showSuccess('Benefit deleted successfully!');
         setDeleteDialogOpen(false);
         setSelectedBenefit(null);
         fetchBenefits();
@@ -163,13 +149,10 @@ const BenefitList: React.FC = () => {
         throw new Error('Delete failed');
       }
     } catch (error: unknown) {
-      console.error('Error deleting benefit:', error);
-      setToastSeverity('error');
-      setToastMessage(
+      showError(
         (error as { response?: { data?: { message?: string } } }).response?.data
           ?.message || 'Failed to delete benefit.'
       );
-      setShowToast(true);
     }
   };
 
@@ -280,22 +263,23 @@ const BenefitList: React.FC = () => {
         </Box>
 
         <Box display='flex' gap={1} flexWrap='wrap'>
-          <Button
+          <AppButton
             variant='contained'
             startIcon={<AddIcon />}
-            color='primary'
+            variantType='primary'
             onClick={() => {
               setEditingBenefit(null);
               setModalOpen(true);
             }}
           >
             Create
-          </Button>
+          </AppButton>
 
           <Tooltip title='Export Benefit List'>
             <IconButton
               color='primary'
               onClick={handleDownload}
+              aria-label='Export benefit list'
               sx={{
                 backgroundColor: 'primary.main',
                 borderRadius: '6px',
@@ -304,7 +288,7 @@ const BenefitList: React.FC = () => {
                 '&:hover': { backgroundColor: 'primary.dark' },
               }}
             >
-              <FileDownloadIcon />
+              <FileDownloadIcon aria-hidden='true' />
             </IconButton>
           </Tooltip>
         </Box>
@@ -320,96 +304,96 @@ const BenefitList: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Paper sx={{ mt: 2, boxShadow: 'none' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
+        <Box sx={{ mt: 2 }}>
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  <b>Benefit Name</b>
+                </TableCell>
+                <TableCell>
+                  <b>Type</b>
+                </TableCell>
+                <TableCell>
+                  <b>Description</b>
+                </TableCell>
+                <TableCell>
+                  <b>Eligibility</b>
+                </TableCell>
+                <TableCell align='center'>
+                  <b>Status</b>
+                </TableCell>
+                <TableCell align='center'>
+                  <b>Actions</b>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredBenefits.length === 0 ? (
                 <TableRow>
-                  <TableCell>
-                    <b>Benefit Name</b>
-                  </TableCell>
-                  <TableCell>
-                    <b>Type</b>
-                  </TableCell>
-                  <TableCell>
-                    <b>Description</b>
-                  </TableCell>
-                  <TableCell>
-                    <b>Eligibility</b>
-                  </TableCell>
-                  <TableCell align='center'>
-                    <b>Status</b>
-                  </TableCell>
-                  <TableCell align='center'>
-                    <b>Actions</b>
+                  <TableCell colSpan={6} align='center'>
+                    No benefits found
                   </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredBenefits.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align='center'>
-                      No benefits found
+              ) : (
+                filteredBenefits.map(b => (
+                  <TableRow key={b.id}>
+                    <TableCell>{b.name}</TableCell>
+                    <TableCell>{b.type}</TableCell>
+                    <TableCell>{b.description}</TableCell>
+                    <TableCell>{b.eligibilityCriteria}</TableCell>
+                    <TableCell align='center'>
+                      <Typography
+                        sx={{
+                          fontWeight: 500,
+                          backgroundColor:
+                            b.status === 'active' ? '#206d23ff' : '#9e9e9e',
+                          px: 1.2,
+                          py: 0.3,
+                          borderRadius: 2,
+                          color: 'white',
+                          textTransform: 'capitalize',
+                          display: 'inline-block',
+                          minWidth: 70,
+                          textAlign: 'center',
+                        }}
+                      >
+                        {b.status}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align='center'>
+                      <Box display='flex' justifyContent='center' gap={1}>
+                        <Tooltip title='Edit'>
+                          <IconButton
+                            color='primary'
+                            size='small'
+                            onClick={() => {
+                              setEditingBenefit(b);
+                              setModalOpen(true);
+                            }}
+                            aria-label={`Edit benefit ${b.name}`}
+                          >
+                            <EditIcon aria-hidden='true' />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title='Delete'>
+                          <IconButton
+                            color='error'
+                            size='small'
+                            onClick={() => handleOpenDeleteDialog(b)}
+                            aria-label={`Delete benefit ${b.name}`}
+                          >
+                            <DeleteIcon aria-hidden='true' />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredBenefits.map(b => (
-                    <TableRow key={b.id}>
-                      <TableCell>{b.name}</TableCell>
-                      <TableCell>{b.type}</TableCell>
-                      <TableCell>{b.description}</TableCell>
-                      <TableCell>{b.eligibilityCriteria}</TableCell>
-                      <TableCell align='center'>
-                        <Typography
-                          sx={{
-                            fontWeight: 500,
-                            backgroundColor:
-                              b.status === 'active' ? '#206d23ff' : '#9e9e9e',
-                            px: 1.2,
-                            py: 0.3,
-                            borderRadius: 2,
-                            color: 'white',
-                            textTransform: 'capitalize',
-                            display: 'inline-block',
-                            minWidth: 70,
-                            textAlign: 'center',
-                          }}
-                        >
-                          {b.status}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align='center'>
-                        <Box display='flex' justifyContent='center' gap={1}>
-                          <Tooltip title='Edit'>
-                            <IconButton
-                              color='primary'
-                              size='small'
-                              onClick={() => {
-                                setEditingBenefit(b);
-                                setModalOpen(true);
-                              }}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title='Delete'>
-                            <IconButton
-                              color='error'
-                              size='small'
-                              onClick={() => handleOpenDeleteDialog(b)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
+                ))
+              )}
+            </TableBody>
+          </AppTable>
+        </Box>
       )}
 
       {totalPages > 1 && (
@@ -446,16 +430,20 @@ const BenefitList: React.FC = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} color='primary'>
+          <AppButton
+            onClick={() => setDeleteDialogOpen(false)}
+            variantType='secondary'
+            variant='outlined'
+          >
             Cancel
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             onClick={handleConfirmDelete}
-            color='error'
+            variantType='danger'
             variant='contained'
           >
             Delete
-          </Button>
+          </AppButton>
         </DialogActions>
       </Dialog>
 
@@ -469,20 +457,12 @@ const BenefitList: React.FC = () => {
         benefit={editingBenefit || undefined}
       />
 
-      <Snackbar
-        open={showToast}
-        autoHideDuration={3000}
-        onClose={() => setShowToast(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          severity={toastSeverity}
-          variant='filled'
-          onClose={() => setShowToast(false)}
-        >
-          {toastMessage}
-        </Alert>
-      </Snackbar>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };

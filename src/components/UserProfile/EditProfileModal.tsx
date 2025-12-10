@@ -19,9 +19,11 @@ import {
   type UpdateProfileRequest,
 } from '../../api/profileApi';
 import type { UserProfile } from '../../api/profileApi';
-import ProfilePictureUpload from '../common/ProfilePictureUpload';
+import ProfilePictureUpload from '../Common/ProfilePictureUpload';
 import { useProfilePicture } from '../../context/ProfilePictureContext';
 import { validateEmailAddress } from '../../utils/validation';
+import { env } from '../../config/env';
+import { TIMEOUTS, ERROR_MESSAGES } from '../../constants/appConstants';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -188,13 +190,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     // Add timeout to prevent loader from getting stuck
     const timeoutId = setTimeout(() => {
       setLoading(false);
-      setError('Request timeout. Please try again.');
-    }, 30000); // 30 second timeout
+      setError(ERROR_MESSAGES.TIMEOUT);
+    }, TIMEOUTS.API_REQUEST);
 
     try {
       const token = localStorage.getItem('accessToken');
-      const API_BASE_URL =
-        import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
       // 1) If delete requested, remove first and clear global picture context
       if (removeRequested) {
@@ -212,7 +212,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           selectedPictureFile
         );
         const profilePicUrl = response.user.profile_pic
-          ? `${API_BASE_URL}/users/${correctUserId}/profile-picture?t=${Date.now()}`
+          ? `${env.apiBaseUrl}/users/${correctUserId}/profile-picture?t=${Date.now()}`
           : null;
         updateProfilePicture(profilePicUrl);
       }

@@ -6,16 +6,15 @@ import {
   Select,
   MenuItem,
   Paper,
-  Snackbar,
-  Alert,
   CircularProgress,
 } from '@mui/material';
 import PerformanceKpiGrid from './KPIPerformanceOverview';
 import PerformanceTrendChart from './PerformanceTrend';
 import PromotionsList from './PromotionsTable';
 import { systemEmployeeApiService } from '../../api/systemEmployeeApi';
-import { useErrorHandler } from '../../hooks/useErrorHandler';
 import type { Tenant } from '../../types';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 const PerformanceDashboard: React.FC = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -46,10 +45,8 @@ const PerformanceDashboard: React.FC = () => {
           }
         }
       }
-    } catch (err) {
-      console.error('Error fetching tenants:', err);
-      // Use centralized error handler
-      showError(err);
+    } catch {
+      showError('Failed to fetch tenants.');
     } finally {
       setLoadingTenants(false);
     }
@@ -112,20 +109,12 @@ const PerformanceDashboard: React.FC = () => {
         </>
       )}
 
-      <Snackbar
+      <ErrorSnackbar
         open={snackbar.open}
-        autoHideDuration={3000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={closeSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          variant='filled'
-          onClose={closeSnackbar}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 };
