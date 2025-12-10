@@ -6,38 +6,17 @@ import {
   ListItemIcon,
   ListItemText,
   Collapse,
-  Switch,
-  Skeleton,
 } from '@mui/material';
-import {
-  Dashboard,
-  BusinessCenter,
-  ConfirmationNumber,
-  People,
-  Group,
-  Receipt,
-  Payments,
-  Apps,
-  Code,
-  Widgets,
-  Inventory,
-  CardGiftcard,
-  History,
-  Insights,
-} from '@mui/icons-material';
-import dotted from '../../assets/dashboardIcon/dotted-down.svg';
-import Clipboard from '../../assets/dashboardIcon/Clipboard';
-import bubbleleft from '../../assets/dashboardIcon/bubble-left.svg';
 import { useEffect, useMemo, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
 import { useTheme } from '../../theme/hooks';
-import { useCompany } from '../../context/CompanyContext';
-import { COLORS } from '../../constants/appConstants';
 import {
   isMenuVisibleForRole,
   isSubMenuVisibleForRole,
 } from '../../utils/permissions';
+import { clearAuthData } from '../../utils/authValidation';
+import { Icons } from '../../assets/icons';
 
 interface SubItem {
   label: string;
@@ -45,10 +24,57 @@ interface SubItem {
 }
 interface MenuItem {
   label: string;
-  icon: React.ReactNode;
+  icon: string;
+  iconFill: string;
   path?: string;
   subItems?: SubItem[];
 }
+
+const MenuIcon: React.FC<{
+  src: string;
+  srcFill?: string;
+  isActive?: boolean;
+  size?: number;
+  useOriginalColor?: boolean;
+}> = ({
+  src,
+  srcFill,
+  isActive = false,
+  size = 24,
+  useOriginalColor = false,
+}) => {
+  // CSS filter to convert fill icon to primary color (#3083dc)
+  const primaryColorFilter =
+    'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)';
+
+  // CSS filter for inactive icons (black)
+  const inactiveFilter = 'brightness(0) saturate(100%)';
+
+  const iconSrc = isActive && srcFill ? srcFill : src;
+
+  const iconFilter = useOriginalColor
+    ? 'none'
+    : isActive && srcFill
+      ? primaryColorFilter
+      : inactiveFilter;
+
+  return (
+    <Box
+      component='img'
+      src={iconSrc}
+      alt=''
+      sx={{
+        width: size,
+        height: size,
+        minWidth: size,
+        minHeight: size,
+        objectFit: 'contain',
+        filter: iconFilter,
+        transition: 'filter 0.2s ease',
+      }}
+    />
+  );
+};
 interface SidebarProps {
   rtlMode: boolean;
   setRtlMode: React.Dispatch<React.SetStateAction<boolean>>;
@@ -60,25 +86,14 @@ interface SidebarProps {
 const menuItems: MenuItem[] = [
   {
     label: 'Dashboard',
-    icon: <Dashboard />,
+    icon: Icons.dashboard,
+    iconFill: Icons.dashboardFill,
     subItems: [{ label: 'Dashboard', path: '' }],
   },
   {
-    label: 'Projects',
-    icon: <BusinessCenter />,
-    subItems: [
-      { label: 'Project List', path: 'project-list' },
-      { label: 'Add Project', path: 'add-project' },
-    ],
-  },
-  {
-    label: 'Tenant',
-    icon: <ConfirmationNumber />,
-    subItems: [{ label: 'Add Tenant', path: 'tenant' }],
-  },
-  {
     label: 'Department',
-    icon: <People />,
+    icon: Icons.department,
+    iconFill: Icons.departmentFill,
     subItems: [
       { label: 'Department List', path: 'departments' },
       { label: 'Designation', path: 'Designations' },
@@ -89,7 +104,8 @@ const menuItems: MenuItem[] = [
   },
   {
     label: 'Employees',
-    icon: <Group />,
+    icon: Icons.employee,
+    iconFill: Icons.employeeFill,
     subItems: [
       { label: 'Employee List', path: 'EmployeeManager' },
       { label: 'Tenant Employees', path: 'TenantEmployees' },
@@ -97,12 +113,14 @@ const menuItems: MenuItem[] = [
   },
   {
     label: 'Teams',
-    icon: <Group />,
+    icon: Icons.teams,
+    iconFill: Icons.teamsFill,
     subItems: [{ label: 'Team Management', path: 'teams' }],
   },
   {
     label: 'Assets',
-    icon: <Inventory />,
+    icon: Icons.assets,
+    iconFill: Icons.assetsFill,
     subItems: [
       { label: 'Asset Inventory', path: 'assets' },
       { label: 'Asset Requests', path: 'assets/requests' },
@@ -112,7 +130,8 @@ const menuItems: MenuItem[] = [
   },
   {
     label: 'Attendance',
-    icon: <Receipt />,
+    icon: Icons.attendance,
+    iconFill: Icons.attendanceFill,
     subItems: [
       { label: 'Attendance', path: 'AttendanceCheck' },
       { label: 'Daily Attendance', path: 'AttendanceTable' },
@@ -122,7 +141,8 @@ const menuItems: MenuItem[] = [
   },
   {
     label: 'Leave Analytics',
-    icon: <Receipt />,
+    icon: Icons.leaveAnalytics,
+    iconFill: Icons.leaveAnalyticsFill,
     subItems: [
       { label: 'Reports', path: 'Reports' },
       { label: 'Cross Tenant Leaves', path: 'cross-tenant-leaves' },
@@ -130,7 +150,8 @@ const menuItems: MenuItem[] = [
   },
   {
     label: 'Benefits',
-    icon: <CardGiftcard />,
+    icon: Icons.benefits,
+    iconFill: Icons.benefitsFill,
     subItems: [
       { label: 'Benefits List', path: 'benefits-list' },
       { label: 'Employee Benefits', path: 'employee-benefit' },
@@ -139,23 +160,9 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    label: 'Performance',
-    icon: <Insights />,
-    subItems: [
-      { label: 'Employee Performance', path: 'performance-dashboard' },
-    ],
-  },
-  {
-    label: 'Accounts',
-    icon: <Receipt />,
-    subItems: [
-      { label: 'Invoice', path: 'invoice' },
-      { label: 'Payments', path: 'payments' },
-    ],
-  },
-  {
     label: 'Payroll',
-    icon: <Payments />,
+    icon: Icons.payroll,
+    iconFill: Icons.payrollFill,
     subItems: [
       { label: 'Payroll Configuration', path: 'payroll-configuration' },
       { label: 'Employee Salary', path: 'employee-salary' },
@@ -164,55 +171,28 @@ const menuItems: MenuItem[] = [
       { label: 'My Salary', path: 'my-salary' },
     ],
   },
-  {
-    label: 'Audit Logs',
-    icon: <History />,
-    subItems: [{ label: 'Audit Logs', path: 'audit-logs' }],
-  },
-  {
-    label: 'App',
-    icon: <Apps />,
-    subItems: [
-      { label: 'Chat', path: 'chat' },
-      { label: 'Calendar', path: 'calendar' },
-    ],
-  },
-  {
-    label: 'Other Pages',
-    icon: <Code />,
-    subItems: [
-      { label: 'Login', path: 'login' },
-      { label: 'Register', path: 'register' },
-      { label: 'Error', path: 'error' },
-    ],
-  },
-  {
-    label: 'UI Components',
-    icon: <Widgets />,
-    subItems: [
-      { label: 'Buttons', path: 'buttons' },
-      { label: 'Cards', path: 'cards' },
-      { label: 'Modals', path: 'modals' },
-    ],
-  },
 ];
 
 export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   const { toggleTheme } = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useUser();
-  const {
-    companyDetails,
-    companyLogo,
-    companyName: contextCompanyName,
-  } = useCompany();
   const role = user?.role;
+
+  const handleLogout = () => {
+    clearAuthData();
+    navigate('/');
+  };
 
   const [openItem, setOpenItem] = useState<string>('');
   const [activeSubItem, setActiveSubItem] = useState<string>('');
 
   const filteredMenuItems = useMemo(() => {
-    const userRole = typeof role === 'string' ? role : (role as unknown)?.name;
+    const userRole =
+      typeof role === 'string'
+        ? role
+        : (role as unknown as { name?: string })?.name || '';
 
     const filtered = menuItems
       .filter(item => {
@@ -221,7 +201,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
       })
       .map(item => ({
         ...item,
-        subItems: item.subItems.filter(sub => {
+        subItems: (item.subItems || []).filter(sub => {
           const isSubVisible = isSubMenuVisibleForRole(
             item.label,
             sub.label,
@@ -266,85 +246,41 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
     onMenuItemClick?.();
   };
 
-  const companyName = contextCompanyName || 'Trans Global Services';
-  const loading = !companyDetails;
-
   return (
     <Box
       sx={{
-        color: 'white',
-        borderRadius: '12px 0 0 12px',
+        backgroundColor: 'var(--white-color)',
+        color: 'var(--text-color)',
+        borderRadius: 'var(--border-radius-lg)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        fontFamily: 'Open Sans, sans-serif',
+        fontFamily: 'SF Pro Rounded, sans-serif',
         height: '100%',
         overflow: 'hidden',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
       }}
     >
-      <Box sx={{ position: 'sticky', top: 0, zIndex: 10, px: 2, py: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ position: 'sticky', top: 0, zIndex: 20, px: 3, py: 5, mb: 1 }}>
           <Box
             sx={{
-              width: 60,
-              height: 60,
-              minWidth: 60,
-              minHeight: 60,
-              bgcolor: 'white',
-              color: COLORS.PRIMARY,
-              borderRadius: '50%',
+            position: 'absolute',
+            top: '40px',
+            bottom: '40px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              fontSize: 22,
-              overflow: 'hidden',
-              flexShrink: 0,
-            }}
-          >
-            {loading && !companyLogo ? (
-              <Skeleton
-                variant='circular'
-                width='100%'
-                height='100%'
-                sx={{ borderRadius: '50%' }}
-              />
-            ) : companyLogo ? (
+            gap: 1,
+          }}
+        >
               <Box
                 component='img'
-                src={companyLogo}
-                alt='Company Logo'
-                loading='lazy'
+            src={Icons.logoSidebar}
+            alt='Logo'
                 sx={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                }}
-              />
-            ) : (
-              <Clipboard />
-            )}
-          </Box>
-
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              sx={{
-                fontWeight: 700,
-                fontSize: 18,
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-              title={companyName || 'Trans Global Services'}
-              aria-label={`Company name: ${companyName || 'Trans Global Services'}`}
-            >
-              {companyName.length > 15
-                ? companyName.slice(0, 18) + '...'
-                : companyName}
-            </Typography>
-          </Box>
+              height: 'auto',
+              width: 'auto',
+            }}
+          />
         </Box>
       </Box>
 
@@ -386,22 +322,50 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                       onMenuItemClick?.();
                     }}
                     sx={{
-                      color: isActive ? 'orange' : 'white',
-                      pl: 1,
+                      color: isActive
+                        ? 'var(--primary-dark-color)'
+                        : 'var(--text-color)',
+                      pl: 2,
+                      py: 1.5,
+                      mx: 1.5,
+                      mb: 0.5,
+                      backgroundColor: isActive
+                        ? 'var(--light-grey-200-color)'
+                        : 'transparent',
+                      borderRadius: isActive ? 'var(--border-radius-lg)' : 0,
+                      '&:hover': {
+                        backgroundColor: isActive
+                          ? 'var(--light-grey-200-color)'
+                          : 'var(--white-100-color)',
+                        borderRadius: 'var(--border-radius-lg)',
+                      },
                     }}
                     aria-label={`Navigate to ${item.label}`}
                     aria-current={isActive ? 'page' : undefined}
                   >
                     <ListItemIcon
                       sx={{
-                        color: isActive ? 'orange' : 'white',
                         minWidth: '36px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                       aria-hidden='true'
                     >
-                      {item.icon}
+                      <MenuIcon
+                        src={item.icon}
+                        srcFill={item.iconFill}
+                        isActive={isActive}
+                        size={24}
+                      />
                     </ListItemIcon>
-                    <ListItemText primary={item.label} />
+                    <ListItemText
+                      primary={item.label}
+                      primaryTypographyProps={{
+                        fontSize: 'var(--body-font-size)',
+                        fontWeight: isActive ? 600 : 400,
+                      }}
+                    />
                   </ListItemButton>
                 </Box>
               );
@@ -419,23 +383,58 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                       onMenuItemClick?.();
                     }}
                     sx={{
-                      color: location.pathname.includes(item.path)
-                        ? 'orange'
-                        : 'white',
-                      pl: 1,
+                      color:
+                        item.path && location.pathname.includes(item.path)
+                          ? 'var(--primary-dark-color)'
+                          : 'var(--text-color)',
+                      pl: 2,
+                      py: 1.5,
+                      mx: 1.5,
+                      mb: 0.5,
+                      backgroundColor:
+                        item.path && location.pathname.includes(item.path)
+                          ? 'var(--light-grey-200-color)'
+                          : 'transparent',
+                      borderRadius:
+                        item.path && location.pathname.includes(item.path)
+                          ? 'var(--border-radius-lg)'
+                          : 0,
+                      '&:hover': {
+                        backgroundColor:
+                          item.path && location.pathname.includes(item.path)
+                            ? 'var(--light-grey-200-color)'
+                            : 'var(--white-100-color)',
+                        borderRadius: 'var(--border-radius-lg)',
+                      },
                     }}
                   >
                     <ListItemIcon
                       sx={{
-                        color: location.pathname.includes(item.path)
-                          ? 'orange'
-                          : 'white',
                         minWidth: '36px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
-                      {item.icon}
+                      <MenuIcon
+                        src={item.icon}
+                        srcFill={item.iconFill}
+                        isActive={
+                          !!(item.path && location.pathname.includes(item.path))
+                        }
+                        size={24}
+                      />
                     </ListItemIcon>
-                    <ListItemText primary={item.label} />
+                    <ListItemText
+                      primary={item.label}
+                      primaryTypographyProps={{
+                        fontSize: 'var(--body-font-size)',
+                        fontWeight:
+                          item.path && location.pathname.includes(item.path)
+                            ? 600
+                            : 400,
+                      }}
+                    />
                   </ListItemButton>
                 ) : (
                   <>
@@ -444,8 +443,25 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                         setOpenItem(isParentActive ? '' : item.label)
                       }
                       sx={{
-                        color: isParentActive ? 'orange' : 'white',
-                        pl: 1,
+                        color: isParentActive
+                          ? 'var(--primary-dark-color)'
+                          : 'var(--text-color)',
+                        pl: 2,
+                        py: 1.5,
+                        mx: 1.5,
+                        mb: 0.5,
+                        backgroundColor: isParentActive
+                          ? 'var(--light-grey-200-color)'
+                          : 'transparent',
+                        borderRadius: isParentActive
+                          ? 'var(--border-radius-lg)'
+                          : 0,
+                        '&:hover': {
+                          backgroundColor: isParentActive
+                            ? 'var(--light-grey-200-color)'
+                            : 'var(--white-100-color)',
+                          borderRadius: 'var(--border-radius-lg)',
+                        },
                       }}
                       aria-label={`${item.label} menu`}
                       aria-expanded={isParentActive}
@@ -453,24 +469,40 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                     >
                       <ListItemIcon
                         sx={{
-                          color: isParentActive ? 'orange' : 'white',
                           minWidth: '36px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                         }}
                         aria-hidden='true'
                       >
-                        {item.icon}
+                        <MenuIcon
+                          src={item.icon}
+                          srcFill={item.iconFill}
+                          isActive={isParentActive}
+                          size={24}
+                        />
                       </ListItemIcon>
-                      <ListItemText primary={item.label} />
+                      <ListItemText
+                        primary={item.label}
+                        primaryTypographyProps={{
+                          fontSize: 'var(--body-font-size)',
+                          fontWeight: isParentActive ? 600 : 400,
+                        }}
+                      />
                       {item.subItems && item.subItems.length > 1 && (
-                        <img
-                          src={dotted}
+                        <Box
+                          component='img'
+                          src={Icons.arrowUp}
                           alt=''
-                          aria-hidden='true'
-                          style={{
-                            width: 23,
-                            height: 23,
-                            filter:
-                              'invert(57%) sepia(9%) saturate(388%) hue-rotate(195deg) brightness(89%) contrast(85%)',
+                          sx={{
+                            width: 16,
+                            height: 16,
+                            transform: isParentActive
+                              ? 'rotate(180deg)'
+                              : 'rotate(0deg)',
+                            transition: 'transform 0.2s',
+                            filter: 'brightness(0) saturate(100%)',
                           }}
                         />
                       )}
@@ -493,16 +525,28 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                             }
                             sx={{
                               pl: 6,
-                              fontSize: '14px',
+                              py: 1,
+                              fontSize: 'var(--body-font-size)',
                               color:
                                 activeSubItem === sub.label
-                                  ? 'orange'
-                                  : 'white',
+                                  ? 'var(--primary-dark-color)'
+                                  : 'var(--text-color)',
+                              '&:hover': {
+                                backgroundColor: 'var(--white-100-color)',
+                                borderRadius: 'var(--border-radius-lg)',
+                              },
                             }}
                             role='menuitem'
                             aria-label={`Navigate to ${sub.label}`}
                           >
-                            <ListItemText primary={sub.label} />
+                            <ListItemText
+                              primary={sub.label}
+                              primaryTypographyProps={{
+                                fontSize: 'var(--body-font-size)',
+                                fontWeight:
+                                  activeSubItem === sub.label ? 600 : 400,
+                              }}
+                            />
                           </ListItemButton>
                         ))}
                       </List>
@@ -515,43 +559,122 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
         </List>
       </Box>
 
-      <Box sx={{ px: 2, pb: 2, pt: 1, bottom: 0, zIndex: 10 }}>
+      <Box sx={{ px: 3, pb: 3, pt: 2, bottom: 0, zIndex: 10 }}>
         <Box
           display='flex'
           alignItems='center'
           justifyContent='space-between'
-          mb={1}
+          mb={2}
         >
           <Typography
             variant='body2'
             component='label'
             htmlFor='dark-mode-switch'
+            sx={{
+              color: 'var(--text-color)',
+              fontSize: 'var(--body-font-size)',
+              fontWeight: 400,
+              cursor: 'pointer',
+            }}
           >
-            Enable Dark Mode!
+            Dark Mode
           </Typography>
-          <Switch
+          <Box
+            component='button'
             id='dark-mode-switch'
-            checked={darkMode}
-            onChange={toggleTheme}
+            onClick={toggleTheme}
             aria-label='Toggle dark mode'
             role='switch'
             aria-checked={darkMode}
-          />
-        </Box>
-        <Box textAlign='center' mt={2}>
-          <Box
-            component='img'
-            src={bubbleleft}
-            alt=''
-            aria-hidden='true'
             sx={{
-              width: 40,
-              height: 40,
-              filter: 'brightness(0) invert(1)',
-              borderBottom: '4px solid white',
+              position: 'relative',
+              width: 50,
+              height: 20,
+              padding: 0,
+              border: 'none',
+              backgroundColor: 'transparent',
+              cursor: 'pointer',
+              outline: 'none',
+              '&:focus-visible': {
+                outline: '2px solid var(--primary-dark-color)',
+                outlineOffset: '2px',
+                borderRadius: '12px',
+              },
+            }}
+          >
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                borderRadius: '12px',
+                backgroundColor: darkMode
+                  ? 'var(--primary-dark-color)'
+                  : 'var(--light-grey-color)',
+                transition: 'background-color 300ms ease',
+              }}
+            />
+            <Box
+            sx={{
+                position: 'absolute',
+                top: '2px',
+                left: darkMode ? '22px' : '2px',
+                width: 25,
+                height: 16,
+                borderRadius: '40%',
+                backgroundColor: 'var(--white-color)',
+                // boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+                transition: 'left 300ms ease',
             }}
           />
         </Box>
+        </Box>
+        <ListItemButton
+          onClick={handleLogout}
+          sx={{
+            color: 'var(--secondary-color)',
+            pl: 0.25,
+            py: 1.5,
+            borderRadius: 'var(--border-radius-lg)',
+            '&:hover': {
+              backgroundColor: 'rgba(198, 25, 82, 0.1)',
+              borderRadius: 'var(--border-radius-lg)',
+            },
+          }}
+        >
+          <ListItemIcon
+            sx={{
+              color: 'var(--secondary-color)',
+              minWidth: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mr: 1,
+            }}
+          >
+            <Box
+              component='img'
+              src={Icons.logout}
+              alt=''
+              sx={{
+                width: 24,
+                height: 24,
+                filter:
+                  'brightness(0) saturate(100%) invert(20%) sepia(95%) saturate(5000%) hue-rotate(320deg) brightness(90%) contrast(90%)',
+              }}
+            />
+          </ListItemIcon>
+          <ListItemText
+            primary='Logout'
+            primaryTypographyProps={{
+              fontSize: 'var(--body-font-size)',
+              fontWeight: 500,
+              color: 'var(--secondary-color)',
+            }}
+          />
+        </ListItemButton>
       </Box>
     </Box>
   );

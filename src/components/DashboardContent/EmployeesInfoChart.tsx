@@ -3,10 +3,6 @@ import {
   Typography,
   useMediaQuery,
   CircularProgress,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
 } from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import {
@@ -24,6 +20,7 @@ import {
   getEmployeeJoiningReport,
   type EmployeeJoiningReport,
 } from '../../api/employeeApi';
+import TimeRangeSelector from '../Common/TimeRangeSelector';
 
 export default function EmployeesInfoChart() {
   const isMobile = useMediaQuery('(max-width:600px)');
@@ -33,7 +30,9 @@ export default function EmployeesInfoChart() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [joiningData, setJoiningData] = useState<EmployeeJoiningReport[]>([]);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [selectedTimeRange, setSelectedTimeRange] = useState<
+    string | number | null
+  >('all-time');
 
   // Fetch employee joining report data
   useEffect(() => {
@@ -44,14 +43,6 @@ export default function EmployeesInfoChart() {
         const data = await getEmployeeJoiningReport();
 
         setJoiningData(data);
-
-        // Set the most recent year as default selected year
-        if (data.length > 0) {
-          const years = [...new Set(data.map(item => item.year))].sort(
-            (a, b) => b - a
-          );
-          setSelectedYear(years[0]); // Set most recent year as default
-        }
       } catch {
         // If API fails (including 401), show zero-values instead of an error block
         setError(null);
@@ -80,15 +71,16 @@ export default function EmployeesInfoChart() {
     (a, b) => b - a
   );
 
-  // Filter data by selected year
-  const filteredData = selectedYear
-    ? joiningData.filter(item => item.year === selectedYear)
-    : [];
+  // Filter data by selected time range
+  const filteredData =
+    selectedTimeRange === 'all-time' || selectedTimeRange === null
+      ? joiningData
+      : joiningData.filter(item => item.year === (selectedTimeRange as number));
 
   // Translations
   const chartTitle = {
-    en: `Employee Growth ${selectedYear ? `(${selectedYear})` : ''}`,
-    ar: `معلومات الموظفين ${selectedYear ? `(${selectedYear})` : ''}`,
+    en: 'Employee Growth',
+    ar: 'نمو الموظفين',
   };
 
   const months: Record<string, Record<string, string>> = {
@@ -140,12 +132,18 @@ export default function EmployeesInfoChart() {
         'Dec',
       ].indexOf(monthStr) + 1;
 
-    // Find corresponding API data for this month in the filtered data
+    // If "All Time" is selected, aggregate data across all years for this month
+    if (selectedTimeRange === 'all-time' || selectedTimeRange === null) {
+      const monthData = filteredData.filter(item => item.month === monthIndex);
+      const value = monthData.reduce((sum, item) => sum + item.total, 0);
+      return {
+        date: monthStr,
+        value: value,
+      };
+    }
+
+    // For specific year, find corresponding API data for this month
     const apiData = filteredData.find(item => item.month === monthIndex);
-
-    // Debug logging
-
-    // Use API data if available, otherwise use zero (no mock data)
     const value = apiData ? apiData.total : 0;
 
     return {
@@ -165,10 +163,6 @@ export default function EmployeesInfoChart() {
   return (
     <Box
       sx={{
-        p: 2,
-        border: `1px solid ${borderColor}`,
-        borderRadius: '0.375rem',
-        backgroundColor: bgColor,
         direction: language === 'ar' ? 'rtl' : 'ltr',
         width: '100%',
         overflow: 'hidden',
@@ -180,42 +174,23 @@ export default function EmployeesInfoChart() {
         justifyContent='space-between'
         mb={2}
       >
-        <Typography fontWeight='bold' color={textColor}>
+        <Typography
+          fontWeight={500}
+          fontSize='28px'
+          lineHeight='36px'
+          letterSpacing='-2%'
+          color='#2C2C2C'
+        >
           {chartTitle[language]}
         </Typography>
 
-        {availableYears.length > 0 && (
-          <FormControl size='small' sx={{ minWidth: 120 }}>
-            <InputLabel sx={{ color: textColor }}>
-              {language === 'ar' ? 'السنة' : 'Year'}
-            </InputLabel>
-            <Select
-              className='Ramish selected'
-              value={selectedYear || ''}
-              onChange={e => setSelectedYear(Number(e.target.value))}
-              label={language === 'ar' ? 'السنة' : 'Year'}
-              sx={{
-                color: textColor,
-                borderRadius: '5px',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#e8e8e8',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#464b8a',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#464b8a',
-                },
-              }}
-            >
-              {availableYears.map(year => (
-                <MenuItem key={year} value={year}>
-                  {year}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
+        <TimeRangeSelector
+          value={selectedTimeRange}
+          options={availableYears}
+          onChange={setSelectedTimeRange}
+          allTimeLabel={language === 'ar' ? 'كل الوقت' : 'All Time'}
+          language={language}
+        />
       </Box>
 
       {loading ? (

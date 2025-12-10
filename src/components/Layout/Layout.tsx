@@ -155,22 +155,21 @@ const Layout = () => {
           ref={sidebarRef}
           className='sidebar'
           sx={{
-            backgroundColor: 'var(--dark-color)',
-            color: 'white',
-            padding: '20px',
+            backgroundColor: 'var(--white-color)',
+            color: 'var(--text-color)',
+            padding: 0,
             display: 'flex',
             flexDirection: 'column',
             direction: rtlMode ? 'rtl' : 'ltr',
-            height: { xs: '100vh', lg: 'calc(100vh - 50px)' },
-            width: '270px',
+            height: { xs: '100vh', lg: 'calc(100vh - 40px)' },
+            width: '280px',
             position: { xs: 'absolute', lg: 'fixed' },
-            top: 0,
-            left: rtlMode ? 'auto' : 0,
-            right: rtlMode ? 0 : 'auto',
-            m: { xs: 0, lg: 3 },
-            mr: 0,
-            borderRadius: { xs: 0, lg: '17.6px' },
+            top: { xs: 0, lg: '20px' },
+            left: rtlMode ? 'auto' : { xs: 0, lg: '20px' },
+            right: rtlMode ? { xs: 0, lg: '20px' } : 'auto',
+            borderRadius: { xs: 0, lg: 'var(--border-radius-lg)' },
             zIndex: 1000,
+            boxShadow: { xs: 'none', lg: '0 1px 3px rgba(0,0,0,0.1)' },
           }}
         >
           <Sidebar
@@ -193,8 +192,8 @@ const Layout = () => {
           display: 'flex',
           alignItems: 'center',
           flexShrink: 0,
-          mt: 3,
-          mb: 3,
+          px: { xs: 2, lg: 3 },
+          pt: { xs: 2, lg: 0 },
         }}
       >
         <Navbar
@@ -223,8 +222,9 @@ const Layout = () => {
       sx={{
         display: 'flex',
         height: '100vh',
-        fontFamily: 'sans-serif',
+        fontFamily: 'SF Pro Rounded, sans-serif',
         overflow: 'hidden',
+        backgroundColor: 'var(--white-100-color)',
       }}
     >
       {sidebarOpen && !isLargeScreen && (
@@ -255,10 +255,11 @@ const Layout = () => {
           overflow: 'auto',
           height: '100%',
           transition: 'margin 0.3s ease',
-          marginLeft: isLargeScreen && sidebarOpen && !rtlMode ? '290px' : 0,
-          marginRight: isLargeScreen && sidebarOpen && rtlMode ? '274px' : 0,
+          marginLeft: isLargeScreen && sidebarOpen && !rtlMode ? '320px' : 0,
+          marginRight: isLargeScreen && sidebarOpen && rtlMode ? '320px' : 0,
           width: '100%',
           direction: rtlMode ? 'rtl' : 'ltr',
+          backgroundColor: 'var(--white-100-color)',
         }}
       >
         {/* Navbar (static) */}
@@ -267,7 +268,12 @@ const Layout = () => {
         {/* Scrollable Outlet */}
         <Box
           component='main'
-          sx={{ flex: 1, px: { xs: '7px', md: '24px' }, py: 3 }}
+          sx={{
+            flex: 1,
+            px: { xs: 2, md: 3 },
+            py: { xs: 2, md: 3 },
+            backgroundColor: 'var(--white-100-color)',
+          }}
         >
           {isDashboardRoute && (loading || !user || !isAllowed) ? (
             <Box

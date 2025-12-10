@@ -86,7 +86,7 @@ const SystemUptimeCard: React.FC<SystemUptimeCardProps> = ({
     <Paper
       sx={{
         p: 3,
-        borderRadius: 1,
+        borderRadius: '20px',
         backgroundColor: bgColor,
         textAlign: 'center',
         boxShadow: 'none',
