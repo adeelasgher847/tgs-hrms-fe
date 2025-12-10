@@ -44,7 +44,7 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [hasCheckedIn, setHasCheckedIn] = useState<boolean>(false);
   const [checkingAttendance, setCheckingAttendance] = useState<boolean>(true);
-  
+
   // Use refs to track the latest values without causing re-renders
   const currentSessionRef = useRef<TimesheetEntry | null>(null);
   const hasCheckedInRef = useRef<boolean>(false);
@@ -63,20 +63,20 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
   // Check if user has checked in today - now stable with no dependencies
   const checkAttendanceStatus = useCallback(async (force = false) => {
     if (!isComponentMountedRef.current) return;
-    
+
     // Prevent redundant calls within 10 seconds unless forced
     const now = Date.now();
-    if (!force && (now - lastFetchTimeRef.current) < 10000) {
+    if (!force && now - lastFetchTimeRef.current < 10000) {
       return;
     }
-    
+
     try {
       setCheckingAttendance(true);
       const todaySummary = await attendanceApi.getTodaySummary();
       const checkedIn = !!todaySummary.checkIn;
-      
+
       lastFetchTimeRef.current = now;
-      
+
       // Only update state if value changed
       if (hasCheckedInRef.current !== checkedIn) {
         setHasCheckedIn(checkedIn);
@@ -109,21 +109,23 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
 
   const fetchLatestSession = useCallback(async (force = false) => {
     if (!isComponentMountedRef.current) return;
-    
+
     // Prevent redundant calls within 10 seconds unless forced
     const now = Date.now();
-    if (!force && (now - lastFetchTimeRef.current) < 10000) {
+    if (!force && now - lastFetchTimeRef.current < 10000) {
       return;
     }
-    
+
     try {
       const response = await timesheetApi.getUserTimesheet();
       const sessions = response.items.sessions;
       const activeSession = sessions.find(s => !s.end_time);
       const newSession = activeSession || null;
-      
+
       // Only update state if session changed
-      if (JSON.stringify(currentSessionRef.current) !== JSON.stringify(newSession)) {
+      if (
+        JSON.stringify(currentSessionRef.current) !== JSON.stringify(newSession)
+      ) {
         setCurrentSession(newSession);
       }
     } catch {
@@ -139,7 +141,7 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
     try {
       await Promise.all([
         checkAttendanceStatus(true),
-        fetchLatestSession(true)
+        fetchLatestSession(true),
       ]);
     } finally {
       setRefreshing(false);
@@ -161,7 +163,7 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
     const initialFetch = async () => {
       await Promise.all([
         checkAttendanceStatus(true),
-        fetchLatestSession(true)
+        fetchLatestSession(true),
       ]);
     };
 
@@ -169,7 +171,10 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
 
     // Listen for visibility changes - refresh when user comes back to tab
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isComponentMountedRef.current) {
+      if (
+        document.visibilityState === 'visible' &&
+        isComponentMountedRef.current
+      ) {
         // Only refresh if it's been more than 30 seconds since last fetch
         const timeSinceLastFetch = Date.now() - lastFetchTimeRef.current;
         if (timeSinceLastFetch > 30000) {
@@ -257,7 +262,7 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
       // Force refresh data after starting work
       await Promise.all([
         checkAttendanceStatus(true),
-        fetchLatestSession(true)
+        fetchLatestSession(true),
       ]);
       setErrorMsg(null);
     } catch (err: unknown) {
@@ -291,7 +296,7 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
       // Force refresh data after ending work to ensure consistency
       await Promise.all([
         checkAttendanceStatus(true),
-        fetchLatestSession(true)
+        fetchLatestSession(true),
       ]);
       setErrorMsg(null);
     } catch (err: unknown) {
@@ -324,10 +329,10 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
           boxShadow: 'unset',
           color: darkMode ? '#ffffff' : '#000000',
           overflow: 'hidden',
-          border:'none'
+          border: 'none',
         }}
       >
-        <CardContent sx={{ p: 3, boxShadow: 'none'}}>
+        <CardContent sx={{ p: 3, boxShadow: 'none' }}>
           {/* Main Timer Display - Centered */}
           {/* Session Progress - Top Left */}
           <Box
@@ -395,11 +400,11 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
               zIndex: 1,
             }}
           >
-            <Tooltip title="Refresh data">
+            <Tooltip title='Refresh data'>
               <IconButton
                 onClick={handleRefresh}
                 disabled={refreshing || loading}
-                size="small"
+                size='small'
                 sx={{
                   backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
                   border: darkMode ? '1px solid #333333' : '1px solid #e0e0e0',

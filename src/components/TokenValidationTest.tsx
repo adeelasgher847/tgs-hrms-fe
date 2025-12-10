@@ -13,12 +13,13 @@ export const TokenValidationTest: React.FC = () => {
   const testTokenValidation = async () => {
     setIsValidating(true);
     setValidationResult('Validating token...');
-    
-    
+
     try {
       const result = await validateToken();
       if (result.isValid) {
-        setValidationResult(`✅ Token is valid. User: ${JSON.stringify(result.user, null, 2)}`);
+        setValidationResult(
+          `✅ Token is valid. User: ${JSON.stringify(result.user, null, 2)}`
+        );
       } else {
         setValidationResult(`❌ Token is invalid. Error: ${result.error}`);
       }
@@ -31,19 +32,19 @@ export const TokenValidationTest: React.FC = () => {
 
   return (
     <Box sx={{ p: 2, border: '1px solid #ccc', borderRadius: 1, m: 2 }}>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant='h6' gutterBottom>
         Token Validation Test
       </Typography>
-      
-      <Button 
-        variant="contained" 
+
+      <Button
+        variant='contained'
         onClick={testTokenValidation}
         disabled={isValidating}
         sx={{ mb: 2 }}
       >
         {isValidating ? 'Validating...' : 'Test Token Validation'}
       </Button>
-      
+
       {validationResult && (
         <Alert severity={validationResult.includes('✅') ? 'success' : 'error'}>
           <pre style={{ whiteSpace: 'pre-wrap', fontSize: '12px' }}>

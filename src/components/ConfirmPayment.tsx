@@ -166,7 +166,7 @@ const ConfirmPayment: React.FC = () => {
           }
         }
 
-        let loginResponse =
+        const loginResponse =
           (await loginWithPendingCredentials()) ||
           coerceLoginResponse(signupResult);
 

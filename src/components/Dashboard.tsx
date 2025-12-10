@@ -148,7 +148,7 @@ const Dashboard: React.FC = () => {
         sx={{
           direction: language === 'ar' ? 'rtl' : 'ltr',
           color: darkMode ? '#8f8f8f' : '#000',
-          textAlign: { xs: 'left'},
+          textAlign: { xs: 'left' },
         }}
       >
         {lang.title}
@@ -400,7 +400,7 @@ const Dashboard: React.FC = () => {
             {(() => {
               // Get current page record count
               const currentPageRowsCount = logs.length;
-              
+
               // Pagination buttons logic:
               // - On first page: Only show if current page has full limit (to indicate more pages exist)
               // - On other pages (including last page): Always show if there are multiple pages
@@ -410,7 +410,7 @@ const Dashboard: React.FC = () => {
                 (currentPage === 1
                   ? currentPageRowsCount === itemsPerPage // First page: only show if full limit
                   : true); // Other pages: always show if totalPages > 1
-              
+
               return shouldShowPagination ? (
                 <Box display='flex' justifyContent='center' mt={2}>
                   <Pagination

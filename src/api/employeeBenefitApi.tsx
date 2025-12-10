@@ -345,9 +345,12 @@ const employeeBenefitApi = {
       }
   > {
     try {
-      const response = await axiosInstance.get('/employee-benefits/all-tenants', {
-        params: params || {},
-      });
+      const response = await axiosInstance.get(
+        '/employee-benefits/all-tenants',
+        {
+          params: params || {},
+        }
+      );
 
       console.log('All Tenants Employee Benefits:', response.data);
 
@@ -382,7 +385,9 @@ const employeeBenefitApi = {
       }
 
       // If response is array or has items but not paginated, wrap it
-      const items = response.data?.items || (Array.isArray(response.data) ? response.data : []);
+      const items =
+        response.data?.items ||
+        (Array.isArray(response.data) ? response.data : []);
       return {
         items: items,
         total: items.length,

@@ -40,7 +40,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
     };
 
     fetchLeaveTypes();
-  }, []);
+  }, [onError]);
 
   // ✅ Allow same day leave
   const getToday = () => {

@@ -14,17 +14,14 @@ import PerformanceKpiGrid from './KPIPerformanceOverview';
 import PerformanceTrendChart from './PerformanceTrend';
 import PromotionsList from './PromotionsTable';
 import { systemEmployeeApiService } from '../../api/systemEmployeeApi';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 import type { Tenant } from '../../types';
 
 const PerformanceDashboard: React.FC = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [selectedTenant, setSelectedTenant] = useState<string>('');
   const [loadingTenants, setLoadingTenants] = useState(true);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>(
-    'success'
-  );
+  const { snackbar, showError, closeSnackbar } = useErrorHandler();
 
   const fetchTenants = useCallback(async () => {
     setLoadingTenants(true);
@@ -51,13 +48,12 @@ const PerformanceDashboard: React.FC = () => {
       }
     } catch (err) {
       console.error('Error fetching tenants:', err);
-      setToastSeverity('error');
-      setToastMessage('Failed to fetch tenants.');
-      setShowToast(true);
+      // Use centralized error handler
+      showError(err);
     } finally {
       setLoadingTenants(false);
     }
-  }, [selectedTenant]);
+  }, [selectedTenant, showError]);
 
   useEffect(() => {
     fetchTenants();
@@ -102,7 +98,7 @@ const PerformanceDashboard: React.FC = () => {
         </Box>
       ) : (
         <>
-          <Paper sx={{mb: 3, boxShadow:'none' ,backgroundColor:'unset'}}>
+          <Paper sx={{ mb: 3, boxShadow: 'none', backgroundColor: 'unset' }}>
             <PerformanceKpiGrid tenantId={selectedTenant} />
           </Paper>
 
@@ -117,17 +113,17 @@ const PerformanceDashboard: React.FC = () => {
       )}
 
       <Snackbar
-        open={showToast}
+        open={snackbar.open}
         autoHideDuration={3000}
-        onClose={() => setShowToast(false)}
+        onClose={closeSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Alert
-          severity={toastSeverity}
+          severity={snackbar.severity}
           variant='filled'
-          onClose={() => setShowToast(false)}
+          onClose={closeSnackbar}
         >
-          {toastMessage}
+          {snackbar.message}
         </Alert>
       </Snackbar>
     </Box>

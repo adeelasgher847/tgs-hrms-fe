@@ -49,7 +49,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     Record<string, string>
   >({});
   const [hasChanges, setHasChanges] = useState(false);
-  const [selectedPictureFile, setSelectedPictureFile] = useState<File | null>(null);
+  const [selectedPictureFile, setSelectedPictureFile] = useState<File | null>(
+    null
+  );
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [removeRequested, setRemoveRequested] = useState(false);
 
@@ -191,7 +193,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
     try {
       const token = localStorage.getItem('accessToken');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
       // 1) If delete requested, remove first and clear global picture context
       if (removeRequested) {
@@ -267,12 +270,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={handleClose} 
-      maxWidth='sm' 
-      fullWidth
-    >
+    <Dialog open={open} onClose={handleClose} maxWidth='sm' fullWidth>
       <DialogTitle>Edit Profile</DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 1 }}>
@@ -294,7 +292,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               onFileSelected={file => {
                 setSelectedPictureFile(file);
                 const reader = new FileReader();
-                reader.onload = e => setPreviewImageUrl(e.target?.result as string);
+                reader.onload = e =>
+                  setPreviewImageUrl(e.target?.result as string);
                 reader.readAsDataURL(file);
               }}
               previewImageOverride={previewImageUrl}
@@ -330,10 +329,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               disabled={loading}
               inputProps={{ maxLength: 50 }}
             />
-                <TextField
+            <TextField
               label='Phone Number'
               value={formData.phone}
-              onChange={(e) => handlePhoneChange(e.target.value)}
+              onChange={e => handlePhoneChange(e.target.value)}
               error={!!validationErrors.phone}
               helperText={validationErrors.phone}
               fullWidth
@@ -341,9 +340,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               placeholder='Enter phone number (optional)'
               InputProps={{
                 startAdornment: (
-                  <InputAdornment position="start" sx={{ margin: 0, padding: '28px 0px' }}>
+                  <InputAdornment
+                    position='start'
+                    sx={{ margin: 0, padding: '28px 0px' }}
+                  >
                     <PhoneInput
-                      defaultCountry="pk"
+                      defaultCountry='pk'
                       value={formData.phone}
                       onChange={handlePhoneChange}
                       disabled={loading}
@@ -359,7 +361,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         padding: '0',
                         margin: '0',
                         fontSize: '1rem',
-                        fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                        fontFamily:
+                          '"Roboto", "Helvetica", "Arial", sans-serif',
                         backgroundColor: 'transparent',
                         width: '100%',
                         boxSizing: 'border-box',
@@ -381,7 +384,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                           maxHeight: '140px',
                         },
                       }}
-                      className="phone-input-textfield-adornment"
+                      className='phone-input-textfield-adornment'
                     />
                   </InputAdornment>
                 ),
@@ -413,7 +416,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               fullWidth
               disabled={loading}
             />
-        
           </Box>
         </Box>
       </DialogContent>
@@ -424,9 +426,15 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         <Button
           onClick={handleSubmit}
           variant='contained'
-          disabled={loading || (!hasChanges && !selectedPictureFile && !removeRequested)}
+          disabled={
+            loading || (!hasChanges && !selectedPictureFile && !removeRequested)
+          }
           startIcon={loading ? <CircularProgress size={16} /> : null}
-          title={!hasChanges && !selectedPictureFile && !removeRequested ? 'No changes made' : ''}
+          title={
+            !hasChanges && !selectedPictureFile && !removeRequested
+              ? 'No changes made'
+              : ''
+          }
         >
           {loading ? 'Updating...' : 'Update Profile'}
         </Button>

@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from 'react';
 import {
   Card,
   CardContent,
@@ -50,17 +56,12 @@ const UserProfileComponent = React.memo(() => {
   // Silently fetch tenant if missing (without causing loading state)
   useEffect(() => {
     // Only fetch tenant if profile exists, tenant is missing, and we haven't fetched yet
-    if (
-      profile &&
-      !profile.tenant &&
-      !loading &&
-      !tenantFetchedRef.current
-    ) {
+    if (profile && !profile.tenant && !loading && !tenantFetchedRef.current) {
       tenantFetchedRef.current = true;
       // Fetch directly from API and update state without triggering loading
       profileApiService
         .getUserProfile()
-        .then((updatedProfile) => {
+        .then(updatedProfile => {
           // Update user state directly without going through refreshUser (which sets loading)
           updateUser(updatedProfile);
         })
@@ -115,57 +116,46 @@ const UserProfileComponent = React.memo(() => {
   // Determine if the user should see the employee profile view (managers included)
   const userIsEmployee = isEmployee(profile?.role) || isManager(profile?.role);
 
-  const profileItems = useMemo(
-    () => {
-      if (!profile) return [];
-      return [
-        {
-          icon: <Person sx={{ color: 'primary.main' }} />,
-          label: 'First Name',
-          value: profile.first_name,
-        },
-        {
-          icon: <Person sx={{ color: 'primary.main' }} />,
-          label: 'Last Name',
-          value: profile.last_name,
-        },
-        {
-          icon: <Email sx={{ color: 'primary.main' }} />,
-          label: 'Email Address',
-          value: profile.email,
-        },
-        {
-          icon: <Phone sx={{ color: 'primary.main' }} />,
-          label: 'Phone',
-          value: profile.phone,
-        },
-        {
-          icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
-          label: 'Role',
-          value: getRoleName(profile.role),
-        },
-        {
-          icon: <Business sx={{ color: 'primary.main' }} />,
-          label: 'Tenant',
-          value: profile.tenant,
-        },
-        {
-          icon: <CalendarToday sx={{ color: 'primary.main' }} />,
-          label: 'Joined',
-          value: formatDate(profile.created_at),
-        },
-      ];
-    },
-    [
-      profile?.first_name,
-      profile?.last_name,
-      profile?.email,
-      profile?.phone,
-      profile?.role,
-      profile?.tenant,
-      profile?.created_at,
-    ]
-  );
+  const profileItems = useMemo(() => {
+    if (!profile) return [];
+    return [
+      {
+        icon: <Person sx={{ color: 'primary.main' }} />,
+        label: 'First Name',
+        value: profile.first_name,
+      },
+      {
+        icon: <Person sx={{ color: 'primary.main' }} />,
+        label: 'Last Name',
+        value: profile.last_name,
+      },
+      {
+        icon: <Email sx={{ color: 'primary.main' }} />,
+        label: 'Email Address',
+        value: profile.email,
+      },
+      {
+        icon: <Phone sx={{ color: 'primary.main' }} />,
+        label: 'Phone',
+        value: profile.phone,
+      },
+      {
+        icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
+        label: 'Role',
+        value: getRoleName(profile.role),
+      },
+      {
+        icon: <Business sx={{ color: 'primary.main' }} />,
+        label: 'Tenant',
+        value: profile.tenant,
+      },
+      {
+        icon: <CalendarToday sx={{ color: 'primary.main' }} />,
+        label: 'Joined',
+        value: formatDate(profile.created_at),
+      },
+    ];
+  }, [profile]);
 
   // Only show loading if we truly don't have profile data and it's still loading
   // If we have profile data, show it even if loading is true (might be fetching tenant in background)

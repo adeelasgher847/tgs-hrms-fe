@@ -10,8 +10,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Tabs,
-  Tab,
   CircularProgress,
   Tooltip,
   IconButton,
@@ -68,7 +66,7 @@ function TabPanel({
 
 const Reports: React.FC = () => {
   const darkMode = useIsDarkMode();
-  const [tab, setTab] = useState(0);
+  const [tab] = useState(0);
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
@@ -76,8 +74,8 @@ const Reports: React.FC = () => {
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
   const [allLeaveReports, setAllLeaveReports] = useState<EmployeeReport[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
+  const [, setTotalPages] = useState(1);
+  const [, setTotalRecords] = useState(0);
   const [paginationLimit, setPaginationLimit] = useState(25); // Backend limit, default 25
   const [loading, setLoading] = useState(true);
   const [loadingTab, setLoadingTab] = useState(false);
@@ -117,8 +115,7 @@ const Reports: React.FC = () => {
 
   const isAdminView = isHrAdmin || isAdmin || isSystemAdmin;
 
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) =>
-    setTab(newValue);
+  // Tab change handled directly where Tabs are used (no separate handler required)
 
   const handleMonthChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -358,8 +355,7 @@ const Reports: React.FC = () => {
       let allEmployeeReports: EmployeeReport[] = [];
       let paginationLimit = 25;
       let totalPagesFromBackend = 1;
-      let organizationStats: any = null;
-      let leaveTypes: any[] = [];
+      // organizationStats and leaveTypes removed (not used)
 
       const firstPageData = await leaveReportApi.getAllLeaveReports(
         1,
@@ -394,9 +390,7 @@ const Reports: React.FC = () => {
         totalPagesFromBackend = firstPageData.totalPages || 1;
       }
 
-      // Store organization stats and leave types from first page
-      organizationStats = firstPageData.organizationStats;
-      leaveTypes = firstPageData.leaveTypes || [];
+      // organizationStats and leaveTypes not needed here
 
       // Fetch all remaining pages if there are more pages
       if (totalPagesFromBackend > 1) {

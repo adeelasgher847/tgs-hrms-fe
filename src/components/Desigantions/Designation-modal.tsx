@@ -16,7 +16,10 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
-import { departmentApiService, type FrontendDepartment } from '../../api/departmentApi';
+import {
+  departmentApiService,
+  type FrontendDepartment,
+} from '../../api/departmentApi';
 
 interface Designation {
   id: string;
@@ -28,7 +31,11 @@ interface Designation {
 interface DesignationModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (data: { title: string; titleAr: string; departmentId: string }) => void;
+  onSave: (data: {
+    title: string;
+    titleAr: string;
+    departmentId: string;
+  }) => void;
   designation: Designation | null;
   isRTL: boolean;
 }
@@ -54,9 +61,11 @@ export default function DesignationModal({
   const [originalDepartmentId, setOriginalDepartmentId] = useState('');
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
   // const [loadingDepartments, setLoadingDepartments] = useState(false);
-  const [errors, setErrors] = useState<{ title?: string; titleAr?: string; departmentId?: string }>(
-    {}
-  );
+  const [errors, setErrors] = useState<{
+    title?: string;
+    titleAr?: string;
+    departmentId?: string;
+  }>({});
 
   // Load departments when modal opens
   useEffect(() => {
@@ -105,11 +114,17 @@ export default function DesignationModal({
 
   // Check if form has changes
   const hasChanges = designation
-    ? title !== originalTitle || titleAr !== originalTitleAr || departmentId !== originalDepartmentId
+    ? title !== originalTitle ||
+      titleAr !== originalTitleAr ||
+      departmentId !== originalDepartmentId
     : title.trim() !== '' || titleAr.trim() !== '' || departmentId !== '';
 
   const validateForm = () => {
-    const newErrors: { title?: string; titleAr?: string; departmentId?: string } = {};
+    const newErrors: {
+      title?: string;
+      titleAr?: string;
+      departmentId?: string;
+    } = {};
 
     if (!title.trim()) {
       newErrors.title = getText(
@@ -203,8 +218,6 @@ export default function DesignationModal({
 
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
-         
-
           <TextField
             select
             label={getText('Department', 'القسم')}

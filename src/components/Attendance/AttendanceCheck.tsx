@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Alert,
-} from '@mui/material';
+import { Box, Typography, Paper, Button, Alert } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
-import { isAdmin, isSystemAdmin, isNetworkAdmin, isHRAdmin } from '../../utils/roleUtils';
+import {
+  isAdmin,
+  isSystemAdmin,
+  isNetworkAdmin,
+  isHRAdmin,
+} from '../../utils/roleUtils';
 
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
 
@@ -151,7 +150,10 @@ const AttendanceCheck = () => {
             color='text.secondary'
             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
           >
-            {(isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser)
+            {isAdminUser ||
+            isSystemAdminUser ||
+            isNetworkAdminUser ||
+            isHRAdminUser
               ? 'Admin - Track your daily attendance'
               : 'Track your daily attendance'}
           </Typography>

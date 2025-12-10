@@ -88,7 +88,6 @@ export const DepartmentList: React.FC = () => {
     useState<FrontendDepartment | null>(null);
   const [allTenants, setAllTenants] = useState<SystemTenant[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
-  const [loadingTenants, setLoadingTenants] = useState(false);
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   // Fetch tenants for system admin
@@ -97,7 +96,6 @@ export const DepartmentList: React.FC = () => {
 
     const fetchTenants = async () => {
       try {
-        setLoadingTenants(true);
         const tenants = await SystemTenantApi.getAllTenants(false);
         const activeTenants = tenants.filter(
           t => t.status === 'active' && t.isDeleted === false
@@ -107,8 +105,6 @@ export const DepartmentList: React.FC = () => {
         // Default to "All Tenants" - no need to set selectedTenantId
       } catch (error) {
         console.error('Error fetching tenants:', error);
-      } finally {
-        setLoadingTenants(false);
       }
     };
 

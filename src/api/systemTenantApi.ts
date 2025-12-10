@@ -119,39 +119,46 @@ export const SystemTenantApi = {
     try {
       const response: AxiosResponse<SystemTenantDetail> =
         await axiosInstance.get(`/system/tenants/${id}`);
-      
+
       const detail = response.data;
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
-      
+      const baseURL =
+        import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
+
       // Helper function to convert relative path to full URL
-      const getFullLogoUrl = (logoPath: string | undefined | null): string | undefined => {
-        if (!logoPath || typeof logoPath !== 'string' || logoPath === '[object Object]') {
+      const getFullLogoUrl = (
+        logoPath: string | undefined | null
+      ): string | undefined => {
+        if (
+          !logoPath ||
+          typeof logoPath !== 'string' ||
+          logoPath === '[object Object]'
+        ) {
           return undefined;
         }
-        
+
         // If it's already a full URL (starts with http:// or https://), return as is
         if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
           return logoPath;
         }
-        
+
         // If it's a relative path (starts with /), prepend base URL
         if (logoPath.startsWith('/')) {
           return `${baseURL}${logoPath}`;
         }
-        
+
         // Otherwise, assume it's a relative path and prepend base URL with /
         return `${baseURL}/${logoPath}`;
       };
-      
+
       // Extract logo from direct logo property or company.logo_url
       let logoUrl = detail.logo || detail.company?.logo_url;
       logoUrl = getFullLogoUrl(logoUrl);
-      
+
       // Set the processed logo URL
       if (logoUrl) {
         detail.logo = logoUrl;
       }
-      
+
       console.log('Tenant Detail API Response:', {
         id: detail.id,
         name: detail.name,
@@ -160,7 +167,7 @@ export const SystemTenantApi = {
         processedLogo: detail.logo,
         baseURL,
       });
-      
+
       return detail;
     } catch (error) {
       console.error(` Failed to fetch tenant details (id=${id}):`, error);
@@ -288,14 +295,17 @@ export const SystemTenantApi = {
         }
         formData.append('logo', data.logo);
 
-        console.log('Sending FormData for tenant update with logo as multipart:', {
-          tenantId: data.tenantId,
-          companyName: data.companyName,
-          domain: data.domain,
-          logo: data.logo.name,
-          logoSize: data.logo.size,
-          logoType: data.logo.type,
-        });
+        console.log(
+          'Sending FormData for tenant update with logo as multipart:',
+          {
+            tenantId: data.tenantId,
+            companyName: data.companyName,
+            domain: data.domain,
+            logo: data.logo.name,
+            logoSize: data.logo.size,
+            logoType: data.logo.type,
+          }
+        );
 
         const response: AxiosResponse<SystemTenant> = await axiosInstance.put(
           '/system/tenants',

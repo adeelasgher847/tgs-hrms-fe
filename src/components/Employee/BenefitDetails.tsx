@@ -63,7 +63,6 @@ const BenefitDetails: React.FC = () => {
     fetchBenefits();
   }, [page]);
 
-
   const csvEscape = (value: unknown) => {
     if (value === null || value === undefined) return '';
     const s = String(value).replace(/"/g, '""');
@@ -157,7 +156,7 @@ const BenefitDetails: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Paper sx={{ mt: 2, overflowX: 'auto',boxShadow:'none' }}>
+        <Paper sx={{ mt: 2, overflowX: 'auto', boxShadow: 'none' }}>
           <Table>
             <TableHead>
               <TableRow>

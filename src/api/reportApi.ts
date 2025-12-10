@@ -27,7 +27,8 @@ class AttendanceSummaryApi {
     } catch (error: unknown) {
       console.error(
         'Error fetching attendance summary:',
-        (error as Record<string, unknown>)?.response?.data || (error as Record<string, unknown>)?.message
+        (error as Record<string, unknown>)?.response?.data ||
+          (error as Record<string, unknown>)?.message
       );
       throw error;
     }

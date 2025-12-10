@@ -1,5 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, CardContent, CircularProgress, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography, Box } from '@mui/material';
+import {
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Typography,
+  Box,
+} from '@mui/material';
 import { Download } from '@mui/icons-material';
 import { listBenefits, listEmployeeBenefits } from '../../api/benefits';
 import type { Benefit, EmployeeBenefitAssignment } from '../../types/benefits';
@@ -10,7 +23,9 @@ interface MyBenefitsProps {
 }
 
 export default function MyBenefits({ employeeId }: MyBenefitsProps) {
-  const [assignments, setAssignments] = useState<EmployeeBenefitAssignment[]>([]);
+  const [assignments, setAssignments] = useState<EmployeeBenefitAssignment[]>(
+    []
+  );
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -18,14 +33,19 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
     setLoading(true);
     Promise.all([
       listEmployeeBenefits(employeeId),
-      listBenefits({ page: 1, pageSize: 100 })
-    ]).then(([assignmentsRes, benefitsRes]) => {
-      setAssignments(assignmentsRes);
-      setBenefits(benefitsRes.items);
-    }).finally(() => setLoading(false));
+      listBenefits({ page: 1, pageSize: 100 }),
+    ])
+      .then(([assignmentsRes, benefitsRes]) => {
+        setAssignments(assignmentsRes);
+        setBenefits(benefitsRes.items);
+      })
+      .finally(() => setLoading(false));
   }, [employeeId]);
 
-  const statusMap = useMemo(() => ({ active: 'Active', ended: 'Ended', scheduled: 'Scheduled' }), []);
+  const statusMap = useMemo(
+    () => ({ active: 'Active', ended: 'Ended', scheduled: 'Scheduled' }),
+    []
+  );
 
   const getBenefitDetails = (benefitId: string) => {
     return benefits.find(b => b.id === benefitId);
@@ -45,7 +65,9 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('Employee Benefits Summary', pageWidth / 2, yPosition, { align: 'center' });
+    doc.text('Employee Benefits Summary', pageWidth / 2, yPosition, {
+      align: 'center',
+    });
     yPosition += 15;
 
     // Employee Info
@@ -65,7 +87,13 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
     // Table Headers
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    const headers = ['Benefit Name', 'Type', 'Start Date', 'End Date', 'Status'];
+    const headers = [
+      'Benefit Name',
+      'Type',
+      'Start Date',
+      'End Date',
+      'Status',
+    ];
     const colWidths = [60, 25, 30, 30, 25];
     let xPosition = 20;
 
@@ -77,7 +105,7 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
 
     // Table Data
     doc.setFont('helvetica', 'normal');
-    assignments.forEach((assignment) => {
+    assignments.forEach(assignment => {
       if (yPosition > pageHeight - 30) {
         doc.addPage();
         yPosition = 20;
@@ -89,7 +117,7 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
         benefit?.type || '-',
         assignment.startDate,
         assignment.endDate || '-',
-        assignment.status
+        assignment.status,
       ];
 
       xPosition = 20;
@@ -108,28 +136,35 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
     doc.setFont('helvetica', 'bold');
     doc.text(`Total Benefits: ${assignments.length}`, 20, yPosition);
     yPosition += 8;
-    
+
     const activeCount = assignments.filter(a => a.status === 'active').length;
     doc.text(`Active Benefits: ${activeCount}`, 20, yPosition);
 
     // Footer
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text('This document was generated automatically by HRMS', pageWidth / 2, pageHeight - 10, { align: 'center' });
+    doc.text(
+      'This document was generated automatically by HRMS',
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: 'center' }
+    );
 
     // Download
-    doc.save(`benefits-summary-${employeeId}-${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(
+      `benefits-summary-${employeeId}-${new Date().toISOString().split('T')[0]}.pdf`
+    );
   };
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography variant="h6">My Benefits</Typography>
+      <Stack direction='row' justifyContent='space-between' alignItems='center'>
+        <Typography variant='h6'>My Benefits</Typography>
         <Button
-          variant="outlined"
+          variant='outlined'
           startIcon={<Download />}
           onClick={handleDownloadPDF}
-          size="small"
+          size='small'
         >
           Benefit Summary
         </Button>
@@ -137,13 +172,13 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
       <Card>
         <CardContent>
           {loading ? (
-            <Stack alignItems="center" py={4}>
+            <Stack alignItems='center' py={4}>
               <CircularProgress />
             </Stack>
           ) : (
             <>
-              <Box sx={{ overflowX: 'auto', width: '100%'}}>
-                <Table size="small" sx={{ minWidth: 600 }}>
+              <Box sx={{ overflowX: 'auto', width: '100%' }}>
+                <Table size='small' sx={{ minWidth: 600 }}>
                   <TableHead>
                     <TableRow>
                       <TableCell>Benefit Name</TableCell>
@@ -154,22 +189,28 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {assignments.map((a) => {
+                    {assignments.map(a => {
                       const benefit = getBenefitDetails(a.benefitId);
                       return (
                         <TableRow key={a.id} hover>
                           <TableCell>
                             <Stack>
-                              <Typography variant="body2" fontWeight="medium">
+                              <Typography variant='body2' fontWeight='medium'>
                                 {benefit?.name || a.benefitId}
                               </Typography>
                               {benefit?.description && (
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography
+                                  variant='caption'
+                                  color='text.secondary'
+                                >
                                   {benefit.description}
                                 </Typography>
                               )}
                               {benefit?.eligibility && (
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography
+                                  variant='caption'
+                                  color='text.secondary'
+                                >
                                   Eligibility: {benefit.eligibility}
                                 </Typography>
                               )}
@@ -186,8 +227,10 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
                 </Table>
               </Box>
               {assignments.length === 0 && (
-                <Stack alignItems="center" py={4}>
-                  <Typography color="text.secondary">No benefits assigned</Typography>
+                <Stack alignItems='center' py={4}>
+                  <Typography color='text.secondary'>
+                    No benefits assigned
+                  </Typography>
                 </Stack>
               )}
             </>
@@ -197,5 +240,3 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
     </Stack>
   );
 }
-
-

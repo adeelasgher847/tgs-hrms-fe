@@ -201,12 +201,12 @@ const Signup: React.FC = () => {
     e: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
     e.preventDefault();
-    
+
     // Prevent duplicate submissions
     if (isSubmitting.current) {
       return;
     }
-    
+
     setError(null);
     setSuccess(null);
     setTermsError('');
@@ -360,7 +360,7 @@ const Signup: React.FC = () => {
                 component='img'
                 src='https://pixelwibes.com/template/my-task/react/static/media/login-img.b36c8fbd17b96828d9ba0900b843d21c.svg'
                 alt='Login Illustration'
-                loading="lazy"
+                loading='lazy'
                 sx={{ width: '100%', maxWidth: '400px' }}
               />
             </Box>
@@ -574,7 +574,10 @@ const Signup: React.FC = () => {
                         }}
                       />
                     </Box>
-                    <Box sx={{ flex: 1, position: 'relative' }} className="signup-phone-input">
+                    <Box
+                      sx={{ flex: 1, position: 'relative' }}
+                      className='signup-phone-input'
+                    >
                       <Typography
                         component='label'
                         htmlFor='phone'
@@ -588,16 +591,23 @@ const Signup: React.FC = () => {
                         required
                         fullWidth
                         value={formData.phone}
-                        placeholder={lang === 'ar' ? 'أدخل رقم الهاتف' : 'Enter phone number'}
-                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        placeholder={
+                          lang === 'ar'
+                            ? 'أدخل رقم الهاتف'
+                            : 'Enter phone number'
+                        }
+                        onChange={e => handlePhoneChange(e.target.value)}
                         disabled={loading}
                         error={Boolean(fieldErrors.phone)}
                         helperText={fieldErrors.phone}
                         InputProps={{
                           startAdornment: (
-                            <InputAdornment position="start" sx={{ margin: 0, padding: '28px 0px' }}>
+                            <InputAdornment
+                              position='start'
+                              sx={{ margin: 0, padding: '28px 0px' }}
+                            >
                               <PhoneInput
-                                defaultCountry="pk"
+                                defaultCountry='pk'
                                 value={formData.phone}
                                 onChange={handlePhoneChange}
                                 style={{
@@ -612,7 +622,8 @@ const Signup: React.FC = () => {
                                   padding: '0',
                                   margin: '0',
                                   fontSize: '1rem',
-                                  fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                                  fontFamily:
+                                    '"Roboto", "Helvetica", "Arial", sans-serif',
                                   backgroundColor: 'transparent',
                                   width: '100%',
                                   boxSizing: 'border-box',
@@ -633,7 +644,7 @@ const Signup: React.FC = () => {
                                     zIndex: 9999,
                                   },
                                 }}
-                                className="phone-input-textfield-adornment"
+                                className='phone-input-textfield-adornment'
                               />
                             </InputAdornment>
                           ),

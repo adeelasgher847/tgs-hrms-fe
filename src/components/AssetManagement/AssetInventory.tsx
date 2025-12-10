@@ -51,6 +51,7 @@ import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../Data/assetCategories';
 import { isHRAdmin } from '../../utils/roleUtils';
 import { formatDate } from '../../utils/dateUtils';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 // Extended interface for API asset response that may include additional user information
 interface ApiAssetWithUser extends ApiAsset {
@@ -134,6 +135,7 @@ const AssetInventory: React.FC = () => {
   const handleSnackbarClose = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
+  const { showError } = useErrorHandler();
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -321,7 +323,13 @@ const AssetInventory: React.FC = () => {
         setAssets(transformedAssets);
       } catch (error) {
         console.error('Failed to fetch assets:', error);
-        showSnackbar('Failed to load assets', 'error');
+        // Use centralized error handler when available
+        try {
+          showError(error);
+        } catch {
+          // Fallback to local snackbar
+          showSnackbar('Failed to load assets', 'error');
+        }
       } finally {
         fetchingRef.current = false;
         // Only set initial loading to false on very first load
@@ -330,7 +338,7 @@ const AssetInventory: React.FC = () => {
         }
       }
     },
-    [transformApiAssets]
+    [transformApiAssets, showError]
   );
 
   // Initial load: fetch paginated assets (counts are included in API response)
@@ -881,9 +889,7 @@ const AssetInventory: React.FC = () => {
                         </Typography>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {formatDate(asset.purchaseDate)}
-                    </TableCell>
+                    <TableCell>{formatDate(asset.purchaseDate)}</TableCell>
                     {!hideActions && (
                       <TableCell align='right'>
                         <IconButton

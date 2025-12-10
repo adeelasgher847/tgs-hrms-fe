@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import LeaveForm from './LeaveForm';
 import LeaveHistory from './LeaveHistory';
 import LeaveApprovalDialog from './LeaveApprovalDialog';
-import { leaveApi, type CreateLeaveRequest } from '../../api/leaveApi';
+import { leaveApi } from '../../api/leaveApi';
 import type { Leave } from '../../type/levetypes';
 import { getCurrentUser, getUserName, getUserRole } from '../../utils/auth';
 import { normalizeRole } from '../../utils/permissions';
@@ -96,38 +96,93 @@ const LeaveRequestPage = () => {
           res = await leaveApi.getUserLeaves(currentUserId, page);
         }
 
-        const leavesData: Leave[] = res.items.map((leave: any) => {
+        const leavesData: Leave[] = (
+          Array.isArray(res.items) ? res.items : []
+        ).map((leaveRaw: unknown) => {
+          const leave = (leaveRaw || {}) as Record<string, unknown>;
+
+          const employeeObj =
+            (leave.employee && typeof leave.employee === 'object'
+              ? (leave.employee as Record<string, unknown>)
+              : undefined) || undefined;
+          const userObj =
+            (leave.user && typeof leave.user === 'object'
+              ? (leave.user as Record<string, unknown>)
+              : undefined) || undefined;
+
+          const getString = (v: unknown) =>
+            v === null || typeof v === 'undefined' ? '' : String(v);
+
           const employeeId =
-            leave.employeeId || leave.employee?.id || leave.user?.id || '';
-          const userId = leave.user?.id || leave.employee?.id || '';
+            (typeof leave.employeeId === 'string' && leave.employeeId) ||
+            (typeof leave.employeeId === 'number' &&
+              String(leave.employeeId)) ||
+            (employeeObj &&
+              typeof employeeObj.id === 'string' &&
+              employeeObj.id) ||
+            (userObj && typeof userObj.id === 'string' && userObj.id) ||
+            '';
+
+          const userId =
+            (userObj && typeof userObj.id === 'string' && userObj.id) ||
+            (employeeObj &&
+              typeof employeeObj.id === 'string' &&
+              employeeObj.id) ||
+            '';
+
+          const employeeFirstName =
+            (employeeObj &&
+              typeof employeeObj.first_name === 'string' &&
+              employeeObj.first_name) ||
+            (userObj &&
+              typeof userObj.first_name === 'string' &&
+              userObj.first_name) ||
+            'You';
+
+          const employeeLastName =
+            (employeeObj &&
+              typeof employeeObj.last_name === 'string' &&
+              employeeObj.last_name) ||
+            (userObj &&
+              typeof userObj.last_name === 'string' &&
+              userObj.last_name) ||
+            undefined;
+
+          const employeeEmail =
+            (employeeObj &&
+              typeof employeeObj.email === 'string' &&
+              employeeObj.email) ||
+            (userObj && typeof userObj.email === 'string' && userObj.email) ||
+            '';
+
+          const leaveTypeName =
+            (leave.leaveType &&
+            typeof leave.leaveType === 'object' &&
+            typeof (leave.leaveType as Record<string, unknown>).name ===
+              'string'
+              ? ((leave.leaveType as Record<string, unknown>).name as string)
+              : undefined) || 'Unknown';
+
           return {
-            id: leave.id,
-            employeeId,
-            employee: leave.employee
-              ? {
-                  id: leave.employee.id || userId,
-                  first_name: leave.employee.first_name || 'You',
-                  last_name: leave.employee.last_name,
-                  email: leave.employee.email || '',
-                }
-              : {
-                  id: userId,
-                  first_name: leave.user?.first_name || 'You',
-                  last_name: leave.user?.last_name,
-                  email: leave.user?.email || '',
-                },
-            leaveTypeId: leave.leaveTypeId || '',
-            leaveType: leave.leaveType
-              ? { id: '', name: leave.leaveType.name || 'Unknown' }
-              : { id: '', name: 'Unknown' },
-            reason: leave.reason || '',
-            remarks: leave.remarks || undefined,
-            startDate: leave.startDate || '',
-            endDate: leave.endDate || '',
-            status: leave.status || 'pending',
-            createdAt: leave.createdAt,
-            updatedAt: leave.updatedAt,
-          };
+            id: getString(leave.id),
+            employeeId: getString(employeeId),
+            employee: {
+              id: getString(employeeObj?.id) || getString(userId),
+              first_name: employeeFirstName,
+              last_name: employeeLastName as string | undefined,
+              email: employeeEmail,
+            },
+            leaveTypeId: getString(leave.leaveTypeId),
+            leaveType: { id: '', name: leaveTypeName },
+            reason: getString(leave.reason),
+            remarks:
+              typeof leave.remarks === 'string' ? leave.remarks : undefined,
+            startDate: getString(leave.startDate),
+            endDate: getString(leave.endDate),
+            status: (getString(leave.status) as Leave['status']) || 'pending',
+            createdAt: leave.createdAt as string | undefined,
+            updatedAt: leave.updatedAt as string | undefined,
+          } as Leave;
         });
 
         setLeaves(Array.from(new Map(leavesData.map(l => [l.id, l])).values()));
@@ -153,7 +208,7 @@ const LeaveRequestPage = () => {
         else setTableLoading(false);
       }
     },
-    [currentUserId, role]
+    [currentUserId, role, currentPage, viewMode]
   );
 
   useEffect(() => {
@@ -172,12 +227,7 @@ const LeaveRequestPage = () => {
     const viewModeChanged = previousViewModeRef.current !== effectiveViewMode;
 
     // Only skip loading if nothing has changed (initial load already happened)
-    if (
-      hasLoadedOnceRef.current &&
-      !pageChanged &&
-      !viewModeChanged
-    )
-      return;
+    if (hasLoadedOnceRef.current && !pageChanged && !viewModeChanged) return;
 
     // Use table loader (not full page loader) if we've loaded before and only the page changed
     const skipFullPageLoader =
@@ -205,7 +255,7 @@ const LeaveRequestPage = () => {
   };
 
   // Handle apply leave (called after successful API in form)
-  const handleApply = async (data: CreateLeaveRequest) => {
+  const handleApply = async () => {
     try {
       setSnackbar({
         open: true,
@@ -312,34 +362,83 @@ const LeaveRequestPage = () => {
 
   // Fetch all leaves for export
   const fetchAllLeavesForExport = useCallback(async (): Promise<Leave[]> => {
-    try {
-      const allLeaves: Leave[] = [];
-      let pageNum = 1;
-      let totalPagesLocal = 1;
-      do {
-        let res;
-        if (
-          ['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role)
-        ) {
-          res = await leaveApi.getAllLeaves(pageNum);
-        } else if (role === 'manager') {
-          res =
-            viewMode === 'you'
-              ? await leaveApi.getUserLeaves(currentUserId, pageNum)
-              : await leaveApi.getTeamLeaves(pageNum);
-        } else {
-          res = await leaveApi.getUserLeaves(currentUserId, pageNum);
-        }
-        totalPagesLocal = res.totalPages || 1;
-        allLeaves.push(...res.items);
-        pageNum++;
-      } while (pageNum <= totalPagesLocal);
+    const allLeaves: Leave[] = [];
+    let pageNum = 1;
+    let totalPagesLocal = 1;
+    do {
+      let res;
+      if (
+        ['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role)
+      ) {
+        res = await leaveApi.getAllLeaves(pageNum);
+      } else if (role === 'manager') {
+        res =
+          viewMode === 'you'
+            ? await leaveApi.getUserLeaves(currentUserId, pageNum)
+            : await leaveApi.getTeamLeaves(pageNum);
+      } else {
+        res = await leaveApi.getUserLeaves(currentUserId, pageNum);
+      }
+      totalPagesLocal = res.totalPages || 1;
 
-      return Array.from(new Map(allLeaves.map(l => [l.id, l])).values());
-    } catch (error) {
-      console.error('Error fetching all leaves for export:', error);
-      throw error;
-    }
+      // Normalize incoming items to `Leave` shape to ensure types match
+      const incoming = Array.isArray(res.items) ? res.items : [];
+      incoming.forEach(raw => {
+        const obj = ((raw as unknown) || {}) as Record<string, unknown>;
+        const empObj =
+          obj.employee && typeof obj.employee === 'object'
+            ? (obj.employee as Record<string, unknown>)
+            : undefined;
+        const userObj =
+          obj.user && typeof obj.user === 'object'
+            ? (obj.user as Record<string, unknown>)
+            : undefined;
+
+        const toStr = (v: unknown) =>
+          v === null || typeof v === 'undefined' ? '' : String(v);
+
+        const normalized: Leave = {
+          id: toStr(obj.id),
+          employeeId:
+            toStr(obj.employeeId) ||
+            toStr(empObj?.id) ||
+            toStr(userObj?.id) ||
+            '',
+          employee: {
+            id: toStr(empObj?.id) || toStr(userObj?.id) || '',
+            first_name:
+              toStr(empObj?.first_name) || toStr(userObj?.first_name) || 'You',
+            last_name:
+              (empObj?.last_name as string) ||
+              (userObj?.last_name as string) ||
+              undefined,
+            email: toStr(empObj?.email) || toStr(userObj?.email) || '',
+          },
+          leaveTypeId: toStr(obj.leaveTypeId),
+          leaveType: {
+            id: '',
+            name:
+              toStr((obj.leaveType as Record<string, unknown>)?.name) ||
+              'Unknown',
+          },
+          reason: toStr(obj.reason),
+          remarks:
+            typeof obj.remarks === 'string'
+              ? (obj.remarks as string)
+              : undefined,
+          startDate: toStr(obj.startDate),
+          endDate: toStr(obj.endDate),
+          status: (toStr(obj.status) as Leave['status']) || 'pending',
+          createdAt: (obj.createdAt as string) || undefined,
+          updatedAt: (obj.updatedAt as string) || undefined,
+        };
+
+        allLeaves.push(normalized);
+      });
+      pageNum++;
+    } while (pageNum <= totalPagesLocal);
+
+    return Array.from(new Map(allLeaves.map(l => [l.id, l])).values());
   }, [currentUserId, role, viewMode]);
 
   if (initialLoading)

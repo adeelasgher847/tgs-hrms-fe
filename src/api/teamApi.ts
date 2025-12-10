@@ -290,7 +290,7 @@ class TeamApiService {
     employeeId: string,
     companyId?: string
   ): Promise<void> {
-    const payload: any = { employee_id: employeeId };
+    const payload: { employee_id: string; company_id?: string } = { employee_id: employeeId };
     if (companyId) payload.company_id = companyId;
 
     await axiosInstance.post(`${this.baseUrl}/${teamId}/add-member`, payload);

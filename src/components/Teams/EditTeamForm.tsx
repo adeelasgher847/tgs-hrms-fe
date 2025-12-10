@@ -104,7 +104,7 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
                 email: team.manager.email,
                 role: 'Manager',
               };
-              managersData.unshift(currentManager); 
+              managersData.unshift(currentManager);
             }
           }
 

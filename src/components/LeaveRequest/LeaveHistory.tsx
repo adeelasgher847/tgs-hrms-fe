@@ -26,7 +26,7 @@ import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
 
-const ITEMS_PER_PAGE = 25; 
+const ITEMS_PER_PAGE = 25;
 
 const statusConfig: Record<
   string,
@@ -52,7 +52,6 @@ const statusConfig: Record<
     icon: <UndoIcon fontSize='small' sx={{ mr: 0.5 }} />,
   },
 };
-
 
 interface LeaveHistoryProps {
   leaves: Leave[];
@@ -163,21 +162,22 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
   // When employee is filtered, disable server pagination and use client-side filtering
   // This ensures we can filter all available leaves, not just the current page
-  const useServerPagination = !isEmployeeFiltered && !!onPageChange && serverTotalPages > 0;
+  const useServerPagination =
+    !isEmployeeFiltered && !!onPageChange && serverTotalPages > 0;
   const currentPage = useServerPagination ? serverCurrentPage : page;
-  
+
   // When employee is filtered, calculate pagination based on filtered results
   const filteredTotalItems = filteredLeaves.length;
   const totalPages = useServerPagination
     ? serverTotalPages
     : Math.max(1, Math.ceil(filteredTotalItems / ITEMS_PER_PAGE));
-  
+
   // When employee is filtered, use filtered count; otherwise use server total
   const totalItems = isEmployeeFiltered
     ? filteredTotalItems
     : useServerPagination
-    ? serverTotalItems
-    : filteredTotalItems;
+      ? serverTotalItems
+      : filteredTotalItems;
 
   // Use normal pagination for all cases
   const paginatedLeaves = useServerPagination
@@ -204,7 +204,12 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
       // Determine which API to call based on user role and view mode
       const role = userRole || '';
-      const isAdminRole = ['hr-admin', 'system-admin', 'admin', 'network-admin'].includes(role);
+      const isAdminRole = [
+        'hr-admin',
+        'system-admin',
+        'admin',
+        'network-admin',
+      ].includes(role);
 
       if (isAdminRole) {
         // Admin/HR Admin/Network Admin - export all leaves for tenant
@@ -318,7 +323,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         </Box>
       </Box>
 
-      {(isLoading || loadingAllLeaves) ? (
+      {isLoading || loadingAllLeaves ? (
         <Paper elevation={1} sx={{ boxShadow: 'none', py: 6 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <CircularProgress />
@@ -376,8 +381,8 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                             sx: {
                               position: 'relative',
                               left: '-115px',
-                            }
-                          }
+                            },
+                          },
                         }}
                       >
                         <Typography
@@ -497,7 +502,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           const shouldShowPagination = isEmployeeFiltered
             ? filteredTotalItems > ITEMS_PER_PAGE
             : totalPages > 1;
-          
+
           return shouldShowPagination ? (
             <Pagination
               count={totalPages}

@@ -62,7 +62,7 @@ import type { AxiosError } from 'axios';
 import { formatDate } from '../../utils/dateUtils';
 
 // Extended interface for API asset request response that may include additional fields
-interface ApiAssetRequestExtended extends ApiAssetRequest {
+interface ApiAssetRequestExtended extends Omit<ApiAssetRequest, 'category_id'> {
   category_id?: string;
   subcategory_id?: string | null;
   category?: {
@@ -71,22 +71,19 @@ interface ApiAssetRequestExtended extends ApiAssetRequest {
     description?: string | null;
     icon?: string | null;
   };
-  subcategory?: {
-    id: string;
-    name: string;
-    description?: string | null;
-  };
-  subcategory_name?: string;
   subcategory?:
     | string
     | {
+        id?: string;
         name?: string;
+        description?: string | null;
         title?: string;
         subcategory_name?: string;
         subcategoryName?: string;
         display_name?: string;
         label?: string;
       };
+  subcategory_name?: string;
   subcategoryId?: string;
   subcategoryName?: string;
   rejection_reason?: string | null;
@@ -134,7 +131,6 @@ const normalizeRequestStatus = (
       return 'pending'; // Default fallback
   }
 };
-
 
 const schema = yup.object({
   action: yup.string().required('Action is required'),
@@ -210,7 +206,7 @@ const RequestManagement: React.FC = () => {
 
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 25, 
+    limit: 25,
     total: 0,
     totalPages: 0,
   });
@@ -1079,15 +1075,15 @@ const RequestManagement: React.FC = () => {
           let matchingCategory = assetCategories.find(
             cat =>
               cat.name.toLowerCase() ===
-                apiRequest.asset_category.toLowerCase() ||
+                apiRequest.asset_category?.toLowerCase() ||
               cat.subcategories?.some(
                 sub =>
-                  sub.toLowerCase() === apiRequest.asset_category.toLowerCase()
+                  sub.toLowerCase() === apiRequest.asset_category?.toLowerCase()
               )
           );
 
           // If no direct match, try to match subcategory format (e.g., "Mobility / Transport - Fuel Card")
-          if (!matchingCategory && apiRequest.asset_category.includes(' - ')) {
+          if (!matchingCategory && apiRequest.asset_category?.includes(' - ')) {
             const [mainCategoryName, subcategoryName] =
               apiRequest.asset_category.split(' - ');
             matchingCategory = assetCategories.find(
@@ -1122,9 +1118,9 @@ const RequestManagement: React.FC = () => {
                   requestedItem: subcategoryName || apiRequest.asset_category,
                 }
               : {
-                  id: apiRequest.asset_category,
-                  name: mainCategoryName,
-                  nameAr: apiRequest.asset_category,
+                  id: apiRequest.asset_category || 'unknown',
+                  name: mainCategoryName || 'Unknown Category',
+                  nameAr: apiRequest.asset_category || 'Unknown Category',
                   description: '',
                   color: '#757575',
                   requestedItem: subcategoryName || apiRequest.asset_category,
@@ -1232,9 +1228,7 @@ const RequestManagement: React.FC = () => {
       <TableCell>
         <StatusChip status={request.status} type='request' />
       </TableCell>
-      <TableCell>
-        {formatDate(request.requestedDate)}
-      </TableCell>
+      <TableCell>{formatDate(request.requestedDate)}</TableCell>
       <TableCell>
         {request.remarks && (
           <Tooltip title={request.remarks} arrow>

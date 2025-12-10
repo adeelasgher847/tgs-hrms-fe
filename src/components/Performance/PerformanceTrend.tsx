@@ -367,7 +367,10 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           </Grid>
 
           <Grid item xs={12} md={8}>
-            <Paper elevation={1} sx={{ width: '100%', overflow: 'auto',boxShadow: 'none' }}>
+            <Paper
+              elevation={1}
+              sx={{ width: '100%', overflow: 'auto', boxShadow: 'none' }}
+            >
               <Table size='small'>
                 <TableHead>
                   <TableRow>
@@ -388,9 +391,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
                         <TableCell>{row.cycle}</TableCell>
                         <TableCell>{row.overallScore}</TableCell>
                         <TableCell>{row.status}</TableCell>
-                        <TableCell>
-                          {formatDate(row.createdAt)}
-                        </TableCell>
+                        <TableCell>{formatDate(row.createdAt)}</TableCell>
                       </TableRow>
                     ))
                   ) : (

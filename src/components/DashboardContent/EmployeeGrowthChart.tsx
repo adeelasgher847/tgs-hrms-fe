@@ -116,9 +116,7 @@ const EmployeeGrowthChart: React.FC = () => {
     ar: 'الشهر',
   };
 
-  const series = [
-    { name: 'Employees', data: employeesData },
-  ];
+  const series = [{ name: 'Employees', data: employeesData }];
 
   const options: ApexCharts.ApexOptions = {
     chart: {
@@ -252,7 +250,13 @@ const EmployeeGrowthChart: React.FC = () => {
             </Select>
           </FormControl>
 
-          <FormControl size='small' sx={{ minWidth: { xs: '100%', sm: 120 }, width: { xs: '100%', sm: 'auto' } }}>
+          <FormControl
+            size='small'
+            sx={{
+              minWidth: { xs: '100%', sm: 120 },
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          >
             <Select
               value={selectedMonth}
               onChange={e => setSelectedMonth(e.target.value)}
@@ -325,4 +329,3 @@ const EmployeeGrowthChart: React.FC = () => {
 };
 
 export default EmployeeGrowthChart;
-

@@ -39,6 +39,8 @@ import employeeApi from '../../api/employeeApi';
 
 type EmployeeWithTenantName = SystemEmployee & {
   tenantName: string;
+  departmentName?: string;
+  designationTitle?: string;
 };
 
 const TenantBasedEmployeeManager: React.FC = () => {
@@ -114,7 +116,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
     isLoadingRef.current = true;
     setLoading(true);
     try {
-      const params: any = {
+      const params: Record<string, string | number | undefined> = {
         page: currentPage,
       };
       if (filters.tenantId) params.tenantId = filters.tenantId;
@@ -128,14 +130,38 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
       // Map flat API fields to include tenantName (match by tenantId)
       const mapped: EmployeeWithTenantName[] = employeesData.map(emp => {
+        const e = emp as unknown as Record<string, unknown>;
         const tenantId =
-          (emp as any).tenantId ||
-          (emp as any).tenant_id ||
-          (emp as any).tenant?.id;
-        const matchedTenant = tenants.find(t => t.id === tenantId);
+          (typeof e.tenantId === 'string' && e.tenantId) ||
+          (typeof e.tenant_id === 'string' && e.tenant_id) ||
+          (typeof e.tenant === 'object' &&
+            e.tenant &&
+            typeof (e.tenant as Record<string, unknown>).id === 'string' &&
+            (e.tenant as Record<string, unknown>).id) ||
+          undefined;
+
+        const matchedTenant = tenants.find(t => t.id === String(tenantId));
+
+        // Safely read departmentName / designationTitle from backend shapes
+        const departmentName =
+          typeof e.departmentName === 'string'
+            ? e.departmentName
+            : typeof e.department_name === 'string'
+              ? e.department_name
+              : '';
+
+        const designationTitle =
+          typeof e.designationTitle === 'string'
+            ? e.designationTitle
+            : typeof e.designation_title === 'string'
+              ? e.designation_title
+              : '';
+
         return {
           ...emp,
           tenantName: matchedTenant ? matchedTenant.name : '', // Tenant name if available
+          departmentName,
+          designationTitle,
         };
       });
 
@@ -253,12 +279,12 @@ const TenantBasedEmployeeManager: React.FC = () => {
       // Use backend API to export employees CSV
       const tenantId = filters.tenantId || undefined;
       const blob = await employeeApi.exportSystemEmployeesCSV(tenantId);
-      
+
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      const filename = tenantId 
+      const filename = tenantId
         ? `employees_tenant_${tenantId}.csv`
         : 'employees_all_tenants.csv';
       link.setAttribute('download', filename);
@@ -422,8 +448,8 @@ const TenantBasedEmployeeManager: React.FC = () => {
                   <TableRow key={emp.id}>
                     <TableCell>{emp.name}</TableCell>
                     <TableCell>{emp.tenantName || <em>—</em>}</TableCell>
-                    <TableCell>{(emp as any).departmentName}</TableCell>
-                    <TableCell>{(emp as any).designationTitle}</TableCell>
+                    <TableCell>{emp.departmentName || <em>—</em>}</TableCell>
+                    <TableCell>{emp.designationTitle || <em>—</em>}</TableCell>
                     <TableCell>{emp.status}</TableCell>
                     <TableCell>
                       {emp.createdAt ? formatDate(emp.createdAt) : 'N/A'}

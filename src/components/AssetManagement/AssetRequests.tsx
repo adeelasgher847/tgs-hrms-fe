@@ -45,12 +45,13 @@ import {
 import StatusChip from './StatusChip';
 import ConfirmationDialog from './ConfirmationDialog';
 import { Snackbar, Alert } from '@mui/material';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { type AssetSubcategory } from '../../api/assetApi';
 import { formatDate } from '../../utils/dateUtils';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
-  category_id?: string;
+  category_id: string;
   subcategory_id?: string | null;
   subcategory_name?: string;
   category?:
@@ -96,7 +97,6 @@ const getCurrentUserId = () => {
   }
   return '1'; // Default fallback
 };
-
 
 // Normalize status to ensure it matches expected values
 const normalizeRequestStatus = (
@@ -197,6 +197,8 @@ const AssetRequests: React.FC = () => {
     message: string;
     severity: 'success' | 'error' | 'warning' | 'info';
   }>({ open: false, message: '', severity: 'success' });
+
+  const { showError } = useErrorHandler();
 
   const showSnackbar = (
     message: string,
@@ -336,7 +338,7 @@ const AssetRequests: React.FC = () => {
 
         setSubcategories(filteredSubcategories);
       } catch (error) {
-        console.error('AssetRequests - Failed to fetch subcategories:', error);
+        showError(error);
         setSubcategories([]);
       } finally {
         setLoadingData(false);
@@ -346,7 +348,7 @@ const AssetRequests: React.FC = () => {
     if (selectedCategoryId) {
       fetchSubcategories();
     }
-  }, [selectedCategoryId, categories, categories.length]);
+  }, [selectedCategoryId, categories, categories.length, showError]);
 
   const transformApiRequests = React.useCallback(
     (apiRequests: ApiAssetRequestExtended[]): AssetRequest[] => {
@@ -517,7 +519,7 @@ const AssetRequests: React.FC = () => {
           });
         }
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        showError(error);
       } finally {
         fetchingRef.current = false;
         // Only set initial loading to false on very first load
@@ -526,7 +528,7 @@ const AssetRequests: React.FC = () => {
         }
       }
     },
-    [currentUserId, transformApiRequests]
+    [currentUserId, transformApiRequests, showError]
   );
 
   // Re-transform requests when categories are loaded to update category names
@@ -825,9 +827,7 @@ const AssetRequests: React.FC = () => {
       <TableCell>
         <StatusChip status={request.status} type='request' />
       </TableCell>
-      <TableCell>
-        {formatDate(request.requestedDate)}
-      </TableCell>
+      <TableCell>{formatDate(request.requestedDate)}</TableCell>
       <TableCell>
         {request.processedDate && formatDate(request.processedDate)}
       </TableCell>

@@ -25,7 +25,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Grid,
   Pagination,
 } from '@mui/material';
 import {
@@ -49,7 +48,8 @@ interface AssetCategory {
   icon?: string | null;
 }
 
-interface ExtendedSystemAsset extends SystemAsset {
+interface ExtendedSystemAsset
+  extends Omit<SystemAsset, 'category_id' | 'subcategory_id'> {
   category_id?: string;
   subcategory_id?: string;
 }
