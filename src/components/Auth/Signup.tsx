@@ -28,7 +28,7 @@ import {
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
 import AppInputField from '../Common/AppInputField';
-import { Icons } from '../../assets/icons';
+import AuthSidebar from '../Common/AuthSidebar';
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -287,85 +287,18 @@ const Signup: React.FC = () => {
   };
 
   return (
-      <Box
-        sx={{
+    <Box
+      sx={{
         display: 'flex',
         minHeight: '100vh',
         width: '100%',
-          position: 'relative',
-        }}
-      >
-        <Box
-          sx={{
-          display: { xs: 'none', lg: 'flex' },
-          flexDirection: 'column',
-          width: '40%',
-          backgroundColor: 'var(--primary-dark-color)',
-          padding: '40px',
-          position: 'relative',
-          overflow: 'hidden',
-            justifyContent: 'center',
-            alignItems: 'center',
-          zIndex: 0,
-          }}
-        >
-          <Box
-            sx={{
-            position: 'absolute',
-            top: '40px',
-            left: '40px',
-              display: 'flex',
-              alignItems: 'center',
-            gap: 1,
-            }}
-          >
-            <Box
-            component='img'
-            src={Icons.logoWhite}
-            alt='Logo'
-              sx={{
-              height: 'auto',
-              width: 'auto',
-              maxHeight: '40px',
-            }}
-          />
-        </Box>
-
-        <Box
-          sx={{
-            display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-            gap: 4,
-                textAlign: 'center',
-          }}
-        >
-              <Typography
-            variant='h1'
-                sx={{
-              fontSize: '48px',
-              fontWeight: 700,
-              color: 'var(--white-color)',
-            }}
-          >
-            Workonnect - Let's Management Better
-              </Typography>
-              <Box
-                component='img'
-            src={Icons.authSidebar}
-            alt='Illustration'
-            sx={{
-              width: '100%',
-              maxWidth: '500px',
-              height: 'auto',
-            }}
-          />
-        </Box>
-            </Box>
+        position: 'relative',
+      }}
+    >
+      <AuthSidebar />
 
       <Box
-                sx={{
+        sx={{
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
@@ -391,33 +324,33 @@ const Signup: React.FC = () => {
         >
           <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
             <FormControl size='small' sx={{ minWidth: 100 }}>
-                    <Select
-                      value={lang}
-                      onChange={e => setLang(e.target.value as 'en' | 'ar')}
-                      sx={{
+              <Select
+                value={lang}
+                onChange={e => setLang(e.target.value as 'en' | 'ar')}
+                sx={{
                   borderRadius: 'var(--border-radius-lg)',
-                      }}
-                    >
-                      <MenuItem value='en'>English</MenuItem>
-                      <MenuItem value='ar'>عربى</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
+                }}
+              >
+                <MenuItem value='en'>English</MenuItem>
+                <MenuItem value='ar'>عربى</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
 
-                  <Typography
+          <Typography
             variant='h1'
-                    sx={{
+            sx={{
               fontSize: '48px',
               fontWeight: 700,
               mb: 1,
             }}
           >
             Create Account
-                  </Typography>
+          </Typography>
 
           <Typography
             className='body'
-                    sx={{
+            sx={{
               color: 'var(--dark-grey-color)',
               mb: 4,
             }}
@@ -425,13 +358,13 @@ const Signup: React.FC = () => {
             For business, band or celebrity.
           </Typography>
 
-                {error && (
+          {error && (
             <Alert severity='error' sx={{ mb: 2 }}>
-                    {error}
-                  </Alert>
-                )}
+              {error}
+            </Alert>
+          )}
 
-                <Box component='form' onSubmit={handleSubmit}>
+          <Box component='form' onSubmit={handleSubmit}>
             <Box
               sx={{
                 display: 'flex',
@@ -441,33 +374,33 @@ const Signup: React.FC = () => {
             >
               <Box sx={{ flex: 1 }}>
                 <AppInputField
-                        name='first_name'
+                  name='first_name'
                   label='First Name'
-                        required
-                        fullWidth
-                        value={formData.first_name}
-                        onChange={handleChange}
-                        disabled={loading}
-                        error={Boolean(fieldErrors.first_name)}
-                        helperText={fieldErrors.first_name}
+                  required
+                  fullWidth
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  disabled={loading}
+                  error={Boolean(fieldErrors.first_name)}
+                  helperText={fieldErrors.first_name}
                   placeholder='Waleed'
-                      />
-                    </Box>
-                    <Box sx={{ flex: 1 }}>
+                />
+              </Box>
+              <Box sx={{ flex: 1 }}>
                 <AppInputField
-                        name='last_name'
+                  name='last_name'
                   label='Last Name'
-                        required
-                        fullWidth
-                        value={formData.last_name}
-                        onChange={handleChange}
-                        disabled={loading}
-                        error={Boolean(fieldErrors.last_name)}
-                        helperText={fieldErrors.last_name}
+                  required
+                  fullWidth
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  disabled={loading}
+                  error={Boolean(fieldErrors.last_name)}
+                  helperText={fieldErrors.last_name}
                   placeholder='Ahmed'
-                      />
-                    </Box>
-                  </Box>
+                />
+              </Box>
+            </Box>
 
             <Box
               sx={{
@@ -478,97 +411,97 @@ const Signup: React.FC = () => {
             >
               <Box sx={{ flex: 1 }}>
                 <AppInputField
-                        name='email'
+                  name='email'
                   label='Email'
-                        type='email'
-                        required
-                        fullWidth
-                        value={formData.email}
-                        onChange={handleChange}
-                        onBlur={e => {
-                          const value = e.target.value;
-                          const trimmed = value.trim();
-                          const emailError = trimmed
-                            ? validateEmailAddress(trimmed)
-                            : null;
-                          setFieldErrors(prev => ({
-                            ...prev,
-                            email: emailError ?? '',
-                          }));
-                        }}
-                        disabled={loading}
-                        error={Boolean(fieldErrors.email)}
-                        helperText={fieldErrors.email}
+                  type='email'
+                  required
+                  fullWidth
+                  value={formData.email}
+                  onChange={handleChange}
+                  onBlur={e => {
+                    const value = e.target.value;
+                    const trimmed = value.trim();
+                    const emailError = trimmed
+                      ? validateEmailAddress(trimmed)
+                      : null;
+                    setFieldErrors(prev => ({
+                      ...prev,
+                      email: emailError ?? '',
+                    }));
+                  }}
+                  disabled={loading}
+                  error={Boolean(fieldErrors.email)}
+                  helperText={fieldErrors.email}
                   placeholder='Waleed@xyz.com'
-                      />
-                    </Box>
-                    <Box
+                />
+              </Box>
+              <Box
                 sx={{
                   flex: 1,
                   position: 'relative',
                 }}
-                      className='signup-phone-input'
-                    >
+                className='signup-phone-input'
+              >
                 <AppInputField
-                        name='phone'
+                  name='phone'
                   label='Phone #'
-                        type='tel'
-                        required
-                        fullWidth
-                        value={formData.phone}
-                        onChange={e => handlePhoneChange(e.target.value)}
-                        disabled={loading}
-                        error={Boolean(fieldErrors.phone)}
-                        helperText={fieldErrors.phone}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment
-                              position='start'
-                              sx={{ margin: 0, padding: '28px 0px' }}
-                            >
-                              <PhoneInput
-                                defaultCountry='pk'
-                                value={formData.phone}
-                                onChange={handlePhoneChange}
-                                style={{
-                                  border: 'none',
-                                  outline: 'none',
-                                  background: 'transparent',
-                                  width: '100%',
-                                }}
-                                inputStyle={{
-                                  border: 'none',
-                                  outline: 'none',
-                                  padding: '0',
-                                  margin: '0',
-                                  fontSize: '1rem',
-                                  fontFamily:
-                                    '"Roboto", "Helvetica", "Arial", sans-serif',
-                                  backgroundColor: 'transparent',
-                                  width: '100%',
-                                  boxSizing: 'border-box',
-                                  flex: 1,
-                                  height: '100%',
-                                }}
-                                countrySelectorStyleProps={{
-                                  buttonStyle: {
-                                    border: 'none',
-                                    background: 'transparent',
-                                    padding: '0',
-                                    margin: '0',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                  },
-                                }}
-                                className='phone-input-textfield-adornment'
-                              />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    </Box>
-                  </Box>
+                  type='tel'
+                  required
+                  fullWidth
+                  value={formData.phone}
+                  onChange={e => handlePhoneChange(e.target.value)}
+                  disabled={loading}
+                  error={Boolean(fieldErrors.phone)}
+                  helperText={fieldErrors.phone}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment
+                        position='start'
+                        sx={{ margin: 0, padding: '28px 0px' }}
+                      >
+                        <PhoneInput
+                          defaultCountry='pk'
+                          value={formData.phone}
+                          onChange={handlePhoneChange}
+                          style={{
+                            border: 'none',
+                            outline: 'none',
+                            background: 'transparent',
+                            width: '100%',
+                          }}
+                          inputStyle={{
+                            border: 'none',
+                            outline: 'none',
+                            padding: '0',
+                            margin: '0',
+                            fontSize: '1rem',
+                            fontFamily:
+                              '"Roboto", "Helvetica", "Arial", sans-serif',
+                            backgroundColor: 'transparent',
+                            width: '100%',
+                            boxSizing: 'border-box',
+                            flex: 1,
+                            height: '100%',
+                          }}
+                          countrySelectorStyleProps={{
+                            buttonStyle: {
+                              border: 'none',
+                              background: 'transparent',
+                              padding: '0',
+                              margin: '0',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                            },
+                          }}
+                          className='phone-input-textfield-adornment'
+                        />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Box>
+            </Box>
 
             <Box
               sx={{
@@ -579,77 +512,77 @@ const Signup: React.FC = () => {
             >
               <Box sx={{ flex: 1 }}>
                 <AppInputField
-                        name='password'
+                  name='password'
                   label='Password'
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        fullWidth
-                        value={formData.password}
-                        onChange={handleChange}
-                        disabled={loading}
-                        error={Boolean(fieldErrors.password)}
-                        helperText={fieldErrors.password}
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  fullWidth
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={loading}
+                  error={Boolean(fieldErrors.password)}
+                  helperText={fieldErrors.password}
                   placeholder='********'
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment position='end'>
-                              <IconButton
-                                onClick={handleTogglePassword}
-                                edge='end'
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        <IconButton
+                          onClick={handleTogglePassword}
+                          edge='end'
                           sx={{ color: 'var(--dark-grey-color)' }}
-                              >
-                                {showPassword ? (
+                        >
+                          {showPassword ? (
                             <VisibilityOff sx={{ width: 20, height: 20 }} />
-                                ) : (
+                          ) : (
                             <Visibility sx={{ width: 20, height: 20 }} />
-                                )}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    </Box>
-                    <Box sx={{ flex: 1 }}>
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Box>
+              <Box sx={{ flex: 1 }}>
                 <AppInputField
-                        name='confirmPassword'
+                  name='confirmPassword'
                   label='Confirm Password'
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        required
-                        fullWidth
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        disabled={loading}
-                        error={Boolean(fieldErrors.confirmPassword)}
-                        helperText={fieldErrors.confirmPassword}
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  required
+                  fullWidth
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  disabled={loading}
+                  error={Boolean(fieldErrors.confirmPassword)}
+                  helperText={fieldErrors.confirmPassword}
                   placeholder='********'
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment position='end'>
-                              <IconButton
-                                onClick={handleToggleConfirmPassword}
-                                edge='end'
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        <IconButton
+                          onClick={handleToggleConfirmPassword}
+                          edge='end'
                           sx={{ color: 'var(--dark-grey-color)' }}
-                              >
-                                {showConfirmPassword ? (
+                        >
+                          {showConfirmPassword ? (
                             <VisibilityOff sx={{ width: 20, height: 20 }} />
-                                ) : (
+                          ) : (
                             <Visibility sx={{ width: 20, height: 20 }} />
-                                )}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    </Box>
-                  </Box>
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Box>
+            </Box>
 
-            <Box sx={{ mb: 3 }}>
-                    <FormControlLabel
+            <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column' }}>
+              <FormControlLabel
                 control={
                   <Checkbox
                     checked={rememberMe}
                     onChange={e => setRememberMe(e.target.checked)}
-                      sx={{
+                    sx={{
                       color: 'var(--dark-grey-color)',
                       '&.Mui-checked': {
                         color: 'var(--primary-dark-color)',
@@ -658,30 +591,30 @@ const Signup: React.FC = () => {
                   />
                 }
                 label={<Typography className='label'>Remember me</Typography>}
-                sx={{ mb: 1 }}
               />
               <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={acceptedTerms}
-                          onChange={e => setAcceptedTerms(e.target.checked)}
-                              sx={{
+                control={
+                  <Checkbox
+                    checked={acceptedTerms}
+                    onChange={e => setAcceptedTerms(e.target.checked)}
+                    sx={{
                       color: 'var(--dark-grey-color)',
                       '&.Mui-checked': {
                         color: 'var(--primary-dark-color)',
                       },
-                              }}
-                            />
-                          }
+                    }}
+                  />
+                }
                 label={
                   <Typography className='label'>
                     I agree to all the{' '}
                     <Link
                       href='#'
-                          sx={{
+                      sx={{
                         color: 'var(--primary-dark-color)',
                         textDecoration: 'none',
-                            '&:hover': {
+                        fontWeight: 500,
+                        '&:hover': {
                           textDecoration: 'underline',
                         },
                       }}
@@ -691,9 +624,10 @@ const Signup: React.FC = () => {
                     and{' '}
                     <Link
                       href='#'
-                          sx={{
+                      sx={{
                         color: 'var(--primary-dark-color)',
                         textDecoration: 'none',
+                        fontWeight: 500,
                         '&:hover': {
                           textDecoration: 'underline',
                         },
@@ -701,22 +635,22 @@ const Signup: React.FC = () => {
                     >
                       Privacy policy
                     </Link>
-                        </Typography>
-                      }
-                    />
-                  </Box>
-                  {termsError && (
+                  </Typography>
+                }
+              />
+            </Box>
+            {termsError && (
               <Alert severity='error' sx={{ mb: 2 }}>
-                      {termsError}
-                    </Alert>
-                  )}
+                {termsError}
+              </Alert>
+            )}
 
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                    <Button
-                      type='submit'
-                      variant='contained'
-                      disabled={isSubmitDisabled}
-                      sx={{
+              <Button
+                type='submit'
+                variant='contained'
+                disabled={isSubmitDisabled}
+                sx={{
                   backgroundColor: 'var(--primary-dark-color)',
                   color: 'var(--white-color)',
                   fontWeight: 600,
@@ -730,40 +664,40 @@ const Signup: React.FC = () => {
                   '&:disabled': {
                     backgroundColor: 'var(--grey-color)',
                   },
-                      }}
-                    >
-                      {loading ? (
+                }}
+              >
+                {loading ? (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <CircularProgress size={16} color='inherit' />
                     Processing...
-                        </Box>
-                      ) : (
-                  'Sign Up'
-                      )}
-                    </Button>
                   </Box>
+                ) : (
+                  'Sign Up'
+                )}
+              </Button>
+            </Box>
 
-                  <Typography
-                    align='center'
+            <Typography
+              align='center'
               className='label'
               sx={{ color: 'var(--dark-grey-color)' }}
             >
               Don't have an account?{' '}
-                    <Link
-                      component={RouterLink}
-                      to='/'
-                      sx={{
+              <Link
+                component={RouterLink}
+                to='/'
+                sx={{
                   color: 'var(--primary-dark-color)',
-                        textDecoration: 'none',
-                        fontWeight: 500,
+                  textDecoration: 'none',
+                  fontWeight: 500,
                   '&:hover': {
                     textDecoration: 'underline',
                   },
-                      }}
-                    >
+                }}
+              >
                 Log In
-                    </Link>
-                  </Typography>
+              </Link>
+            </Typography>
           </Box>
         </Box>
       </Box>

@@ -74,7 +74,6 @@ const Search = styled('div')(({ theme }) => ({
   },
 }));
 
-
 const StyledInputBase = styled(InputBase)(() => ({
   fontSize: 'var(--body-font-size)',
   flex: 1,

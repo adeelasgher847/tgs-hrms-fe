@@ -167,7 +167,7 @@ const Layout = () => {
             top: { xs: 0, lg: '20px' },
             left: rtlMode ? 'auto' : { xs: 0, lg: '20px' },
             right: rtlMode ? { xs: 0, lg: '20px' } : 'auto',
-            borderRadius: { xs: 0, lg: 'var(--border-radius-lg)' },
+            borderRadius: { xs: 0, lg: '20px' },
             zIndex: 1000,
             boxShadow: { xs: 'none', lg: '0 1px 3px rgba(0,0,0,0.1)' },
           }}
@@ -225,6 +225,7 @@ const Layout = () => {
         fontFamily: 'SF Pro Rounded, sans-serif',
         overflow: 'hidden',
         backgroundColor: 'var(--white-100-color)',
+        borderRadius: '20px',
       }}
     >
       {sidebarOpen && !isLargeScreen && (

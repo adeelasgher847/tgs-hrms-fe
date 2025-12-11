@@ -10,10 +10,10 @@ import {
   MenuItem,
   Select,
 } from '@mui/material';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
 import AppInputField from '../Common/AppInputField';
+import AuthSidebar from '../Common/AuthSidebar';
 import { Icons } from '../../assets/icons';
 
 const CompanyDetails: React.FC = () => {
@@ -213,90 +213,23 @@ const CompanyDetails: React.FC = () => {
   };
 
   return (
-      <Box
-        sx={{
+    <Box
+      sx={{
         display: 'flex',
         minHeight: '100vh',
         width: '100%',
-          position: 'relative',
-        }}
-      >
-        <Box
-          sx={{
-          display: { xs: 'none', lg: 'flex' },
-          flexDirection: 'column',
-          width: '40%',
-          backgroundColor: 'var(--primary-dark-color)',
-          padding: '40px',
-          position: 'relative',
-          overflow: 'hidden',
-            justifyContent: 'center',
-            alignItems: 'center',
-          zIndex: 0,
-          }}
-        >
-          <Box
-            sx={{
-            position: 'absolute',
-            top: '40px',
-            left: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-          }}
-        >
-          <Box
-            component='img'
-            src={Icons.logoWhite}
-            alt='Logo'
-            sx={{
-              height: 'auto',
-              width: 'auto',
-              maxHeight: '40px',
-            }}
-          />
-        </Box>
-
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 4,
-            textAlign: 'center',
-          }}
-        >
-          <Typography
-            variant='h1'
-            sx={{
-              fontSize: '48px',
-              fontWeight: 700,
-              color: 'var(--white-color)',
-            }}
-          >
-            Workonnect - Let's Management Better
-          </Typography>
-          <Box
-            component='img'
-            src={Icons.authSidebar}
-            alt='Illustration'
-            sx={{
-              width: '100%',
-              maxWidth: '500px',
-              height: 'auto',
-            }}
-          />
-        </Box>
-      </Box>
+        position: 'relative',
+      }}
+    >
+      <AuthSidebar />
 
       <Box
         sx={{
           flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
           padding: { xs: '24px', md: '48px' },
           backgroundColor: 'var(--white-100-color)',
           overflowY: 'auto',
@@ -329,18 +262,18 @@ const CompanyDetails: React.FC = () => {
             </FormControl>
           </Box>
 
-                    <Typography
+          <Typography
             variant='h1'
-                      sx={{
+            sx={{
               fontSize: '48px',
               fontWeight: 700,
-                        mb: 1,
-                      }}
-                    >
+              mb: 1,
+            }}
+          >
             Company Details
-                    </Typography>
+          </Typography>
 
-                    <Typography
+          <Typography
             className='body'
             sx={{
               color: 'var(--dark-grey-color)',
@@ -348,97 +281,103 @@ const CompanyDetails: React.FC = () => {
             }}
           >
             Tell us more about your company.
-                    </Typography>
+          </Typography>
 
-                  {error && (
+          {error && (
             <Alert severity='error' sx={{ mb: 2 }}>
-                      {error}
-                    </Alert>
-                  )}
+              {error}
+            </Alert>
+          )}
 
-                  {success && (
+          {success && (
             <Alert severity='success' sx={{ mb: 2 }}>
-                      {success}
-                    </Alert>
-                  )}
+              {success}
+            </Alert>
+          )}
 
           <Box component='form' onSubmit={handleSubmit} noValidate>
             <Box sx={{ mb: 2 }}>
               <AppInputField
-                        name='companyName'
+                name='companyName'
                 label='Company Name'
-                        required
-                        fullWidth
-                        value={formData.companyName}
-                        onChange={handleChange}
-                        disabled={loading}
-                        error={Boolean(fieldErrors.companyName)}
-                        helperText={fieldErrors.companyName}
+                required
+                fullWidth
+                value={formData.companyName}
+                onChange={handleChange}
+                disabled={loading}
+                error={Boolean(fieldErrors.companyName)}
+                helperText={fieldErrors.companyName}
                 placeholder='Name'
-                      />
-                    </Box>
+              />
+            </Box>
 
             <Box sx={{ mb: 2 }}>
               <AppInputField
-                        name='domain'
+                name='domain'
                 label='Domain'
-                        required
-                        fullWidth
-                        value={formData.domain}
-                        onChange={handleChange}
-                        disabled={loading}
-                        error={Boolean(fieldErrors.domain)}
-                        helperText={fieldErrors.domain}
+                required
+                fullWidth
+                value={formData.domain}
+                onChange={handleChange}
+                disabled={loading}
+                error={Boolean(fieldErrors.domain)}
+                helperText={fieldErrors.domain}
                 placeholder='Domain (e.g. Development)'
-                      />
-                    </Box>
+              />
+            </Box>
 
             <Box sx={{ mb: 3 }}>
-                      <Typography
-                        component='label'
+              <Typography
+                component='label'
                 className='label'
                 sx={{
+                  fontSize: '20px',
+                  fontWeight: 600,
                   display: 'block',
                   mb: 0.5,
-                  fontWeight: 700,
-                  color: 'var(--text-color)',
+                  color: 'var(--dark-black-color)',
                 }}
               >
                 Company Logo
-                      </Typography>
-                      {!imagePreview ? (
-                        <Box
+              </Typography>
+              {!imagePreview ? (
+                <Box
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
                   onClick={() =>
                     document.getElementById('logo-upload')?.click()
                   }
-                          sx={{
+                  sx={{
                     border: '2px dashed var(--light-grey-color)',
                     borderRadius: 'var(--border-radius-lg)',
                     p: 4,
-                            textAlign: 'center',
+                    textAlign: 'center',
                     backgroundColor: 'var(--white-color)',
-                            cursor: 'pointer',
+                    cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                            '&:hover': {
+                    '&:hover': {
                       backgroundColor: 'var(--light-grey-100-color)',
                       borderColor: 'var(--primary-dark-color)',
-                            },
-                          }}
-                        >
-                          <input
-                            id='logo-upload'
-                            type='file'
+                    },
+                  }}
+                >
+                  <input
+                    id='logo-upload'
+                    type='file'
                     accept='image/jpeg,image/png,image/gif'
-                            onChange={handleImageChange}
-                            style={{ display: 'none' }}
-                          />
-                  <CloudUploadIcon
+                    onChange={handleImageChange}
+                    style={{ display: 'none' }}
+                  />
+                  <Box
+                    component='img'
+                    src={Icons.upload}
+                    alt='Upload'
                     sx={{
-                      fontSize: 48,
-                      color: 'var(--dark-grey-color)',
+                      width: '48px',
+                      height: '48px',
                       mb: 2,
+                      filter:
+                        'brightness(0) saturate(100%) invert(45%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(95%)',
                     }}
                   />
                   <Typography
@@ -449,7 +388,7 @@ const CompanyDetails: React.FC = () => {
                     }}
                   >
                     Choose a file or drag & drop it here
-                          </Typography>
+                  </Typography>
                   <Typography
                     sx={{
                       fontSize: '12px',
@@ -457,9 +396,9 @@ const CompanyDetails: React.FC = () => {
                     }}
                   >
                     JPEG, PNG and GIF formats, up to 10 MB
-                          </Typography>
-                        </Box>
-                      ) : (
+                  </Typography>
+                </Box>
+              ) : (
                 <Box
                   sx={{
                     position: 'relative',
@@ -469,83 +408,83 @@ const CompanyDetails: React.FC = () => {
                     p: 1,
                   }}
                 >
-                          <Box
-                            component='img'
-                            src={imagePreview}
-                            alt='Company Logo Preview'
+                  <Box
+                    component='img'
+                    src={imagePreview}
+                    alt='Company Logo Preview'
                     loading='lazy'
-                            sx={{
-                              width: '120px',
-                              height: '120px',
-                              objectFit: 'cover',
+                    sx={{
+                      width: '120px',
+                      height: '120px',
+                      objectFit: 'cover',
                       borderRadius: 'var(--border-radius-lg)',
-                            }}
-                          />
-                          <Button
-                            size='small'
-                            onClick={handleRemoveImage}
-                            sx={{
-                              position: 'absolute',
-                              top: -8,
-                              right: -8,
-                              minWidth: 'auto',
+                    }}
+                  />
+                  <Button
+                    size='small'
+                    onClick={handleRemoveImage}
+                    sx={{
+                      position: 'absolute',
+                      top: -8,
+                      right: -8,
+                      minWidth: 'auto',
                       width: '28px',
                       height: '28px',
-                              borderRadius: '50%',
+                      borderRadius: '50%',
                       backgroundColor: 'var(--secondary-color)',
                       color: 'var(--white-color)',
                       padding: 0,
-                              '&:hover': {
+                      '&:hover': {
                         backgroundColor: 'var(--secondary-color)',
                         opacity: 0.8,
-                              },
-                            }}
-                          >
-                            ×
-                          </Button>
-                        </Box>
-                      )}
-                  </Box>
-
-                  <Box
-                    sx={{
-                      display: 'flex',
-                justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: 2,
-                mt: 4,
+                      },
                     }}
                   >
-                    <Button
-                      variant='outlined'
-                      type='button'
-                      onClick={handleBack}
-                      disabled={loading}
-                      sx={{
-                  borderColor: 'var(--text-color)',
-                  color: 'var(--text-color)',
+                    ×
+                  </Button>
+                </Box>
+              )}
+            </Box>
+
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 2,
+                mt: 4,
+              }}
+            >
+              <Button
+                variant='outlined'
+                type='button'
+                onClick={handleBack}
+                disabled={loading}
+                sx={{
+                  borderColor: 'var(--black-color)',
+                  color: 'var(--black-color)',
                   backgroundColor: 'transparent',
-                  borderRadius: 'var(--border-radius-lg)',
+                  borderRadius: '12px',
                   fontSize: 'var(--body-font-size)',
                   textTransform: 'none',
                   padding: '8px 30px',
-                        '&:hover': {
+                  '&:hover': {
                     borderColor: 'var(--primary-dark-color)',
                     backgroundColor: 'rgba(48, 131, 220, 0.1)',
-                        },
-                      }}
-                    >
+                  },
+                }}
+              >
                 Back
-                    </Button>
-                    <Button
-                      variant='contained'
-                      type='submit'
-                      disabled={isSubmitDisabled}
-                      sx={{
+              </Button>
+              <Button
+                variant='contained'
+                type='submit'
+                disabled={isSubmitDisabled}
+                sx={{
                   backgroundColor: 'var(--primary-dark-color)',
                   color: 'var(--white-color)',
                   fontWeight: 600,
-                  borderRadius: 'var(--border-radius-lg)',
+                  borderRadius: '12px',
                   fontSize: 'var(--body-font-size)',
                   textTransform: 'none',
                   padding: '8px 30px',
@@ -555,17 +494,17 @@ const CompanyDetails: React.FC = () => {
                   '&:disabled': {
                     backgroundColor: 'var(--grey-color)',
                   },
-                      }}
-                    >
-                      {loading ? (
+                }}
+              >
+                {loading ? (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <CircularProgress size={16} color='inherit' />
                     Processing...
-                        </Box>
-                      ) : (
-                        'Next'
-                      )}
-                    </Button>
+                  </Box>
+                ) : (
+                  'Next'
+                )}
+              </Button>
             </Box>
           </Box>
         </Box>

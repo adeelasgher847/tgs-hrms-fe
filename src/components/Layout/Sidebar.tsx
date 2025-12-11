@@ -251,7 +251,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
       sx={{
         backgroundColor: 'var(--white-color)',
         color: 'var(--text-color)',
-        borderRadius: 'var(--border-radius-lg)',
+        borderRadius: '20px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -262,21 +262,21 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
       }}
     >
       <Box sx={{ position: 'sticky', top: 0, zIndex: 20, px: 3, py: 5, mb: 1 }}>
-          <Box
-            sx={{
+        <Box
+          sx={{
             position: 'absolute',
             top: '40px',
             bottom: '40px',
-              display: 'flex',
-              alignItems: 'center',
+            display: 'flex',
+            alignItems: 'center',
             gap: 1,
           }}
         >
-              <Box
-                component='img'
+          <Box
+            component='img'
             src={Icons.logoSidebar}
             alt='Logo'
-                sx={{
+            sx={{
               height: 'auto',
               width: 'auto',
             }}
@@ -617,7 +617,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
               }}
             />
             <Box
-            sx={{
+              sx={{
                 position: 'absolute',
                 top: '2px',
                 left: darkMode ? '22px' : '2px',
@@ -627,9 +627,9 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                 backgroundColor: 'var(--white-color)',
                 // boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
                 transition: 'left 300ms ease',
-            }}
-          />
-        </Box>
+              }}
+            />
+          </Box>
         </Box>
         <ListItemButton
           onClick={handleLogout}

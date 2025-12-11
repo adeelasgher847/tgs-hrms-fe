@@ -4,13 +4,10 @@ import {
   Typography,
   Button,
   CircularProgress,
-  Paper,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  TableContainer,
-  Table,
   TableHead,
   TableBody,
   TableRow,
@@ -18,14 +15,17 @@ import {
   IconButton,
   Pagination,
 } from '@mui/material';
+import AppTable from '../Common/AppTable';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
+import AppDropdown from '../Common/AppDropdown';
+import { Icons } from '../../assets/icons';
 
-import DesignationModal from './DesignationModal';
+import AppFormModal, { type FormField } from '../Common/AppFormModal';
 import DeleteConfirmationDialog from '../Common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
 import {
@@ -77,6 +77,17 @@ export default function DesignationManager() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [designationToDelete, setDesignationToDelete] =
     useState<FrontendDesignation | null>(null);
+  const [title, setTitle] = useState('');
+  const [titleAr, setTitleAr] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
+  const [originalTitle, setOriginalTitle] = useState('');
+  const [originalTitleAr, setOriginalTitleAr] = useState('');
+  const [originalDepartmentId, setOriginalDepartmentId] = useState('');
+  const [errors, setErrors] = useState<{
+    title?: string;
+    titleAr?: string;
+    departmentId?: string;
+  }>({});
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<
     string | 'all'
   >('all');
@@ -161,6 +172,7 @@ export default function DesignationManager() {
         }
       } catch (error: unknown) {
         showError(error, { operation: 'fetch', resource: 'designation' });
+        setDesignations([]);
       } finally {
         setLoading(false);
       }
@@ -236,6 +248,7 @@ export default function DesignationManager() {
       setCurrentPage(1);
     } catch (error: unknown) {
       showError(error, { operation: 'fetch', resource: 'designation' });
+      setDesignations([]);
     } finally {
       setLoading(false);
     }
@@ -257,14 +270,23 @@ export default function DesignationManager() {
   const fetchAllDesignations = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('Fetching all designations...');
       const backendDesignations =
         await designationApiService.getAllDesignations();
+      console.log('Backend designations:', backendDesignations);
       const frontendDesignations = backendDesignations.map(designation =>
         designationApiService.convertBackendToFrontend(designation)
       );
+      console.log('Frontend designations:', frontendDesignations);
       setDesignations(frontendDesignations);
+      // Reset pagination when fetching all designations
+      setCurrentPage(1);
+      setTotalPages(1);
+      setTotalRecords(frontendDesignations.length);
     } catch (error: unknown) {
+      console.error('Error fetching all designations:', error);
       showError(error, { operation: 'fetch', resource: 'designation' });
+      setDesignations([]);
     } finally {
       setLoading(false);
     }
@@ -275,6 +297,11 @@ export default function DesignationManager() {
   }, [fetchDepartments]);
 
   useEffect(() => {
+    console.log('Designation fetch effect triggered:', {
+      isSystemAdmin,
+      selectedDepartmentId,
+      selectedTenantId,
+    });
     if (isSystemAdmin) {
       fetchSystemAdminDesignations();
     } else {
@@ -298,6 +325,114 @@ export default function DesignationManager() {
     setSelectedTenantId(event.target.value);
     setSelectedDepartmentId('all'); // Reset department filter when tenant changes
   };
+
+  // Form state management
+  useEffect(() => {
+    if (editingDesignation) {
+      setTitle(editingDesignation.title);
+      setTitleAr(editingDesignation.titleAr || '');
+      setDepartmentId(editingDesignation.departmentId);
+      setOriginalTitle(editingDesignation.title);
+      setOriginalTitleAr(editingDesignation.titleAr || '');
+      setOriginalDepartmentId(editingDesignation.departmentId);
+    } else {
+      setTitle('');
+      setTitleAr('');
+      setDepartmentId('');
+      setOriginalTitle('');
+      setOriginalTitleAr('');
+      setOriginalDepartmentId('');
+    }
+    setErrors({});
+  }, [editingDesignation, modalOpen]);
+
+  const hasChanges = editingDesignation
+    ? title !== originalTitle ||
+      titleAr !== originalTitleAr ||
+      departmentId !== originalDepartmentId
+    : title.trim() !== '' || titleAr.trim() !== '' || departmentId !== '';
+
+  const validateForm = () => {
+    const newErrors: {
+      title?: string;
+      titleAr?: string;
+      departmentId?: string;
+    } = {};
+
+    if (!title.trim()) {
+      newErrors.title = getText(
+        'Designation title is required',
+        'عنوان المسمى الوظيفي مطلوب'
+      );
+    }
+
+    if (!editingDesignation && !departmentId) {
+      newErrors.departmentId = getText(
+        'Please select a department',
+        'يرجى اختيار قسم'
+      );
+    }
+
+    if (titleAr.trim() && titleAr.trim().length < 2) {
+      newErrors.titleAr = getText(
+        'Arabic title must be at least 2 characters',
+        'العنوان بالعربية يجب أن يكون على الأقل حرفين'
+      );
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleFormSubmit = () => {
+    if (validateForm()) {
+      handleSaveDesignation({
+        title: title.trim(),
+        titleAr: titleAr.trim(),
+        departmentId,
+      });
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setEditingDesignation(null);
+  };
+
+  const departmentOptions = departments.map(dept => ({
+    value: dept.id,
+    label: getText(dept.name, dept.nameAr),
+  }));
+
+  const fields: FormField[] = [
+    {
+      name: 'departmentId',
+      label: getText('Department', 'القسم'),
+      type: 'dropdown',
+      required: true,
+      options: departmentOptions,
+      value: departmentId,
+      error: errors.departmentId,
+      onChange: value => {
+        setDepartmentId(value as string);
+        if (errors.departmentId)
+          setErrors(prev => ({ ...prev, departmentId: undefined }));
+      },
+    },
+    {
+      name: 'title',
+      label: getText('Designation Title', 'عنوان المسمى الوظيفي (بالإنجليزية)'),
+      type: 'text',
+      required: true,
+      placeholder: 'Designation Title',
+      value: title,
+      error: errors.title,
+      onChange: value => {
+        setTitle(value as string);
+        if (errors.title) setErrors(prev => ({ ...prev, title: undefined }));
+      },
+    },
+  ];
 
   const handleSaveDesignation = async (data: {
     title: string;
@@ -398,7 +533,13 @@ export default function DesignationManager() {
           gap: 2,
         }}
       >
-        <Typography variant='h4' sx={{ fontWeight: 600 }}>
+        <Typography
+          fontWeight={500}
+          fontSize='48px'
+          lineHeight='44px'
+          letterSpacing='-2%'
+          color='#2C2C2C'
+        >
           {getText('Designation', 'المسمى الوظيفي')}
         </Typography>
 
@@ -440,76 +581,31 @@ export default function DesignationManager() {
                   ))}
                 </Select>
               </FormControl>
-              <FormControl
-                size='small'
-                sx={{ minWidth: { xs: '100%', sm: 200 } }}
-              >
-                <InputLabel id='dept-select'>
-                  {getText('Filter by Department', 'تصفية حسب القسم')}
-                </InputLabel>
-                <Select
-                  labelId='dept-select'
-                  value={selectedDepartmentId}
-                  label={getText('Filter by Department', 'تصفية حسب القسم')}
-                  onChange={e => {
-                    setSelectedDepartmentId(
-                      e.target.value === 'all' ? 'all' : e.target.value
-                    );
-                    setCurrentPage(1);
-                  }}
-                  disabled={departmentsLoading}
-                >
-                  <MenuItem value='all'>
-                    {getText('All Departments', 'كل الأقسام')}
-                  </MenuItem>
-                  {departments.map(d => (
-                    <MenuItem key={d.id} value={d.id}>
-                      {getText(d.name, d.nameAr)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <AppDropdown
+                label={getText('Filter by department', 'تصفية حسب القسم')}
+                options={[
+                  {
+                    value: 'all',
+                    label: getText('All Departments', 'كل الأقسام'),
+                  },
+                  ...departments.map(d => ({
+                    value: d.id,
+                    label: getText(d.name, d.nameAr),
+                  })),
+                ]}
+                value={selectedDepartmentId}
+                onChange={e => {
+                  const newValue =
+                    e.target.value === '' ? 'all' : String(e.target.value);
+                  setSelectedDepartmentId(newValue);
+                  setCurrentPage(1);
+                }}
+                disabled={departmentsLoading}
+                containerSx={{ minWidth: { xs: '100%', sm: 250 } }}
+              />
             </>
           ) : (
             <>
-              <FormControl
-                size='small'
-                sx={{ minWidth: { xs: '100%', sm: 200 } }}
-              >
-                <InputLabel id='dept-select'>
-                  {getText('Filter by Department', 'تصفية حسب القسم')}
-                </InputLabel>
-                <Select
-                  labelId='dept-select'
-                  value={selectedDepartmentId}
-                  label={getText('Filter by Department', 'تصفية حسب القسم')}
-                  onChange={e => {
-                    setSelectedDepartmentId(
-                      e.target.value === 'all' ? 'all' : e.target.value
-                    );
-                    setCurrentPage(1);
-                  }}
-                  disabled={departmentsLoading}
-                >
-                  <MenuItem value='all'>
-                    {getText('All Departments', 'كل الأقسام')}
-                  </MenuItem>
-                  {departmentsLoading ? (
-                    <MenuItem disabled>
-                      {getText(
-                        'Loading departments...',
-                        'جاري تحميل الأقسام...'
-                      )}
-                    </MenuItem>
-                  ) : (
-                    departments.map(d => (
-                      <MenuItem key={d.id} value={d.id}>
-                        {getText(d.name, d.nameAr)}
-                      </MenuItem>
-                    ))
-                  )}
-                </Select>
-              </FormControl>
               <Button
                 variant='contained'
                 startIcon={<AddIcon />}
@@ -518,10 +614,21 @@ export default function DesignationManager() {
                   setModalOpen(true);
                 }}
                 sx={{
+                  borderRadius: '12px',
+                  textTransform: 'none',
+                  fontWeight: 400,
+                  fontSize: 'var(--body-font-size)',
+                  lineHeight: 'var(--body-line-height)',
+                  letterSpacing: 'var(--body-letter-spacing)',
+                  bgcolor: 'var(--primary-dark-color)',
+                  color: '#FFFFFF',
+                  boxShadow: 'none',
                   minWidth: 200,
-                  fontWeight: 600,
                   py: 1,
-                  backgroundColor: COLORS.PRIMARY,
+                  '&:hover': {
+                    bgcolor: 'var(--primary-dark-color)',
+                    boxShadow: 'none',
+                  },
                 }}
               >
                 {getText('Create Designation', 'إنشاء مسمى وظيفي')}
@@ -531,240 +638,294 @@ export default function DesignationManager() {
         </Box>
       </Box>
 
-      <Paper variant='outlined' sx={{ bgcolor: 'unset', border: 'none' }}>
-        <Box>
-          <Typography variant='body2' sx={{ mb: 2, color: 'text.secondary' }}>
-            {filteredDesignations.length}{' '}
-            {getText('designation(s)', 'مسمى وظيفي')}
-          </Typography>
+      {!isSystemAdmin && (
+        <Box sx={{ mb: 3 }}>
+          <AppDropdown
+            label={getText('Filter by department', 'تصفية حسب القسم')}
+            options={[
+              { value: 'all', label: getText('All Departments', 'كل الأقسام') },
+              ...(departmentsLoading
+                ? []
+                : departments.map(d => ({
+                    value: d.id,
+                    label: getText(d.name, d.nameAr),
+                  }))),
+            ]}
+            value={selectedDepartmentId}
+            onChange={e => {
+              const newValue =
+                e.target.value === '' ? 'all' : String(e.target.value);
+              setSelectedDepartmentId(newValue);
+              setCurrentPage(1);
+            }}
+            disabled={departmentsLoading}
+            containerSx={{ mb: 2, width: '100%' }}
+          />
 
-          <TableContainer
-            component={Paper}
-            variant='outlined'
-            sx={{ border: 'none', borderRadius: '0px' }}
+          <Typography
+            variant='body2'
+            sx={{
+              fontSize: '16px',
+              lineHeight: 'var(--body-line-height)',
+              color: 'var(--dark-grey-color)',
+            }}
           >
-            <Table>
-              <TableHead>
-                <TableRow>
+            {filteredDesignations.length}{' '}
+            {getText('Designation(s)', 'مسمى وظيفي')}
+          </Typography>
+        </Box>
+      )}
+
+      {isSystemAdmin && (
+        <Box sx={{ mb: 3 }}>
+          <Typography
+            variant='body2'
+            sx={{
+              mb: 2,
+              fontSize: '16px',
+              lineHeight: 'var(--body-line-height)',
+              color: 'var(--dark-grey-color)',
+            }}
+          >
+            {filteredDesignations.length}{' '}
+            {getText('Designation(s)', 'مسمى وظيفي')}
+          </Typography>
+        </Box>
+      )}
+
+      <AppTable>
+        <TableHead>
+          <TableRow>
+            {isSystemAdmin && (
+              <TableCell
+                sx={{
+                  ...(isRTL ? { textAlign: 'right' } : { textAlign: 'left' }),
+                }}
+              >
+                {getText('Tenant', 'المستأجر')}
+              </TableCell>
+            )}
+            <TableCell
+              sx={{
+                ...(isRTL ? { textAlign: 'right' } : { textAlign: 'left' }),
+              }}
+            >
+              {getText('Designation Title', 'المسمى الوظيفي')}
+            </TableCell>
+            {(selectedDepartmentId === 'all' || isSystemAdmin) && (
+              <TableCell
+                sx={{
+                  ...(isRTL ? { textAlign: 'right' } : { textAlign: 'left' }),
+                }}
+              >
+                {getText('Department', 'القسم')}
+              </TableCell>
+            )}
+            {!isSystemAdmin && (
+              <TableCell
+                align='center'
+                sx={{
+                  minWidth: 120,
+                }}
+              >
+                {getText('Actions', 'الإجراءات')}
+              </TableCell>
+            )}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {loading ? (
+            <TableRow>
+              <TableCell
+                colSpan={
+                  isSystemAdmin ? 3 : selectedDepartmentId === 'all' ? 3 : 2
+                }
+                align='center'
+                sx={{ color: 'text.secondary' }}
+              >
+                <Box
+                  display='flex'
+                  justifyContent='center'
+                  alignItems='center'
+                  py={3}
+                >
+                  <CircularProgress />
+                </Box>
+              </TableCell>
+            </TableRow>
+          ) : paginatedData.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={
+                  isSystemAdmin ? 3 : selectedDepartmentId === 'all' ? 3 : 2
+                }
+                align='center'
+                sx={{ color: 'text.secondary' }}
+              >
+                {selectedDepartmentId === 'all'
+                  ? getText('No designations found', 'لا توجد مسميات وظيفية')
+                  : getText(
+                      'No designations found for this department',
+                      'لا توجد مسميات وظيفية لهذا القسم'
+                    )}
+              </TableCell>
+            </TableRow>
+          ) : (
+            paginatedData.map(designation => {
+              const department = departments.find(
+                d => d.id === designation.departmentId
+              );
+              const departmentName = department
+                ? getText(department.name, department.nameAr)
+                : 'Unknown Department';
+              const tenantInfo = designationTenantMap.get(designation.id);
+
+              return (
+                <TableRow key={designation.id} hover>
                   {isSystemAdmin && (
                     <TableCell
                       sx={{
-                        fontWeight: 'bold',
                         ...(isRTL
                           ? { textAlign: 'right' }
                           : { textAlign: 'left' }),
                       }}
                     >
-                      {getText('Tenant', 'المستأجر')}
+                      {tenantInfo?.tenantName || '-'}
                     </TableCell>
                   )}
                   <TableCell
                     sx={{
-                      fontWeight: 'bold',
                       ...(isRTL
                         ? { textAlign: 'right' }
                         : { textAlign: 'left' }),
                     }}
                   >
-                    {getText('Designation Title', 'المسمى الوظيفي')}
+                    {getText(designation.title, designation.titleAr)}
                   </TableCell>
                   {(selectedDepartmentId === 'all' || isSystemAdmin) && (
                     <TableCell
                       sx={{
-                        fontWeight: 'bold',
                         ...(isRTL
                           ? { textAlign: 'right' }
                           : { textAlign: 'left' }),
                       }}
                     >
-                      {getText('Department', 'القسم')}
+                      {departmentName}
                     </TableCell>
                   )}
                   {!isSystemAdmin && (
-                    <TableCell
-                      align='center'
-                      sx={{
-                        fontWeight: 'bold',
-                        minWidth: 120,
-                      }}
-                    >
-                      {getText('Actions', 'الإجراءات')}
+                    <TableCell align='center'>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          gap: 1,
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <IconButton
+                          size='small'
+                          onClick={() => {
+                            setEditingDesignation(designation);
+                            setModalOpen(true);
+                          }}
+                          title={getText('Edit', 'تعديل')}
+                          aria-label={`Edit designation ${getText(designation.title, designation.titleAr)}`}
+                          sx={{
+                            p: 1,
+                            '&:hover': {
+                              backgroundColor: 'transparent',
+                            },
+                          }}
+                        >
+                          <Box
+                            component='img'
+                            src={Icons.edit}
+                            alt='Edit'
+                            sx={{
+                              width: 20,
+                              height: 20,
+                            }}
+                          />
+                        </IconButton>
+                        {!isHRAdmin && (
+                          <IconButton
+                            size='small'
+                            onClick={() => {
+                              setDesignationToDelete(designation);
+                              setDeleteDialogOpen(true);
+                            }}
+                            title={getText('Delete', 'حذف')}
+                            aria-label={`Delete designation ${getText(designation.title, designation.titleAr)}`}
+                            sx={{
+                              p: 1,
+                              '&:hover': {
+                                backgroundColor: 'transparent',
+                              },
+                            }}
+                          >
+                            <Box
+                              component='img'
+                              src={Icons.delete}
+                              alt='Delete'
+                              sx={{
+                                width: 20,
+                                height: 20,
+                              }}
+                            />
+                          </IconButton>
+                        )}
+                      </Box>
                     </TableCell>
                   )}
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={
-                        isSystemAdmin
-                          ? 3
-                          : selectedDepartmentId === 'all'
-                            ? 3
-                            : 2
-                      }
-                      align='center'
-                      sx={{ color: 'text.secondary' }}
-                    >
-                      <Box
-                        display='flex'
-                        justifyContent='center'
-                        alignItems='center'
-                        py={3}
-                      >
-                        <CircularProgress />
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ) : paginatedData.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={
-                        isSystemAdmin
-                          ? 3
-                          : selectedDepartmentId === 'all'
-                            ? 3
-                            : 2
-                      }
-                      align='center'
-                      sx={{ color: 'text.secondary' }}
-                    >
-                      {selectedDepartmentId === 'all'
-                        ? getText(
-                            'No designations found',
-                            'لا توجد مسميات وظيفية'
-                          )
-                        : getText(
-                            'No designations found for this department',
-                            'لا توجد مسميات وظيفية لهذا القسم'
-                          )}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedData.map(designation => {
-                    const department = departments.find(
-                      d => d.id === designation.departmentId
-                    );
-                    const departmentName = department
-                      ? getText(department.name, department.nameAr)
-                      : 'Unknown Department';
-                    const tenantInfo = designationTenantMap.get(designation.id);
-
-                    return (
-                      <TableRow key={designation.id} hover>
-                        {isSystemAdmin && (
-                          <TableCell
-                            sx={{
-                              ...(isRTL
-                                ? { textAlign: 'right' }
-                                : { textAlign: 'left' }),
-                            }}
-                          >
-                            {tenantInfo?.tenantName || '-'}
-                          </TableCell>
-                        )}
-                        <TableCell
-                          sx={{
-                            ...(isRTL
-                              ? { textAlign: 'right' }
-                              : { textAlign: 'left' }),
-                          }}
-                        >
-                          {getText(designation.title, designation.titleAr)}
-                        </TableCell>
-                        {(selectedDepartmentId === 'all' || isSystemAdmin) && (
-                          <TableCell
-                            sx={{
-                              ...(isRTL
-                                ? { textAlign: 'right' }
-                                : { textAlign: 'left' }),
-                            }}
-                          >
-                            {departmentName}
-                          </TableCell>
-                        )}
-                        {!isSystemAdmin && (
-                          <TableCell align='center'>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                gap: 1,
-                                justifyContent: 'center',
-                              }}
-                            >
-                              <IconButton
-                                color='primary'
-                                size='small'
-                                onClick={() => {
-                                  setEditingDesignation(designation);
-                                  setModalOpen(true);
-                                }}
-                                title={getText('Edit', 'تعديل')}
-                                aria-label={`Edit designation ${getText(designation.title, designation.titleAr)}`}
-                              >
-                                <EditIcon fontSize='small' aria-hidden='true' />
-                              </IconButton>
-                              {!isHRAdmin && (
-                                <IconButton
-                                  color='error'
-                                  size='small'
-                                  onClick={() => {
-                                    setDesignationToDelete(designation);
-                                    setDeleteDialogOpen(true);
-                                  }}
-                                  title={getText('Delete', 'حذف')}
-                                  aria-label={`Delete designation ${getText(designation.title, designation.titleAr)}`}
-                                >
-                                  <DeleteIcon
-                                    fontSize='small'
-                                    aria-hidden='true'
-                                  />
-                                </IconButton>
-                              )}
-                            </Box>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {totalPagesForFiltered > 1 && (
-            <Box display='flex' justifyContent='center' mt={2}>
-              <Pagination
-                count={totalPagesForFiltered}
-                page={currentPage}
-                onChange={(_, page) => handlePageChange(page)}
-                color='primary'
-                showFirstButton
-                showLastButton
-              />
-            </Box>
+              );
+            })
           )}
+        </TableBody>
+      </AppTable>
 
-          {paginatedData.length > 0 && (
-            <Box display='flex' justifyContent='center' mt={1}>
-              <Typography variant='body2' color='textSecondary'>
-                {getText(
-                  `Showing page ${currentPage} of ${totalPagesForFiltered} (${selectedDepartmentId === 'all' ? filteredDesignations.length : totalRecords} total records)`,
-                  `عرض الصفحة ${currentPage} من ${totalPagesForFiltered} (${selectedDepartmentId === 'all' ? filteredDesignations.length : totalRecords} سجل إجمالي)`
-                )}
-              </Typography>
-            </Box>
-          )}
+      {totalPagesForFiltered > 1 && (
+        <Box display='flex' justifyContent='center' mt={2}>
+          <Pagination
+            count={totalPagesForFiltered}
+            page={currentPage}
+            onChange={(_, page) => handlePageChange(page)}
+            color='primary'
+            showFirstButton
+            showLastButton
+          />
         </Box>
-      </Paper>
+      )}
 
-      <DesignationModal
+      {paginatedData.length > 0 && (
+        <Box display='flex' justifyContent='center' mt={1}>
+          <Typography variant='body2' color='textSecondary'>
+            {getText(
+              `Showing page ${currentPage} of ${totalPagesForFiltered} (${selectedDepartmentId === 'all' ? filteredDesignations.length : totalRecords} total records)`,
+              `عرض الصفحة ${currentPage} من ${totalPagesForFiltered} (${selectedDepartmentId === 'all' ? filteredDesignations.length : totalRecords} سجل إجمالي)`
+            )}
+          </Typography>
+        </Box>
+      )}
+
+      <AppFormModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSave={handleSaveDesignation}
-        designation={editingDesignation}
-        isRTL={isRTL}
+        onClose={handleCloseModal}
+        onSubmit={handleFormSubmit}
+        title={
+          editingDesignation
+            ? getText('Edit Designation', 'تعديل المسمى الوظيفي')
+            : getText('Create New Designation', 'إنشاء مسمى وظيفي جديد')
+        }
+        fields={fields}
+        submitLabel={
+          editingDesignation
+            ? getText('Update', 'تحديث')
+            : getText('Create', 'إنشاء')
+        }
+        cancelLabel={getText('Cancel', 'إلغاء')}
+        hasChanges={hasChanges}
+        isRtl={isRTL}
       />
 
       <DeleteConfirmationDialog

@@ -1,3 +1,5 @@
+import { add } from "date-fns";
+
 export const Icons = {
   logoSidebar: '/logo-sidebar.svg',
   logoWhite: '/logo-white.svg',
@@ -37,6 +39,8 @@ export const Icons = {
   notification: '/notification.svg',
   edit: '/edit.svg',
   delete: '/delete.svg',
+  add: '/add.svg',
+  upload: '/upload.svg',
 
   avatar: '/avatar.png',
   avatar2: '/avatar2.png',
