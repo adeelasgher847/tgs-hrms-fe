@@ -504,7 +504,7 @@ export const TenantPage: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <AppCard pading={0} sx={{ borderRadius: 1, overflow: 'hidden' }}>
+        <AppCard sx={{ padding: 0, borderRadius: 1, overflow: 'hidden' }}>
           <AppTable>
             <TableHead>
               <TableRow>

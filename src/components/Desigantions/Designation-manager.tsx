@@ -39,7 +39,6 @@ import {
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import {
-  getRoleName,
   isSystemAdmin as isSystemAdminFn,
   isHRAdmin as isHRAdminFn,
 } from '../../utils/roleUtils';

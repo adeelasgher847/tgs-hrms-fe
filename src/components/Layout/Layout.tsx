@@ -45,7 +45,7 @@ const Layout = () => {
       typeof user?.role === 'string'
         ? user?.role
         : (user as { role?: { name?: string } })?.role?.name,
-    [user?.role]
+    [user]
   );
 
   // Update sidebar state when screen size changes

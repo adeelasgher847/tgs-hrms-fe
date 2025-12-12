@@ -743,29 +743,32 @@ const EmployeeManager: React.FC = () => {
     setDesignationFilter('');
   };
 
-  const handleResendInvite = useCallback(async (employee: Employee) => {
-    try {
-      // Immediately update the status to "Invite Sent" in the local state
-      setAllEmployees(prev =>
-        prev.map(emp =>
-          emp.id === employee.id ? { ...emp, status: 'Invite Sent' } : emp
-        )
-      );
+  const handleResendInvite = useCallback(
+    async (employee: Employee) => {
+      try {
+        // Immediately update the status to "Invite Sent" in the local state
+        setAllEmployees(prev =>
+          prev.map(emp =>
+            emp.id === employee.id ? { ...emp, status: 'Invite Sent' } : emp
+          )
+        );
 
-      await employeeApi.resendInvite(employee.id);
-      showSuccess(`Invite resent successfully to ${employee.name}!`);
-    } catch (error: unknown) {
-      // If API call fails, revert the status back to "Invite Expired"
-      setAllEmployees(prev =>
-        prev.map(emp =>
-          emp.id === employee.id ? { ...emp, status: 'Invite Expired' } : emp
-        )
-      );
+        await employeeApi.resendInvite(employee.id);
+        showSuccess(`Invite resent successfully to ${employee.name}!`);
+      } catch (error: unknown) {
+        // If API call fails, revert the status back to "Invite Expired"
+        setAllEmployees(prev =>
+          prev.map(emp =>
+            emp.id === employee.id ? { ...emp, status: 'Invite Expired' } : emp
+          )
+        );
 
-      const errorResult = extractErrorMessage(error);
-      showError(errorResult.message);
-    }
-  }, []);
+        const errorResult = extractErrorMessage(error);
+        showError(errorResult.message);
+      }
+    },
+    [showSuccess, showError]
+  );
 
   const handleViewEmployee = useCallback((employee: Employee) => {
     setViewingEmployee(employee);

@@ -26,7 +26,7 @@ import {
 } from '@mui/icons-material';
 
 import DesignationModal from './DesignationModal';
-import DeleteConfirmationDialog from '../Common/DeleteConfirmationDialog';
+import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
 import {
   designationApiService,

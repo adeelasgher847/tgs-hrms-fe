@@ -93,25 +93,13 @@ const BenefitReport: React.FC = () => {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        if (isSystemAdmin) {
-          const tenantParam = selectedTenant || 'all';
-          const data =
-            await employeeBenefitApi.getSystemAdminBenefitSummary(tenantParam);
-          setSummary({
-            tenant_id: data.tenant_id ?? tenantParam,
-            totalActiveBenefits: data.totalActiveBenefits ?? 0,
-            mostCommonBenefitType: data.mostCommonBenefitType ?? '-',
-            totalEmployeesCovered: data.totalEmployeesCovered ?? 0,
-          });
-        } else {
-          const data = await benefitsApi.getBenefitSummary();
-          setSummary({
-            tenant_id: 'current',
-            totalActiveBenefits: data.totalActiveBenefits ?? 0,
-            mostCommonBenefitType: data.mostCommonBenefitType ?? '-',
-            totalEmployeesCovered: data.totalEmployeesCovered ?? 0,
-          });
-        }
+        const data = await benefitsApi.getBenefitSummary();
+        setSummary({
+          tenant_id: isSystemAdmin ? selectedTenant || 'all' : 'current',
+          totalActiveBenefits: data.totalActiveBenefits ?? 0,
+          mostCommonBenefitType: data.mostCommonBenefitType ?? '-',
+          totalEmployeesCovered: data.totalEmployeesCovered ?? 0,
+        });
       } catch (error) {
         console.error('Error fetching summary data:', error);
       }
@@ -177,13 +165,7 @@ const BenefitReport: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
 
-    const isObject = (v: unknown): v is Record<string, unknown> =>
-      v !== null && typeof v === 'object';
-    const toStringSafe = (v: unknown, fallback = '-') =>
-      v === undefined || v === null ? fallback : String(v);
-    const asArray = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
-    const asNumber = (v: unknown, fallback = 1) =>
-      typeof v === 'number' ? v : fallback;
+    // helper functions removed — not needed for current processing
 
     const fetchEmployeeBenefits = async () => {
       setTableLoading(true);
@@ -197,7 +179,7 @@ const BenefitReport: React.FC = () => {
               tenant_id: selectedTenant || undefined,
               page,
               limit: ITEMS_PER_PAGE,
-            } as any);
+            });
 
           const tenants: TenantEmployeeWithBenefits[] =
             'items' in response ? response.items : (response.tenants ?? []);

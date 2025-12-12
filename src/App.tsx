@@ -40,7 +40,7 @@ const Error404 = lazy(() => import('./components/Common/Error404'));
 
 const Dashboard = lazy(() => import('./components/DashboardContent/Dashboard'));
 const DepartmentList = lazy(() =>
-  import('./components/Department/Department-list').then(module => ({
+  import('./components/department/Department-list').then(module => ({
     default: module.DepartmentList,
   }))
 );

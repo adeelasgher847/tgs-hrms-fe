@@ -2005,28 +2005,7 @@ const EmployeeSalaryPage: React.FC = () => {
                         [key]: numValue,
                       }));
                       // Update total base salary
-                      const updated = {
-                        ...basePayComponents,
-                        [key]: numValue,
-                      };
-                      const total =
-                        (typeof updated.basic === 'string' &&
-                        updated.basic === ''
-                          ? 0
-                          : updated.basic || 0) +
-                        (typeof updated.houseRent === 'string' &&
-                        updated.houseRent === ''
-                          ? 0
-                          : updated.houseRent || 0) +
-                        (typeof updated.medical === 'string' &&
-                        updated.medical === ''
-                          ? 0
-                          : updated.medical || 0) +
-                        (typeof updated.transport === 'string' &&
-                        updated.transport === ''
-                          ? 0
-                          : updated.transport || 0);
-                      // total is stored in `basePayComponents`, no separate baseSalary state
+                      // Update local base pay components; total computed elsewhere
                     }}
                     sx={{
                       '& .MuiOutlinedInput-root': {

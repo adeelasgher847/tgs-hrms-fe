@@ -448,7 +448,7 @@ const RequestManagement: React.FC = () => {
     } catch {
       assetsFetchedRef.current = false; // Reset on error so it can retry
     }
-  }, []);
+  }, [showError]);
 
   // Fetch data from API
   const fetchRequests = React.useCallback(
@@ -474,7 +474,6 @@ const RequestManagement: React.FC = () => {
         // we need to fetch all pages to get all filtered records
         // First, check if backend supports filtering by making a test call
         let allFilteredRequests: AssetRequest[] = [];
-        let backendSupportsFiltering = false;
         let finalTotal = 0;
         let finalTotalPages = 1;
         let backendLimit = limit;
@@ -492,7 +491,6 @@ const RequestManagement: React.FC = () => {
             status: statusFilter,
           };
 
-
           const testResponse: PaginatedResponse<ApiAssetRequest> =
             await assetApi.getAllAssetRequests(testApiFilters);
 
@@ -501,13 +499,12 @@ const RequestManagement: React.FC = () => {
           );
 
           // Check if backend filtered correctly
-          const allMatchFilter = testTransformed.length === 0 || testTransformed.every(
-            req => req.status === statusFilter
-          );
+          const allMatchFilter =
+            testTransformed.length === 0 ||
+            testTransformed.every(req => req.status === statusFilter);
 
           if (allMatchFilter && testResponse.total && testResponse.totalPages) {
             // Backend supports filtering - use normal pagination
-            backendSupportsFiltering = true;
 
             // Build API filters for the requested page
             const apiFilters: {
@@ -545,16 +542,20 @@ const RequestManagement: React.FC = () => {
             }
           } else {
             // Backend doesn't support filtering - fetch all pages and filter client-side
-            
+
             let allRequests: AssetRequest[] = [];
             let currentPage = 1;
             let hasMorePages = true;
             const maxPages = 100; // Safety limit
-            let totalFromBackend = testResponse.total || 0;
+
             let totalPagesFromBackend = testResponse.totalPages || 1;
 
             // Fetch all pages
-            while (hasMorePages && currentPage <= maxPages && currentPage <= totalPagesFromBackend) {
+            while (
+              hasMorePages &&
+              currentPage <= maxPages &&
+              currentPage <= totalPagesFromBackend
+            ) {
               const pageApiFilters: {
                 page: number;
                 limit: number;
@@ -580,7 +581,9 @@ const RequestManagement: React.FC = () => {
                 totalFromBackend = pageResponse.total;
               }
 
-              hasMorePages = currentPage < totalPagesFromBackend && pageTransformed.length === limit;
+              hasMorePages =
+                currentPage < totalPagesFromBackend &&
+                pageTransformed.length === limit;
               currentPage++;
 
               // Update counts from first page
@@ -609,8 +612,10 @@ const RequestManagement: React.FC = () => {
             // Apply pagination to filtered results
             const startIndex = (page - 1) * limit;
             const endIndex = startIndex + limit;
-            allFilteredRequests = allFilteredRequests.slice(startIndex, endIndex);
-
+            allFilteredRequests = allFilteredRequests.slice(
+              startIndex,
+              endIndex
+            );
 
             // Update counts from test response if available
             if (testResponse.counts) {
@@ -669,7 +674,6 @@ const RequestManagement: React.FC = () => {
           total: finalTotal,
           totalPages: finalTotalPages,
         }));
-
 
         setRequests(finalRequests);
 
@@ -802,7 +806,7 @@ const RequestManagement: React.FC = () => {
         }
       }
     },
-    [transformApiRequests]
+    [transformApiRequests, showError]
   );
 
   // Initial load effect
@@ -837,7 +841,6 @@ const RequestManagement: React.FC = () => {
     if (lastTabRef.current === tabValue) {
       return; // Tab hasn't changed
     }
-
 
     lastTabRef.current = tabValue;
     const statusFilter = getStatusFilter(tabValue);
@@ -1067,7 +1070,12 @@ const RequestManagement: React.FC = () => {
           );
 
           // Refresh paginated requests to update counts
-          fetchRequests(pagination.page, pagination.limit, getStatusFilter(tabValue), false);
+          fetchRequests(
+            pagination.page,
+            pagination.limit,
+            getStatusFilter(tabValue),
+            false
+          );
 
           // Show success message with asset assignment details
           showSuccess(
@@ -1115,7 +1123,12 @@ const RequestManagement: React.FC = () => {
           );
 
           // Refresh paginated requests to update counts
-          fetchRequests(pagination.page, pagination.limit, getStatusFilter(tabValue), false);
+          fetchRequests(
+            pagination.page,
+            pagination.limit,
+            getStatusFilter(tabValue),
+            false
+          );
 
           showSuccess(
             `Request from ${selectedRequest.employeeName} has been rejected successfully`
@@ -1594,7 +1607,7 @@ const RequestManagement: React.FC = () => {
       </AppCard>
 
       {/* Tabs */}
-      <AppCard pading={0}>
+      <AppCard sx={{ padding: 0 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs
             value={tabValue}

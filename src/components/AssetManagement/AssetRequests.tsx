@@ -43,9 +43,9 @@ import {
   type AssetRequest as ApiAssetRequest,
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
-import ConfirmationDialog from './ConfirmationDialog';
-import { Snackbar, Alert } from '@mui/material';
-import { DeleteConfirmationDialog } from '../Common/DeleteConfirmationDialog';
+// ConfirmationDialog, Snackbar and Alert not used in this component
+// kept imports removed to satisfy linter
+import { DeleteConfirmationDialog } from '../common/DeleteConfirmationDialog';
 import { type AssetSubcategory } from '../../api/assetApi';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';

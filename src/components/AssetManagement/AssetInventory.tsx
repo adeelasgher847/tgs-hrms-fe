@@ -36,7 +36,7 @@ import type {
 import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
 import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
-import { DeleteConfirmationDialog } from '../Common/DeleteConfirmationDialog';
+import { DeleteConfirmationDialog } from '../common/DeleteConfirmationDialog';
 import { assetCategories } from '../../Data/assetCategories';
 import { isHRAdmin } from '../../utils/roleUtils';
 import { formatDate } from '../../utils/dateUtils';
@@ -128,17 +128,17 @@ const AssetInventory: React.FC = () => {
       showError(message);
     }
   };
-const [pagination, setPagination] = useState<{
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}>({
-  total: 0,
-  page: 1,
-  limit: PAGINATION.DEFAULT_PAGE_SIZE, // Backend returns records per page
-  totalPages: 1,
-});
+  const [pagination, setPagination] = useState<{
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }>({
+    total: 0,
+    page: 1,
+    limit: PAGINATION.DEFAULT_PAGE_SIZE, // Backend returns records per page
+    totalPages: 1,
+  });
   const mockUsers: MockUser[] = [
     {
       id: '1',
@@ -333,7 +333,7 @@ const [pagination, setPagination] = useState<{
         }
       }
     },
-    [transformApiAssets, showError]
+    [transformApiAssets, showError, showSnackbar]
   );
 
   // Initial load: fetch paginated assets (counts are included in API response)
@@ -691,7 +691,7 @@ const [pagination, setPagination] = useState<{
       </Box>
 
       {/* Filters and Search */}
-      <AppCard sx={{ mb: 3 }} >
+      <AppCard sx={{ mb: 3 }}>
         <Box
           sx={{
             display: 'flex',
@@ -699,12 +699,11 @@ const [pagination, setPagination] = useState<{
             gap: 2,
             alignItems: 'center',
             py: 2,
-
           }}
         >
           <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
             <AppTextField
-              placeholder='Search assets...'
+              inputProps={{ placeholder: 'Search assets...' }}
               value={searchTerm}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setSearchTerm(e.target.value)
@@ -789,7 +788,7 @@ const [pagination, setPagination] = useState<{
       </AppCard>
 
       {/* Assets Table */}
-      <AppCard pading={0}>
+      <AppCard sx={{ padding: 0 }}>
         <AppTable>
           <TableHead>
             <TableRow>
@@ -849,9 +848,13 @@ const [pagination, setPagination] = useState<{
 
                   <TableCell>
                     {asset.assignedToName ? (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      >
                         <PersonIcon fontSize='small' />
-                        <Typography variant='body2'>{asset.assignedToName}</Typography>
+                        <Typography variant='body2'>
+                          {asset.assignedToName}
+                        </Typography>
                       </Box>
                     ) : (
                       <Typography variant='body2' color='text.secondary'>
@@ -869,7 +872,9 @@ const [pagination, setPagination] = useState<{
                         size='small'
                         aria-label={`Actions menu for asset ${asset.name}`}
                         aria-haspopup='true'
-                        aria-expanded={Boolean(anchorEl) && selectedAssetId === asset.id}
+                        aria-expanded={
+                          Boolean(anchorEl) && selectedAssetId === asset.id
+                        }
                       >
                         <MoreVertIcon aria-hidden='true' />
                       </IconButton>
@@ -900,7 +905,11 @@ const [pagination, setPagination] = useState<{
                             aria-label={`Mark asset ${asset.name} as under maintenance`}
                           >
                             <ListItemIcon>
-                              <BuildIcon fontSize='small' color='warning' aria-hidden='true' />
+                              <BuildIcon
+                                fontSize='small'
+                                color='warning'
+                                aria-hidden='true'
+                              />
                             </ListItemIcon>
                             <ListItemText>Mark as Maintenance</ListItemText>
                           </MenuItem>
@@ -914,7 +923,11 @@ const [pagination, setPagination] = useState<{
                             aria-label={`Mark asset ${asset.name} as available`}
                           >
                             <ListItemIcon>
-                              <AvailableIcon fontSize='small' color='success' aria-hidden='true' />
+                              <AvailableIcon
+                                fontSize='small'
+                                color='success'
+                                aria-hidden='true'
+                              />
                             </ListItemIcon>
                             <ListItemText>Mark as Available</ListItemText>
                           </MenuItem>
@@ -927,7 +940,11 @@ const [pagination, setPagination] = useState<{
                           aria-label={`Delete asset ${asset.name}`}
                         >
                           <ListItemIcon>
-                            <DeleteIcon fontSize='small' color='error' aria-hidden='true' />
+                            <DeleteIcon
+                              fontSize='small'
+                              color='error'
+                              aria-hidden='true'
+                            />
                           </ListItemIcon>
                           <ListItemText>Delete</ListItemText>
                         </MenuItem>

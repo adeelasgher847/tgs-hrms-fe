@@ -146,7 +146,7 @@ export const TenantPage: React.FC = () => {
       // Use centralized error handler for consistent UX
       try {
         showError(err);
-      } catch (_e) {
+      } catch {
         // Fallback to local snackbar if showError fails
         setSnackbar({
           open: true,

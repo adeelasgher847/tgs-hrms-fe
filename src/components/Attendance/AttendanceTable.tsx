@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -39,7 +39,7 @@ import {
 import DateNavigation from './DateNavigation';
 import { useTheme } from '../../theme/hooks';
 import { formatDate } from '../../utils/dateUtils';
-import systemEmployeeApiService from '../../api/systemEmployeeApi';
+// systemEmployeeApiService removed; not used after cleanup
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
@@ -684,153 +684,6 @@ const AttendanceTable = () => {
     }
   };
 
-  const _fetchEmployeesFromAttendance = async (viewOverride?: 'my' | 'all') => {
-    try {
-      const currentView = viewOverride || adminView;
-
-      if (currentView === 'my') {
-        setEmployees([]);
-        return;
-      }
-
-      const storedUser = localStorage.getItem('user');
-      if (!storedUser) {
-        setEmployees([]);
-        return;
-      }
-
-      const currentUser = JSON.parse(storedUser);
-      const isSystemAdminFlag = isSystemAdmin(currentUser.role);
-      const isAdminFlag = isAdmin(currentUser.role);
-      const isNetworkAdminFlag = isNetworkAdmin(currentUser.role);
-      const isHRAdminFlag = isHRAdmin(currentUser.role);
-
-      let tenantIdForEmployees: string | undefined =
-        selectedTenant || undefined;
-
-      if (
-        !isSystemAdminFlag &&
-        (isAdminFlag || isNetworkAdminFlag || isHRAdminFlag)
-      ) {
-        const adminTenantId = getAdminTenantId(currentUser);
-        if (adminTenantId) {
-          tenantIdForEmployees = adminTenantId;
-        }
-      }
-      const userIdMapByEmail = new Map<string, string>();
-      const userIdMapByName = new Map<string, string>();
-
-      if (isSystemAdminFlag) {
-        const systemAttendanceResponse =
-          await attendanceApi.getSystemAllAttendance();
-
-        systemAttendanceResponse.tenants.forEach(tenant => {
-          if (
-            tenantIdForEmployees &&
-            tenant.tenant_id !== tenantIdForEmployees
-          ) {
-            return;
-          }
-
-          if (tenant.tenant_status !== 'active') {
-            return;
-          }
-
-          tenant.employees.forEach(emp => {
-            if (emp.user_id && emp.first_name) {
-              const fullName =
-                `${emp.first_name} ${emp.last_name || ''}`.trim();
-
-              if (emp.email) {
-                userIdMapByEmail.set(emp.email.toLowerCase(), emp.user_id);
-              }
-              if (fullName) {
-                userIdMapByName.set(fullName.toLowerCase(), emp.user_id);
-              }
-            }
-          });
-        });
-      }
-
-      const response = await systemEmployeeApiService.getSystemEmployees({
-        tenantId: tenantIdForEmployees,
-        page: null,
-      });
-
-      const employeesData = Array.isArray(response)
-        ? response
-        : 'items' in response && Array.isArray(response.items)
-          ? response.items
-          : [];
-
-      const employeeOptions = employeesData
-        .map((empUnknown: unknown) => {
-          const emp = (empUnknown as Record<string, unknown>) || {};
-          let employeeName = 'Unknown';
-          let employeeEmail = String(emp.email || '').toLowerCase();
-
-          const userObj = (emp.user as Record<string, unknown>) || {};
-          const userFirstName = String(
-            userObj.first_name || emp.first_name || ''
-          );
-          const userLastName = String(userObj.last_name || emp.last_name || '');
-          const userEmail = String(
-            userObj.email || emp.email || ''
-          ).toLowerCase();
-
-          if (userFirstName) {
-            employeeName =
-              `${userFirstName}${userLastName ? ` ${userLastName}` : ''}`.trim();
-          } else if (emp.firstName && emp.lastName) {
-            employeeName = `${emp.firstName} ${emp.lastName}`.trim();
-          } else if (emp.name) {
-            employeeName = String(emp.name);
-          } else if (userEmail) {
-            employeeName = userEmail;
-          }
-
-          employeeEmail = userEmail || employeeEmail;
-
-          let employeeUserId: string | undefined;
-
-          if (userObj.id) {
-            employeeUserId = userObj.id;
-          } else if (employeeEmail && userIdMapByEmail.has(employeeEmail)) {
-            employeeUserId = userIdMapByEmail.get(employeeEmail);
-          } else if (
-            employeeName &&
-            userIdMapByName.has(employeeName.toLowerCase())
-          ) {
-            employeeUserId = userIdMapByName.get(employeeName.toLowerCase());
-          } else if (emp.user_id) {
-            // Prefer explicit user_id if provided by backend
-            employeeUserId = String(emp.user_id as string);
-            console.log('Using emp.user_id:', employeeUserId);
-          } else if (emp.id) {
-            // Fallback to emp.id when no user_id available
-            employeeUserId = String(emp.id as string);
-            console.warn(
-              'Using emp.id as fallback (may not match attendance):',
-              employeeUserId
-            );
-          } else {
-            // Unable to determine an id
-            employeeUserId = undefined;
-          }
-
-          return {
-            id: employeeUserId!,
-            name: employeeName,
-          };
-        })
-        .filter(emp => emp.id && emp.name !== 'Unknown');
-      setEmployees(employeeOptions);
-    } catch (error) {
-      setEmployees([]);
-      showError(error);
-    }
-  };
-
   const getAdminTenantId = (currentUser: unknown): string | undefined => {
     try {
       const storedTenantId = localStorage.getItem('tenant_id');
@@ -1058,6 +911,11 @@ const AttendanceTable = () => {
     }
   };
 
+  // Keep a stable ref to fetchAttendance so effects can call it without
+  // being forced to include the function reference in dependency arrays.
+  const fetchAttendanceRef = useRef<typeof fetchAttendance | null>(null);
+  fetchAttendanceRef.current = fetchAttendance;
+
   const handleDateNavigationChange = (newDate: string) => {
     setCurrentNavigationDate(newDate);
     if (newDate === 'all') {
@@ -1202,9 +1060,9 @@ const AttendanceTable = () => {
         .map((tUnknown: unknown) => {
           const t = (tUnknown as Record<string, unknown>) || {};
           return {
-            id: t.id,
-            name: t.name,
-          };
+            id: String(t.id || ''),
+            name: String(t.name || ''),
+          } as TenantOption;
         });
       console.log('🔍 Final tenant verification:', {
         totalFetched: allTenants.length,
@@ -1253,36 +1111,6 @@ const AttendanceTable = () => {
     }
   };
 
-  const _fetchEmployeesFromSystemAttendance = async (tenantId?: string) => {
-    try {
-      const response = await attendanceApi.getSystemAllAttendance();
-      const uniqueEmployees = new Map<string, { id: string; name: string }>();
-
-      response.tenants.forEach(tenant => {
-        if (tenantId && tenant.tenant_id !== tenantId) return;
-
-        tenant.employees.forEach(emp => {
-          if (emp.user_id && emp.first_name) {
-            const employeeId = emp.user_id;
-            const employeeName =
-              emp.first_name + (emp.last_name ? ` ${emp.last_name}` : '');
-            if (!uniqueEmployees.has(employeeId)) {
-              uniqueEmployees.set(employeeId, {
-                id: employeeId,
-                name: employeeName,
-              });
-            }
-          }
-        });
-      });
-
-      setEmployees(Array.from(uniqueEmployees.values()));
-    } catch {
-      setEmployees([]);
-      showError(error);
-    }
-  };
-
   const handleTenantChange = (tenantId: string) => {
     setSelectedTenant(tenantId);
     setSelectedEmployee('');
@@ -1315,13 +1143,15 @@ const AttendanceTable = () => {
   }, [mode]);
 
   useEffect(() => {
-    fetchAttendance('my', undefined, '', '');
+    // use stable ref to call the latest fetchAttendance implementation
+    fetchAttendanceRef.current?.('my', undefined, '', '');
   }, []);
   useEffect(() => {
     if (adminView === 'all' && isSystemAdminUser) {
-      fetchAttendance('all', undefined, startDate, endDate);
+      // Use stable ref to avoid including fetchAttendance in deps
+      fetchAttendanceRef.current?.('all', undefined, startDate, endDate);
     }
-  }, [selectedTenant]);
+  }, [selectedTenant, adminView, isSystemAdminUser, startDate, endDate]);
 
   useEffect(() => {
     if (attendanceData.length > 0 && adminView === 'all') {
@@ -1498,7 +1328,7 @@ const AttendanceTable = () => {
         })),
       };
 
-      setFilteredTeamAttendance([member as any]);
+      setFilteredTeamAttendance([member as TeamMember]);
     } catch (error) {
       setFilteredTeamAttendance([]);
       showError(error);
@@ -2050,59 +1880,56 @@ const AttendanceTable = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredTeamAttendance.flatMap(member =>
-                  (member as any).attendance &&
-                  (member as any).attendance.length > 0
-                    ? (member as any).attendance.map(
-                        (attendance: any, index: number) => (
-                          <TableRow key={`${member.user_id}-${index}`}>
-                            <TableCell>
-                              {member.first_name} {member.last_name}
-                            </TableCell>
-                            <TableCell>
-                              {attendance.date
-                                ? formatDate(attendance.date)
-                                : '--'}
-                            </TableCell>
-                            <TableCell>
-                              {attendance.checkIn
-                                ? new Date(
-                                    attendance.checkIn
-                                  ).toLocaleTimeString()
-                                : '--'}
-                            </TableCell>
-                            <TableCell>
-                              {attendance.checkOut
-                                ? new Date(
-                                    attendance.checkOut
-                                  ).toLocaleTimeString()
-                                : '--'}
-                            </TableCell>
-                            <TableCell>
-                              {(member as any).totalDaysWorked}
-                            </TableCell>
-                            <TableCell>{attendance.workedHours || 0}</TableCell>
-                          </TableRow>
-                        )
+                filteredTeamAttendance.flatMap((memberUnknown: unknown) => {
+                  const member =
+                    (memberUnknown as TeamMember) || ({} as TeamMember);
+                  const attendanceList = member.attendance || [];
+                  if (attendanceList.length > 0) {
+                    return attendanceList.map(
+                      (attendance: TeamAttendanceEntry, index: number) => (
+                        <TableRow key={`${member.user_id}-${index}`}>
+                          <TableCell>
+                            {member.first_name} {member.last_name}
+                          </TableCell>
+                          <TableCell>
+                            {attendance.date
+                              ? formatDate(attendance.date)
+                              : '--'}
+                          </TableCell>
+                          <TableCell>
+                            {attendance.checkIn
+                              ? new Date(
+                                  attendance.checkIn
+                                ).toLocaleTimeString()
+                              : '--'}
+                          </TableCell>
+                          <TableCell>
+                            {attendance.checkOut
+                              ? new Date(
+                                  attendance.checkOut
+                                ).toLocaleTimeString()
+                              : '--'}
+                          </TableCell>
+                          <TableCell>{member.totalDaysWorked}</TableCell>
+                          <TableCell>{attendance.workedHours || 0}</TableCell>
+                        </TableRow>
                       )
-                    : [
-                        <TableRow key={(member as any).user_id}>
-                          <TableCell>
-                            {(member as any).first_name}{' '}
-                            {(member as any).last_name}
-                          </TableCell>
-                          <TableCell>--</TableCell>
-                          <TableCell>--</TableCell>
-                          <TableCell>--</TableCell>
-                          <TableCell>
-                            {(member as any).totalDaysWorked}
-                          </TableCell>
-                          <TableCell>
-                            {(member as any).totalHoursWorked}
-                          </TableCell>
-                        </TableRow>,
-                      ]
-                )
+                    );
+                  }
+
+                  return [
+                    <TableRow key={member.user_id}>
+                      <TableCell>
+                        {member.first_name} {member.last_name}
+                      </TableCell>
+                      <TableCell>--</TableCell>
+                      <TableCell>--</TableCell>
+                      <TableCell>--</TableCell>
+                      <TableCell>{member.totalDaysWorked}</TableCell>
+                      <TableCell>{member.totalHoursWorked}</TableCell>
+                    </TableRow>,
+                  ];
+                })
               )}
             </TableBody>
           </AppTable>
@@ -2281,54 +2108,54 @@ const AttendanceTable = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredTeamAttendance.flatMap(member =>
-                  (member as any).attendance &&
-                  (member as any).attendance.length > 0
-                    ? (member as any).attendance.map(
-                        (attendance: any, index: number) => (
-                          <TableRow key={`${(member as any).user_id}-${index}`}>
-                            <TableCell>
-                              {(member as any).first_name}{' '}
-                              {(member as any).last_name}
-                            </TableCell>
-                            <TableCell>
-                              {attendance.date
-                                ? formatDate(attendance.date)
-                                : '--'}
-                            </TableCell>
-                            <TableCell>
-                              {attendance.checkIn
-                                ? new Date(
-                                    attendance.checkIn
-                                  ).toLocaleTimeString()
-                                : '--'}
-                            </TableCell>
-                            <TableCell>
-                              {attendance.checkOut
-                                ? new Date(
-                                    attendance.checkOut
-                                  ).toLocaleTimeString()
-                                : '--'}
-                            </TableCell>
-                            <TableCell>{attendance.workedHours || 0}</TableCell>
-                          </TableRow>
-                        )
+                filteredTeamAttendance.flatMap((memberUnknown: unknown) => {
+                  const member =
+                    (memberUnknown as TeamMember) || ({} as TeamMember);
+                  const attendanceList = member.attendance || [];
+                  if (attendanceList.length > 0) {
+                    return attendanceList.map(
+                      (attendance: TeamAttendanceEntry, index: number) => (
+                        <TableRow key={`${member.user_id}-${index}`}>
+                          <TableCell>
+                            {member.first_name} {member.last_name}
+                          </TableCell>
+                          <TableCell>
+                            {attendance.date
+                              ? formatDate(attendance.date)
+                              : '--'}
+                          </TableCell>
+                          <TableCell>
+                            {attendance.checkIn
+                              ? new Date(
+                                  attendance.checkIn
+                                ).toLocaleTimeString()
+                              : '--'}
+                          </TableCell>
+                          <TableCell>
+                            {attendance.checkOut
+                              ? new Date(
+                                  attendance.checkOut
+                                ).toLocaleTimeString()
+                              : '--'}
+                          </TableCell>
+                          <TableCell>{attendance.workedHours || 0}</TableCell>
+                        </TableRow>
                       )
-                    : [
-                        <TableRow key={(member as any).user_id}>
-                          <TableCell>
-                            {(member as any).first_name}{' '}
-                            {(member as any).last_name}
-                          </TableCell>
-                          <TableCell>--</TableCell>
-                          <TableCell>--</TableCell>
-                          <TableCell>--</TableCell>
-                          <TableCell>
-                            {(member as any).totalHoursWorked}
-                          </TableCell>
-                        </TableRow>,
-                      ]
-                )
+                    );
+                  }
+
+                  return [
+                    <TableRow key={member.user_id}>
+                      <TableCell>
+                        {member.first_name} {member.last_name}
+                      </TableCell>
+                      <TableCell>--</TableCell>
+                      <TableCell>--</TableCell>
+                      <TableCell>--</TableCell>
+                      <TableCell>{member.totalHoursWorked}</TableCell>
+                    </TableRow>,
+                  ];
+                })
               )}
             </TableBody>
           </AppTable>

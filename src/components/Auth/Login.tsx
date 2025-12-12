@@ -290,29 +290,46 @@ const Login: React.FC = () => {
         navigate(getDefaultDashboardRoute(role), { replace: true });
       }
     } catch (err: unknown) {
-      const error = err as any;
-      const data = error?.response?.data ?? null;
+      const error = err;
+      const data = (() => {
+        if (typeof error === 'object' && error !== null) {
+          const resp = (error as Record<string, unknown>)['response'];
+          if (typeof resp === 'object' && resp !== null) {
+            return (resp as Record<string, unknown>)['data'];
+          }
+        }
+        return null;
+      })();
 
       // API may return different shapes: { field, message }, { errors: [{field, message}] }, or { message }
-      if (data) {
-        if (data.field) {
-          if (data.field === 'email') setEmailError(data.message || '');
-          else if (data.field === 'password')
-            setPasswordError(data.message || '');
-          else showError(data.message || 'Login failed');
-        } else if (Array.isArray(data.errors)) {
+      if (data && typeof data === 'object') {
+        const d = data as Record<string, unknown>;
+
+        const fieldVal = d['field'];
+        const messageVal = d['message'];
+
+        if (typeof fieldVal === 'string') {
+          const field = fieldVal;
+          const msg = typeof messageVal === 'string' ? messageVal : '';
+          if (field === 'email') setEmailError(msg);
+          else if (field === 'password') setPasswordError(msg);
+          else showError(msg || 'Login failed');
+        } else if (Array.isArray(d['errors'])) {
           // Map multiple field errors to corresponding inputs
-          data.errors.forEach((errItem: any) => {
-            if (errItem.field === 'email') setEmailError(errItem.message || '');
-            else if (errItem.field === 'password')
-              setPasswordError(errItem.message || '');
+          const errorsArr = d['errors'] as unknown[];
+          errorsArr.forEach(errItem => {
+            if (typeof errItem === 'object' && errItem !== null) {
+              const ei = errItem as Record<string, unknown>;
+              const ef = ei['field'];
+              const em = ei['message'];
+              if (ef === 'email' && typeof em === 'string') setEmailError(em);
+              else if (ef === 'password' && typeof em === 'string')
+                setPasswordError(em);
+            }
           });
-          // If there is a top-level message, show it as snackbar
-          if (data.message) showError(data.message);
-        } else if (data.message) {
-          // Generic message (e.g., invalid credentials) - show under password if credentials issue
-          const msg = String(data.message);
-          // Heuristic: if message mentions credential or password, attach to password field
+          if (typeof messageVal === 'string') showError(messageVal);
+        } else if (typeof messageVal === 'string') {
+          const msg = messageVal;
           if (/password|credential|invalid/i.test(msg)) {
             setPasswordError(msg);
           } else if (/email/i.test(msg)) {

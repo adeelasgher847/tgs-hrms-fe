@@ -132,7 +132,7 @@ const AssignEmployeeBenefit: React.FC<{
     };
 
     fetchData();
-  }, [open]);
+  }, [open, showError]);
 
   useEffect(() => {
     if (!selectedEmployeeId) {
@@ -172,7 +172,7 @@ const AssignEmployeeBenefit: React.FC<{
     return () => {
       isMounted = false;
     };
-  }, [selectedEmployeeId]);
+  }, [selectedEmployeeId, showError]);
 
   const handleFormSubmit = async (data: AssignEmployeeBenefitValues) => {
     const duplicateBenefitIds = data.benefitIds.filter(benefitId =>

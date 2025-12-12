@@ -110,11 +110,6 @@ const EmployeeGrowthChart: React.FC = () => {
     new Set(tenantGrowthData.map(d => d.month))
   ).sort();
 
-  const monthLabels = {
-    en: 'Month',
-    ar: 'الشهر',
-  };
-
   const series = [{ name: 'Employees', data: employeesData }];
 
   const options: ApexCharts.ApexOptions = {

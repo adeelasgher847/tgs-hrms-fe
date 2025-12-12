@@ -21,7 +21,7 @@ import { useOutletContext } from 'react-router-dom';
 import type { DepartmentFormData } from '../../types';
 import { DepartmentCard } from './DepartmentCard';
 import { DepartmentFormModal } from './DepartmentFormModal';
-import DeleteConfirmationDialog from '../Common/DeleteConfirmationDialog';
+import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
 import {
   departmentApiService,
@@ -86,7 +86,7 @@ export const DepartmentList: React.FC = () => {
     useState<FrontendDepartment | null>(null);
   const [allTenants, setAllTenants] = useState<SystemTenant[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
-  const [loadingTenants, setLoadingTenants] = useState<boolean>(false);
+  const [, setLoadingTenants] = useState<boolean>(false);
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   // Fetch tenants for system admin

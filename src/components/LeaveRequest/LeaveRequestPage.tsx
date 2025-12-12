@@ -355,28 +355,43 @@ const LeaveRequestPage = () => {
         totalPagesLocal = res.totalPages || 1;
         allLeaves.push(
           ...res.items.map((leave): Leave => {
-            const employeeId =
-              leave.employeeId ||
-              (
-                leave as unknown as {
-                  employee?: { id?: string };
-                  user?: { id?: string };
-                }
-              ).employee?.id ||
-              (
-                leave as unknown as {
-                  employee?: { id?: string };
-                  user?: { id?: string };
-                }
-              ).user?.id ||
-              '';
+            const leaveRec = leave as unknown as Record<string, unknown>;
+            const employeeId = String(
+              (leaveRec.employee as Record<string, unknown> | undefined)?.id ||
+                (leaveRec.user as Record<string, unknown> | undefined)?.id ||
+                (leaveRec.employeeId as string | undefined) ||
+                ''
+            );
+
+            const r = leaveRec.remarks;
+            const remarks =
+              r === null || typeof r === 'undefined' ? undefined : String(r);
+
+            const rawStatus = String(leaveRec.status ?? '').toLowerCase();
+            let normalizedStatus: import('../../type/levetypes').LeaveStatus =
+              'pending';
+            if (
+              rawStatus === 'pending' ||
+              rawStatus === 'approved' ||
+              rawStatus === 'rejected' ||
+              rawStatus === 'withdrawn'
+            ) {
+              normalizedStatus =
+                rawStatus as import('../../type/levetypes').LeaveStatus;
+            } else if (rawStatus === 'cancelled') {
+              // Backend uses 'cancelled' sometimes — map to 'rejected'
+              normalizedStatus = 'rejected';
+            }
+
             return {
               ...leave,
               employeeId,
-              leaveTypeId: leave.leaveTypeId || '',
-              // Ensure remarks is not null (convert null -> undefined) to match Leave type
-              remarks: (leave as any).remarks ?? undefined,
-            };
+              leaveTypeId: leaveRec.leaveTypeId
+                ? String(leaveRec.leaveTypeId)
+                : '',
+              remarks,
+              status: normalizedStatus,
+            } as Leave;
           })
         );
         pageNum++;
