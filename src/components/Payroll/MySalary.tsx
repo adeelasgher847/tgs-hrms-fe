@@ -28,6 +28,7 @@ import { payrollApi, type PayrollRecord } from '../../api/payrollApi';
 import { useIsDarkMode } from '../../theme';
 import { useUser } from '../../hooks/useUser';
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
+import { PAGINATION } from '../../constants/appConstants';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -57,8 +58,7 @@ const resolveEmployeeId = (): string | null => {
 
     const trimmed = raw.replace(/^"|"$/g, '').trim();
     return trimmed.length > 0 ? trimmed : null;
-  } catch (error) {
-    console.warn('Unable to read employeeId from localStorage:', error);
+  } catch {
     return null;
   }
 };
@@ -84,7 +84,7 @@ const MySalary: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 25;
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
 
   const fetchPayslip = useCallback(async (recordId: string | null) => {
     if (!recordId) {
@@ -100,8 +100,7 @@ const MySalary: React.FC = () => {
       setDetailError(null);
       const data = await payrollApi.getPayrollPayslip(recordId);
       setDetailRecord(data);
-    } catch (err) {
-      console.error('Failed to load payslip details:', err);
+    } catch {
       setDetailRecord(null);
       setDetailError('Failed to load payslip details.');
     } finally {
@@ -171,32 +170,12 @@ const MySalary: React.FC = () => {
         );
       }
 
-      console.log('MySalary pagination state:', {
-        currentPage,
-        totalPages:
-          backendTotalPages !== undefined
-            ? backendTotalPages
-            : backendTotal !== undefined
-              ? Math.ceil(backendTotal / itemsPerPage) || 1
-              : historyRecords.length === itemsPerPage
-                ? currentPage + 1
-                : currentPage,
-        totalRecords:
-          backendTotal !== undefined
-            ? backendTotal
-            : historyRecords.length === itemsPerPage
-              ? currentPage * itemsPerPage
-              : (currentPage - 1) * itemsPerPage + historyRecords.length,
-        historyLength: historyRecords.length,
-      });
-
       setSelectedRecordId(null);
       setDetailRecord(null);
       setDetailError(null);
       setDetailLoading(false);
       setDialogOpen(false);
-    } catch (err) {
-      console.error('Failed to load salary data:', err);
+    } catch {
       setError('Failed to load salary information.');
       setHistory([]);
       setSelectedRecordId(null);

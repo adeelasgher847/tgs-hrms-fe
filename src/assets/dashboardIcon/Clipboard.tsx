@@ -1,4 +1,3 @@
-
 const Clipboard = () => {
   return (
     <svg

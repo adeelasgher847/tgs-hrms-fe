@@ -72,8 +72,8 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     backgroundColor: imgError
       ? '#9e9e9e'
       : effectiveProfilePictureUrl || user.profile_pic
-      ? 'transparent'
-      : generateAvatarColor(user.first_name),
+        ? 'transparent'
+        : generateAvatarColor(user.first_name),
     '& .MuiAvatar-img': {
       objectFit: 'cover',
       objectPosition: 'top',

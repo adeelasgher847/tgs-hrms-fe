@@ -9,11 +9,14 @@ interface SnackbarState {
 
 interface UseErrorHandlerReturn {
   snackbar: SnackbarState;
-  showError: (error: unknown, context?: {
-    operation: 'create' | 'update' | 'delete' | 'fetch';
-    resource: 'department' | 'designation' | 'employee';
-    isGlobal?: boolean;
-  }) => void;
+  showError: (
+    error: unknown,
+    context?: {
+      operation: 'create' | 'update' | 'delete' | 'fetch';
+      resource: 'department' | 'designation' | 'employee';
+      isGlobal?: boolean;
+    }
+  ) => void;
   showSuccess: (message: string) => void;
   showWarning: (message: string) => void;
   showInfo: (message: string) => void;
@@ -31,24 +34,27 @@ export function useErrorHandler(): UseErrorHandlerReturn {
     severity: 'error',
   });
 
-  const showError = useCallback((
-    error: unknown,
-    context?: {
-      operation: 'create' | 'update' | 'delete' | 'fetch';
-      resource: 'department' | 'designation' | 'employee';
-      isGlobal?: boolean;
-    }
-  ) => {
-    const errorResult = context 
-      ? handleApiError(error, context)
-      : extractErrorMessage(error);
-    
-    setSnackbar({
-      open: true,
-      message: errorResult.message,
-      severity: 'error',
-    });
-  }, []);
+  const showError = useCallback(
+    (
+      error: unknown,
+      context?: {
+        operation: 'create' | 'update' | 'delete' | 'fetch';
+        resource: 'department' | 'designation' | 'employee';
+        isGlobal?: boolean;
+      }
+    ) => {
+      const errorResult = context
+        ? handleApiError(error, context)
+        : extractErrorMessage(error);
+
+      setSnackbar({
+        open: true,
+        message: errorResult.message,
+        severity: 'error',
+      });
+    },
+    []
+  );
 
   const showSuccess = useCallback((message: string) => {
     setSnackbar({
@@ -97,7 +103,7 @@ export function useErrorHandler(): UseErrorHandlerReturn {
  */
 export function withErrorHandling<T>(
   apiCall: () => Promise<T>,
-  errorHandler: (error: unknown) => void,
+  errorHandler: (error: unknown) => void
   // context?: {
   //   operation: 'create' | 'update' | 'delete' | 'fetch';
   //   resource: 'department' | 'designation' | 'employee';

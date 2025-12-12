@@ -1,0 +1,25 @@
+import { Card, type CardProps, type SxProps, type Theme } from '@mui/material';
+
+interface AppCardProps extends CardProps {
+  compact?: boolean;
+}
+
+export function AppCard({ compact = false, sx, pading, ...rest }: AppCardProps) {
+  const baseSx: SxProps<Theme> = compact
+    ? {
+        padding: pading !== undefined ? pading : 1,
+        boxShadow: 1,
+      }
+    : {
+        padding: pading !== undefined ? pading : 2,
+        boxShadow: 2,
+      };
+
+  const combinedSx: SxProps<Theme> = sx
+    ? ([baseSx, sx] as SxProps<Theme>)
+    : baseSx;
+
+  return <Card {...rest} sx={combinedSx} />;
+}
+
+export default AppCard;

@@ -7,18 +7,14 @@ import React, {
 } from 'react';
 import {
   Box,
-  Button,
   Dialog,
   DialogTitle,
   DialogContent,
   useTheme,
   IconButton,
-  TextField,
   MenuItem,
   Stack,
   useMediaQuery,
-  Alert,
-  Snackbar,
   Pagination,
   Typography,
   Paper,
@@ -33,7 +29,7 @@ import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeList from './EmployeeList';
 import EmployeeViewModal from './EmployeeViewModal';
 import employeeApi from '../../api/employeeApi';
-import type { EmployeeDto } from '../../api/employeeApi';
+import type { BackendEmployee, EmployeeDto } from '../../api/employeeApi';
 import {
   departmentApiService,
   type BackendDepartment,
@@ -44,6 +40,12 @@ import {
 } from '../../api/designationApi';
 import { extractErrorMessage } from '../../utils/errorHandler';
 import { exportCSV } from '../../api/exportApi';
+import { env } from '../../config/env';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppButton from '../common/AppButton';
+import AppTextField from '../common/AppTextField';
+import { PAGINATION } from '../../constants/appConstants';
 interface Employee {
   id: string;
   user_id?: string; // User ID for fetching profile pictures
@@ -96,16 +98,17 @@ const EmployeeManager: React.FC = () => {
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]); // Store all employees
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   // Pagination state - now for client-side pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [paginationLimit, setPaginationLimit] = useState(25); // Backend limit, default 25
+  const [paginationLimit, setPaginationLimit] = useState(
+    PAGINATION.DEFAULT_PAGE_SIZE
+  ); // Backend limit
 
   // Calculate pagination from all employees using backend limit
   const totalItems = allEmployees.length;
-  const itemsPerPage = paginationLimit || 25; // Use backend limit
+  const itemsPerPage = paginationLimit || PAGINATION.DEFAULT_PAGE_SIZE; // Use backend limit
 
   // Calculate total pages - only count pages that have actual data
   // For example: 50 records / 25 limit = 2 pages (not 3)
@@ -162,7 +165,6 @@ const EmployeeManager: React.FC = () => {
   const bgColor = darkMode ? '#111' : '#fff';
   const textColor = darkMode ? '#8f8f8f' : '#000';
   const borderColor = darkMode ? '#333' : '#ddd';
-  const filterBtn = darkMode ? '#555' : '#484c7f';
 
   // Dark mode input styles
   const darkInputStyles = darkMode
@@ -206,7 +208,7 @@ const EmployeeManager: React.FC = () => {
   }, []);
 
   // Helper function to convert BackendEmployee to Employee
-  const convertToEmployee = (emp: any): Employee => ({
+  const convertToEmployee = (emp: BackendEmployee): Employee => ({
     id: emp.id,
     user_id: emp.user_id,
     name: emp.name,
@@ -253,7 +255,6 @@ const EmployeeManager: React.FC = () => {
     try {
       isLoadingRef.current = true;
       setLoading(true);
-      setError(null);
 
       const filters = {
         departmentId: departmentFilter || undefined,
@@ -295,20 +296,9 @@ const EmployeeManager: React.FC = () => {
       setAllEmployees(allEmployeesData);
       // Reset to page 1 when data is loaded
       setCurrentPage(1);
-
-      // Debug: Log pagination info
-      const calculatedTotalPages =
-        allEmployeesData.length > 0
-          ? Math.ceil(allEmployeesData.length / (backendLimit || 25))
-          : 1;
-      console.log('Employee pagination:', {
-        totalItems: allEmployeesData.length,
-        limit: backendLimit,
-        calculatedTotalPages,
-      });
     } catch (error: unknown) {
       const errorResult = extractErrorMessage(error);
-      setError(errorResult.message);
+      showError(errorResult.message);
       setAllEmployees([]);
     } finally {
       setLoading(false);
@@ -359,7 +349,6 @@ const EmployeeManager: React.FC = () => {
   ) => {
     try {
       setSubmitting(true);
-      setError(null);
 
       // Ensure required fields are present
       if (
@@ -440,7 +429,7 @@ const EmployeeManager: React.FC = () => {
       // Reload department and designation mappings
       await loadDepartmentsAndDesignations();
 
-      setSuccessMessage(
+      showSuccess(
         'Employee added successfully! A password reset link has been sent to their email.'
       );
       setOpen(false);
@@ -546,11 +535,11 @@ const EmployeeManager: React.FC = () => {
 
       if (isGlobalError) {
         // For global errors, only show snackbar, don't set form error
-        setError(errorResult.message); // This will show in the snackbar
+        showError(errorResult.message);
         return { success: false }; // Return empty errors to avoid form display
       } else {
         // For other errors, show both snackbar and form error
-        setError(errorResult.message);
+        showError(errorResult.message);
         return { success: false, errors: { general: errorResult.message } };
       }
     } finally {
@@ -581,7 +570,6 @@ const EmployeeManager: React.FC = () => {
 
     try {
       setSubmitting(true);
-      setError(null);
 
       const nextDesignationId =
         updates.designationId && updates.designationId !== ''
@@ -684,7 +672,7 @@ const EmployeeManager: React.FC = () => {
         )
       );
 
-      setSuccessMessage('Employee updated successfully!');
+      showSuccess('Employee updated successfully!');
       setOpen(false);
       setEditing(null);
       return { success: true };
@@ -701,11 +689,11 @@ const EmployeeManager: React.FC = () => {
 
       if (isGlobalError) {
         // For global errors, only show snackbar, don't set form error
-        setError(errorResult.message); // This will show in the snackbar
+        showError(errorResult.message);
         return { success: false }; // Return empty errors to avoid form display
       } else {
         // For other errors, show both snackbar and form error
-        setError(errorResult.message);
+        showError(errorResult.message);
         return {
           success: false,
           errors: { general: errorResult.message },
@@ -718,13 +706,12 @@ const EmployeeManager: React.FC = () => {
 
   const handleDeleteEmployee = async (id: string) => {
     try {
-      setError(null);
       await employeeApi.deleteEmployee(id);
       setAllEmployees(prev => prev.filter(emp => emp.id !== id));
-      setSuccessMessage('Employee deleted successfully!');
+      showSuccess('Employee deleted successfully!');
     } catch (error: unknown) {
       const errorResult = extractErrorMessage(error);
-      setError(errorResult.message);
+      showError(errorResult.message);
     }
   };
 
@@ -756,31 +743,32 @@ const EmployeeManager: React.FC = () => {
     setDesignationFilter('');
   };
 
-  const handleResendInvite = useCallback(async (employee: Employee) => {
-    try {
-      setError(null);
+  const handleResendInvite = useCallback(
+    async (employee: Employee) => {
+      try {
+        // Immediately update the status to "Invite Sent" in the local state
+        setAllEmployees(prev =>
+          prev.map(emp =>
+            emp.id === employee.id ? { ...emp, status: 'Invite Sent' } : emp
+          )
+        );
 
-      // Immediately update the status to "Invite Sent" in the local state
-      setAllEmployees(prev =>
-        prev.map(emp =>
-          emp.id === employee.id ? { ...emp, status: 'Invite Sent' } : emp
-        )
-      );
+        await employeeApi.resendInvite(employee.id);
+        showSuccess(`Invite resent successfully to ${employee.name}!`);
+      } catch (error: unknown) {
+        // If API call fails, revert the status back to "Invite Expired"
+        setAllEmployees(prev =>
+          prev.map(emp =>
+            emp.id === employee.id ? { ...emp, status: 'Invite Expired' } : emp
+          )
+        );
 
-      await employeeApi.resendInvite(employee.id);
-      setSuccessMessage(`Invite resent successfully to ${employee.name}!`);
-    } catch (error: unknown) {
-      // If API call fails, revert the status back to "Invite Expired"
-      setAllEmployees(prev =>
-        prev.map(emp =>
-          emp.id === employee.id ? { ...emp, status: 'Invite Expired' } : emp
-        )
-      );
-
-      const errorResult = extractErrorMessage(error);
-      setError(errorResult.message);
-    }
-  }, []);
+        const errorResult = extractErrorMessage(error);
+        showError(errorResult.message);
+      }
+    },
+    [showSuccess, showError]
+  );
 
   const handleViewEmployee = useCallback((employee: Employee) => {
     setViewingEmployee(employee);
@@ -807,8 +795,7 @@ const EmployeeManager: React.FC = () => {
   const filters = { page: '1' };
 
   // Build absolute media URL from backend path
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+  const API_BASE_URL = env.apiBaseUrl;
   const toAbsoluteUrl = (path?: string | null) => {
     if (!path) return '';
     const trimmed = path.trim();
@@ -844,7 +831,7 @@ const EmployeeManager: React.FC = () => {
           }}
         >
           {/* Department Filter */}
-          <TextField
+          <AppTextField
             select
             fullWidth
             label={getLabel('Department', 'القسم')}
@@ -880,10 +867,10 @@ const EmployeeManager: React.FC = () => {
                 {dept.name}
               </MenuItem>
             ))}
-          </TextField>
+          </AppTextField>
 
           {/* Designation Filter */}
-          <TextField
+          <AppTextField
             select
             fullWidth
             label={getLabel('Designation', 'المسمى الوظيفي')}
@@ -916,43 +903,33 @@ const EmployeeManager: React.FC = () => {
                 {des.title}
               </MenuItem>
             ))}
-          </TextField>
+          </AppTextField>
 
-          <Button
+          <AppButton
             variant='outlined'
+            variantType='secondary'
             onClick={handleClearFilters}
             sx={{
-              borderColor: filterBtn,
-              color: textColor,
               width: isMobile ? '100%' : 'auto',
-              '&:hover': {
-                borderColor: darkMode ? '#888' : '#999',
-                backgroundColor: darkMode
-                  ? 'rgba(255,255,255,0.08)'
-                  : 'rgba(0,0,0,0.04)',
-              },
             }}
           >
             {getLabel('Clear Filters', 'مسح الفلاتر')}
-          </Button>
+          </AppButton>
 
           {/* Add Employee Button */}
-          <Button
+          <AppButton
             variant='contained'
+            variantType='primary'
             onClick={() => {
               setEditing(null);
               setOpen(true);
             }}
             sx={{
-              backgroundColor: darkMode ? '#464b8a' : '#484c7f',
               width: isMobile ? '100%' : 'auto',
-              '&:hover': {
-                backgroundColor: darkMode ? '#464b8a' : '#5b56a0',
-              },
             }}
           >
             {getLabel('Add Employee', 'إضافة موظف')}
-          </Button>
+          </AppButton>
         </Stack>
         <Box display='flex' justifyContent='flex-end'>
           <Tooltip title='Export Employees CSV'>
@@ -1054,35 +1031,12 @@ const EmployeeManager: React.FC = () => {
       )}
 
       {/* Notifications */}
-      <Snackbar
-        open={!!error}
-        autoHideDuration={6000}
-        onClose={() => setError(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setError(null)}
-          severity='error'
-          sx={{ width: '100%' }}
-        >
-          {error}
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={6000}
-        onClose={() => setSuccessMessage(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSuccessMessage(null)}
-          severity='success'
-          sx={{ width: '100%' }}
-        >
-          {successMessage}
-        </Alert>
-      </Snackbar>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
 
       {/* Delete Confirmation - Department modal style */}
       <Dialog
@@ -1114,16 +1068,21 @@ const EmployeeManager: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'center', p: 3, pt: 1 }}>
-          <Button
+          <AppButton
             onClick={cancelDelete}
             variant='outlined'
+            variantType='secondary'
             sx={{ color: textColor, borderColor }}
           >
             {getLabel('Cancel', 'إلغاء')}
-          </Button>
-          <Button onClick={confirmDelete} variant='contained' color='error'>
+          </AppButton>
+          <AppButton
+            onClick={confirmDelete}
+            variant='contained'
+            variantType='danger'
+          >
             {getLabel('Delete', 'حذف')}
-          </Button>
+          </AppButton>
         </DialogActions>
       </Dialog>
 

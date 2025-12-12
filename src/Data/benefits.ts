@@ -45,5 +45,3 @@ export const seedAssignments: EmployeeBenefitAssignment[] = [
     status: 'active',
   },
 ];
-
-

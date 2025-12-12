@@ -35,7 +35,7 @@ export const ErrorSnackbar: React.FC<ErrorSnackbarProps> = ({
       <Alert
         onClose={onClose}
         severity={severity}
-        sx={{ 
+        sx={{
           width: '100%',
           '& .MuiAlert-message': {
             fontSize: '14px',

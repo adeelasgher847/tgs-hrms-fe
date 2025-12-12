@@ -18,7 +18,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -28,6 +27,8 @@ import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
+import AppButton from '../common/AppButton';
+import { COLORS } from '../../constants/appConstants';
 import UserAvatar from '../common/UserAvatar';
 
 interface TeamMemberListProps {
@@ -244,7 +245,10 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
     <Box>
       <TableContainer
         component={Paper}
-        sx={{ backgroundColor: darkMode ? '#2d2d2d' : '#fff' , boxShadow:"none"}}
+        sx={{
+          backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+          boxShadow: 'none',
+        }}
       >
         <Table>
           <TableHead>
@@ -415,16 +419,17 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowDeleteConfirmDialog(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmRemoveMember}
+          <AppButton
+            variant='outlined'
+            text='Cancel'
+            onClick={() => setShowDeleteConfirmDialog(false)}
+          />
+          <AppButton
             variant='contained'
-            sx={{ backgroundColor: '#d32f2f' }}
-          >
-            Remove Member
-          </Button>
+            text='Remove Member'
+            onClick={handleConfirmRemoveMember}
+            sx={{ backgroundColor: COLORS.ERROR }}
+          />
         </DialogActions>
       </Dialog>
     </Box>

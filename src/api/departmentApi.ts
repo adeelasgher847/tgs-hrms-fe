@@ -154,26 +154,21 @@ class DepartmentApiService {
       }>;
     }>;
   }> {
-    try {
-      const params = tenantId ? { tenant_id: tenantId } : {};
-      const response = await axiosInstance.get<{
-        tenants: Array<{
-          tenant_id: string;
-          tenant_name: string;
-          tenant_status: string;
-          departments: Array<{
-            id: string;
-            name: string;
-            description?: string;
-            created_at: string;
-          }>;
+    const params = tenantId ? { tenant_id: tenantId } : {};
+    const response = await axiosInstance.get<{
+      tenants: Array<{
+        tenant_id: string;
+        tenant_name: string;
+        tenant_status: string;
+        departments: Array<{
+          id: string;
+          name: string;
+          description?: string;
+          created_at: string;
         }>;
-      }>(`${this.baseUrl}/all-tenants`, { params });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching all tenants with departments:', error);
-      throw error;
-    }
+      }>;
+    }>(`${this.baseUrl}/all-tenants`, { params });
+    return response.data;
   }
 }
 

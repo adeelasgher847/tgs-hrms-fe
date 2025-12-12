@@ -5,7 +5,7 @@ export { default as RequestManagement } from './RequestManagement';
 export { default as SystemAdminAssets } from './SystemAdminAssets';
 export { default as AssetModal } from './AssetModal';
 export { default as StatusChip } from './StatusChip';
-export { default as ConfirmationDialog } from './ConfirmationDialog';
+// ConfirmationDialog has been replaced with DeleteConfirmationDialog from Common/
 export { default as NotificationToast } from './NotificationToast';
 export {
   showSuccessToast,

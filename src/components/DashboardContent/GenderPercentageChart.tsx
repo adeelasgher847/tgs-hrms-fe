@@ -97,9 +97,8 @@ export default function GenderPercentageChart() {
           },
         ];
         setGenderData(transformedData);
-      } catch (err) {
+      } catch {
         // If there's an error (including tenant with zero employees), render zeros
-        console.warn('GenderPercentageChart fetch error:', err);
         setError(null);
         setGenderData([
           { name: 'Male', value: 0, color: '#484c7f', percentage: 0 },

@@ -61,7 +61,7 @@ const SheetList: React.FC = () => {
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return '—';
-      
+
       const formattedDate = formatDate(date);
       const time = date.toLocaleTimeString();
       return `${formattedDate} ${time}`;
@@ -93,12 +93,8 @@ const SheetList: React.FC = () => {
                 timesheet.map(row => (
                   <TableRow key={row.id}>
                     <TableCell>{row.employee_full_name}</TableCell>
-                    <TableCell>
-                      {formatDateTime(row.start_time)}
-                    </TableCell>
-                    <TableCell>
-                      {formatDateTime(row.end_time)}
-                    </TableCell>
+                    <TableCell>{formatDateTime(row.start_time)}</TableCell>
+                    <TableCell>{formatDateTime(row.end_time)}</TableCell>
                     <TableCell>{row.duration_hours ?? '—'}</TableCell>
                   </TableRow>
                 ))

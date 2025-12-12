@@ -228,6 +228,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                             <IconButton
                               onClick={() => onView(emp)}
                               disabled={loading}
+                              aria-label={`View details for employee ${emp.name}`}
                               sx={{
                                 color: darkMode ? '#4caf50' : '#2e7d32',
                                 '&:hover': {
@@ -237,7 +238,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                                 },
                               }}
                             >
-                              <VisibilityIcon />
+                              <VisibilityIcon aria-hidden='true' />
                             </IconButton>
                           </Tooltip>
                         )}
@@ -264,8 +265,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                                 disabled={
                                   loading || emp.status !== 'Invite Expired'
                                 }
+                                aria-label={`Resend invite to employee ${emp.name}`}
                               >
-                                <ReplayIcon />
+                                <ReplayIcon aria-hidden='true' />
                               </IconButton>
                             </span>
                           </Tooltip>
@@ -282,8 +284,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                             <IconButton
                               onClick={() => onEdit(emp)}
                               disabled={loading}
+                              aria-label={`Edit employee ${emp.name}`}
                             >
-                              <EditIcon />
+                              <EditIcon aria-hidden='true' />
                             </IconButton>
                           </Tooltip>
                         )}
@@ -299,6 +302,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                             <IconButton
                               onClick={() => onDelete(emp.id)}
                               disabled={loading}
+                              aria-label={`Delete employee ${emp.name}`}
                               sx={{
                                 color: darkMode ? '#ff6b6b' : '#d32f2f',
                                 '&:hover': {
@@ -308,7 +312,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                                 },
                               }}
                             >
-                              <DeleteIcon />
+                              <DeleteIcon aria-hidden='true' />
                             </IconButton>
                           </Tooltip>
                         )}

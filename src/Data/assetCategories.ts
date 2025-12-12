@@ -30,8 +30,8 @@ export const assetCategories: AssetCategoryWithSubcategories[] = [
       'Display Screens',
       'Tablets',
       'iPads',
-      'Network Devices (Routers, Switches, Access Points)'
-    ]
+      'Network Devices (Routers, Switches, Access Points)',
+    ],
   },
   {
     id: 'software-licenses',
@@ -45,8 +45,8 @@ export const assetCategories: AssetCategoryWithSubcategories[] = [
       'Design Software (Figma, Adobe Suite, Sketch)',
       'Development Tools (GitHub, JetBrains, Visual Studio, Postman)',
       'Cloud Accounts (AWS, Azure, GCP credits)',
-      'Antivirus / Security Subscriptions'
-    ]
+      'Antivirus / Security Subscriptions',
+    ],
   },
   {
     id: 'office-equipment',
@@ -63,8 +63,8 @@ export const assetCategories: AssetCategoryWithSubcategories[] = [
       'Projectors',
       'Stationery Items',
       'Filing Cabinets',
-      'Lighting Equipment'
-    ]
+      'Lighting Equipment',
+    ],
   },
   {
     id: 'mobility-transport',
@@ -78,8 +78,8 @@ export const assetCategories: AssetCategoryWithSubcategories[] = [
       'Bike',
       'Fuel Card',
       'Transport Pass',
-      'GPS Devices'
-    ]
+      'GPS Devices',
+    ],
   },
   {
     id: 'employee-accessories',
@@ -94,8 +94,8 @@ export const assetCategories: AssetCategoryWithSubcategories[] = [
       'Safety Gear',
       'Power Banks',
       'Cables',
-      'USB Drives'
-    ]
+      'USB Drives',
+    ],
   },
   {
     id: 'facility-assets',
@@ -110,8 +110,8 @@ export const assetCategories: AssetCategoryWithSubcategories[] = [
       'Biometric Devices',
       'UPS',
       'Power Units',
-      'Office Furniture Sets'
-    ]
+      'Office Furniture Sets',
+    ],
   },
   {
     id: 'health-safety',
@@ -126,8 +126,8 @@ export const assetCategories: AssetCategoryWithSubcategories[] = [
       'Vests',
       'Fire Extinguishers',
       'Medical Devices',
-      'Kits'
-    ]
+      'Kits',
+    ],
   },
   {
     id: 'miscellaneous',
@@ -139,13 +139,15 @@ export const assetCategories: AssetCategoryWithSubcategories[] = [
       'Promotional Materials',
       'Event Equipment',
       'Training Devices',
-      'Other (custom-defined by admin)'
-    ]
-  }
+      'Other (custom-defined by admin)',
+    ],
+  },
 ];
 
 // Helper function to get category by ID
-export const getCategoryById = (id: string): AssetCategoryWithSubcategories | undefined => {
+export const getCategoryById = (
+  id: string
+): AssetCategoryWithSubcategories | undefined => {
   return assetCategories.find(category => category.id === id);
 };
 
@@ -156,12 +158,15 @@ export const getSubcategoriesByCategoryId = (categoryId: string): string[] => {
 };
 
 // Helper function to search categories by name or subcategory
-export const searchCategories = (searchTerm: string): AssetCategoryWithSubcategories[] => {
+export const searchCategories = (
+  searchTerm: string
+): AssetCategoryWithSubcategories[] => {
   const term = searchTerm.toLowerCase();
-  return assetCategories.filter(category => 
-    category.name.toLowerCase().includes(term) ||
-    category.nameAr.toLowerCase().includes(term) ||
-    category.subcategories?.some(sub => sub.toLowerCase().includes(term))
+  return assetCategories.filter(
+    category =>
+      category.name.toLowerCase().includes(term) ||
+      category.nameAr.toLowerCase().includes(term) ||
+      category.subcategories?.some(sub => sub.toLowerCase().includes(term))
   );
 };
 
@@ -169,26 +174,35 @@ export const searchCategories = (searchTerm: string): AssetCategoryWithSubcatego
 export const getCategoryStatistics = () => {
   return {
     totalCategories: assetCategories.length,
-    totalSubcategories: assetCategories.reduce((sum, cat) => sum + (cat.subcategories?.length || 0), 0),
-    categoriesWithSubcategories: assetCategories.filter(cat => cat.subcategories && cat.subcategories.length > 0).length
+    totalSubcategories: assetCategories.reduce(
+      (sum, cat) => sum + (cat.subcategories?.length || 0),
+      0
+    ),
+    categoriesWithSubcategories: assetCategories.filter(
+      cat => cat.subcategories && cat.subcategories.length > 0
+    ).length,
   };
 };
 
 // Export for backward compatibility - converts to simple AssetCategory format
-export const simpleAssetCategories: AssetCategory[] = assetCategories.map(cat => ({
-  id: cat.id,
-  name: cat.name,
-  nameAr: cat.nameAr,
-  description: cat.description
-}));
+export const simpleAssetCategories: AssetCategory[] = assetCategories.map(
+  cat => ({
+    id: cat.id,
+    name: cat.name,
+    nameAr: cat.nameAr,
+    description: cat.description,
+  })
+);
 
 // Export all subcategories as flat list for easy selection
-export const allSubcategories: string[] = assetCategories.flatMap(cat => cat.subcategories || []);
+export const allSubcategories: string[] = assetCategories.flatMap(
+  cat => cat.subcategories || []
+);
 
 // Export category options for dropdowns
 export const categoryOptions = assetCategories.map(cat => ({
   value: cat.id,
   label: cat.name,
   description: cat.description,
-  subcategories: cat.subcategories
+  subcategories: cat.subcategories,
 }));

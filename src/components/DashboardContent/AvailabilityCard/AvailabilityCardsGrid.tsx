@@ -1,4 +1,4 @@
-import { Box, Typography, CircularProgress, Button } from '@mui/material';
+import { Box, Typography, CircularProgress } from '@mui/material';
 import AvailabilityCard from './AvailabilityCard';
 import CheckedIcon from '../../../assets/dashboardIcon/checked.svg';
 import beachIcon from '../../../assets/dashboardIcon/beach-bed.svg';
@@ -6,6 +6,8 @@ import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AppButton from '../../common/AppButton';
+import { COLORS } from '../../../constants/appConstants';
 import {
   getAttendanceThisMonth,
   getLeavesThisMonth,
@@ -21,9 +23,9 @@ export default function AvailabilityCardsGrid() {
   const [leavesData, setLeavesData] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
-  const bgColor = darkMode ? '#111' : '#fff';
-  const borderColor = darkMode ? '#252525' : '#f0f0f0';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
+  const bgColor = darkMode ? COLORS.DARK_BG : COLORS.LIGHT_BG;
+  const borderColor = darkMode ? COLORS.DARK_BORDER : COLORS.LIGHT_BORDER;
+  const textColor = darkMode ? COLORS.DARK_TEXT : COLORS.LIGHT_TEXT;
 
   const handleLoginClick = () => {
     navigate('/login');
@@ -84,7 +86,6 @@ export default function AvailabilityCardsGrid() {
         setLeavesData(0);
       } else {
         // For other errors or empty tenants, show zero data instead of an error block.
-        console.warn('Availability fetch error:', err);
         setError(null);
         setAttendanceData(0);
         setLeavesData(0);
@@ -226,9 +227,12 @@ export default function AvailabilityCardsGrid() {
           </Typography>
           {error ===
             'Authentication required to view real data. Please login.' && (
-            <Button variant='contained' onClick={handleLoginClick} size='small'>
-              {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
-            </Button>
+            <AppButton
+              variant='contained'
+              text={language === 'ar' ? 'تسجيل الدخول' : 'Login'}
+              onClick={handleLoginClick}
+              size='small'
+            />
           )}
         </Box>
       ) : (

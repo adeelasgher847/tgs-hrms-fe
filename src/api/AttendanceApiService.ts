@@ -2,19 +2,18 @@ import axiosInstance from './axiosInstance';
 
 export type AttendanceEvent = {
   id: string;
-  timestamp: string; 
+  timestamp: string;
   type: 'check-in' | 'check-out' | string;
   user_id?: string;
   user?: { first_name?: string; name?: string; id?: string };
   created_at?: string;
-
 };
 
 export type UserDailySummary = {
-  date: string; 
-  checkIn: string | null; 
-  checkOut: string | null; 
-  workedHours: number; 
+  date: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  workedHours: number;
 };
 
 const BASE = '/attendance';

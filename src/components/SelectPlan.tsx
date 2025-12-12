@@ -102,102 +102,108 @@ const SelectPlan: React.FC = () => {
     // Prevent duplicate API calls in StrictMode
     if (!hasFetched.current) {
       hasFetched.current = true;
-      fetchPlans();
-    }
-  }, [navigate]);
-
-  const fetchPlans = async () => {
-    try {
-      setLoading(true);
-      const subscriptionPlans: SubscriptionPlan[] =
-        await signupApi.getSubscriptionPlans();
-
-      // Fetch Stripe prices using stripePriceId from each plan
-      const priceIds = subscriptionPlans
-        .map(p => p.stripePriceId)
-        .filter((id): id is string => Boolean(id));
-
-      let priceInfoByPriceId: Record<
-        string,
-        { formatted: string; intervalLabel: string }
-      > = {};
-      if (priceIds.length > 0) {
+      const fetchPlans = async () => {
         try {
-          // Try to fetch prices from backend using Stripe price IDs
-          const prices = await signupApi.getStripePrices(priceIds);
-          priceInfoByPriceId = (prices || []).reduce(
-            (acc, pr: Record<string, unknown>) => {
-              const amount =
-                typeof pr.unit_amount === 'number' ? pr.unit_amount : 0;
-              const currency = pr.currency?.toUpperCase?.() || 'USD';
-              const interval = pr.interval || 'month';
-              const formattedAmount = new Intl.NumberFormat(undefined, {
-                style: 'currency',
-                currency,
-                currencyDisplay: 'symbol',
-                maximumFractionDigits: 2,
-              }).format(amount / 100);
-              const intervalLabel =
-                interval.charAt(0).toUpperCase() + interval.slice(1);
-              acc[pr.priceId] = { formatted: formattedAmount, intervalLabel };
-              return acc;
-            },
-            {} as Record<string, { formatted: string; intervalLabel: string }>
-          );
-        } catch {
-          // Fallback to default prices if API is not available
-          // Fallback: Use default prices based on plan index
-          priceIds.forEach((priceId, index) => {
-            const fallbackPrices = ['$9', '$19', '$30'];
-            const fallbackIntervals = ['Month', 'Month', 'Month'];
-            priceInfoByPriceId[priceId] = {
-              formatted: fallbackPrices[index] || '$0',
-              intervalLabel: fallbackIntervals[index] || 'Month',
+          setLoading(true);
+          const subscriptionPlans: SubscriptionPlan[] =
+            await signupApi.getSubscriptionPlans();
+
+          // Fetch Stripe prices using stripePriceId from each plan
+          const priceIds = subscriptionPlans
+            .map(p => p.stripePriceId)
+            .filter((id): id is string => Boolean(id));
+
+          let priceInfoByPriceId: Record<
+            string,
+            { formatted: string; intervalLabel: string }
+          > = {};
+          if (priceIds.length > 0) {
+            try {
+              // Try to fetch prices from backend using Stripe price IDs
+              const prices = await signupApi.getStripePrices(priceIds);
+              priceInfoByPriceId = (prices || []).reduce(
+                (acc, pr: Record<string, unknown>) => {
+                  const amount =
+                    typeof pr.unit_amount === 'number' ? pr.unit_amount : 0;
+                  const currency = pr.currency?.toUpperCase?.() || 'USD';
+                  const interval = pr.interval || 'month';
+                  const formattedAmount = new Intl.NumberFormat(undefined, {
+                    style: 'currency',
+                    currency,
+                    currencyDisplay: 'symbol',
+                    maximumFractionDigits: 2,
+                  }).format(amount / 100);
+                  const intervalLabel =
+                    interval.charAt(0).toUpperCase() + interval.slice(1);
+                  acc[pr.priceId] = {
+                    formatted: formattedAmount,
+                    intervalLabel,
+                  };
+                  return acc;
+                },
+                {} as Record<
+                  string,
+                  { formatted: string; intervalLabel: string }
+                >
+              );
+            } catch {
+              // Fallback to default prices if API is not available
+              // Fallback: Use default prices based on plan index
+              priceIds.forEach((priceId, index) => {
+                const fallbackPrices = ['$9', '$19', '$30'];
+                const fallbackIntervals = ['Month', 'Month', 'Month'];
+                priceInfoByPriceId[priceId] = {
+                  formatted: fallbackPrices[index] || '$0',
+                  intervalLabel: fallbackIntervals[index] || 'Month',
+                };
+              });
+            }
+          }
+
+          // Transform API data to match our UI structure
+          const transformedPlans = subscriptionPlans.map((plan, index) => {
+            const descriptionText = plan.description || '';
+            // Split description into bullet points by common delimiters
+            const bullets = descriptionText
+              .split(/\r?\n|\u2022|\||;|\./)
+              .map(s => s.trim())
+              .filter(Boolean);
+
+            const features =
+              bullets.length > 0
+                ? bullets.map(b => ({ text: b, included: true }))
+                : [{ text: 'Includes core features', included: true }];
+
+            const priceInfo = plan.stripePriceId
+              ? priceInfoByPriceId[plan.stripePriceId]
+              : undefined;
+            const price = priceInfo ? priceInfo.formatted : '$—';
+            const duration = priceInfo ? priceInfo.intervalLabel : 'Month';
+
+            return {
+              id: plan.id,
+              name: plan.name,
+              price,
+              duration,
+              description: descriptionText,
+              features,
+              popular: index === 1,
             };
           });
+
+          setPlans(transformedPlans);
+        } catch (err: unknown) {
+          console.error('Error fetching plans:', err);
+          setError('Failed to load subscription plans. Using default plans.');
+          // Keep default plans as fallback
+        } finally {
+          setLoading(false);
         }
-      }
+      };
 
-      // Transform API data to match our UI structure
-      const transformedPlans = subscriptionPlans.map((plan, index) => {
-        const descriptionText = plan.description || '';
-        // Split description into bullet points by common delimiters
-        const bullets = descriptionText
-          .split(/\r?\n|\u2022|\||;|\./)
-          .map(s => s.trim())
-          .filter(Boolean);
-
-        const features =
-          bullets.length > 0
-            ? bullets.map(b => ({ text: b, included: true }))
-            : [{ text: 'Includes core features', included: true }];
-
-        const priceInfo = plan.stripePriceId
-          ? priceInfoByPriceId[plan.stripePriceId]
-          : undefined;
-        const price = priceInfo ? priceInfo.formatted : '$—';
-        const duration = priceInfo ? priceInfo.intervalLabel : 'Month';
-
-        return {
-          id: plan.id,
-          name: plan.name,
-          price,
-          duration,
-          description: descriptionText,
-          features,
-          popular: index === 1,
-        };
-      });
-
-      setPlans(transformedPlans);
-    } catch (err: unknown) {
-      console.error('Error fetching plans:', err);
-      setError('Failed to load subscription plans. Using default plans.');
-      // Keep default plans as fallback
-    } finally {
-      setLoading(false);
+      void fetchPlans();
     }
-  };
+  }, [navigate]);
 
   const handlePlanSelect = (planId: string) => {
     setSelectedPlan(planId);

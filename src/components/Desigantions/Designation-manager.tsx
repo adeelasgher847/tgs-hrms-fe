@@ -39,7 +39,6 @@ import {
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import {
-  getRoleName,
   isSystemAdmin as isSystemAdminFn,
   isHRAdmin as isHRAdminFn,
 } from '../../utils/roleUtils';
@@ -81,7 +80,6 @@ export default function DesignationManager() {
     string | 'all'
   >('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
   const [totalRecords, setTotalRecords] = useState<number>(0);
   const [allTenants, setAllTenants] = useState<SystemTenant[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
@@ -148,11 +146,9 @@ export default function DesignationManager() {
 
         if (response.totalPages && response.total) {
           setCurrentPage(response.page);
-          setTotalPages(response.totalPages);
           setTotalRecords(response.total);
         } else {
           setCurrentPage(response.page || page);
-          setTotalPages(hasMorePages ? page + 1 : page);
           setTotalRecords(
             hasMorePages
               ? page * itemsPerPage
@@ -231,7 +227,6 @@ export default function DesignationManager() {
       setDesignations(allDesignations);
       setDepartments(Array.from(allDepartmentsMap.values()));
       setDesignationTenantMap(tenantMap);
-      setTotalPages(1);
       setTotalRecords(allDesignations.length);
       setCurrentPage(1);
     } catch (error: unknown) {
@@ -424,6 +419,7 @@ export default function DesignationManager() {
                   value={selectedTenantId}
                   label={getText('Select Tenant', 'اختر المستأجر')}
                   onChange={handleTenantChange}
+                  disabled={loadingTenants}
                   sx={{
                     '.MuiOutlinedInput-notchedOutline': {
                       borderColor: 'divider',
@@ -433,11 +429,20 @@ export default function DesignationManager() {
                   <MenuItem value='all'>
                     {getText('All Tenants', 'جميع المستأجرين')}
                   </MenuItem>
-                  {allTenants.map((tenant: SystemTenant) => (
-                    <MenuItem key={tenant.id} value={tenant.id}>
-                      {tenant.name}
+                  {loadingTenants ? (
+                    <MenuItem disabled>
+                      {getText(
+                        'Loading tenants...',
+                        'جاري تحميل المستأجرين...'
+                      )}
                     </MenuItem>
-                  ))}
+                  ) : (
+                    allTenants.map((tenant: SystemTenant) => (
+                      <MenuItem key={tenant.id} value={tenant.id}>
+                        {tenant.name}
+                      </MenuItem>
+                    ))
+                  )}
                 </Select>
               </FormControl>
               <FormControl

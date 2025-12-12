@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Typography, Paper, Chip, Divider, Button } from '@mui/material';
+import { Box, Typography, Paper, Chip, Divider } from '@mui/material';
+import AppButton from '../common/AppButton';
 
 interface BenefitCardProps {
   name: string;
@@ -87,14 +88,13 @@ const BenefitCard: React.FC<BenefitCardProps> = ({
 
       {onCancel && (
         <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
+          <AppButton
             variant='contained'
             color='error'
             size='small'
+            text='Cancel Benefit'
             onClick={onCancel}
-          >
-            Cancel Benefit
-          </Button>
+          />
         </Box>
       )}
     </Paper>

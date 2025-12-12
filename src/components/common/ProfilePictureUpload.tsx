@@ -207,7 +207,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       } finally {
         setUploading(false);
       }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedFile, updateProfilePicture]); // ✅ Removed refreshUser from dependencies
 
     const handleRemove = useCallback(async () => {
@@ -248,7 +248,14 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       } finally {
         setRemoving(false);
       }
-    }, [clearProfilePicture, deferDelete, onRemoveSelected, onPictureChanged, updateUser, user]); // ✅ Removed refreshUser from dependencies
+    }, [
+      clearProfilePicture,
+      deferDelete,
+      onRemoveSelected,
+      onPictureChanged,
+      updateUser,
+      user,
+    ]); // ✅ Removed refreshUser from dependencies
 
     const handleAvatarClick = useCallback(() => {
       if (clickable && showUploadButton) {
@@ -265,8 +272,8 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
         backgroundColor: imgError
           ? '#9e9e9e'
           : user.profile_pic
-          ? 'transparent'
-          : generateAvatarColor(user.first_name),
+            ? 'transparent'
+            : generateAvatarColor(user.first_name),
         transition: 'all 0.3s ease-in-out',
         '& .MuiAvatar-img': {
           objectFit: 'cover',
@@ -300,7 +307,14 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
         return `${API_BASE_URL}/users/${user.id}/profile-picture`;
       }
       return null;
-    }, [previewImageOverride, suppressExistingImage, profilePictureUrl, user.profile_pic, user.id, API_BASE_URL]);
+    }, [
+      previewImageOverride,
+      suppressExistingImage,
+      profilePictureUrl,
+      user.profile_pic,
+      user.id,
+      API_BASE_URL,
+    ]);
 
     const renderAvatar = useCallback(() => {
       const hasProfilePicture =
@@ -309,15 +323,12 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
 
       if (hasProfilePicture && imageUrl && !imgError) {
         return (
-          <Avatar
-            sx={avatarStyle}
-            onClick={handleAvatarClick}
-          >
+          <Avatar sx={avatarStyle} onClick={handleAvatarClick}>
             <img
               src={imageUrl}
               alt={`${user.first_name} ${user.last_name}`}
               onError={() => setImgError(true)}
-              loading="lazy"
+              loading='lazy'
               style={{
                 width: '100%',
                 height: '100%',
@@ -393,7 +404,10 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
                     gap: 1,
                   }}
                 >
-                  {(!suppressExistingImage && (previewImageOverride || profilePictureUrl || user.profile_pic)) ? (
+                  {!suppressExistingImage &&
+                  (previewImageOverride ||
+                    profilePictureUrl ||
+                    user.profile_pic) ? (
                     <Edit
                       sx={{
                         color: 'white',
@@ -416,7 +430,8 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
           )}
 
           {/* Delete Icon - Only show when profile picture exists */}
-          {(!suppressExistingImage && (profilePictureUrl || user.profile_pic)) &&
+          {!suppressExistingImage &&
+            (profilePictureUrl || user.profile_pic) &&
             showRemoveButton &&
             !uploading && (
               <Fade in={showOverlay}>
@@ -545,8 +560,8 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
                   >
                     <img
                       src={previewUrl}
-                      alt="Preview"
-                      loading="lazy"
+                      alt='Preview'
+                      loading='lazy'
                       style={{
                         width: '100%',
                         height: '100%',

@@ -1,6 +1,6 @@
 import axiosInstance from './axiosInstance';
 import { getRoleName } from '../utils/roleUtils';
-import type { Leave } from '../type/levetypes';
+import type { Leave } from '../types/leave';
 
 export interface LeaveSummaryItem {
   type: string;
@@ -159,8 +159,7 @@ const getUserFromLocalStorage = () => {
       isAdmin,
       isSystemAdmin,
     };
-  } catch (error) {
-    console.error('Error getting user from localStorage:', error);
+  } catch {
     return {
       userId: null,
       role: 'unknown',
@@ -172,88 +171,92 @@ const getUserFromLocalStorage = () => {
   }
 };
 
-export const leaveReportApi = {
-  getUserInfo: getUserFromLocalStorage,
+class LeaveReportApiService {
+  private baseUrl = '/reports';
 
-  getLeaveSummary: async (page: number): Promise<LeaveSummaryResponse> => {
+  getUserInfo = getUserFromLocalStorage;
+
+  async getLeaveSummary(page: number): Promise<LeaveSummaryResponse> {
     const { userId } = getUserFromLocalStorage();
-    const response = await axiosInstance.get('/reports/leave-summary', {
-      params: { userId, page },
-    });
+    const response = await axiosInstance.get<LeaveSummaryResponse>(
+      `${this.baseUrl}/leave-summary`,
+      { params: { userId, page } }
+    );
     return response.data;
-  },
+  }
 
-  getTeamLeaveSummary: async (
+  async getTeamLeaveSummary(
     month: number,
     year: number
-  ): Promise<TeamLeaveSummaryResponse> => {
+  ): Promise<TeamLeaveSummaryResponse> {
     const { userId: managerId } = getUserFromLocalStorage();
-    console.log('Sending Team Leave Summary Request:', {
-      managerId,
-      month,
-      year,
-    });
-    const response = await axiosInstance.get('/reports/team-leave-summary', {
-      params: { managerId, month, year },
-    });
+    const response = await axiosInstance.get<TeamLeaveSummaryResponse>(
+      `${this.baseUrl}/team-leave-summary`,
+      { params: { managerId, month, year } }
+    );
     return response.data;
-  },
+  }
 
-  getLeaveBalance: async (): Promise<LeaveBalanceResponse> => {
+  async getLeaveBalance(): Promise<LeaveBalanceResponse> {
     const { userId } = getUserFromLocalStorage();
-    const response = await axiosInstance.get('/reports/leave-balance', {
-      params: { employeeId: userId },
-    });
+    const response = await axiosInstance.get<LeaveBalanceResponse>(
+      `${this.baseUrl}/leave-balance`,
+      { params: { employeeId: userId } }
+    );
 
-    // Return backend values as‑is so negative remaining can also be shown
+    // Return backend values as-is so negative remaining can also be shown
     return response.data;
-  },
+  }
 
-  exportLeaveSummaryCSV: async (year: number): Promise<Blob> => {
+  async exportLeaveSummaryCSV(year: number): Promise<Blob> {
     const { userId } = getUserFromLocalStorage();
-    const response = await axiosInstance.get('/reports/leave-summary/export', {
-      params: { employeeId: userId, year },
-      responseType: 'blob',
-    });
+    const response = await axiosInstance.get(
+      `${this.baseUrl}/leave-summary/export`,
+      {
+        params: { employeeId: userId, year },
+        responseType: 'blob',
+      }
+    );
     return response.data;
-  },
+  }
 
-  exportTeamLeaveSummaryCSV: async (
-    month: number,
-    year: number
-  ): Promise<Blob> => {
+  async exportTeamLeaveSummaryCSV(month: number, year: number): Promise<Blob> {
     const { userId: managerId } = getUserFromLocalStorage();
     const response = await axiosInstance.get(
-      '/reports/team-leave-summary/export',
+      `${this.baseUrl}/team-leave-summary/export`,
       {
         params: { managerId, month, year },
         responseType: 'blob',
       }
     );
     return response.data;
-  },
+  }
 
-  exportLeaveBalanceCSV: async (): Promise<Blob> => {
+  async exportLeaveBalanceCSV(): Promise<Blob> {
     const { userId } = getUserFromLocalStorage();
-    const response = await axiosInstance.get('/reports/leave-balance/export', {
-      params: { employeeId: userId },
-      responseType: 'blob',
-    });
+    const response = await axiosInstance.get(
+      `${this.baseUrl}/leave-balance/export`,
+      {
+        params: { employeeId: userId },
+        responseType: 'blob',
+      }
+    );
     return response.data;
-  },
+  }
 
-  getAllLeaveReports: async (
+  async getAllLeaveReports(
     page: number = 1,
     month?: number,
     year?: number
-  ): Promise<AllLeaveReportsResponse> => {
+  ): Promise<AllLeaveReportsResponse> {
     const params: { page: number; month?: number; year?: number } = { page };
     if (month) params.month = month;
     if (year) params.year = year;
 
-    const response = await axiosInstance.get('/reports/all-leave-reports', {
-      params,
-    });
+    const response = await axiosInstance.get<AllLeaveReportsResponse>(
+      `${this.baseUrl}/all-leave-reports`,
+      { params }
+    );
     const data = response.data;
 
     if (!data) {
@@ -499,15 +502,29 @@ export const leaveReportApi = {
     }
 
     // Fallback for other response structures
-    if (Array.isArray(data.items)) {
+    // Check if employeeReports is an object with items property
+    if (
+      data.employeeReports &&
+      typeof data.employeeReports === 'object' &&
+      !Array.isArray(data.employeeReports) &&
+      'items' in data.employeeReports &&
+      Array.isArray(data.employeeReports.items)
+    ) {
+      const reportsWithItems = data.employeeReports as {
+        items: EmployeeReport[];
+        total?: number;
+        page?: number;
+        limit?: number;
+        totalPages?: number;
+      };
       return {
         period: data.period,
         organizationStats: data.organizationStats,
-        employeeReports: data.items,
-        total: data.total || data.items.length,
-        page: data.page || page,
-        limit: data.limit || 25,
-        totalPages: data.totalPages || 1,
+        employeeReports: reportsWithItems.items,
+        total: reportsWithItems.total || reportsWithItems.items.length,
+        page: reportsWithItems.page || page,
+        limit: reportsWithItems.limit || 25,
+        totalPages: reportsWithItems.totalPages || 1,
         leaveTypes: data.leaveTypes,
       };
     }
@@ -523,5 +540,10 @@ export const leaveReportApi = {
     }
 
     throw new Error('Unexpected response structure for all leave reports');
-  },
-};
+  }
+}
+
+export const leaveReportApiService = new LeaveReportApiService();
+
+// Maintain backward compatibility
+export const leaveReportApi = leaveReportApiService;

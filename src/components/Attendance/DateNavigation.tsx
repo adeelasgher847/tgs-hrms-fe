@@ -18,34 +18,38 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
   // Get a date sequence centered around the sequenceCenter state
   const getDateSequence = () => {
     const dates = [];
-    
+
     // Show 5 days centered around sequenceCenter
     for (let i = 2; i >= -2; i--) {
       const d = new Date(sequenceCenter);
       d.setDate(sequenceCenter.getDate() + i);
       dates.push(d);
     }
-    
+
     return dates;
   };
 
   const formatDate = (date: Date) => {
     const day = date.getDate();
     const month = date.toLocaleDateString('en-US', { month: 'short' });
-    
+
     // Add ordinal suffix to day
     const getOrdinalSuffix = (day: number) => {
       if (day >= 11 && day <= 13) {
         return 'th';
       }
       switch (day % 10) {
-        case 1: return 'st';
-        case 2: return 'nd';
-        case 3: return 'rd';
-        default: return 'th';
+        case 1:
+          return 'st';
+        case 2:
+          return 'nd';
+        case 3:
+          return 'rd';
+        default:
+          return 'th';
       }
     };
-    
+
     return `${day}${getOrdinalSuffix(day)} ${month}`;
   };
 
@@ -60,8 +64,7 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
     const newCenter = new Date(sequenceCenter);
     newCenter.setDate(sequenceCenter.getDate() - 1);
     setSequenceCenter(newCenter);
-    
-  
+
     onDateChange(formatDateToString(newCenter));
   };
 
@@ -70,8 +73,7 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
     const newCenter = new Date(sequenceCenter);
     newCenter.setDate(sequenceCenter.getDate() + 1);
     setSequenceCenter(newCenter);
-    
-  
+
     onDateChange(formatDateToString(newCenter));
   };
 
@@ -97,10 +99,10 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
     const dateSequence = getDateSequence();
     const todayDate = new Date();
     todayDate.setHours(0, 0, 0, 0);
-    
+
     const rightmostDate = new Date(dateSequence[dateSequence.length - 1]);
     rightmostDate.setHours(0, 0, 0, 0);
-    
+
     // If rightmost date is in the future, adjust sequence center
     if (rightmostDate > todayDate) {
       const adjustedCenter = new Date(todayDate);
@@ -118,12 +120,21 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
   // Check if the rightmost date exceeds today
   const rightmostDate = new Date(dateSequence[dateSequence.length - 1]);
   rightmostDate.setHours(0, 0, 0, 0);
-  
+
   // Disable next button if the rightmost date is today or in the future
   const isNextDisabled = rightmostDate >= todayDate;
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3,justifyContent: 'center', mt: 3 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        mb: 3,
+        justifyContent: 'center',
+        mt: 3,
+      }}
+    >
       {/* Previous Button */}
       <IconButton
         onClick={handlePrevious}
@@ -140,12 +151,13 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
       </IconButton>
 
       {/* Date Sequence */}
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center',}}>
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
         {dateSequence.map((date, index) => {
           const dateStr = formatDateToString(date);
           const isToday = dateStr === today;
-          const isSelected = currentDate === 'all' ? false : dateStr === currentDate;
-          
+          const isSelected =
+            currentDate === 'all' ? false : dateStr === currentDate;
+
           return (
             <Paper
               key={dateStr}
@@ -157,7 +169,11 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
                 cursor: 'pointer',
                 border: isSelected ? '2px solid' : '1px solid',
                 borderColor: isSelected ? 'primary.main' : 'divider',
-                backgroundColor: isSelected ? 'primary.50' : isToday ? 'action.hover' : 'background.paper',
+                backgroundColor: isSelected
+                  ? 'primary.50'
+                  : isToday
+                    ? 'action.hover'
+                    : 'background.paper',
                 borderRadius: '8px',
                 transition: 'all 0.2s ease',
                 boxShadow: 'none',
@@ -170,10 +186,14 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
               }}
             >
               <Typography
-                variant="body2"
+                variant='body2'
                 sx={{
                   fontWeight: isSelected ? 600 : isToday ? 500 : 400,
-                  color: isSelected ? 'primary.main' : isToday ? 'primary.dark' : 'text.primary',
+                  color: isSelected
+                    ? 'primary.main'
+                    : isToday
+                      ? 'primary.dark'
+                      : 'text.primary',
                   fontSize: '0.875rem',
                 }}
               >

@@ -32,6 +32,7 @@ import {
   Pagination,
   Avatar,
 } from '@mui/material';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -45,7 +46,6 @@ import {
   type SystemTenant,
   type SystemTenantDetail,
 } from '../api/systemTenantApi';
-import companyApi from '../api/companyApi';
 import { formatDate } from '../utils/dateUtils';
 
 type StatusFilterOption = 'All' | 'active' | 'suspended' | 'deleted';
@@ -69,6 +69,7 @@ export const TenantPage: React.FC = () => {
     message: '',
     severity: 'success' as 'success' | 'error',
   });
+  const { showError } = useErrorHandler();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilterOption>('All');
 
@@ -110,11 +111,13 @@ export const TenantPage: React.FC = () => {
 
       const res = await SystemTenantApi.getAll({
         page: 1,
-        limit: 'all',
+        // API expects a number for `limit`. Request a sufficiently large
+        // numeric limit to effectively fetch all tenants client-side.
+        limit: 100000,
         includeDeleted: true,
       });
 
-      let allTenants = res.data;
+      const allTenants = res.data;
 
       let filtered = allTenants;
 
@@ -140,19 +143,25 @@ export const TenantPage: React.FC = () => {
       setTenants(filtered.slice(start, end));
     } catch (err) {
       console.error(err);
-      setSnackbar({
-        open: true,
-        message: 'Failed to fetch tenants',
-        severity: 'error',
-      });
+      // Use centralized error handler for consistent UX
+      try {
+        showError(err);
+      } catch {
+        // Fallback to local snackbar if showError fails
+        setSnackbar({
+          open: true,
+          message: 'Failed to fetch tenants',
+          severity: 'error',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter, currentPage, itemsPerPage]);
+  }, [statusFilter, currentPage, itemsPerPage, showError]);
 
   useEffect(() => {
     fetchTenants();
-  }, [currentPage, statusFilter]);
+  }, [fetchTenants]);
 
   useEffect(() => {
     setCurrentPage(1);

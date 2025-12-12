@@ -1,4 +1,3 @@
-import type { AxiosError } from 'axios';
 import axiosInstance from './axiosInstance';
 
 export interface Asset {
@@ -154,29 +153,32 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// Asset Management API Service
-export const assetApi = {
-  // Test function to check API connectivity
-  testApiConnection: async () => {
-    const response = await axiosInstance.get('/assets');
-    return response;
-  },
+class AssetApiService {
+  private baseUrl = '/assets';
+  private assetRequestsUrl = '/asset-requests';
+  private assetSubcategoriesUrl = '/asset-subcategories';
+  private assetCategoriesUrl = '/asset-categories';
 
-  // Assets CRUD operations
-  getAllAssets: async (filters?: {
+  async testApiConnection() {
+    const response = await axiosInstance.get(this.baseUrl);
+    return response;
+  }
+
+  async getAllAssets(filters?: {
     status?: string;
     category?: string;
     page?: number;
     limit?: number;
-  }) => {
+  }) {
     const params = new URLSearchParams();
     if (filters?.status) params.append('status', filters.status);
     if (filters?.category) params.append('category', filters.category);
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
-    // Only append query string if there are params, otherwise just use base URL
-    const url = params.toString() ? `/assets?${params.toString()}` : '/assets';
+    const url = params.toString()
+      ? `${this.baseUrl}?${params.toString()}`
+      : this.baseUrl;
     const response = await axiosInstance.get(url);
 
     // Handle different possible response structures
@@ -273,58 +275,58 @@ export const assetApi = {
         totalPages: 1,
       },
     };
-  },
+  }
 
-  getAssetById: async (id: string) => {
-    const response = await axiosInstance.get(`/assets/${id}`);
+  async getAssetById(id: string) {
+    const response = await axiosInstance.get(`${this.baseUrl}/${id}`);
     return response.data;
-  },
+  }
 
-  createAsset: async (data: CreateAssetRequest) => {
-    const response = await axiosInstance.post('/assets', data);
+  async createAsset(data: CreateAssetRequest) {
+    const response = await axiosInstance.post(this.baseUrl, data);
     return response.data;
-  },
+  }
 
-  updateAsset: async (id: string, data: UpdateAssetRequest) => {
-    const response = await axiosInstance.put(`/assets/${id}`, data);
+  async updateAsset(id: string, data: UpdateAssetRequest) {
+    const response = await axiosInstance.put(`${this.baseUrl}/${id}`, data);
     return response.data;
-  },
+  }
 
-  deleteAsset: async (id: string) => {
-    const response = await axiosInstance.delete(`/assets/${id}`);
+  async deleteAsset(id: string) {
+    const response = await axiosInstance.delete(`${this.baseUrl}/${id}`);
     return response.data;
-  },
+  }
 
-  updateAssetStatus: async (
+  async updateAssetStatus(
     id: string,
     status: string,
     assetData: { name: string; categoryId: string; purchaseDate: string }
-  ) => {
-    // Update asset with new status using PUT endpoint
-    const response = await axiosInstance.put(`/assets/${id}`, {
+  ) {
+    const response = await axiosInstance.put(`${this.baseUrl}/${id}`, {
       name: assetData.name,
       categoryId: assetData.categoryId,
       purchaseDate: assetData.purchaseDate,
       status: status,
     });
     return response.data;
-  },
+  }
 
-  // Asset Requests operations
-  getAllAssetRequests: async (filters?: {
+  async getAllAssetRequests(filters?: {
     requester?: string;
     tenant?: string;
+    status?: string;
     page?: number;
     limit?: number;
-  }) => {
+  }) {
     const params = new URLSearchParams();
     if (filters?.requester) params.append('requester', filters.requester);
     if (filters?.tenant) params.append('tenant', filters.tenant);
+    if (filters?.status) params.append('status', filters.status);
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
     const response = await axiosInstance.get(
-      `/asset-requests?${params.toString()}`
+      `${this.assetRequestsUrl}?${params.toString()}`
     );
 
     // Debug: Log individual request statuses
@@ -408,21 +410,20 @@ export const assetApi = {
       limit: 25,
       totalPages: 1,
     };
-  },
+  }
 
-  getAssetRequestById: async (
+  async getAssetRequestById(
     id: string,
     filters?: { page?: number; limit?: number }
-  ) => {
-    // Get current user ID from localStorage
+  ) {
     const userStr = localStorage.getItem('user');
     let currentUserId = '';
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
         currentUserId = user.id || user.user_id || '';
-      } catch (error) {
-        console.error('Failed to parse user from localStorage:', error);
+      } catch {
+        // Ignore malformed user data
       }
     }
 
@@ -432,7 +433,7 @@ export const assetApi = {
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
     const response = await axiosInstance.get(
-      `/asset-requests/?${params.toString()}`
+      `${this.assetRequestsUrl}/?${params.toString()}`
     );
 
     const responseData = response.data;
@@ -478,148 +479,134 @@ export const assetApi = {
       totalPages: responseData.totalPages || 1,
       counts: responseData.counts || undefined,
     };
-  },
+  }
 
-  createAssetRequest: async (data: CreateAssetRequestRequest) => {
-    const response = await axiosInstance.post('/asset-requests', data);
+  async createAssetRequest(data: CreateAssetRequestRequest) {
+    const response = await axiosInstance.post(this.assetRequestsUrl, data);
     return response.data;
-  },
+  }
 
-  approveAssetRequest: async (
-    id: string,
-    data?: ApproveAssetRequestRequest
-  ) => {
+  async approveAssetRequest(id: string, data?: ApproveAssetRequestRequest) {
     try {
       const response = await axiosInstance.put(
-        `/asset-requests/${id}/approve`,
+        `${this.assetRequestsUrl}/${id}/approve`,
         data || {}
       );
       return response.data;
     } catch (bodyError: unknown) {
-      const bodyAxiosError = bodyError as AxiosError | undefined;
-      console.error('❌ Approval with body failed:', {
-        error: bodyAxiosError?.response?.data,
-        status: bodyAxiosError?.response?.status,
-      });
 
       if (data?.asset_id || data?.assetId) {
         const assetId = data.asset_id || data.assetId;
         try {
-          const url = `/asset-requests/${id}/approve?asset_id=${assetId}`;
+          const url = `${this.assetRequestsUrl}/${id}/approve?asset_id=${assetId}`;
           const response = await axiosInstance.put(url, {});
           return response.data;
-        } catch (queryError: unknown) {
-          const queryAxiosError = queryError as AxiosError | undefined;
-          console.error('❌ Approval with query param failed:', {
-            error: queryAxiosError?.response?.data,
-            status: queryAxiosError?.response?.status,
-          });
-
-          try {
-            const response = await axiosInstance.put(
-              `/asset-requests/${id}/approve`,
-              { asset_id: assetId }
-            );
-            return response.data;
-          } catch (minimalError: unknown) {
-            console.error('❌ All approval attempts failed');
-            throw minimalError;
-          }
+        } catch {
+          const response = await axiosInstance.put(
+            `${this.assetRequestsUrl}/${id}/approve`,
+            { asset_id: assetId }
+          );
+          return response.data;
         }
       }
-
       throw bodyError;
     }
-  },
+  }
 
-  rejectAssetRequest: async (id: string, rejectionReason?: string) => {
-    const response = await axiosInstance.put(`/asset-requests/${id}/reject`, {
-      rejection_reason: rejectionReason,
-    });
+  async rejectAssetRequest(id: string, rejectionReason?: string) {
+    const response = await axiosInstance.put(
+      `${this.assetRequestsUrl}/${id}/reject`,
+      { rejection_reason: rejectionReason }
+    );
     return response.data;
-  },
+  }
 
-  deleteAssetRequest: async (id: string) => {
-    const response = await axiosInstance.delete(`/asset-requests/${id}`);
+  async deleteAssetRequest(id: string) {
+    const response = await axiosInstance.delete(
+      `${this.assetRequestsUrl}/${id}`
+    );
     return response.data;
-  },
+  }
 
-  getAllAssetSubcategories: async (filters?: {
+  async getAllAssetSubcategories(filters?: {
     category?: string;
     page?: number;
     limit?: number;
-  }) => {
+  }) {
     const params = new URLSearchParams();
     if (filters?.category) params.append('category', filters.category);
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
     const response = await axiosInstance.get(
-      `/asset-subcategories?${params.toString()}`
+      `${this.assetSubcategoriesUrl}?${params.toString()}`
     );
     return response.data;
-  },
+  }
 
-  getAssetSubcategoryById: async (id: string) => {
-    const response = await axiosInstance.get(`/asset-subcategories/${id}`);
+  async getAssetSubcategoryById(id: string) {
+    const response = await axiosInstance.get(
+      `${this.assetSubcategoriesUrl}/${id}`
+    );
     return response.data;
-  },
+  }
 
-  createAssetSubcategory: async (data: CreateAssetSubcategoryRequest) => {
-    const response = await axiosInstance.post('/asset-subcategories', data);
+  async createAssetSubcategory(data: CreateAssetSubcategoryRequest) {
+    const response = await axiosInstance.post(this.assetSubcategoriesUrl, data);
     return response.data;
-  },
+  }
 
-  updateAssetSubcategory: async (
+  async updateAssetSubcategory(
     id: string,
     data: UpdateAssetSubcategoryRequest
-  ) => {
+  ) {
     const response = await axiosInstance.put(
-      `/asset-subcategories/${id}`,
+      `${this.assetSubcategoriesUrl}/${id}`,
       data
     );
     return response.data;
-  },
+  }
 
-  deleteAssetSubcategory: async (id: string) => {
-    const response = await axiosInstance.delete(`/asset-subcategories/${id}`);
+  async deleteAssetSubcategory(id: string) {
+    const response = await axiosInstance.delete(
+      `${this.assetSubcategoriesUrl}/${id}`
+    );
     return response.data;
-  },
+  }
 
-  getAssetSubcategoriesByCategory: async () => {
-    const response = await axiosInstance.get('/asset-subcategories/categories');
+  async getAssetSubcategoriesByCategory() {
+    const response = await axiosInstance.get(
+      `${this.assetSubcategoriesUrl}/categories`
+    );
     return response.data;
-  },
+  }
 
-  getAllAssetCategories: async () => {
-    const response = await axiosInstance.get('/asset-categories');
+  async getAllAssetCategories() {
+    const response = await axiosInstance.get(this.assetCategoriesUrl);
     return response.data;
-  },
+  }
 
-  getAssetSubcategoriesByCategoryId: async (categoryId: string) => {
+  async getAssetSubcategoriesByCategoryId(categoryId: string) {
     const params = new URLSearchParams();
     params.append('category_id', categoryId);
 
     try {
       const response = await axiosInstance.get(
-        `/asset-subcategories?${params.toString()}`
+        `${this.assetSubcategoriesUrl}?${params.toString()}`
       );
       return response.data;
     } catch {
-      const response = await assetApi.getAllAssetSubcategories({
-        category: categoryId,
-      });
-      return response;
+      return this.getAllAssetSubcategories({ category: categoryId });
     }
-  },
+  }
 
-  getSystemAssets: async (filters?: {
+  async getSystemAssets(filters?: {
     category?: string;
     tenantId?: string;
     assigned?: 'assigned' | 'unassigned';
     page?: number;
     limit?: number;
-  }) => {
+  }) {
     const params = new URLSearchParams();
     if (filters?.category) params.append('category', filters.category);
     if (filters?.tenantId) params.append('tenantId', filters.tenantId);
@@ -664,13 +651,17 @@ export const assetApi = {
       limit: 25,
       totalPages: 1,
     };
-  },
+  }
 
-  getSystemAssetsSummary: async () => {
+  async getSystemAssetsSummary() {
     const response = await axiosInstance.get('/system/assets/summary/');
     return response.data;
-  },
-};
+  }
+}
+
+export const assetApiService = new AssetApiService();
+
+export const assetApi = assetApiService;
 
 export interface SystemAsset {
   id: string;

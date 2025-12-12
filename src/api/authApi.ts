@@ -35,25 +35,23 @@ export interface LoginResponse {
   company?: Record<string, unknown>;
 }
 
-export const authApi = {
-  /**
-   * Authenticate user credentials and retrieve auth tokens
-   */
-  login: async (data: LoginRequest): Promise<LoginResponse> => {
-    const response = await axiosInstance.post('/auth/login', data);
-    return response.data;
-  },
+class AuthApiService {
+  private baseUrl = '/auth';
 
-  /**
-   * Send password reset link to user's email
-   * @param data - Email address for password reset
-   * @returns Promise with message
-   */
-  forgotPassword: async (
-    data: ForgotPasswordRequest
-  ): Promise<AuthResponse> => {
+  async login(data: LoginRequest): Promise<LoginResponse> {
+    const response = await axiosInstance.post<LoginResponse>(
+      `${this.baseUrl}/login`,
+      data
+    );
+    return response.data;
+  }
+
+  async forgotPassword(data: ForgotPasswordRequest): Promise<AuthResponse> {
     try {
-      const response = await axiosInstance.post('/auth/forgot-password', data);
+      const response = await axiosInstance.post<AuthResponse>(
+        `${this.baseUrl}/forgot-password`,
+        data
+      );
       return response.data;
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'response' in error) {
@@ -62,16 +60,14 @@ export const authApi = {
       }
       throw new Error('Failed to send password reset link');
     }
-  },
+  }
 
-  /**
-   * Reset user password using reset token
-   * @param data - Reset token, new password, and confirmation
-   * @returns Promise with message
-   */
-  resetPassword: async (data: ResetPasswordRequest): Promise<AuthResponse> => {
+  async resetPassword(data: ResetPasswordRequest): Promise<AuthResponse> {
     try {
-      const response = await axiosInstance.post('/auth/reset-password', data);
+      const response = await axiosInstance.post<AuthResponse>(
+        `${this.baseUrl}/reset-password`,
+        data
+      );
       return response.data;
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'response' in error) {
@@ -80,7 +76,10 @@ export const authApi = {
       }
       throw new Error('Failed to reset password');
     }
-  },
-};
+  }
+}
 
+export const authApiService = new AuthApiService();
+
+export const authApi = authApiService;
 export default authApi;
