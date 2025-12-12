@@ -27,7 +27,7 @@ import {
 } from '../../api/designationApi';
 import { rolesApiService, type Role } from '../../api/rolesApi';
 import { validateEmailAddress } from '../../utils/validation';
-import AppButton from '../Common/AppButton';
+import AppButton from '../common/AppButton';
 import { COLORS } from '../../constants/appConstants';
 
 // Types

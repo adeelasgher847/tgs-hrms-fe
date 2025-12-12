@@ -28,7 +28,7 @@ import {
   type FrontendDepartment,
 } from '../../api/departmentApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';

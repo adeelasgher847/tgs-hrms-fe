@@ -16,7 +16,7 @@ import Navbar from './Navbar';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import '../../layout.css';
 import EmployeeInviteModal from '../Employee/EmployeeInviteModal';
-import RouteErrorBoundary from '../Common/RouteErrorBoundary';
+import RouteErrorBoundary from '../common/RouteErrorBoundary';
 
 import { useUser } from '../../hooks/useUser';
 import { useTheme } from '../../theme/hooks';

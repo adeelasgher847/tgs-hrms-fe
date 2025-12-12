@@ -49,7 +49,7 @@ import { DeleteConfirmationDialog } from '../common/DeleteConfirmationDialog';
 import { type AssetSubcategory } from '../../api/assetApi';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset request response that may include additional fields

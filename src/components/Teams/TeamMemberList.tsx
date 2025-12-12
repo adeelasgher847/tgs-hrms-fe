@@ -27,9 +27,9 @@ import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
-import AppButton from '../Common/AppButton';
+import AppButton from '../common/AppButton';
 import { COLORS } from '../../constants/appConstants';
-import UserAvatar from '../Common/UserAvatar';
+import UserAvatar from '../common/UserAvatar';
 
 interface TeamMemberListProps {
   teamId: string;

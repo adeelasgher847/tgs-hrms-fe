@@ -52,12 +52,12 @@ import { assetCategories } from '../../Data/assetCategories';
 import type { AxiosError } from 'axios';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
-import AppButton from '../Common/AppButton';
-import AppTextField from '../Common/AppTextField';
-import AppSelect from '../Common/AppSelect';
-import AppTable from '../Common/AppTable';
-import AppCard from '../Common/AppCard';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppButton from '../common/AppButton';
+import AppTextField from '../common/AppTextField';
+import AppSelect from '../common/AppSelect';
+import AppTable from '../common/AppTable';
+import AppCard from '../common/AppCard';
 import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset request response that may include additional fields

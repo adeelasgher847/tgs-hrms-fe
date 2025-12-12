@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Paper, Chip, Divider } from '@mui/material';
-import AppButton from '../Common/AppButton';
+import AppButton from '../common/AppButton';
 
 interface BenefitCardProps {
   name: string;

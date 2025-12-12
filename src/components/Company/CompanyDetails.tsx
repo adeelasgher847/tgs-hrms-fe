@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 // import signupApi, { type CompanyDetailsRequest, type LogoUploadRequest } from '../api/signupApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 
 const CompanyDetails: React.FC = () => {
   const navigate = useNavigate();

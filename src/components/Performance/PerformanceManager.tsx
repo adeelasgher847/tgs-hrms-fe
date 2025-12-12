@@ -14,7 +14,7 @@ import PromotionsList from './PromotionsTable';
 import { systemEmployeeApiService } from '../../api/systemEmployeeApi';
 import type { Tenant } from '../../types';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 
 const PerformanceDashboard: React.FC = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);

@@ -23,11 +23,11 @@ import {
   Select,
   MenuItem,
 } from '@mui/material';
-import UserAvatar from '../Common/UserAvatar';
+import UserAvatar from '../common/UserAvatar';
 import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
-import AppButton from '../Common/AppButton';
+import AppButton from '../common/AppButton';
 import { COLORS } from '../../constants/appConstants';
 import type { TeamMember, Team } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
