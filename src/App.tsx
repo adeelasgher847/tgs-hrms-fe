@@ -3,7 +3,7 @@ import { Suspense, lazy } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/common/ProtectedRoute';
-import RouteErrorBoundary from './components/Common/RouteErrorBoundary';
+import RouteErrorBoundary from "./components/common/RouteErrorBoundary";
 import NotificationToast from './components/AssetManagement/NotificationToast';
 import { LanguageProvider } from './context/LanguageContext';
 import { UserProvider } from './context/UserContext';
