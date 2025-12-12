@@ -33,13 +33,13 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import type { Dayjs } from 'dayjs';
 import Chart from 'react-apexcharts';
-import { TenantLeaveApi } from '../../api/tenantLeaveApi';
+import { TenantLeaveApi } from '../../api/TenantLeaveApi';
 import type {
   Department as ApiDepartment,
   SystemLeaveFilters,
   SystemLeaveResponse,
   SystemLeaveSummary,
-} from '../../api/tenantLeaveApi';
+} from '../../api/TenantLeaveApi';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { useUser } from '../../hooks/useUser';
