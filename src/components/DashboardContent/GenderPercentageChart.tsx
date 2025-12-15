@@ -132,10 +132,11 @@ export default function GenderPercentageChart() {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: 300,
+
         }}
       >
         <CircularProgress />
-        <Typography ml={2} color={textColor}>
+        <Typography ml={2} color={textColor} fontSize={{ xs: '20px', lg: '28px' }} >
           {labels.loading[language]}
         </Typography>
       </Box>
@@ -153,7 +154,7 @@ export default function GenderPercentageChart() {
           direction: language === 'ar' ? 'rtl' : 'ltr',
         }}
       >
-        <Typography fontWeight='bold' fontSize={16} mb={0.5} color={textColor}>
+        <Typography fontWeight='bold' fontSize={{ xs: '16px', lg: '20px' }} mb={0.5} color={textColor}>
           {labels.activity[language]}
         </Typography>
         <Box
@@ -194,8 +195,8 @@ export default function GenderPercentageChart() {
       >
         <Typography
           fontWeight={500}
-          fontSize='28px'
-          lineHeight='36px'
+          fontSize={{ xs: '16px', lg: '20px' }}
+          lineHeight={{ xs: '24px', lg: '28px' }}
           letterSpacing='-2%'
           color='#2C2C2C'
         >
@@ -215,8 +216,8 @@ export default function GenderPercentageChart() {
                   }}
                 />
                 <Typography
-                  fontSize='16px'
-                  lineHeight='24px'
+                  fontSize={{ xs: '16px', lg: '20px' }}
+                  lineHeight={{ xs: '24px', lg: '28px' }}
                   letterSpacing='-1%'
                   fontWeight={500}
                   color='#2C2C2C'

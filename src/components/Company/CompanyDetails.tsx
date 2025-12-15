@@ -267,9 +267,6 @@ const CompanyDetails: React.FC = () => {
             padding: { xs: '16px 12px', sm: '24px 16px', md: '48px' },
             backgroundColor: { xs: '#3083DC', lg: 'var(--white-100-color)' },
             overflowY: 'auto',
-            borderTopLeftRadius: { xs: 0, lg: '12px' },
-            borderTopRightRadius: { xs: 0, lg: 0 },
-            borderBottomLeftRadius: { xs: 0, lg: '12px' },
             position: 'relative',
             zIndex: 1,
             marginLeft: { xs: 0, lg: '-12px' },
@@ -282,13 +279,12 @@ const CompanyDetails: React.FC = () => {
           <Box
             sx={{
               // width: '100%',
-              maxWidth: { xs: '100%', sm: '512px' },
+              maxWidth: { xs: '100%', sm: '500px' },
+              mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
               borderRadius: { xs: '30px', lg: 0 },
-              p: { xs: 3, md: 7 },
-              pt: { xs: 1, md: 2 },
-              pb: { xs: 1, md: 2 },
-              mt: { xs: 6, sm: 7, lg: 0 },
+              p: { xs: 2, sm: 3, md: 4 },
+              mt: { xs: '60px', sm: '70px', lg: 0 },
             }}
           >
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
@@ -363,7 +359,7 @@ const CompanyDetails: React.FC = () => {
             )}
 
             <Box component='form' onSubmit={handleSubmit} noValidate>
-              <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+              <Box sx={{ mb: 2 }}>
                 <AppInputField
                   name='companyName'
                   label='Company Name'
@@ -378,7 +374,7 @@ const CompanyDetails: React.FC = () => {
                 />
               </Box>
 
-              <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+              <Box sx={{ mb: 2 }}>
                 <AppInputField
                   name='domain'
                   label='Domain'
@@ -527,8 +523,8 @@ const CompanyDetails: React.FC = () => {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  gap: { xs: 1, sm: 2 },
-                  mt: { xs: 3, sm: 4 },
+                  gap: 2,
+                  mt: 4,
                 }}
               >
                 <Button
@@ -541,7 +537,7 @@ const CompanyDetails: React.FC = () => {
                     color: { xs: '#001218', lg: 'var(--black-color)' },
                     backgroundColor: 'transparent',
                     borderRadius: '12px',
-                    fontSize: 'var(--body-font-size)',
+                    fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
                     textTransform: 'none',
                     padding: { xs: '8px 32px', lg: '8px 30px' },
                     height: { xs: '40px', lg: 'auto' },
@@ -563,7 +559,7 @@ const CompanyDetails: React.FC = () => {
                     color: 'var(--white-color)',
                     fontWeight: 600,
                     borderRadius: '12px',
-                    fontSize: 'var(--body-font-size)',
+                    fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
                     textTransform: 'none',
                     padding: { xs: '8px 32px', lg: '8px 30px' },
                     height: { xs: '40px', lg: 'auto' },

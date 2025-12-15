@@ -126,8 +126,8 @@ export default function AvailabilityCardsGrid() {
       >
         <Typography
           fontWeight={500}
-          fontSize='28px'
-          lineHeight='36px'
+          fontSize={{ xs: '20px', lg: '28px' }}
+          lineHeight={{ xs: '28px', lg: '36px' }}
           letterSpacing='-2%'
           color='#2C2C2C'
         >

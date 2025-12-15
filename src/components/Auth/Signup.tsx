@@ -322,9 +322,6 @@ const Signup: React.FC = () => {
             padding: { xs: '16px 12px', sm: '24px 16px', md: '48px' },
             backgroundColor: { xs: '#3083DC', lg: 'var(--white-100-color)' },
             overflowY: 'auto',
-            borderTopLeftRadius: { xs: 0, lg: '12px' },
-            borderTopRightRadius: { xs: 0, lg: 0 },
-            borderBottomLeftRadius: { xs: 0, lg: '12px' },
             position: 'relative',
             zIndex: 1,
             marginLeft: { xs: 0, lg: '-12px' },
@@ -355,14 +352,12 @@ const Signup: React.FC = () => {
           <Box
             sx={{
               // width: '100%',
-              maxWidth: { xs: '100%', sm: '400px' },
+              maxWidth: { xs: '100%', sm: 520 },
               mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
               borderRadius: { xs: '30px', lg: 0 },
-              p: { xs: 3, md: 7 },
-              pt: { xs: 1, md: 2 },
-              pb: { xs: 1, md: 2 },
-              mt: { xs: 6, sm: 7, lg: 0 },
+              p: { xs: 2, sm: 3, md: 4 },
+              mt: { xs: '60px', sm: '70px', lg: 0 },
             }}
           >
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>

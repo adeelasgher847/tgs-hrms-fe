@@ -142,7 +142,7 @@ const Dashboard: React.FC = () => {
           color: '#2C2C2C',
           textAlign: { xs: 'left' },
           fontWeight: 500,
-          fontSize: '48px',
+          fontSize: { xs: '32px', lg: '48px' },
           lineHeight: '44px',
           letterSpacing: '-2%',
           mb: 3,

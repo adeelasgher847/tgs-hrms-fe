@@ -195,7 +195,7 @@ const EmployeeGrowthChart: React.FC = () => {
           gap: 2,
         }}
       >
-        <Typography fontWeight='bold' fontSize={20} color={textColor}>
+        <Typography fontWeight='bold' fontSize={{ xs: '20px', lg: '28px' }} color={textColor}>
           {labels[language]} ({selectedYear})
         </Typography>
 

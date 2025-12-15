@@ -176,7 +176,7 @@ export default function EmployeesInfoChart() {
       >
         <Typography
           fontWeight={500}
-          fontSize='28px'
+          fontSize={{ xs: '20px', lg: '28px' }} 
           lineHeight='36px'
           letterSpacing='-2%'
           color='#2C2C2C'

@@ -68,7 +68,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
         >
           <Typography
             sx={{
-              fontSize: 'var(--body-font-size)',
+              fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
               fontWeight: 500,
               color: 'var(--primary-dark-color)',
             }}
@@ -128,7 +128,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             >
               <Typography
                 sx={{
-                  fontSize: 'var(--body-font-size)',
+                  fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
                   fontWeight: 500,
                   color:
                     value === 'all-time' || value === null

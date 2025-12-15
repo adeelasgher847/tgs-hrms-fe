@@ -27,8 +27,8 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
           sx={{
             display: 'block',
             mb: 0.5,
-            fontWeight: 500,
-            fontSize: { xs: '10px', sm: '14px', lg: '20px' },
+            fontWeight: { xs: 400, lg: 600 },
+            fontSize: { xs: '14px', lg: '20px' },
             lineHeight: 'var(--subheading2-line-height)',
             letterSpacing: 'var(--subheading2-letter-spacing)',
             color: '#2C2C2C',
