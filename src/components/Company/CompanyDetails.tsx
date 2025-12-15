@@ -264,30 +264,31 @@ const CompanyDetails: React.FC = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: { xs: '24px 16px', md: '48px' },
+            padding: { xs: '16px 12px', sm: '24px 16px', md: '48px' },
             backgroundColor: { xs: '#3083DC', lg: 'var(--white-100-color)' },
             overflowY: 'auto',
-            borderTopLeftRadius: { xs: '30px', lg: '12px' },
-            borderTopRightRadius: { xs: '30px', lg: 0 },
+            borderTopLeftRadius: { xs: 0, lg: '12px' },
+            borderTopRightRadius: { xs: 0, lg: 0 },
             borderBottomLeftRadius: { xs: 0, lg: '12px' },
             position: 'relative',
             zIndex: 1,
             marginLeft: { xs: 0, lg: '-12px' },
-            paddingLeft: { xs: '16px', lg: 'calc(48px + 12px)' },
-            paddingRight: { xs: '16px', lg: '48px' },
+            paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
+            paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
             pt: { xs: '60px', lg: '48px' },
           }}
         >
           <Box
             sx={{
-              width: '100%',
-              maxWidth: '500px',
+              // width: '100%',
+              maxWidth: { xs: '100%', sm: '512px' },
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
               borderRadius: { xs: '30px', lg: 0 },
-              padding: { xs: '24px', lg: 0 },
-              paddingTop: { xs: '32px', lg: 0 },
-              paddingBottom: { xs: '32px', lg: 0 },
+              p: { xs: 3, md: 7 },
+              pt: { xs: 1, md: 2 },
+              pb: { xs: 1, md: 2 },
+              mt: { xs: 6, sm: 7, lg: 0 },
             }}
           >
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
@@ -362,7 +363,7 @@ const CompanyDetails: React.FC = () => {
             )}
 
             <Box component='form' onSubmit={handleSubmit} noValidate>
-              <Box sx={{ mb: 2 }}>
+              <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
                 <AppInputField
                   name='companyName'
                   label='Company Name'
@@ -377,7 +378,7 @@ const CompanyDetails: React.FC = () => {
                 />
               </Box>
 
-              <Box sx={{ mb: 2 }}>
+              <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
                 <AppInputField
                   name='domain'
                   label='Domain'
@@ -526,8 +527,8 @@ const CompanyDetails: React.FC = () => {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  gap: 2,
-                  mt: 4,
+                  gap: { xs: 1, sm: 2 },
+                  mt: { xs: 3, sm: 4 },
                 }}
               >
                 <Button

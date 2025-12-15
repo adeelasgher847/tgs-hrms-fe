@@ -75,7 +75,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
                 display: isPhoneInput ? 'none' : undefined,
                 padding: rest.multiline
                   ? undefined
-                  : { xs: '8px 16px', sm: '10px 16px' },
+                  : { xs: '8px 12px', sm: '10px 16px' },
                 '&::placeholder': {
                   color: '#A3A3A3',
                   opacity: 1,

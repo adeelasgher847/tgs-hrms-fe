@@ -319,17 +319,17 @@ const Signup: React.FC = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: { xs: '24px 16px', md: '48px' },
+            padding: { xs: '16px 12px', sm: '24px 16px', md: '48px' },
             backgroundColor: { xs: '#3083DC', lg: 'var(--white-100-color)' },
             overflowY: 'auto',
-            borderTopLeftRadius: { xs: '30px', lg: '12px' },
-            borderTopRightRadius: { xs: '30px', lg: 0 },
+            borderTopLeftRadius: { xs: 0, lg: '12px' },
+            borderTopRightRadius: { xs: 0, lg: 0 },
             borderBottomLeftRadius: { xs: 0, lg: '12px' },
             position: 'relative',
             zIndex: 1,
             marginLeft: { xs: 0, lg: '-12px' },
-            paddingLeft: { xs: '16px', lg: 'calc(48px + 12px)' },
-            paddingRight: { xs: '16px', lg: '48px' },
+            paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
+            paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
             pt: { xs: '60px', lg: '48px' },
           }}
@@ -354,12 +354,15 @@ const Signup: React.FC = () => {
           </Box>
           <Box
             sx={{
-              width: '100%',
-              maxWidth: 520,
+              // width: '100%',
+              maxWidth: { xs: '100%', sm: '400px' },
               mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
               borderRadius: { xs: '30px', lg: 0 },
-              p: { xs: 3, sm: 4 },
+              p: { xs: 3, md: 7 },
+              pt: { xs: 1, md: 2 },
+              pb: { xs: 1, md: 2 },
+              mt: { xs: 6, sm: 7, lg: 0 },
             }}
           >
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
@@ -408,7 +411,13 @@ const Signup: React.FC = () => {
               </Alert>
             )}
             <Box component='form' onSubmit={handleSubmit}>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: { xs: 1, sm: 2 },
+                  mb: { xs: 1.5, sm: 2 },
+                }}
+              >
                 <Box sx={{ flex: 1 }}>
                   <AppInputField
                     name='first_name'
@@ -442,8 +451,8 @@ const Signup: React.FC = () => {
                 sx={{
                   display: 'flex',
                   flexDirection: 'row',
-                  gap: 2,
-                  mb: 2,
+                  gap: { xs: 1, sm: 2 },
+                  mb: { xs: 1.5, sm: 2 },
                 }}
               >
                 <Box sx={{ flex: 1 }}>
@@ -541,8 +550,8 @@ const Signup: React.FC = () => {
                 sx={{
                   display: 'flex',
                   flexDirection: 'row',
-                  gap: 2,
-                  mb: 2,
+                  gap: { xs: 1, sm: 2 },
+                  mb: { xs: 1.5, sm: 2 },
                 }}
               >
                 <Box sx={{ flex: 1 }}>
@@ -610,7 +619,13 @@ const Signup: React.FC = () => {
                   />
                 </Box>
               </Box>
-              <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column' }}>
+              <Box
+                sx={{
+                  mb: { xs: 2, sm: 3 },
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
                 <FormControlLabel
                   control={
                     <Checkbox
