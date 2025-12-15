@@ -1,4 +1,4 @@
-import { add } from "date-fns";
+import { add } from 'date-fns';
 
 export const Icons = {
   logoSidebar: '/logo-sidebar.svg',
@@ -41,6 +41,7 @@ export const Icons = {
   delete: '/delete.svg',
   add: '/add.svg',
   upload: '/upload.svg',
+  plans: '/plans.svg',
 
   avatar: '/avatar.png',
   avatar2: '/avatar2.png',
@@ -53,4 +54,3 @@ export type IconName = keyof typeof Icons;
 export const getIcon = (name: IconName): string => {
   return Icons[name];
 };
-

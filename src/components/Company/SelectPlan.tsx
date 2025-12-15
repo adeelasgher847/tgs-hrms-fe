@@ -10,8 +10,6 @@ import {
   CircularProgress,
   Divider,
 } from '@mui/material';
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import signupApi, {
   type SubscriptionPlan,
@@ -21,6 +19,7 @@ import signupApi, {
 } from '../../api/signupApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
+import { Icons } from '../../assets/icons';
 
 // Default plans as fallback
 const defaultPlans = [
@@ -534,7 +533,8 @@ const SelectPlan: React.FC = () => {
           color: 'var(--dark-grey-color)',
           mb: 5,
           textAlign: 'center',
-          fontSize: 'var(--body-font-size)',
+          fontSize: '24px',
+          fontWeight: 400,
         }}
       >
         You can choose the plan of your choice
@@ -559,7 +559,7 @@ const SelectPlan: React.FC = () => {
             onClick={() => handlePlanSelect(plan.id)}
             sx={{
               flex: 1,
-              borderRadius: 'var(--border-radius-lg)',
+              borderRadius: '24px',
               overflow: 'hidden',
               boxShadow:
                 selectedPlan === plan.id
@@ -569,13 +569,16 @@ const SelectPlan: React.FC = () => {
               bgcolor: 'var(--white-color)',
               transition: 'all 250ms ease',
               cursor: 'pointer',
+              mx: { xs: 1.5, sm: 2, md: 0 },
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 420,
               '&:hover': {
                 boxShadow:
                   selectedPlan === plan.id
                     ? '0 0 0 3px rgba(48, 131, 220, 0.5), 0 12px 28px rgba(48, 131, 220, 0.35), 0 0 25px rgba(48, 131, 220, 0.2)'
                     : '0 8px 24px rgba(0,0,0,0.15)',
               },
-              mx: { xs: 1.5, sm: 2, md: 0 },
             }}
           >
             {/* Card Header */}
@@ -600,24 +603,24 @@ const SelectPlan: React.FC = () => {
                   flexDirection: 'column',
                   alignItems: 'flex-start',
                   mb: 2,
-                  }}
-                >
-                  <Typography
-                    component='span'
-                    sx={{
+                }}
+              >
+                <Typography
+                  component='span'
+                  sx={{
                     fontSize: { xs: 36, sm: 42, md: 48 },
                     fontWeight: 700,
                     color: 'var(--secondary-color)',
-                      lineHeight: 1,
+                    lineHeight: 1,
                     mb: 0.5,
-                    }}
-                  >
-                    {typeof plan.price === 'string'
+                  }}
+                >
+                  {typeof plan.price === 'string'
                     ? plan.price
                         .replace(/^US\$/i, '$')
                         .replace(/\$(\d)/, '$ $1')
-                      : plan.price}
-                  </Typography>
+                    : plan.price}
+                </Typography>
                 <Typography
                   component='span'
                   sx={{
@@ -632,35 +635,38 @@ const SelectPlan: React.FC = () => {
             </Box>
             <Divider />
 
-            {/* Features */}
-            <Box sx={{ p: 3 }}>
+            {/* Features - scrollable area */}
+            <Box
+              sx={{
+                pt: 3,
+                px: 3,
+                flexGrow: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                maxHeight: 320,
+              }}
+            >
               {plan.features.map((feature, idx) => (
                 <Stack
                   key={idx}
                   direction='row'
                   spacing={1.5}
-                  alignItems='flex-start'
+                  alignItems='center'
                   sx={{ mb: 1.5 }}
                 >
-                  {feature.included ? (
-                    <CheckIcon
-                      sx={{
-                        color: '#16a34a',
-                        fontSize: 20,
-                        mt: 0.25,
-                        flexShrink: 0,
-                      }}
-                    />
-                  ) : (
-                    <CloseIcon
-                      sx={{
-                        color: '#dc2626',
-                        fontSize: 20,
-                        mt: 0.25,
-                        flexShrink: 0,
-                      }}
-                    />
-                  )}
+                  <Box
+                    component='img'
+                    src={Icons.plans}
+                    alt='Plan feature icon'
+                    sx={{
+                      width: 20,
+                      height: 20,
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  />
                   <Typography
                     sx={{
                       color: 'var(--text-color)',
@@ -674,20 +680,21 @@ const SelectPlan: React.FC = () => {
               ))}
             </Box>
 
-            {/* Button */}
-            <Box sx={{ textAlign: 'center', pb: 3, px: 3 }}>
+            {/* Button - fixed at bottom of card */}
+            <Box sx={{ textAlign: 'center', pb: 3, px: 3, mt: 2 }}>
               <Button
                 onClick={e => {
                   e.stopPropagation();
                   handlePlanSelect(plan.id);
                 }}
                 sx={{
+                  maxWidth: '180px',
                   backgroundColor:
                     selectedPlan === plan.id
                       ? 'var(--black-color)'
                       : 'var(--dark-grey-500-color)',
                   color: 'var(--white-color)',
-                  borderRadius: 'var(--border-radius-lg)',
+                  borderRadius: '16px',
                   px: 4,
                   py: 1.25,
                   width: '100%',
@@ -728,7 +735,7 @@ const SelectPlan: React.FC = () => {
             borderColor: 'var(--dark-grey-500-color)',
             color: 'var(--text-color)',
             px: 4,
-            borderRadius: 'var(--border-radius-lg)',
+            borderRadius: '12px',
             fontWeight: 500,
             textTransform: 'none',
             fontSize: 'var(--body-font-size)',
@@ -749,7 +756,7 @@ const SelectPlan: React.FC = () => {
             backgroundColor: 'var(--primary-dark-color)',
             color: 'var(--white-color)',
             px: 4,
-            borderRadius: 'var(--border-radius-lg)',
+            borderRadius: '12px',
             fontWeight: 500,
             textTransform: 'none',
             fontSize: 'var(--body-font-size)',

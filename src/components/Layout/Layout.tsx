@@ -153,7 +153,6 @@ const Layout = () => {
       sidebarOpen && (
         <Box
           ref={sidebarRef}
-          className='sidebar'
           sx={{
             backgroundColor: 'var(--white-color)',
             color: 'var(--text-color)',
@@ -161,15 +160,18 @@ const Layout = () => {
             display: 'flex',
             flexDirection: 'column',
             direction: rtlMode ? 'rtl' : 'ltr',
-            height: { xs: '100vh', lg: 'calc(100vh - 40px)' },
+            height: { xs: '100vh', lg: 'auto' },
             width: '280px',
-            position: { xs: 'absolute', lg: 'fixed' },
-            top: { xs: 0, lg: '20px' },
-            left: rtlMode ? 'auto' : { xs: 0, lg: '20px' },
-            right: rtlMode ? { xs: 0, lg: '20px' } : 'auto',
-            borderRadius: { xs: 0, lg: '20px' },
-            zIndex: 1000,
-            boxShadow: { xs: 'none', lg: '0 1px 3px rgba(0,0,0,0.1)' },
+            position: { xs: 'absolute', lg: 'relative' },
+            top: 0,
+            left: rtlMode ? 'auto' : { xs: 0, lg: 'auto' },
+            right: rtlMode ? { xs: 0, lg: 'auto' } : 'auto',
+            mt: { xs: 0, lg: 2.5 }, 
+            ml: { xs: 0, lg: 2.5 },
+            mb: { xs: 0, lg: 2.5 },
+            borderRadius: '20px',
+            zIndex: { xs: 1000, lg: 'auto' },
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           }}
         >
           <Sidebar
@@ -220,78 +222,88 @@ const Layout = () => {
   return (
     <Box
       sx={{
+        minHeight: '100vh',
+        width: '100%',
         display: 'flex',
-        height: '100vh',
-        fontFamily: 'SF Pro Rounded, sans-serif',
-        overflow: 'hidden',
+        justifyContent: 'center',
         backgroundColor: 'var(--white-100-color)',
-        borderRadius: '20px',
       }}
     >
-      {sidebarOpen && !isLargeScreen && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 999,
-          }}
-          onClick={closeSidebar}
-        />
-      )}
-
-      {/* Sidebar (rendered once, static) */}
-      {MemoizedSidebar}
-
-      {/* Main Area */}
       <Box
-        className='main-area content'
         sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'auto',
-          height: '100%',
-          transition: 'margin 0.3s ease',
-          marginLeft: isLargeScreen && sidebarOpen && !rtlMode ? '320px' : 0,
-          marginRight: isLargeScreen && sidebarOpen && rtlMode ? '320px' : 0,
           width: '100%',
-          direction: rtlMode ? 'rtl' : 'ltr',
-          backgroundColor: 'var(--white-100-color)',
+          maxWidth: '1440px',
+          display: 'flex',
+          fontFamily: 'SF Pro Rounded, sans-serif',
+          overflow: 'hidden',
+          borderRadius: '20px',
         }}
       >
-        {/* Navbar (static) */}
-        {MemoizedNavbar}
+        {sidebarOpen && !isLargeScreen && (
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 999,
+            }}
+            onClick={closeSidebar}
+          />
+        )}
 
-        {/* Scrollable Outlet */}
+        {/* Sidebar (rendered once, static) */}
+        {MemoizedSidebar}
+
+        {/* Main Area */}
         <Box
-          component='main'
+          className='main-area content'
           sx={{
             flex: 1,
-            px: { xs: 2, md: 3 },
-            py: { xs: 2, md: 3 },
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'auto',
+            height: '100vh',
+            transition: 'margin 0.3s ease',
+            marginLeft: 0,
+            marginRight: 0,
+            width: '100%',
+            direction: rtlMode ? 'rtl' : 'ltr',
             backgroundColor: 'var(--white-100-color)',
           }}
         >
-          {isDashboardRoute && (loading || !user || !isAllowed) ? (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          ) : (
-            <RouteErrorBoundary>
-              <Outlet context={outletContext} />
-            </RouteErrorBoundary>
-          )}
+          {/* Navbar (static) */}
+          {MemoizedNavbar}
+
+          {/* Scrollable Outlet */}
+          <Box
+            component='main'
+            sx={{
+              flex: 1,
+              px: { xs: 2, md: 3 },
+              py: { xs: 2, md: 3 },
+              backgroundColor: 'var(--white-100-color)',
+            }}
+          >
+            {isDashboardRoute && (loading || !user || !isAllowed) ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            ) : (
+              <RouteErrorBoundary>
+                <Outlet context={outletContext} />
+              </RouteErrorBoundary>
+            )}
+          </Box>
         </Box>
       </Box>
     </Box>
