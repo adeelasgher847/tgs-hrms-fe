@@ -44,6 +44,7 @@ import {
 } from '../../utils/roleUtils';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
+import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import { COLORS, PAGINATION } from '../../constants/appConstants';
 // import { extractErrorMessage } from '../../utils/errorHandler';
 
@@ -98,13 +99,10 @@ export default function DesignationManager() {
     const fetchTenants = async () => {
       try {
         setLoadingTenants(true);
-        const tenants = await SystemTenantApi.getAllTenants(false);
-        const activeTenants = tenants.filter(
-          t => t.status === 'active' && t.isDeleted === false
-        );
-        setAllTenants(activeTenants);
-
-        // Default to "All Tenants" - no need to set selectedTenantId
+        // Use the same API as Employee List to get all tenants
+        const data = await systemEmployeeApiService.getAllTenants(true);
+        // Show all tenants (no filtering) - same as Employee List
+        setAllTenants((data || []) as unknown as SystemTenant[]);
       } catch {
         // Ignore; tenant filter list will simply be empty
       } finally {

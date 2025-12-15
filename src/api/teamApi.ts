@@ -316,9 +316,13 @@ class TeamApiService {
   async getAllTenantsWithTeams(
     tenantId?: string
   ): Promise<AllTenantsTeamsResponse> {
-    const params = tenantId ? `?tenant_id=${tenantId}` : '';
+    const params: Record<string, string> = { limit: 'all' };
+    if (tenantId) {
+      params.tenant_id = tenantId;
+    }
     const response = await axiosInstance.get<AllTenantsTeamsResponse>(
-      `${this.baseUrl}/all-tenants${params}`
+      `${this.baseUrl}/all-tenants`,
+      { params }
     );
     return response.data;
   }

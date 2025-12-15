@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 
 import { useLanguage } from '../../hooks/useLanguage';
@@ -25,6 +25,11 @@ import {
   Divider,
   ListItemIcon,
   Button,
+  Paper,
+  ClickAwayListener,
+  List,
+  ListItemButton,
+  ListItemText,
 } from '@mui/material';
 import UserAvatar from '../Common/UserAvatar';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -36,8 +41,15 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
+import PersonIcon from '@mui/icons-material/Person';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import GroupIcon from '@mui/icons-material/Group';
+import FolderIcon from '@mui/icons-material/Folder';
 import TeamMembersAvatar from '../Teams/TeamMembersAvatar';
 import TeamMembersModal from '../Teams/TeamMembersModal';
+import employeeApi from '../../api/employeeApi';
+import { teamApiService } from '../../api/teamApi';
+import type { Team } from '../../api/teamApi';
 
 const labels = {
   en: {
@@ -85,13 +97,221 @@ const SearchIconWrapper = styled('div')(({ theme }) => ({
 
 const StyledInputBase = styled(InputBase)(() => ({
   fontSize: '16px',
+  width: '100%',
   '& .MuiInputBase-input': {
-    padding: 0,
-    '::placeholder': {
+    padding: '0 !important',
+    '&::placeholder': {
       color: '#b3b3b3',
+      opacity: 1,
     },
   },
 }));
+
+interface SearchResult {
+  label: string;
+  path: string;
+  category: string;
+  type: 'route' | 'employee' | 'asset' | 'team' | 'department';
+  id?: string;
+  icon?: React.ReactNode;
+  subtitle?: string;
+}
+
+// Flattened list of all searchable routes
+const searchableRoutes: SearchResult[] = [
+  {
+    label: 'Dashboard',
+    path: '',
+    category: 'Main',
+    type: 'route',
+  },
+  {
+    label: 'Project List',
+    path: 'project-list',
+    category: 'Projects',
+    type: 'route',
+  },
+  {
+    label: 'Add Project',
+    path: 'add-project',
+    category: 'Projects',
+    type: 'route',
+  },
+  { label: 'Add Tenant', path: 'tenant', category: 'Tenant', type: 'route' },
+  {
+    label: 'Department List',
+    path: 'departments',
+    category: 'Department',
+    type: 'route',
+  },
+  {
+    label: 'Designation',
+    path: 'Designations',
+    category: 'Department',
+    type: 'route',
+  },
+  {
+    label: 'User List',
+    path: 'UserList',
+    category: 'Department',
+    type: 'route',
+  },
+  {
+    label: 'Policies',
+    path: 'policies',
+    category: 'Department',
+    type: 'route',
+  },
+  {
+    label: 'Holidays',
+    path: 'holidays',
+    category: 'Department',
+    type: 'route',
+  },
+  {
+    label: 'Employee List',
+    path: 'EmployeeManager',
+    category: 'Employees',
+    type: 'route',
+  },
+  {
+    label: 'Tenant Employees',
+    path: 'TenantEmployees',
+    category: 'Employees',
+    type: 'route',
+  },
+  {
+    label: 'Team Management',
+    path: 'teams',
+    category: 'Teams',
+    type: 'route',
+  },
+  {
+    label: 'Asset Inventory',
+    path: 'assets',
+    category: 'Assets',
+    type: 'route',
+  },
+  {
+    label: 'Asset Requests',
+    path: 'assets/requests',
+    category: 'Assets',
+    type: 'route',
+  },
+  {
+    label: 'Request Management',
+    path: 'assets/request-management',
+    category: 'Assets',
+    type: 'route',
+  },
+  {
+    label: 'Assets Overview',
+    path: 'assets/system-admin',
+    category: 'Assets',
+    type: 'route',
+  },
+  {
+    label: 'Attendance',
+    path: 'AttendanceCheck',
+    category: 'Attendance',
+    type: 'route',
+  },
+  {
+    label: 'Daily Attendance',
+    path: 'AttendanceTable',
+    category: 'Attendance',
+    type: 'route',
+  },
+  {
+    label: 'Attendance Report',
+    path: 'attendance-summary',
+    category: 'Attendance',
+    type: 'route',
+  },
+  {
+    label: 'Leave Request',
+    path: 'leaves',
+    category: 'Attendance',
+    type: 'route',
+  },
+  {
+    label: 'Reports',
+    path: 'Reports',
+    category: 'Leave Analytics',
+    type: 'route',
+  },
+  {
+    label: 'Cross Tenant Leaves',
+    path: 'cross-tenant-leaves',
+    category: 'Leave Analytics',
+    type: 'route',
+  },
+  {
+    label: 'Benefits List',
+    path: 'benefits-list',
+    category: 'Benefits',
+    type: 'route',
+  },
+  {
+    label: 'Employee Benefits',
+    path: 'employee-benefit',
+    category: 'Benefits',
+    type: 'route',
+  },
+  {
+    label: 'Benefit Details',
+    path: 'benefit-details',
+    category: 'Benefits',
+    type: 'route',
+  },
+  {
+    label: 'Benefits Report',
+    path: 'benefit-report',
+    category: 'Benefits',
+    type: 'route',
+  },
+  {
+    label: 'Employee Performance',
+    path: 'performance-dashboard',
+    category: 'Performance',
+    type: 'route',
+  },
+  { label: 'Invoice', path: 'invoice', category: 'Accounts', type: 'route' },
+  { label: 'Payments', path: 'payments', category: 'Accounts', type: 'route' },
+  {
+    label: 'Payroll Configuration',
+    path: 'payroll-configuration',
+    category: 'Payroll',
+    type: 'route',
+  },
+  {
+    label: 'Employee Salary',
+    path: 'employee-salary',
+    category: 'Payroll',
+    type: 'route',
+  },
+  {
+    label: 'Payroll Records',
+    path: 'payroll-records',
+    category: 'Payroll',
+    type: 'route',
+  },
+  {
+    label: 'Payroll Reports',
+    path: 'payroll-reports',
+    category: 'Payroll',
+    type: 'route',
+  },
+  { label: 'My Salary', path: 'my-salary', category: 'Payroll', type: 'route' },
+  { label: 'Audit Logs', path: 'audit-logs', category: 'Audit', type: 'route' },
+  { label: 'Settings', path: 'settings', category: 'Settings', type: 'route' },
+  {
+    label: 'User Profile',
+    path: 'UserProfile',
+    category: 'Profile',
+    type: 'route',
+  },
+];
 
 interface NavbarProps {
   darkMode: boolean;
@@ -106,8 +326,17 @@ const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [teamMembersModalOpen, setTeamMembersModalOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [searchResults, setSearchResults] = React.useState<SearchResult[]>([]);
+  const [showSearchResults, setShowSearchResults] = React.useState(false);
+  const [selectedResultIndex, setSelectedResultIndex] = React.useState(-1);
+  const [isSearching, setIsSearching] = React.useState(false);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const searchContainerRef = React.useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
+  const location = useLocation();
   const { language, setLanguage } = useLanguage();
   const lang = labels[language];
   const { user, clearUser } = useUser();
@@ -162,6 +391,208 @@ const Navbar: React.FC<NavbarProps> = ({
     setTeamMembersModalOpen(false);
   };
 
+  // Search functionality - searches routes and entities
+  React.useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      setSelectedResultIndex(-1);
+      setIsSearching(false);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+
+    // Debounce the search for entity queries (wait 300ms)
+    searchTimeoutRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      const results: SearchResult[] = [];
+
+      // 1. Search routes (instant, no API call)
+      const routeResults = searchableRoutes
+        .filter(
+          route =>
+            route.label.toLowerCase().includes(query) ||
+            route.category.toLowerCase().includes(query) ||
+            route.path.toLowerCase().includes(query)
+        )
+        .slice(0, 5); // Limit route results to 5
+
+      results.push(...routeResults);
+
+      // 2. Search employees (API call)
+      try {
+        // Fetch employees without pagination for search
+        const allEmployees =
+          await employeeApi.getAllEmployeesWithoutPagination();
+
+        const employeeMatches = allEmployees
+          .filter(emp => {
+            const firstName = (
+              emp.firstName ||
+              emp.name?.split(' ')[0] ||
+              ''
+            ).toLowerCase();
+            const lastName = (
+              emp.lastName ||
+              emp.name?.split(' ').slice(1).join(' ') ||
+              ''
+            ).toLowerCase();
+            const fullName =
+              `${firstName} ${lastName}`.trim() ||
+              emp.name?.toLowerCase() ||
+              '';
+            const email = (emp.email || '').toLowerCase();
+            const department = (emp.department?.name || '').toLowerCase();
+            const designation = (emp.designation?.title || '').toLowerCase();
+
+            return (
+              firstName.includes(query) ||
+              lastName.includes(query) ||
+              fullName.includes(query) ||
+              emp.name?.toLowerCase().includes(query) ||
+              email.includes(query) ||
+              department.includes(query) ||
+              designation.includes(query)
+            );
+          })
+          .slice(0, 5) // Limit to 5 employee results
+          .map(emp => ({
+            label:
+              `${emp.firstName || ''} ${emp.lastName || ''}`.trim() ||
+              emp.name ||
+              emp.email ||
+              'Employee',
+            path: 'EmployeeManager',
+            category:
+              emp.department?.name || emp.designation?.title || 'Employee',
+            type: 'employee' as const,
+            id: emp.id,
+            icon: <PersonIcon fontSize='small' />,
+            subtitle:
+              emp.email || emp.designation?.title || emp.department?.name,
+          }));
+
+        results.push(...employeeMatches);
+      } catch (error) {
+        console.error('Error searching employees:', error);
+      }
+
+      // 3. Search teams (if needed)
+      try {
+        const teamsResponse = await teamApiService.getAllTeams(null);
+        const teams = teamsResponse.items || [];
+
+        const teamMatches = teams
+          .filter((team: Team) => {
+            const name = (team.name || '').toLowerCase();
+            const description = (team.description || '').toLowerCase();
+            return name.includes(query) || description.includes(query);
+          })
+          .slice(0, 3) // Limit to 3 team results
+          .map((team: Team) => ({
+            label: team.name || 'Team',
+            path: 'teams',
+            category: 'Team',
+            type: 'team' as const,
+            id: team.id,
+            icon: <GroupIcon fontSize='small' />,
+            subtitle: team.description || 'Team',
+          }));
+
+        results.push(...teamMatches);
+      } catch (error) {
+        console.error('Error searching teams:', error);
+      }
+
+      // Limit total results to 10
+      setSearchResults(results.slice(0, 10));
+      setShowSearchResults(results.length > 0);
+      setSelectedResultIndex(-1);
+      setIsSearching(false);
+    }, 300); // 300ms debounce
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Handle search input change
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  };
+
+  // Handle search result click
+  const handleSearchResultClick = (result: SearchResult) => {
+    setSearchQuery('');
+    setShowSearchResults(false);
+
+    if (result.type === 'employee' && result.id) {
+      // Navigate to employee manager with employee ID in state or query param
+      // Note: You may need to adjust this based on how your EmployeeManager handles viewing specific employees
+      navigate('/dashboard/EmployeeManager', {
+        state: { employeeId: result.id, viewEmployee: true },
+      });
+    } else if (result.type === 'team' && result.id) {
+      // Navigate to teams page
+      navigate('/dashboard/teams', {
+        state: { teamId: result.id },
+      });
+    } else {
+      // Navigate to route
+      navigate(`/dashboard/${result.path}`);
+    }
+  };
+
+  // Handle keyboard navigation in search
+  const handleSearchKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      if (selectedResultIndex >= 0 && searchResults[selectedResultIndex]) {
+        handleSearchResultClick(searchResults[selectedResultIndex]);
+      } else if (searchResults.length > 0) {
+        handleSearchResultClick(searchResults[0]);
+      }
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setSelectedResultIndex(prev =>
+        prev < searchResults.length - 1 ? prev + 1 : prev
+      );
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setSelectedResultIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (event.key === 'Escape') {
+      setShowSearchResults(false);
+      setSearchQuery('');
+      searchInputRef.current?.blur();
+    }
+  };
+
+  // Close search results when clicking outside
+  const handleClickAway = (event: MouseEvent | TouchEvent) => {
+    if (
+      searchContainerRef.current &&
+      !searchContainerRef.current.contains(event.target as Node)
+    ) {
+      setShowSearchResults(false);
+    }
+  };
+
+  // Close search results on route change
+  React.useEffect(() => {
+    setShowSearchResults(false);
+    setSearchQuery('');
+  }, [location.pathname]);
+
   const textColor = darkMode ? '#8f8f8f' : '#000';
   // Language context available if needed
 
@@ -186,71 +617,259 @@ const Navbar: React.FC<NavbarProps> = ({
           }}
         >
           <Box sx={{ flexGrow: { xs: 1, sm: 0 }, minWidth: 0 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                backgroundColor: darkMode ? '#262727' : '#efefef',
-                borderRadius: '6px',
-                px: 1,
-                height: '44px',
-              }}
-            >
-              <Search
-                sx={{
-                  backgroundColor: 'transparent',
-                  height: '100%',
-                  paddingLeft: 0,
-                }}
-              >
-                <SearchIconWrapper>
-                  <SearchIcon sx={{}} />
-                </SearchIconWrapper>
-                <StyledInputBase
-                  placeholder={lang.search}
-                  inputProps={{ 'aria-label': 'search' }}
-                  sx={{
-                    transition: 'all 0.3s ease-in-out',
-                    color: darkMode ? 'white' : 'black',
-                    '& input': {
-                      backgroundColor: 'transparent',
-                      height: '43px',
-                    },
-                    '&:focus-within': {
-                      height: '45px',
-                    },
-                  }}
-                />
-              </Search>
-
+            <ClickAwayListener onClickAway={handleClickAway}>
               <Box
+                ref={searchContainerRef}
                 sx={{
-                  display: { xs: 'block', sm: 'none' },
-                  borderRadius: '6px',
-                  p: '6px',
+                  position: 'relative',
+                  width: '100%',
                 }}
               >
-                <IconButton
-                  onClick={handleOpenTeamMembersModal}
-                  aria-label='Open team members modal'
-                  size='small'
+                <Box
                   sx={{
-                    p: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    backgroundColor: darkMode ? '#262727' : '#efefef',
+                    borderRadius: '6px',
+                    px: 1,
+                    height: '44px',
                   }}
                 >
-                  <AddIcon
+                  <Search
                     sx={{
-                      color: '#555',
-                      fontSize: '26px',
-                      width: '31px',
-                      height: '31px',
+                      backgroundColor: 'transparent',
+                      height: '100%',
+                      paddingLeft: 0,
                     }}
-                    aria-hidden='true'
-                  />
-                </IconButton>
+                  >
+                    <SearchIconWrapper>
+                      <SearchIcon
+                        sx={{
+                          color: darkMode ? '#8f8f8f' : '#000',
+                        }}
+                      />
+                    </SearchIconWrapper>
+                    <StyledInputBase
+                      inputRef={searchInputRef}
+                      fullWidth
+                      placeholder={lang.search}
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      onKeyDown={handleSearchKeyDown}
+                      onFocus={() => {
+                        if (searchQuery.trim()) {
+                          setShowSearchResults(true);
+                        }
+                      }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        if (searchQuery.trim()) {
+                          setShowSearchResults(true);
+                        }
+                      }}
+                      inputProps={{
+                        'aria-label': 'search',
+                        type: 'text',
+                        autoComplete: 'off',
+                      }}
+                      sx={{
+                        transition: 'all 0.3s ease-in-out',
+                        color: darkMode ? 'white' : 'black',
+                        width: '100%',
+                        flex: 1,
+                        minWidth: 0,
+                        cursor: 'text',
+                        '& .MuiInputBase-input': {
+                          padding: '0 !important',
+                          height: '43px',
+                          backgroundColor: 'transparent',
+                          cursor: 'text',
+                          '&::placeholder': {
+                            color: darkMode ? '#8f8f8f' : '#b3b3b3',
+                            opacity: 1,
+                          },
+                        },
+                        '&:focus-within': {
+                          '& .MuiInputBase-input': {
+                            height: '45px',
+                          },
+                        },
+                      }}
+                    />
+                  </Search>
+
+                  <Box
+                    sx={{
+                      display: { xs: 'block', sm: 'none' },
+                      borderRadius: '6px',
+                      p: '6px',
+                    }}
+                  >
+                    <IconButton
+                      onClick={handleOpenTeamMembersModal}
+                      aria-label='Open team members modal'
+                      size='small'
+                      sx={{
+                        p: '6px',
+                      }}
+                    >
+                      <AddIcon
+                        sx={{
+                          color: '#555',
+                          fontSize: '26px',
+                          width: '31px',
+                          height: '31px',
+                        }}
+                        aria-hidden='true'
+                      />
+                    </IconButton>
+                  </Box>
+                </Box>
+
+                {/* Search Results Dropdown */}
+                {(showSearchResults || isSearching) && (
+                  <Paper
+                    elevation={4}
+                    sx={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      mt: 1,
+                      maxHeight: '400px',
+                      overflow: 'auto',
+                      zIndex: 1300,
+                      backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                    }}
+                  >
+                    {isSearching ? (
+                      <Box sx={{ py: 3, px: 2, textAlign: 'center' }}>
+                        <Typography
+                          sx={{
+                            fontSize: '14px',
+                            color: darkMode ? '#8f8f8f' : '#666',
+                          }}
+                        >
+                          Searching...
+                        </Typography>
+                      </Box>
+                    ) : searchResults.length > 0 ? (
+                      <List sx={{ p: 0 }}>
+                        {searchResults.map((result, index) => {
+                          const IconComponent =
+                            result.icon ||
+                            (result.type === 'route' ? (
+                              <FolderIcon fontSize='small' />
+                            ) : result.type === 'employee' ? (
+                              <PersonIcon fontSize='small' />
+                            ) : result.type === 'team' ? (
+                              <GroupIcon fontSize='small' />
+                            ) : result.type === 'asset' ? (
+                              <InventoryIcon fontSize='small' />
+                            ) : (
+                              <FolderIcon fontSize='small' />
+                            ));
+
+                          return (
+                            <ListItemButton
+                              key={`${result.type}-${result.id || result.path}-${index}`}
+                              selected={index === selectedResultIndex}
+                              onClick={() => handleSearchResultClick(result)}
+                              sx={{
+                                py: 1.5,
+                                px: 2,
+                                '&:hover': {
+                                  backgroundColor: darkMode
+                                    ? 'rgba(255, 255, 255, 0.1)'
+                                    : 'rgba(0, 0, 0, 0.04)',
+                                },
+                                '&.Mui-selected': {
+                                  backgroundColor: darkMode
+                                    ? 'rgba(255, 255, 255, 0.15)'
+                                    : 'rgba(0, 0, 0, 0.08)',
+                                  '&:hover': {
+                                    backgroundColor: darkMode
+                                      ? 'rgba(255, 255, 255, 0.2)'
+                                      : 'rgba(0, 0, 0, 0.12)',
+                                  },
+                                },
+                              }}
+                            >
+                              <ListItemIcon
+                                sx={{
+                                  minWidth: 36,
+                                  color: darkMode ? '#8f8f8f' : '#666',
+                                }}
+                              >
+                                {IconComponent}
+                              </ListItemIcon>
+                              <ListItemText
+                                primary={
+                                  <Typography
+                                    sx={{
+                                      fontSize: '14px',
+                                      fontWeight: 500,
+                                      color: darkMode ? '#fff' : '#000',
+                                    }}
+                                  >
+                                    {result.label}
+                                  </Typography>
+                                }
+                                secondary={
+                                  <Typography
+                                    sx={{
+                                      fontSize: '12px',
+                                      color: darkMode ? '#8f8f8f' : '#666',
+                                      mt: 0.5,
+                                    }}
+                                  >
+                                    {result.subtitle || result.category}
+                                  </Typography>
+                                }
+                              />
+                            </ListItemButton>
+                          );
+                        })}
+                      </List>
+                    ) : null}
+                  </Paper>
+                )}
+
+                {/* No Results Message */}
+                {showSearchResults &&
+                  searchQuery.trim() &&
+                  searchResults.length === 0 && (
+                    <Paper
+                      elevation={4}
+                      sx={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        mt: 1,
+                        zIndex: 1300,
+                        backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                        p: 2,
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontSize: '14px',
+                          color: darkMode ? '#8f8f8f' : '#666',
+                          textAlign: 'center',
+                        }}
+                      >
+                        No results found
+                      </Typography>
+                    </Paper>
+                  )}
               </Box>
-            </Box>
+            </ClickAwayListener>
           </Box>
 
           {/* Right Side */}

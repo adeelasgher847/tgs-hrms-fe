@@ -21,7 +21,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import systemDashboardApiService, {
   type RecentLog,
 } from '../../api/systemDashboardApi';
-import { SystemTenantApi } from '../../api/systemTenantApi';
+import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import rolesApiService, { type Role } from '../../api/rolesApi';
 import { PAGINATION } from '../../constants/appConstants';
 
@@ -55,11 +55,14 @@ const AuditLogs: React.FC = () => {
     const fetchTenants = async () => {
       try {
         setTenantsLoading(true);
-        const allTenants = await SystemTenantApi.getAllTenants(false);
-        const activeTenants = allTenants
-          .filter(t => t.status === 'active' && t.isDeleted === false)
-          .map(t => ({ id: t.id, name: t.name }));
-        setTenants(activeTenants);
+        // Use the same API as Employee List to get all tenants
+        const data = await systemEmployeeApiService.getAllTenants(true);
+        // Show all tenants (no filtering) - same as Employee List
+        const allTenants = (data || []).map((t: any) => ({
+          id: t.id,
+          name: t.name || t.tenant_name || '',
+        }));
+        setTenants(allTenants);
       } catch {
         setTenants([]);
       } finally {
