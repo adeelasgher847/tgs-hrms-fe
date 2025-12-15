@@ -1,16 +1,18 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from 'react';
 import {
-  Card,
-  CardContent,
   Typography,
   Box,
   Divider,
   Chip,
-  Paper,
   CircularProgress,
-  Alert,
-  Button,
   useTheme,
+  Paper,
 } from '@mui/material';
 import {
   Person,
@@ -26,6 +28,7 @@ import { useUser } from '../../hooks/useUser';
 import type { UserProfile } from '../../api/profileApi';
 import { profileApiService } from '../../api/profileApi';
 import { useProfilePicture } from '../../context/ProfilePictureContext';
+import { env } from '../../config/env';
 import {
   getRoleName,
   getRoleColor,
@@ -37,11 +40,12 @@ import EmployeeProfileView from '../Employee/EmployeeProfileView';
 import EditProfileModal from './EditProfileModal';
 import { useIsDarkMode } from '../../theme';
 import { formatDate } from '../../utils/dateUtils';
+import AppButton from '../common/AppButton';
+import AppCard from '../common/AppCard';
 
 const UserProfileComponent = React.memo(() => {
   const { user: profile, loading, updateUser } = useUser();
   const { updateProfilePicture } = useProfilePicture();
-  const [error, setError] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const theme = useTheme();
   const darkMode = useIsDarkMode();
@@ -50,17 +54,12 @@ const UserProfileComponent = React.memo(() => {
   // Silently fetch tenant if missing (without causing loading state)
   useEffect(() => {
     // Only fetch tenant if profile exists, tenant is missing, and we haven't fetched yet
-    if (
-      profile &&
-      !profile.tenant &&
-      !loading &&
-      !tenantFetchedRef.current
-    ) {
+    if (profile && !profile.tenant && !loading && !tenantFetchedRef.current) {
       tenantFetchedRef.current = true;
       // Fetch directly from API and update state without triggering loading
       profileApiService
         .getUserProfile()
-        .then((updatedProfile) => {
+        .then(updatedProfile => {
           // Update user state directly without going through refreshUser (which sets loading)
           updateUser(updatedProfile);
         })
@@ -101,11 +100,9 @@ const UserProfileComponent = React.memo(() => {
 
       // Normalize profile picture URL and update picture context
       if (updatedUser.profile_pic) {
-        const API_BASE_URL =
-          import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
         const profilePicUrl = updatedUser.profile_pic.startsWith('http')
           ? updatedUser.profile_pic
-          : `${API_BASE_URL}/users/${updatedUser.id}/profile-picture`;
+          : `${env.apiBaseUrl}/users/${updatedUser.id}/profile-picture`;
         updateProfilePicture(profilePicUrl);
       }
     },
@@ -115,57 +112,46 @@ const UserProfileComponent = React.memo(() => {
   // Determine if the user should see the employee profile view (managers included)
   const userIsEmployee = isEmployee(profile?.role) || isManager(profile?.role);
 
-  const profileItems = useMemo(
-    () => {
-      if (!profile) return [];
-      return [
-        {
-          icon: <Person sx={{ color: 'primary.main' }} />,
-          label: 'First Name',
-          value: profile.first_name,
-        },
-        {
-          icon: <Person sx={{ color: 'primary.main' }} />,
-          label: 'Last Name',
-          value: profile.last_name,
-        },
-        {
-          icon: <Email sx={{ color: 'primary.main' }} />,
-          label: 'Email Address',
-          value: profile.email,
-        },
-        {
-          icon: <Phone sx={{ color: 'primary.main' }} />,
-          label: 'Phone',
-          value: profile.phone,
-        },
-        {
-          icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
-          label: 'Role',
-          value: getRoleName(profile.role),
-        },
-        {
-          icon: <Business sx={{ color: 'primary.main' }} />,
-          label: 'Tenant',
-          value: profile.tenant,
-        },
-        {
-          icon: <CalendarToday sx={{ color: 'primary.main' }} />,
-          label: 'Joined',
-          value: formatDate(profile.created_at),
-        },
-      ];
-    },
-    [
-      profile?.first_name,
-      profile?.last_name,
-      profile?.email,
-      profile?.phone,
-      profile?.role,
-      profile?.tenant,
-      profile?.created_at,
-    ]
-  );
+  const profileItems = useMemo(() => {
+    if (!profile) return [];
+    return [
+      {
+        icon: <Person sx={{ color: 'primary.main' }} />,
+        label: 'First Name',
+        value: profile.first_name,
+      },
+      {
+        icon: <Person sx={{ color: 'primary.main' }} />,
+        label: 'Last Name',
+        value: profile.last_name,
+      },
+      {
+        icon: <Email sx={{ color: 'primary.main' }} />,
+        label: 'Email Address',
+        value: profile.email,
+      },
+      {
+        icon: <Phone sx={{ color: 'primary.main' }} />,
+        label: 'Phone',
+        value: profile.phone,
+      },
+      {
+        icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
+        label: 'Role',
+        value: getRoleName(profile.role),
+      },
+      {
+        icon: <Business sx={{ color: 'primary.main' }} />,
+        label: 'Tenant',
+        value: profile.tenant,
+      },
+      {
+        icon: <CalendarToday sx={{ color: 'primary.main' }} />,
+        label: 'Joined',
+        value: formatDate(profile.created_at),
+      },
+    ];
+  }, [profile]);
 
   // Only show loading if we truly don't have profile data and it's still loading
   // If we have profile data, show it even if loading is true (might be fetching tenant in background)
@@ -176,7 +162,6 @@ const UserProfileComponent = React.memo(() => {
       </Box>
     );
   }
-  if (error) return <Alert severity='error'>{error}</Alert>;
   if (!profile) return null;
 
   return (
@@ -207,9 +192,10 @@ const UserProfileComponent = React.memo(() => {
           >
             User Profile
           </Typography>
-          <Button
+          <AppButton
             onClick={handleEditProfile}
             variant='outlined'
+            variantType='secondary'
             startIcon={<Edit />}
             sx={{
               textTransform: 'none',
@@ -225,109 +211,105 @@ const UserProfileComponent = React.memo(() => {
             }}
           >
             Edit profile
-          </Button>
+          </AppButton>
         </Box>
-        <Card
+        <AppCard
           elevation={1}
-          sx={{ borderRadius: 3, border: 'none', bgcolor: 'transparent' }}
+          sx={{ borderRadius: 3, border: 'none', bgcolor: 'transparent', p: 0 }}
         >
-          <CardContent sx={{ p: 0 }}>
-            {/* Header Section with Profile Picture Upload */}
-            <Box
-              sx={{ display: 'flex', alignItems: 'flex-start', mb: 4, gap: 3 }}
-            >
-              <ProfilePictureUpload
-                user={profile}
-                onProfileUpdate={handleProfileUpdate}
-                size={100}
-                showUploadButton={true}
-                showRemoveButton={true}
-                clickable={true}
+          {/* Header Section with Profile Picture Upload */}
+          <Box
+            sx={{ display: 'flex', alignItems: 'flex-start', mb: 4, gap: 3 }}
+          >
+            <ProfilePictureUpload
+              user={profile}
+              onProfileUpdate={handleProfileUpdate}
+              size={100}
+              showUploadButton={true}
+              showRemoveButton={true}
+              clickable={true}
+            />
+            <Box sx={{ flex: 1 }}>
+              <Typography
+                variant='h5'
+                component='h2'
+                sx={{ fontWeight: 600, mb: 1 }}
+              >
+                {profile.first_name} {profile.last_name}
+              </Typography>
+              <Chip
+                label={getRoleName(profile.role)}
+                color={getRoleColor(profile.role)}
+                size='small'
+                sx={{ fontWeight: 500, mb: 1 }}
               />
-              <Box sx={{ flex: 1 }}>
-                <Typography
-                  variant='h5'
-                  component='h2'
-                  sx={{ fontWeight: 600, mb: 1 }}
-                >
-                  {profile.first_name} {profile.last_name}
-                </Typography>
-                <Chip
-                  label={getRoleName(profile.role)}
-                  color={getRoleColor(profile.role)}
-                  size='small'
-                  sx={{ fontWeight: 500, mb: 1 }}
-                />
+              <Typography
+                variant='body2'
+                sx={{
+                  mb: 0.5,
+                  color: darkMode ? '#8f8f8f' : theme.palette.text.secondary,
+                }}
+              >
+                {profile.email}
+              </Typography>
+              {profile.phone && (
                 <Typography
                   variant='body2'
                   sx={{
-                    mb: 0.5,
                     color: darkMode ? '#8f8f8f' : theme.palette.text.secondary,
                   }}
                 >
-                  {profile.email}
+                  {profile.phone}
                 </Typography>
-                {profile.phone && (
+              )}
+            </Box>
+          </Box>
+
+          <Divider sx={{ mb: 3 }} />
+          {/* Profile Info */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
+            {profileItems.map((item, index) => (
+              <Box
+                key={index}
+                sx={{
+                  flex: { xs: '1 1 100%', sm: '1 1 48%' },
+                  p: 2,
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                }}
+              >
+                <Box sx={{ mr: 2, mt: 0.5 }}>{item.icon}</Box>
+                <Box sx={{ flex: 1 }}>
                   <Typography
                     variant='body2'
                     sx={{
+                      mb: 0.5,
+                      fontWeight: 500,
                       color: darkMode
                         ? '#8f8f8f'
                         : theme.palette.text.secondary,
                     }}
                   >
-                    {profile.phone}
+                    {item.label}
                   </Typography>
-                )}
-              </Box>
-            </Box>
-
-            <Divider sx={{ mb: 3 }} />
-            {/* Profile Info */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 2,
-              }}
-            >
-              {profileItems.map((item, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    flex: { xs: '1 1 100%', sm: '1 1 48%' },
-                    p: 2,
-                    borderRadius: 2,
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                  }}
-                >
-                  <Box sx={{ mr: 2, mt: 0.5 }}>{item.icon}</Box>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography
-                      variant='body2'
-                      sx={{
-                        mb: 0.5,
-                        fontWeight: 500,
-                        color: darkMode
-                          ? '#8f8f8f'
-                          : theme.palette.text.secondary,
-                      }}
-                    >
-                      {item.label}
-                    </Typography>
-                    <Typography
-                      variant='body1'
-                      sx={{ fontWeight: 400, wordBreak: 'break-word' }}
-                    >
-                      {item.value}
-                    </Typography>
-                  </Box>
+                  <Typography
+                    variant='body1'
+                    sx={{ fontWeight: 400, wordBreak: 'break-word' }}
+                  >
+                    {item.value}
+                  </Typography>
                 </Box>
-              ))}
-            </Box>
-          </CardContent>
-        </Card>
+              </Box>
+            ))}
+          </Box>
+        </AppCard>
         {/* Show EmployeeProfileView if user is an employee */}
         {userIsEmployee && (
           <Box mt={4}>

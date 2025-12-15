@@ -1,5 +1,5 @@
 // mockData.ts
-import type { Policy } from '../type/Hrtypes';
+import type { Policy } from '../types/policy';
 
 export const mockPolicies: Policy[] = [
   {

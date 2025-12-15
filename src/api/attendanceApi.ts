@@ -28,7 +28,6 @@ export interface AttendanceResponse {
   totalPages: number;
 }
 
-
 export interface SystemTenantEmployeeAttendance {
   user_id: string;
   first_name: string;

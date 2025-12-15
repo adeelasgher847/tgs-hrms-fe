@@ -3,7 +3,13 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 interface NotificationToastProps {
-  position?: 'top-right' | 'top-center' | 'top-left' | 'bottom-right' | 'bottom-center' | 'bottom-left';
+  position?:
+    | 'top-right'
+    | 'top-center'
+    | 'top-left'
+    | 'bottom-right'
+    | 'bottom-center'
+    | 'bottom-left';
   autoClose?: number;
   hideProgressBar?: boolean;
   newestOnTop?: boolean;
@@ -36,7 +42,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({
       pauseOnFocusLoss={pauseOnFocusLoss}
       draggable={draggable}
       pauseOnHover={pauseOnHover}
-      theme="light"
+      theme='light'
       toastStyle={{
         borderRadius: '8px',
         fontSize: '14px',

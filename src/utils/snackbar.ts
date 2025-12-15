@@ -1,3 +1,5 @@
+import { TIMEOUTS } from '../constants/appConstants';
+
 interface SnackbarOptions {
   message: string;
   type?: 'success' | 'error' | 'warning' | 'info';
@@ -52,7 +54,7 @@ class SnackbarManager {
     }
   }
 
-  show({ message, type = 'info', duration = 6000 }: SnackbarOptions) {
+  show({ message, type = 'info', duration = TIMEOUTS.SNACKBAR_DURATION }: SnackbarOptions) {
     this.createContainer();
 
     const snackbar = document.createElement('div');

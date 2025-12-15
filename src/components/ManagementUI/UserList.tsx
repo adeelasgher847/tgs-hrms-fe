@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Button,
   Table,
   TableHead,
   TableRow,
@@ -24,6 +23,8 @@ import {
   designations,
   users as mockUsers,
 } from '../../Data/userMock';
+import AppButton from '../common/AppButton';
+import { COLORS } from '../../constants/appConstants';
 
 const UserList: React.FC = () => {
   const [users, setUsers] = useState<User[]>(mockUsers);
@@ -70,7 +71,7 @@ const UserList: React.FC = () => {
       <Typography
         variant='h5'
         gutterBottom
-        sx={{ color: darkMode ? '#8f8f8f' : '#000' }}
+        sx={{ color: darkMode ? COLORS.DARK_TEXT : COLORS.LIGHT_TEXT }}
       >
         User Management UI
       </Typography>
@@ -124,8 +125,9 @@ const UserList: React.FC = () => {
           ))}
         </TextField>
 
-        <Button
+        <AppButton
           variant='contained'
+          text='Add User'
           onClick={() => handleOpen()}
           startIcon={<AddIcon />}
           sx={{
@@ -140,7 +142,7 @@ const UserList: React.FC = () => {
           }}
         >
           Create User
-        </Button>
+        </AppButton>
       </Box>
       <Box sx={{ overflowX: 'auto', bgcolor: theme.palette.background.paper }}>
         <Table>

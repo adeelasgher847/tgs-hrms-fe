@@ -1,20 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Card,
-  CardHeader,
-  CardContent,
   Typography,
   Stack,
-  TextField,
   MenuItem,
   useTheme,
   Grid,
-  Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
-  Paper,
   Box,
   CircularProgress,
 } from '@mui/material';
@@ -28,6 +22,11 @@ import {
   type SystemEmployee,
 } from '../../api/systemEmployeeApi';
 import { formatDate } from '../../utils/dateUtils';
+import AppCard from '../common/AppCard';
+import AppTextField from '../common/AppTextField';
+import AppSelect from '../common/AppSelect';
+import AppTable from '../common/AppTable';
+import { PAGINATION } from '../../constants/appConstants';
 
 interface PerformanceTrendProps {
   tenantId: string;
@@ -42,7 +41,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
   const [endDate, setEndDate] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const itemsPerPage = 25;
+  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
   const theme = useTheme();
 
   const fetchPerformance = useCallback(async () => {
@@ -68,8 +67,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
       const response =
         await systemPerformanceApiService.getPerformanceRecords(params);
       setRecords(response.items || []);
-    } catch (error) {
-      console.error('Error fetching performance records:', error);
+    } catch {
       setRecords([]);
     }
   }, [tenantId, currentPage, itemsPerPage, statusFilter, startDate, endDate]);
@@ -87,8 +85,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           ? data.items
           : [];
       setEmployees(employeesList);
-    } catch (error) {
-      console.error('Error fetching employees:', error);
+    } catch {
       setEmployees([]);
     }
   }, [tenantId]);
@@ -251,13 +248,14 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader
-          title='Company Performance'
-          subheader='Overview gauge by tenant'
-          titleTypographyProps={{ variant: 'h5', fontWeight: 600 }}
-        />
-        <CardContent>
+      <AppCard>
+        <Box sx={{ p: 3 }}>
+          <Typography variant='h5' fontWeight={600} gutterBottom>
+            Company Performance
+          </Typography>
+          <Typography variant='body2' color='text.secondary' gutterBottom>
+            Overview gauge by tenant
+          </Typography>
           <Box
             display='flex'
             justifyContent='center'
@@ -266,27 +264,26 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           >
             <CircularProgress />
           </Box>
-        </CardContent>
-      </Card>
+        </Box>
+      </AppCard>
     );
   }
 
   return (
-    <Card>
-      <CardHeader
-        title='Company Performance'
-        subheader='Overview gauge by tenant'
-        titleTypographyProps={{ variant: 'h5', fontWeight: 600 }}
-      />
-
-      <CardContent>
+    <AppCard>
+      <Box sx={{ p: 3 }}>
+        <Typography variant='h5' fontWeight={600} gutterBottom>
+          Company Performance
+        </Typography>
+        <Typography variant='body2' color='text.secondary' gutterBottom>
+          Overview gauge by tenant
+        </Typography>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={3}>
-          <TextField
-            select
-            fullWidth
+          <AppSelect
             label='Select Employee'
+            fullWidth
             value={selectedEmployee}
-            onChange={e => setSelectedEmployee(e.target.value)}
+            onChange={e => setSelectedEmployee(e.target.value as string)}
             size='small'
           >
             <MenuItem value=''>All Employees</MenuItem>
@@ -295,39 +292,42 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
                 {employeeMap[emp.id]}
               </MenuItem>
             ))}
-          </TextField>
+          </AppSelect>
 
-          <TextField
-            select
-            fullWidth
+          <AppSelect
             label='Status'
+            fullWidth
             value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
+            onChange={e => setStatusFilter(e.target.value as string)}
             size='small'
           >
             <MenuItem value=''>All Statuses</MenuItem>
             <MenuItem value='completed'>Completed</MenuItem>
             <MenuItem value='under_review'>Under Review</MenuItem>
             <MenuItem value='pending'>Pending</MenuItem>
-          </TextField>
+          </AppSelect>
 
-          <TextField
+          <AppTextField
             type='date'
             fullWidth
             label='Start Date'
             InputLabelProps={{ shrink: true }}
             value={startDate}
-            onChange={e => setStartDate(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setStartDate(e.target.value)
+            }
             size='small'
           />
 
-          <TextField
+          <AppTextField
             type='date'
             fullWidth
             label='End Date'
             InputLabelProps={{ shrink: true }}
             value={endDate}
-            onChange={e => setEndDate(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setEndDate(e.target.value)
+            }
             size='small'
           />
         </Stack>
@@ -367,46 +367,46 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           </Grid>
 
           <Grid item xs={12} md={8}>
-            <Paper elevation={1} sx={{ width: '100%', overflow: 'auto',boxShadow: 'none' }}>
-              <Table size='small'>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Employee</TableCell>
-                    <TableCell>Cycle</TableCell>
-                    <TableCell>Overall Score</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Created At</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredRecords.length > 0 ? (
-                    filteredRecords.map(row => (
-                      <TableRow key={row.id}>
-                        <TableCell>
-                          {employeeMap[row.employee?.id] || 'N/A'}
-                        </TableCell>
-                        <TableCell>{row.cycle}</TableCell>
-                        <TableCell>{row.overallScore}</TableCell>
-                        <TableCell>{row.status}</TableCell>
-                        <TableCell>
-                          {formatDate(row.createdAt)}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} align='center'>
-                        No performance records found.
+            <AppTable
+              size='small'
+              noPaper
+              sx={{ width: '100%', overflow: 'auto' }}
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>Employee</TableCell>
+                  <TableCell>Cycle</TableCell>
+                  <TableCell>Overall Score</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Created At</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredRecords.length > 0 ? (
+                  filteredRecords.map(row => (
+                    <TableRow key={row.id}>
+                      <TableCell>
+                        {employeeMap[row.employee?.id] || 'N/A'}
                       </TableCell>
+                      <TableCell>{row.cycle}</TableCell>
+                      <TableCell>{row.overallScore}</TableCell>
+                      <TableCell>{row.status}</TableCell>
+                      <TableCell>{formatDate(row.createdAt)}</TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </Paper>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} align='center'>
+                      No performance records found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </AppTable>
           </Grid>
         </Grid>
-      </CardContent>
-    </Card>
+      </Box>
+    </AppCard>
   );
 };
 

@@ -8,14 +8,16 @@
   height: 35px !important;
   background-color: transparent !important;
   outline: none !important;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out !important;
   cursor: pointer !important;
   color: rgba(0, 0, 0, 0.87) !important;
 }
 
 .custom-date-picker-input:focus {
-  border-color: #1976D2 !important;
-  box-shadow: 0 0 0 1px #1976D2 !important;
+  border-color: #1976d2 !important;
+  box-shadow: 0 0 0 1px #1976d2 !important;
 }
 
 .custom-date-picker-input:hover {
@@ -27,22 +29,22 @@
 }
 
 /* Dark mode styles for date picker input - ONLY when dark mode is active */
-[data-theme="dark"] .custom-date-picker-input {
+[data-theme='dark'] .custom-date-picker-input {
   border: 1px solid #555555 !important;
   color: #ffffff !important;
   background-color: #2e2e2e !important;
 }
 
-[data-theme="dark"] .custom-date-picker-input:focus {
+[data-theme='dark'] .custom-date-picker-input:focus {
   border-color: #605bd4 !important;
   box-shadow: 0 0 0 1px #605bd4 !important;
 }
 
-[data-theme="dark"] .custom-date-picker-input:hover {
+[data-theme='dark'] .custom-date-picker-input:hover {
   border-color: #666666 !important;
 }
 
-[data-theme="dark"] .custom-date-picker-input::placeholder {
+[data-theme='dark'] .custom-date-picker-input::placeholder {
   color: #999999 !important;
 }
 .rmdp-container {
@@ -51,87 +53,93 @@
 .rmdp-calendar {
   border: 1px solid rgba(0, 0, 0, 0.12) !important;
   border-radius: 4px !important;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12) !important;
+  box-shadow:
+    0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 3px 0px rgba(0, 0, 0, 0.12) !important;
 }
 
 /* Dark mode styles for calendar - ONLY when dark mode is active */
-[data-theme="dark"] .rmdp-calendar {
+[data-theme='dark'] .rmdp-calendar {
   background-color: #1e1e1e !important;
   border: 1px solid #333333 !important;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.4), 0px 1px 1px 0px rgba(0,0,0,0.3), 0px 1px 3px 0px rgba(0,0,0,0.2) !important;
+  box-shadow:
+    0px 2px 1px -1px rgba(0, 0, 0, 0.4),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.3),
+    0px 1px 3px 0px rgba(0, 0, 0, 0.2) !important;
 }
 
-[data-theme="dark"] .rmdp-header {
+[data-theme='dark'] .rmdp-header {
   background-color: #2a2a2a !important;
   border-bottom: 1px solid #333333 !important;
   color: #ffffff !important;
 }
 
-[data-theme="dark"] .rmdp-header .rmdp-day-name {
+[data-theme='dark'] .rmdp-header .rmdp-day-name {
   color: #cccccc !important;
 }
 
-[data-theme="dark"] .rmdp-day {
+[data-theme='dark'] .rmdp-day {
   color: #ffffff !important;
   background-color: transparent !important;
 }
 
-[data-theme="dark"] .rmdp-day:hover {
+[data-theme='dark'] .rmdp-day:hover {
   background-color: rgba(96, 91, 212, 0.2) !important;
 }
 
-[data-theme="dark"] .rmdp-day.rmdp-today {
+[data-theme='dark'] .rmdp-day.rmdp-today {
   background-color: rgba(96, 91, 212, 0.3) !important;
   color: #ffffff !important;
   border: 1px solid #605bd4 !important;
 }
 
-[data-theme="dark"] .rmdp-day.rmdp-selected {
+[data-theme='dark'] .rmdp-day.rmdp-selected {
   background-color: #605bd4 !important;
   color: white !important;
 }
 
-[data-theme="dark"] .rmdp-day.rmdp-range {
+[data-theme='dark'] .rmdp-day.rmdp-range {
   background-color: #605bd4 !important;
   color: #fff !important;
 }
 
-[data-theme="dark"] .rmdp-day.rmdp-range-start,
-[data-theme="dark"] .rmdp-day.rmdp-range-end {
+[data-theme='dark'] .rmdp-day.rmdp-range-start,
+[data-theme='dark'] .rmdp-day.rmdp-range-end {
   background-color: #605bd4 !important;
   color: white !important;
 }
 
-[data-theme="dark"] .rmdp-arrow {
+[data-theme='dark'] .rmdp-arrow {
   color: #605bd4 !important;
 }
 
-[data-theme="dark"] .rmdp-arrow:hover {
+[data-theme='dark'] .rmdp-arrow:hover {
   background-color: rgba(96, 91, 212, 0.2) !important;
 }
 
-[data-theme="dark"] .rmdp-month-name {
+[data-theme='dark'] .rmdp-month-name {
   color: #ffffff !important;
 }
 
-[data-theme="dark"] .rmdp-year-name {
+[data-theme='dark'] .rmdp-year-name {
   color: #ffffff !important;
 }
 
-[data-theme="dark"] .rmdp-week-day {
+[data-theme='dark'] .rmdp-week-day {
   color: #cccccc !important;
 }
 
-[data-theme="dark"] .rmdp-day.rmdp-other-month {
+[data-theme='dark'] .rmdp-day.rmdp-other-month {
   color: #666666 !important;
 }
 
-[data-theme="dark"] .rmdp-day.rmdp-disabled {
+[data-theme='dark'] .rmdp-day.rmdp-disabled {
   color: #444444 !important;
   background-color: transparent !important;
 }
 
-[data-theme="dark"] .rmdp-day.rmdp-disabled:hover {
+[data-theme='dark'] .rmdp-day.rmdp-disabled:hover {
   background-color: transparent !important;
 }
 /* .rmdp-header {
@@ -139,28 +147,27 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
 } */
 .rmdp-day {
-  
   transition: background-color 0.15s ease-in-out !important;
 }
 /* .rmdp-day:hover {
   background-color: rgba(25, 118, 210, 0.08) !important;
 } */
 .rmdp-day.rmdp-selected {
-  background-color: #1976D2 !important;
+  background-color: #1976d2 !important;
   color: white !important;
 }
 .rmdp-day.rmdp-range {
-    background-color: #0074D9;
-    box-shadow: 0 0 3px #8798AD;
-    color: #fff;
+  background-color: #0074d9;
+  box-shadow: 0 0 3px #8798ad;
+  color: #fff;
 }
 .rmdp-day.rmdp-range-start,
 .rmdp-day.rmdp-range-end {
-  background-color: #1976D2 !important;
+  background-color: #1976d2 !important;
   color: white !important;
 }
 .rmdp-arrow {
-  color: #1976D2 !important;
+  color: #1976d2 !important;
 }
 .rmdp-arrow:hover {
   background-color: rgba(25, 118, 210, 0.08) !important;

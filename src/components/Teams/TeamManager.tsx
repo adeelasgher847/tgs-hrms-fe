@@ -6,7 +6,6 @@ import {
   Tab,
   Card,
   CardContent,
-  Button,
   Skeleton,
   Alert,
 } from '@mui/material';
@@ -21,6 +20,8 @@ import {
 import { useLanguage } from '../../hooks/useLanguage';
 import { isAdmin, isManager, isHRAdmin, isSystemAdmin } from '../../utils/auth';
 import { teamApiService } from '../../api/teamApi';
+import AppButton from '../common/AppButton';
+import { COLORS } from '../../constants/appConstants';
 import type {
   Team,
   TeamMember,
@@ -286,9 +287,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
         <Alert severity='error' sx={{ mb: 2 }}>
           {error}
         </Alert>
-        <Button variant='contained' onClick={handleRefresh}>
-          Retry
-        </Button>
+        <AppButton variant='contained' text='Retry' onClick={handleRefresh} />
       </Box>
     );
   }
@@ -316,18 +315,17 @@ const TeamManager: React.FC<TeamManagerProps> = ({
           {lang.title}
         </Typography>
         {isAdmin() && !isHRAdmin() && !isSystemAdmin() && (
-          <Button
+          <AppButton
             variant='contained'
+            text={lang.createTeam}
             startIcon={<AddIcon />}
             onClick={() => setShowCreateForm(true)}
             sx={{
-              backgroundColor: theme => theme.palette.primary.main,
+              backgroundColor: COLORS.PRIMARY,
               minWidth: { xs: '100%', sm: 'auto' },
               py: { xs: 1.5, sm: 1 },
             }}
-          >
-            {lang.createTeam}
-          </Button>
+          />
         )}
       </Box>
 

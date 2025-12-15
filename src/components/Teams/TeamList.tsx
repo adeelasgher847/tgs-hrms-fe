@@ -6,7 +6,6 @@ import {
   Typography,
   Avatar,
   Chip,
-  Button,
   Stack,
   IconButton,
   Dialog,
@@ -28,6 +27,8 @@ import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, UpdateTeamDto } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
+import AppButton from '../common/AppButton';
+import { COLORS } from '../../constants/appConstants';
 import TeamMemberList from './TeamMemberList';
 import EditTeamForm from './EditTeamForm';
 import DeleteTeamDialog from './DeleteTeamDialog';
@@ -105,7 +106,7 @@ const TeamList: React.FC<TeamListProps> = ({
       '#1976d2',
       '#388e3c',
       '#f57c00',
-      '#d32f2f',
+      COLORS.ERROR,
       '#7b1fa2',
       '#303f9f',
       '#ff6f00',
@@ -250,6 +251,7 @@ const TeamList: React.FC<TeamListProps> = ({
           onClick={() =>
             exportCSV('/teams/export', 'teams.csv', token, filters)
           }
+          aria-label='Export teams to CSV'
           sx={{
             backgroundColor: 'primary.main',
             borderRadius: '6px',
@@ -260,7 +262,7 @@ const TeamList: React.FC<TeamListProps> = ({
             },
           }}
         >
-          <FileDownloadIcon />
+          <FileDownloadIcon aria-hidden='true' />
         </IconButton>
       </Tooltip>
     </Box>
@@ -497,76 +499,72 @@ const TeamList: React.FC<TeamListProps> = ({
                     }}
                   >
                     {isEmployeePoolTeam ? (
-                      <Button
+                      <AppButton
                         variant='outlined'
                         size='small'
+                        text={lang.viewMembers}
                         startIcon={
                           <GroupIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
                         }
                         onClick={() => handleOpenEmployeePool(team)}
                         sx={{
-                          borderColor: theme => theme.palette.primary.main,
-                          color: theme => theme.palette.primary.main,
+                          borderColor: COLORS.PRIMARY,
+                          color: COLORS.PRIMARY,
+                          backgroundColor: 'transparent',
                           fontSize: { xs: '0.75rem', sm: '0.875rem' },
                           py: { xs: 0.5, sm: 0.75 },
                           px: { xs: 1, sm: 1.5 },
                           '&:hover': {
-                            borderColor: theme => theme.palette.primary.dark,
-                            backgroundColor: theme =>
-                              theme.palette.action.hover,
+                            borderColor: COLORS.PRIMARY,
+                            backgroundColor: 'rgba(72, 76, 127, 0.1)',
                           },
                         }}
-                      >
-                        {lang.viewMembers}
-                      </Button>
+                      />
                     ) : (
                       <>
-                        <Button
+                        <AppButton
                           variant='outlined'
                           size='small'
+                          text={lang.viewMembers}
                           startIcon={
                             <GroupIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
                           }
                           onClick={() => handleViewMembers(team)}
                           sx={{
-                            borderColor: theme => theme.palette.primary.main,
-                            color: theme => theme.palette.primary.main,
+                            borderColor: COLORS.PRIMARY,
+                            color: COLORS.PRIMARY,
+                            backgroundColor: 'transparent',
                             fontSize: { xs: '0.75rem', sm: '0.875rem' },
                             py: { xs: 0.5, sm: 0.75 },
                             px: { xs: 1, sm: 1.5 },
                             '&:hover': {
-                              borderColor: theme => theme.palette.primary.dark,
-                              backgroundColor: theme =>
-                                theme.palette.action.hover,
+                              borderColor: COLORS.PRIMARY,
+                              backgroundColor: 'rgba(72, 76, 127, 0.1)',
                             },
                           }}
-                        >
-                          {lang.viewMembers}
-                        </Button>
+                        />
                         {!isHRAdmin() && (
-                          <Button
+                          <AppButton
                             variant='outlined'
                             size='small'
+                            text={lang.addMember}
                             startIcon={
                               <AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
                             }
                             onClick={() => handleAddMember(team)}
                             sx={{
-                              borderColor: theme => theme.palette.primary.main,
-                              color: theme => theme.palette.primary.main,
+                              borderColor: COLORS.PRIMARY,
+                              color: COLORS.PRIMARY,
+                              backgroundColor: 'transparent',
                               fontSize: { xs: '0.75rem', sm: '0.875rem' },
                               py: { xs: 0.5, sm: 0.75 },
                               px: { xs: 1, sm: 1.5 },
                               '&:hover': {
-                                borderColor: theme =>
-                                  theme.palette.primary.dark,
-                                backgroundColor: theme =>
-                                  theme.palette.action.hover,
+                                borderColor: COLORS.PRIMARY,
+                                backgroundColor: 'rgba(72, 76, 127, 0.1)',
                               },
                             }}
-                          >
-                            {lang.addMember}
-                          </Button>
+                          />
                         )}
                       </>
                     )}
@@ -593,9 +591,11 @@ const TeamList: React.FC<TeamListProps> = ({
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setShowMemberDialog(false)}>
-              {lang.cancel}
-            </Button>
+            <AppButton
+              variant='outlined'
+              text={lang.cancel}
+              onClick={() => setShowMemberDialog(false)}
+            />
           </DialogActions>
         </Dialog>
 
@@ -606,7 +606,9 @@ const TeamList: React.FC<TeamListProps> = ({
             maxWidth='lg'
             fullWidth
           >
-            <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+            <DialogTitle
+              sx={{ color: darkMode ? COLORS.LIGHT_BG : COLORS.LIGHT_TEXT }}
+            >
               {employeePoolTeam?.name
                 ? `${employeePoolTeam.name} - ${lang.viewMembers}`
                 : lang.viewMembers}
@@ -621,7 +623,11 @@ const TeamList: React.FC<TeamListProps> = ({
               />
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleCloseEmployeePool}>{lang.cancel}</Button>
+              <AppButton
+                variant='outlined'
+                text={lang.cancel}
+                onClick={handleCloseEmployeePool}
+              />
             </DialogActions>
           </Dialog>
         )}
@@ -634,7 +640,9 @@ const TeamList: React.FC<TeamListProps> = ({
             maxWidth='md'
             fullWidth
           >
-            <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+            <DialogTitle
+              sx={{ color: darkMode ? COLORS.LIGHT_BG : COLORS.LIGHT_TEXT }}
+            >
               {lang.addMember} - {selectedTeam?.name}
             </DialogTitle>
             <DialogContent>
@@ -646,9 +654,11 @@ const TeamList: React.FC<TeamListProps> = ({
               />
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setShowAddMemberDialog(false)}>
-                {lang.cancel}
-              </Button>
+              <AppButton
+                variant='outlined'
+                text={lang.cancel}
+                onClick={() => setShowAddMemberDialog(false)}
+              />
             </DialogActions>
           </Dialog>
         )}

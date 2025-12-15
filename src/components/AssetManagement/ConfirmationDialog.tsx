@@ -46,14 +46,9 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onCancel}
-      maxWidth="sm"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onCancel} maxWidth='sm' fullWidth>
       <DialogTitle>
-        <Typography variant="h6" component="div" fontWeight={600}>
+        <Typography variant='h6' component='div' fontWeight={600}>
           {title}
         </Typography>
       </DialogTitle>
@@ -65,7 +60,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
       <DialogActions sx={{ padding: '16px 24px', gap: 1 }}>
         <Button
           onClick={onCancel}
-          variant="outlined"
+          variant='outlined'
           disabled={loading}
           sx={{ minWidth: 80 }}
         >
@@ -74,7 +69,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
         <Button
           onClick={onConfirm}
           color={getSeverityColor()}
-          variant="contained"
+          variant='contained'
           disabled={loading}
           sx={{ minWidth: 80 }}
         >

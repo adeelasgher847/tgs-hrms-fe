@@ -1,14 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
-  Button,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   IconButton,
@@ -16,10 +11,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
   MenuItem,
   Tabs,
   Tab,
@@ -32,6 +23,7 @@ import {
   CircularProgress,
   Stack,
   Pagination,
+  Alert,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -56,13 +48,20 @@ import {
   type PaginatedResponse,
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
-import { Snackbar, Alert } from '@mui/material';
 import { assetCategories } from '../../Data/assetCategories';
 import type { AxiosError } from 'axios';
 import { formatDate } from '../../utils/dateUtils';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppButton from '../common/AppButton';
+import AppTextField from '../common/AppTextField';
+import AppSelect from '../common/AppSelect';
+import AppTable from '../common/AppTable';
+import AppCard from '../common/AppCard';
+import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset request response that may include additional fields
-interface ApiAssetRequestExtended extends ApiAssetRequest {
+interface ApiAssetRequestExtended extends Omit<ApiAssetRequest, 'category_id'> {
   category_id?: string;
   subcategory_id?: string | null;
   category?: {
@@ -71,26 +70,33 @@ interface ApiAssetRequestExtended extends ApiAssetRequest {
     description?: string | null;
     icon?: string | null;
   };
-  subcategory?: {
-    id: string;
-    name: string;
-    description?: string | null;
-  };
   subcategory_name?: string;
   subcategory?:
+    | {
+        id: string;
+        name: string;
+        description?: string | null;
+      }
     | string
     | {
+        id?: string;
         name?: string;
+        description?: string | null;
         title?: string;
         subcategory_name?: string;
         subcategoryName?: string;
         display_name?: string;
         label?: string;
       };
+  subcategory_name?: string;
   subcategoryId?: string;
   subcategoryName?: string;
   rejection_reason?: string | null;
   requestedByName?: string;
+  employee_id?: string;
+  employee_name?: string;
+  assigned_asset_id?: string | null;
+  assigned_asset_name?: string | null;
   requestedByUser?: {
     id: string;
     name: string;
@@ -125,16 +131,9 @@ const normalizeRequestStatus = (
     case 'canceled':
       return 'cancelled';
     default:
-      console.warn(
-        'Unknown status received from API:',
-        status,
-        'normalized to:',
-        normalized
-      );
       return 'pending'; // Default fallback
   }
 };
-
 
 const schema = yup.object({
   action: yup.string().required('Action is required'),
@@ -183,24 +182,11 @@ const RequestManagement: React.FC = () => {
   const lastFetchedPageRef = React.useRef<{
     page: number;
     limit: number;
+    statusFilter?: string;
   } | null>(null);
   const assetsFetchedRef = React.useRef(false); // Track if assets have been fetched
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error' | 'warning' | 'info';
-  }>({ open: false, message: '', severity: 'success' });
-
-  const showSnackbar = (
-    message: string,
-    severity: 'success' | 'error' | 'warning' | 'info' = 'success'
-  ) => {
-    setSnackbar({ open: true, message, severity });
-  };
-
-  const handleSnackbarClose = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  };
+  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
+  const lastTabRef = React.useRef(0); // Track last tab to detect tab changes
   const [searchTerm, setSearchTerm] = useState('');
   const [tabValue, setTabValue] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -208,9 +194,25 @@ const RequestManagement: React.FC = () => {
     null
   );
 
+  // Get status filter based on active tab
+  const getStatusFilter = (tabIndex: number): string | undefined => {
+    switch (tabIndex) {
+      case 0:
+        return undefined; // All requests
+      case 1:
+        return 'pending';
+      case 2:
+        return 'approved';
+      case 3:
+        return 'rejected';
+      default:
+        return undefined;
+    }
+  };
+
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 25, 
+    limit: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
     totalPages: 0,
   });
@@ -443,17 +445,17 @@ const RequestManagement: React.FC = () => {
       );
 
       setAssets(transformedAssets);
-    } catch (error) {
-      console.error('Failed to fetch assets:', error);
+    } catch {
       assetsFetchedRef.current = false; // Reset on error so it can retry
     }
-  }, []);
+  }, [showError]);
 
   // Fetch data from API
   const fetchRequests = React.useCallback(
     async (
       page: number = 1,
-      limit: number = 25,
+      limit: number = PAGINATION.DEFAULT_PAGE_SIZE,
+      statusFilter?: string,
       isInitialLoad: boolean = false
     ) => {
       // Prevent duplicate calls
@@ -468,50 +470,212 @@ const RequestManagement: React.FC = () => {
           setInitialLoading(true);
         }
 
-        const apiResponse: PaginatedResponse<ApiAssetRequest> =
-          await assetApi.getAllAssetRequests({
+        // If backend doesn't support filtering and we have a status filter,
+        // we need to fetch all pages to get all filtered records
+        // First, check if backend supports filtering by making a test call
+        let allFilteredRequests: AssetRequest[] = [];
+        let finalTotal = 0;
+        let finalTotalPages = 1;
+        let backendLimit = limit;
+        let backendPage = page;
+
+        if (statusFilter) {
+          // First, fetch page 1 to check if backend filters
+          const testApiFilters: {
+            page: number;
+            limit: number;
+            status?: string;
+          } = {
+            page: 1,
+            limit: limit,
+            status: statusFilter,
+          };
+
+          const testResponse: PaginatedResponse<ApiAssetRequest> =
+            await assetApi.getAllAssetRequests(testApiFilters);
+
+          const testTransformed = transformApiRequests(
+            (testResponse.items || []) as ApiAssetRequestExtended[]
+          );
+
+          // Check if backend filtered correctly
+          const allMatchFilter =
+            testTransformed.length === 0 ||
+            testTransformed.every(req => req.status === statusFilter);
+
+          if (allMatchFilter && testResponse.total && testResponse.totalPages) {
+            // Backend supports filtering - use normal pagination
+
+            // Build API filters for the requested page
+            const apiFilters: {
+              page: number;
+              limit: number;
+              status?: string;
+            } = {
+              page,
+              limit,
+              status: statusFilter,
+            };
+
+            const apiResponse: PaginatedResponse<ApiAssetRequest> =
+              await assetApi.getAllAssetRequests(apiFilters);
+
+            const transformedRequests = transformApiRequests(
+              (apiResponse.items || []) as ApiAssetRequestExtended[]
+            );
+
+            allFilteredRequests = transformedRequests;
+            finalTotal = apiResponse.total || 0;
+            finalTotalPages = apiResponse.totalPages || 1;
+            backendLimit = apiResponse.limit || limit;
+            backendPage = apiResponse.page || page;
+
+            // Update counts
+            if (apiResponse.counts) {
+              setStatusCounts({
+                total: apiResponse.counts.total || 0,
+                pending: apiResponse.counts.pending || 0,
+                approved: apiResponse.counts.approved || 0,
+                rejected: apiResponse.counts.rejected || 0,
+                cancelled: apiResponse.counts.cancelled || 0,
+              });
+            }
+          } else {
+            // Backend doesn't support filtering - fetch all pages and filter client-side
+
+            let allRequests: AssetRequest[] = [];
+            let currentPage = 1;
+            let hasMorePages = true;
+            const maxPages = 100; // Safety limit
+
+            let totalPagesFromBackend = testResponse.totalPages || 1;
+
+            // Fetch all pages
+            while (
+              hasMorePages &&
+              currentPage <= maxPages &&
+              currentPage <= totalPagesFromBackend
+            ) {
+              const pageApiFilters: {
+                page: number;
+                limit: number;
+              } = {
+                page: currentPage,
+                limit: limit,
+              };
+
+              const pageResponse: PaginatedResponse<ApiAssetRequest> =
+                await assetApi.getAllAssetRequests(pageApiFilters);
+
+              const pageTransformed = transformApiRequests(
+                (pageResponse.items || []) as ApiAssetRequestExtended[]
+              );
+
+              allRequests = [...allRequests, ...pageTransformed];
+
+              // Update totalPages if we got new info
+              if (pageResponse.totalPages) {
+                totalPagesFromBackend = pageResponse.totalPages;
+              }
+              if (pageResponse.total) {
+                totalFromBackend = pageResponse.total;
+              }
+
+              hasMorePages =
+                currentPage < totalPagesFromBackend &&
+                pageTransformed.length === limit;
+              currentPage++;
+
+              // Update counts from first page
+              if (currentPage === 2 && pageResponse.counts) {
+                setStatusCounts({
+                  total: pageResponse.counts.total || 0,
+                  pending: pageResponse.counts.pending || 0,
+                  approved: pageResponse.counts.approved || 0,
+                  rejected: pageResponse.counts.rejected || 0,
+                  cancelled: pageResponse.counts.cancelled || 0,
+                });
+              }
+            }
+
+            // Filter client-side
+            allFilteredRequests = allRequests.filter(
+              req => req.status === statusFilter
+            );
+
+            // Calculate pagination for filtered results
+            finalTotal = allFilteredRequests.length;
+            finalTotalPages = Math.ceil(finalTotal / limit);
+            backendLimit = limit;
+            backendPage = page;
+
+            // Apply pagination to filtered results
+            const startIndex = (page - 1) * limit;
+            const endIndex = startIndex + limit;
+            allFilteredRequests = allFilteredRequests.slice(
+              startIndex,
+              endIndex
+            );
+
+            // Update counts from test response if available
+            if (testResponse.counts) {
+              setStatusCounts({
+                total: testResponse.counts.total || 0,
+                pending: testResponse.counts.pending || 0,
+                approved: testResponse.counts.approved || 0,
+                rejected: testResponse.counts.rejected || 0,
+                cancelled: testResponse.counts.cancelled || 0,
+              });
+            }
+          }
+        } else {
+          // No filter - normal pagination
+          const apiFilters: {
+            page: number;
+            limit: number;
+          } = {
             page,
             limit,
-          });
+          };
 
-        const hasMorePages = (apiResponse.items || []).length === limit;
+          const apiResponse: PaginatedResponse<ApiAssetRequest> =
+            await assetApi.getAllAssetRequests(apiFilters);
 
-        // Use backend pagination info if available, otherwise estimate
-        if (apiResponse.total && apiResponse.totalPages) {
-          setPagination(prev => ({
-            ...prev,
-            total: apiResponse.total || 0,
-            totalPages: apiResponse.totalPages || 1,
-          }));
-        } else {
-          const estimatedTotal = hasMorePages
-            ? page * limit
-            : (page - 1) * limit + (apiResponse.items || []).length;
-          const estimatedTotalPages = hasMorePages ? page + 1 : page;
+          const transformedRequests = transformApiRequests(
+            (apiResponse.items || []) as ApiAssetRequestExtended[]
+          );
 
-          setPagination(prev => ({
-            ...prev,
-            total: estimatedTotal,
-            totalPages: estimatedTotalPages,
-          }));
+          allFilteredRequests = transformedRequests;
+          finalTotal = apiResponse.total || 0;
+          finalTotalPages = apiResponse.totalPages || 1;
+          backendLimit = apiResponse.limit || limit;
+          backendPage = apiResponse.page || page;
+
+          // Update counts
+          if (apiResponse.counts) {
+            setStatusCounts({
+              total: apiResponse.counts.total || 0,
+              pending: apiResponse.counts.pending || 0,
+              approved: apiResponse.counts.approved || 0,
+              rejected: apiResponse.counts.rejected || 0,
+              cancelled: apiResponse.counts.cancelled || 0,
+            });
+          }
         }
 
-        const transformedRequests = transformApiRequests(
-          (apiResponse.items || []) as ApiAssetRequestExtended[]
-        );
+        // Use the results we prepared
+        const finalRequests = allFilteredRequests;
 
-        setRequests(transformedRequests);
+        // Set pagination
+        setPagination(prev => ({
+          ...prev,
+          page: backendPage,
+          limit: backendLimit,
+          total: finalTotal,
+          totalPages: finalTotalPages,
+        }));
 
-        // Update counts from API response if available
-        if (apiResponse.counts) {
-          setStatusCounts({
-            total: apiResponse.counts.total || 0,
-            pending: apiResponse.counts.pending || 0,
-            approved: apiResponse.counts.approved || 0,
-            rejected: apiResponse.counts.rejected || 0,
-            cancelled: apiResponse.counts.cancelled || 0,
-          });
-        }
+        setRequests(finalRequests);
 
         let allAssets: Record<string, unknown>[] = [];
         let assetCurrentPage = 1;
@@ -616,12 +780,6 @@ const RequestManagement: React.FC = () => {
         const axiosError = error as
           | AxiosError<{ message?: string }>
           | undefined;
-        console.error('❌ Failed to fetch data:', error);
-        console.error('❌ Error details:', {
-          message: axiosError?.message,
-          response: axiosError?.response?.data,
-          status: axiosError?.response?.status,
-        });
 
         // Only show error toast if it's a real error (not 404 or empty results)
         const status = axiosError?.response?.status;
@@ -630,7 +788,7 @@ const RequestManagement: React.FC = () => {
 
         // Don't show error for 404 (not found) or if it's just empty results
         if (status !== 404 && status !== 200 && errorMessage) {
-          showSnackbar(errorMessage || 'Failed to load data', 'error');
+          showError(errorMessage || 'Failed to load data');
         } else {
           // If it's 404 or empty results, just set empty state without showing error
           setRequests([]);
@@ -648,59 +806,94 @@ const RequestManagement: React.FC = () => {
         }
       }
     },
-    [transformApiRequests]
+    [transformApiRequests, showError]
   );
 
-  // Initial load: fetch paginated requests and assets (counts come from API response)
+  // Initial load effect
   React.useEffect(() => {
-    // Only run initial load once
-    if (initialLoadRef.current) {
+    if (initialLoadRef.current || fetchingRef.current) {
       return;
-    }
-    if (fetchingRef.current) {
-      return; // Don't fetch if already fetching
     }
 
     initialLoadRef.current = true;
+    lastTabRef.current = tabValue;
 
-    // Mark this page/limit as fetched
+    const statusFilter = getStatusFilter(tabValue);
     lastFetchedPageRef.current = {
-      page: pagination.page,
+      page: 1,
       limit: pagination.limit,
+      statusFilter: statusFilter,
     };
 
-    // Fetch paginated requests only (assets will be fetched when needed)
-    fetchRequests(pagination.page, pagination.limit, true);
+    fetchRequests(1, pagination.limit, statusFilter, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on initial mount
+  }, []); // Only on mount
 
-  // Handle page changes: fetch paginated requests (counts come from API response)
+  // Handle tab changes - separate effect to ensure it always runs
   React.useEffect(() => {
-    if (!initialLoadRef.current) return; // Don't fetch if initial load hasn't happened
-    if (fetchingRef.current) return; // Don't fetch if already fetching
+    if (!initialLoadRef.current) {
+      lastTabRef.current = tabValue; // Initialize
+      return;
+    }
+    if (fetchingRef.current) return;
 
-    // Check if page/limit actually changed
+    // Check if tab actually changed
+    if (lastTabRef.current === tabValue) {
+      return; // Tab hasn't changed
+    }
+
+    lastTabRef.current = tabValue;
+    const statusFilter = getStatusFilter(tabValue);
+
+    // Mark as fetched to prevent page change effect from running
+    lastFetchedPageRef.current = {
+      page: 1,
+      limit: pagination.limit,
+      statusFilter: statusFilter,
+    };
+
+    // Update pagination - this will trigger page change effect, but it will see it's already fetched
+    setPagination(prev => ({
+      ...prev,
+      page: 1,
+      total: 0,
+      totalPages: 0,
+    }));
+
+    // Fetch directly - page change effect will see it's already fetched and skip
+    fetchRequests(1, pagination.limit, statusFilter, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabValue]);
+
+  // Handle page/limit changes
+  React.useEffect(() => {
+    if (!initialLoadRef.current) return;
+    if (fetchingRef.current) return;
+
+    const statusFilter = getStatusFilter(tabValue);
     const lastFetched = lastFetchedPageRef.current;
+
+    // Check if already fetched this combination
     if (
       lastFetched &&
       lastFetched.page === pagination.page &&
-      lastFetched.limit === pagination.limit
+      lastFetched.limit === pagination.limit &&
+      lastFetched.statusFilter === statusFilter
     ) {
-      return; // Already fetched this page/limit combination
+      return;
     }
 
-    // Fetch paginated requests when page or limit changes (but not on initial load)
-    if (pagination.page > 0) {
-      lastFetchedPageRef.current = {
-        page: pagination.page,
-        limit: pagination.limit,
-      };
-      fetchRequests(pagination.page, pagination.limit, false);
-    }
+    lastFetchedPageRef.current = {
+      page: pagination.page,
+      limit: pagination.limit,
+      statusFilter: statusFilter,
+    };
+
+    fetchRequests(pagination.page, pagination.limit, statusFilter, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, pagination.limit]); // Removed fetchRequests from deps to prevent re-triggers
+  }, [pagination.page, pagination.limit]);
 
-  // Filter requests
+  // Filter requests by search term only (status filtering is done by backend)
   const filteredRequests = useMemo(() => {
     if (!searchTerm) return requests;
 
@@ -778,10 +971,9 @@ const RequestManagement: React.FC = () => {
     return filtered;
   }, [assets, selectedRequest]);
 
-  // Filter by tab
-  const getFilteredRequestsByTab = (statusFilter?: string) => {
-    if (!statusFilter) return filteredRequests;
-    return filteredRequests.filter(request => request.status === statusFilter);
+  // Get filtered requests for display (status filtering is done by backend, only search is client-side)
+  const getFilteredRequestsByTab = () => {
+    return filteredRequests;
   };
 
   const handleProcessRequest = (request: AssetRequest) => {
@@ -834,16 +1026,6 @@ const RequestManagement: React.FC = () => {
           asset => asset.id === data.assignedAssetId
         );
         if (!selectedAsset) {
-          console.error('Selected asset not found in available assets:', {
-            selectedAssetId: data.assignedAssetId,
-            availableAssets: availableAssets.map(a => ({
-              id: a.id,
-              name: a.name,
-              category: a.category.name,
-              subcategoryId: a.subcategoryId,
-              status: a.status,
-            })),
-          });
           throw new Error(
             'Selected asset is not available or not in the correct category'
           );
@@ -888,12 +1070,16 @@ const RequestManagement: React.FC = () => {
           );
 
           // Refresh paginated requests to update counts
-          fetchRequests(pagination.page, pagination.limit, false);
+          fetchRequests(
+            pagination.page,
+            pagination.limit,
+            getStatusFilter(tabValue),
+            false
+          );
 
           // Show success message with asset assignment details
-          showSnackbar(
-            `Asset "${selectedAsset.name}" has been assigned to ${selectedRequest.employeeName} successfully!`,
-            'success'
+          showSuccess(
+            `Asset "${selectedAsset.name}" has been assigned to ${selectedRequest.employeeName} successfully!`
           );
 
           // Close modal and return early for approval - no need to refresh from API
@@ -904,20 +1090,12 @@ const RequestManagement: React.FC = () => {
           const axiosError = approvalError as
             | AxiosError<{ message?: string }>
             | undefined;
-          console.error('❌ Approval failed:', approvalError);
-          console.error('❌ Error details:', {
-            message: axiosError?.message,
-            response: axiosError?.response?.data,
-            status: axiosError?.response?.status,
-            requestId: selectedRequest.id,
-            payload,
-          });
 
           const errorMessage =
             axiosError?.response?.data?.message ||
             axiosError?.message ||
             'Failed to approve request';
-          showSnackbar(errorMessage, 'error');
+          showError(errorMessage);
           setLoading(false);
           return;
         }
@@ -945,30 +1123,44 @@ const RequestManagement: React.FC = () => {
           );
 
           // Refresh paginated requests to update counts
-          fetchRequests(pagination.page, pagination.limit, false);
+          fetchRequests(
+            pagination.page,
+            pagination.limit,
+            getStatusFilter(tabValue),
+            false
+          );
 
-          showSnackbar(
-            `Request from ${selectedRequest.employeeName} has been rejected successfully`,
-            'success'
+          showSuccess(
+            `Request from ${selectedRequest.employeeName} has been rejected successfully`
           );
 
           // Close modal and return early for rejection - no need to refresh from API
           setIsProcessModalOpen(false);
           setLoading(false);
           return;
-        } catch (rejectError) {
-          console.error('❌ Rejection failed:', rejectError);
-          showSnackbar('Failed to reject request', 'error');
+        } catch {
+          showError('Failed to reject request');
           setLoading(false);
           return;
         }
       }
 
+      const statusFilter = getStatusFilter(tabValue);
+      // Build API filters - only include status if it's defined
+      const apiFilters: {
+        page: number;
+        limit: number;
+        status?: string;
+      } = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
+      if (statusFilter) {
+        apiFilters.status = statusFilter;
+      }
+
       const apiResponse: PaginatedResponse<ApiAssetRequest> =
-        await assetApi.getAllAssetRequests({
-          page: pagination.page,
-          limit: pagination.limit,
-        });
+        await assetApi.getAllAssetRequests(apiFilters);
 
       // Refresh assets to reflect assignment status - fetch all assets with pagination
       let allAssets: Record<string, unknown>[] = [];
@@ -1074,20 +1266,45 @@ const RequestManagement: React.FC = () => {
       setAssets(transformedAssets);
 
       const transformedRequests: AssetRequest[] = apiResponse.items.map(
-        (apiRequest: ApiAssetRequest) => {
+        (apiRequest: ApiAssetRequestExtended) => {
+          // Guard against undefined asset_category
+          if (!apiRequest.asset_category) {
+            // Return a default/fallback request structure
+            return {
+              id: apiRequest.id,
+              employeeId:
+                apiRequest.employee_id || apiRequest.requested_by || '',
+              employeeName:
+                apiRequest.employee_name ||
+                apiRequest.requestedByName ||
+                'Unknown',
+              category: {
+                id: '',
+                name: 'Unknown Category',
+                nameAr: '',
+                description: '',
+              },
+              status: apiRequest.status || 'pending',
+              requestedDate:
+                apiRequest.requested_date || new Date().toISOString(),
+              assignedAssetId: apiRequest.assigned_asset_id || undefined,
+              assignedAssetName: apiRequest.assigned_asset_name || undefined,
+            };
+          }
+
           // Try to find matching category from our comprehensive list
           let matchingCategory = assetCategories.find(
             cat =>
               cat.name.toLowerCase() ===
-                apiRequest.asset_category.toLowerCase() ||
+                apiRequest.asset_category!.toLowerCase() ||
               cat.subcategories?.some(
                 sub =>
-                  sub.toLowerCase() === apiRequest.asset_category.toLowerCase()
+                  sub.toLowerCase() === apiRequest.asset_category!.toLowerCase()
               )
           );
 
           // If no direct match, try to match subcategory format (e.g., "Mobility / Transport - Fuel Card")
-          if (!matchingCategory && apiRequest.asset_category.includes(' - ')) {
+          if (!matchingCategory && apiRequest.asset_category?.includes(' - ')) {
             const [mainCategoryName, subcategoryName] =
               apiRequest.asset_category.split(' - ');
             matchingCategory = assetCategories.find(
@@ -1122,9 +1339,9 @@ const RequestManagement: React.FC = () => {
                   requestedItem: subcategoryName || apiRequest.asset_category,
                 }
               : {
-                  id: apiRequest.asset_category,
-                  name: mainCategoryName,
-                  nameAr: apiRequest.asset_category,
+                  id: apiRequest.asset_category || 'unknown',
+                  name: mainCategoryName || 'Unknown Category',
+                  nameAr: apiRequest.asset_category || 'Unknown Category',
                   description: '',
                   color: '#757575',
                   requestedItem: subcategoryName || apiRequest.asset_category,
@@ -1148,18 +1365,24 @@ const RequestManagement: React.FC = () => {
 
       setRequests(transformedRequests);
 
-      // Update pagination info from API response
+      // Update pagination info from API response - use backend values
+      const backendLimit = apiResponse.limit || pagination.limit;
+      const backendTotal = apiResponse.total || 0;
+      const backendTotalPages = apiResponse.totalPages || 1;
+      const backendPage = apiResponse.page || pagination.page;
+
       setPagination(prev => ({
         ...prev,
-        total: apiResponse.total || 0,
-        totalPages: apiResponse.totalPages || 1,
+        page: backendPage,
+        limit: backendLimit,
+        total: backendTotal,
+        totalPages: backendTotalPages,
       }));
 
       setIsProcessModalOpen(false);
       setSelectedRequest(null);
     } catch (error) {
-      console.error('Failed to process request:', error);
-      showSnackbar('Failed to process request', 'error');
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -1232,9 +1455,7 @@ const RequestManagement: React.FC = () => {
       <TableCell>
         <StatusChip status={request.status} type='request' />
       </TableCell>
-      <TableCell>
-        {formatDate(request.requestedDate)}
-      </TableCell>
+      <TableCell>{formatDate(request.requestedDate)}</TableCell>
       <TableCell>
         {request.remarks && (
           <Tooltip title={request.remarks} arrow>
@@ -1262,24 +1483,40 @@ const RequestManagement: React.FC = () => {
           )}
       </TableCell>
       <TableCell align='right'>
-        <IconButton onClick={e => handleMenuClick(e, request.id)} size='small'>
-          <MoreVertIcon />
+        <IconButton
+          onClick={e => handleMenuClick(e, request.id)}
+          size='small'
+          aria-label={`Actions menu for request ${request.id}`}
+          aria-haspopup='true'
+          aria-expanded={Boolean(anchorEl) && selectedRequestId === request.id}
+        >
+          <MoreVertIcon aria-hidden='true' />
         </IconButton>
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl) && selectedRequestId === request.id}
           onClose={handleMenuClose}
+          role='menu'
+          aria-label='Request actions menu'
         >
-          <MenuItem onClick={() => handleViewRequest(request)}>
+          <MenuItem
+            onClick={() => handleViewRequest(request)}
+            role='menuitem'
+            aria-label='View request details'
+          >
             <ListItemIcon>
-              <ViewIcon fontSize='small' />
+              <ViewIcon fontSize='small' aria-hidden='true' />
             </ListItemIcon>
             <ListItemText>View Details</ListItemText>
           </MenuItem>
           {request.status === 'pending' && (
-            <MenuItem onClick={() => handleProcessRequest(request)}>
+            <MenuItem
+              onClick={() => handleProcessRequest(request)}
+              role='menuitem'
+              aria-label='Process request'
+            >
               <ListItemIcon>
-                <AssignmentIcon fontSize='small' />
+                <AssignmentIcon fontSize='small' aria-hidden='true' />
               </ListItemIcon>
               <ListItemText>Process Request</ListItemText>
             </MenuItem>
@@ -1309,77 +1546,68 @@ const RequestManagement: React.FC = () => {
       {/* Statistics Cards */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
         <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-          <Card>
-            <CardContent>
-              <Typography color='textSecondary' gutterBottom>
-                Total Requests
-              </Typography>
-              <Typography variant='h4' fontWeight={600}>
-                {displayCounts.all}
-              </Typography>
-            </CardContent>
-          </Card>
+          <AppCard compact>
+            <Typography color='textSecondary' gutterBottom>
+              Total Requests
+            </Typography>
+            <Typography variant='h4' fontWeight={600}>
+              {displayCounts.all}
+            </Typography>
+          </AppCard>
         </Box>
         <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-          <Card>
-            <CardContent>
-              <Typography color='textSecondary' gutterBottom>
-                Pending
-              </Typography>
-              <Typography variant='h4' fontWeight={600} color='warning.main'>
-                {displayCounts.pending}
-              </Typography>
-            </CardContent>
-          </Card>
+          <AppCard compact>
+            <Typography color='textSecondary' gutterBottom>
+              Pending
+            </Typography>
+            <Typography variant='h4' fontWeight={600} color='warning.main'>
+              {displayCounts.pending}
+            </Typography>
+          </AppCard>
         </Box>
         <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-          <Card>
-            <CardContent>
-              <Typography color='textSecondary' gutterBottom>
-                Approved
-              </Typography>
-              <Typography variant='h4' fontWeight={600} color='success.main'>
-                {displayCounts.approved}
-              </Typography>
-            </CardContent>
-          </Card>
+          <AppCard compact>
+            <Typography color='textSecondary' gutterBottom>
+              Approved
+            </Typography>
+            <Typography variant='h4' fontWeight={600} color='success.main'>
+              {displayCounts.approved}
+            </Typography>
+          </AppCard>
         </Box>
         <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-          <Card>
-            <CardContent>
-              <Typography color='textSecondary' gutterBottom>
-                Rejected
-              </Typography>
-              <Typography variant='h4' fontWeight={600} color='error.main'>
-                {displayCounts.rejected}
-              </Typography>
-            </CardContent>
-          </Card>
+          <AppCard compact>
+            <Typography color='textSecondary' gutterBottom>
+              Rejected
+            </Typography>
+            <Typography variant='h4' fontWeight={600} color='error.main'>
+              {displayCounts.rejected}
+            </Typography>
+          </AppCard>
         </Box>
       </Box>
 
       {/* Search */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <TextField
-            fullWidth
-            placeholder='Search requests by employee, category, or status...'
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position='start'>
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ borderRadius: 2 }}
-          />
-        </CardContent>
-      </Card>
+      <AppCard sx={{ mb: 3 }}>
+        <AppTextField
+          placeholder='Search requests by employee, category, or status...'
+          value={searchTerm}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setSearchTerm(e.target.value)
+          }
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position='start'>
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+          sx={{ borderRadius: 2, width: '100%' }}
+        />
+      </AppCard>
 
       {/* Tabs */}
-      <Card>
+      <AppCard sx={{ padding: 0 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs
             value={tabValue}
@@ -1393,128 +1621,120 @@ const RequestManagement: React.FC = () => {
         </Box>
 
         <TabPanel value={tabValue} index={0}>
-          <TableContainer>
-            <Table>
-              <TableHead>
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>Employee & Asset</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Requested Date</TableCell>
+                <TableCell>Remarks</TableCell>
+                <TableCell>Rejection Reason</TableCell>
+                <TableCell align='right'>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {getFilteredRequestsByTab().length === 0 ? (
                 <TableRow>
-                  <TableCell>Employee & Asset</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+                    <Typography variant='body2' color='text.secondary'>
+                      No records found
+                    </Typography>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {getFilteredRequestsByTab().length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
-                      <Typography variant='body2' color='text.secondary'>
-                        No records found
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  getFilteredRequestsByTab().map(renderRequestRow)
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ) : (
+                getFilteredRequestsByTab().map(renderRequestRow)
+              )}
+            </TableBody>
+          </AppTable>
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
-          <TableContainer>
-            <Table>
-              <TableHead>
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>Employee & Asset</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Requested Date</TableCell>
+                <TableCell>Remarks</TableCell>
+                <TableCell>Rejection Reason</TableCell>
+                <TableCell align='right'>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {getFilteredRequestsByTab('pending').length === 0 ? (
                 <TableRow>
-                  <TableCell>Employee & Asset</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+                    <Typography variant='body2' color='text.secondary'>
+                      No records found
+                    </Typography>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {getFilteredRequestsByTab('pending').length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
-                      <Typography variant='body2' color='text.secondary'>
-                        No records found
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  getFilteredRequestsByTab('pending').map(renderRequestRow)
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ) : (
+                getFilteredRequestsByTab('pending').map(renderRequestRow)
+              )}
+            </TableBody>
+          </AppTable>
         </TabPanel>
 
         <TabPanel value={tabValue} index={2}>
-          <TableContainer>
-            <Table>
-              <TableHead>
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>Employee & Asset</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Requested Date</TableCell>
+                <TableCell>Remarks</TableCell>
+                <TableCell>Rejection Reason</TableCell>
+                <TableCell align='right'>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {getFilteredRequestsByTab('approved').length === 0 ? (
                 <TableRow>
-                  <TableCell>Employee & Asset</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+                    <Typography variant='body2' color='text.secondary'>
+                      No records found
+                    </Typography>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {getFilteredRequestsByTab('approved').length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
-                      <Typography variant='body2' color='text.secondary'>
-                        No records found
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  getFilteredRequestsByTab('approved').map(renderRequestRow)
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ) : (
+                getFilteredRequestsByTab('approved').map(renderRequestRow)
+              )}
+            </TableBody>
+          </AppTable>
         </TabPanel>
 
         <TabPanel value={tabValue} index={3}>
-          <TableContainer>
-            <Table>
-              <TableHead>
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>Employee & Asset</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Requested Date</TableCell>
+                <TableCell>Remarks</TableCell>
+                <TableCell>Rejection Reason</TableCell>
+                <TableCell align='right'>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {getFilteredRequestsByTab('rejected').length === 0 ? (
                 <TableRow>
-                  <TableCell>Employee & Asset</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+                    <Typography variant='body2' color='text.secondary'>
+                      No records found
+                    </Typography>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {getFilteredRequestsByTab('rejected').length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
-                      <Typography variant='body2' color='text.secondary'>
-                        No records found
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  getFilteredRequestsByTab('rejected').map(renderRequestRow)
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ) : (
+                getFilteredRequestsByTab('rejected').map(renderRequestRow)
+              )}
+            </TableBody>
+          </AppTable>
         </TabPanel>
-      </Card>
+      </AppCard>
 
       {/* Pagination Controls */}
-      {pagination.totalPages > 1 && (
+      {pagination.total > pagination.limit && (
         <Box
           sx={{
             display: 'flex',
@@ -1609,35 +1829,38 @@ const RequestManagement: React.FC = () => {
                       name='action'
                       control={control}
                       render={({ field }) => (
-                        <FormControl fullWidth error={!!errors.action}>
-                          <InputLabel>Action</InputLabel>
-                          <Select {...field} label='Action' disabled={loading}>
-                            <MenuItem value='approve'>
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 1,
-                                }}
-                              >
-                                <ApproveIcon color='success' />
-                                Approve Request
-                              </Box>
-                            </MenuItem>
-                            <MenuItem value='reject'>
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 1,
-                                }}
-                              >
-                                <RejectIcon color='error' />
-                                Reject Request
-                              </Box>
-                            </MenuItem>
-                          </Select>
-                        </FormControl>
+                        <AppSelect
+                          label='Action'
+                          fullWidth
+                          error={!!errors.action}
+                          disabled={loading}
+                          {...field}
+                        >
+                          <MenuItem value='approve'>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <ApproveIcon color='success' />
+                              Approve Request
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value='reject'>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <RejectIcon color='error' />
+                              Reject Request
+                            </Box>
+                          </MenuItem>
+                        </AppSelect>
                       )}
                     />
                   </Box>
@@ -1650,39 +1873,35 @@ const RequestManagement: React.FC = () => {
                       name='assignedAssetId'
                       control={control}
                       render={({ field }) => (
-                        <FormControl fullWidth error={!!errors.assignedAssetId}>
-                          <InputLabel>Assign Asset</InputLabel>
-                          <Select
-                            {...field}
-                            label='Assign Asset'
-                            disabled={loading || availableAssets.length === 0}
-                          >
-                            {availableAssets.length === 0 ? (
-                              <MenuItem disabled>
-                                No available assets found
+                        <AppSelect
+                          label='Assign Asset'
+                          fullWidth
+                          error={!!errors.assignedAssetId}
+                          disabled={loading || availableAssets.length === 0}
+                          {...field}
+                        >
+                          {availableAssets.length === 0 ? (
+                            <MenuItem disabled>
+                              No available assets found
+                            </MenuItem>
+                          ) : (
+                            availableAssets.map(asset => (
+                              <MenuItem key={asset.id} value={asset.id}>
+                                <Box>
+                                  <Typography variant='body2' fontWeight={500}>
+                                    {asset.name}
+                                  </Typography>
+                                  <Typography
+                                    variant='caption'
+                                    color='text.secondary'
+                                  >
+                                    {asset.category.name} - {asset.status}
+                                  </Typography>
+                                </Box>
                               </MenuItem>
-                            ) : (
-                              availableAssets.map(asset => (
-                                <MenuItem key={asset.id} value={asset.id}>
-                                  <Box>
-                                    <Typography
-                                      variant='body2'
-                                      fontWeight={500}
-                                    >
-                                      {asset.name}
-                                    </Typography>
-                                    <Typography
-                                      variant='caption'
-                                      color='text.secondary'
-                                    >
-                                      {asset.category.name} - {asset.status}
-                                    </Typography>
-                                  </Box>
-                                </MenuItem>
-                              ))
-                            )}
-                          </Select>
-                        </FormControl>
+                            ))
+                          )}
+                        </AppSelect>
                       )}
                     />
                     {availableAssets.length === 0 && (
@@ -1702,10 +1921,10 @@ const RequestManagement: React.FC = () => {
                         name='rejectionReason'
                         control={control}
                         render={({ field }) => (
-                          <TextField
+                          <AppTextField
                             {...field}
-                            fullWidth
                             label='Rejection Reason (Optional)'
+                            sx={{ width: '100%' }}
                             multiline
                             rows={3}
                             placeholder='Optionally provide a reason for rejection...'
@@ -1733,17 +1952,19 @@ const RequestManagement: React.FC = () => {
           </DialogContent>
 
           <DialogActions sx={{ padding: '16px 24px', gap: 1 }}>
-            <Button
+            <AppButton
               onClick={() => setIsProcessModalOpen(false)}
               variant='outlined'
+              variantType='secondary'
               disabled={loading}
               sx={{ minWidth: 80 }}
             >
               Cancel
-            </Button>
-            <Button
+            </AppButton>
+            <AppButton
               type='submit'
               variant='contained'
+              variantType='primary'
               disabled={
                 loading ||
                 (selectedAction === 'approve' && availableAssets.length === 0)
@@ -1757,7 +1978,7 @@ const RequestManagement: React.FC = () => {
                   : selectedAction === 'approve'
                     ? 'Approve'
                     : 'Reject'}
-            </Button>
+            </AppButton>
           </DialogActions>
         </form>
       </Dialog>
@@ -1781,7 +2002,7 @@ const RequestManagement: React.FC = () => {
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {/* Employee Information */}
                 <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                  <Card variant='outlined' sx={{ p: 2, height: '100%' }}>
+                  <AppCard variant='outlined' sx={{ p: 2, height: '100%' }}>
                     <Typography variant='h6' gutterBottom color='primary'>
                       Employee Information
                     </Typography>
@@ -1792,12 +2013,12 @@ const RequestManagement: React.FC = () => {
                         <strong>Name:</strong> {selectedRequest.employeeName}
                       </Typography>
                     </Box>
-                  </Card>
+                  </AppCard>
                 </Box>
 
                 {/* Request Information */}
                 <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                  <Card variant='outlined' sx={{ p: 2, height: '100%' }}>
+                  <AppCard variant='outlined' sx={{ p: 2, height: '100%' }}>
                     <Typography variant='h6' gutterBottom color='primary'>
                       Request Information
                     </Typography>
@@ -1824,13 +2045,13 @@ const RequestManagement: React.FC = () => {
                         ).toLocaleDateString()}
                       </Typography>
                     </Box>
-                  </Card>
+                  </AppCard>
                 </Box>
 
                 {/* Remarks */}
                 {selectedRequest.remarks && (
                   <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                    <Card variant='outlined' sx={{ p: 2 }}>
+                    <AppCard variant='outlined' sx={{ p: 2 }}>
                       <Typography variant='h6' gutterBottom color='primary'>
                         Employee Remarks
                       </Typography>
@@ -1840,7 +2061,7 @@ const RequestManagement: React.FC = () => {
                       >
                         "{selectedRequest.remarks}"
                       </Typography>
-                    </Card>
+                    </AppCard>
                   </Box>
                 )}
 
@@ -1849,7 +2070,7 @@ const RequestManagement: React.FC = () => {
                   selectedRequest.assignedAssetName ||
                   selectedRequest.rejectionReason) && (
                   <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                    <Card variant='outlined' sx={{ p: 2 }}>
+                    <AppCard variant='outlined' sx={{ p: 2 }}>
                       <Typography variant='h6' gutterBottom color='primary'>
                         Processing Information
                       </Typography>
@@ -1893,7 +2114,7 @@ const RequestManagement: React.FC = () => {
                             </Alert>
                           )}
                       </Box>
-                    </Card>
+                    </AppCard>
                   </Box>
                 )}
               </Box>
@@ -1901,31 +2122,24 @@ const RequestManagement: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button
+          <AppButton
             onClick={() => setIsViewModalOpen(false)}
             variant='contained'
+            variantType='primary'
             sx={{ minWidth: 80 }}
           >
             Close
-          </Button>
+          </AppButton>
         </DialogActions>
       </Dialog>
 
       {/* Snackbar for notifications */}
-      <Snackbar
+      <ErrorSnackbar
         open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };
