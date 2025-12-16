@@ -249,7 +249,7 @@ const AttendanceSummaryReport: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant='h4' gutterBottom>
+      <Typography variant='h4' fontSize={{xs: '32px', lg: '48px'}} gutterBottom>
         Attendance Summary Report
       </Typography>
 

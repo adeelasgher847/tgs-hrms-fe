@@ -505,6 +505,7 @@ const RequestManagement: React.FC = () => {
 
           if (allMatchFilter && testResponse.total && testResponse.totalPages) {
             // Backend supports filtering - use normal pagination
+            backendSupportsFiltering = true;
 
             // Build API filters for the requested page
             const apiFilters: {
@@ -547,7 +548,7 @@ const RequestManagement: React.FC = () => {
             let currentPage = 1;
             let hasMorePages = true;
             const maxPages = 100; // Safety limit
-
+            let totalFromBackend = testResponse.total || 0;
             let totalPagesFromBackend = testResponse.totalPages || 1;
 
             // Fetch all pages
@@ -576,9 +577,6 @@ const RequestManagement: React.FC = () => {
               // Update totalPages if we got new info
               if (pageResponse.totalPages) {
                 totalPagesFromBackend = pageResponse.totalPages;
-              }
-              if (pageResponse.total) {
-                totalFromBackend = pageResponse.total;
               }
 
               hasMorePages =
@@ -1538,7 +1536,7 @@ const RequestManagement: React.FC = () => {
           gap: 1,
         }}
       >
-        <Typography variant='h4' fontWeight={600}>
+        <Typography variant='h4' fontSize={{xs: '32px', lg: '48px'}} fontWeight={600}>
           Asset Request Management
         </Typography>
       </Box>

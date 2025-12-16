@@ -10,7 +10,6 @@ import {
   Button,
   Paper,
   Chip,
-  Table,
   TableHead,
   TableRow,
   TableCell,
@@ -26,6 +25,7 @@ import {
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import { formatDate } from '../../utils/dateUtils';
 import { PAGINATION } from '../../constants/appConstants';
+import AppTable from '../common/AppTable';
 
 interface PromotionsListProps {
   tenantId: string;
@@ -246,7 +246,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
             <CircularProgress />
           </Box>
         ) : (
-          <Table sx={{}}>
+          <AppTable>
             <TableHead>
               <TableRow>
                 <TableCell>Employee</TableCell>
@@ -279,7 +279,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
                 </TableRow>
               )}
             </TableBody>
-          </Table>
+          </AppTable>
         )}
       </Paper>
 

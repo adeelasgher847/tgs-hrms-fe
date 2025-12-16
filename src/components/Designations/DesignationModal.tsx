@@ -53,6 +53,7 @@ export default function DesignationModal({
   const theme = useTheme();
 
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
 
   const [title, setTitle] = useState('');
   const [titleAr, setTitleAr] = useState('');
@@ -183,7 +184,7 @@ export default function DesignationModal({
       PaperProps={{
         sx: {
           width: '100%',
-          maxWidth: 600, // set a max width for mobile
+          maxWidth: isLargeScreen ? 800 : 600, // larger width on large screens
           borderRadius: 1,
           m: 2, // margin around
         },
@@ -191,7 +192,7 @@ export default function DesignationModal({
       sx={{
         '& .MuiDialog-paper': {
           width: '100%',
-          maxWidth: 600,
+          maxWidth: isLargeScreen ? 800 : 600, // larger width on large screens
           margin: '16px', // keeps it centered with spacing
         },
       }}

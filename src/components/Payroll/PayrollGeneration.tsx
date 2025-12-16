@@ -11,10 +11,8 @@ import {
   MenuItem,
   Paper,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -30,6 +28,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { payrollApi, type PayrollRecord } from '../../api/payrollApi';
 import { snackbar } from '../../utils/snackbar';
 import { useIsDarkMode } from '../../theme';
+import AppTable from '../common/AppTable';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -168,7 +167,14 @@ const PayrollGeneration: React.FC = () => {
         }}
       >
         <Box>
-          <Typography variant='h4' sx={{ fontWeight: 600, color: textColor }}>
+          <Typography
+            variant='h4'
+            sx={{
+              fontWeight: 600,
+              fontSize: { xs: '32px', lg: '48px' },
+              color: textColor,
+            }}
+          >
             Payroll Generation
           </Typography>
         </Box>
@@ -400,91 +406,89 @@ const PayrollGeneration: React.FC = () => {
             </Alert>
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Employee</TableCell>
-                  <TableCell align='right'>Gross Salary</TableCell>
-                  <TableCell align='right'>Total Deductions</TableCell>
-                  <TableCell align='right'>Bonuses</TableCell>
-                  <TableCell align='right'>Net Salary</TableCell>
-                  <TableCell align='center'>Status</TableCell>
-                  <TableCell align='center'>Actions</TableCell>
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>Employee</TableCell>
+                <TableCell align='right'>Gross Salary</TableCell>
+                <TableCell align='right'>Total Deductions</TableCell>
+                <TableCell align='right'>Bonuses</TableCell>
+                <TableCell align='right'>Net Salary</TableCell>
+                <TableCell align='center'>Status</TableCell>
+                <TableCell align='center'>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {records.map(record => (
+                <TableRow key={record.id} hover>
+                  <TableCell>
+                    <Typography variant='subtitle2' sx={{ color: textColor }}>
+                      {record.employee?.user
+                        ? `${record.employee.user.first_name} ${record.employee.user.last_name}`
+                        : record.employee_id}
+                    </Typography>
+                    <Typography
+                      variant='caption'
+                      sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#666' }}
+                    >
+                      {record.employee?.user?.email || '—'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align='right'>
+                    {formatCurrency(record.grossSalary)}
+                  </TableCell>
+                  <TableCell align='right'>
+                    {formatCurrency(record.totalDeductions)}
+                  </TableCell>
+                  <TableCell align='right'>
+                    {formatCurrency(record.bonuses || 0)}
+                  </TableCell>
+                  <TableCell align='right'>
+                    {formatCurrency(record.netSalary)}
+                  </TableCell>
+                  <TableCell align='center'>
+                    <Typography
+                      variant='caption'
+                      sx={{
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: 1,
+                        textTransform: 'capitalize',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 600,
+                        backgroundColor:
+                          record.status === 'paid'
+                            ? theme.palette.success.light
+                            : record.status === 'approved'
+                              ? theme.palette.info.light
+                              : theme.palette.warning.light,
+                        color:
+                          record.status === 'paid'
+                            ? theme.palette.success.contrastText
+                            : record.status === 'approved'
+                              ? theme.palette.info.contrastText
+                              : theme.palette.warning.contrastText,
+                      }}
+                    >
+                      {record.status}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <Button
+                      size='small'
+                      variant='outlined'
+                      onClick={() => openDetails(record)}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      View breakdown
+                    </Button>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {records.map(record => (
-                  <TableRow key={record.id} hover>
-                    <TableCell>
-                      <Typography variant='subtitle2' sx={{ color: textColor }}>
-                        {record.employee?.user
-                          ? `${record.employee.user.first_name} ${record.employee.user.last_name}`
-                          : record.employee_id}
-                      </Typography>
-                      <Typography
-                        variant='caption'
-                        sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#666' }}
-                      >
-                        {record.employee?.user?.email || '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align='right'>
-                      {formatCurrency(record.grossSalary)}
-                    </TableCell>
-                    <TableCell align='right'>
-                      {formatCurrency(record.totalDeductions)}
-                    </TableCell>
-                    <TableCell align='right'>
-                      {formatCurrency(record.bonuses || 0)}
-                    </TableCell>
-                    <TableCell align='right'>
-                      {formatCurrency(record.netSalary)}
-                    </TableCell>
-                    <TableCell align='center'>
-                      <Typography
-                        variant='caption'
-                        sx={{
-                          px: 1.5,
-                          py: 0.5,
-                          borderRadius: 1,
-                          textTransform: 'capitalize',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 600,
-                          backgroundColor:
-                            record.status === 'paid'
-                              ? theme.palette.success.light
-                              : record.status === 'approved'
-                                ? theme.palette.info.light
-                                : theme.palette.warning.light,
-                          color:
-                            record.status === 'paid'
-                              ? theme.palette.success.contrastText
-                              : record.status === 'approved'
-                                ? theme.palette.info.contrastText
-                                : theme.palette.warning.contrastText,
-                        }}
-                      >
-                        {record.status}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align='center'>
-                      <Button
-                        size='small'
-                        variant='outlined'
-                        onClick={() => openDetails(record)}
-                        sx={{ textTransform: 'none' }}
-                      >
-                        View breakdown
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ))}
+            </TableBody>
+          </AppTable>
         )}
       </Paper>
 
@@ -633,7 +637,7 @@ const PayrollGeneration: React.FC = () => {
                     >
                       Allowances
                     </Typography>
-                    <Table size='small'>
+                    <AppTable>
                       <TableHead>
                         <TableRow>
                           <TableCell>Type</TableCell>
@@ -654,7 +658,7 @@ const PayrollGeneration: React.FC = () => {
                           )
                         )}
                       </TableBody>
-                    </Table>
+                    </AppTable>
                   </Box>
                 )}
 
@@ -666,7 +670,7 @@ const PayrollGeneration: React.FC = () => {
                   >
                     Deductions
                   </Typography>
-                  <Table size='small'>
+                  <AppTable>
                     <TableBody>
                       <TableRow>
                         <TableCell>Tax</TableCell>
@@ -704,7 +708,7 @@ const PayrollGeneration: React.FC = () => {
                         )
                       )}
                     </TableBody>
-                  </Table>
+                  </AppTable>
                 </Box>
               )}
 
@@ -716,7 +720,7 @@ const PayrollGeneration: React.FC = () => {
                   >
                     Bonuses
                   </Typography>
-                  <Table size='small'>
+                  <AppTable>
                     <TableBody>
                       <TableRow>
                         <TableCell>Performance Bonus</TableCell>
@@ -746,7 +750,7 @@ const PayrollGeneration: React.FC = () => {
                         )
                       )}
                     </TableBody>
-                  </Table>
+                  </AppTable>
                 </Box>
               )}
             </Stack>

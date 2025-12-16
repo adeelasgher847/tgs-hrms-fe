@@ -779,7 +779,10 @@ const EmployeeManager: React.FC = () => {
 
   // Handle viewing employee from navigation state (e.g., from search)
   useEffect(() => {
-    const state = location.state as { employeeId?: string; viewEmployee?: boolean } | null;
+    const state = location.state as {
+      employeeId?: string;
+      viewEmployee?: boolean;
+    } | null;
     if (state?.employeeId && state?.viewEmployee) {
       // First try to find in already loaded employees
       if (allEmployees.length > 0) {
@@ -792,11 +795,13 @@ const EmployeeManager: React.FC = () => {
           return;
         }
       }
-      
+
       // Employee not found in list or list not loaded yet, fetch it directly
       const fetchAndViewEmployee = async () => {
         try {
-          const employeeData = await employeeApi.getEmployeeById(state.employeeId!);
+          const employeeData = await employeeApi.getEmployeeById(
+            state.employeeId!
+          );
           const employeeToView: Employee = {
             id: employeeData.id,
             user_id: employeeData.user_id,
@@ -869,7 +874,7 @@ const EmployeeManager: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant='h6' gutterBottom>
+      <Typography variant='h4' fontSize={{ xs: '32px', lg: '48px' }} gutterBottom>
         Employee List
       </Typography>
       {/* Add Employee Button */}

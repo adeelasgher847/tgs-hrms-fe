@@ -58,7 +58,12 @@ const PerformanceDashboard: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant='h4' fontWeight={600} mb={2}>
+      <Typography
+        variant='h4'
+        fontWeight={600}
+        fontSize={{ xs: '32px', lg: '48px' }}
+        mb={2}
+      >
         Performance Dashboard
       </Typography>
 

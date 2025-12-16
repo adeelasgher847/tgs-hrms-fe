@@ -507,7 +507,10 @@ const MySalary: React.FC = () => {
     >
       <Stack spacing={3}>
         <Box>
-          <Typography variant='h4' sx={{ fontWeight: 600 }}>
+          <Typography
+            variant='h4'
+            sx={{ fontWeight: 600, fontSize: { xs: '32px', lg: '48px' } }}
+          >
             My Salary
           </Typography>
         </Box>

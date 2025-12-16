@@ -684,6 +684,149 @@ const AttendanceTable = () => {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _fetchEmployeesFromAttendance = async (
+    _viewOverride?: 'my' | 'all'
+  ) => {
+    try {
+      const currentView = _viewOverride || adminView;
+
+      if (currentView === 'my') {
+        setEmployees([]);
+        return;
+      }
+
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        setEmployees([]);
+        return;
+      }
+
+      const currentUser = JSON.parse(storedUser);
+      const isSystemAdminFlag = isSystemAdmin(currentUser.role);
+      const isAdminFlag = isAdmin(currentUser.role);
+      const isNetworkAdminFlag = isNetworkAdmin(currentUser.role);
+      const isHRAdminFlag = isHRAdmin(currentUser.role);
+
+      let tenantIdForEmployees: string | undefined =
+        selectedTenant || undefined;
+
+      if (
+        !isSystemAdminFlag &&
+        (isAdminFlag || isNetworkAdminFlag || isHRAdminFlag)
+      ) {
+        const adminTenantId = getAdminTenantId(currentUser);
+        if (adminTenantId) {
+          tenantIdForEmployees = adminTenantId;
+        }
+      }
+      const userIdMapByEmail = new Map<string, string>();
+      const userIdMapByName = new Map<string, string>();
+
+      if (isSystemAdminFlag) {
+        const systemAttendanceResponse =
+          await attendanceApi.getSystemAllAttendance();
+
+        systemAttendanceResponse.tenants.forEach(tenant => {
+          if (
+            tenantIdForEmployees &&
+            tenant.tenant_id !== tenantIdForEmployees
+          ) {
+            return;
+          }
+
+          if (tenant.tenant_status !== 'active') {
+            return;
+          }
+
+          tenant.employees.forEach(emp => {
+            if (emp.user_id && emp.first_name) {
+              const fullName =
+                `${emp.first_name} ${emp.last_name || ''}`.trim();
+
+              if (emp.email) {
+                userIdMapByEmail.set(emp.email.toLowerCase(), emp.user_id);
+              }
+              if (fullName) {
+                userIdMapByName.set(fullName.toLowerCase(), emp.user_id);
+              }
+            }
+          });
+        });
+      }
+
+      const response = await systemEmployeeApiService.getSystemEmployees({
+        tenantId: tenantIdForEmployees,
+        page: null,
+      });
+
+      const employeesData = Array.isArray(response)
+        ? response
+        : 'items' in response && Array.isArray(response.items)
+          ? response.items
+          : [];
+
+      const employeeOptions = employeesData
+        .map((emp: unknown) => {
+          const empObj = (emp as Record<string, unknown>) || {};
+          let employeeName = 'Unknown';
+          let employeeEmail = String(empObj.email || '').toLowerCase();
+
+          const userObj = (empObj.user as Record<string, unknown>) || {};
+          const userFirstName = String(
+            userObj.first_name || empObj.first_name || ''
+          );
+          const userLastName = String(
+            userObj.last_name || empObj.last_name || ''
+          );
+          const userEmail = String(
+            userObj.email || empObj.email || ''
+          ).toLowerCase();
+
+          if (userFirstName) {
+            employeeName =
+              `${userFirstName}${userLastName ? ` ${userLastName}` : ''}`.trim();
+          } else if (empObj.firstName && empObj.lastName) {
+            employeeName =
+              `${String(empObj.firstName)} ${String(empObj.lastName)}`.trim();
+          } else if (empObj.name) {
+            employeeName = String(empObj.name);
+          } else if (userEmail) {
+            employeeName = userEmail;
+          }
+
+          employeeEmail = userEmail || employeeEmail;
+
+          let employeeUserId: string | undefined;
+
+          if (userObj.id) {
+            employeeUserId = String(userObj.id);
+          } else if (employeeEmail && userIdMapByEmail.has(employeeEmail)) {
+            employeeUserId = userIdMapByEmail.get(employeeEmail);
+          } else if (
+            employeeName &&
+            userIdMapByName.has(employeeName.toLowerCase())
+          ) {
+            employeeUserId = userIdMapByName.get(employeeName.toLowerCase());
+          } else if (empObj.user_id) {
+            employeeUserId = String(empObj.user_id);
+          } else if (empObj.id) {
+            employeeUserId = String(empObj.id);
+          }
+
+          return {
+            id: employeeUserId!,
+            name: employeeName,
+          };
+        })
+        .filter(emp => emp.id && emp.name !== 'Unknown');
+      setEmployees(employeeOptions);
+    } catch (error) {
+      setEmployees([]);
+      showError(error);
+    }
+  };
+
   const getAdminTenantId = (currentUser: unknown): string | undefined => {
     try {
       const storedTenantId = localStorage.getItem('tenant_id');
@@ -1011,14 +1154,16 @@ const AttendanceTable = () => {
 
       // Use the same API as Employee List to get all tenants
       const allTenants = await systemEmployeeApiService.getAllTenants(true);
-      
+
       console.log('Fetched tenants from API:', allTenants);
 
       // Use tenants directly like Employee List does - map to the expected format
-      const tenantOptions = (allTenants || []).map((t: Record<string, unknown>) => ({
-        id: (t.id || t.tenant_id || '') as string,
-        name: (t.name || t.tenant_name || '') as string,
-      })).filter((t: { id: string; name: string }) => t.id && t.name); // Only keep tenants with valid id and name
+      const tenantOptions = (allTenants || [])
+        .map((t: Record<string, unknown>) => ({
+          id: (t.id || t.tenant_id || '') as string,
+          name: (t.name || t.tenant_name || '') as string,
+        }))
+        .filter((t: { id: string; name: string }) => t.id && t.name); // Only keep tenants with valid id and name
 
       console.log('Mapped tenant options:', tenantOptions);
       setTenants(tenantOptions);
@@ -1059,6 +1204,37 @@ const AttendanceTable = () => {
       showError(error);
     } finally {
       setTenantsLoading(false);
+    }
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _fetchEmployeesFromSystemAttendance = async (_tenantId?: string) => {
+    try {
+      const response = await attendanceApi.getSystemAllAttendance();
+      const uniqueEmployees = new Map<string, { id: string; name: string }>();
+
+      response.tenants.forEach(tenant => {
+        if (_tenantId && tenant.tenant_id !== _tenantId) return;
+
+        tenant.employees.forEach(emp => {
+          if (emp.user_id && emp.first_name) {
+            const employeeId = emp.user_id;
+            const employeeName =
+              emp.first_name + (emp.last_name ? ` ${emp.last_name}` : '');
+            if (!uniqueEmployees.has(employeeId)) {
+              uniqueEmployees.set(employeeId, {
+                id: employeeId,
+                name: employeeName,
+              });
+            }
+          }
+        });
+      });
+
+      setEmployees(Array.from(uniqueEmployees.values()));
+    } catch (error) {
+      setEmployees([]);
+      showError(error);
     }
   };
 
@@ -1334,7 +1510,7 @@ const AttendanceTable = () => {
 
   return (
     <Box>
-      <Typography variant='h4' gutterBottom>
+      <Typography variant='h4' fontSize={{xs: '32px', lg: '48px'}} gutterBottom>
         Attendance Management
       </Typography>
       {!isManager && !isAdminLike && (

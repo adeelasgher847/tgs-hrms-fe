@@ -624,7 +624,7 @@ const AssetInventory: React.FC = () => {
           gap: 1,
         }}
       >
-        <Typography variant='h4' fontWeight={600}>
+        <Typography variant='h4' fontSize={{xs: '32px', lg: '48px'}} fontWeight={600}>
           Asset Inventory
         </Typography>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
