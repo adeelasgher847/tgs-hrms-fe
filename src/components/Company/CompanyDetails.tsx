@@ -220,6 +220,7 @@ const CompanyDetails: React.FC = () => {
         display: 'flex',
         justifyContent: 'center',
         backgroundColor: 'var(--white-100-color)',
+        overflowX: 'hidden',
       }}
     >
       <Box
@@ -229,6 +230,7 @@ const CompanyDetails: React.FC = () => {
           display: 'flex',
           flexDirection: { xs: 'column', lg: 'row' },
           overflow: 'hidden',
+          boxSizing: 'border-box',
         }}
       >
         <AuthSidebar />
@@ -267,6 +269,7 @@ const CompanyDetails: React.FC = () => {
             padding: { xs: '16px 12px', sm: '24px 16px', md: '48px' },
             backgroundColor: { xs: '#3083DC', lg: 'var(--white-100-color)' },
             overflowY: 'auto',
+            overflowX: 'hidden',
             position: 'relative',
             zIndex: 1,
             marginLeft: { xs: 0, lg: '-12px' },
@@ -274,17 +277,21 @@ const CompanyDetails: React.FC = () => {
             paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
             pt: { xs: '60px', lg: '48px' },
+            boxSizing: 'border-box',
+            minWidth: 0,
           }}
         >
           <Box
             sx={{
-              // width: '100%',
               maxWidth: { xs: '100%', sm: '500px' },
+              width: '100%',
               mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
               borderRadius: { xs: '30px', lg: 0 },
               p: { xs: 2, sm: 3, md: 4 },
               mt: { xs: '60px', sm: '70px', lg: 0 },
+              boxSizing: 'border-box',
+              minWidth: 0,
             }}
           >
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
@@ -358,7 +365,17 @@ const CompanyDetails: React.FC = () => {
               </Alert>
             )}
 
-            <Box component='form' onSubmit={handleSubmit} noValidate>
+            <Box 
+              component='form' 
+              onSubmit={handleSubmit} 
+              noValidate
+              sx={{
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                overflowX: 'hidden',
+              }}
+            >
               <Box sx={{ mb: 2 }}>
                 <AppInputField
                   name='companyName'

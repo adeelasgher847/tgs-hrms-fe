@@ -22,9 +22,15 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import UserAvatar from '../Common/UserAvatar';
-import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Person as PersonIcon,
+  Search as SearchIcon,
+} from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
 import AppButton from '../Common/AppButton';
@@ -57,7 +63,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
-  const [searchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [showTeamDialog, setShowTeamDialog] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
@@ -180,11 +186,35 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
     setPage(0);
   };
 
-  // const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   const value = event.target.value;
-  //   setSearchTerm(value);
-  //   setPage(0);
-  // };
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    setPage(0);
+  };
+
+  // Filter employees based on search term (starts with match for each word)
+  const filteredEmployees = employees.filter(employee => {
+    if (!searchTerm.trim()) return true;
+    const searchLower = searchTerm.toLowerCase().trim();
+    const fullName =
+      `${employee.user?.first_name || ''} ${employee.user?.last_name || ''}`.toLowerCase();
+    const email = (employee.user?.email || '').toLowerCase();
+    const designation = (employee.designation?.title || '').toLowerCase();
+    const department = (employee.department?.name || '').toLowerCase();
+
+    // Check if any word in the field starts with the search term
+    const checkStartsWith = (text: string) => {
+      const words = text.split(/\s+/);
+      return words.some(word => word.startsWith(searchLower));
+    };
+
+    return (
+      checkStartsWith(fullName) ||
+      checkStartsWith(email) ||
+      checkStartsWith(designation) ||
+      checkStartsWith(department)
+    );
+  });
 
   // Load teams for selection
   useEffect(() => {
@@ -351,6 +381,42 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
         </Box>
       ) : (
         <>
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              fullWidth
+              size='small'
+              placeholder={lang.search}
+              value={searchTerm}
+              onChange={handleSearch}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position='start'>
+                    <SearchIcon sx={{ color: darkMode ? '#ccc' : '#666' }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+                borderRadius: 2,
+                '& .MuiOutlinedInput-root': {
+                  color: darkMode ? '#fff' : '#000',
+                  '& fieldset': {
+                    borderColor: darkMode ? '#555' : '#ccc',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: darkMode ? '#888' : '#999',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#484c7f',
+                  },
+                },
+                '& .MuiInputBase-input::placeholder': {
+                  color: darkMode ? '#999' : '#999',
+                  opacity: 1,
+                },
+              }}
+            />
+          </Box>
           <TableContainer
             component={Paper}
             sx={{
@@ -389,7 +455,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {employees
+                {filteredEmployees
                   .filter(
                     employee =>
                       employee?.user?.first_name && employee?.user?.last_name
@@ -452,7 +518,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
 
           <TablePagination
             component='div'
-            count={total}
+            count={searchTerm ? filteredEmployees.length : total}
             page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}

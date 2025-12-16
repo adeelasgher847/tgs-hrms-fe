@@ -24,7 +24,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import WarningIcon from '@mui/icons-material/Warning';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useLocation, useNavigate } from 'react-router-dom';
 import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeList from './EmployeeList';
 import EmployeeViewModal from './EmployeeViewModal';
@@ -93,6 +93,8 @@ const EmployeeManager: React.FC = () => {
   const direction = theme.direction;
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { darkMode } = useOutletContext<OutletContext>();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<null | Employee>(null);
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]); // Store all employees
@@ -771,6 +773,64 @@ const EmployeeManager: React.FC = () => {
     setViewingEmployee(employee);
     setViewModalOpen(true);
   }, []);
+
+  // Handle viewing employee from navigation state (e.g., from search)
+  useEffect(() => {
+    const state = location.state as { employeeId?: string; viewEmployee?: boolean } | null;
+    if (state?.employeeId && state?.viewEmployee) {
+      // First try to find in already loaded employees
+      if (allEmployees.length > 0) {
+        const employee = allEmployees.find(emp => emp.id === state.employeeId);
+        if (employee) {
+          setViewingEmployee(employee);
+          setViewModalOpen(true);
+          // Clear the state to prevent re-opening on re-render
+          navigate(location.pathname, { replace: true, state: {} });
+          return;
+        }
+      }
+      
+      // Employee not found in list or list not loaded yet, fetch it directly
+      const fetchAndViewEmployee = async () => {
+        try {
+          const employeeData = await employeeApi.getEmployeeById(state.employeeId!);
+          const employeeToView: Employee = {
+            id: employeeData.id,
+            user_id: employeeData.user_id,
+            name: employeeData.name,
+            firstName: employeeData.firstName,
+            lastName: employeeData.lastName,
+            email: employeeData.email,
+            phone: employeeData.phone,
+            departmentId: employeeData.departmentId,
+            designationId: employeeData.designationId,
+            role_name: employeeData.role_name,
+            status: employeeData.status,
+            cnic_number: employeeData.cnic_number,
+            profile_picture: employeeData.profile_picture,
+            cnic_picture: employeeData.cnic_picture,
+            cnic_back_picture: employeeData.cnic_back_picture,
+            department: employeeData.department,
+            designation: employeeData.designation,
+            tenantId: employeeData.tenantId,
+            createdAt: employeeData.createdAt,
+            updatedAt: employeeData.updatedAt,
+          };
+          setViewingEmployee(employeeToView);
+          setViewModalOpen(true);
+          // Clear the state to prevent re-opening on re-render
+          navigate(location.pathname, { replace: true, state: {} });
+        } catch (error) {
+          const errorResult = extractErrorMessage(error);
+          showError(errorResult.message);
+          // Clear the state even on error
+          navigate(location.pathname, { replace: true, state: {} });
+        }
+      };
+      fetchAndViewEmployee();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, allEmployees, navigate]);
 
   // Server-driven filtering; render employees as-is
 

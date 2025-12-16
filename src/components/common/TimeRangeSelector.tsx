@@ -17,6 +17,8 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   allTimeLabel = 'All Time',
   language = 'en',
 }) => {
+  // language parameter is reserved for future use
+  void language;
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
 

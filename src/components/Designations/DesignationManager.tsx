@@ -17,11 +17,7 @@ import {
 } from '@mui/material';
 import AppTable from '../Common/AppTable';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material';
 import AppDropdown from '../Common/AppDropdown';
 import { Icons } from '../../assets/icons';
 
@@ -42,9 +38,9 @@ import {
   isSystemAdmin as isSystemAdminFn,
   isHRAdmin as isHRAdminFn,
 } from '../../utils/roleUtils';
-import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
-import { COLORS, PAGINATION } from '../../constants/appConstants';
+import systemEmployeeApiService from '../../api/systemEmployeeApi';
+import { PAGINATION } from '../../constants/appConstants';
 // import { extractErrorMessage } from '../../utils/errorHandler';
 
 export default function DesignationManager() {
@@ -92,11 +88,9 @@ export default function DesignationManager() {
     string | 'all'
   >('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
   const [totalRecords, setTotalRecords] = useState<number>(0);
   const [allTenants, setAllTenants] = useState<SystemTenant[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
-  const [loadingTenants, setLoadingTenants] = useState(false);
   const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
@@ -109,13 +103,10 @@ export default function DesignationManager() {
     const fetchTenants = async () => {
       try {
         setLoadingTenants(true);
-        const tenants = await SystemTenantApi.getAllTenants(false);
-        const activeTenants = tenants.filter(
-          t => t.status === 'active' && t.isDeleted === false
-        );
-        setAllTenants(activeTenants);
-
-        // Default to "All Tenants" - no need to set selectedTenantId
+        // Use the same API as Employee List to get all tenants
+        const data = await systemEmployeeApiService.getAllTenants(true);
+        // Show all tenants (no filtering) - same as Employee List
+        setAllTenants((data || []) as unknown as SystemTenant[]);
       } catch {
         // Ignore; tenant filter list will simply be empty
       } finally {
@@ -528,14 +519,14 @@ export default function DesignationManager() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          flexWrap: 'wrap',
+          flexWrap: 'nowrap',
           mb: 3,
           gap: 2,
         }}
       >
         <Typography
           fontWeight={500}
-          fontSize='48px'
+          fontSize={{ xs: '32px', lg: '48px' }}
           lineHeight='44px'
           letterSpacing='-2%'
           color='#2C2C2C'
@@ -548,7 +539,7 @@ export default function DesignationManager() {
             display: 'flex',
             gap: 2,
             alignItems: 'center',
-            flexWrap: 'wrap',
+            flexWrap: 'nowrap',
           }}
         >
           {isSystemAdmin ? (
@@ -623,15 +614,33 @@ export default function DesignationManager() {
                   bgcolor: 'var(--primary-dark-color)',
                   color: '#FFFFFF',
                   boxShadow: 'none',
-                  minWidth: 200,
-                  py: 1,
+                  minWidth: { xs: 'auto', sm: 200 },
+                  px: { xs: 1.5, sm: 2 },
+                  py: { xs: 0.75, sm: 1 },
+                  '& .MuiButton-startIcon': {
+                    marginRight: { xs: 0.5, sm: 1 },
+                    '& > *:nth-of-type(1)': {
+                      fontSize: { xs: '18px', sm: '20px' },
+                    },
+                  },
                   '&:hover': {
                     bgcolor: 'var(--primary-dark-color)',
                     boxShadow: 'none',
                   },
                 }}
               >
-                {getText('Create Designation', 'إنشاء مسمى وظيفي')}
+                <Box
+                  component='span'
+                  sx={{ display: { xs: 'none', sm: 'inline' } }}
+                >
+                  {getText('Create Designation', 'إنشاء مسمى وظيفي')}
+                </Box>
+                <Box
+                  component='span'
+                  sx={{ display: { xs: 'inline', sm: 'none' } }}
+                >
+                  {getText('Create', 'إنشاء')}
+                </Box>
               </Button>
             </>
           )}
@@ -665,7 +674,7 @@ export default function DesignationManager() {
           <Typography
             variant='body2'
             sx={{
-              fontSize: '16px',
+              fontSize: { xs: '14px', lg: '16px' },
               lineHeight: 'var(--body-line-height)',
               color: 'var(--dark-grey-color)',
             }}
@@ -682,7 +691,7 @@ export default function DesignationManager() {
             variant='body2'
             sx={{
               mb: 2,
-              fontSize: '16px',
+              fontSize: { xs: '14px', lg: '16px' },
               lineHeight: 'var(--body-line-height)',
               color: 'var(--dark-grey-color)',
             }}
@@ -725,7 +734,7 @@ export default function DesignationManager() {
               <TableCell
                 align='center'
                 sx={{
-                  minWidth: 120,
+                  minWidth: { xs: 80, sm: 120 },
                 }}
               >
                 {getText('Actions', 'الإجراءات')}
@@ -818,7 +827,7 @@ export default function DesignationManager() {
                       <Box
                         sx={{
                           display: 'flex',
-                          gap: 1,
+                          gap: { xs: 0.5, sm: 1 },
                           justifyContent: 'center',
                         }}
                       >
@@ -831,7 +840,7 @@ export default function DesignationManager() {
                           title={getText('Edit', 'تعديل')}
                           aria-label={`Edit designation ${getText(designation.title, designation.titleAr)}`}
                           sx={{
-                            p: 1,
+                            p: { xs: 0.5, sm: 1 },
                             '&:hover': {
                               backgroundColor: 'transparent',
                             },
@@ -842,8 +851,8 @@ export default function DesignationManager() {
                             src={Icons.edit}
                             alt='Edit'
                             sx={{
-                              width: 20,
-                              height: 20,
+                              width: { xs: 16, sm: 20 },
+                              height: { xs: 16, sm: 20 },
                             }}
                           />
                         </IconButton>
@@ -857,7 +866,7 @@ export default function DesignationManager() {
                             title={getText('Delete', 'حذف')}
                             aria-label={`Delete designation ${getText(designation.title, designation.titleAr)}`}
                             sx={{
-                              p: 1,
+                              p: { xs: 0.5, sm: 1 },
                               '&:hover': {
                                 backgroundColor: 'transparent',
                               },
@@ -868,8 +877,8 @@ export default function DesignationManager() {
                               src={Icons.delete}
                               alt='Delete'
                               sx={{
-                                width: 20,
-                                height: 20,
+                                width: { xs: 16, sm: 20 },
+                                height: { xs: 16, sm: 20 },
                               }}
                             />
                           </IconButton>

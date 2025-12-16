@@ -62,9 +62,9 @@ export default function EmployeesInfoChart() {
     fetchJoiningData();
   }, []);
 
-  const bgColor = darkMode ? '#111' : '#fff';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
-  const borderColor = darkMode ? '#252525' : '#f0f0f0';
+  // const bgColor = darkMode ? '#111' : '#fff';
+  // const textColor = darkMode ? '#8f8f8f' : '#000';
+  // const borderColor = darkMode ? '#252525' : '#f0f0f0';
 
   // Get unique years from API data
   const availableYears = [...new Set(joiningData.map(item => item.year))].sort(

@@ -10,7 +10,6 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
-  Drawer,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { COLORS } from '../../constants/appConstants';
@@ -62,6 +61,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,9 +83,11 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 4,
-        mt: 2,
+        gap: { xs: 2, sm: 4 },
+        mt: { xs: 1, sm: 2 },
         direction: isRtl ? 'rtl' : 'ltr',
+        width: '100%',
+        mx: 'auto',
       }}
     >
       {fields.map((field, index) => (
@@ -143,13 +145,13 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           borderRadius: '12px',
           textTransform: 'none',
           fontWeight: 400,
-          fontSize: 'var(--body-font-size)',
-          lineHeight: 'var(--body-line-height)',
+          fontSize: { xs: '14px', sm: 'var(--body-font-size)' },
+          lineHeight: { xs: '20px', sm: 'var(--body-line-height)' },
           letterSpacing: 'var(--body-letter-spacing)',
           border: '1px solid #BDBDBD',
           color: '#2C2C2C',
-          px: 4,
-          py: 1,
+          px: { xs: 2, sm: 4 },
+          py: { xs: 0.75, sm: 1 },
           '&:hover': {
             borderColor: '#BDBDBD',
             backgroundColor: 'transparent',
@@ -167,13 +169,13 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           borderRadius: '12px',
           textTransform: 'none',
           fontWeight: 400,
-          fontSize: 'var(--body-font-size)',
-          lineHeight: 'var(--body-line-height)',
+          fontSize: { xs: '14px', sm: 'var(--body-font-size)' },
+          lineHeight: { xs: '20px', sm: 'var(--body-line-height)' },
           letterSpacing: 'var(--body-letter-spacing)',
           bgcolor: 'var(--primary-dark-color)',
           color: '#FFFFFF',
-          px: 4,
-          py: 1,
+          px: { xs: 2, sm: 4 },
+          py: { xs: 0.75, sm: 1 },
           boxShadow: 'none',
           '&:hover': {
             bgcolor: COLORS.PRIMARY,
@@ -191,79 +193,43 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
     </>
   );
 
-  // Mobile drawer
-  if (isMobile) {
-    return (
-      <Drawer
-        anchor={isRtl ? 'right' : 'left'}
-        open={open}
-        onClose={onClose}
-        PaperProps={{
-          sx: {
-            width: '100%',
-            maxWidth: 400,
-            ...paperSx,
-          },
-        }}
-      >
-        <Box
-          sx={{
-            p: 4,
-            overflowY: 'auto',
-            '&::-webkit-scrollbar': { display: 'none' },
-            scrollbarWidth: 'none',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <Typography
-              sx={{
-                flexGrow: 1,
-                fontWeight: 500,
-                fontSize: '28px',
-                lineHeight: '36px',
-                letterSpacing: '-2%',
-                color: '#2C2C2C',
-              }}
-            >
-              {title}
-            </Typography>
-            <IconButton
-              onClick={onClose}
-              size='small'
-              aria-label='Close dialog'
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-          {formContent}
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 1,
-              mt: 4,
-              justifyContent: 'flex-end',
-            }}
-          >
-            {actionButtons}
-          </Box>
-        </Box>
-      </Drawer>
-    );
-  }
+  // Mobile and Desktop - Use Dialog for both to ensure centering
 
-  // Desktop dialog
+  // Dialog for all screen sizes (mobile and desktop)
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth={maxWidth}
-      fullWidth
+      maxWidth={isMobile ? false : maxWidth}
+      fullWidth={false}
       PaperProps={{
         sx: {
           ...paperSx,
-          borderRadius: '30px',
-          padding: '32px 20px',
-          gap: '32px',
+          borderRadius: { xs: '20px', sm: '30px' },
+          padding: { xs: '20px 16px', sm: '32px 20px' },
+          gap: { xs: '20px', sm: '32px' },
+          width: { xs: '90%', sm: 'auto' },
+          maxWidth: { xs: '90%', sm: '600px' },
+          margin: 'auto',
+          height: 'auto',
+          maxHeight: { xs: 'auto', sm: '90vh' },
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          alignSelf: 'center',
+        },
+      }}
+      sx={{
+        '& .MuiDialog-container': {
+          alignItems: 'center',
+          justifyContent: 'center',
+          display: 'flex',
+        },
+        '& .MuiBackdrop-root': {
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        },
+        '& .MuiDialog-paper': {
+          margin: { xs: '16px', sm: '32px' },
         },
       }}
     >
@@ -279,8 +245,8 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           sx={{
             textAlign: isRtl ? 'right' : 'left',
             fontWeight: 500,
-            fontSize: '28px',
-            lineHeight: '36px',
+            fontSize: { xs: '20px', sm: '28px' },
+            lineHeight: { xs: '28px', sm: '36px' },
             letterSpacing: '-2%',
             color: '#2C2C2C',
           }}
@@ -289,6 +255,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
         </Typography>
         <IconButton
           onClick={onClose}
+          size={isSmallScreen ? 'small' : 'medium'}
           sx={{
             position: 'absolute',
             right: isRtl ? 'auto' : 0,
@@ -297,7 +264,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             color: '#2C2C2C',
           }}
         >
-          <CloseIcon />
+          <CloseIcon fontSize={isSmallScreen ? 'small' : 'medium'} />
         </IconButton>
       </DialogTitle>
 
@@ -305,24 +272,35 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
         sx={{
           ...paperSx,
           p: 0,
-          pt: 4,
+          pt: { xs: 2, sm: 4 },
           pb: 2,
-          maxHeight: '70vh',
-          overflowY: 'auto',
-          overflowX: 'visible',
-          '&::-webkit-scrollbar': { display: 'none' },
-          scrollbarWidth: 'none',
+          overflow: 'visible',
+          display: 'flex',
+          justifyContent: 'center',
+          flex: '0 0 auto',
+          minHeight: 'auto',
+          height: 'auto',
         }}
       >
-        {formContent}
+        <Box
+          sx={{
+            width: '100%',
+            maxWidth: { xs: '100%', sm: '500px' },
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          {formContent}
+        </Box>
       </DialogContent>
 
       <DialogActions
         sx={{
           p: 0,
-          pt: 4,
+          pt: { xs: 2, sm: 4 },
           justifyContent: 'flex-end',
           gap: 1,
+          flex: '0 0 auto',
           ...paperSx,
         }}
       >

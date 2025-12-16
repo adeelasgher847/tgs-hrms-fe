@@ -50,6 +50,8 @@ const labels = {
 
 const Dashboard: React.FC = () => {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  // darkMode is reserved for future use
+  void darkMode;
   const { language } = useLanguage();
   const lang = labels[language];
   const theme = useTheme();

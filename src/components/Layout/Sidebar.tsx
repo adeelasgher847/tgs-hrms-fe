@@ -7,7 +7,7 @@ import {
   ListItemText,
   Collapse,
 } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
 import { useTheme } from '../../theme/hooks';
@@ -16,7 +16,18 @@ import {
   isSubMenuVisibleForRole,
 } from '../../utils/permissions';
 import { clearAuthData } from '../../utils/authValidation';
+import { getRoleName } from '../../utils/roleUtils';
 import { Icons } from '../../assets/icons';
+import {
+  Apps,
+  BusinessCenter,
+  Code,
+  ConfirmationNumber,
+  History,
+  Insights,
+  Receipt,
+  Widgets,
+} from '@mui/icons-material';
 
 interface SubItem {
   label: string;
@@ -24,25 +35,65 @@ interface SubItem {
 }
 interface MenuItem {
   label: string;
-  icon: string;
-  iconFill: string;
+  icon: string | React.ReactNode;
+  iconFill?: string | React.ReactNode;
   path?: string;
   subItems?: SubItem[];
 }
 
+type IconSize = number | { xs?: number; lg?: number };
+
 const MenuIcon: React.FC<{
-  src: string;
-  srcFill?: string;
+  icon: string | React.ReactNode;
+  iconFill?: string | React.ReactNode;
   isActive?: boolean;
-  size?: number;
+  size?: IconSize;
   useOriginalColor?: boolean;
 }> = ({
-  src,
-  srcFill,
+  icon,
+  iconFill,
   isActive = false,
   size = 24,
   useOriginalColor = false,
 }) => {
+  // Normalize size to handle both number and responsive object
+  const iconSize = typeof size === 'number' ? size : size.xs || 20;
+  const iconSizeLg = typeof size === 'number' ? size : size.lg || 24;
+
+  // If icon is a React component, render it directly
+  if (React.isValidElement(icon)) {
+    return (
+      <Box
+        sx={{
+          width:
+            typeof size === 'number' ? size : { xs: iconSize, lg: iconSizeLg },
+          height:
+            typeof size === 'number' ? size : { xs: iconSize, lg: iconSizeLg },
+          minWidth:
+            typeof size === 'number' ? size : { xs: iconSize, lg: iconSizeLg },
+          minHeight:
+            typeof size === 'number' ? size : { xs: iconSize, lg: iconSizeLg },
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: isActive ? 'var(--primary-dark-color)' : 'var(--text-color)',
+          transition: 'color 0.2s ease',
+        }}
+      >
+        {React.cloneElement(icon, {
+          sx: {
+            fontSize:
+              typeof size === 'number'
+                ? size
+                : { xs: iconSize, lg: iconSizeLg },
+            color: 'inherit',
+          },
+        } as Record<string, unknown>)}
+      </Box>
+    );
+  }
+
+  // If icon is a string (image path), render as image
   // CSS filter to convert fill icon to primary color (#3083dc)
   const primaryColorFilter =
     'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)';
@@ -50,11 +101,14 @@ const MenuIcon: React.FC<{
   // CSS filter for inactive icons (black)
   const inactiveFilter = 'brightness(0) saturate(100%)';
 
-  const iconSrc = isActive && srcFill ? srcFill : src;
+  const iconSrc =
+    isActive && iconFill && typeof iconFill === 'string'
+      ? iconFill
+      : (icon as string);
 
   const iconFilter = useOriginalColor
     ? 'none'
-    : isActive && srcFill
+    : isActive && iconFill && typeof iconFill === 'string'
       ? primaryColorFilter
       : inactiveFilter;
 
@@ -64,10 +118,14 @@ const MenuIcon: React.FC<{
       src={iconSrc}
       alt=''
       sx={{
-        width: size,
-        height: size,
-        minWidth: size,
-        minHeight: size,
+        width:
+          typeof size === 'number' ? size : { xs: iconSize, lg: iconSizeLg },
+        height:
+          typeof size === 'number' ? size : { xs: iconSize, lg: iconSizeLg },
+        minWidth:
+          typeof size === 'number' ? size : { xs: iconSize, lg: iconSizeLg },
+        minHeight:
+          typeof size === 'number' ? size : { xs: iconSize, lg: iconSizeLg },
         objectFit: 'contain',
         filter: iconFilter,
         transition: 'filter 0.2s ease',
@@ -89,6 +147,19 @@ const menuItems: MenuItem[] = [
     icon: Icons.dashboard,
     iconFill: Icons.dashboardFill,
     subItems: [{ label: 'Dashboard', path: '' }],
+  },
+  {
+    label: 'Projects',
+    icon: <BusinessCenter />,
+    subItems: [
+      { label: 'Project List', path: 'project-list' },
+      { label: 'Add Project', path: 'add-project' },
+    ],
+  },
+  {
+    label: 'Tenant',
+    icon: <ConfirmationNumber />,
+    subItems: [{ label: 'Add Tenant', path: 'tenant' }],
   },
   {
     label: 'Department',
@@ -160,6 +231,21 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
+    label: 'Performance',
+    icon: <Insights />,
+    subItems: [
+      { label: 'Employee Performance', path: 'performance-dashboard' },
+    ],
+  },
+  {
+    label: 'Accounts',
+    icon: <Receipt />,
+    subItems: [
+      { label: 'Invoice', path: 'invoice' },
+      { label: 'Payments', path: 'payments' },
+    ],
+  },
+  {
     label: 'Payroll',
     icon: Icons.payroll,
     iconFill: Icons.payrollFill,
@@ -171,9 +257,48 @@ const menuItems: MenuItem[] = [
       { label: 'My Salary', path: 'my-salary' },
     ],
   },
+  {
+    label: 'Audit Logs',
+    icon: <History />,
+    subItems: [{ label: 'Audit Logs', path: 'audit-logs' }],
+  },
+  {
+    label: 'App',
+    icon: <Apps />,
+    subItems: [
+      { label: 'Chat', path: 'chat' },
+      { label: 'Calendar', path: 'calendar' },
+    ],
+  },
+  {
+    label: 'Other Pages',
+    icon: <Code />,
+    subItems: [
+      { label: 'Login', path: 'login' },
+      { label: 'Register', path: 'register' },
+      { label: 'Error', path: 'error' },
+    ],
+  },
+  {
+    label: 'UI Components',
+    icon: <Widgets />,
+    subItems: [
+      { label: 'Buttons', path: 'buttons' },
+      { label: 'Cards', path: 'cards' },
+      { label: 'Modals', path: 'modals' },
+    ],
+  },
 ];
 
-export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
+export default function Sidebar({
+  darkMode,
+  onMenuItemClick,
+  rtlMode: _rtlMode,
+  setRtlMode: _setRtlMode,
+}: SidebarProps) {
+  // rtlMode and setRtlMode are reserved for future use
+  void _rtlMode;
+  void _setRtlMode;
   const { toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -189,10 +314,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
   const [activeSubItem, setActiveSubItem] = useState<string>('');
 
   const filteredMenuItems = useMemo(() => {
-    const userRole =
-      typeof role === 'string'
-        ? role
-        : (role as unknown as { name?: string })?.name || '';
+    const userRole = getRoleName(role);
 
     const filtered = menuItems
       .filter(item => {
@@ -251,7 +373,10 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
       sx={{
         backgroundColor: 'var(--white-color)',
         color: 'var(--text-color)',
-        borderRadius: '20px',
+        borderRadius: {
+          xs: 0,
+          lg: '20px',
+        },
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -261,12 +386,21 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
       }}
     >
-      <Box sx={{ position: 'sticky', top: 0, zIndex: 20, px: 3, py: 5, mb: 1 }}>
+      <Box
+        sx={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          px: { xs: 2, lg: 3 },
+          py: { xs: 3, lg: 5 },
+          mb: 1,
+        }}
+      >
         <Box
           sx={{
             position: 'absolute',
-            top: '40px',
-            bottom: '40px',
+            top: { xs: '24px', lg: '40px' },
+            bottom: { xs: '24px', lg: '40px' },
             display: 'flex',
             alignItems: 'center',
             gap: 1,
@@ -278,7 +412,8 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
             alt='Logo'
             sx={{
               height: 'auto',
-              width: 'auto',
+              width: { xs: '120px', lg: 'auto' },
+              maxWidth: { xs: '120px', lg: 'none' },
             }}
           />
         </Box>
@@ -288,8 +423,8 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
         sx={{
           flex: 1,
           maxHeight: {
-            xs: 'none', 
-            md: '330px', 
+            xs: 'none',
+            md: '330px',
             xl: 'none',
           },
           overflowY: 'auto',
@@ -350,7 +485,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                   >
                     <ListItemIcon
                       sx={{
-                        minWidth: '36px',
+                        minWidth: { xs: '32px', lg: '36px' },
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -358,16 +493,16 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                       aria-hidden='true'
                     >
                       <MenuIcon
-                        src={item.icon}
-                        srcFill={item.iconFill}
+                        icon={item.icon}
+                        iconFill={item.iconFill}
                         isActive={isActive}
-                        size={24}
+                        size={{ xs: 20, lg: 24 }}
                       />
                     </ListItemIcon>
                     <ListItemText
                       primary={item.label}
                       primaryTypographyProps={{
-                        fontSize: 'var(--body-font-size)',
+                        fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
                         fontWeight: isActive ? 600 : 400,
                       }}
                     />
@@ -415,25 +550,25 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                   >
                     <ListItemIcon
                       sx={{
-                        minWidth: '36px',
+                        minWidth: { xs: '32px', lg: '36px' },
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
                     >
                       <MenuIcon
-                        src={item.icon}
-                        srcFill={item.iconFill}
+                        icon={item.icon}
+                        iconFill={item.iconFill}
                         isActive={
                           !!(item.path && location.pathname.includes(item.path))
                         }
-                        size={24}
+                        size={{ xs: 20, lg: 24 }}
                       />
                     </ListItemIcon>
                     <ListItemText
                       primary={item.label}
                       primaryTypographyProps={{
-                        fontSize: 'var(--body-font-size)',
+                        fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
                         fontWeight:
                           item.path && location.pathname.includes(item.path)
                             ? 600
@@ -474,7 +609,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                     >
                       <ListItemIcon
                         sx={{
-                          minWidth: '36px',
+                          minWidth: { xs: '32px', lg: '36px' },
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -482,16 +617,16 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                         aria-hidden='true'
                       >
                         <MenuIcon
-                          src={item.icon}
-                          srcFill={item.iconFill}
+                          icon={item.icon}
+                          iconFill={item.iconFill}
                           isActive={isParentActive}
-                          size={24}
+                          size={{ xs: 20, lg: 24 }}
                         />
                       </ListItemIcon>
                       <ListItemText
                         primary={item.label}
                         primaryTypographyProps={{
-                          fontSize: 'var(--body-font-size)',
+                          fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
                           fontWeight: isParentActive ? 600 : 400,
                         }}
                       />
@@ -529,9 +664,12 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                               handleSubItemClick(item.label, sub.label)
                             }
                             sx={{
-                              pl: 6,
+                              pl: { xs: 4, lg: 6 },
                               py: 1,
-                              fontSize: 'var(--body-font-size)',
+                              fontSize: {
+                                xs: '14px',
+                                lg: 'var(--body-font-size)',
+                              },
                               color:
                                 activeSubItem === sub.label
                                   ? 'var(--primary-dark-color)'
@@ -547,7 +685,10 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
                             <ListItemText
                               primary={sub.label}
                               primaryTypographyProps={{
-                                fontSize: 'var(--body-font-size)',
+                                fontSize: {
+                                  xs: '14px',
+                                  lg: 'var(--body-font-size)',
+                                },
                                 fontWeight:
                                   activeSubItem === sub.label ? 600 : 400,
                               }}
@@ -577,7 +718,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
             htmlFor='dark-mode-switch'
             sx={{
               color: 'var(--text-color)',
-              fontSize: 'var(--body-font-size)',
+              fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
               fontWeight: 400,
               cursor: 'pointer',
             }}
@@ -664,8 +805,8 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
               src={Icons.logout}
               alt=''
               sx={{
-                width: 24,
-                height: 24,
+                width: { xs: 20, lg: 24 },
+                height: { xs: 20, lg: 24 },
                 filter:
                   'brightness(0) saturate(100%) invert(20%) sepia(95%) saturate(5000%) hue-rotate(320deg) brightness(90%) contrast(90%)',
               }}
@@ -674,7 +815,7 @@ export default function Sidebar({ darkMode, onMenuItemClick }: SidebarProps) {
           <ListItemText
             primary='Logout'
             primaryTypographyProps={{
-              fontSize: 'var(--body-font-size)',
+              fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
               fontWeight: 500,
               color: 'var(--secondary-color)',
             }}

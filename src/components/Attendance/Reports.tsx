@@ -11,10 +11,6 @@ import {
   IconButton,
   Pagination,
   TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
@@ -35,13 +31,13 @@ const getCardStyle = (darkMode: boolean) => ({
   backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
 });
 
-interface TeamMemberSummary {
-  name: string;
-  email: string;
-  department: string;
-  designation: string;
-  totalLeaveDays: number;
-}
+// interface TeamMemberSummary {
+//   name: string;
+//   email: string;
+//   department: string;
+//   designation: string;
+//   totalLeaveDays: number;
+// }
 
 interface LeaveBalance {
   leaveTypeName: string;
@@ -53,22 +49,19 @@ interface LeaveBalance {
 
 const Reports: React.FC = () => {
   const darkMode = useIsDarkMode();
-  const [tab, setTab] = useState(0);
+  const [tab] = useState(0);
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
   const [allLeaveReports, setAllLeaveReports] = useState<EmployeeReport[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
   const [paginationLimit, setPaginationLimit] = useState(25); // Backend limit, default 25
   const [loading, setLoading] = useState(true);
   const [loadingTab, setLoadingTab] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
-  const [allEmployees, setAllEmployees] = useState<Array<{ id: string; name: string }>>([]);
-  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [, setAllEmployees] = useState<Array<{ id: string; name: string }>>([]);
   const [userInfo, setUserInfo] = useState<{
     userId: string | null;
     isManager: boolean;
@@ -133,8 +126,8 @@ const Reports: React.FC = () => {
     }
   }, [isAdminView, userInfo]);
 
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) =>
-    setTab(newValue);
+  // const handleTabChange = (_: React.SyntheticEvent, newValue: number) =>
+  //   setTab(newValue);
 
   const handleMonthChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -152,13 +145,13 @@ const Reports: React.FC = () => {
   };
 
   // Extract employee names from fetched allEmployees for the filter dropdown
-  const availableEmployees = useMemo(() => {
-    if (!allEmployees || allEmployees.length === 0) return [];
-    return allEmployees
-      .map(emp => emp.name)
-      .filter((name): name is string => !!name)
-      .sort();
-  }, [allEmployees]);
+  // const availableEmployees = useMemo(() => {
+  //   if (!allEmployees || allEmployees.length === 0) return [];
+  //   return allEmployees
+  //     .map(emp => emp.name)
+  //     .filter((name): name is string => !!name)
+  //     .sort();
+  // }, [allEmployees]);
 
   const filteredEmployeeReports = useMemo(() => {
     if (!allLeaveReports || allLeaveReports.length === 0) return [];
@@ -602,8 +595,9 @@ const Reports: React.FC = () => {
         >
           Leave Reports
         </Typography>
-        {(isAdminView || isManager) && (
-          <Box display='flex' alignItems='center' gap={1} flexWrap='wrap'>
+        <Box display='flex' alignItems='center' gap={1} flexWrap='wrap'>
+          {/* Month picker should be visible only to admin roles (hide for managers and employees) */}
+          {isAdminView && (
             <TextField
               label='Month'
               type='month'
@@ -613,29 +607,9 @@ const Reports: React.FC = () => {
               InputLabelProps={{ shrink: true }}
               sx={{ minWidth: 180 }}
             />
-            {isAdminView && (
-              <FormControl size='small' sx={{ minWidth: 250 }}>
-                <InputLabel>Select Employee</InputLabel>
-                <Select
-                  value={selectedEmployee || ''}
-                  onChange={e => {
-                    setSelectedEmployee(e.target.value || null);
-                    setPage(1); // Reset to first page when filter changes
-                  }}
-                  label='Select Employee'
-                  disabled={loadingEmployees}
-                >
-                  <MenuItem value=''>
-                    <em>All Employees</em>
-                  </MenuItem>
-                  {availableEmployees.map(employeeName => (
-                    <MenuItem key={employeeName} value={employeeName}>
-                      {employeeName}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
+          )}
+
+          {(isAdminView || isManager) && (
             <Tooltip title='Export CSV'>
               <IconButton
                 color='primary'
@@ -650,8 +624,8 @@ const Reports: React.FC = () => {
                 <FileDownloadIcon />
               </IconButton>
             </Tooltip>
-          </Box>
-        )}
+          )}
+        </Box>
       </Box>
 
       {isAdminView && (

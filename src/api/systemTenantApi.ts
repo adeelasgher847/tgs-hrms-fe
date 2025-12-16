@@ -5,7 +5,7 @@ import { env } from '../config/env';
 export interface SystemTenant {
   id: string;
   name: string;
-  status: 'active' | 'suspended';
+  status: 'active' | 'suspended' | 'delelted';
   isDeleted: boolean;
   created_at: string;
   updated_at: string;
@@ -15,7 +15,7 @@ export interface SystemTenant {
 export interface SystemTenantDetail {
   id: string;
   name: string;
-  status: 'active' | 'suspended';
+  status: 'active' | 'suspended' | 'delelted';
   created_at: string;
   departmentCount: number;
   employeeCount: number;
@@ -117,7 +117,6 @@ export const SystemTenantApi = {
     );
     const detail = response.data;
     const baseURL = env.apiBaseUrl;
-    // Helper function to convert relative path to full URL
     const getFullLogoUrl = (
       logoPath: string | undefined | null
     ): string | undefined => {
@@ -128,21 +127,15 @@ export const SystemTenantApi = {
       ) {
         return undefined;
       }
-      // If it's already a full URL (starts with http:// or https://), return as is
       if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
         return logoPath;
       }
-      // If it's a relative path (starts with /), prepend base URL
       if (logoPath.startsWith('/')) {
         return `${baseURL}${logoPath}`;
       }
-      // Otherwise, assume it's a relative path and prepend base URL with /
-      return `${baseURL}/${logoPath}`;
     };
-    // Extract logo from direct logo property or company.logo_url
     let logoUrl = detail.logo || detail.company?.logo_url;
     logoUrl = getFullLogoUrl(logoUrl);
-    // Set the processed logo URL
     if (logoUrl) {
       detail.logo = logoUrl;
     }
@@ -219,7 +212,6 @@ export const SystemTenantApi = {
   }): Promise<SystemTenant> => {
     try {
       if (data.logo instanceof File) {
-        // Use multipart/form-data when logo is a File
         const formData = new FormData();
         formData.append('tenantId', data.tenantId);
         if (data.companyName) {
@@ -236,7 +228,6 @@ export const SystemTenantApi = {
         );
         return response.data;
       } else {
-        // Use JSON when logo is a string or not provided
         const response: AxiosResponse<SystemTenant> = await axiosInstance.put(
           '/system/tenants',
           data

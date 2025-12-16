@@ -4,10 +4,7 @@ import {
   Box,
   Typography,
   Button,
-  Fab,
-  useMediaQuery,
   Paper,
-  Divider,
   // Snackbar,
   // Alert,
   CircularProgress,
@@ -21,7 +18,6 @@ import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
 import { DepartmentCard } from './DepartmentCard';
 import AppFormModal, { type FormField } from '../Common/AppFormModal';
-import AppInputField from '../Common/AppInputField';
 import { VALIDATION_LIMITS } from '../../constants/appConstants';
 import DeleteConfirmationDialog from '../Common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
@@ -32,7 +28,6 @@ import {
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
 import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
-import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { COLORS } from '../../constants/appConstants';
 
@@ -40,6 +35,7 @@ const labels = {
   en: {
     title: 'Departments',
     create: 'Create Department',
+    createShort: 'Create',
     createFirst: 'Create First Department',
     noDepartments: 'No Departments Found',
     description: 'Get started by creating your first department',
@@ -47,6 +43,7 @@ const labels = {
   ar: {
     title: 'إدارة الأقسام',
     create: 'إنشاء قسم',
+    createShort: 'إنشاء',
     createFirst: 'إنشاء قسم جديد',
     noDepartments: 'لا توجد أقسام',
     description: 'ابدأ بإنشاء قسم جديد لإدارة مؤسستك',
@@ -55,7 +52,6 @@ const labels = {
 
 export const DepartmentList: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
 
@@ -65,7 +61,6 @@ export const DepartmentList: React.FC = () => {
   const bgPaper = darkMode ? '#1b1b1b' : '#fff';
   const textPrimary = darkMode ? '#e0e0e0' : theme.palette.text.primary;
   const textSecond = darkMode ? '#9a9a9a' : theme.palette.text.secondary;
-  const dividerCol = darkMode ? '#333' : '#ccc';
   const textColor = darkMode ? '#8f8f8f' : '#000';
   const borderColor = darkMode ? '#252525' : '#f0f0f0';
 
@@ -98,23 +93,40 @@ export const DepartmentList: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allTenants, setAllTenants] = useState<SystemTenant[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
-  const [loadingTenants, setLoadingTenants] = useState(false);
+  const [, setLoadingTenants] = useState(false);
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
-  // Fetch tenants for system admin
+  // Fetch tenants for system admin from departments API
   useEffect(() => {
     if (!isSystemAdmin) return;
 
     const fetchTenants = async () => {
       try {
         setLoadingTenants(true);
-        const tenants = await SystemTenantApi.getAllTenants(false);
-        const activeTenants = tenants.filter(
-          t => t.status === 'active' && t.isDeleted === false
-        );
-        setAllTenants(activeTenants);
+        // Use GET:/departments API to get tenant list
+        const response =
+          await departmentApiService.getAllTenantsWithDepartments();
 
-        // Default to "All Tenants" - no need to set selectedTenantId
+        // Extract unique tenants from the departments API response
+        const uniqueTenantsMap = new Map<string, SystemTenant>();
+        response.tenants.forEach(tenant => {
+          if (!uniqueTenantsMap.has(tenant.tenant_id)) {
+            uniqueTenantsMap.set(tenant.tenant_id, {
+              id: tenant.tenant_id,
+              name: tenant.tenant_name,
+              status: tenant.tenant_status as
+                | 'active'
+                | 'suspended'
+                | 'delelted',
+              isDeleted: false,
+              created_at: '',
+              updated_at: '',
+              deleted_at: null,
+            });
+          }
+        });
+
+        setAllTenants(Array.from(uniqueTenantsMap.values()));
       } catch {
         // Leave tenant filter empty on failure
       } finally {
@@ -396,13 +408,13 @@ export const DepartmentList: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          flexWrap: 'wrap',
+          flexWrap: 'nowrap',
           gap: 2,
         }}
       >
         <Typography
           fontWeight={500}
-          fontSize='48px'
+          fontSize={{ xs: '32px', lg: '48px' }}
           lineHeight='44px'
           letterSpacing='-2%'
           color='#2C2C2C'
@@ -446,7 +458,7 @@ export const DepartmentList: React.FC = () => {
               </Select>
             </FormControl>
           )}
-          {!isMobile && !isSystemAdmin && (
+          {!isSystemAdmin && (
             <Button
               variant='contained'
               startIcon={<AddIcon />}
@@ -464,13 +476,39 @@ export const DepartmentList: React.FC = () => {
                 bgcolor: 'var(--primary-dark-color)',
                 color: '#FFFFFF',
                 boxShadow: 'none',
+                minWidth: { xs: 'auto', sm: 'auto' },
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 0.75, sm: 1 },
+                '& .MuiButton-startIcon': {
+                  marginRight: { xs: 0.5, sm: 1 },
+                  '& > *:nth-of-type(1)': {
+                    fontSize: { xs: '18px', sm: '20px' },
+                  },
+                },
                 '&:hover': {
                   bgcolor: COLORS.PRIMARY,
                   boxShadow: 'none',
                 },
               }}
             >
-              {lang.create}
+              <Box
+                component='span'
+                sx={{
+                  display: { xs: 'none', sm: 'inline' },
+                  fontSize: { xs: '8px', lg: '16px' },
+                }}
+              >
+                {lang.create}
+              </Box>
+              <Box
+                component='span'
+                sx={{
+                  display: { xs: 'inline', sm: 'none' },
+                  fontSize: { xs: '12px', lg: '16px' },
+                }}
+              >
+                {lang.createShort}
+              </Box>
             </Button>
           )}
         </Box>
@@ -569,26 +607,6 @@ export const DepartmentList: React.FC = () => {
             />
           ))}
         </Box>
-      )}
-
-      {/* FAB (mobile) */}
-      {isMobile && !isSystemAdmin && (
-        <Fab
-          color='primary'
-          onClick={() => {
-            setSelectedDepartment(null);
-            setIsFormModalOpen(true);
-          }}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: isRtl ? 'auto' : 24,
-            left: isRtl ? 24 : 'auto',
-            boxShadow: 'none', // Remove FAB shadow
-          }}
-        >
-          <AddIcon />
-        </Fab>
       )}
 
       {/* Modals */}

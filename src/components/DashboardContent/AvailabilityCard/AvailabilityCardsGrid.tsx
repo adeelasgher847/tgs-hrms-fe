@@ -12,6 +12,8 @@ import {
 
 export default function AvailabilityCardsGrid() {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  // darkMode is reserved for future use
+  void darkMode;
   const { language } = useLanguage();
   const navigate = useNavigate();
 

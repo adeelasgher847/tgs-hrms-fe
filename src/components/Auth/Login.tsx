@@ -4,10 +4,8 @@ import { useNavigate } from 'react-router-dom';
 
 import {
   Box,
-  Paper,
   Typography,
   Button,
-  TextField,
   Link,
   Divider,
   Checkbox,
@@ -18,6 +16,7 @@ import {
   IconButton,
   InputAdornment,
   CircularProgress,
+  Alert,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -31,6 +30,9 @@ import ErrorSnackbar from '../Common/ErrorSnackbar';
 import signupApi from '../../api/signupApi';
 import { persistAuthSession } from '../../utils/authSession';
 import type { UserProfile } from '../../api/profileApi';
+import AppInputField from '../Common/AppInputField';
+import AuthSidebar from '../Common/AuthSidebar';
+import { Icons } from '../../assets/icons';
 
 // Extend Window interface for Google Sign-In
 declare global {
@@ -73,6 +75,7 @@ const Login: React.FC = () => {
 
   const [emailError, setEmailError] = useState<string>('');
   const [passwordError, setPasswordError] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
   const { snackbar, showError, closeSnackbar } = useErrorHandler();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -127,6 +130,7 @@ const Login: React.FC = () => {
     const value = e.target.value;
     setEmail(value);
     setEmailError(''); // Clear email error when user types
+    setError(null); // Clear general error when user types
 
     // Only auto-fill password if email matches remembered email exactly
     if (remembered && value === remembered.email) {
@@ -233,6 +237,7 @@ const Login: React.FC = () => {
     let valid = true;
     setEmailError('');
     setPasswordError('');
+    setError(null);
 
     if (!email) {
       setEmailError(
@@ -295,554 +300,415 @@ const Login: React.FC = () => {
           data?: {
             field?: string;
             message?: string;
+            errors?: Record<string, unknown[]>;
           };
         };
+        message?: string;
       };
       const data = error?.response?.data ?? null;
-      if (data?.field === 'email') setEmailError(data.message || '');
-      else if (data?.field === 'password')
+      if (data?.field === 'email') {
+        setEmailError(data.message || '');
+        setError(null);
+      } else if (data?.field === 'password') {
         setPasswordError(data.message || '');
+        setError(null);
+      } else if (data?.message) {
+        setError(String(data.message));
+      } else if (data?.errors) {
+        const errorMessages = Object.values(data.errors).flat();
+        setError(String(errorMessages.join(', ')));
+      } else if (error.message) {
+        setError(error.message);
+      } else {
+        setError('Failed to login. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className='loginpage'>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        backgroundColor: 'var(--white-100-color)',
+        overflowX: 'hidden',
+      }}
+    >
       <Box
-        className='login-scroll'
         sx={{
-          height: { xs: 'auto', md: '100vh' },
-          m: { xs: '14px', sm: 0 },
-          position: 'relative',
+          width: '100%',
+          maxWidth: '1440px',
+          display: 'flex',
+          flexDirection: { xs: 'column', lg: 'row' },
+          overflow: 'hidden',
+          boxSizing: 'border-box',
         }}
       >
+        <AuthSidebar />
+
         <Box
           sx={{
-            height: '100%',
-            // display: "flex",
-            justifyContent: 'center',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            direction: lang === 'ar' ? 'rtl' : 'ltr',
+            justifyContent: 'center',
+            padding: { xs: '16px 12px', sm: '24px 16px', md: '48px' },
+            backgroundColor: { xs: '#3083DC', lg: 'var(--white-100-color)' },
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            position: 'relative',
+            zIndex: 1,
+            marginLeft: { xs: 0, lg: '-12px' },
+            paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
+            paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
+            marginTop: { xs: 'auto', lg: 0 },
+            pt: { xs: '60px', lg: '48px' },
+            boxSizing: 'border-box',
+            minWidth: 0,
           }}
         >
           <Box
             sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
+              display: { xs: 'flex', lg: 'none' },
+              position: 'absolute',
+              top: { xs: 32, sm: 40 },
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 2,
               alignItems: 'center',
-              justifyContent: 'center',
-              // gap: "2px",
-              height: '100%',
-              margin: 'auto',
             }}
           >
-            {/* Left Side - Image and Title */}
             <Box
+              component='img'
+              src={Icons.logoWhite}
+              alt='Logo'
+              sx={{ maxHeight: 40 }}
+            />
+          </Box>
+          <Box
+            sx={{
+              maxWidth: { xs: '100%', sm: 520 },
+              width: '100%',
+              mx: 'auto',
+              backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
+              borderRadius: { xs: '30px', lg: 0 },
+              p: { xs: 2, sm: 3, md: 4 },
+              mt: { xs: '60px', sm: '70px', lg: 0 },
+              boxSizing: 'border-box',
+              minWidth: 0,
+            }}
+          >
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+              <FormControl size='small' sx={{ minWidth: 100 }}>
+                <Select
+                  value={lang}
+                  onChange={e => setLang(e.target.value as 'en' | 'ar')}
+                >
+                  <MenuItem value='en'>English</MenuItem>
+                  <MenuItem value='ar'>عربى</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+            <Typography
+              variant='h1'
               sx={{
-                display: { xs: 'none', md: 'flex' },
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textAlign: 'center',
-                flex: 1,
-                height: '100%',
-                mt: 7,
+                fontSize: { xs: '24px', sm: '32px', lg: '48px' },
+                fontWeight: 700,
+                mb: 1,
+                color: { xs: '#001218', lg: 'inherit' },
               }}
             >
-              <Box sx={{ mb: 7 }}>
-                <svg
-                  width='4rem'
-                  fill='currentColor'
-                  className='bi bi-clipboard-check'
-                  viewBox='0 0 16 16'
-                >
-                  <path
-                    fillRule='evenodd'
-                    d='M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z'
-                  ></path>
-                  <path d='M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z'></path>
-                  <path d='M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z'></path>
-                </svg>
-              </Box>
-              <Typography
-                variant='h4'
+              {isLoading
+                ? 'Signing in...'
+                : lang === 'ar'
+                  ? 'تسجيل الدخول'
+                  : 'Sign In'}
+            </Typography>
+            <Typography
+              sx={{
+                color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
+                mb: 3,
+                fontSize: { xs: '14px', sm: '16px', lg: '24px' },
+                fontWeight: 400,
+              }}
+            >
+              {lang === 'ar'
+                ? 'وصول مجاني إلى لوحة التحكم الخاصة بنا.'
+                : 'Free access to our dashboard.'}
+            </Typography>
+            {error && (
+              <Alert
+                severity='error'
                 sx={{
-                  maxWidth: 370,
-                  mb: 4,
-                  fontFamily: 'Open Sans, sans-serif',
-                  fontWeight: 500,
-                  fontSize: '32px',
+                  mb: 2,
+                  '& .MuiAlert-message': {
+                    fontSize: { xs: '12px', sm: '14px' },
+                  },
                 }}
               >
-                {lang === 'ar'
-                  ? 'إدارة مهام أفضل مع ماي-تاسك'
-                  : "My-Task Let's Management Better"}
-              </Typography>
-              <Box
-                component='img'
-                src='https://pixelwibes.com/template/my-task/react/static/media/login-img.b36c8fbd17b96828d9ba0900b843d21c.svg'
-                alt='Login Illustration'
-                sx={{ width: '100%', maxWidth: '400px' }}
-              />
-            </Box>
-
-            {/* Right Side - Login Form */}
-            <Box sx={{ flex: 1, width: '100%', maxWidth: '512px' }}>
-              <Paper
-                elevation={4}
-                sx={{
-                  backgroundColor: 'var(--dark-color)',
-                  color: 'common.white',
-                  p: { xs: 3, md: 7 },
-                  pt: { xs: 1, md: 2 },
-                  pb: { xs: 1, md: 2 },
-                  borderRadius: { xs: 2, lg: 0 },
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  direction: lang === 'ar' ? 'rtl' : 'ltr',
-                }}
-              >
-                {/* Language Selector */}
-                <Box sx={{ mb: { xs: 1, md: 1 }, mt: 2, maxWidth: 100 }}>
-                  <FormControl size='small' fullWidth>
-                    <Select
-                      id='language-select'
-                      value={lang}
-                      onChange={e => setLang(e.target.value as 'en' | 'ar')}
-                      displayEmpty
-                      sx={{
-                        bgcolor: 'white',
-                        borderRadius: 1,
-                        fontFamily: 'Open Sans, sans-serif',
-                        fontSize: 14,
-                        '& .MuiOutlinedInput-notchedOutline': {
-                          borderColor: '#ccc',
-                        },
-                        '&:hover .MuiOutlinedInput-notchedOutline': {
-                          borderColor: '#f19828',
-                        },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                          borderColor: '#f19828',
-                        },
-                      }}
-                      renderValue={selected => {
-                        return selected === 'ar' ? 'عربى' : 'English';
-                      }}
-                    >
-                      <MenuItem value='en'>English</MenuItem>
-                      <MenuItem value='ar'>عربى</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
+                {error}
+              </Alert>
+            )}
+            <Box
+              component='form'
+              onSubmit={handleSubmit}
+              sx={{
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                overflowX: 'hidden',
+              }}
+            >
+              <Box sx={{ textAlign: 'center', mb: 2 }}>
                 <Box
                   sx={{
-                    textAlign: 'center',
-                    mt: { xs: 1 },
-                    mb: { xs: 1, sm: 2 },
+                    display: 'flex',
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    alignItems: 'center',
                   }}
                 >
-                  <Typography
-                    variant='h1'
-                    // fontWeight="500"
-                    gutterBottom
+                  <Button
+                    variant='outlined'
+                    onClick={initGoogleButton}
                     sx={{
-                      fontSize: '35px',
-                      fontFamily: 'Open Sans, sans-serif',
+                      color: 'var(--text-color)',
+                      borderColor: '#BDBDBD',
+                      textTransform: 'none',
+                      fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
+                      py: 1.1,
+                      px: 2,
                       mb: 1,
-                      fontWeight: 400,
+                      borderRadius: '12px',
+                      width: '100%',
+                      '&:hover': {
+                        borderColor: 'var(--primary-dark-color)',
+                        backgroundColor: 'transparent',
+                      },
                     }}
                   >
-                    {isLoading
-                      ? 'Signing in...'
-                      : lang === 'ar'
-                        ? 'تسجيل الدخول'
-                        : 'Sign in'}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontSize: '14px',
-                      fontFamily: 'Open Sans, sans-serif',
-                    }}
-                  >
-                    {lang === 'ar'
-                      ? 'وصول مجاني إلى لوحة التحكم الخاصة بنا.'
-                      : 'Free access to our dashboard.'}
-                  </Typography>
-                </Box>
-                <Box sx={{ textAlign: 'center', mb: 1 }}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Button
-                      variant='outlined'
-                      onClick={initGoogleButton}
-                      sx={{
-                        color: 'white',
-                        borderColor: '#f0f0f0',
-                        textTransform: 'none',
-                        fontSize: '14px',
-                        fontFamily: 'Open Sans, sans-serif',
-                        py: 1.1,
-                        px: 2,
-                        mb: 1,
-                        borderRadius: 2,
-                        '&:hover': {
-                          bgcolor: '#f19828',
-                        },
-                        '&:focus': {
-                          outline: 'none',
-                        },
-                      }}
-                    >
-                      <Box
-                        component='img'
-                        src={GoogleIcon}
-                        alt='Google logo'
-                        sx={{
-                          height: 16,
-                          width: 16,
-                          minWidth: 16,
-                          ...(lang === 'ar' ? { ml: '8px' } : { mr: '8px' }),
-                        }}
-                      />
-                      {lang === 'ar'
-                        ? 'تسجيل الدخول باستخدام جوجل'
-                        : 'Sign in with Google'}
-                    </Button>
                     <Box
-                      id='googleBtn'
-                      ref={googleBtnRef}
-                      sx={{ display: 'none' }}
+                      component='img'
+                      src={GoogleIcon}
+                      alt='Google logo'
+                      sx={{
+                        height: 16,
+                        width: 16,
+                        minWidth: 16,
+                        ...(lang === 'ar' ? { ml: '8px' } : { mr: '8px' }),
+                      }}
                     />
-                  </Box>
-                  <Divider
-                    sx={{
-                      color: 'rgb(154, 155, 157)',
-                      '&::before, &::after': { borderColor: '#f0f0f0' },
-                    }}
-                  >
-                    <Box px={1.5}>{lang === 'ar' ? 'أو' : 'OR'}</Box>
-                  </Divider>
+                    {lang === 'ar'
+                      ? 'تسجيل الدخول باستخدام جوجل'
+                      : 'Sign in with Google'}
+                  </Button>
+                  <Box
+                    id='googleBtn'
+                    ref={googleBtnRef}
+                    sx={{ display: 'none' }}
+                  />
                 </Box>
-                <Box
-                  component='form'
-                  noValidate
-                  onSubmit={handleSubmit}
+                <Divider
                   sx={{
-                    '& input, & textarea, & .MuiOutlinedInput-root': {
-                      outline: 'none',
-                      border: 'none',
-                      boxShadow: 'none',
-                    },
-                    '& input:focus, & textarea:focus, & .MuiOutlinedInput-root.Mui-focused':
-                      {
-                        outline: 'none',
-                        border: 'none',
-                        boxShadow: 'none',
-                      },
-                    '& input:hover, & textarea:hover, & .MuiOutlinedInput-root:hover':
-                      {
-                        outline: 'none',
-                        border: 'none',
-                        boxShadow: 'none',
-                      },
-                    // Autofill overrides (Chrome, Edge, Safari)
-                    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus':
-                      {
-                        WebkitTextFillColor: 'unset !important',
-                        WebkitBoxShadow: 'unset !important',
-                        caretColor: 'black',
-                        transition: 'background-color 9999s ease-in-out 0s',
-                      },
-                    '& .MuiOutlinedInput-root.Mui-focused input:-webkit-autofill':
-                      {
-                        WebkitBoxShadow: 'unset !important',
-                      },
-                    // Fallback for some browsers exposing internal autofill selector
-                    '& input:-internal-autofill-selected': {
-                      backgroundColor: 'unset !important',
-                      boxShadow: 'unset !important',
-                      color: 'black',
-                    },
+                    color: 'var(--dark-grey-color)',
+                    my: 2,
+                    '&::before, &::after': { borderColor: '#BDBDBD' },
+                  }}
+                >
+                  <Box px={1.5}>{lang === 'ar' ? 'أو' : 'OR'}</Box>
+                </Divider>
+              </Box>
+              <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                <AppInputField
+                  name='email'
+                  label={lang === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+                  type='email'
+                  required
+                  fullWidth
+                  value={email}
+                  onChange={handleEmailChange}
+                  disabled={isLoading}
+                  error={Boolean(emailError)}
+                  helperText={emailError}
+                  placeholder='name@example.com'
+                />
+              </Box>
+              <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 0.5,
                   }}
                 >
                   <Typography
                     component='label'
-                    htmlFor='email'
-                    sx={{ fontWeight: 400, fontSize: '14px' }}
-                  >
-                    {lang === 'ar' ? 'البريد الإلكتروني' : 'Email address'}
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    required
-                    id='email'
-                    name='email'
-                    type='email'
-                    margin='normal'
-                    placeholder='name@example.com'
-                    sx={{ mt: 1 }}
-                    value={email}
-                    onChange={handleEmailChange}
-                    error={Boolean(emailError)}
-                    helperText={emailError}
-                    FormHelperTextProps={{
-                      style: { fontSize: '16px' }, // or any size you want
-                    }}
-                    InputProps={{
-                      sx: {
-                        backgroundColor: '#eee',
-                        borderRadius: '8px',
-                        '&.Mui-focused, &:active': {
-                          backgroundColor: 'white',
-                        },
-                        '& fieldset': { border: 'none' },
-                        '&:hover fieldset': { border: 'none' },
-                        '&.Mui-focused fieldset': { border: 'none' },
-                      },
-                    }}
-                  />
-                  <Box>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <Typography
-                        component='label'
-                        htmlFor='password'
-                        sx={{ fontWeight: 400, fontSize: '14px' }}
-                      >
-                        {lang === 'ar' ? 'كلمة المرور' : 'Password'}
-                      </Typography>
-                      <Link
-                        component={RouterLink}
-                        underline='hover'
-                        to='/forget'
-                        sx={{
-                          color: 'var(--yellow-color)',
-                          fontWeight: 400,
-                          fontSize: '14px',
-                          fontFamily: 'Open Sans, sans-serif',
-                          '&:hover': {
-                            textDecoration: 'none',
-                            color: 'var(--yellow-color)',
-                            outline: 'none',
-                            boxShadow: 'none',
-                          },
-                        }}
-                      >
-                        {lang === 'ar'
-                          ? 'نسيت كلمة المرور؟'
-                          : 'Forgot password?'}
-                      </Link>
-                    </Box>
-
-                    <TextField
-                      fullWidth
-                      required
-                      id='password'
-                      name='password'
-                      type={showPassword ? 'text' : 'password'}
-                      margin='normal'
-                      placeholder='********'
-                      sx={{ mt: 1 }}
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      error={Boolean(passwordError)}
-                      helperText={passwordError}
-                      FormHelperTextProps={{
-                        style: { fontSize: '16px' }, // or any size you want
-                      }}
-                      inputProps={{
-                        maxLength: 15,
-                      }}
-                      InputProps={{
-                        sx: {
-                          backgroundColor: '#eee',
-                          borderRadius: '8px',
-                          '&.Mui-focused': {
-                            backgroundColor: 'white',
-                          },
-                          '& fieldset': {
-                            border: 'none',
-                          },
-                          '&:hover fieldset': {
-                            border: 'none',
-                          },
-                          '&.Mui-focused fieldset': {
-                            border: 'none',
-                          },
-                        },
-                        endAdornment: (
-                          <InputAdornment position='end'>
-                            <IconButton
-                              onClick={handleTogglePassword}
-                              edge='end'
-                              sx={{
-                                outline: 'none',
-                                boxShadow: 'none',
-                                '&:focus': {
-                                  outline: 'none',
-                                  boxShadow: 'none',
-                                },
-                              }}
-                            >
-                              {showPassword ? (
-                                <VisibilityOff />
-                              ) : (
-                                <Visibility />
-                              )}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <FormControlLabel
-                      sx={{
-                        border: 'none',
-                        marginLeft: 0,
-                        marginRight: 0,
-                        marginTop: 1,
-                      }}
-                      control={
-                        <Checkbox
-                          checked={rememberMe}
-                          onChange={e => setRememberMe(e.target.checked)}
-                          icon={
-                            <Box
-                              sx={{
-                                width: 14,
-                                height: 14,
-                                bgcolor: 'white',
-                                borderRadius: '4px',
-                              }}
-                            />
-                          }
-                          disableRipple
-                          sx={{
-                            padding: 0,
-                            border: 'none',
-                            width: 14,
-                            height: 14,
-                            minWidth: 14,
-                            minHeight: 14,
-                            boxSizing: 'border-box',
-                            '&:hover': {
-                              bgcolor: 'transparent',
-                            },
-                            '&.Mui-focusVisible': {
-                              outline: 'none',
-                              boxShadow: 'none',
-                            },
-                          }}
-                        />
-                      }
-                      label={
-                        <Typography
-                          sx={{
-                            ...(lang === 'ar' ? { mr: 1 } : { ml: 1 }),
-                            fontFamily: 'Open Sans',
-                            fontSize: '14px',
-                          }}
-                        >
-                          {lang === 'ar' ? 'تذكرني' : 'Remember me'}
-                        </Typography>
-                      }
-                    />
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <Button
-                      type='submit'
-                      variant='contained'
-                      sx={{
-                        mt: 2,
-                        p: 1.5,
-                        px: 2,
-                        bgcolor: 'white',
-                        color: 'black',
-                        textTransform: 'uppercase',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        fontFamily: 'Open Sans, sans-serif',
-                        outline: 'none',
-                        border: 'none',
-                        minWidth: 40,
-                        '&:hover': {
-                          bgcolor: 'grey.200',
-                        },
-                        '&:focus': {
-                          outline: 'none',
-                          border: 'none',
-                        },
-                      }}
-                      disabled={!email || !password}
-                    >
-                      {isLoading ? (
-                        <CircularProgress size={22} sx={{ color: 'black' }} />
-                      ) : lang === 'ar' ? (
-                        'تسجيل الدخول'
-                      ) : (
-                        'Sign In'
-                      )}
-                    </Button>
-                  </Box>
-
-                  <Typography
-                    variant='body2'
-                    align='center'
+                    htmlFor='password'
+                    className='label'
                     sx={{
-                      mt: 2,
-                      color: '#9a9b9d',
-                      fontSize: '14px',
-                      fontFamily: 'Open Sans, sans-serif',
+                      fontSize: { xs: '14px', lg: '20px' },
+                      fontWeight: { xs: 400, lg: 600 },
                     }}
                   >
-                    {lang === 'ar'
-                      ? 'ليس لديك حساب بعد؟ '
-                      : "Don't have an account yet? "}
-                    <Link
-                      component={RouterLink}
-                      to='/Signup'
+                    {lang === 'ar' ? 'كلمة المرور' : 'Password'}
+                  </Typography>
+                  <Link
+                    component={RouterLink}
+                    to='/forget'
+                    sx={{
+                      color: 'var(--primary-dark-color)',
+                      textDecoration: 'none',
+                      fontWeight: 500,
+                      fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
+                      '&:hover': { textDecoration: 'underline' },
+                    }}
+                  >
+                    {lang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
+                  </Link>
+                </Box>
+                <AppInputField
+                  name='password'
+                  label=''
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  fullWidth
+                  value={password}
+                  onChange={e => {
+                    setPassword(e.target.value);
+                    setPasswordError('');
+                    setError(null);
+                  }}
+                  disabled={isLoading}
+                  error={Boolean(passwordError)}
+                  helperText={passwordError}
+                  placeholder='********'
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        <IconButton
+                          onClick={handleTogglePassword}
+                          edge='end'
+                          sx={{ color: 'var(--dark-grey-color)' }}
+                        >
+                          {showPassword ? (
+                            <VisibilityOff sx={{ width: 20, height: 20 }} />
+                          ) : (
+                            <Visibility sx={{ width: 20, height: 20 }} />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Box>
+              <Box
+                sx={{
+                  mb: { xs: 2, sm: 3 },
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={rememberMe}
+                      onChange={e => setRememberMe(e.target.checked)}
                       sx={{
-                        color: 'var(--yellow-color)',
-                        fontWeight: 400,
-                        fontFamily: 'Open Sans, sans-serif',
-                        fontSize: { xs: '11px', md: '14px' },
-                        textDecoration: 'none',
-                        '&:hover': {
-                          textDecoration: 'none',
-                          color: 'var(--yellow-color)',
+                        color: 'var(--dark-grey-color)',
+                        '&.Mui-checked': {
+                          color: 'var(--primary-dark-color)',
                         },
                       }}
+                    />
+                  }
+                  label={
+                    <Typography
+                      className='label'
+                      sx={{
+                        fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
+                      }}
                     >
-                      {lang === 'ar' ? 'سجل هنا' : 'Sign up here'}
-                    </Link>
-                  </Typography>
-                </Box>
-              </Paper>
+                      {lang === 'ar' ? 'تذكرني' : 'Remember me'}
+                    </Typography>
+                  }
+                />
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                <Button
+                  type='submit'
+                  variant='contained'
+                  disabled={isLoading || !email || !password}
+                  sx={{
+                    backgroundColor: 'var(--primary-dark-color)',
+                    color: 'var(--white-color)',
+                    fontWeight: 600,
+                    borderRadius: 'var(--border-radius-lg)',
+                    fontSize: 'var(--body-font-size)',
+                    textTransform: 'none',
+                    padding: { xs: '8px 32px', lg: '8px 32px' },
+                    height: { xs: '40px', lg: 'auto' },
+                    gap: { xs: '4px', lg: 0 },
+                    width: { xs: '100%', lg: 'auto' },
+                    '&:hover': {
+                      backgroundColor: 'var(--primary-light-color)',
+                    },
+                    '&:disabled': { backgroundColor: 'var(--grey-color)' },
+                  }}
+                >
+                  {isLoading ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={16} color='inherit' />
+                      {lang === 'ar' ? 'جاري تسجيل الدخول...' : 'Signing in...'}
+                    </Box>
+                  ) : lang === 'ar' ? (
+                    'تسجيل الدخول'
+                  ) : (
+                    'Sign In'
+                  )}
+                </Button>
+              </Box>
+              <Typography
+                align='center'
+                className='label'
+                sx={{
+                  color: 'var(--dark-grey-color)',
+                  fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
+                }}
+              >
+                {lang === 'ar'
+                  ? 'ليس لديك حساب بعد؟ '
+                  : "Don't have an account yet? "}
+                <Link
+                  component={RouterLink}
+                  to='/Signup'
+                  sx={{
+                    color: 'var(--primary-dark-color)',
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                    fontSize: 'inherit',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  {lang === 'ar' ? 'سجل هنا' : 'Sign up here'}
+                </Link>
+              </Typography>
             </Box>
           </Box>
         </Box>
+        <ErrorSnackbar
+          open={snackbar.open}
+          message={snackbar.message}
+          severity={snackbar.severity}
+          onClose={closeSnackbar}
+        />
       </Box>
-      <ErrorSnackbar
-        open={snackbar.open}
-        message={snackbar.message}
-        severity={snackbar.severity}
-        onClose={closeSnackbar}
-      />
-    </div>
+    </Box>
   );
 };
 

@@ -161,15 +161,18 @@ const Layout = () => {
             flexDirection: 'column',
             direction: rtlMode ? 'rtl' : 'ltr',
             height: { xs: '100vh', lg: 'auto' },
-            width: '280px',
+            width: { xs: '240px', lg: '280px' },
             position: { xs: 'absolute', lg: 'relative' },
             top: 0,
             left: rtlMode ? 'auto' : { xs: 0, lg: 'auto' },
             right: rtlMode ? { xs: 0, lg: 'auto' } : 'auto',
-            mt: { xs: 0, lg: 2.5 }, 
+            mt: { xs: 0, lg: 2.5 },
             ml: { xs: 0, lg: 2.5 },
             mb: { xs: 0, lg: 2.5 },
-            borderRadius: '20px',
+            borderRadius: {
+              xs: rtlMode ? '0 20px 20px 0' : '20px 0 0 20px',
+              lg: '20px',
+            },
             zIndex: { xs: 1000, lg: 'auto' },
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           }}
@@ -227,6 +230,7 @@ const Layout = () => {
         display: 'flex',
         justifyContent: 'center',
         backgroundColor: 'var(--white-100-color)',
+        py: { xs: 2, md: 0 },
       }}
     >
       <Box
@@ -237,6 +241,7 @@ const Layout = () => {
           fontFamily: 'SF Pro Rounded, sans-serif',
           overflow: 'hidden',
           borderRadius: '20px',
+          height: { xs: 'auto', md: '100vh' },
         }}
       >
         {sidebarOpen && !isLargeScreen && (
@@ -265,7 +270,7 @@ const Layout = () => {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'auto',
-            height: '100vh',
+            height: { xs: 'auto', md: '100vh' },
             transition: 'margin 0.3s ease',
             marginLeft: 0,
             marginRight: 0,
