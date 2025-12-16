@@ -16,7 +16,7 @@ import {
 import { useLanguage } from '../../hooks/useLanguage';
 import type { UpdateTeamDto, Manager, Team } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
-import AppButton from '../common/AppButton';
+import AppButton from '../Common/AppButton';
 import { COLORS } from '../../constants/appConstants';
 
 interface EditTeamFormProps {

@@ -19,7 +19,7 @@ import {
   type UpdateProfileRequest,
 } from '../../api/profileApi';
 import type { UserProfile } from '../../api/profileApi';
-import ProfilePictureUpload from '../common/ProfilePictureUpload';
+import ProfilePictureUpload from '../Common/ProfilePictureUpload';
 import { useProfilePicture } from '../../context/ProfilePictureContext';
 import { validateEmailAddress } from '../../utils/validation';
 import { env } from '../../config/env';

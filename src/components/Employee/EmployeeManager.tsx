@@ -42,9 +42,9 @@ import { extractErrorMessage } from '../../utils/errorHandler';
 import { exportCSV } from '../../api/exportApi';
 import { env } from '../../config/env';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
-import AppButton from '../common/AppButton';
-import AppTextField from '../common/AppTextField';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
+import AppButton from '../Common/AppButton';
+import AppTextField from '../Common/AppTextField';
 import { PAGINATION } from '../../constants/appConstants';
 interface Employee {
   id: string;
@@ -779,7 +779,10 @@ const EmployeeManager: React.FC = () => {
 
   // Handle viewing employee from navigation state (e.g., from search)
   useEffect(() => {
-    const state = location.state as { employeeId?: string; viewEmployee?: boolean } | null;
+    const state = location.state as {
+      employeeId?: string;
+      viewEmployee?: boolean;
+    } | null;
     if (state?.employeeId && state?.viewEmployee) {
       // First try to find in already loaded employees
       if (allEmployees.length > 0) {
@@ -792,11 +795,13 @@ const EmployeeManager: React.FC = () => {
           return;
         }
       }
-      
+
       // Employee not found in list or list not loaded yet, fetch it directly
       const fetchAndViewEmployee = async () => {
         try {
-          const employeeData = await employeeApi.getEmployeeById(state.employeeId!);
+          const employeeData = await employeeApi.getEmployeeById(
+            state.employeeId!
+          );
           const employeeToView: Employee = {
             id: employeeData.id,
             user_id: employeeData.user_id,

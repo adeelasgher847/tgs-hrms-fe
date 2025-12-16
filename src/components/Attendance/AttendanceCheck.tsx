@@ -4,7 +4,7 @@ import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
-import AppButton from '../common/AppButton';
+import AppButton from '../Common/AppButton';
 import {
   isAdmin,
   isSystemAdmin,

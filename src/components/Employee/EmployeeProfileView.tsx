@@ -22,7 +22,7 @@ import type {
   EmployeeProfileLeaveHistoryItem,
 } from '../../api/employeeApi';
 import { leaveApi, type LeaveType } from '../../api/leaveApi';
-import UserAvatar from '../../components/common/UserAvatar';
+import UserAvatar from '../Common/UserAvatar';
 import { formatDate } from '../../utils/dateUtils';
 
 const EmployeeProfileView: React.FC = () => {

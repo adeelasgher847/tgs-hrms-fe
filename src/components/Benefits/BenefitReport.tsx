@@ -26,8 +26,8 @@ import { departmentApiService } from '../../api/departmentApi';
 import { designationApiService } from '../../api/designationApi';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
-import AppSelect from '../common/AppSelect';
-import AppTable from '../common/AppTable';
+import AppSelect from '../Common/AppSelect';
+import AppTable from '../Common/AppTable';
 
 import { PAGINATION } from '../../constants/appConstants';
 

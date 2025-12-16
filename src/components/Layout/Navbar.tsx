@@ -31,7 +31,7 @@ import {
   ListItemButton,
   ListItemText,
 } from '@mui/material';
-import UserAvatar from '../common/UserAvatar';
+import UserAvatar from '../Common/UserAvatar';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';

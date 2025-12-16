@@ -21,7 +21,7 @@ import { useOutletContext } from 'react-router-dom';
 import type { DepartmentFormData } from '../../types';
 import { DepartmentCard } from './DepartmentCard';
 import { DepartmentFormModal } from './DepartmentFormModal';
-import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
+import DeleteConfirmationDialog from '../Common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
 import {
   departmentApiService,
@@ -29,9 +29,7 @@ import {
 } from '../../api/departmentApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../Common/ErrorSnackbar';
-import {
-  isSystemAdmin as isSystemAdminFn,
-} from '../../utils/roleUtils';
+import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { COLORS } from '../../constants/appConstants';
 
@@ -100,7 +98,7 @@ export const DepartmentList: React.FC = () => {
         // Use GET:/departments API to get tenant list
         const response =
           await departmentApiService.getAllTenantsWithDepartments();
-        
+
         // Extract unique tenants from the departments API response
         const uniqueTenantsMap = new Map<string, SystemTenant>();
         response.tenants.forEach(tenant => {
@@ -108,7 +106,10 @@ export const DepartmentList: React.FC = () => {
             uniqueTenantsMap.set(tenant.tenant_id, {
               id: tenant.tenant_id,
               name: tenant.tenant_name,
-              status: tenant.tenant_status as 'active' | 'suspended' | 'delelted',
+              status: tenant.tenant_status as
+                | 'active'
+                | 'suspended'
+                | 'delelted',
               isDeleted: false,
               created_at: '',
               updated_at: '',
@@ -116,7 +117,7 @@ export const DepartmentList: React.FC = () => {
             });
           }
         });
-        
+
         setAllTenants(Array.from(uniqueTenantsMap.values()));
       } catch {
         // Leave tenant filter empty on failure

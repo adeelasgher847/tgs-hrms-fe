@@ -6,7 +6,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AppButton from '../../common/AppButton';
+import AppButton from '../../Common/AppButton';
 import { COLORS } from '../../../constants/appConstants';
 import {
   getAttendanceThisMonth,

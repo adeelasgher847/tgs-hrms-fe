@@ -23,7 +23,7 @@ import employeeApi from '../../api/employeeApi';
 import benefitsApi from '../../api/benefitApi';
 import employeeBenefitApi from '../../api/employeeBenefitApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 interface Employee {
   id: string;

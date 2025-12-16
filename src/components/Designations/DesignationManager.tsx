@@ -26,7 +26,7 @@ import {
 } from '@mui/icons-material';
 
 import DesignationModal from './DesignationModal';
-import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
+import DeleteConfirmationDialog from '../Common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
 import {
   designationApiService,
@@ -37,7 +37,7 @@ import {
   type FrontendDepartment,
 } from '../../api/departmentApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 import {
   isSystemAdmin as isSystemAdminFn,
   isHRAdmin as isHRAdminFn,

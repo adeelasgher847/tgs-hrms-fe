@@ -20,7 +20,7 @@ import signupApi, {
   type PaymentRequest,
 } from '../../api/signupApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 // Default plans as fallback
 const defaultPlans = [

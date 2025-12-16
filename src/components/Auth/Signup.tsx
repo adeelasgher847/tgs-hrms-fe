@@ -29,7 +29,7 @@ import {
   validatePasswordStrength,
 } from '../../utils/validation';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();

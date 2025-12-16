@@ -15,7 +15,7 @@ import {
   ListItemText,
   IconButton,
 } from '@mui/material';
-import UserAvatar from '../common/UserAvatar';
+import UserAvatar from '../Common/UserAvatar';
 import { Avatar } from '@mui/material';
 import { Group as GroupIcon, Close as CloseIcon } from '@mui/icons-material';
 import { teamApiService } from '../../api/teamApi';

@@ -35,13 +35,13 @@ import {
   isEmployee,
   isManager,
 } from '../../utils/roleUtils';
-import ProfilePictureUpload from '../common/ProfilePictureUpload';
+import ProfilePictureUpload from '../Common/ProfilePictureUpload';
 import EmployeeProfileView from '../Employee/EmployeeProfileView';
 import EditProfileModal from './EditProfileModal';
 import { useIsDarkMode } from '../../theme';
 import { formatDate } from '../../utils/dateUtils';
-import AppButton from '../common/AppButton';
-import AppCard from '../common/AppCard';
+import AppButton from '../Common/AppButton';
+import AppCard from '../Common/AppCard';
 
 const UserProfileComponent = React.memo(() => {
   const { user: profile, loading, updateUser } = useUser();
