@@ -255,6 +255,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
       <Box sx={{ p: 3 }}>
         <Typography
           variant='h4'
+          fontWeight={600}
           fontSize={{ xs: '32px', lg: '48px' }}
           gutterBottom
         >
@@ -310,10 +311,10 @@ const TeamManager: React.FC<TeamManagerProps> = ({
       >
         <Typography
           variant='h4'
+          fontWeight={600}
+          fontSize={{ xs: '32px', lg: '48px' }}
           sx={{
             color: theme => theme.palette.text.primary,
-            fontWeight: 600,
-            fontSize: { xs: '32px', lg: '48px' },
             textAlign: { xs: 'left', sm: 'left' },
           }}
         >

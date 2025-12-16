@@ -874,7 +874,7 @@ const EmployeeManager: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant='h6' fontSize={{xs: '32px', lg: '48px'}} gutterBottom>
+      <Typography variant='h4' fontSize={{ xs: '32px', lg: '48px' }} gutterBottom>
         Employee List
       </Typography>
       {/* Add Employee Button */}

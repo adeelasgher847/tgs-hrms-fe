@@ -327,9 +327,9 @@ const TenantBasedEmployeeManager: React.FC = () => {
   return (
     <Box>
       <Typography
-        variant='h5'
+        variant='h4'
+        fontWeight={600}
         fontSize={{ xs: '32px', lg: '48px' }}
-        fontWeight='bold'
         mb={3}
       >
         Employee List
