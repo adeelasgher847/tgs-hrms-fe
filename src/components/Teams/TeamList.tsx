@@ -27,7 +27,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, UpdateTeamDto } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
-import AppButton from '../common/AppButton';
+import AppButton from '../Common/AppButton';
 import { COLORS } from '../../constants/appConstants';
 import TeamMemberList from './TeamMemberList';
 import EditTeamForm from './EditTeamForm';

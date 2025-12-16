@@ -14,7 +14,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { validatePasswordStrength } from '../../utils/validation';
 import authApi from '../../api/authApi';
-import AppButton from '../common/AppButton';
+import AppButton from '../Common/AppButton';
 import { COLORS } from '../../constants/appConstants';
 
 const PasswordReset: React.FC = () => {

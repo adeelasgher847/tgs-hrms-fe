@@ -20,7 +20,7 @@ import {
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import attendanceSummaryApi from '../../api/reportApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 import { PAGINATION } from '../../constants/appConstants';
 
 interface AttendanceSummaryItem {

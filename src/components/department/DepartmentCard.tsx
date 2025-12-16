@@ -9,8 +9,7 @@ import {
 } from '@mui/material';
 import type { Department } from '../../types';
 import { useOutletContext } from 'react-router-dom';
-import edit from '../../assets/dashboardIcon/edit.svg';
-import deleteIcon from '../../assets/dashboardIcon/ui-delete.svg';
+import { Icons } from '../../assets/icons';
 
 interface DepartmentCardProps {
   department: Department;
@@ -35,66 +34,41 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
       sx={{
         height: '100%',
         display: 'flex',
-        px: 2,
         flexDirection: 'column',
-        transition: 'all 0.3s ease',
         direction: isRtl ? 'rtl' : 'ltr',
-        backgroundColor: bgColor,
-        color: textColor,
-        border: `1px solid ${borderColor}`,
-        boxShadow: 'unset',
-        '&:hover': {
-          // transform: "translateY(-4px)",
-          // boxShadow: 4,
-        },
+        backgroundColor: '#FFFFFF',
+        borderRadius: '20px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        p: '20px',
+        gap: '32px',
       }}
     >
-      <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Typography
-            variant='h6'
-            component='h2'
-            sx={{
-              fontWeight: 600,
-              textAlign: isRtl ? 'right' : 'left',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: '100%',
-              color: textColor,
-            }}
-          >
-            {isRtl ? department.nameAr : department.name}
-          </Typography>
-        </Box>
-
-        {(isRtl ? department.subtitleAr : department.subtitle) && (
-          <Typography
-            variant='body2'
-            sx={{
-              color: darkMode ? '#8f8f8f' : 'text.secondary',
-              textAlign: isRtl ? 'right' : 'left',
-              mb: 2,
-              fontWeight: 700,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {isRtl ? department.subtitleAr : department.subtitle}
-          </Typography>
-        )}
-
-        <Divider sx={{ mb: 2, borderColor: borderColor }} />
-
+      <CardContent sx={{ flexGrow: 1, p: 0, '&:last-child': { pb: 0 } }}>
+        <Typography
+          component='h2'
+          fontWeight={500}
+          fontSize='28px'
+          lineHeight='36px'
+          letterSpacing='-2%'
+          color='#2C2C2C'
+          sx={{
+            textAlign: isRtl ? 'right' : 'left',
+            mb: '10px',
+          }}
+        >
+          {isRtl ? department.nameAr : department.name}
+        </Typography>
+        <Divider />
         {(isRtl ? department.descriptionAr : department.description) && (
           <Typography
-            variant='body2'
+            fontWeight={400}
+            fontSize='var(--body-font-size)'
+            lineHeight='var(--body-line-height)'
+            letterSpacing='var(--body-letter-spacing)'
+            color='#2C2C2C'
             sx={{
-              mb: 2,
-              lineHeight: 1.6,
               textAlign: isRtl ? 'right' : 'left',
-              color: darkMode ? '#8f8f8f' : 'text.secondary',
+              mt: '10px',
             }}
           >
             {isRtl ? department.descriptionAr : department.description}
@@ -103,75 +77,52 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
       </CardContent>
 
       {(onEdit || onDelete) && (
-        <CardActions
-          sx={{
-            justifyContent: 'flex-start',
-            px: 2,
-            pb: 2,
-          }}
-        >
-          <Box display='flex' width={100}>
-            {onEdit && (
-              <IconButton
-                onClick={() => onEdit(department)}
-                color='success'
-                size='small'
+        <CardActions sx={{ p: 0, justifyContent: 'flex-start', gap: 1 }}>
+          {onEdit && (
+            <IconButton
+              onClick={() => onEdit(department)}
+              size='small'
+              sx={{
+                p: 1,
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                },
+              }}
+            >
+              <Box
+                component='img'
+                src={Icons.edit}
+                alt='Edit'
                 sx={{
-                  border: `1px solid ${borderColor}`,
-                  borderTopLeftRadius: isRtl ? 0 : '5px',
-                  borderBottomLeftRadius: isRtl ? 0 : '5px',
-                  borderTopRightRadius: isRtl ? '5px' : 0,
-                  borderBottomRightRadius: isRtl ? '5px' : 0,
-                  '&:hover': {
-                    backgroundColor: 'orange',
-                    color: 'white',
-                  },
+                  width: 20,
+                  height: 20,
                 }}
-              >
-                <img
-                  src={edit}
-                  alt='Absent'
-                  style={{
-                    width: 15,
-                    height: 15,
-                    filter:
-                      'invert(48%) sepia(59%) saturate(528%) hue-rotate(85deg) brightness(90%) contrast(91%)',
-                  }}
-                />
-                {/* <EditIcon fontSize="small" /> */}
-              </IconButton>
-            )}
+              />
+            </IconButton>
+          )}
 
-            {onDelete && (
-              <IconButton
-                onClick={() => onDelete(department)}
-                color='error'
-                size='small'
+          {onDelete && (
+            <IconButton
+              onClick={() => onDelete(department)}
+              size='small'
+              sx={{
+                p: 1,
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                },
+              }}
+            >
+              <Box
+                component='img'
+                src={Icons.delete}
+                alt='Delete'
                 sx={{
-                  border: `1px solid ${borderColor}`,
-                  borderTopLeftRadius: isRtl ? '5px' : 0,
-                  borderBottomLeftRadius: isRtl ? '5px' : 0,
-                  borderTopRightRadius: isRtl ? 0 : '5px',
-                  borderBottomRightRadius: isRtl ? 0 : '5px',
-                  '&:hover': {
-                    backgroundColor: 'orange',
-                    color: 'white',
-                  },
+                  width: 20,
+                  height: 20,
                 }}
-              >
-                <img
-                  src={deleteIcon}
-                  alt='Delete'
-                  style={{
-                    width: 15,
-                    height: 15,
-                    filter:
-                      'invert(28%) sepia(97%) saturate(1404%) hue-rotate(329deg) brightness(95%) contrast(96%)',
-                  }}
-                />
-              </IconButton>
-            )}
-          </Box>
+              />
+            </IconButton>
+          )}
         </CardActions>
       )}
     </Card>

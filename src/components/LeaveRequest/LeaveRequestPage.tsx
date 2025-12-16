@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import HistoryIcon from '@mui/icons-material/History';
-import ErrorSnackbar from '../common/ErrorSnackbar';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 import { PAGINATION } from '../../constants/appConstants';

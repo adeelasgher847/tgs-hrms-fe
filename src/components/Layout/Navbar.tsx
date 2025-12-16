@@ -13,7 +13,6 @@ import {
 } from '../../utils/roleUtils';
 
 import {
-  AppBar,
   Box,
   Toolbar,
   IconButton,
@@ -25,17 +24,16 @@ import {
   Divider,
   ListItemIcon,
   Button,
+  Paper,
 } from '@mui/material';
-import UserAvatar from '../common/UserAvatar';
+import UserAvatar from '../Common/UserAvatar';
 import MenuIcon from '@mui/icons-material/Menu';
-import SearchIcon from '@mui/icons-material/Search';
-import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
-import AddIcon from '@mui/icons-material/Add';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
+import { Icons } from '../../assets/icons';
 import TeamMembersAvatar from '../Teams/TeamMembersAvatar';
 import TeamMembersModal from '../Teams/TeamMembersModal';
 
@@ -62,33 +60,28 @@ const labels = {
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
-  borderRadius: '6px',
-  backgroundColor: '#efefef',
+  borderRadius: '16px',
+  backgroundColor: 'var(--primary-color)',
   height: '44px',
   display: 'flex',
   alignItems: 'center',
-  paddingLeft: theme.spacing(1),
+  paddingLeft: theme.spacing(1.5),
+  paddingRight: theme.spacing(1),
   width: '100%',
   [theme.breakpoints.up('md')]: {
-    width: '300px',
+    width: '400px',
     flexGrow: 0,
   },
 }));
 
-const SearchIconWrapper = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: '#000',
-  marginRight: theme.spacing(1),
-}));
-
 const StyledInputBase = styled(InputBase)(() => ({
-  fontSize: '16px',
+  fontSize: 'var(--body-font-size)',
+  flex: 1,
   '& .MuiInputBase-input': {
     padding: 0,
     '::placeholder': {
-      color: '#b3b3b3',
+      color: 'var(--dark-grey-color)',
+      opacity: 1,
     },
   },
 }));
@@ -166,90 +159,78 @@ const Navbar: React.FC<NavbarProps> = ({
   // Language context available if needed
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar
-        position='static'
+    <Box
+      sx={{
+        flexGrow: 1,
+        backgroundColor: 'var(--white-100-color)',
+        py: 2,
+      }}
+    >
+      <Paper
         elevation={0}
         sx={{
-          backgroundColor: 'transparent',
-          color: darkMode ? 'white' : 'black',
+          backgroundColor: 'var(--white-color)',
+          borderRadius: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          px: { xs: 2, md: 3 },
+          py: 1.5,
         }}
       >
         <Toolbar
           disableGutters
           sx={{
-            px: { xs: 1, md: 3 },
-            gap: '10px',
-            display: { xs: 'block', sm: 'flex' },
-            justifyContent: { xs: 'center', sm: 'space-between' },
-            flexWrap: 'wrap',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 2,
+            minHeight: 'auto',
           }}
         >
-          <Box sx={{ flexGrow: { xs: 1, sm: 0 }, minWidth: 0 }}>
+          <Box sx={{ flex: 1, maxWidth: { xs: '100%', md: '300px' } }}>
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
-                backgroundColor: darkMode ? '#262727' : '#efefef',
-                borderRadius: '6px',
-                px: 1,
-                height: '44px',
               }}
             >
-              <Search
-                sx={{
-                  backgroundColor: 'transparent',
-                  height: '100%',
-                  paddingLeft: 0,
-                }}
-              >
-                <SearchIconWrapper>
-                  <SearchIcon sx={{}} />
-                </SearchIconWrapper>
+              <Search>
                 <StyledInputBase
                   placeholder={lang.search}
                   inputProps={{ 'aria-label': 'search' }}
                   sx={{
-                    transition: 'all 0.3s ease-in-out',
-                    color: darkMode ? 'white' : 'black',
+                    color: 'var(--text-color)',
                     '& input': {
                       backgroundColor: 'transparent',
-                      height: '43px',
-                    },
-                    '&:focus-within': {
-                      height: '45px',
                     },
                   }}
                 />
               </Search>
-
-              <Box
+              <IconButton
                 sx={{
-                  display: { xs: 'block', sm: 'none' },
-                  borderRadius: '6px',
-                  p: '6px',
+                  backgroundColor: 'var(--primary-dark-color)',
+                  color: 'var(--white-color)',
+                  borderRadius: '16px',
+                  width: '44px',
+                  height: '44px',
+                  minWidth: '44px',
+                  '&:hover': {
+                    backgroundColor: 'var(--primary-light-color)',
+                  },
                 }}
+                aria-label='Search'
               >
-                <IconButton
-                  onClick={handleOpenTeamMembersModal}
-                  aria-label='Open team members modal'
-                  size='small'
+                <Box
+                  component='img'
+                  src={Icons.search}
+                  alt='Search'
                   sx={{
-                    p: '6px',
+                    width: 20,
+                    height: 20,
+                    filter: 'brightness(0) saturate(100%) invert(1)',
                   }}
-                >
-                  <AddIcon
-                    sx={{
-                      color: '#555',
-                      fontSize: '26px',
-                      width: '31px',
-                      height: '31px',
-                    }}
-                    aria-hidden='true'
-                  />
-                </IconButton>
-              </Box>
+                />
+              </IconButton>
             </Box>
           </Box>
 
@@ -257,63 +238,141 @@ const Navbar: React.FC<NavbarProps> = ({
           <Box
             sx={{
               display: 'flex',
-              justifyContent: 'flex-end',
               alignItems: 'center',
-              mt: { xs: 1, sm: 0 },
+              gap: 1,
             }}
           >
+            <Button
+              variant='text'
+              size='small'
+              onClick={e => setLangAnchorEl(e.currentTarget)}
+              sx={{
+                minWidth: 0,
+                px: 1.5,
+                color: 'var(--text-color)',
+                fontWeight: 600,
+                fontSize: 'var(--body-font-size)',
+              }}
+              aria-label={`Current language: ${language === 'en' ? 'English' : 'Arabic'}. Click to change language`}
+              aria-haspopup='true'
+              aria-expanded={langMenuOpen}
+            >
+              {language === 'en' ? 'EN' : 'عربي'}
+            </Button>
+
+            {/* Team Members Avatar */}
             <Box
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: { xs: 3, md: 2 },
+                display: { xs: 'none', md: 'block' },
               }}
             >
-              {/* <IconButton
-                sx={{
-                  backgroundColor: '#4b4f73',
-                  color: 'white',
-                  width: 28,
-                  height: 28,
-                }}
-              >
-                <InfoOutlinedIcon fontSize='small' />
-              </IconButton> */}
-              <Button
-                variant='text'
-                size='small'
-                onClick={e => setLangAnchorEl(e.currentTarget)}
-                sx={{
-                  minWidth: 0,
-                  px: 0,
-                  color: textColor,
-                  fontWeight: 600,
-                }}
-                aria-label={`Current language: ${language === 'en' ? 'English' : 'Arabic'}. Click to change language`}
-                aria-haspopup='true'
-                aria-expanded={langMenuOpen}
-              >
-                {language === 'en' ? 'EN' : 'عربي'}
-              </Button>
-              <TeamMembersAvatar
-                maxAvatars={5}
-                onOpenInviteModal={onOpenInviteModal}
-                darkMode={darkMode}
-              />
+              <TeamMembersAvatar maxAvatars={5} darkMode={darkMode} />
+            </Box>
 
+            {/* Mobile Team Members Button */}
+            <IconButton
+              onClick={handleOpenTeamMembersModal}
+              sx={{
+                display: { xs: 'flex', md: 'none' },
+                backgroundColor: 'var(--white-color)',
+                borderRadius: 'var(--border-radius-lg)',
+                p: 1,
+              }}
+              aria-label='Open team members modal'
+            >
+              <GroupOutlinedIcon sx={{ color: 'var(--text-color)' }} />
+            </IconButton>
+
+            <Paper
+              elevation={0}
+              sx={{
+                backgroundColor: 'var(--light-grey-200-color)',
+                borderRadius: '16px',
+                p: 0.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <IconButton
-                sx={{ xs: { padding: '8px' }, md: { padding: '0px' } }}
+                sx={{
+                  padding: '8px',
+                }}
                 aria-label='Notifications'
                 aria-describedby='notifications-badge'
               >
-                <Badge variant='dot' color='error' id='notifications-badge'>
-                  <NotificationsNoneOutlinedIcon
-                    sx={{ color: textColor }}
+                <Badge
+                  variant='dot'
+                  sx={{
+                    '& .MuiBadge-dot': {
+                      backgroundColor: 'var(--secondary-color)',
+                      width: 8,
+                      height: 8,
+                    },
+                  }}
+                  id='notifications-badge'
+                >
+                  <Box
+                    component='img'
+                    src={Icons.notification}
+                    alt='Notifications'
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      filter: 'brightness(0) saturate(100%)',
+                    }}
                     aria-hidden='true'
                   />
                 </Badge>
               </IconButton>
+            </Paper>
 
+            <Divider
+              orientation='vertical'
+              flexItem
+              sx={{
+                height: '40px',
+                alignSelf: 'center',
+                borderColor: 'var(--light-grey-color)',
+              }}
+            />
+
+            {/* User Profile */}
+            <Paper
+              elevation={0}
+              sx={{
+                backgroundColor: 'var(--white-color)',
+                borderRadius: 'var(--border-radius-lg)',
+                px: 2,
+                py: 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+              }}
+            >
+              <IconButton
+                onClick={handleMenuOpen}
+                sx={{ p: 0 }}
+                aria-label={`User menu for ${user ? `${user.first_name} ${user.last_name}` : 'user'}`}
+                aria-haspopup='true'
+                aria-expanded={open}
+              >
+                {user ? (
+                  <UserAvatar user={user} size={40} clickable={false} />
+                ) : (
+                  <img
+                    src='./avatar.png'
+                    alt=''
+                    aria-hidden='true'
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                    }}
+                  />
+                )}
+              </IconButton>
               <Box
                 sx={{
                   display: 'flex',
@@ -322,124 +381,80 @@ const Navbar: React.FC<NavbarProps> = ({
                 }}
               >
                 <Typography
-                  variant='subtitle2'
-                  sx={{ fontWeight: 600, fontSize: '14px' }}
-                  color={textColor}
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: 'var(--body-font-size)',
+                    color: 'var(--black-color)',
+                    lineHeight: 1.2,
+                  }}
                 >
                   {user ? `${user.first_name} ${user.last_name}` : 'User'}
                 </Typography>
-                <Typography variant='caption' color={textColor}>
+                <Typography
+                  sx={{
+                    fontSize: 'var(--label-font-size)',
+                    color: 'var(--dark-grey-500-color)',
+                    lineHeight: 1.2,
+                    fontWeight: 400,
+                  }}
+                >
                   {getRoleDisplayName(user?.role)}
                 </Typography>
               </Box>
-              <IconButton
-                onClick={handleMenuOpen}
-                aria-label={`User menu for ${user ? `${user.first_name} ${user.last_name}` : 'user'}`}
-                aria-haspopup='true'
-                aria-expanded={open}
-              >
-                {user ? (
-                  <UserAvatar user={user} size={50} clickable={false} />
-                ) : (
-                  <img
-                    src='./avatar.png'
-                    alt=''
-                    aria-hidden='true'
-                    style={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                    }}
-                  />
-                )}
-              </IconButton>
-              {/* Language Toggle */}
-              {/* <ToggleButtonGroup
-                value={language}
-                exclusive
-                onChange={(_, value) => value && setLanguage(value)}
-                size='small'
-              >
-                <ToggleButton
-                  value='en'
-                  sx={{
-                    '&.Mui-selected': {
-                      backgroundColor: COLORS.PRIMARY,
-                      color: '#fff',
-                      '&:hover': {
-                        backgroundColor: COLORS.PRIMARY,
-                      },
-                    },
-                  }}
-                >
-                  EN
-                </ToggleButton>
+            </Paper>
 
-                <ToggleButton
-                  value='ar'
-                  sx={{
-                    '&.Mui-selected': {
-                      backgroundColor: COLORS.PRIMARY,
-                      color: '#fff',
-                      '&:hover': {
-                        backgroundColor: COLORS.PRIMARY,
-                      },
-                    },
-                  }}
-                >
-                  عربي
-                </ToggleButton>
-              </ToggleButtonGroup> */}
-              <Menu
-                anchorEl={langAnchorEl}
-                open={langMenuOpen}
-                onClose={() => setLangAnchorEl(null)}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                PaperProps={{
-                  elevation: 4,
-                  sx: {
-                    borderRadius: '8px',
-                    minWidth: 80,
-                    p: 0,
-                  },
+            {/* Mobile Menu Toggle */}
+            <IconButton
+              onClick={onToggleSidebar}
+              sx={{
+                display: { xs: 'block', lg: 'none' },
+                color: 'var(--text-color)',
+              }}
+              aria-label='Toggle sidebar menu'
+              aria-expanded='false'
+            >
+              <MenuIcon aria-hidden='true' />
+            </IconButton>
+          </Box>
+
+          {/* Language Menu */}
+          <Menu
+            anchorEl={langAnchorEl}
+            open={langMenuOpen}
+            onClose={() => setLangAnchorEl(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{
+              elevation: 4,
+              sx: {
+                borderRadius: 'var(--border-radius-lg)',
+                minWidth: 80,
+                p: 0,
+              },
+            }}
+          >
+            {language === 'en' ? (
+              <MenuItem
+                onClick={() => {
+                  setLanguage('ar');
+                  setLangAnchorEl(null);
                 }}
               >
-                {language === 'en' ? (
-                  <MenuItem
-                    onClick={() => {
-                      setLanguage('ar');
-                      setLangAnchorEl(null);
-                    }}
-                  >
-                    عربي
-                  </MenuItem>
-                ) : (
-                  <MenuItem
-                    onClick={() => {
-                      setLanguage('en');
-                      setLangAnchorEl(null);
-                    }}
-                  >
-                    EN
-                  </MenuItem>
-                )}
-              </Menu>
-            </Box>
-            <Box>
-              <IconButton
-                onClick={onToggleSidebar}
-                sx={{ display: { xs: 'block', lg: 'none' } }}
-                aria-label='Toggle sidebar menu'
-                aria-expanded='false'
+                عربي
+              </MenuItem>
+            ) : (
+              <MenuItem
+                onClick={() => {
+                  setLanguage('en');
+                  setLangAnchorEl(null);
+                }}
               >
-                <MenuIcon sx={{ color: textColor }} aria-hidden='true' />
-              </IconButton>
-            </Box>
-          </Box>
+                EN
+              </MenuItem>
+            )}
+          </Menu>
         </Toolbar>
-      </AppBar>
+      </Paper>
 
       {/* Menu */}
       <Menu

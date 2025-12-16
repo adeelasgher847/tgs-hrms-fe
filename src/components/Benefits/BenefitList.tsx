@@ -27,9 +27,9 @@ import BenefitFormModal from './BenefitFormModal';
 import type { BenefitFormValues } from './BenefitFormModal';
 import benefitsApi from '../../api/benefitApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
-import AppButton from '../common/AppButton';
-import AppTable from '../common/AppTable';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
+import AppButton from '../Common/AppButton';
+import AppTable from '../Common/AppTable';
 
 const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 

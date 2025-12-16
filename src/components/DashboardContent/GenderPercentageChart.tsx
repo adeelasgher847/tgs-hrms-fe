@@ -1,5 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Box, Typography, Stack, CircularProgress } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Stack,
+  CircularProgress,
+  Divider,
+} from '@mui/material';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
@@ -15,7 +21,8 @@ type GenderDataItem = {
 
 // Translations
 const labels = {
-  genderDistribution: { en: 'Total Active Employees', ar: 'توزيع الجنس' },
+  activity: { en: 'Activity', ar: 'النشاط' },
+  activeEmployees: { en: 'Active Employees', ar: 'الموظفين النشطين' },
   male: { en: 'Male', ar: 'ذكر' },
   female: { en: 'Female', ar: 'أنثى' },
   loading: { en: 'Loading...', ar: 'جاري التحميل...' },
@@ -86,13 +93,13 @@ export default function GenderPercentageChart() {
           {
             name: 'Male',
             value: data.male,
-            color: '#484c7f',
+            color: '#2462A5',
             percentage: data.male,
           },
           {
             name: 'Female',
             value: data.female,
-            color: '#E91E63',
+            color: '#C61952',
             percentage: data.female,
           },
         ];
@@ -101,8 +108,8 @@ export default function GenderPercentageChart() {
         // If there's an error (including tenant with zero employees), render zeros
         setError(null);
         setGenderData([
-          { name: 'Male', value: 0, color: '#484c7f', percentage: 0 },
-          { name: 'Female', value: 0, color: '#E91E63', percentage: 0 },
+          { name: 'Male', value: 0, color: '#2462A5', percentage: 0 },
+          { name: 'Female', value: 0, color: '#C61952', percentage: 0 },
         ]);
       } finally {
         setLoading(false);
@@ -147,7 +154,7 @@ export default function GenderPercentageChart() {
         }}
       >
         <Typography fontWeight='bold' fontSize={16} mb={0.5} color={textColor}>
-          {labels.genderDistribution[language]}
+          {labels.activity[language]}
         </Typography>
         <Box
           display='flex'
@@ -170,40 +177,103 @@ export default function GenderPercentageChart() {
   return (
     <Box
       sx={{
-        p: 2,
-        border: `1px solid ${borderColor}`,
         height: '100%',
-        borderRadius: '0.375rem',
-        backgroundColor: bgColor,
+        display: 'flex',
+        flexDirection: 'column',
         direction: language === 'ar' ? 'rtl' : 'ltr',
       }}
     >
-      <Box display={'flex'} justifyContent={'space-between'}>
-        <Typography fontWeight='bold' fontSize={16} mb={2} color={textColor}>
-          {labels.genderDistribution[language]}
+      {/* Title with Legend on Right */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          mb: 3,
+        }}
+      >
+        <Typography
+          fontWeight={500}
+          fontSize='28px'
+          lineHeight='36px'
+          letterSpacing='-2%'
+          color='#2C2C2C'
+        >
+          {labels.activity[language]}
         </Typography>
-        <Typography fontWeight='bold' fontSize={'25px'} color={textColor}>
-          {totalEmployees}
-        </Typography>
+
+        <Stack direction='row' spacing={2} alignItems='center'>
+          {genderData.map((item, index) => (
+            <React.Fragment key={item.name}>
+              <Stack direction='row' alignItems='center' spacing={1}>
+                <Box
+                  sx={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    backgroundColor: item.color,
+                  }}
+                />
+                <Typography
+                  fontSize='16px'
+                  lineHeight='24px'
+                  letterSpacing='-1%'
+                  fontWeight={500}
+                  color='#2C2C2C'
+                >
+                  {item.name === 'Male'
+                    ? labels.male[language]
+                    : labels.female[language]}{' '}
+                  <Box component='span' fontWeight={500}>
+                    {item.value}
+                  </Box>
+                </Typography>
+              </Stack>
+              {index < genderData.length - 1 && (
+                <Divider
+                  orientation='vertical'
+                  flexItem
+                  sx={{
+                    height: '24px',
+                    borderColor: 'var(--light-grey-color)',
+                  }}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </Stack>
       </Box>
 
+      {/* Donut Chart with Center Text */}
       <Box
         tabIndex={-1}
         sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          minHeight: 300,
           '& svg, & path': {
             outline: 'none',
             border: 'none',
           },
         }}
       >
-        <ResponsiveContainer width='100%' height={220}>
+        <ResponsiveContainer width='100%' height={300}>
           <PieChart>
             <Pie
               data={genderData}
-              innerRadius={50}
-              outerRadius={80}
+              cx='50%'
+              cy='50%'
+              innerRadius={80}
+              outerRadius={120}
               paddingAngle={4}
+              cornerRadius={6}
               dataKey='value'
+              startAngle={90}
+              endAngle={-270}
             >
               {genderData.map((entry, _index) => (
                 <Cell key={`cell-${_index}`} fill={entry.color} />
@@ -212,34 +282,42 @@ export default function GenderPercentageChart() {
             <Tooltip content={<CustomTooltip language={language} />} />
           </PieChart>
         </ResponsiveContainer>
-      </Box>
 
-      {/* Gender labels */}
-      <Stack direction='row' spacing={3} justifyContent='center' mt={2}>
-        {genderData.map(item => (
-          <Stack
-            key={item.name}
-            direction='row'
-            alignItems='center'
-            spacing={1}
+        {/* Center Text Overlay */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          <Typography
+            fontSize='14px'
+            lineHeight='20px'
+            letterSpacing='-1%'
+            fontWeight={400}
+            color='#888888'
+            sx={{ mb: 0.5 }}
           >
-            <Box
-              sx={{
-                width: 12,
-                height: 12,
-                borderRadius: '50%',
-                backgroundColor: item.color,
-              }}
-            />
-            <Typography fontSize={14} color={textColor}>
-              {item.name === 'Male'
-                ? labels.male[language]
-                : labels.female[language]}
-              : <b>{item.percentage}</b>
-            </Typography>
-          </Stack>
-        ))}
-      </Stack>
+            {labels.activeEmployees[language]}
+          </Typography>
+          <Typography
+            fontWeight={500}
+            fontSize='28px'
+            lineHeight='36px'
+            letterSpacing='-2%'
+            color='#2C2C2C'
+          >
+            {totalEmployees}
+          </Typography>
+        </Box>
+      </Box>
     </Box>
   );
 }

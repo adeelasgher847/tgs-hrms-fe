@@ -137,11 +137,15 @@ const Dashboard: React.FC = () => {
       }}
     >
       <Typography
-        variant='h4'
         sx={{
           direction: language === 'ar' ? 'rtl' : 'ltr',
-          color: darkMode ? '#8f8f8f' : '#000',
+          color: '#2C2C2C',
           textAlign: { xs: 'left' },
+          fontWeight: 500,
+          fontSize: '48px',
+          lineHeight: '44px',
+          letterSpacing: '-2%',
+          mb: 3,
         }}
       >
         {lang.title}
@@ -160,7 +164,7 @@ const Dashboard: React.FC = () => {
             elevation={3}
             sx={{
               width: '100%',
-              borderRadius: 1,
+              borderRadius: '20px',
               backgroundColor: 'unset',
               boxShadow: 'none',
             }}
@@ -190,7 +194,7 @@ const Dashboard: React.FC = () => {
             sx={{
               p: { xs: 2, sm: 3 },
               width: '100%',
-              borderRadius: 1,
+              borderRadius: '20px',
               backgroundColor: theme.palette.background.paper,
               boxShadow: 'none',
             }}
@@ -215,7 +219,7 @@ const Dashboard: React.FC = () => {
               <Paper
                 elevation={3}
                 sx={{
-                  borderRadius: 1,
+                  borderRadius: '20px',
                   backgroundColor: 'unset',
                   display: 'flex',
                   flexDirection: 'column',
@@ -237,7 +241,7 @@ const Dashboard: React.FC = () => {
                 <Box
                   sx={{
                     overflow: 'hidden',
-                    borderRadius: 1,
+                    borderRadius: '20px',
                     backgroundColor: theme.palette.background.paper,
                   }}
                 >
@@ -315,7 +319,7 @@ const Dashboard: React.FC = () => {
             elevation={3}
             sx={{
               p: { xs: 2, sm: 3 },
-              borderRadius: 1,
+              borderRadius: '20px',
               backgroundColor: theme.palette.background.paper,
               boxShadow: 'none',
             }}
@@ -423,47 +427,63 @@ const Dashboard: React.FC = () => {
           </Paper>
         </Box>
       ) : (
-        <>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+          }}
+        >
+          {/* Employee Growth Chart - Full Width */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: '20px',
+              backgroundColor: 'var(--white-color)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            }}
+          >
+            <EmployeesInfoChart />
+          </Paper>
+
+          {/* Employees Availability and Activity Cards - Side by Side */}
           <Box
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
-              gap: 2,
+              gap: 3,
             }}
           >
-            <Box
-              sx={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 2 }}
+            {/* Employees Availability Card */}
+            <Paper
+              elevation={0}
+              sx={{
+                flex: 1,
+                p: 3,
+                borderRadius: '20px',
+                backgroundColor: 'var(--white-color)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              }}
             >
-              <EmployeesInfoChart />
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  gap: 2,
-                }}
-              >
-                <Box flex={1}>
-                  <AvailabilityCardsGrid />
-                </Box>
-                <Box flex={1}>
-                  <GenderPercentageChart />
-                </Box>
-              </Box>
-            </Box>
+              <AvailabilityCardsGrid />
+            </Paper>
 
-            {/* <Box
-              sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}
+            {/* Activity Card */}
+            <Paper
+              elevation={0}
+              sx={{
+                flex: 1,
+                p: 3,
+                borderRadius: '20px',
+                backgroundColor: 'var(--white-color)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              }}
             >
-              <IconImageCardProps />
-              <ApplicationStats />
-              <UpcomingInterviews />
-            </Box> */}
+              <GenderPercentageChart />
+            </Paper>
           </Box>
-
-          {/* <Box mt={2}>
-            <TopPerformersProps />
-          </Box> */}
-        </>
+        </Box>
       )}
     </Box>
   );

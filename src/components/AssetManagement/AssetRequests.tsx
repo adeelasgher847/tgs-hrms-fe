@@ -45,11 +45,11 @@ import {
 import StatusChip from './StatusChip';
 // ConfirmationDialog, Snackbar and Alert not used in this component
 // kept imports removed to satisfy linter
-import { DeleteConfirmationDialog } from '../common/DeleteConfirmationDialog';
+import { DeleteConfirmationDialog } from '../Common/DeleteConfirmationDialog';
 import { type AssetSubcategory } from '../../api/assetApi';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset request response that may include additional fields

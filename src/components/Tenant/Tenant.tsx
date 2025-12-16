@@ -40,11 +40,11 @@ import {
 import { formatDate } from '../../utils/dateUtils';
 import { env } from '../../config/env';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
-import AppButton from '../common/AppButton';
-import AppSelect from '../common/AppSelect';
-import AppTable from '../common/AppTable';
-import AppCard from '../common/AppCard';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
+import AppButton from '../Common/AppButton';
+import AppSelect from '../Common/AppSelect';
+import AppTable from '../Common/AppTable';
+import AppCard from '../Common/AppCard';
 import { PAGINATION } from '../../constants/appConstants';
 
 type StatusFilterOption = 'All' | 'active' | 'suspended' | 'deleted';

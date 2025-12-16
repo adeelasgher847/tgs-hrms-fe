@@ -33,7 +33,7 @@ import employeeBenefitApi from '../../api/employeeBenefitApi';
 import benefitsApi from '../../api/benefitApi';
 import type { EmployeeWithBenefits } from '../../api/employeeBenefitApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 

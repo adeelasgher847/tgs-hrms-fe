@@ -15,8 +15,8 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import { useOutletContext } from 'react-router-dom';
 import { env } from '../../config/env';
-import AppButton from '../common/AppButton';
-import AppCard from '../common/AppCard';
+import AppButton from '../Common/AppButton';
+import AppCard from '../Common/AppCard';
 
 interface Employee {
   id: string;

@@ -30,7 +30,7 @@ import systemEmployeeApiService, {
   type Benefit,
 } from '../../api/systemEmployeeApi';
 import { leaveApi, type LeaveType } from '../../api/leaveApi';
-import UserAvatar from '../../components/common/UserAvatar';
+import UserAvatar from '../Common/UserAvatar';
 import KpiDetailCard from '../KPI/KPICardDetail';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 

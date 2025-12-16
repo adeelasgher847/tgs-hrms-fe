@@ -23,7 +23,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import AppButton from '../common/AppButton';
+import AppButton from '../Common/AppButton';
 
 import {
   Group as GroupIcon,

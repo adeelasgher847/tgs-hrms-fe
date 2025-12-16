@@ -22,9 +22,9 @@ import type { Team, TeamMember } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
 import TeamMemberList from './TeamMemberList';
-import AppButton from '../common/AppButton';
-import AppCard from '../common/AppCard';
-import AppSelect from '../common/AppSelect';
+import AppButton from '../Common/AppButton';
+import AppCard from '../Common/AppCard';
+import AppSelect from '../Common/AppSelect';
 import { COLORS } from '../../constants/appConstants';
 
 interface MyTeamsProps {

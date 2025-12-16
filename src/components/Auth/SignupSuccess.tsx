@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Paper, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import AppButton from '../common/AppButton';
+import AppButton from '../Common/AppButton';
 
 const SignupSuccess: React.FC = () => {
   const navigate = useNavigate();

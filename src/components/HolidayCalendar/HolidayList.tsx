@@ -5,7 +5,7 @@ import HolidayTable from './HolidayTable';
 import AddHolidayDialog from './AddHolidayDialog';
 import HolidayCalendarView from './HolidayCalendarView';
 import UpcomingHolidayList from './UpcomingHolidayList';
-import AppButton from '../common/AppButton';
+import AppButton from '../Common/AppButton';
 import { COLORS } from '../../constants/appConstants';
 
 export interface Holiday {

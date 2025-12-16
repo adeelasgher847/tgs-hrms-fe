@@ -42,9 +42,9 @@ import { formatDate } from '../../utils/dateUtils';
 // systemEmployeeApiService removed; not used after cleanup
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
-import AppButton from '../common/AppButton';
-import AppTable from '../common/AppTable';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
+import AppButton from '../Common/AppButton';
+import AppTable from '../Common/AppTable';
 
 type TenantOption = { id: string; name: string };
 

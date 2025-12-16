@@ -17,7 +17,7 @@ import ForgetImage from '../../assets/icons/forget-image.svg';
 import authApi from '../../api/authApi';
 import { validatePasswordStrength } from '../../utils/validation';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
+import ErrorSnackbar from '../Common/ErrorSnackbar';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
