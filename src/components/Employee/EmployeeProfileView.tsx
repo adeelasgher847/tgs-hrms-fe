@@ -7,10 +7,8 @@ import {
   Chip,
   CircularProgress,
   Alert,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
 } from '@mui/material';
@@ -22,8 +20,9 @@ import type {
   EmployeeProfileLeaveHistoryItem,
 } from '../../api/employeeApi';
 import { leaveApi, type LeaveType } from '../../api/leaveApi';
-import UserAvatar from '../../components/common/UserAvatar';
+import UserAvatar from '../common/UserAvatar';
 import { formatDate } from '../../utils/dateUtils';
+import AppTable from '../common/AppTable';
 
 const EmployeeProfileView: React.FC = () => {
   const [profile, setProfile] = useState<EmployeeFullProfile | null>(null);
@@ -249,41 +248,36 @@ const EmployeeProfileView: React.FC = () => {
           Recent Attendance
         </Typography>
         <Divider sx={{ mb: 2 }} />
-        <TableContainer>
-          <Table size='small' sx={{ minWidth: 350 }}>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: 'rgba(76, 175, 80, 0.08)' }}>
-                <TableCell>Date</TableCell>
-                <TableCell>Check In</TableCell>
-                <TableCell>Check Out</TableCell>
-                <TableCell>Worked Hours</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {(profile.attendanceSummary || [])
-                .slice(0, 5)
-                .map(
-                  (
-                    log: EmployeeProfileAttendanceSummaryItem,
-                    index: number
-                  ) => (
-                    <TableRow
-                      key={index}
-                      sx={{
-                        backgroundColor:
-                          index % 2 === 0 ? 'background.default' : 'grey.50',
-                      }}
-                    >
-                      <TableCell>{formatDate(log.date)}</TableCell>
-                      <TableCell>{formatTime(log.checkIn)}</TableCell>
-                      <TableCell>{formatTime(log.checkOut)}</TableCell>
-                      <TableCell>{log.workedHours ?? 0}h</TableCell>
-                    </TableRow>
-                  )
-                )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <AppTable sx={{ minWidth: 350 }}>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: 'rgba(76, 175, 80, 0.08)' }}>
+              <TableCell>Date</TableCell>
+              <TableCell>Check In</TableCell>
+              <TableCell>Check Out</TableCell>
+              <TableCell>Worked Hours</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {(profile.attendanceSummary || [])
+              .slice(0, 5)
+              .map(
+                (log: EmployeeProfileAttendanceSummaryItem, index: number) => (
+                  <TableRow
+                    key={index}
+                    sx={{
+                      backgroundColor:
+                        index % 2 === 0 ? 'background.default' : 'grey.50',
+                    }}
+                  >
+                    <TableCell>{formatDate(log.date)}</TableCell>
+                    <TableCell>{formatTime(log.checkIn)}</TableCell>
+                    <TableCell>{formatTime(log.checkOut)}</TableCell>
+                    <TableCell>{log.workedHours ?? 0}h</TableCell>
+                  </TableRow>
+                )
+              )}
+          </TableBody>
+        </AppTable>
       </Paper>
 
       {/* Leave History Table */}
@@ -305,70 +299,66 @@ const EmployeeProfileView: React.FC = () => {
           Leave History
         </Typography>
         <Divider sx={{ mb: 2 }} />
-        <TableContainer>
-          <Table size='small' sx={{ minWidth: 350 }}>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: 'rgba(33, 150, 243, 0.08)' }}>
-                <TableCell>Type</TableCell>
-                <TableCell>From</TableCell>
-                <TableCell>To</TableCell>
-                <TableCell>Status</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {(profile.leaveHistory || [])
-                .slice(0, 5)
-                .map((lv: EmployeeProfileLeaveHistoryItem, idx: number) => {
-                  // Check if lv.type is an ID (UUID format) or already a name
-                  // UUID format: contains hyphens and is 36 characters long
-                  const isUUID =
-                    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-                      lv.type
-                    );
-                  const leaveTypeName =
-                    isUUID && leaveTypes[lv.type]
-                      ? leaveTypes[lv.type]
-                      : lv.type; // If not UUID or name not found, show original value
-
-                  return (
-                    <TableRow
-                      key={idx}
-                      sx={{
-                        backgroundColor:
-                          idx % 2 === 0 ? 'background.default' : 'grey.50',
-                      }}
-                    >
-                      <TableCell>
-                        {loadingLeaveTypes && isUUID ? (
-                          <CircularProgress size={16} />
-                        ) : (
-                          leaveTypeName
-                        )}
-                      </TableCell>
-                      <TableCell>{formatDate(lv.fromDate)}</TableCell>
-                      <TableCell>{formatDate(lv.toDate)}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={lv.status}
-                          sx={{
-                            bgcolor:
-                              lv.status === 'approved'
-                                ? 'success.main'
-                                : lv.status === 'Pending'
-                                  ? 'primary.dark'
-                                  : 'error.main',
-                            color: '#fff',
-                            fontWeight: 600,
-                          }}
-                          size='small'
-                        />
-                      </TableCell>
-                    </TableRow>
+        <AppTable sx={{ minWidth: 350 }}>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: 'rgba(33, 150, 243, 0.08)' }}>
+              <TableCell>Type</TableCell>
+              <TableCell>From</TableCell>
+              <TableCell>To</TableCell>
+              <TableCell>Status</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {(profile.leaveHistory || [])
+              .slice(0, 5)
+              .map((lv: EmployeeProfileLeaveHistoryItem, idx: number) => {
+                // Check if lv.type is an ID (UUID format) or already a name
+                // UUID format: contains hyphens and is 36 characters long
+                const isUUID =
+                  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                    lv.type
                   );
-                })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                const leaveTypeName =
+                  isUUID && leaveTypes[lv.type] ? leaveTypes[lv.type] : lv.type; // If not UUID or name not found, show original value
+
+                return (
+                  <TableRow
+                    key={idx}
+                    sx={{
+                      backgroundColor:
+                        idx % 2 === 0 ? 'background.default' : 'grey.50',
+                    }}
+                  >
+                    <TableCell>
+                      {loadingLeaveTypes && isUUID ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        leaveTypeName
+                      )}
+                    </TableCell>
+                    <TableCell>{formatDate(lv.fromDate)}</TableCell>
+                    <TableCell>{formatDate(lv.toDate)}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={lv.status}
+                        sx={{
+                          bgcolor:
+                            lv.status === 'approved'
+                              ? 'success.main'
+                              : lv.status === 'Pending'
+                                ? 'primary.dark'
+                                : 'error.main',
+                          color: '#fff',
+                          fontWeight: 600,
+                        }}
+                        size='small'
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+          </TableBody>
+        </AppTable>
       </Paper>
     </Box>
   );

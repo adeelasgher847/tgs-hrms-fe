@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import {
   Box,
-  Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
   Paper,
-  TableContainer,
   CircularProgress,
   Typography,
   Pagination,
@@ -15,6 +13,7 @@ import {
 import timesheetApi from '../../api/timesheetApi';
 import type { TimesheetEntry } from '../../api/timesheetApi';
 import { formatDate } from '../../utils/dateUtils';
+import AppTable from '../common/AppTable';
 
 const SheetList: React.FC = () => {
   const [timesheet, setTimesheet] = useState<TimesheetEntry[]>([]);
@@ -72,9 +71,8 @@ const SheetList: React.FC = () => {
   return (
     <Box>
       <Paper elevation={3} sx={{ boxShadow: 'none' }}>
-        <TableContainer>
-          <Table>
-            <TableHead>
+        <AppTable>
+          <TableHead>
               <TableRow>
                 <TableCell>Employee</TableCell>
                 <TableCell>Start Time</TableCell>
@@ -106,8 +104,7 @@ const SheetList: React.FC = () => {
                 </TableRow>
               )}
             </TableBody>
-          </Table>
-        </TableContainer>
+        </AppTable>
       </Paper>
 
       {/* Pagination */}

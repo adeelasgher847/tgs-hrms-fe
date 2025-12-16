@@ -1,12 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
+import type { DepartmentFormData, DepartmentFormErrors } from '../../types';
 import {
   Box,
   Typography,
   Button,
-  Fab,
-  useMediaQuery,
   Paper,
-  Divider,
   // Snackbar,
   // Alert,
   CircularProgress,
@@ -18,9 +16,9 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
-import type { DepartmentFormData } from '../../types';
 import { DepartmentCard } from './DepartmentCard';
-import { DepartmentFormModal } from './DepartmentFormModal';
+import AppFormModal, { type FormField } from '../common/AppFormModal';
+import { VALIDATION_LIMITS } from '../../constants/appConstants';
 import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
 import {
@@ -30,7 +28,6 @@ import {
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
-import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { COLORS } from '../../constants/appConstants';
 
@@ -38,6 +35,7 @@ const labels = {
   en: {
     title: 'Departments',
     create: 'Create Department',
+    createShort: 'Create',
     createFirst: 'Create First Department',
     noDepartments: 'No Departments Found',
     description: 'Get started by creating your first department',
@@ -45,6 +43,7 @@ const labels = {
   ar: {
     title: 'إدارة الأقسام',
     create: 'إنشاء قسم',
+    createShort: 'إنشاء',
     createFirst: 'إنشاء قسم جديد',
     noDepartments: 'لا توجد أقسام',
     description: 'ابدأ بإنشاء قسم جديد لإدارة مؤسستك',
@@ -53,7 +52,6 @@ const labels = {
 
 export const DepartmentList: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
 
@@ -63,7 +61,6 @@ export const DepartmentList: React.FC = () => {
   const bgPaper = darkMode ? '#1b1b1b' : '#fff';
   const textPrimary = darkMode ? '#e0e0e0' : theme.palette.text.primary;
   const textSecond = darkMode ? '#9a9a9a' : theme.palette.text.secondary;
-  const dividerCol = darkMode ? '#333' : '#ccc';
   const textColor = darkMode ? '#8f8f8f' : '#000';
   const borderColor = darkMode ? '#252525' : '#f0f0f0';
 
@@ -84,27 +81,54 @@ export const DepartmentList: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] =
     useState<FrontendDepartment | null>(null);
+  const [formData, setFormData] = useState<DepartmentFormData>({
+    name: '',
+    description: '',
+  });
+  const [originalData, setOriginalData] = useState<DepartmentFormData>({
+    name: '',
+    description: '',
+  });
+  const [errors, setErrors] = useState<DepartmentFormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [allTenants, setAllTenants] = useState<SystemTenant[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
-  const [, setLoadingTenants] = useState<boolean>(false);
+  const [, setLoadingTenants] = useState(false);
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
-  // Fetch tenants for system admin
+  // Fetch tenants for system admin from departments API
   useEffect(() => {
     if (!isSystemAdmin) return;
 
     const fetchTenants = async () => {
       try {
         setLoadingTenants(true);
-        const tenants = await SystemTenantApi.getAllTenants(false);
-        const activeTenants = tenants.filter(
-          t => t.status === 'active' && t.isDeleted === false
-        );
-        setAllTenants(activeTenants);
+        // Use GET:/departments API to get tenant list
+        const response =
+          await departmentApiService.getAllTenantsWithDepartments();
 
-        // Default to "All Tenants" - no need to set selectedTenantId
-      } catch (error) {
-        console.error('Error fetching tenants:', error);
+        // Extract unique tenants from the departments API response
+        const uniqueTenantsMap = new Map<string, SystemTenant>();
+        response.tenants.forEach(tenant => {
+          if (!uniqueTenantsMap.has(tenant.tenant_id)) {
+            uniqueTenantsMap.set(tenant.tenant_id, {
+              id: tenant.tenant_id,
+              name: tenant.tenant_name,
+              status: tenant.tenant_status as
+                | 'active'
+                | 'suspended'
+                | 'delelted',
+              isDeleted: false,
+              created_at: '',
+              updated_at: '',
+              deleted_at: null,
+            });
+          }
+        });
+
+        setAllTenants(Array.from(uniqueTenantsMap.values()));
+      } catch {
+        // Leave tenant filter empty on failure
       } finally {
         setLoadingTenants(false);
       }
@@ -239,6 +263,120 @@ export const DepartmentList: React.FC = () => {
     }
   };
 
+  // Form modal handlers
+  useEffect(() => {
+    if (selectedDepartment) {
+      const initialData = {
+        name: selectedDepartment.name,
+        description: selectedDepartment.description || '',
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
+    } else {
+      const initialData = {
+        name: '',
+        description: '',
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
+    }
+    setErrors({});
+  }, [selectedDepartment, isFormModalOpen]);
+
+  const isEditing = Boolean(selectedDepartment);
+  const hasChanges = isEditing
+    ? formData.name !== originalData.name ||
+      (formData.description || '') !== (originalData.description || '')
+    : formData.name.trim() !== '' || (formData.description || '').trim() !== '';
+
+  const validateForm = (): boolean => {
+    const newErrors: DepartmentFormErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = isRtl
+        ? 'اسم القسم مطلوب'
+        : 'Department name is required';
+    } else if (
+      formData.name.trim().length < VALIDATION_LIMITS.MIN_DEPARTMENT_NAME_LENGTH
+    ) {
+      newErrors.name = isRtl
+        ? `اسم القسم يجب أن يكون على الأقل ${VALIDATION_LIMITS.MIN_DEPARTMENT_NAME_LENGTH} حرفين`
+        : `Department name must be at least ${VALIDATION_LIMITS.MIN_DEPARTMENT_NAME_LENGTH} characters`;
+    }
+
+    if (
+      formData.description &&
+      formData.description.length > VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH
+    ) {
+      newErrors.description = isRtl
+        ? `الوصف يجب أن يكون أقل من ${VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH} حرف`
+        : `Description must be less than ${VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH} characters`;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleFormSubmit = async () => {
+    if (!validateForm()) return;
+    setIsSubmitting(true);
+
+    try {
+      await new Promise(r => setTimeout(r, 300));
+      if (selectedDepartment) {
+        await handleEditDepartment(formData);
+      } else {
+        await handleCreateDepartment(formData);
+      }
+    } catch {
+      // Handle error silently
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsFormModalOpen(false);
+    setSelectedDepartment(null);
+  };
+
+  const title = isEditing
+    ? isRtl
+      ? 'تعديل القسم'
+      : 'Edit Department'
+    : isRtl
+      ? 'إنشاء قسم جديد'
+      : 'Create New Department';
+
+  const fields: FormField[] = [
+    {
+      name: 'name',
+      label: isRtl ? 'اسم القسم' : 'Department Name',
+      type: 'text',
+      required: true,
+      placeholder: 'Name',
+      value: formData.name,
+      error: errors.name,
+      onChange: value => {
+        setFormData(prev => ({ ...prev, name: value as string }));
+        if (errors.name) setErrors(prev => ({ ...prev, name: undefined }));
+      },
+    },
+    {
+      name: 'description',
+      label: isRtl ? 'الوصف (اختياري)' : 'Description (Optional)',
+      type: 'textarea',
+      placeholder: 'Description',
+      value: formData.description || '',
+      error: errors.description,
+      onChange: value => {
+        setFormData(prev => ({ ...prev, description: value as string }));
+        if (errors.description)
+          setErrors(prev => ({ ...prev, description: undefined }));
+      },
+    },
+  ];
+
   const handleDeleteDepartment = async () => {
     if (!selectedDepartment) return;
 
@@ -264,24 +402,23 @@ export const DepartmentList: React.FC = () => {
       }}
     >
       {/* Header */}
-      <Paper
-        elevation={0} // No shadow
+      <Box
         sx={{
-          mb: 0,
+          mb: 3,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          flexWrap: 'wrap',
+          flexWrap: 'nowrap',
           gap: 2,
-          backgroundColor: 'unset',
-          color: textColor,
-          boxShadow: 'none', // Ensure no shadow
         }}
       >
         <Typography
-          variant='h4'
-          fontWeight={700}
-          sx={{ textAlign: isRtl ? 'right' : 'left', py: 1.5 }}
+          fontWeight={500}
+          fontSize={{ xs: '32px', lg: '48px' }}
+          lineHeight='44px'
+          letterSpacing='-2%'
+          color='#2C2C2C'
+          sx={{ textAlign: isRtl ? 'right' : 'left' }}
         >
           {lang.title}
         </Typography>
@@ -321,7 +458,7 @@ export const DepartmentList: React.FC = () => {
               </Select>
             </FormControl>
           )}
-          {!isMobile && !isSystemAdmin && (
+          {!isSystemAdmin && (
             <Button
               variant='contained'
               startIcon={<AddIcon />}
@@ -330,24 +467,52 @@ export const DepartmentList: React.FC = () => {
                 setIsFormModalOpen(true);
               }}
               sx={{
-                borderRadius: '0.375rem',
+                borderRadius: '12px',
                 textTransform: 'none',
-                fontWeight: 600,
-                bgcolor: darkMode ? COLORS.PRIMARY : COLORS.PRIMARY,
-                boxShadow: 'none', // Remove button shadow
+                fontWeight: 400,
+                fontSize: 'var(--body-font-size)',
+                lineHeight: 'var(--body-line-height)',
+                letterSpacing: 'var(--body-letter-spacing)',
+                bgcolor: 'var(--primary-dark-color)',
+                color: '#FFFFFF',
+                boxShadow: 'none',
+                minWidth: { xs: 'auto', sm: 'auto' },
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 0.75, sm: 1 },
+                '& .MuiButton-startIcon': {
+                  marginRight: { xs: 0.5, sm: 1 },
+                  '& > *:nth-of-type(1)': {
+                    fontSize: { xs: '18px', sm: '20px' },
+                  },
+                },
                 '&:hover': {
-                  bgcolor: darkMode ? COLORS.PRIMARY : COLORS.PRIMARY,
+                  bgcolor: COLORS.PRIMARY,
                   boxShadow: 'none',
                 },
               }}
             >
-              {lang.create}
+              <Box
+                component='span'
+                sx={{
+                  display: { xs: 'none', sm: 'inline' },
+                  fontSize: { xs: '8px', lg: '16px' },
+                }}
+              >
+                {lang.create}
+              </Box>
+              <Box
+                component='span'
+                sx={{
+                  display: { xs: 'inline', sm: 'none' },
+                  fontSize: { xs: '12px', lg: '16px' },
+                }}
+              >
+                {lang.createShort}
+              </Box>
             </Button>
           )}
         </Box>
-      </Paper>
-
-      <Divider sx={{ mb: 4, borderColor: dividerCol }} />
+      </Box>
 
       {/* Content */}
       {loading ? (
@@ -372,6 +537,7 @@ export const DepartmentList: React.FC = () => {
       ) : departments.length === 0 ? (
         <Paper
           sx={{
+            mt: 2,
             p: 4,
             textAlign: 'center',
             bgcolor: bgPaper,
@@ -407,79 +573,65 @@ export const DepartmentList: React.FC = () => {
       ) : (
         <Box
           sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 2,
-            justifyContent: 'flex-start',
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, 1fr)',
+              md: 'repeat(2, 1fr)',
+              lg: 'repeat(2, 1fr)',
+            },
+            gap: 3,
           }}
         >
           {departments.map(d => (
-            <Box
+            <DepartmentCard
               key={d.id}
-              sx={{
-                width: {
-                  xs: '100%',
-                  sm: 'calc(50% - 12px)',
-                  md: 'calc(50% - 12px)',
-                },
-              }}
-            >
-              <DepartmentCard
-                department={d}
-                onEdit={
-                  isSystemAdmin
-                    ? undefined
-                    : dept => {
-                        setSelectedDepartment(dept);
-                        setIsFormModalOpen(true);
-                      }
-                }
-                onDelete={
-                  isSystemAdmin
-                    ? undefined
-                    : dept => {
-                        setSelectedDepartment(dept);
-                        setIsDeleteModalOpen(true);
-                      }
-                }
-                isRtl={isRtl}
-              />
-            </Box>
+              department={d}
+              onEdit={
+                isSystemAdmin
+                  ? undefined
+                  : dept => {
+                      setSelectedDepartment(dept);
+                      setIsFormModalOpen(true);
+                    }
+              }
+              onDelete={
+                isSystemAdmin
+                  ? undefined
+                  : dept => {
+                      setSelectedDepartment(dept);
+                      setIsDeleteModalOpen(true);
+                    }
+              }
+              isRtl={isRtl}
+            />
           ))}
         </Box>
       )}
 
-      {/* FAB (mobile) */}
-      {isMobile && !isSystemAdmin && (
-        <Fab
-          color='primary'
-          onClick={() => {
-            setSelectedDepartment(null);
-            setIsFormModalOpen(true);
-          }}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: isRtl ? 'auto' : 24,
-            left: isRtl ? 24 : 'auto',
-            boxShadow: 'none', // Remove FAB shadow
-          }}
-        >
-          <AddIcon />
-        </Fab>
-      )}
-
       {/* Modals */}
-      <DepartmentFormModal
+      <AppFormModal
         open={isFormModalOpen}
-        onClose={() => {
-          setIsFormModalOpen(false);
-          setSelectedDepartment(null);
-        }}
-        onSubmit={
-          selectedDepartment ? handleEditDepartment : handleCreateDepartment
+        onClose={handleCloseModal}
+        onSubmit={handleFormSubmit}
+        title={title}
+        fields={fields}
+        submitLabel={
+          isSubmitting
+            ? isRtl
+              ? 'جاري الحفظ...'
+              : 'Saving...'
+            : isEditing
+              ? isRtl
+                ? 'تحديث'
+                : 'Update'
+              : isRtl
+                ? 'إنشاء'
+                : 'Create'
         }
-        department={selectedDepartment}
+        cancelLabel={isRtl ? 'إلغاء' : 'Cancel'}
+        isSubmitting={isSubmitting}
+        hasChanges={hasChanges}
         isRtl={isRtl}
       />
 

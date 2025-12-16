@@ -1,7 +1,6 @@
 import React, { memo } from 'react';
 import {
   Box,
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -9,10 +8,10 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
-  TableContainer,
   Typography,
   useTheme,
 } from '@mui/material';
+import AppTable from '../common/AppTable';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ReplayIcon from '@mui/icons-material/Replay';
@@ -99,231 +98,223 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
   return (
     <Box>
-      <TableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
-                {direction === 'rtl' ? 'الاسم' : 'Name'}
-              </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
-                {direction === 'rtl' ? 'البريد الإلكتروني' : 'Email'}
-              </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
-                {direction === 'rtl' ? 'رقم الهاتف' : 'Phone'}
-              </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
-                {direction === 'rtl' ? 'القسم' : 'Department'}
-              </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
-                {direction === 'rtl' ? 'الوظيفة' : 'Designation'}
-              </TableCell>
+      <AppTable>
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+              {direction === 'rtl' ? 'الاسم' : 'Name'}
+            </TableCell>
+            <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+              {direction === 'rtl' ? 'البريد الإلكتروني' : 'Email'}
+            </TableCell>
+            <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+              {direction === 'rtl' ? 'رقم الهاتف' : 'Phone'}
+            </TableCell>
+            <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+              {direction === 'rtl' ? 'القسم' : 'Department'}
+            </TableCell>
+            <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+              {direction === 'rtl' ? 'الوظيفة' : 'Designation'}
+            </TableCell>
+            <TableCell
+              sx={{
+                color: textColor,
+                fontWeight: 'bold',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {direction === 'rtl' ? 'رقم الهوية' : 'CNIC Number'}
+            </TableCell>
+            <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+              {direction === 'rtl' ? 'الحالة' : 'Status'}
+            </TableCell>
+            {(onDelete || onEdit || onResendInvite || onView) && (
               <TableCell
+                sx={{ color: textColor, fontWeight: 'bold', width: '120px' }}
+              >
+                {direction === 'rtl' ? 'إجراءات' : 'Actions'}
+              </TableCell>
+            )}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {loading && (
+            <TableRow>
+              <TableCell
+                colSpan={onDelete || onEdit || onResendInvite || onView ? 8 : 7}
+                align='center'
+              >
+                <Box display='flex' justifyContent='center' py={4}>
+                  <CircularProgress />
+                </Box>
+              </TableCell>
+            </TableRow>
+          )}
+          {!loading && employees.length === 0 && (
+            <TableRow>
+              <TableCell
+                colSpan={onDelete || onEdit || onResendInvite || onView ? 8 : 7}
+                align='center'
+              >
+                <Box display='flex' justifyContent='center' py={4}>
+                  <Typography variant='body1' color='textSecondary'>
+                    {direction === 'rtl' ? 'لا توجد سجلات' : 'No record exists'}
+                  </Typography>
+                </Box>
+              </TableCell>
+            </TableRow>
+          )}
+          {!loading &&
+            employees.length > 0 &&
+            employees.map(emp => (
+              <TableRow
+                key={emp.id}
                 sx={{
-                  color: textColor,
-                  fontWeight: 'bold',
-                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    backgroundColor: darkMode
+                      ? 'rgba(255,255,255,0.08)'
+                      : 'rgba(0,0,0,0.04)',
+                  },
                 }}
               >
-                {direction === 'rtl' ? 'رقم الهوية' : 'CNIC Number'}
-              </TableCell>
-              <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
-                {direction === 'rtl' ? 'الحالة' : 'Status'}
-              </TableCell>
-              {(onDelete || onEdit || onResendInvite || onView) && (
-                <TableCell
-                  sx={{ color: textColor, fontWeight: 'bold', width: '120px' }}
-                >
-                  {direction === 'rtl' ? 'إجراءات' : 'Actions'}
+                <TableCell sx={{ color: textColor }}>{emp.name}</TableCell>
+                <TableCell sx={{ color: secondaryTextColor }}>
+                  {emp.email}
                 </TableCell>
-              )}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading && (
-              <TableRow>
-                <TableCell
-                  colSpan={
-                    onDelete || onEdit || onResendInvite || onView ? 8 : 7
-                  }
-                  align='center'
-                >
-                  <Box display='flex' justifyContent='center' py={4}>
-                    <CircularProgress />
-                  </Box>
+                <TableCell sx={{ color: textColor }}>{emp.phone}</TableCell>
+                <TableCell sx={{ color: textColor }}>
+                  {emp.department?.name ||
+                    departments[emp.departmentId] ||
+                    emp.departmentId ||
+                    '—'}
                 </TableCell>
-              </TableRow>
-            )}
-            {!loading && employees.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={
-                    onDelete || onEdit || onResendInvite || onView ? 8 : 7
-                  }
-                  align='center'
-                >
-                  <Box display='flex' justifyContent='center' py={4}>
-                    <Typography variant='body1' color='textSecondary'>
-                      {direction === 'rtl'
-                        ? 'لا توجد سجلات'
-                        : 'No record exists'}
-                    </Typography>
-                  </Box>
+                <TableCell sx={{ color: textColor }}>
+                  {emp.designation?.title ||
+                    designations[emp.designationId] ||
+                    emp.designationId ||
+                    '—'}
                 </TableCell>
-              </TableRow>
-            )}
-            {!loading &&
-              employees.length > 0 &&
-              employees.map(emp => (
-                <TableRow
-                  key={emp.id}
-                  sx={{
-                    '&:hover': {
-                      backgroundColor: darkMode
-                        ? 'rgba(255,255,255,0.08)'
-                        : 'rgba(0,0,0,0.04)',
-                    },
-                  }}
-                >
-                  <TableCell sx={{ color: textColor }}>{emp.name}</TableCell>
-                  <TableCell sx={{ color: secondaryTextColor }}>
-                    {emp.email}
-                  </TableCell>
-                  <TableCell sx={{ color: textColor }}>{emp.phone}</TableCell>
-                  <TableCell sx={{ color: textColor }}>
-                    {emp.department?.name ||
-                      departments[emp.departmentId] ||
-                      emp.departmentId ||
-                      '—'}
-                  </TableCell>
-                  <TableCell sx={{ color: textColor }}>
-                    {emp.designation?.title ||
-                      designations[emp.designationId] ||
-                      emp.designationId ||
-                      '—'}
-                  </TableCell>
-                  <TableCell sx={{ color: textColor, whiteSpace: 'nowrap' }}>
-                    {emp.cnic_number || '—'}
-                  </TableCell>
-                  <TableCell sx={{ color: textColor }}>
-                    {emp.status || 'N/A'}
-                  </TableCell>
-                  {(onDelete || onEdit || onResendInvite || onView) && (
-                    <TableCell sx={{ textAlign: 'center' }}>
-                      <Box
-                        display='flex'
-                        justifyContent='center'
-                        alignItems='center'
-                        gap={1}
-                      >
-                        {onView && (
-                          <Tooltip
-                            title={
-                              direction === 'rtl'
-                                ? 'عرض التفاصيل'
-                                : 'View Details'
-                            }
-                            placement='bottom'
+                <TableCell sx={{ color: textColor, whiteSpace: 'nowrap' }}>
+                  {emp.cnic_number || '—'}
+                </TableCell>
+                <TableCell sx={{ color: textColor }}>
+                  {emp.status || 'N/A'}
+                </TableCell>
+                {(onDelete || onEdit || onResendInvite || onView) && (
+                  <TableCell sx={{ textAlign: 'center' }}>
+                    <Box
+                      display='flex'
+                      justifyContent='center'
+                      alignItems='center'
+                      gap={1}
+                    >
+                      {onView && (
+                        <Tooltip
+                          title={
+                            direction === 'rtl'
+                              ? 'عرض التفاصيل'
+                              : 'View Details'
+                          }
+                          placement='bottom'
+                        >
+                          <IconButton
+                            onClick={() => onView(emp)}
+                            disabled={loading}
+                            aria-label={`View details for employee ${emp.name}`}
+                            sx={{
+                              color: darkMode ? '#4caf50' : '#2e7d32',
+                              '&:hover': {
+                                backgroundColor: darkMode
+                                  ? 'rgba(76,175,80,0.1)'
+                                  : 'rgba(46,125,50,0.1)',
+                              },
+                            }}
                           >
+                            <VisibilityIcon aria-hidden='true' />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {onResendInvite && (
+                        <Tooltip
+                          title={
+                            direction === 'rtl'
+                              ? 'إعادة إرسال الدعوة'
+                              : 'Resend Invite'
+                          }
+                          placement='bottom'
+                        >
+                          <span>
                             <IconButton
-                              onClick={() => onView(emp)}
-                              disabled={loading}
-                              aria-label={`View details for employee ${emp.name}`}
                               sx={{
-                                color: darkMode ? '#4caf50' : '#2e7d32',
-                                '&:hover': {
-                                  backgroundColor: darkMode
-                                    ? 'rgba(76,175,80,0.1)'
-                                    : 'rgba(46,125,50,0.1)',
-                                },
+                                color: darkMode ? '#1976d2' : '#0288d1',
+                                opacity:
+                                  emp.status === 'Invite Expired' ? 1 : 0.5,
                               }}
+                              onClick={() =>
+                                emp.status === 'Invite Expired' &&
+                                handleResendInvite(emp)
+                              }
+                              disabled={
+                                loading || emp.status !== 'Invite Expired'
+                              }
+                              aria-label={`Resend invite to employee ${emp.name}`}
                             >
-                              <VisibilityIcon aria-hidden='true' />
+                              <ReplayIcon aria-hidden='true' />
                             </IconButton>
-                          </Tooltip>
-                        )}
-                        {onResendInvite && (
-                          <Tooltip
-                            title={
-                              direction === 'rtl'
-                                ? 'إعادة إرسال الدعوة'
-                                : 'Resend Invite'
-                            }
-                            placement='bottom'
+                          </span>
+                        </Tooltip>
+                      )}
+                      {onEdit && (
+                        <Tooltip
+                          title={
+                            direction === 'rtl'
+                              ? 'تعديل الموظف'
+                              : 'Edit Employee'
+                          }
+                          placement='bottom'
+                        >
+                          <IconButton
+                            onClick={() => onEdit(emp)}
+                            disabled={loading}
+                            aria-label={`Edit employee ${emp.name}`}
                           >
-                            <span>
-                              <IconButton
-                                sx={{
-                                  color: darkMode ? '#1976d2' : '#0288d1',
-                                  opacity:
-                                    emp.status === 'Invite Expired' ? 1 : 0.5,
-                                }}
-                                onClick={() =>
-                                  emp.status === 'Invite Expired' &&
-                                  handleResendInvite(emp)
-                                }
-                                disabled={
-                                  loading || emp.status !== 'Invite Expired'
-                                }
-                                aria-label={`Resend invite to employee ${emp.name}`}
-                              >
-                                <ReplayIcon aria-hidden='true' />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                        )}
-                        {onEdit && (
-                          <Tooltip
-                            title={
-                              direction === 'rtl'
-                                ? 'تعديل الموظف'
-                                : 'Edit Employee'
-                            }
-                            placement='bottom'
+                            <EditIcon aria-hidden='true' />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {onDelete && (
+                        <Tooltip
+                          title={
+                            direction === 'rtl'
+                              ? 'حذف الموظف'
+                              : 'Delete Employee'
+                          }
+                          placement='bottom'
+                        >
+                          <IconButton
+                            onClick={() => onDelete(emp.id)}
+                            disabled={loading}
+                            aria-label={`Delete employee ${emp.name}`}
+                            sx={{
+                              color: darkMode ? '#ff6b6b' : '#d32f2f',
+                              '&:hover': {
+                                backgroundColor: darkMode
+                                  ? 'rgba(255,107,107,0.1)'
+                                  : 'rgba(211,47,47,0.1)',
+                              },
+                            }}
                           >
-                            <IconButton
-                              onClick={() => onEdit(emp)}
-                              disabled={loading}
-                              aria-label={`Edit employee ${emp.name}`}
-                            >
-                              <EditIcon aria-hidden='true' />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {onDelete && (
-                          <Tooltip
-                            title={
-                              direction === 'rtl'
-                                ? 'حذف الموظف'
-                                : 'Delete Employee'
-                            }
-                            placement='bottom'
-                          >
-                            <IconButton
-                              onClick={() => onDelete(emp.id)}
-                              disabled={loading}
-                              aria-label={`Delete employee ${emp.name}`}
-                              sx={{
-                                color: darkMode ? '#ff6b6b' : '#d32f2f',
-                                '&:hover': {
-                                  backgroundColor: darkMode
-                                    ? 'rgba(255,107,107,0.1)'
-                                    : 'rgba(211,47,47,0.1)',
-                                },
-                              }}
-                            >
-                              <DeleteIcon aria-hidden='true' />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                            <DeleteIcon aria-hidden='true' />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+        </TableBody>
+      </AppTable>
     </Box>
   );
 };

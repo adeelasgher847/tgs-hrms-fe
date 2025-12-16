@@ -10,8 +10,7 @@ import {
   CircularProgress,
   Divider,
 } from '@mui/material';
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import signupApi, {
   type SubscriptionPlan,
   type StripePriceInfo,
@@ -21,48 +20,61 @@ import signupApi, {
 } from '../../api/signupApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
+import { Icons } from '../../assets/icons';
 
 // Default plans as fallback
 const defaultPlans = [
   {
     id: 'basic',
-    name: 'Basic',
-    price: '$9',
+    name: 'Basic Plan',
+    price: '$10.00',
     duration: 'Month',
     features: [
-      { text: 'Up to 10 employees', included: true },
-      { text: 'Basic HR features', included: true },
-      { text: 'Email support', included: true },
-      { text: 'Advanced analytics', included: false },
-      { text: 'API access', included: false },
+      { text: 'Basic HRMS features', included: true },
+      {
+        text: 'Employee profile management with essential details',
+        included: true,
+      },
+      { text: 'Department and designation setup', included: true },
+      { text: 'Leave request and approval workflow (basic)', included: true },
+      { text: 'Attendance tracking (manual entry)', included: true },
+      { text: 'Standard reports (PDF/Excel export)', included: true },
     ],
     popular: false,
   },
   {
-    id: 'standard',
-    name: 'Standard',
-    price: '$19',
+    id: 'pro',
+    name: 'Pro Plan',
+    price: '$20.00',
     duration: 'Month',
     features: [
-      { text: 'Up to 50 employees', included: true },
-      { text: 'All basic features', included: true },
-      { text: 'Advanced analytics', included: true },
-      { text: 'Priority support', included: true },
-      { text: 'API access', included: false },
+      { text: 'Basic HRMS features', included: true },
+      {
+        text: 'Employee profile management with essential details',
+        included: true,
+      },
+      { text: 'Department and designation setup', included: true },
+      { text: 'Leave request and approval workflow (basic)', included: true },
+      { text: 'Attendance tracking (manual entry)', included: true },
+      { text: 'Standard reports (PDF/Excel export)', included: true },
     ],
     popular: true,
   },
   {
-    id: 'premium',
-    name: 'Premium',
-    price: '$30',
+    id: 'enterprise',
+    name: 'Enterprise Plan',
+    price: '$50.00',
     duration: 'Month',
     features: [
-      { text: 'Unlimited employees', included: true },
-      { text: 'All standard features', included: true },
-      { text: 'Advanced analytics', included: true },
-      { text: 'Priority support', included: true },
-      { text: 'API access', included: true },
+      { text: 'Basic HRMS features', included: true },
+      {
+        text: 'Employee profile management with essential details',
+        included: true,
+      },
+      { text: 'Department and designation setup', included: true },
+      { text: 'Leave request and approval workflow (basic)', included: true },
+      { text: 'Attendance tracking (manual entry)', included: true },
+      { text: 'Standard reports (PDF/Excel export)', included: true },
     ],
     popular: false,
   },
@@ -459,23 +471,38 @@ const SelectPlan: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: '#f3f4f6',
+        background: 'var(--white-100-color)',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'column',
         px: { xs: 2, sm: 4, md: 6 },
+        py: 4,
       }}
     >
       {/* Heading */}
       <Typography
-        variant='h4'
-        sx={{ color: '#111827', fontWeight: 700, mb: 1 }}
+        variant='h1'
+        sx={{
+          color: 'var(--text-color)',
+          fontWeight: 700,
+          fontSize: { xs: '32px', lg: '48px' },
+          mb: 1,
+          textAlign: 'center',
+        }}
       >
         Choose Your Plan
       </Typography>
-      <Typography sx={{ color: '#4b5563', mb: 5 }}>
-        You can take the plan of your choice
+      <Typography
+        sx={{
+          color: 'var(--dark-grey-color)',
+          mb: 5,
+          textAlign: 'center',
+          fontSize: { xs: '16px', lg: '24px' },
+          fontWeight: 400,
+        }}
+      >
+        You can choose the plan of your choice
       </Typography>
 
       {/* Error Message */}
@@ -489,7 +516,7 @@ const SelectPlan: React.FC = () => {
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         spacing={3}
-        sx={{ width: '100%', maxWidth: '1300px' }}
+        sx={{ width: '100%', maxWidth: '1300px', mb: 4 }}
       >
         {plans.map(plan => (
           <Paper
@@ -497,66 +524,39 @@ const SelectPlan: React.FC = () => {
             onClick={() => handlePlanSelect(plan.id)}
             sx={{
               flex: 1,
-              borderRadius: '16px',
+              borderRadius: '24px',
               overflow: 'hidden',
               boxShadow:
                 selectedPlan === plan.id
-                  ? '0 12px 28px rgba(72, 76, 127, 0.3)'
-                  : '0 8px 24px rgba(0,0,0,0.12)',
+                  ? '0 0 0 3px rgba(48, 131, 220, 0.4), 0 8px 24px rgba(48, 131, 220, 0.25), 0 0 20px rgba(48, 131, 220, 0.15)'
+                  : '0 4px 12px rgba(0,0,0,0.08)',
               position: 'relative',
-              bgcolor: selectedPlan === plan.id ? '#f8f9ff' : '#ffffff',
-              border:
-                selectedPlan === plan.id
-                  ? '2px solid #484c7f'
-                  : '2px solid transparent',
-              transition:
-                'transform 250ms ease, box-shadow 250ms ease, border 250ms ease',
-              transformOrigin: 'center',
-              willChange: 'transform',
+              bgcolor: 'var(--white-color)',
+              transition: 'all 250ms ease',
               cursor: 'pointer',
-              '&:hover': {
-                transform: 'scale(1.02)',
-                boxShadow: '0 12px 28px rgba(0,0,0,0.18)',
-              },
               mx: { xs: 1.5, sm: 2, md: 0 },
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 420,
+              '&:hover': {
+                boxShadow:
+                  selectedPlan === plan.id
+                    ? '0 0 0 3px rgba(48, 131, 220, 0.5), 0 12px 28px rgba(48, 131, 220, 0.35), 0 0 25px rgba(48, 131, 220, 0.2)'
+                    : '0 8px 24px rgba(0,0,0,0.15)',
+              },
             }}
           >
             {/* Card Header */}
-            <Box sx={{ pt: plan.popular ? 5 : 3, pb: 2, px: 2 }}>
-              {/* Popular badge */}
-              {plan.popular && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 18,
-                    left: 18,
-                    bgcolor: '#facc15',
-                    color: '#111827',
-                    px: 2.5,
-                    py: '4px',
-                    borderRadius: '8px',
-                    fontSize: { xs: '13px', sm: '15px' },
-                    fontWeight: 900,
-                    boxShadow: 2,
-                    letterSpacing: 1,
-                    zIndex: 2,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Popular
-                </Box>
-              )}
+            <Box sx={{ pt: 3, px: 3 }}>
               {/* Heading */}
               <Typography
-                variant='h5'
+                variant='h3'
                 sx={{
-                  fontWeight: 900,
-                  letterSpacing: 0.5,
-                  mt: 1,
-                  fontSize: { xs: 22, sm: 26, md: 28 },
-
+                  fontWeight: 700,
+                  fontSize: 'var(--subheading2-font-size)',
                   textAlign: 'left',
-                  color: '#484c7f',
+                  color: 'var(--text-color)',
+                  mb: 2,
                 }}
               >
                 {plan.name}
@@ -566,101 +566,115 @@ const SelectPlan: React.FC = () => {
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'left',
-                  // justifyContent: 'center',
+                  alignItems: 'flex-start',
                   mb: 2,
                 }}
               >
-                <Box
-                  sx={{
-                    borderRadius: '16px',
-
-                    mb: 0.5,
-                  }}
-                >
-                  <Typography
-                    component='span'
-                    sx={{
-                      fontSize: { xs: 32, sm: 38, md: 44 },
-                      fontWeight: 900,
-                      color: '#484c7f',
-                      lineHeight: 1,
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    {typeof plan.price === 'string'
-                      ? plan.price.replace(/^US\$/i, '$')
-                      : plan.price}
-                  </Typography>
-                </Box>
                 <Typography
                   component='span'
                   sx={{
-                    fontSize: { xs: 16, sm: 18 },
-                    color: '#484c7f',
+                    fontSize: { xs: 36, sm: 42, md: 48 },
                     fontWeight: 700,
-                    letterSpacing: 0.2,
+                    color: 'var(--secondary-color)',
+                    lineHeight: 1,
+                    mb: 0.5,
                   }}
                 >
-                  per {plan.duration}
+                  {typeof plan.price === 'string'
+                    ? plan.price
+                        .replace(/^US\$/i, '$')
+                        .replace(/\$(\d)/, '$ $1')
+                    : plan.price}
                 </Typography>
-                <Divider sx={{ my: 1, borderColor: '#e5e7eb' }} />
+                <Typography
+                  component='span'
+                  sx={{
+                    fontSize: 'var(--body-font-size)',
+                    color: 'var(--secondary-color)',
+                    fontWeight: 400,
+                  }}
+                >
+                  Per {plan.duration}
+                </Typography>
               </Box>
             </Box>
+            <Divider />
 
-            {/* Features */}
-            <Box sx={{ p: 3, pt: 4 }}>
+            {/* Features - scrollable area */}
+            <Box
+              sx={{
+                pt: 3,
+                px: 3,
+                flexGrow: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                maxHeight: 320,
+              }}
+            >
               {plan.features.map((feature, idx) => (
                 <Stack
                   key={idx}
                   direction='row'
-                  spacing={1}
+                  spacing={1.5}
                   alignItems='center'
-                  sx={{ mb: 1.25 }}
+                  sx={{ mb: 1.5 }}
                 >
-                  {feature.included ? (
-                    <CheckIcon sx={{ color: '#16a34a', fontSize: 20 }} />
-                  ) : (
-                    <CloseIcon sx={{ color: '#dc2626', fontSize: 20 }} />
-                  )}
-                  <Typography sx={{ color: '#1f2937', fontSize: 14 }}>
+                  <Box
+                    component='img'
+                    src={Icons.plans}
+                    alt='Plan feature icon'
+                    sx={{
+                      width: 20,
+                      height: 20,
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  />
+                  <Typography
+                    sx={{
+                      color: 'var(--text-color)',
+                      fontSize: { xs: '16px', lg: 'var(--body-font-size)' },
+                      lineHeight: 1.5,
+                    }}
+                  >
                     {feature.text}
                   </Typography>
                 </Stack>
               ))}
             </Box>
 
-            {/* Button */}
-            <Box sx={{ textAlign: 'center', pb: 3 }}>
+            {/* Button - fixed at bottom of card */}
+            <Box sx={{ textAlign: 'center', pb: 3, px: 3, mt: 2 }}>
               <Button
                 onClick={e => {
                   e.stopPropagation();
                   handlePlanSelect(plan.id);
                 }}
                 sx={{
-                  background:
+                  maxWidth: '180px',
+                  backgroundColor:
                     selectedPlan === plan.id
-                      ? 'linear-gradient(90deg, #16a34a 0%, #16a34a 100%)'
-                      : 'linear-gradient(90deg, #484c7f 0%, #484c7f 100%)',
-                  color: 'white',
-                  borderRadius: '999px',
-                  px: 5,
+                      ? 'var(--black-color)'
+                      : 'var(--dark-grey-500-color)',
+                  color: 'var(--white-color)',
+                  borderRadius: '16px',
+                  px: 4,
                   py: 1.25,
-                  boxShadow:
-                    selectedPlan === plan.id
-                      ? '0 6px 16px rgba(22, 163, 74, 0.4)'
-                      : '0 6px 16px rgba(42, 18, 179, 0.4)',
-                  fontWeight: 700,
-                  letterSpacing: 0.5,
+                  width: '100%',
+                  fontWeight: 500,
+                  textTransform: 'none',
+                  fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
                   '&:hover': {
-                    background:
+                    backgroundColor:
                       selectedPlan === plan.id
-                        ? 'linear-gradient(90deg,rgb(21, 128, 61) 0%,rgb(22, 163, 74) 100%)'
-                        : 'linear-gradient(90deg,rgb(87, 91, 144) 0%,rgb(91, 95, 152) 100%)',
+                        ? 'var(--text-color)'
+                        : 'var(--dark-grey-color)',
                   },
                 }}
               >
-                {selectedPlan === plan.id ? 'SELECTED' : 'SELECT'}
+                Choose Plan
               </Button>
             </Box>
           </Paper>
@@ -670,13 +684,12 @@ const SelectPlan: React.FC = () => {
       {/* Navigation Buttons */}
       <Box
         sx={{
-          mt: 4,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 2,
           width: '100%',
-          maxWidth: '1100px',
+          maxWidth: '1300px',
         }}
       >
         <Button
@@ -684,13 +697,16 @@ const SelectPlan: React.FC = () => {
           onClick={handleBack}
           disabled={submitting}
           sx={{
-            borderColor: '#484c7f',
-            color: '#484c7f',
+            borderColor: 'var(--dark-grey-500-color)',
+            color: 'var(--text-color)',
             px: 4,
-            py: 1.5,
+            borderRadius: '12px',
+            fontWeight: 500,
+            textTransform: 'none',
+            fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
             '&:hover': {
-              borderColor: '#484c7f',
-              backgroundColor: 'rgba(72, 76, 127, 0.1)',
+              borderColor: 'var(--dark-grey-color)',
+              backgroundColor: 'var(--white-100-color)',
             },
           }}
         >
@@ -702,17 +718,19 @@ const SelectPlan: React.FC = () => {
           onClick={handleContinue}
           disabled={!selectedPlan || submitting}
           sx={{
-            background: 'linear-gradient(90deg, #484c7f 0%, #484c7f 100%)',
-            color: 'white',
+            backgroundColor: 'var(--primary-dark-color)',
+            color: 'var(--white-color)',
             px: 4,
-            py: 1.5,
-            fontWeight: 600,
+            borderRadius: '12px',
+            fontWeight: 500,
+            textTransform: 'none',
+            fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
             '&:hover': {
-              background:
-                'linear-gradient(90deg,rgb(87, 91, 144) 0%,rgb(91, 95, 152) 100%)',
+              backgroundColor: 'var(--primary-light-color)',
             },
             '&:disabled': {
-              backgroundColor: '#ccc',
+              backgroundColor: 'var(--grey-color)',
+              color: 'var(--white-color)',
             },
           }}
         >
@@ -722,7 +740,9 @@ const SelectPlan: React.FC = () => {
               Processing...
             </Box>
           ) : (
-            'Continue to  Checkout'
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ShoppingCartIcon /> Checkout
+            </Box>
           )}
         </Button>
       </Box>

@@ -816,7 +816,12 @@ const CrossTenantLeaveManagement: React.FC = () => {
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ minHeight: '100vh' }} onKeyDown={handleKeyDown}>
         <Paper sx={{ p: 3, mb: 3, boxShadow: 'none' }}>
-          <Typography variant='h6' fontWeight={700} mb={2}>
+          <Typography
+            variant='h6'
+            fontWeight={700}
+            fontSize={{ xs: '32px', lg: '48px' }}
+            mb={2}
+          >
             Tenant Leave Management
           </Typography>
           <Divider sx={{ mb: 2 }} />

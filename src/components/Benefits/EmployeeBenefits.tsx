@@ -4,10 +4,8 @@ import {
   Typography,
   Button,
   Paper,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Chip,
@@ -34,6 +32,7 @@ import benefitsApi from '../../api/benefitApi';
 import type { EmployeeWithBenefits } from '../../api/employeeBenefitApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppTable from '../common/AppTable';
 
 const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 
@@ -233,7 +232,12 @@ const EmployeeBenefits: React.FC = () => {
   return (
     <Box sx={{ py: 3 }}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant='h4' fontWeight={600} mb={1}>
+        <Typography
+          variant='h4'
+          fontWeight={600}
+          fontSize={{ xs: '32px', lg: '48px' }}
+          mb={1}
+        >
           Employees Benefits
         </Typography>
 
@@ -312,64 +316,62 @@ const EmployeeBenefits: React.FC = () => {
             <CircularProgress size={28} />
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: 'grey.100' }}>
-                  <TableCell sx={{ fontWeight: 600 }}>Employee</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Department</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Designation</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>
-                    Assigned Benefits
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredEmployees.length > 0 ? (
-                  filteredEmployees.map(emp => (
-                    <TableRow key={emp.employeeId}>
-                      <TableCell>{emp.employeeName}</TableCell>
-                      <TableCell>{emp.department}</TableCell>
-                      <TableCell>{emp.designation}</TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                          {emp.benefits.map(b => (
-                            <Chip
-                              key={b.benefitAssignmentId}
-                              label={b.name}
-                              color={
-                                b.statusOfAssignment === 'active'
-                                  ? 'success'
-                                  : b.statusOfAssignment === 'expired'
-                                    ? 'default'
-                                    : 'warning'
-                              }
-                              variant='outlined'
-                              size='small'
-                              sx={{ cursor: 'pointer' }}
-                              onClick={() =>
-                                handleBenefitClick(
-                                  b.id,
-                                  b.statusOfAssignment,
-                                  b.benefitAssignmentId
-                                )
-                              }
-                            />
-                          ))}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} align='center'>
-                      No employees with {selectedStatus} benefits
+          <AppTable>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: 'grey.100' }}>
+                <TableCell sx={{ fontWeight: 600 }}>Employee</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Department</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Designation</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  Assigned Benefits
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredEmployees.length > 0 ? (
+                filteredEmployees.map(emp => (
+                  <TableRow key={emp.employeeId}>
+                    <TableCell>{emp.employeeName}</TableCell>
+                    <TableCell>{emp.department}</TableCell>
+                    <TableCell>{emp.designation}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {emp.benefits.map(b => (
+                          <Chip
+                            key={b.benefitAssignmentId}
+                            label={b.name}
+                            color={
+                              b.statusOfAssignment === 'active'
+                                ? 'success'
+                                : b.statusOfAssignment === 'expired'
+                                  ? 'default'
+                                  : 'warning'
+                            }
+                            variant='outlined'
+                            size='small'
+                            sx={{ cursor: 'pointer' }}
+                            onClick={() =>
+                              handleBenefitClick(
+                                b.id,
+                                b.statusOfAssignment,
+                                b.benefitAssignmentId
+                              )
+                            }
+                          />
+                        ))}
+                      </Box>
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} align='center'>
+                    No employees with {selectedStatus} benefits
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </AppTable>
         )}
       </Paper>
 

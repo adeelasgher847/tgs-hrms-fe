@@ -1,13 +1,10 @@
-import { Box, Typography, CircularProgress } from '@mui/material';
-import AvailabilityCard from './AvailabilityCard';
-import CheckedIcon from '../../../assets/dashboardIcon/checked.svg';
-import beachIcon from '../../../assets/dashboardIcon/beach-bed.svg';
+import { Box, Typography, CircularProgress, Divider } from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppButton from '../../common/AppButton';
-import { COLORS } from '../../../constants/appConstants';
+import { Icons } from '../../../assets/icons';
 import {
   getAttendanceThisMonth,
   getLeavesThisMonth,
@@ -15,6 +12,8 @@ import {
 
 export default function AvailabilityCardsGrid() {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  // darkMode is reserved for future use
+  void darkMode;
   const { language } = useLanguage();
   const navigate = useNavigate();
 
@@ -22,10 +21,6 @@ export default function AvailabilityCardsGrid() {
   const [attendanceData, setAttendanceData] = useState<number>(0);
   const [leavesData, setLeavesData] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
-
-  const bgColor = darkMode ? COLORS.DARK_BG : COLORS.LIGHT_BG;
-  const borderColor = darkMode ? COLORS.DARK_BORDER : COLORS.LIGHT_BORDER;
-  const textColor = darkMode ? COLORS.DARK_TEXT : COLORS.LIGHT_TEXT;
 
   const handleLoginClick = () => {
     navigate('/login');
@@ -104,64 +99,24 @@ export default function AvailabilityCardsGrid() {
     ar: 'توفر الموظفين',
   };
 
-  const cardTitles: Record<string, { en: string; ar: string }> = {
-    Attendance: { en: 'Attendance', ar: 'الحضور' },
-    'Late Coming': { en: 'Late Coming', ar: 'التأخير' },
-    Absent: { en: 'Absent', ar: 'غياب' },
-    'Leave Apply': { en: 'Leave Apply', ar: 'طلب إجازة' },
+  const attendanceLabel = {
+    en: 'Attendance',
+    ar: 'الحضور',
   };
 
-  const cards = [
-    {
-      title: cardTitles['Attendance'][language],
-      value: attendanceData,
-      icon: (
-        <img
-          src={CheckedIcon}
-          alt='Attendance'
-          style={{
-            width: 30,
-            height: 30,
-            filter: darkMode
-              ? 'invert(1) brightness(0.4)'
-              : 'grayscale(100%) brightness(55%)',
-          }}
-        />
-      ),
-      BorderColor: borderColor,
-    },
-    {
-      title: cardTitles['Leave Apply'][language],
-      value: leavesData,
-      icon: (
-        <img
-          src={beachIcon}
-          alt='LeaveApply'
-          style={{
-            width: 30,
-            height: 30,
-            filter: darkMode
-              ? 'invert(1) brightness(0.4)'
-              : 'grayscale(100%) brightness(55%)',
-          }}
-        />
-      ),
-      BorderColor: borderColor,
-    },
-  ];
+  const leavesLabel = {
+    en: 'Leaves Applied',
+    ar: 'الإجازات المطبقة',
+  };
 
   return (
     <Box
       sx={{
-        border: `1px solid  ${borderColor}`,
-        borderRadius: '0.375rem',
-        backgroundColor: bgColor,
         direction: language === 'ar' ? 'rtl' : 'ltr', // RTL support
         height: '100%', // Match the height of GenderPercentageChart
         display: 'flex',
         flexDirection: 'column',
       }}
-      p={2}
     >
       <Box
         sx={{
@@ -171,7 +126,13 @@ export default function AvailabilityCardsGrid() {
           mb: 2,
         }}
       >
-        <Typography fontWeight='bold' fontSize={16} color={textColor}>
+        <Typography
+          fontWeight={500}
+          fontSize={{ xs: '20px', lg: '28px' }}
+          lineHeight={{ xs: '28px', lg: '36px' }}
+          letterSpacing='-2%'
+          color='#2C2C2C'
+        >
           {labels[language]}
           {!error && attendanceData > 0 && (
             <Typography
@@ -240,22 +201,110 @@ export default function AvailabilityCardsGrid() {
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 2,
-            flex: 1, // Take remaining space
-            justifyContent: 'center', // Center the cards vertically
+            gap: 0,
           }}
         >
-          {cards.map(card => (
+          {/* Attendance Item */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              py: 2,
+            }}
+          >
             <Box
-              key={card.title}
               sx={{
-                flex: 1, // Each card takes equal space
-                minHeight: '80px', // Ensure minimum height for cards
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
               }}
             >
-              <AvailabilityCard {...card} />
+              <Box
+                component='img'
+                src={Icons.attendance}
+                alt='Attendance'
+                sx={{
+                  width: 24,
+                  height: 24,
+                  filter: 'brightness(0) saturate(100%)',
+                }}
+              />
+              <Typography
+                sx={{
+                  fontSize: '16px',
+                  fontWeight: 400,
+                  color: 'var(--text-color)',
+                }}
+              >
+                {attendanceLabel[language]}
+              </Typography>
             </Box>
-          ))}
+            <Typography
+              sx={{
+                fontSize: '24px',
+                fontWeight: 700,
+                color: 'var(--text-color)',
+              }}
+            >
+              {attendanceData}
+            </Typography>
+          </Box>
+
+          {/* Divider */}
+          <Divider
+            sx={{
+              borderColor: 'var(--light-grey-color)',
+              my: 0,
+            }}
+          />
+
+          {/* Leaves Applied Item */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              py: 2,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+              }}
+            >
+              <Box
+                component='img'
+                src={Icons.leaveAnalytics}
+                alt='Leaves Applied'
+                sx={{
+                  width: 24,
+                  height: 24,
+                  filter: 'brightness(0) saturate(100%)',
+                }}
+              />
+              <Typography
+                sx={{
+                  fontSize: 'var(--body-font-size)',
+                  fontWeight: 400,
+                  color: 'var(--text-color)',
+                }}
+              >
+                {leavesLabel[language]}
+              </Typography>
+            </Box>
+            <Typography
+              sx={{
+                fontSize: '24px',
+                fontWeight: 700,
+                color: 'var(--text-color)',
+              }}
+            >
+              {leavesData}
+            </Typography>
+          </Box>
         </Box>
       )}
     </Box>

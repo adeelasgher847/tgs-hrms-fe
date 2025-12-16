@@ -1,6 +1,35 @@
 /* @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap'); */
 @import url('https://fonts.cdnfonts.com/css/sf-pro-rounded');
 
+/* Global font application */
+*,
+*::before,
+*::after {
+  font-family:
+    'SF Pro Rounded',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+}
+
+/* Ensure MUI components use the font */
+.MuiTypography-root,
+.MuiButton-root,
+.MuiInputBase-root,
+.MuiTextField-root,
+.MuiSelect-root,
+.MuiMenuItem-root,
+.MuiListItemText-primary,
+.MuiListItemText-secondary {
+  font-family:
+    'SF Pro Rounded',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif !important;
+}
+
 .loginpage {
   max-width: 1060px;
   margin: 0 auto;
@@ -9,7 +38,18 @@
 body {
   padding: 0;
   margin: 0;
-  font-family: 'SF Pro Rounded', sans-serif;
+  font-family:
+    'SF Pro Rounded',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif !important;
+  font-weight: var(--body-font-weight);
+  font-style: var(--body-font-style);
+  font-size: var(--body-font-size);
+  line-height: var(--body-line-height);
+  letter-spacing: var(--body-letter-spacing);
+  color: var(--text-color);
 }
 body.dark-mode {
   background-color: #1e1f20;
@@ -20,9 +60,132 @@ body.light-mode {
   color: #000000;
 }
 :root {
+  font-family:
+    'SF Pro Rounded',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif !important;
+
   --dark-color: #484c7f;
   --yellow-color: #f19828;
   --background-dark: #6c757d;
-  --text-color: #333;
+  --text-color: #2d3748;
   --border-radius: 4px;
+  --border-radius-lg: 8px;
+
+  --primary-light-color: #2462a5;
+  --primary-dark-color: #3083dc;
+  --primary-color: #e0ecfa;
+  --dark-black-color: #001218;
+  --black-color: #2c2c2c;
+  --dark-grey-500-color: #656565;
+  --dark-grey-color: #888888;
+  --grey-color: #bdbdbd;
+  --light-grey-color: #dcdcdc;
+  --light-grey-100-color: #e8e8e8;
+  --light-grey-200-color: #efefef;
+  --white-100-color: #f8f8f8;
+  --white-color: #ffffff;
+
+  --text-color: #000000;
+
+  --secondary-color: #c61952;
+  --border-radius: 12px;
+
+  --h1-font-weight: 700;
+  --h1-font-style: normal;
+  --h1-font-size: 48px;
+  --h1-line-height: 44px;
+  --h1-letter-spacing: -2%;
+
+  --h2-font-weight: 700;
+  --h2-font-style: normal;
+  --h2-font-size: 32px;
+  --h2-line-height: 40px;
+  --h2-letter-spacing: -2%;
+
+  --h3-font-weight: 500;
+  --h3-font-style: normal;
+  --h3-font-size: 28px;
+  --h3-line-height: 36px;
+  --h3-letter-spacing: 0%;
+
+  --subheading1-font-weight: 400;
+  --subheading1-font-style: normal;
+  --subheading1-font-size: 24px;
+  --subheading1-line-height: 32px;
+  --subheading1-letter-spacing: -2%;
+
+  --subheading2-font-weight: 500;
+  --subheading2-font-style: normal;
+  --subheading2-font-size: 20px;
+  --subheading2-line-height: 28px;
+  --subheading2-letter-spacing: -1%;
+
+  --body-font-weight: 400;
+  --body-font-style: normal;
+  --body-font-size: 16px;
+  --body-line-height: 24px;
+  --body-letter-spacing: -1%;
+
+  --label-font-weight: 400;
+  --label-font-style: normal;
+  --label-font-size: 14px;
+  --label-line-height: 20px;
+  --label-letter-spacing: -1%;
+}
+
+h1 {
+  font-weight: var(--h1-font-weight);
+  font-style: var(--h1-font-style);
+  font-size: var(--h1-font-size);
+  line-height: var(--h1-line-height);
+  /* letter-spacing: var(--h1-letter-spacing); */
+  color: var(--text-color);
+}
+
+h2 {
+  font-weight: var(--h2-font-weight);
+  font-style: var(--h2-font-style);
+  font-size: var(--h2-font-size);
+  line-height: var(--h2-line-height);
+  letter-spacing: var(--h2-letter-spacing);
+  color: var(--text-color);
+}
+
+h3 {
+  font-weight: var(--h3-font-weight);
+  font-style: var(--h3-font-style);
+  font-size: var(--h3-font-size);
+  line-height: var(--h3-line-height);
+  letter-spacing: var(--h3-letter-spacing);
+  color: var(--text-color);
+}
+
+.subheading1 {
+  font-weight: var(--subheading1-font-weight);
+  font-style: var(--subheading1-font-style);
+  font-size: var(--subheading1-font-size);
+  line-height: var(--subheading1-line-height);
+  letter-spacing: var(--subheading1-letter-spacing);
+  color: var(--text-color);
+}
+
+.subheading2 {
+  font-weight: var(--subheading2-font-weight);
+  font-style: var(--subheading2-font-style);
+  font-size: var(--subheading2-font-size);
+  line-height: var(--subheading2-line-height);
+  letter-spacing: var(--subheading2-letter-spacing);
+  color: var(--text-color);
+}
+
+.label {
+  font-weight: var(--label-font-weight);
+  font-style: var(--label-font-style);
+  font-size: var(--label-font-size);
+  line-height: var(--label-line-height);
+  letter-spacing: var(--label-letter-spacing);
+  color: var(--text-color);
 }

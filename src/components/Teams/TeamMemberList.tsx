@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Paper,
@@ -18,10 +16,13 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
   Person as PersonIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
@@ -30,6 +31,7 @@ import { snackbar } from '../../utils/snackbar';
 import AppButton from '../common/AppButton';
 import { COLORS } from '../../constants/appConstants';
 import UserAvatar from '../common/UserAvatar';
+import AppTable from '../common/AppTable';
 
 interface TeamMemberListProps {
   teamId: string;
@@ -46,6 +48,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
   const { language } = useLanguage();
@@ -63,6 +66,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
       error: 'Failed to load team members',
       confirmRemove: 'Are you sure you want to remove this member?',
       memberRemoved: 'Member removed successfully',
+      search: 'Search members...',
     },
     ar: {
       name: 'الاسم',
@@ -76,6 +80,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
       error: 'فشل في تحميل أعضاء الفريق',
       confirmRemove: 'هل أنت متأكد من إزالة هذا العضو؟',
       memberRemoved: 'تم إزالة العضو بنجاح',
+      search: 'البحث عن الأعضاء...',
     },
   };
 
@@ -181,6 +186,37 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
     setPage(0);
   };
 
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setPage(0);
+  };
+
+  // Filter members based on search term (starts with match for each word)
+  const filteredMembers = members.filter(member => {
+    if (!searchTerm.trim()) return true;
+    const searchLower = searchTerm.toLowerCase().trim();
+    const fullName =
+      `${member.user?.first_name || ''} ${member.user?.last_name || ''}`.toLowerCase();
+    const email = (member.user?.email || '').toLowerCase();
+    const designation = (member.designation?.title || '').toLowerCase();
+    const department = (
+      member.designation?.department?.name || ''
+    ).toLowerCase();
+
+    // Check if any word in the field starts with the search term
+    const checkStartsWith = (text: string) => {
+      const words = text.split(/\s+/);
+      return words.some(word => word.startsWith(searchLower));
+    };
+
+    return (
+      checkStartsWith(fullName) ||
+      checkStartsWith(email) ||
+      checkStartsWith(designation) ||
+      checkStartsWith(department)
+    );
+  });
+
   const handleRemoveMember = async (member: TeamMember) => {
     setMemberToDelete(member);
     setShowDeleteConfirmDialog(true);
@@ -243,104 +279,138 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
 
   return (
     <Box>
-      <TableContainer
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          fullWidth
+          size='small'
+          placeholder={lang.search}
+          value={searchTerm}
+          onChange={handleSearch}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position='start'>
+                <SearchIcon sx={{ color: darkMode ? '#ccc' : '#666' }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+            borderRadius: 2,
+            '& .MuiOutlinedInput-root': {
+              color: darkMode ? '#fff' : '#000',
+              '& fieldset': {
+                borderColor: darkMode ? '#555' : '#ccc',
+              },
+              '&:hover fieldset': {
+                borderColor: darkMode ? '#888' : '#999',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#484c7f',
+              },
+            },
+            '& .MuiInputBase-input::placeholder': {
+              color: darkMode ? '#999' : '#999',
+              opacity: 1,
+            },
+          }}
+        />
+      </Box>
+      <AppTable
         component={Paper}
         sx={{
           backgroundColor: darkMode ? '#2d2d2d' : '#fff',
           boxShadow: 'none',
         }}
       >
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell
-                sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-              >
-                {lang.name}
-              </TableCell>
-              <TableCell
-                sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-              >
-                {lang.email}
-              </TableCell>
-              <TableCell
-                sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-              >
-                {lang.designation}
-              </TableCell>
-              <TableCell
-                sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-              >
-                {lang.department}
-              </TableCell>
-              <TableCell
-                sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-              >
-                {lang.actions}
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {members
-              .filter(
-                member => member?.user?.first_name && member?.user?.last_name
-              )
-              .map(member => (
-                <TableRow key={member.id} hover>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <UserAvatar
-                        user={{
-                          id: member.user?.id,
-                          first_name: member.user?.first_name || '',
-                          last_name: member.user?.last_name || '',
-                          profile_pic: member.user?.profile_pic,
-                        }}
-                        size={32}
-                        sx={{ mr: 2 }}
-                      />
-                      <Typography sx={{ color: darkMode ? '#fff' : '#000' }}>
-                        {member.user?.first_name || 'Unknown'}{' '}
-                        {member.user?.last_name || 'User'}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
-                    {member.user?.email || 'N/A'}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={member.designation?.title || 'N/A'}
-                      size='small'
-                      sx={{
-                        backgroundColor: '#484c7f',
-                        color: 'white',
-                        fontSize: '0.75rem',
+        <TableHead>
+          <TableRow>
+            <TableCell
+              sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+            >
+              {lang.name}
+            </TableCell>
+            <TableCell
+              sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+            >
+              {lang.email}
+            </TableCell>
+            <TableCell
+              sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+            >
+              {lang.designation}
+            </TableCell>
+            <TableCell
+              sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+            >
+              {lang.department}
+            </TableCell>
+            <TableCell
+              sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+            >
+              {lang.actions}
+            </TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {filteredMembers
+            .filter(
+              member => member?.user?.first_name && member?.user?.last_name
+            )
+            .map(member => (
+              <TableRow key={member.id} hover>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <UserAvatar
+                      user={{
+                        id: member.user?.id,
+                        first_name: member.user?.first_name || '',
+                        last_name: member.user?.last_name || '',
+                        profile_pic: member.user?.profile_pic,
                       }}
+                      size={32}
+                      sx={{ mr: 2 }}
                     />
-                  </TableCell>
-                  <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
-                    {member.designation?.department?.name || 'N/A'}
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      size='small'
-                      onClick={() => handleRemoveMember(member)}
-                      sx={{ color: '#d32f2f' }}
-                      title={lang.removeMember}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                    <Typography sx={{ color: darkMode ? '#fff' : '#000' }}>
+                      {member.user?.first_name || 'Unknown'}{' '}
+                      {member.user?.last_name || 'User'}
+                    </Typography>
+                  </Box>
+                </TableCell>
+                <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                  {member.user?.email || 'N/A'}
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={member.designation?.title || 'N/A'}
+                    size='small'
+                    sx={{
+                      backgroundColor: '#484c7f',
+                      color: 'white',
+                      fontSize: '0.75rem',
+                    }}
+                  />
+                </TableCell>
+                <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                  {member.designation?.department?.name || 'N/A'}
+                </TableCell>
+                <TableCell>
+                  <IconButton
+                    size='small'
+                    onClick={() => handleRemoveMember(member)}
+                    sx={{ color: '#d32f2f' }}
+                    title={lang.removeMember}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
+        </TableBody>
+      </AppTable>
 
       <TablePagination
         component='div'
-        count={total}
+        count={searchTerm ? filteredMembers.length : total}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}

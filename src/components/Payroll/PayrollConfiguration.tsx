@@ -541,7 +541,7 @@ const PayrollConfiguration: React.FC = () => {
         >
           <Typography
             variant='h4'
-            sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000', mb: 1 }}
+            sx={{ fontWeight: 600, fontSize: { xs: '32px', lg: '48px' }, color: darkMode ? '#fff' : '#000', mb: 1 }}
           >
             Payroll Configuration
           </Typography>

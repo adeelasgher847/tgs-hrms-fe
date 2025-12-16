@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Paper,
@@ -22,12 +20,19 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import UserAvatar from '../common/UserAvatar';
-import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Person as PersonIcon,
+  Search as SearchIcon,
+} from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
 import AppButton from '../common/AppButton';
+import AppTable from '../common/AppTable';
 import { COLORS } from '../../constants/appConstants';
 import type { TeamMember, Team } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
@@ -57,7 +62,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
-  const [searchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [showTeamDialog, setShowTeamDialog] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
@@ -180,11 +185,35 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
     setPage(0);
   };
 
-  // const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   const value = event.target.value;
-  //   setSearchTerm(value);
-  //   setPage(0);
-  // };
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    setPage(0);
+  };
+
+  // Filter employees based on search term (starts with match for each word)
+  const filteredEmployees = employees.filter(employee => {
+    if (!searchTerm.trim()) return true;
+    const searchLower = searchTerm.toLowerCase().trim();
+    const fullName =
+      `${employee.user?.first_name || ''} ${employee.user?.last_name || ''}`.toLowerCase();
+    const email = (employee.user?.email || '').toLowerCase();
+    const designation = (employee.designation?.title || '').toLowerCase();
+    const department = (employee.department?.name || '').toLowerCase();
+
+    // Check if any word in the field starts with the search term
+    const checkStartsWith = (text: string) => {
+      const words = text.split(/\s+/);
+      return words.some(word => word.startsWith(searchLower));
+    };
+
+    return (
+      checkStartsWith(fullName) ||
+      checkStartsWith(email) ||
+      checkStartsWith(designation) ||
+      checkStartsWith(department)
+    );
+  });
 
   // Load teams for selection
   useEffect(() => {
@@ -351,108 +380,140 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
         </Box>
       ) : (
         <>
-          <TableContainer
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              fullWidth
+              size='small'
+              placeholder={lang.search}
+              value={searchTerm}
+              onChange={handleSearch}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position='start'>
+                    <SearchIcon sx={{ color: darkMode ? '#ccc' : '#666' }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+                borderRadius: 2,
+                '& .MuiOutlinedInput-root': {
+                  color: darkMode ? '#fff' : '#000',
+                  '& fieldset': {
+                    borderColor: darkMode ? '#555' : '#ccc',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: darkMode ? '#888' : '#999',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#484c7f',
+                  },
+                },
+                '& .MuiInputBase-input::placeholder': {
+                  color: darkMode ? '#999' : '#999',
+                  opacity: 1,
+                },
+              }}
+            />
+          </Box>
+          <AppTable
             component={Paper}
             sx={{
               backgroundColor: darkMode ? '#2d2d2d' : '#fff',
               boxShadow: 'none',
             }}
           >
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    {lang.name}
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    {lang.email}
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    {lang.designation}
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    {lang.department}
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    {lang.actions}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {employees
-                  .filter(
-                    employee =>
-                      employee?.user?.first_name && employee?.user?.last_name
-                  )
-                  .map(employee => (
-                    <TableRow key={employee.id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <UserAvatar
-                            user={{
-                              id: employee.user?.id,
-                              first_name: employee.user?.first_name || '',
-                              last_name: employee.user?.last_name || '',
-                              profile_pic: employee.user?.profile_pic,
-                            }}
-                            size={32}
-                            clickable={false}
-                            sx={{ mr: 2 }}
-                          />
-                          <Typography
-                            sx={{ color: darkMode ? '#fff' : '#000' }}
-                          >
-                            {employee.user?.first_name || 'Unknown'}{' '}
-                            {employee.user?.last_name || 'User'}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
-                        {employee.user?.email || 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={employee.designation?.title || 'N/A'}
-                          size='small'
-                          sx={{
-                            backgroundColor: '#484c7f',
-                            color: 'white',
-                            fontSize: '0.75rem',
+            <TableHead>
+              <TableRow>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  {lang.name}
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  {lang.email}
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  {lang.designation}
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  {lang.department}
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  {lang.actions}
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredEmployees
+                .filter(
+                  employee =>
+                    employee?.user?.first_name && employee?.user?.last_name
+                )
+                .map(employee => (
+                  <TableRow key={employee.id} hover>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <UserAvatar
+                          user={{
+                            id: employee.user?.id,
+                            first_name: employee.user?.first_name || '',
+                            last_name: employee.user?.last_name || '',
+                            profile_pic: employee.user?.profile_pic,
                           }}
+                          size={32}
+                          clickable={false}
+                          sx={{ mr: 2 }}
                         />
-                      </TableCell>
-                      <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
-                        {employee.department?.name || 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <IconButton
-                          size='small'
-                          onClick={() => handleAddToTeam(employee)}
-                          sx={{ color: '#484c7f' }}
-                          title={lang.addToTeam}
-                        >
-                          <AddIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                        <Typography sx={{ color: darkMode ? '#fff' : '#000' }}>
+                          {employee.user?.first_name || 'Unknown'}{' '}
+                          {employee.user?.last_name || 'User'}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                      {employee.user?.email || 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={employee.designation?.title || 'N/A'}
+                        size='small'
+                        sx={{
+                          backgroundColor: '#484c7f',
+                          color: 'white',
+                          fontSize: '0.75rem',
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                      {employee.department?.name || 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <IconButton
+                        size='small'
+                        onClick={() => handleAddToTeam(employee)}
+                        sx={{ color: '#484c7f' }}
+                        title={lang.addToTeam}
+                      >
+                        <AddIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </AppTable>
 
           <TablePagination
             component='div'
-            count={total}
+            count={searchTerm ? filteredEmployees.length : total}
             page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}

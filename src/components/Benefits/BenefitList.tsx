@@ -214,7 +214,7 @@ const BenefitList: React.FC = () => {
   return (
     <Box>
       <Box display='flex' alignItems='center' gap={1} mb={2}>
-        <Typography variant='h4' fontWeight={600}>
+        <Typography variant='h4' fontWeight={600} fontSize={{xs: '32px', lg: '48px'}}>
           Benefit Management
         </Typography>
       </Box>

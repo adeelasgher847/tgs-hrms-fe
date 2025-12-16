@@ -242,7 +242,7 @@ const PayrollReports: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant='h4' sx={{ fontWeight: 600 }}>
+        <Typography variant='h4' sx={{ fontWeight: 600, fontSize: { xs: '32px', lg: '48px' } }}>
           Payroll Reports
         </Typography>
         <Stack direction='row' spacing={2}>

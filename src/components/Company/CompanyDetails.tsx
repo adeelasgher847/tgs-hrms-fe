@@ -2,20 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
-  Paper,
   Typography,
-  TextField,
   Button,
   Alert,
   CircularProgress,
+  FormControl,
+  MenuItem,
+  Select,
 } from '@mui/material';
-// import signupApi, { type CompanyDetailsRequest, type LogoUploadRequest } from '../api/signupApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppInputField from '../common/AppInputField';
+import AuthSidebar from '../common/AuthSidebar';
+import { Icons } from '../../assets/icons';
 
 const CompanyDetails: React.FC = () => {
   const navigate = useNavigate();
-  const [lang] = useState<'en' | 'ar'>('en');
+  const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -23,7 +26,6 @@ const CompanyDetails: React.FC = () => {
 
   const [formData, setFormData] = useState({
     companyName: '',
-    companyType: '',
     domain: '',
   });
 
@@ -32,7 +34,6 @@ const CompanyDetails: React.FC = () => {
 
   const [fieldErrors, setFieldErrors] = useState({
     companyName: '',
-    companyType: '',
     domain: '',
   });
 
@@ -55,12 +56,23 @@ const CompanyDetails: React.FC = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file size (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('File size must be less than 10MB');
+        return;
+      }
+      // Validate file type
+      if (!file.type.match(/^image\/(jpeg|jpg|png|gif)$/)) {
+        setError('Only JPEG, PNG and GIF formats are allowed');
+        return;
+      }
       setSelectedImage(file);
       const reader = new FileReader();
       reader.onload = e => {
         setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+      setError(null);
     }
   };
 
@@ -69,10 +81,24 @@ const CompanyDetails: React.FC = () => {
     setImagePreview(null);
   };
 
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      const fakeEvent = {
+        target: { files: [file] },
+      } as unknown as React.ChangeEvent<HTMLInputElement>;
+      handleImageChange(fakeEvent);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
   const validateForm = () => {
     const nextErrors = {
       companyName: '',
-      companyType: '',
       domain: '',
     };
 
@@ -112,15 +138,17 @@ const CompanyDetails: React.FC = () => {
         throw new Error('Signup session not found. Please start over.');
       }
 
-      // Store company details in localStorage for plan selection
-      // Company details and logo will be handled together when user selects a plan
-      const companyData = {
+      const companyData: {
+        companyName: string;
+        domain: string;
+        logoBase64?: string;
+        logoFileName?: string;
+        logoFileType?: string;
+      } = {
         companyName: formData.companyName.trim(),
-        companyType: formData.companyType.trim(),
         domain: formData.domain.trim(),
       };
 
-      // Store logo as base64 if selected
       if (selectedImage && imagePreview) {
         companyData.logoBase64 = imagePreview;
         companyData.logoFileName = selectedImage.name;
@@ -136,17 +164,27 @@ const CompanyDetails: React.FC = () => {
           : 'Company details saved successfully!'
       );
 
-      // Redirect to plan selection after a short delay
       setTimeout(() => {
         navigate('/signup/select-plan');
       }, 2000);
     } catch (err: unknown) {
-      if (err.response?.data?.message) {
-        const errorData = err.response.data.message;
+      const error = err as {
+        response?: {
+          data?: {
+            message?: unknown;
+            errors?: Record<string, unknown[]>;
+          };
+        };
+        message?: string;
+      };
+
+      if (error.response?.data?.message) {
+        const errorData = error.response.data.message;
         if (
           typeof errorData === 'object' &&
-          errorData.field &&
-          errorData.message
+          errorData !== null &&
+          'field' in errorData &&
+          'message' in errorData
         ) {
           const field = String(errorData.field) as keyof typeof fieldErrors;
           setFieldErrors(prev => ({
@@ -155,13 +193,13 @@ const CompanyDetails: React.FC = () => {
           }));
           setError(null);
         } else {
-          setError(errorData);
+          setError(String(errorData));
         }
-      } else if (err.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        setError(errorMessages.join(', '));
-      } else if (err.message) {
-        setError(err.message);
+      } else if (error.response?.data?.errors) {
+        const errorMessages = Object.values(error.response.data.errors).flat();
+        setError(String(errorMessages.join(', ')));
+      } else if (error.message) {
+        setError(error.message);
       } else {
         setError('Failed to save company details. Please try again.');
       }
@@ -175,429 +213,403 @@ const CompanyDetails: React.FC = () => {
   };
 
   return (
-    <div className='loginpage'>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        backgroundColor: 'var(--white-100-color)',
+        overflowX: 'hidden',
+      }}
+    >
       <Box
-        className='login-scroll'
         sx={{
-          height: '100vh',
-          m: { xs: '14px', sm: 0 },
-          position: 'relative',
+          width: '100%',
+          maxWidth: '1440px',
+          display: 'flex',
+          flexDirection: { xs: 'column', lg: 'row' },
+          overflow: 'hidden',
+          boxSizing: 'border-box',
         }}
       >
+        <AuthSidebar />
+
+        {/* Mobile / Tablet Logo */}
         <Box
           sx={{
-            height: '100%',
-            justifyContent: 'center',
+            display: { xs: 'flex', lg: 'none' },
+            position: 'absolute',
+            top: { xs: '32px', sm: '40px' },
+            left: '50%',
+            transform: 'translateX(-50%)',
             alignItems: 'center',
-            direction: lang === 'ar' ? 'rtl' : 'ltr',
+            zIndex: 2,
+          }}
+        >
+          <Box
+            component='img'
+            src={Icons.logoWhite}
+            alt='Logo'
+            sx={{
+              height: 'auto',
+              width: 'auto',
+              maxHeight: '40px',
+            }}
+          />
+        </Box>
+
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: { xs: '16px 12px', sm: '24px 16px', md: '48px' },
+            backgroundColor: { xs: '#3083DC', lg: 'var(--white-100-color)' },
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            position: 'relative',
+            zIndex: 1,
+            marginLeft: { xs: 0, lg: '-12px' },
+            paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
+            paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
+            marginTop: { xs: 'auto', lg: 0 },
+            pt: { xs: '60px', lg: '48px' },
+            boxSizing: 'border-box',
+            minWidth: 0,
           }}
         >
           <Box
             sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              margin: 'auto',
+              maxWidth: { xs: '100%', sm: '500px' },
+              width: '100%',
+              mx: 'auto',
+              backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
+              borderRadius: { xs: '30px', lg: 0 },
+              p: { xs: 2, sm: 3, md: 4 },
+              mt: { xs: '60px', sm: '70px', lg: 0 },
+              boxSizing: 'border-box',
+              minWidth: 0,
             }}
           >
-            {/* Form only */}
-            <Box sx={{ width: '100%', maxWidth: '512px' }}>
-              <Paper
-                elevation={4}
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+              <FormControl size='small' sx={{ minWidth: 100 }}>
+                <Select
+                  value={lang}
+                  onChange={e => setLang(e.target.value as 'en' | 'ar')}
+                  sx={{
+                    borderRadius: 'var(--border-radius-lg)',
+                  }}
+                >
+                  <MenuItem value='en'>English</MenuItem>
+                  <MenuItem value='ar'>عربى</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Typography
+              variant='h1'
+              sx={{
+                fontSize: { xs: '26px', sm: '30px', lg: '48px' },
+                fontWeight: 700,
+                lineHeight: { xs: '40px', lg: 'auto' },
+                letterSpacing: { xs: '-2%', lg: 'normal' },
+                color: { xs: '#001218', lg: 'inherit' },
+                mb: 1,
+              }}
+            >
+              Company Details
+            </Typography>
+
+            <Typography
+              className='body'
+              sx={{
+                fontSize: { xs: '14px', sm: '16px', lg: '24px' },
+                fontWeight: { xs: 400, lg: 'inherit' },
+                lineHeight: { xs: '20px', lg: 'inherit' },
+                letterSpacing: { xs: '-1%', lg: 'inherit' },
+                color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
+                mb: { xs: 3, lg: 4 },
+              }}
+            >
+              Tell us more about your company.
+            </Typography>
+
+            {error && (
+              <Alert
+                severity='error'
                 sx={{
-                  backgroundColor: 'var(--dark-color)',
-                  color: 'common.white',
-                  p: { xs: 3, md: 5 },
-                  borderRadius: { xs: 2, lg: 0 },
+                  mb: 2,
+                  '& .MuiAlert-message': {
+                    fontSize: { xs: '12px', sm: '14px' },
+                  },
                 }}
               >
-                <Box component='form' onSubmit={handleSubmit} noValidate>
-                  <Box sx={{ textAlign: 'center', mb: 3 }}>
-                    <Typography
-                      variant='h4'
+                {error}
+              </Alert>
+            )}
+
+            {success && (
+              <Alert
+                severity='success'
+                sx={{
+                  mb: 2,
+                  '& .MuiAlert-message': {
+                    fontSize: { xs: '12px', sm: '14px' },
+                  },
+                }}
+              >
+                {success}
+              </Alert>
+            )}
+
+            <Box
+              component='form'
+              onSubmit={handleSubmit}
+              noValidate
+              sx={{
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                overflowX: 'hidden',
+              }}
+            >
+              <Box sx={{ mb: 2 }}>
+                <AppInputField
+                  name='companyName'
+                  label='Company Name'
+                  required
+                  fullWidth
+                  value={formData.companyName}
+                  onChange={handleChange}
+                  disabled={loading}
+                  error={Boolean(fieldErrors.companyName)}
+                  helperText={fieldErrors.companyName}
+                  placeholder='Name'
+                />
+              </Box>
+
+              <Box sx={{ mb: 2 }}>
+                <AppInputField
+                  name='domain'
+                  label='Domain'
+                  required
+                  fullWidth
+                  value={formData.domain}
+                  onChange={handleChange}
+                  disabled={loading}
+                  error={Boolean(fieldErrors.domain)}
+                  helperText={fieldErrors.domain}
+                  placeholder='Domain (e.g. Development)'
+                />
+              </Box>
+
+              <Box sx={{ mb: 3 }}>
+                <Typography
+                  component='label'
+                  className='label'
+                  sx={{
+                    fontSize: { xs: '14px', lg: '20px' },
+                    fontWeight: { xs: 400, lg: 600 },
+                    lineHeight: { xs: '20px', lg: 'auto' },
+                    letterSpacing: { xs: '-1%', lg: 'normal' },
+                    display: 'block',
+                    mb: 0.5,
+                    color: { xs: '#001218', lg: 'var(--dark-black-color)' },
+                  }}
+                >
+                  Company Logo
+                </Typography>
+                {!imagePreview ? (
+                  <Box
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onClick={() =>
+                      document.getElementById('logo-upload')?.click()
+                    }
+                    sx={{
+                      border: '2px dashed var(--light-grey-color)',
+                      borderRadius: 'var(--border-radius-lg)',
+                      p: 4,
+                      my: 2,
+                      textAlign: 'center',
+                      backgroundColor: 'var(--white-color)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        backgroundColor: 'var(--light-grey-100-color)',
+                        borderColor: 'var(--primary-dark-color)',
+                      },
+                    }}
+                  >
+                    <input
+                      id='logo-upload'
+                      type='file'
+                      accept='image/jpeg,image/png,image/gif'
+                      onChange={handleImageChange}
+                      style={{ display: 'none' }}
+                    />
+                    <Box
+                      component='img'
+                      src={Icons.upload}
+                      alt='Upload'
                       sx={{
-                        color: 'common.white',
-                        fontWeight: 500,
-                        fontSize: '28px',
+                        width: '48px',
+                        height: '48px',
+                        mb: 2,
+                        filter:
+                          'brightness(0) saturate(100%) invert(45%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(95%)',
+                      }}
+                    />
+                    <Typography
+                      className='label'
+                      sx={{
+                        fontSize: { xs: '14px', lg: 'inherit' },
+                        fontWeight: { xs: 400, lg: 'inherit' },
+                        lineHeight: { xs: '20px', lg: 'inherit' },
+                        letterSpacing: { xs: '-1%', lg: 'inherit' },
+                        color: { xs: '#001218', lg: 'var(--text-color)' },
                         mb: 1,
-                        fontFamily: 'Open Sans, sans-serif',
                       }}
                     >
-                      {lang === 'ar' ? 'تفاصيل الشركة' : 'Company Details'}
+                      Choose a file or drag & drop it here
                     </Typography>
                     <Typography
-                      sx={{ fontSize: '14px', color: 'common.white' }}
+                      sx={{
+                        fontSize: '12px',
+                        fontWeight: { xs: 400, lg: 'inherit' },
+                        lineHeight: { xs: '16px', lg: 'inherit' },
+                        color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
+                      }}
                     >
-                      {lang === 'ar'
-                        ? 'أخبرنا المزيد عن شركتك'
-                        : 'Tell us more about your company'}
+                      JPEG, PNG and GIF formats, up to 10 MB
                     </Typography>
                   </Box>
-
-                  {/* Error Message */}
-                  {error && (
-                    <Alert severity='error' sx={{ mt: 2, mb: 2 }}>
-                      {error}
-                    </Alert>
-                  )}
-
-                  {/* Success Message */}
-                  {success && (
-                    <Alert severity='success' sx={{ mt: 2, mb: 2 }}>
-                      {success}
-                    </Alert>
-                  )}
-
+                ) : (
                   <Box
                     sx={{
-                      display: 'grid',
-                      gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                      gap: 2,
+                      position: 'relative',
+                      display: 'inline-block',
+                      border: '2px solid var(--light-grey-200-color)',
+                      borderRadius: 'var(--border-radius-lg)',
+                      p: 1,
                     }}
                   >
-                    <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
-                      <Typography
-                        component='label'
-                        htmlFor='companyName'
-                        sx={{ fontWeight: 400, fontSize: '14px' }}
-                      >
-                        {lang === 'ar' ? 'اسم الشركة' : 'Company Name'}
-                      </Typography>
-                      <TextField
-                        id='companyName'
-                        name='companyName'
-                        required
-                        fullWidth
-                        value={formData.companyName}
-                        onChange={handleChange}
-                        inputProps={{
-                          maxLength: 50,
-                          title: formData.companyName,
-                          style: {
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          },
-                        }}
-                        placeholder={
-                          lang === 'ar'
-                            ? 'أدخل اسم الشركة'
-                            : 'Enter company name'
-                        }
-                        disabled={loading}
-                        error={Boolean(fieldErrors.companyName)}
-                        helperText={fieldErrors.companyName}
-                        sx={{
-                          mt: 1,
-                          '& .MuiOutlinedInput-root': {
-                            backgroundColor: '#eee',
-                            borderRadius: '8px',
-                            height: '46px',
-                            '& fieldset': { border: 'none' },
-                            '&:hover fieldset': { border: 'none' },
-                            '&.Mui-focused fieldset': { border: 'none' },
-                            '&:hover': { backgroundColor: '#eee' },
-                            '&.Mui-focused': {
-                              backgroundColor: theme =>
-                                theme.palette.background.paper,
-                            },
-                          },
-                          '& input': { outline: 'none', boxShadow: 'none' },
-                          '& input:-webkit-autofill': { height: '10px' },
-                        }}
-                      />
-                    </Box>
-
-                    {/* <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
-                      <Typography component='label' htmlFor='companyType' sx={{ fontWeight: 400, fontSize: '14px' }}>
-                        {lang === 'ar' ? 'نوع الشركة' : 'Company Type'}
-                      </Typography>
-                      <FormControl fullWidth sx={{ mt: 1 }}>
-                        <Select
-                          id='companyType'
-                          name='companyType'
-                          value={formData.companyType}
-                          onChange={(e) => setFormData(prev => ({ ...prev, companyType: e.target.value }))}
-                          disabled={loading}
-                          displayEmpty
-                          sx={{
-                            backgroundColor: '#eee',
-                            borderRadius: '8px',
-                            height: '46px',
-                            '& fieldset': { border: 'none' },
-                            '&:hover fieldset': { border: 'none' },
-                            '&.Mui-focused fieldset': { border: 'none' },
-                            '&:hover': { backgroundColor: '#eee' },
-                            '&.Mui-focused': {
-                              backgroundColor: theme => theme.palette.background.paper,
-                            },
-                          }}
-                        >
-                          <MenuItem value='' disabled>
-                            {lang === 'ar' ? 'اختر نوع الشركة' : 'Select company type'}
-                          </MenuItem>
-                          <MenuItem value='Technology'>Technology</MenuItem>
-                          <MenuItem value='Healthcare'>Healthcare</MenuItem>
-                          <MenuItem value='Finance'>Finance</MenuItem>
-                          <MenuItem value='Education'>Education</MenuItem>
-                          <MenuItem value='Manufacturing'>Manufacturing</MenuItem>
-                          <MenuItem value='Retail'>Retail</MenuItem>
-                          <MenuItem value='Other'>Other</MenuItem>
-                        </Select>
-                      </FormControl>
-                      {fieldErrors.companyType && (
-                        <Typography sx={{ color: 'error.main', fontSize: '12px', mt: 0.5 }}>
-                          {fieldErrors.companyType}
-                        </Typography>
-                      )}
-                    </Box> */}
-
-                    <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
-                      <Typography
-                        component='label'
-                        htmlFor='domain'
-                        sx={{ fontWeight: 400, fontSize: '14px' }}
-                      >
-                        {lang === 'ar' ? 'النطاق' : 'Domain'}
-                      </Typography>
-                      <TextField
-                        id='domain'
-                        name='domain'
-                        required
-                        fullWidth
-                        value={formData.domain}
-                        onChange={handleChange}
-                        inputProps={{
-                          maxLength: 50,
-                          title: formData.domain,
-                          style: {
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          },
-                        }}
-                        placeholder={
-                          lang === 'ar'
-                            ? 'أدخل النطاق (مثال: company.com)'
-                            : 'Enter domain (e.g., Development)'
-                        }
-                        disabled={loading}
-                        error={Boolean(fieldErrors.domain)}
-                        helperText={fieldErrors.domain}
-                        sx={{
-                          mt: 1,
-                          '& .MuiOutlinedInput-root': {
-                            backgroundColor: '#eee',
-                            borderRadius: '8px',
-                            height: '46px',
-                            '& fieldset': { border: 'none' },
-                            '&:hover fieldset': { border: 'none' },
-                            '&.Mui-focused fieldset': { border: 'none' },
-                            '&:hover': { backgroundColor: '#eee' },
-                            '&.Mui-focused': {
-                              backgroundColor: theme =>
-                                theme.palette.background.paper,
-                            },
-                          },
-                          '& input': { outline: 'none', boxShadow: 'none' },
-                          '& input:-webkit-autofill': { height: '10px' },
-                        }}
-                      />
-                    </Box>
-
-                    {/* Employee Count */}
-                    {/* <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
-                      <Typography component='label' htmlFor='employeeCount' sx={{ fontWeight: 400, fontSize: '14px' }}>
-                        {lang === 'ar' ? 'عدد الموظفين' : 'Number of Employees'}
-                      </Typography>
-                      <TextField
-                        id='employeeCount'
-                        name='employeeCount'
-                        type='number'
-                        value={employeeCount}
-                        onChange={(e) => setEmployeeCount(Math.max(0, Number(e.target.value) || 0))}
-                        inputProps={{ min: 0 }}
-                        fullWidth
-                        sx={{
-                          mt: 1,
-                          width: '100%',
-                          '& .MuiOutlinedInput-root': {
-                            backgroundColor: '#eee',
-                            borderRadius: '8px',
-                            height: '46px',
-                            '& fieldset': { border: 'none' },
-                            '&:hover fieldset': { border: 'none' },
-                            '&.Mui-focused fieldset': { border: 'none' },
-                            '&:hover': { backgroundColor: '#eee' },
-                            '&.Mui-focused': {
-                              backgroundColor: theme => theme.palette.background.paper,
-                            },
-                          },
-                          '& input': { outline: 'none', boxShadow: 'none' },
-                          '& input:-webkit-autofill': { height: '10px' },
-                        }}
-                      />
-                    </Box> */}
-
-                    {/* Company Logo Upload */}
-                    <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
-                      <Typography
-                        component='label'
-                        sx={{
-                          fontWeight: 400,
-                          fontSize: '14px',
-                          display: 'block',
-                          mb: 1,
-                        }}
-                      >
-                        {lang === 'ar' ? 'شعار الشركة' : 'Company Logo'}
-                      </Typography>
-
-                      {!imagePreview ? (
-                        <Box
-                          sx={{
-                            border: '2px dashed #ccc',
-                            borderRadius: '8px',
-                            p: 3,
-                            textAlign: 'center',
-                            backgroundColor: '#f9f9f9',
-                            cursor: 'pointer',
-                            '&:hover': {
-                              backgroundColor: '#f0f0f0',
-                            },
-                          }}
-                          onClick={() =>
-                            document.getElementById('logo-upload')?.click()
-                          }
-                        >
-                          <input
-                            id='logo-upload'
-                            type='file'
-                            accept='image/*'
-                            onChange={handleImageChange}
-                            style={{ display: 'none' }}
-                          />
-                          <Typography sx={{ color: '#666', fontSize: '14px' }}>
-                            {lang === 'ar'
-                              ? 'اضغط لرفع شعار الشركة'
-                              : 'Click to upload company logo'}
-                          </Typography>
-                          <Typography
-                            sx={{ color: '#999', fontSize: '12px', mt: 1 }}
-                          >
-                            {lang === 'ar'
-                              ? 'PNG, JPG, GIF حتى 10MB'
-                              : 'PNG, JPG, GIF up to 10MB'}
-                          </Typography>
-                        </Box>
-                      ) : (
-                        <Box
-                          sx={{ position: 'relative', display: 'inline-block' }}
-                        >
-                          <Box
-                            component='img'
-                            src={imagePreview}
-                            alt='Company Logo Preview'
-                            loading='lazy'
-                            sx={{
-                              width: '120px',
-                              height: '120px',
-                              objectFit: 'cover',
-                              borderRadius: '8px',
-                              border: '2px solid #eee',
-                            }}
-                          />
-                          <Button
-                            size='small'
-                            onClick={handleRemoveImage}
-                            sx={{
-                              position: 'absolute',
-                              top: -8,
-                              right: -8,
-                              minWidth: 'auto',
-                              width: '24px',
-                              height: '24px',
-                              borderRadius: '50%',
-                              backgroundColor: 'error.main',
-                              color: 'white',
-                              '&:hover': {
-                                backgroundColor: 'error.dark',
-                              },
-                            }}
-                          >
-                            ×
-                          </Button>
-                        </Box>
-                      )}
-                    </Box>
-                  </Box>
-
-                  <Box
-                    sx={{
-                      mt: 3,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 2,
-                    }}
-                  >
-                    <Button
-                      variant='outlined'
-                      type='button'
-                      onClick={handleBack}
-                      disabled={loading}
+                    <Box
+                      component='img'
+                      src={imagePreview}
+                      alt='Company Logo Preview'
+                      loading='lazy'
                       sx={{
-                        borderColor: 'white',
-                        color: 'white',
+                        width: '120px',
+                        height: '120px',
+                        objectFit: 'cover',
+                        borderRadius: 'var(--border-radius-lg)',
+                      }}
+                    />
+                    <Button
+                      size='small'
+                      onClick={handleRemoveImage}
+                      sx={{
+                        position: 'absolute',
+                        top: -8,
+                        right: -8,
+                        minWidth: 'auto',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--secondary-color)',
+                        color: 'var(--white-color)',
+                        padding: 0,
                         '&:hover': {
-                          borderColor: 'white',
-                          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                          backgroundColor: 'var(--secondary-color)',
+                          opacity: 0.8,
                         },
                       }}
                     >
-                      {lang === 'ar' ? 'رجوع' : 'Back'}
-                    </Button>
-                    <Button
-                      variant='contained'
-                      type='submit'
-                      disabled={isSubmitDisabled}
-                      sx={{
-                        backgroundColor: 'white',
-                        color: 'black',
-                        fontWeight: 500,
-                        '&:hover': { backgroundColor: '#f0f0f0' },
-                        '&:disabled': { backgroundColor: '#ccc' },
-                      }}
-                    >
-                      {loading ? (
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <CircularProgress size={16} />
-                          {lang === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
-                        </Box>
-                      ) : lang === 'ar' ? (
-                        'التالي'
-                      ) : (
-                        'Next'
-                      )}
+                      ×
                     </Button>
                   </Box>
-                </Box>
-              </Paper>
+                )}
+              </Box>
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 2,
+                  mt: 4,
+                }}
+              >
+                <Button
+                  variant='outlined'
+                  type='button'
+                  onClick={handleBack}
+                  disabled={loading}
+                  sx={{
+                    borderColor: { xs: '#001218', lg: 'var(--black-color)' },
+                    color: { xs: '#001218', lg: 'var(--black-color)' },
+                    backgroundColor: 'transparent',
+                    borderRadius: '12px',
+                    fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
+                    textTransform: 'none',
+                    padding: { xs: '8px 32px', lg: '8px 30px' },
+                    height: { xs: '40px', lg: 'auto' },
+                    gap: { xs: '4px', lg: 0 },
+                    '&:hover': {
+                      borderColor: 'var(--primary-dark-color)',
+                      backgroundColor: 'rgba(48, 131, 220, 0.1)',
+                    },
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  variant='contained'
+                  type='submit'
+                  disabled={isSubmitDisabled}
+                  sx={{
+                    backgroundColor: 'var(--primary-dark-color)',
+                    color: 'var(--white-color)',
+                    fontWeight: 600,
+                    borderRadius: '12px',
+                    fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
+                    textTransform: 'none',
+                    padding: { xs: '8px 32px', lg: '8px 30px' },
+                    height: { xs: '40px', lg: 'auto' },
+                    gap: { xs: '4px', lg: 0 },
+                    '&:hover': {
+                      backgroundColor: 'var(--primary-light-color)',
+                    },
+                    '&:disabled': {
+                      backgroundColor: 'var(--grey-color)',
+                    },
+                  }}
+                >
+                  {loading ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={16} color='inherit' />
+                      Processing...
+                    </Box>
+                  ) : (
+                    'Next'
+                  )}
+                </Button>
+              </Box>
             </Box>
           </Box>
         </Box>
+        <ErrorSnackbar
+          open={snackbar.open}
+          message={snackbar.message}
+          severity={snackbar.severity}
+          onClose={closeSnackbar}
+        />
       </Box>
-      <ErrorSnackbar
-        open={snackbar.open}
-        message={snackbar.message}
-        severity={snackbar.severity}
-        onClose={closeSnackbar}
-      />
-    </div>
+    </Box>
   );
 };
 
