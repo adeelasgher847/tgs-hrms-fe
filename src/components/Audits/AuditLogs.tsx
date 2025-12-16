@@ -171,6 +171,8 @@ const AuditLogs: React.FC = () => {
           sx={{
             color: theme.palette.text.primary,
             textAlign: { xs: 'center', md: 'left' },
+            fontWeight: 600,
+            fontSize: { xs: '32px', lg: '48px' },
           }}
         >
           Audit Logs

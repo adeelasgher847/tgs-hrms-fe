@@ -1136,7 +1136,11 @@ const EmployeeSalaryPage: React.FC = () => {
       >
         <Typography
           variant='h4'
-          sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000' }}
+          sx={{
+            fontWeight: 600,
+            fontSize: { xs: '32px', lg: '48px' },
+            color: darkMode ? '#fff' : '#000',
+          }}
         >
           Employee Salary Structure
         </Typography>
