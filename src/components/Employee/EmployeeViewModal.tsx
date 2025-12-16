@@ -15,8 +15,8 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import { useOutletContext } from 'react-router-dom';
 import { env } from '../../config/env';
-import AppButton from '../Common/AppButton';
-import AppCard from '../Common/AppCard';
+import AppButton from '../common/AppButton';
+import AppCard from '../common/AppCard';
 
 interface Employee {
   id: string;
@@ -91,7 +91,6 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
   useEffect(() => {
     if (open && employee) {
       setLoadingImages(true);
-
       const API_BASE_URL = env.apiBaseUrl;
       const toAbsoluteUrl = (path?: string | null) => {
         if (!path) return '';

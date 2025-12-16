@@ -2,8 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import Layout from './components/Layout/Layout';
-import ProtectedRoute from './components/Common/ProtectedRoute';
-import RouteErrorBoundary from './components/Common/RouteErrorBoundary';
+import ProtectedRoute from './components/common/ProtectedRoute';
+import RouteErrorBoundary from './components/common/RouteErrorBoundary';
 import NotificationToast from './components/AssetManagement/NotificationToast';
 import { LanguageProvider } from './context/LanguageContext';
 import { UserProvider } from './context/UserContext';
@@ -36,11 +36,11 @@ const ConfirmPayment = lazy(
   () => import('./components/Company/ConfirmPayment')
 );
 const SignupSuccess = lazy(() => import('./components/Auth/SignupSuccess'));
-const Error404 = lazy(() => import('./components/Common/Error404'));
+const Error404 = lazy(() => import('./components/common/Error404'));
 
 const Dashboard = lazy(() => import('./components/DashboardContent/Dashboard'));
 const DepartmentList = lazy(() =>
-  import('./components/Department/Department-list').then(module => ({
+  import('./components/department/Department-list').then(module => ({
     default: module.DepartmentList,
   }))
 );

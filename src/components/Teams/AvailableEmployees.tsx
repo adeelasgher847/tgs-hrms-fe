@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Paper,
@@ -25,7 +23,7 @@ import {
   TextField,
   InputAdornment,
 } from '@mui/material';
-import UserAvatar from '../Common/UserAvatar';
+import UserAvatar from '../common/UserAvatar';
 import {
   Add as AddIcon,
   Person as PersonIcon,
@@ -33,7 +31,8 @@ import {
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
-import AppButton from '../Common/AppButton';
+import AppButton from '../common/AppButton';
+import AppTable from '../common/AppTable';
 import { COLORS } from '../../constants/appConstants';
 import type { TeamMember, Team } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
@@ -417,104 +416,100 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
               }}
             />
           </Box>
-          <TableContainer
+          <AppTable
             component={Paper}
             sx={{
               backgroundColor: darkMode ? '#2d2d2d' : '#fff',
               boxShadow: 'none',
             }}
           >
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    {lang.name}
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    {lang.email}
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    {lang.designation}
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    {lang.department}
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    {lang.actions}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredEmployees
-                  .filter(
-                    employee =>
-                      employee?.user?.first_name && employee?.user?.last_name
-                  )
-                  .map(employee => (
-                    <TableRow key={employee.id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <UserAvatar
-                            user={{
-                              id: employee.user?.id,
-                              first_name: employee.user?.first_name || '',
-                              last_name: employee.user?.last_name || '',
-                              profile_pic: employee.user?.profile_pic,
-                            }}
-                            size={32}
-                            clickable={false}
-                            sx={{ mr: 2 }}
-                          />
-                          <Typography
-                            sx={{ color: darkMode ? '#fff' : '#000' }}
-                          >
-                            {employee.user?.first_name || 'Unknown'}{' '}
-                            {employee.user?.last_name || 'User'}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
-                        {employee.user?.email || 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={employee.designation?.title || 'N/A'}
-                          size='small'
-                          sx={{
-                            backgroundColor: '#484c7f',
-                            color: 'white',
-                            fontSize: '0.75rem',
+            <TableHead>
+              <TableRow>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  {lang.name}
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  {lang.email}
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  {lang.designation}
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  {lang.department}
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  {lang.actions}
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredEmployees
+                .filter(
+                  employee =>
+                    employee?.user?.first_name && employee?.user?.last_name
+                )
+                .map(employee => (
+                  <TableRow key={employee.id} hover>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <UserAvatar
+                          user={{
+                            id: employee.user?.id,
+                            first_name: employee.user?.first_name || '',
+                            last_name: employee.user?.last_name || '',
+                            profile_pic: employee.user?.profile_pic,
                           }}
+                          size={32}
+                          clickable={false}
+                          sx={{ mr: 2 }}
                         />
-                      </TableCell>
-                      <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
-                        {employee.department?.name || 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <IconButton
-                          size='small'
-                          onClick={() => handleAddToTeam(employee)}
-                          sx={{ color: '#484c7f' }}
-                          title={lang.addToTeam}
-                        >
-                          <AddIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                        <Typography sx={{ color: darkMode ? '#fff' : '#000' }}>
+                          {employee.user?.first_name || 'Unknown'}{' '}
+                          {employee.user?.last_name || 'User'}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                      {employee.user?.email || 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={employee.designation?.title || 'N/A'}
+                        size='small'
+                        sx={{
+                          backgroundColor: '#484c7f',
+                          color: 'white',
+                          fontSize: '0.75rem',
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                      {employee.department?.name || 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <IconButton
+                        size='small'
+                        onClick={() => handleAddToTeam(employee)}
+                        sx={{ color: '#484c7f' }}
+                        title={lang.addToTeam}
+                      >
+                        <AddIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </AppTable>
 
           <TablePagination
             component='div'

@@ -8,73 +8,58 @@ import {
   Stack,
   Alert,
   CircularProgress,
+  Snackbar,
   Divider,
 } from '@mui/material';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
 import signupApi, {
   type SubscriptionPlan,
-  type StripePriceInfo,
   type CompanyDetailsRequest,
   type LogoUploadRequest,
-  type PaymentRequest,
-} from '../../api/signupApi';
-import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
-import { Icons } from '../../assets/icons';
+} from '../api/signupApi';
 
 // Default plans as fallback
 const defaultPlans = [
   {
     id: 'basic',
-    name: 'Basic Plan',
-    price: '$10.00',
+    name: 'Basic',
+    price: '$9',
     duration: 'Month',
     features: [
-      { text: 'Basic HRMS features', included: true },
-      {
-        text: 'Employee profile management with essential details',
-        included: true,
-      },
-      { text: 'Department and designation setup', included: true },
-      { text: 'Leave request and approval workflow (basic)', included: true },
-      { text: 'Attendance tracking (manual entry)', included: true },
-      { text: 'Standard reports (PDF/Excel export)', included: true },
+      { text: 'Up to 10 employees', included: true },
+      { text: 'Basic HR features', included: true },
+      { text: 'Email support', included: true },
+      { text: 'Advanced analytics', included: false },
+      { text: 'API access', included: false },
     ],
     popular: false,
   },
   {
-    id: 'pro',
-    name: 'Pro Plan',
-    price: '$20.00',
+    id: 'standard',
+    name: 'Standard',
+    price: '$19',
     duration: 'Month',
     features: [
-      { text: 'Basic HRMS features', included: true },
-      {
-        text: 'Employee profile management with essential details',
-        included: true,
-      },
-      { text: 'Department and designation setup', included: true },
-      { text: 'Leave request and approval workflow (basic)', included: true },
-      { text: 'Attendance tracking (manual entry)', included: true },
-      { text: 'Standard reports (PDF/Excel export)', included: true },
+      { text: 'Up to 50 employees', included: true },
+      { text: 'All basic features', included: true },
+      { text: 'Advanced analytics', included: true },
+      { text: 'Priority support', included: true },
+      { text: 'API access', included: false },
     ],
     popular: true,
   },
   {
-    id: 'enterprise',
-    name: 'Enterprise Plan',
-    price: '$50.00',
+    id: 'premium',
+    name: 'Premium',
+    price: '$30',
     duration: 'Month',
     features: [
-      { text: 'Basic HRMS features', included: true },
-      {
-        text: 'Employee profile management with essential details',
-        included: true,
-      },
-      { text: 'Department and designation setup', included: true },
-      { text: 'Leave request and approval workflow (basic)', included: true },
-      { text: 'Attendance tracking (manual entry)', included: true },
-      { text: 'Standard reports (PDF/Excel export)', included: true },
+      { text: 'Unlimited employees', included: true },
+      { text: 'All standard features', included: true },
+      { text: 'Advanced analytics', included: true },
+      { text: 'Priority support', included: true },
+      { text: 'API access', included: true },
     ],
     popular: false,
   },
@@ -87,7 +72,11 @@ const SelectPlan: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({ open: false, message: '', severity: 'success' });
 
   const hasFetched = useRef(false);
 
@@ -133,12 +122,10 @@ const SelectPlan: React.FC = () => {
               // Try to fetch prices from backend using Stripe price IDs
               const prices = await signupApi.getStripePrices(priceIds);
               priceInfoByPriceId = (prices || []).reduce(
-                (acc, pr: StripePriceInfo) => {
+                (acc, pr: Record<string, unknown>) => {
                   const amount =
                     typeof pr.unit_amount === 'number' ? pr.unit_amount : 0;
-                  const currency = pr.currency
-                    ? pr.currency.toUpperCase()
-                    : 'USD';
+                  const currency = pr.currency?.toUpperCase?.() || 'USD';
                   const interval = pr.interval || 'month';
                   const formattedAmount = new Intl.NumberFormat(undefined, {
                     style: 'currency',
@@ -205,9 +192,9 @@ const SelectPlan: React.FC = () => {
           });
 
           setPlans(transformedPlans);
-        } catch (e) {
+        } catch (err: unknown) {
+          console.error('Error fetching plans:', err);
           setError('Failed to load subscription plans. Using default plans.');
-          showError(e);
           // Keep default plans as fallback
         } finally {
           setLoading(false);
@@ -216,7 +203,7 @@ const SelectPlan: React.FC = () => {
 
       void fetchPlans();
     }
-  }, [navigate, showError]);
+  }, [navigate]);
 
   const handlePlanSelect = (planId: string) => {
     setSelectedPlan(planId);
@@ -257,6 +244,10 @@ const SelectPlan: React.FC = () => {
           throw new Error('Signup session not found. Please start over.');
         }
 
+        // Debug: Log company details
+        console.log('Company details from localStorage:', companyDetails);
+        console.log('SignupSessionId:', signupSessionId);
+
         // Validate company details are present and not empty
         const companyName = companyDetails?.companyName
           ? String(companyDetails.companyName).trim()
@@ -266,6 +257,11 @@ const SelectPlan: React.FC = () => {
           : '';
 
         if (!companyName || !domain) {
+          console.error('Missing company details:', {
+            companyName,
+            domain,
+            fullCompanyDetails: companyDetails,
+          });
           throw new Error(
             'Company name and domain are required. Please go back and fill in all required fields.'
           );
@@ -311,7 +307,9 @@ const SelectPlan: React.FC = () => {
             };
 
             await signupApi.uploadLogo(logoUploadData);
-          } catch {
+            console.log('Logo uploaded successfully');
+          } catch (logoError: unknown) {
+            console.error('Logo upload failed:', logoError);
             // Don't block the flow if logo upload fails
           }
         }
@@ -325,7 +323,11 @@ const SelectPlan: React.FC = () => {
 
         const checkoutSession = await signupApi.createPayment(paymentRequest);
 
-        showSuccess('Redirecting to secure payment...');
+        setSnackbar({
+          open: true,
+          message: 'Redirecting to secure payment...',
+          severity: 'success',
+        });
 
         // 4. Redirect to Stripe Checkout
         if (checkoutSession.url) {
@@ -334,8 +336,12 @@ const SelectPlan: React.FC = () => {
           throw new Error('No checkout URL received from server');
         }
       } else if (isLoginFlow) {
-        // eslint-disable-next-line no-useless-catch
+        // Login flow: User is already logged in after tenant creation
+        // Backend flow: System admin creates tenant → Admin logs in → Admin selects plan → Payment
+        // For login flow, company details are already created during tenant creation
+        // We just need to call /signup/company-details with session_id and planId
         try {
+          // Get session_id from localStorage (set during login as signupSessionId)
           const loginSignupSessionIdRaw =
             localStorage.getItem('signupSessionId');
           const loginSignupSessionId = loginSignupSessionIdRaw
@@ -345,6 +351,14 @@ const SelectPlan: React.FC = () => {
           if (!loginSignupSessionId || loginSignupSessionId.length === 0) {
             throw new Error('Session ID not found. Please log in again.');
           }
+
+          // Step 1: Update company details with selected plan
+          // Backend already has company details from tenant creation, we just need to update with planId
+          // But backend still expects companyName and domain, so we get them from the company object in login response
+          // Actually, let's check if we need to send companyName and domain or if backend can get them from session_id
+          // Based on user's description: "POST /signup/company-details with session_id aur planId"
+          // It seems backend only needs session_id and planId, but the error suggests it needs companyName and domain too
+          // Let's try sending only session_id and planId first, and if that fails, we'll get company details from user object
 
           // Get company details from localStorage (stored during login)
           const companyStr = localStorage.getItem('company');
@@ -373,7 +387,11 @@ const SelectPlan: React.FC = () => {
 
           const checkoutSession = await signupApi.createPayment(paymentRequest);
 
-          showSuccess('Redirecting to secure payment...');
+          setSnackbar({
+            open: true,
+            message: 'Redirecting to secure payment...',
+            severity: 'success',
+          });
 
           if (checkoutSession.url) {
             window.location.href = checkoutSession.url;
@@ -381,7 +399,24 @@ const SelectPlan: React.FC = () => {
             throw new Error('No checkout URL received from server');
           }
         } catch (paymentError: unknown) {
-          throw paymentError;
+          console.error(
+            'Payment creation error for logged-in user:',
+            paymentError
+          );
+          const error = paymentError as {
+            response?: { status?: number; data?: { message?: string } };
+            message?: string;
+          };
+
+          let errorMessage =
+            'Failed to create payment session. Please contact support or try again later.';
+          if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+
+          throw new Error(errorMessage);
         }
       } else {
         throw new Error('Invalid session. Please start over.');
@@ -389,42 +424,19 @@ const SelectPlan: React.FC = () => {
     } catch (err: unknown) {
       let errorMessage = 'Failed to create payment session. Please try again.';
 
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        (err as { response?: { data?: unknown } }).response?.data
-      ) {
-        const data = (err as { response?: { data?: unknown } }).response?.data;
-        if (typeof data === 'string') {
-          errorMessage = data;
-        } else if (
-          data &&
-          typeof data === 'object' &&
-          'message' in data &&
-          typeof (data as { message?: unknown }).message === 'string'
-        ) {
-          errorMessage = (data as { message?: string }).message ?? errorMessage;
-        } else if (
-          data &&
-          typeof data === 'object' &&
-          'error' in data &&
-          typeof (data as { error?: unknown }).error === 'string'
-        ) {
-          errorMessage = (data as { error?: string }).error ?? errorMessage;
-        } else if (
-          data &&
-          typeof data === 'object' &&
-          'details' in data &&
-          typeof (data as { details?: unknown }).details === 'string'
-        ) {
-          errorMessage = (data as { details?: string }).details ?? errorMessage;
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        } else if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response.data.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.response.data.details) {
+          errorMessage = err.response.data.details;
         }
-      } else if (err instanceof Error && err.message) {
+      } else if (err.message) {
         errorMessage = err.message;
       }
-      setError(errorMessage);
-      showError(err);
 
       setError(errorMessage);
     } finally {
@@ -471,38 +483,23 @@ const SelectPlan: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'var(--white-100-color)',
+        background: '#f3f4f6',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'column',
         px: { xs: 2, sm: 4, md: 6 },
-        py: 4,
       }}
     >
       {/* Heading */}
       <Typography
-        variant='h1'
-        sx={{
-          color: 'var(--text-color)',
-          fontWeight: 700,
-          fontSize: { xs: '32px', lg: '48px' },
-          mb: 1,
-          textAlign: 'center',
-        }}
+        variant='h4'
+        sx={{ color: '#111827', fontWeight: 700, mb: 1 }}
       >
         Choose Your Plan
       </Typography>
-      <Typography
-        sx={{
-          color: 'var(--dark-grey-color)',
-          mb: 5,
-          textAlign: 'center',
-          fontSize: { xs: '16px', lg: '24px' },
-          fontWeight: 400,
-        }}
-      >
-        You can choose the plan of your choice
+      <Typography sx={{ color: '#4b5563', mb: 5 }}>
+        You can take the plan of your choice
       </Typography>
 
       {/* Error Message */}
@@ -516,7 +513,7 @@ const SelectPlan: React.FC = () => {
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         spacing={3}
-        sx={{ width: '100%', maxWidth: '1300px', mb: 4 }}
+        sx={{ width: '100%', maxWidth: '1300px' }}
       >
         {plans.map(plan => (
           <Paper
@@ -524,39 +521,66 @@ const SelectPlan: React.FC = () => {
             onClick={() => handlePlanSelect(plan.id)}
             sx={{
               flex: 1,
-              borderRadius: '24px',
+              borderRadius: '16px',
               overflow: 'hidden',
               boxShadow:
                 selectedPlan === plan.id
-                  ? '0 0 0 3px rgba(48, 131, 220, 0.4), 0 8px 24px rgba(48, 131, 220, 0.25), 0 0 20px rgba(48, 131, 220, 0.15)'
-                  : '0 4px 12px rgba(0,0,0,0.08)',
+                  ? '0 12px 28px rgba(72, 76, 127, 0.3)'
+                  : '0 8px 24px rgba(0,0,0,0.12)',
               position: 'relative',
-              bgcolor: 'var(--white-color)',
-              transition: 'all 250ms ease',
+              bgcolor: selectedPlan === plan.id ? '#f8f9ff' : '#ffffff',
+              border:
+                selectedPlan === plan.id
+                  ? '2px solid #484c7f'
+                  : '2px solid transparent',
+              transition:
+                'transform 250ms ease, box-shadow 250ms ease, border 250ms ease',
+              transformOrigin: 'center',
+              willChange: 'transform',
               cursor: 'pointer',
-              mx: { xs: 1.5, sm: 2, md: 0 },
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: 420,
               '&:hover': {
-                boxShadow:
-                  selectedPlan === plan.id
-                    ? '0 0 0 3px rgba(48, 131, 220, 0.5), 0 12px 28px rgba(48, 131, 220, 0.35), 0 0 25px rgba(48, 131, 220, 0.2)'
-                    : '0 8px 24px rgba(0,0,0,0.15)',
+                transform: 'scale(1.02)',
+                boxShadow: '0 12px 28px rgba(0,0,0,0.18)',
               },
+              mx: { xs: 1.5, sm: 2, md: 0 },
             }}
           >
             {/* Card Header */}
-            <Box sx={{ pt: 3, px: 3 }}>
+            <Box sx={{ pt: plan.popular ? 5 : 3, pb: 2, px: 2 }}>
+              {/* Popular badge */}
+              {plan.popular && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 18,
+                    left: 18,
+                    bgcolor: '#facc15',
+                    color: '#111827',
+                    px: 2.5,
+                    py: '4px',
+                    borderRadius: '8px',
+                    fontSize: { xs: '13px', sm: '15px' },
+                    fontWeight: 900,
+                    boxShadow: 2,
+                    letterSpacing: 1,
+                    zIndex: 2,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Popular
+                </Box>
+              )}
               {/* Heading */}
               <Typography
-                variant='h3'
+                variant='h5'
                 sx={{
-                  fontWeight: 700,
-                  fontSize: 'var(--subheading2-font-size)',
+                  fontWeight: 900,
+                  letterSpacing: 0.5,
+                  mt: 1,
+                  fontSize: { xs: 22, sm: 26, md: 28 },
+
                   textAlign: 'left',
-                  color: 'var(--text-color)',
-                  mb: 2,
+                  color: '#484c7f',
                 }}
               >
                 {plan.name}
@@ -566,115 +590,101 @@ const SelectPlan: React.FC = () => {
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'flex-start',
+                  alignItems: 'left',
+                  // justifyContent: 'center',
                   mb: 2,
                 }}
               >
-                <Typography
-                  component='span'
+                <Box
                   sx={{
-                    fontSize: { xs: 36, sm: 42, md: 48 },
-                    fontWeight: 700,
-                    color: 'var(--secondary-color)',
-                    lineHeight: 1,
+                    borderRadius: '16px',
+
                     mb: 0.5,
                   }}
                 >
-                  {typeof plan.price === 'string'
-                    ? plan.price
-                        .replace(/^US\$/i, '$')
-                        .replace(/\$(\d)/, '$ $1')
-                    : plan.price}
-                </Typography>
+                  <Typography
+                    component='span'
+                    sx={{
+                      fontSize: { xs: 32, sm: 38, md: 44 },
+                      fontWeight: 900,
+                      color: '#484c7f',
+                      lineHeight: 1,
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {typeof plan.price === 'string'
+                      ? plan.price.replace(/^US\$/i, '$')
+                      : plan.price}
+                  </Typography>
+                </Box>
                 <Typography
                   component='span'
                   sx={{
-                    fontSize: 'var(--body-font-size)',
-                    color: 'var(--secondary-color)',
-                    fontWeight: 400,
+                    fontSize: { xs: 16, sm: 18 },
+                    color: '#484c7f',
+                    fontWeight: 700,
+                    letterSpacing: 0.2,
                   }}
                 >
-                  Per {plan.duration}
+                  per {plan.duration}
                 </Typography>
+                <Divider sx={{ my: 1, borderColor: '#e5e7eb' }} />
               </Box>
             </Box>
-            <Divider />
 
-            {/* Features - scrollable area */}
-            <Box
-              sx={{
-                pt: 3,
-                px: 3,
-                flexGrow: 1,
-                minHeight: 0,
-                overflowY: 'auto',
-                maxHeight: 320,
-              }}
-            >
+            {/* Features */}
+            <Box sx={{ p: 3, pt: 4 }}>
               {plan.features.map((feature, idx) => (
                 <Stack
                   key={idx}
                   direction='row'
-                  spacing={1.5}
+                  spacing={1}
                   alignItems='center'
-                  sx={{ mb: 1.5 }}
+                  sx={{ mb: 1.25 }}
                 >
-                  <Box
-                    component='img'
-                    src={Icons.plans}
-                    alt='Plan feature icon'
-                    sx={{
-                      width: 20,
-                      height: 20,
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  />
-                  <Typography
-                    sx={{
-                      color: 'var(--text-color)',
-                      fontSize: { xs: '16px', lg: 'var(--body-font-size)' },
-                      lineHeight: 1.5,
-                    }}
-                  >
+                  {feature.included ? (
+                    <CheckIcon sx={{ color: '#16a34a', fontSize: 20 }} />
+                  ) : (
+                    <CloseIcon sx={{ color: '#dc2626', fontSize: 20 }} />
+                  )}
+                  <Typography sx={{ color: '#1f2937', fontSize: 14 }}>
                     {feature.text}
                   </Typography>
                 </Stack>
               ))}
             </Box>
 
-            {/* Button - fixed at bottom of card */}
-            <Box sx={{ textAlign: 'center', pb: 3, px: 3, mt: 2 }}>
+            {/* Button */}
+            <Box sx={{ textAlign: 'center', pb: 3 }}>
               <Button
                 onClick={e => {
                   e.stopPropagation();
                   handlePlanSelect(plan.id);
                 }}
                 sx={{
-                  maxWidth: '180px',
-                  backgroundColor:
+                  background:
                     selectedPlan === plan.id
-                      ? 'var(--black-color)'
-                      : 'var(--dark-grey-500-color)',
-                  color: 'var(--white-color)',
-                  borderRadius: '16px',
-                  px: 4,
+                      ? 'linear-gradient(90deg, #16a34a 0%, #16a34a 100%)'
+                      : 'linear-gradient(90deg, #484c7f 0%, #484c7f 100%)',
+                  color: 'white',
+                  borderRadius: '999px',
+                  px: 5,
                   py: 1.25,
-                  width: '100%',
-                  fontWeight: 500,
-                  textTransform: 'none',
-                  fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
+                  boxShadow:
+                    selectedPlan === plan.id
+                      ? '0 6px 16px rgba(22, 163, 74, 0.4)'
+                      : '0 6px 16px rgba(42, 18, 179, 0.4)',
+                  fontWeight: 700,
+                  letterSpacing: 0.5,
                   '&:hover': {
-                    backgroundColor:
+                    background:
                       selectedPlan === plan.id
-                        ? 'var(--text-color)'
-                        : 'var(--dark-grey-color)',
+                        ? 'linear-gradient(90deg,rgb(21, 128, 61) 0%,rgb(22, 163, 74) 100%)'
+                        : 'linear-gradient(90deg,rgb(87, 91, 144) 0%,rgb(91, 95, 152) 100%)',
                   },
                 }}
               >
-                Choose Plan
+                {selectedPlan === plan.id ? 'SELECTED' : 'SELECT'}
               </Button>
             </Box>
           </Paper>
@@ -684,12 +694,13 @@ const SelectPlan: React.FC = () => {
       {/* Navigation Buttons */}
       <Box
         sx={{
+          mt: 4,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 2,
           width: '100%',
-          maxWidth: '1300px',
+          maxWidth: '1100px',
         }}
       >
         <Button
@@ -697,16 +708,13 @@ const SelectPlan: React.FC = () => {
           onClick={handleBack}
           disabled={submitting}
           sx={{
-            borderColor: 'var(--dark-grey-500-color)',
-            color: 'var(--text-color)',
+            borderColor: '#484c7f',
+            color: '#484c7f',
             px: 4,
-            borderRadius: '12px',
-            fontWeight: 500,
-            textTransform: 'none',
-            fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
+            py: 1.5,
             '&:hover': {
-              borderColor: 'var(--dark-grey-color)',
-              backgroundColor: 'var(--white-100-color)',
+              borderColor: '#484c7f',
+              backgroundColor: 'rgba(72, 76, 127, 0.1)',
             },
           }}
         >
@@ -718,19 +726,17 @@ const SelectPlan: React.FC = () => {
           onClick={handleContinue}
           disabled={!selectedPlan || submitting}
           sx={{
-            backgroundColor: 'var(--primary-dark-color)',
-            color: 'var(--white-color)',
+            background: 'linear-gradient(90deg, #484c7f 0%, #484c7f 100%)',
+            color: 'white',
             px: 4,
-            borderRadius: '12px',
-            fontWeight: 500,
-            textTransform: 'none',
-            fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
+            py: 1.5,
+            fontWeight: 600,
             '&:hover': {
-              backgroundColor: 'var(--primary-light-color)',
+              background:
+                'linear-gradient(90deg,rgb(87, 91, 144) 0%,rgb(91, 95, 152) 100%)',
             },
             '&:disabled': {
-              backgroundColor: 'var(--grey-color)',
-              color: 'var(--white-color)',
+              backgroundColor: '#ccc',
             },
           }}
         >
@@ -740,19 +746,25 @@ const SelectPlan: React.FC = () => {
               Processing...
             </Box>
           ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <ShoppingCartIcon /> Checkout
-            </Box>
+            'Continue to  Checkout'
           )}
         </Button>
       </Box>
 
-      <ErrorSnackbar
+      <Snackbar
         open={snackbar.open}
-        message={snackbar.message}
-        severity={snackbar.severity}
-        onClose={closeSnackbar}
-      />
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

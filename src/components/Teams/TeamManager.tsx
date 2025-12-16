@@ -20,7 +20,7 @@ import {
 import { useLanguage } from '../../hooks/useLanguage';
 import { isAdmin, isManager, isHRAdmin, isSystemAdmin } from '../../utils/auth';
 import { teamApiService } from '../../api/teamApi';
-import AppButton from '../Common/AppButton';
+import AppButton from '../common/AppButton';
 import { COLORS } from '../../constants/appConstants';
 import type {
   Team,
@@ -253,7 +253,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography variant='h4' gutterBottom>
+        <Typography variant='h4' fontSize={{xs: '32px', lg: '48px'}} gutterBottom>
           {lang.title}
         </Typography>
         <Box
@@ -308,7 +308,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
           variant='h4'
           sx={{
             color: theme => theme.palette.text.primary,
-            fontSize: { xs: '1.5rem', sm: '2.125rem' },
+            fontSize: { xs: '32px', lg: '48px' },
             textAlign: { xs: 'left', sm: 'left' },
           }}
         >

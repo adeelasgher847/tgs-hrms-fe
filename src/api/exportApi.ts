@@ -7,16 +7,20 @@ export const exportCSV = async (
   token?: string,
   params?: Record<string, string | number>
 ) => {
-  const response = await axiosInstance.get(endpoint, {
-    params,
-    responseType: 'blob',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-  const url = window.URL.createObjectURL(new Blob([response.data]));
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', filename);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  try {
+    const response = await axiosInstance.get(endpoint, {
+      params,
+      responseType: 'blob',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error) {
+    console.error('Export failed:', error);
+  }
 };

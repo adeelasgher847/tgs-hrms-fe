@@ -28,7 +28,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import UserAvatar from '../Common/UserAvatar';
+import UserAvatar from '../common/UserAvatar';
 import MenuIcon from '@mui/icons-material/Menu';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';

@@ -3,10 +3,8 @@ import {
   Box,
   Button,
   Paper,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -48,6 +46,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { type Dayjs } from 'dayjs';
 import employeeApi from '../../api/employeeApi';
 import { PAGINATION } from '../../constants/appConstants';
+import AppTable from '../common/AppTable';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -119,7 +118,8 @@ const EmployeeSalaryPage: React.FC = () => {
   );
   const [configLoading, setConfigLoading] = useState(false);
 
-  const [baseSalary, setBaseSalary] = useState<number | ''>(0);
+  // `baseSalary` state was previously used for display but base components
+  // are now tracked in `basePayComponents`. Keep no separate baseSalary state.
   const [basePayComponents, setBasePayComponents] = useState<{
     basic: number | '';
     houseRent: number | '';
@@ -270,13 +270,7 @@ const EmployeeSalaryPage: React.FC = () => {
           transport: config.basePayComponents?.transport || 0,
         });
 
-        // Calculate total base salary for display/validation
-        const totalBaseSalary =
-          (config.basePayComponents?.basic || 0) +
-          (config.basePayComponents?.houseRent || 0) +
-          (config.basePayComponents?.medical || 0) +
-          (config.basePayComponents?.transport || 0);
-        setBaseSalary(totalBaseSalary || 0);
+        // total base salary is derived from `basePayComponents`
 
         // Convert config allowances to employee salary allowances format
         const configAllowances: EmployeeSalaryAllowance[] = (
@@ -326,7 +320,7 @@ const EmployeeSalaryPage: React.FC = () => {
           medical: 0,
           transport: 0,
         });
-        setBaseSalary(0);
+        // reset base salary via basePayComponents
         setAllowances([]);
         setDeductions([]);
       }
@@ -338,7 +332,7 @@ const EmployeeSalaryPage: React.FC = () => {
         medical: 0,
         transport: 0,
       });
-      setBaseSalary(0);
+      // reset base salary via basePayComponents
       setAllowances([]);
       setDeductions([]);
     } finally {
@@ -416,7 +410,7 @@ const EmployeeSalaryPage: React.FC = () => {
           });
         }
 
-        setBaseSalary(baseSalaryValue);
+        // base salary value derived from components; no separate state
         setAllowances(response.salary.allowances || []);
         setDeductions(response.salary.deductions || []);
         const effectiveDateObj = dayjs(response.salary.effectiveDate);
@@ -439,12 +433,7 @@ const EmployeeSalaryPage: React.FC = () => {
             medical: config.basePayComponents.medical || 0,
             transport: config.basePayComponents.transport || 0,
           });
-          const totalBaseSalary =
-            (config.basePayComponents.basic || 0) +
-            (config.basePayComponents.houseRent || 0) +
-            (config.basePayComponents.medical || 0) +
-            (config.basePayComponents.transport || 0);
-          setBaseSalary(totalBaseSalary);
+          // total base salary is derived from `basePayComponents`
         } else {
           // Use defaults from API response
           setBasePayComponents({
@@ -453,7 +442,7 @@ const EmployeeSalaryPage: React.FC = () => {
             medical: 0,
             transport: 0,
           });
-          setBaseSalary(response.defaults.baseSalary);
+          // base salary value derived from defaults via basePayComponents
         }
 
         setAllowances([...response.defaults.allowances]);
@@ -707,7 +696,10 @@ const EmployeeSalaryPage: React.FC = () => {
     selectedSalary,
     selectedEmployeeId,
     currentEmployeeId,
-    basePayComponents,
+    basePayComponents.basic,
+    basePayComponents.houseRent,
+    basePayComponents.medical,
+    basePayComponents.transport,
     effectiveMonth,
     effectiveYear,
     allowances,
@@ -780,7 +772,10 @@ const EmployeeSalaryPage: React.FC = () => {
     return false;
   }, [
     selectedSalary,
-    baseSalary,
+    basePayComponents.basic,
+    basePayComponents.houseRent,
+    basePayComponents.medical,
+    basePayComponents.transport,
     effectiveMonth,
     effectiveYear,
     endDate,
@@ -1173,164 +1168,153 @@ const EmployeeSalaryPage: React.FC = () => {
             <CircularProgress />
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    Employee
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  Employee
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  Department
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  Designation
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  Base Salary
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  Status
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  Actions
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {employees.map(item => (
+                <TableRow key={item.employee.id} hover>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box>
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            color: darkMode ? '#fff' : '#000',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {`${item.employee.user.first_name} ${item.employee.user.last_name}`}
+                        </Typography>
+                        <Typography
+                          variant='caption'
+                          sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
+                        >
+                          {item.employee.user.email}
+                        </Typography>
+                      </Box>
+                    </Box>
                   </TableCell>
+                  <TableCell>{item.employee.department.name}</TableCell>
+                  <TableCell>{item.employee.designation.title}</TableCell>
                   <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                    sx={{
+                      color: darkMode ? '#fff' : '#000',
+                      fontWeight: 500,
+                    }}
                   >
-                    Department
+                    {item.salary
+                      ? formatCurrency(item.salary.baseSalary)
+                      : 'Not Assigned'}
                   </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    Designation
+                  <TableCell>
+                    {item.salary ? (
+                      <Chip
+                        label={item.salary.status}
+                        color={
+                          item.salary.status === 'active'
+                            ? 'success'
+                            : 'default'
+                        }
+                        size='small'
+                      />
+                    ) : (
+                      <Chip label='inactive' size='small' />
+                    )}
                   </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    Base Salary
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    Status
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    Actions
+                  <TableCell>
+                    <Stack direction='row' spacing={1}>
+                      {item.salary ? (
+                        <>
+                          <IconButton
+                            size='small'
+                            onClick={() => handleViewSalary(item)}
+                            sx={{ color: theme.palette.primary.main }}
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
+                          <IconButton
+                            size='small'
+                            onClick={() => handleEditSalary(item)}
+                            sx={{ color: theme.palette.primary.main }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </>
+                      ) : (
+                        <Button
+                          size='small'
+                          variant='outlined'
+                          onClick={async () => {
+                            setSelectedEmployee(item);
+                            setSelectedEmployeeId(item.employee.id);
+
+                            try {
+                              // Fetch defaults for this employee
+                              const response =
+                                await payrollApi.getEmployeeSalary(
+                                  item.employee.id
+                                );
+
+                              // Use defaults since salary is null
+                              setSelectedSalary(null);
+                              setAllowances([...response.defaults.allowances]);
+                              setDeductions([...response.defaults.deductions]);
+                              const effectiveDateObj = dayjs(
+                                response.defaults.effectiveDate
+                              );
+                              setEffectiveMonth(effectiveDateObj.month() + 1);
+                              setEffectiveYear(effectiveDateObj.year());
+                              setEndDate(null);
+                              setStatus('active');
+                              setNotes('');
+                              setEditModalOpen(true);
+                            } catch {
+                              snackbar.error('Failed to load salary defaults');
+                            }
+                          }}
+                        >
+                          Assign
+                        </Button>
+                      )}
+                    </Stack>
                   </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {employees.map(item => (
-                  <TableRow key={item.employee.id} hover>
-                    <TableCell>
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                      >
-                        <Box>
-                          <Typography
-                            variant='body2'
-                            sx={{
-                              color: darkMode ? '#fff' : '#000',
-                              fontWeight: 500,
-                            }}
-                          >
-                            {`${item.employee.user.first_name} ${item.employee.user.last_name}`}
-                          </Typography>
-                          <Typography
-                            variant='caption'
-                            sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
-                          >
-                            {item.employee.user.email}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell>{item.employee.department.name}</TableCell>
-                    <TableCell>{item.employee.designation.title}</TableCell>
-                    <TableCell
-                      sx={{
-                        color: darkMode ? '#fff' : '#000',
-                        fontWeight: 500,
-                      }}
-                    >
-                      {item.salary
-                        ? formatCurrency(item.salary.baseSalary)
-                        : 'Not Assigned'}
-                    </TableCell>
-                    <TableCell>
-                      {item.salary ? (
-                        <Chip
-                          label={item.salary.status}
-                          color={
-                            item.salary.status === 'active'
-                              ? 'success'
-                              : 'default'
-                          }
-                          size='small'
-                        />
-                      ) : (
-                        <Chip label='inactive' size='small' />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction='row' spacing={1}>
-                        {item.salary ? (
-                          <>
-                            <IconButton
-                              size='small'
-                              onClick={() => handleViewSalary(item)}
-                              sx={{ color: theme.palette.primary.main }}
-                            >
-                              <VisibilityIcon />
-                            </IconButton>
-                            <IconButton
-                              size='small'
-                              onClick={() => handleEditSalary(item)}
-                              sx={{ color: theme.palette.primary.main }}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </>
-                        ) : (
-                          <Button
-                            size='small'
-                            variant='outlined'
-                            onClick={async () => {
-                              setSelectedEmployee(item);
-                              setSelectedEmployeeId(item.employee.id);
-
-                              try {
-                                // Fetch defaults for this employee
-                                const response =
-                                  await payrollApi.getEmployeeSalary(
-                                    item.employee.id
-                                  );
-
-                                // Use defaults since salary is null
-                                setSelectedSalary(null);
-                                setBaseSalary(response.defaults.baseSalary);
-                                setAllowances([
-                                  ...response.defaults.allowances,
-                                ]);
-                                setDeductions([
-                                  ...response.defaults.deductions,
-                                ]);
-                                const effectiveDateObj = dayjs(
-                                  response.defaults.effectiveDate
-                                );
-                                setEffectiveMonth(effectiveDateObj.month() + 1);
-                                setEffectiveYear(effectiveDateObj.year());
-                                setEndDate(null);
-                                setStatus('active');
-                                setNotes('');
-                                setEditModalOpen(true);
-                              } catch {
-                                snackbar.error(
-                                  'Failed to load salary defaults'
-                                );
-                              }
-                            }}
-                          >
-                            Assign
-                          </Button>
-                        )}
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ))}
+            </TableBody>
+          </AppTable>
         )}
         {!loading && totalPages > 1 && (
           <Box display='flex' justifyContent='center' p={2}>
@@ -1613,95 +1597,91 @@ const EmployeeSalaryPage: React.FC = () => {
                       <CircularProgress size={24} />
                     </Box>
                   ) : (
-                    <TableContainer
+                    <AppTable
                       component={Paper}
                       sx={{
                         backgroundColor: darkMode ? '#2d2d2d' : '#f9f9f9',
                         border: `1px solid ${theme.palette.divider}`,
                       }}
                     >
-                      <Table size='small'>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell
-                              sx={{
-                                color: darkMode ? '#fff' : '#000',
-                                fontWeight: 600,
-                              }}
-                            >
-                              Effective Date
-                            </TableCell>
-                            <TableCell
-                              sx={{
-                                color: darkMode ? '#fff' : '#000',
-                                fontWeight: 600,
-                              }}
-                            >
-                              End Date
-                            </TableCell>
-                            <TableCell
-                              sx={{
-                                color: darkMode ? '#fff' : '#000',
-                                fontWeight: 600,
-                              }}
-                            >
-                              Base Salary
-                            </TableCell>
-                            <TableCell
-                              sx={{
-                                color: darkMode ? '#fff' : '#000',
-                                fontWeight: 600,
-                              }}
-                            >
-                              Status
-                            </TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {salaryHistory
-                            .filter(s => s.id !== selectedSalary?.id)
-                            .map(salary => (
-                              <TableRow key={salary.id} hover>
-                                <TableCell
-                                  sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
-                                >
-                                  {dayjs(salary.effectiveDate).format(
-                                    'MMM DD, YYYY'
-                                  )}
-                                </TableCell>
-                                <TableCell
-                                  sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
-                                >
-                                  {salary.endDate
-                                    ? dayjs(salary.endDate).format(
-                                        'MMM DD, YYYY'
-                                      )
-                                    : 'N/A'}
-                                </TableCell>
-                                <TableCell
-                                  sx={{
-                                    color: darkMode ? '#fff' : '#000',
-                                    fontWeight: 500,
-                                  }}
-                                >
-                                  {formatCurrency(salary.baseSalary)}
-                                </TableCell>
-                                <TableCell>
-                                  <Chip
-                                    label={salary.status}
-                                    color={
-                                      salary.status === 'active'
-                                        ? 'success'
-                                        : 'default'
-                                    }
-                                    size='small'
-                                  />
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell
+                            sx={{
+                              color: darkMode ? '#fff' : '#000',
+                              fontWeight: 600,
+                            }}
+                          >
+                            Effective Date
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              color: darkMode ? '#fff' : '#000',
+                              fontWeight: 600,
+                            }}
+                          >
+                            End Date
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              color: darkMode ? '#fff' : '#000',
+                              fontWeight: 600,
+                            }}
+                          >
+                            Base Salary
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              color: darkMode ? '#fff' : '#000',
+                              fontWeight: 600,
+                            }}
+                          >
+                            Status
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {salaryHistory
+                          .filter(s => s.id !== selectedSalary?.id)
+                          .map(salary => (
+                            <TableRow key={salary.id} hover>
+                              <TableCell
+                                sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
+                              >
+                                {dayjs(salary.effectiveDate).format(
+                                  'MMM DD, YYYY'
+                                )}
+                              </TableCell>
+                              <TableCell
+                                sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
+                              >
+                                {salary.endDate
+                                  ? dayjs(salary.endDate).format('MMM DD, YYYY')
+                                  : 'N/A'}
+                              </TableCell>
+                              <TableCell
+                                sx={{
+                                  color: darkMode ? '#fff' : '#000',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {formatCurrency(salary.baseSalary)}
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={salary.status}
+                                  color={
+                                    salary.status === 'active'
+                                      ? 'success'
+                                      : 'default'
+                                  }
+                                  size='small'
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </AppTable>
                   )}
                 </Box>
               )}
@@ -1886,7 +1866,7 @@ const EmployeeSalaryPage: React.FC = () => {
                             });
                           }
 
-                          setBaseSalary(baseSalaryValue);
+                          // base salary is derived from `basePayComponents`
                           setAllowances(response.salary.allowances || []);
                           setDeductions(response.salary.deductions || []);
                           const effectiveDateObj = dayjs(
@@ -1914,12 +1894,7 @@ const EmployeeSalaryPage: React.FC = () => {
                               transport:
                                 config.basePayComponents.transport || 0,
                             });
-                            const totalBaseSalary =
-                              (config.basePayComponents.basic || 0) +
-                              (config.basePayComponents.houseRent || 0) +
-                              (config.basePayComponents.medical || 0) +
-                              (config.basePayComponents.transport || 0);
-                            setBaseSalary(totalBaseSalary);
+                            // total base salary is derived from `basePayComponents`
                           } else {
                             setBasePayComponents({
                               basic: response.defaults.baseSalary || 0,
@@ -1927,7 +1902,7 @@ const EmployeeSalaryPage: React.FC = () => {
                               medical: 0,
                               transport: 0,
                             });
-                            setBaseSalary(response.defaults.baseSalary);
+                            // defaults applied to `basePayComponents`
                           }
 
                           setAllowances([...response.defaults.allowances]);
@@ -2015,28 +1990,7 @@ const EmployeeSalaryPage: React.FC = () => {
                         [key]: numValue,
                       }));
                       // Update total base salary
-                      const updated = {
-                        ...basePayComponents,
-                        [key]: numValue,
-                      };
-                      const total =
-                        (typeof updated.basic === 'string' &&
-                        updated.basic === ''
-                          ? 0
-                          : updated.basic || 0) +
-                        (typeof updated.houseRent === 'string' &&
-                        updated.houseRent === ''
-                          ? 0
-                          : updated.houseRent || 0) +
-                        (typeof updated.medical === 'string' &&
-                        updated.medical === ''
-                          ? 0
-                          : updated.medical || 0) +
-                        (typeof updated.transport === 'string' &&
-                        updated.transport === ''
-                          ? 0
-                          : updated.transport || 0);
-                      setBaseSalary(total === 0 ? '' : total);
+                      // Update local base pay components; total computed elsewhere
                     }}
                     sx={{
                       '& .MuiOutlinedInput-root': {

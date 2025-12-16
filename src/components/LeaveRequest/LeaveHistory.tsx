@@ -1,9 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Paper,
@@ -26,6 +24,7 @@ import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
 import { PAGINATION } from '../../constants/appConstants';
+import AppTable from '../common/AppTable';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
@@ -343,8 +342,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         </Box>
       ) : (
         <Paper elevation={1} sx={{ boxShadow: 'none' }}>
-          <TableContainer>
-            <Table>
+          <AppTable>
               <TableHead>
                 <TableRow>
                   {!hideNameColumn && (isAdmin || isManager || showNames) && (
@@ -548,8 +546,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
-          </TableContainer>
+          </AppTable>
         </Paper>
       )}
 
@@ -565,9 +562,13 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         }}
       >
         {(() => {
-          // Always show pagination if there are multiple pages
-          // This ensures users can always navigate between pages, even from the last page
-          const shouldShowPagination = totalPages > 1;
+          // When admin filters by employee:
+          // - Hide pagination if filtered records are less than or equal to page limit
+          // - Show pagination only if filtered records exceed page limit
+          // Otherwise, show pagination if there are multiple pages
+          const shouldShowPagination = isEmployeeFiltered
+            ? filteredTotalItems > ITEMS_PER_PAGE
+            : totalPages > 1;
 
           return shouldShowPagination ? (
             <Pagination

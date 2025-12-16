@@ -23,7 +23,7 @@ import employeeApi from '../../api/employeeApi';
 import benefitsApi from '../../api/benefitApi';
 import employeeBenefitApi from '../../api/employeeBenefitApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 
 interface Employee {
   id: string;
@@ -132,7 +132,7 @@ const AssignEmployeeBenefit: React.FC<{
     };
 
     fetchData();
-  }, [open]);
+  }, [open, showError]);
 
   useEffect(() => {
     if (!selectedEmployeeId) {
@@ -172,7 +172,7 @@ const AssignEmployeeBenefit: React.FC<{
     return () => {
       isMounted = false;
     };
-  }, [selectedEmployeeId]);
+  }, [selectedEmployeeId, showError]);
 
   const handleFormSubmit = async (data: AssignEmployeeBenefitValues) => {
     const duplicateBenefitIds = data.benefitIds.filter(benefitId =>

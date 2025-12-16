@@ -279,7 +279,11 @@ const SystemAdminAssets: React.FC = () => {
           gap: 2,
         }}
       >
-        <Typography variant='h4' fontWeight={600}>
+        <Typography
+          variant='h4'
+          fontWeight={600}
+          fontSize={{ xs: '32px', lg: '48px' }}
+        >
           Assets Overview
         </Typography>
       </Box>

@@ -11,9 +11,9 @@ import {
   Select,
 } from '@mui/material';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
-import AppInputField from '../Common/AppInputField';
-import AuthSidebar from '../Common/AuthSidebar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppInputField from '../common/AppInputField';
+import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
 
 const CompanyDetails: React.FC = () => {
@@ -365,9 +365,9 @@ const CompanyDetails: React.FC = () => {
               </Alert>
             )}
 
-            <Box 
-              component='form' 
-              onSubmit={handleSubmit} 
+            <Box
+              component='form'
+              onSubmit={handleSubmit}
               noValidate
               sx={{
                 width: '100%',

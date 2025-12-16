@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AppButton from '../../Common/AppButton';
+import AppButton from '../../common/AppButton';
 import { Icons } from '../../../assets/icons';
 import {
   getAttendanceThisMonth,

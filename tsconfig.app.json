@@ -14,12 +14,8 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-    
+
     /* Add these for better module resolution */
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
 

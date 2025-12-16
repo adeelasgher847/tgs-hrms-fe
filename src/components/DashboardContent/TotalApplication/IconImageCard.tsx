@@ -64,7 +64,7 @@ const IconImageCard: React.FC<IconImageCardProps> = ({
           <img
             src={imageSrc}
             alt={title}
-            loading="lazy"
+            loading='lazy'
             style={{
               width: '100%',
               height: '100%',

@@ -10,9 +10,9 @@ import {
   Box,
 } from '@mui/material';
 import { Download } from '@mui/icons-material';
-import AppButton from '../Common/AppButton';
-import AppCard from '../Common/AppCard';
-import AppTable from '../Common/AppTable';
+import AppButton from '../common/AppButton';
+import AppCard from '../common/AppCard';
+import AppTable from '../common/AppTable';
 import { listBenefits, listEmployeeBenefits } from '../../api/benefits';
 import type { Benefit, EmployeeBenefitAssignment } from '../../types/benefits';
 import jsPDF from 'jspdf';

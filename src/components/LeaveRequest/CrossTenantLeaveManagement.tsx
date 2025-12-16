@@ -33,13 +33,13 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import type { Dayjs } from 'dayjs';
 import Chart from 'react-apexcharts';
-import { TenantLeaveApi } from '../../api/tenantLeaveApi';
+import { TenantLeaveApi } from '../../api/TenantLeaveApi';
 import type {
   Department as ApiDepartment,
   SystemLeaveFilters,
   SystemLeaveResponse,
   SystemLeaveSummary,
-} from '../../api/tenantLeaveApi';
+} from '../../api/TenantLeaveApi';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { useUser } from '../../hooks/useUser';
@@ -47,7 +47,7 @@ import { isSystemAdmin } from '../../utils/auth';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { PAGINATION } from '../../constants/appConstants';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 
 type LeaveStatus = '' | 'pending' | 'approved' | 'rejected' | 'withdrawn';
 
@@ -182,11 +182,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         );
 
         if (filteredTenants.length === 0) {
-          setSnackbar({
-            open: true,
-            message: 'Your tenant is not found or inactive',
-            severity: 'error',
-          });
+          showError('Your tenant is not found or inactive');
         }
       }
 
@@ -237,38 +233,50 @@ const CrossTenantLeaveManagement: React.FC = () => {
     } catch {
       showError('Failed to load tenant list');
     }
-  }, [isSystemAdminUser, userTenantId]);
+  }, [isSystemAdminUser, userTenantId, showError]);
 
-  const fetchDepartments = useCallback(async (tenantId: string | null) => {
-    if (!tenantId) {
-      setDepartments([]);
-      return;
-    }
-    try {
-      const tenantDetails = await SystemTenantApi.getById(tenantId);
-      const tenantIdStr = String(tenantId).trim();
+  const fetchDepartments = useCallback(
+    async (tenantId: string | null) => {
+      if (!tenantId) {
+        setDepartments([]);
+        return;
+      }
 
-      if (tenantDetails?.departments && tenantDetails.departments.length > 0) {
-        const normalizedDepartments: DepartmentOption[] =
-          tenantDetails.departments
-            .filter((dept): dept is { id: string; name: string } => {
-              return Boolean(dept && dept.id && dept.name);
-            })
-            .map(dept => ({
-              id: String(dept.id).trim(),
-              name: String(dept.name).trim(),
-              tenant_id: tenantIdStr,
-            }));
+      try {
+        const tenantDetails = await SystemTenantApi.getById(tenantId);
+        const tenantIdStr = String(tenantId).trim();
 
-        setDepartments(normalizedDepartments);
-      } else {
+        if (
+          tenantDetails?.departments &&
+          tenantDetails.departments.length > 0
+        ) {
+          const normalizedDepartments: DepartmentOption[] =
+            tenantDetails.departments
+              .filter((dept): dept is { id: string; name: string } => {
+                return Boolean(dept && dept.id && dept.name);
+              })
+              .map(dept => ({
+                id: String(dept.id).trim(),
+                name: String(dept.name).trim(),
+                tenant_id: tenantIdStr,
+              }));
+
+          setDepartments(normalizedDepartments);
+        } else {
+          setDepartments([]);
+        }
+      } catch {
+        // Centralized error handling
+        try {
+          showError('Failed to load departments');
+        } catch {
+          // ignore
+        }
         setDepartments([]);
       }
-    } catch {
-      showError('Failed to load departments');
-      setDepartments([]);
-    }
-  }, []);
+    },
+    [showError]
+  );
 
   const fetchSummary = useCallback(
     async (tenantId?: string) => {
@@ -277,13 +285,10 @@ const CrossTenantLeaveManagement: React.FC = () => {
         if (!isSystemAdminUser && userTenantId) {
           tenantIdToUse = userTenantId;
         } else {
-          // System Admin: Use selected tenant ID from filters
           tenantIdToUse = tenantId || filters.tenantId || undefined;
         }
 
-        if (!tenantIdToUse) {
-          return; // Don't fetch if no tenant ID
-        }
+        if (!tenantIdToUse) return;
 
         const summaryData = await TenantLeaveApi.getSystemLeaveSummary({
           tenantId: tenantIdToUse,
@@ -332,7 +337,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         showError('Failed to load summary');
       }
     },
-    [tenants, isSystemAdminUser, userTenantId]
+    [tenants, isSystemAdminUser, userTenantId, filters.tenantId, showError]
   );
 
   const fetchLeaves = useCallback(async () => {
@@ -446,13 +451,14 @@ const CrossTenantLeaveManagement: React.FC = () => {
     isSystemAdminUser,
     userTenantId,
     departments,
+    itemsPerPage,
+    showError,
   ]);
 
   // Fetch tenants only once on mount
   useEffect(() => {
     fetchTenants();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchTenants]);
 
   // For non-system-admin users: ensure tenant filter is always set to their tenant_id from localStorage
   // This ensures data is always filtered by their tenant, even if tenant list hasn't loaded yet
@@ -475,7 +481,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         }));
       }
     }
-  }, [isSystemAdminUser, userTenantId, tenants]);
+  }, [isSystemAdminUser, userTenantId, tenants, filters.tenantId]);
 
   useEffect(() => {
     if (filters.tenantId) fetchDepartments(filters.tenantId);
@@ -810,7 +816,12 @@ const CrossTenantLeaveManagement: React.FC = () => {
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ minHeight: '100vh' }} onKeyDown={handleKeyDown}>
         <Paper sx={{ p: 3, mb: 3, boxShadow: 'none' }}>
-          <Typography variant='h6' fontWeight={700} mb={2}>
+          <Typography
+            variant='h6'
+            fontWeight={700}
+            fontSize={{ xs: '32px', lg: '48px' }}
+            mb={2}
+          >
             Tenant Leave Management
           </Typography>
           <Divider sx={{ mb: 2 }} />

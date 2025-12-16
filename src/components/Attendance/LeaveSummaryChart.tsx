@@ -55,10 +55,7 @@ const LeaveSummaryChart: React.FC = () => {
     <Box mt={4}>
       <Box width={{ xs: '100%', sm: '50%' }} mb={3}>
         <FormControl fullWidth size='small'>
-          <InputLabel
-            id='select-label'
-            sx={{ top: '-6px' }} 
-          >
+          <InputLabel id='select-label' sx={{ top: '-6px' }}>
             User / Department
           </InputLabel>
           <Select

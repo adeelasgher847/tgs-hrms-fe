@@ -60,8 +60,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   maxWidth = 'sm',
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,197 +69,52 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
     }
   };
 
-  const paperSx = {
-    direction: isRtl ? 'rtl' : 'ltr',
-    backgroundColor: '#FFFFFF',
-    borderRadius: '30px',
-  };
-
-  const formContent = (
-    <Box
-      component='form'
-      onSubmit={handleSubmit}
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: { xs: 2, sm: 4 },
-        mt: { xs: 1, sm: 2 },
-        direction: isRtl ? 'rtl' : 'ltr',
-        width: '100%',
-        mx: 'auto',
-      }}
-    >
-      {fields.map((field, index) => (
-        <Box
-          key={field.name}
-          sx={{
-            width: '100%',
-            ...(index === fields.length - 1 && {
-              paddingBottom: '0',
-              marginBottom: '0',
-              '& > *': {
-                overflow: 'visible',
-              },
-            }),
-          }}
-        >
-          {field.component ||
-            (field.type === 'dropdown' && field.options ? (
-              <AppDropdown
-                label={field.label}
-                options={field.options}
-                value={field.value}
-                onChange={(e: SelectChangeEvent<string | number>) => {
-                  field.onChange(e.target.value);
-                }}
-                placeholder={field.placeholder}
-                error={!!field.error}
-                helperText={field.error}
-              />
-            ) : (
-              <AppInputField
-                label={field.label}
-                name={field.name}
-                value={field.value as string}
-                onChange={e => field.onChange(e.target.value)}
-                placeholder={field.placeholder}
-                multiline={field.multiline || field.type === 'textarea'}
-                rows={field.rows || (field.type === 'textarea' ? 3 : undefined)}
-                error={!!field.error}
-                helperText={field.error}
-                required={field.required}
-              />
-            ))}
-        </Box>
-      ))}
-    </Box>
-  );
-
-  const actionButtons = (
-    <>
-      <Button
-        onClick={onClose}
-        disabled={isSubmitting}
-        sx={{
-          borderRadius: '12px',
-          textTransform: 'none',
-          fontWeight: 400,
-          fontSize: { xs: '14px', sm: 'var(--body-font-size)' },
-          lineHeight: { xs: '20px', sm: 'var(--body-line-height)' },
-          letterSpacing: 'var(--body-letter-spacing)',
-          border: '1px solid #BDBDBD',
-          color: '#2C2C2C',
-          px: { xs: 2, sm: 4 },
-          py: { xs: 0.75, sm: 1 },
-          '&:hover': {
-            borderColor: '#BDBDBD',
-            backgroundColor: 'transparent',
-          },
-        }}
-      >
-        {cancelLabel}
-      </Button>
-      <Button
-        type='submit'
-        variant='contained'
-        disabled={isSubmitting || !hasChanges}
-        onClick={handleSubmit}
-        sx={{
-          borderRadius: '12px',
-          textTransform: 'none',
-          fontWeight: 400,
-          fontSize: { xs: '14px', sm: 'var(--body-font-size)' },
-          lineHeight: { xs: '20px', sm: 'var(--body-line-height)' },
-          letterSpacing: 'var(--body-letter-spacing)',
-          bgcolor: 'var(--primary-dark-color)',
-          color: '#FFFFFF',
-          px: { xs: 2, sm: 4 },
-          py: { xs: 0.75, sm: 1 },
-          boxShadow: 'none',
-          '&:hover': {
-            bgcolor: COLORS.PRIMARY,
-            boxShadow: 'none',
-          },
-          '&:disabled': {
-            bgcolor: '#99c0e9ff',
-            border: 'none',
-            color: '#FFFFFF',
-          },
-        }}
-      >
-        {isSubmitting ? 'Saving...' : submitLabel}
-      </Button>
-    </>
-  );
-
-  // Mobile and Desktop - Use Dialog for both to ensure centering
-
-  // Dialog for all screen sizes (mobile and desktop)
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth={isMobile ? false : maxWidth}
-      fullWidth={false}
+      fullWidth
+      maxWidth={maxWidth}
       PaperProps={{
         sx: {
-          ...paperSx,
           borderRadius: { xs: '20px', sm: '30px' },
-          padding: { xs: '20px 16px', sm: '32px 20px' },
-          gap: { xs: '20px', sm: '32px' },
-          width: { xs: '90%', sm: 'auto' },
-          maxWidth: { xs: '90%', sm: '600px' },
-          margin: 'auto',
-          height: 'auto',
-          maxHeight: { xs: 'auto', sm: '90vh' },
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'relative',
-          alignSelf: 'center',
+          padding: { xs: '20px 16px', sm: '32px 24px' },
+          maxWidth: '600px',
+          width: '100%',
+          gap: 2,
         },
       }}
       sx={{
-        '& .MuiDialog-container': {
-          alignItems: 'center',
-          justifyContent: 'center',
-          display: 'flex',
-        },
         '& .MuiBackdrop-root': {
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
         },
-        '& .MuiDialog-paper': {
-          margin: { xs: '16px', sm: '32px' },
-        },
       }}
     >
+      {/* ---------- TITLE ---------- */}
       <DialogTitle
         sx={{
-          ...paperSx,
-          position: 'relative',
           p: 0,
-          pb: 0,
+          position: 'relative',
+          textAlign: isRtl ? 'right' : 'left',
         }}
       >
         <Typography
-          sx={{
-            textAlign: isRtl ? 'right' : 'left',
-            fontWeight: 500,
-            fontSize: { xs: '20px', sm: '28px' },
-            lineHeight: { xs: '28px', sm: '36px' },
-            letterSpacing: '-2%',
-            color: '#2C2C2C',
-          }}
+          fontWeight={500}
+          fontSize={{ xs: '16px', sm: '28px' }}
+          lineHeight={{ xs: '28px', sm: '36px' }}
+          color='#2C2C2C'
         >
           {title}
         </Typography>
+
         <IconButton
           onClick={onClose}
           size={isSmallScreen ? 'small' : 'medium'}
           sx={{
             position: 'absolute',
+            top: 0,
             right: isRtl ? 'auto' : 0,
             left: isRtl ? 0 : 'auto',
-            top: 0,
             color: '#2C2C2C',
           }}
         >
@@ -268,43 +122,115 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
         </IconButton>
       </DialogTitle>
 
+      {/* ---------- CONTENT ---------- */}
       <DialogContent
         sx={{
-          ...paperSx,
           p: 0,
           pt: { xs: 2, sm: 4 },
-          pb: 2,
-          overflow: 'visible',
-          display: 'flex',
-          justifyContent: 'center',
-          flex: '0 0 auto',
-          minHeight: 'auto',
-          height: 'auto',
         }}
       >
+        {/* ✅ CONTENT CONTAINER */}
         <Box
           sx={{
+            maxWidth: '480px', // 👈 container width
             width: '100%',
-            maxWidth: { xs: '100%', sm: '500px' },
-            display: 'flex',
-            justifyContent: 'center',
+            mx: 'auto',
           }}
         >
-          {formContent}
+          <Box
+            component='form'
+            onSubmit={handleSubmit}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: { xs: 2, sm: 4 },
+              width: '100%',
+              direction: isRtl ? 'rtl' : 'ltr',
+            }}
+          >
+            {fields.map(field => (
+              <Box key={field.name} width='100%'>
+                {field.component ||
+                  (field.type === 'dropdown' && field.options ? (
+                    <AppDropdown
+                      label={field.label}
+                      options={field.options}
+                      value={field.value}
+                      onChange={(e: SelectChangeEvent<string | number>) =>
+                        field.onChange(e.target.value)
+                      }
+                      placeholder={field.placeholder}
+                      error={!!field.error}
+                      helperText={field.error}
+                    />
+                  ) : (
+                    <AppInputField
+                      label={field.label}
+                      name={field.name}
+                      value={field.value as string}
+                      onChange={e => field.onChange(e.target.value)}
+                      placeholder={field.placeholder}
+                      multiline={field.multiline || field.type === 'textarea'}
+                      rows={
+                        field.rows ||
+                        (field.type === 'textarea' ? 3 : undefined)
+                      }
+                      error={!!field.error}
+                      helperText={field.error}
+                      required={field.required}
+                    />
+                  ))}
+              </Box>
+            ))}
+          </Box>
         </Box>
       </DialogContent>
 
+      {/* ---------- ACTIONS ---------- */}
       <DialogActions
         sx={{
           p: 0,
           pt: { xs: 2, sm: 4 },
-          justifyContent: 'flex-end',
           gap: 1,
-          flex: '0 0 auto',
-          ...paperSx,
+          justifyContent: 'flex-end',
         }}
       >
-        {actionButtons}
+        <Button
+          onClick={onClose}
+          disabled={isSubmitting}
+          sx={{
+            borderRadius: '12px',
+            textTransform: 'none',
+            border: '1px solid #BDBDBD',
+            color: '#2C2C2C',
+            px: 4,
+          }}
+        >
+          {cancelLabel}
+        </Button>
+
+        <Button
+          type='submit'
+          variant='contained'
+          disabled={isSubmitting || !hasChanges}
+          onClick={handleSubmit}
+          sx={{
+            borderRadius: '12px',
+            textTransform: 'none',
+            bgcolor: 'var(--primary-dark-color)',
+            color: '#fff',
+            px: 4,
+            boxShadow: 'none',
+            '&:hover': {
+              bgcolor: COLORS.PRIMARY,
+            },
+            '&:disabled': {
+              bgcolor: '#99c0e9',
+            },
+          }}
+        >
+          {isSubmitting ? 'Saving...' : submitLabel}
+        </Button>
       </DialogActions>
     </Dialog>
   );

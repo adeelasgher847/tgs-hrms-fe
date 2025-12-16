@@ -27,9 +27,9 @@ import BenefitFormModal from './BenefitFormModal';
 import type { BenefitFormValues } from './BenefitFormModal';
 import benefitsApi from '../../api/benefitApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
-import AppButton from '../Common/AppButton';
-import AppTable from '../Common/AppTable';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppButton from '../common/AppButton';
+import AppTable from '../common/AppTable';
 
 const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 
@@ -214,7 +214,7 @@ const BenefitList: React.FC = () => {
   return (
     <Box>
       <Box display='flex' alignItems='center' gap={1} mb={2}>
-        <Typography variant='h4' fontWeight={600}>
+        <Typography variant='h4' fontWeight={600} fontSize={{xs: '32px', lg: '48px'}}>
           Benefit Management
         </Typography>
       </Box>

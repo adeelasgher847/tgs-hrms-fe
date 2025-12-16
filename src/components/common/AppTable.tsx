@@ -25,7 +25,7 @@ export function AppTable({ children, sx, ...rest }: AppTableProps) {
         borderBottom: 'none',
         padding: { xs: '8px 12px', sm: '16px' },
         fontWeight: 700,
-        fontSize: { xs: '12px', sm: 'var(--subheading2-font-size)' },
+        fontSize: { xs: '12px', sm: '18px' },
         lineHeight: { xs: '16px', sm: 'var(--subheading2-line-height)' },
         letterSpacing: 'var(--subheading2-letter-spacing)',
         color: '#2C2C2C',

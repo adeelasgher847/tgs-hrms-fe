@@ -28,9 +28,9 @@ import {
   validatePasswordStrength,
 } from '../../utils/validation';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
-import AppInputField from '../Common/AppInputField';
-import AuthSidebar from '../Common/AuthSidebar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppInputField from '../common/AppInputField';
+import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
 
 const Signup: React.FC = () => {

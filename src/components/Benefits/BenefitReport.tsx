@@ -26,8 +26,8 @@ import { departmentApiService } from '../../api/departmentApi';
 import { designationApiService } from '../../api/designationApi';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
-import AppSelect from '../Common/AppSelect';
-import AppTable from '../Common/AppTable';
+import AppSelect from '../common/AppSelect';
+import AppTable from '../common/AppTable';
 
 import { PAGINATION } from '../../constants/appConstants';
 
@@ -93,27 +93,15 @@ const BenefitReport: React.FC = () => {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        if (isSystemAdmin) {
-          const tenantParam = selectedTenant || 'all';
-          const data =
-            await employeeBenefitApi.getSystemAdminBenefitSummary(tenantParam);
-          setSummary({
-            tenant_id: data.tenant_id ?? tenantParam,
-            totalActiveBenefits: data.totalActiveBenefits ?? 0,
-            mostCommonBenefitType: data.mostCommonBenefitType ?? '-',
-            totalEmployeesCovered: data.totalEmployeesCovered ?? 0,
-          });
-        } else {
-          const data = await benefitsApi.getBenefitSummary();
-          setSummary({
-            tenant_id: 'current',
-            totalActiveBenefits: data.totalActiveBenefits ?? 0,
-            mostCommonBenefitType: data.mostCommonBenefitType ?? '-',
-            totalEmployeesCovered: data.totalEmployeesCovered ?? 0,
-          });
-        }
-      } catch {
-        // Keep existing summary state if fetch fails
+        const data = await benefitsApi.getBenefitSummary();
+        setSummary({
+          tenant_id: isSystemAdmin ? selectedTenant || 'all' : 'current',
+          totalActiveBenefits: data.totalActiveBenefits ?? 0,
+          mostCommonBenefitType: data.mostCommonBenefitType ?? '-',
+          totalEmployeesCovered: data.totalEmployeesCovered ?? 0,
+        });
+      } catch (error) {
+        console.error('Error fetching summary data:', error);
       }
     };
     fetchSummary();
@@ -128,7 +116,8 @@ const BenefitReport: React.FC = () => {
         setTenants(data || []);
         if ((data || []).length > 0)
           setSelectedTenant(prev => prev || data[0].id);
-      } catch {
+      } catch (error) {
+        console.error('Error fetching tenants:', error);
         setTenants([]);
       }
     };
@@ -141,7 +130,8 @@ const BenefitReport: React.FC = () => {
       try {
         const data = await departmentApiService.getAllDepartments();
         setDepartments(data || []);
-      } catch {
+      } catch (error) {
+        console.error('Error fetching departments:', error);
         setDepartments([]);
       }
     };
@@ -163,7 +153,8 @@ const BenefitReport: React.FC = () => {
           const all = await designationApiService.getAllDesignations();
           setDesignations(all || []);
         }
-      } catch {
+      } catch (error) {
+        console.error('Error fetching designations:', error);
         setDesignations([]);
       }
     };
@@ -173,6 +164,9 @@ const BenefitReport: React.FC = () => {
   // ------------------- Fetch Employee Benefits -------------------
   useEffect(() => {
     let isMounted = true;
+
+    // helper functions removed — not needed for current processing
+
     const fetchEmployeeBenefits = async () => {
       setTableLoading(true);
       try {
@@ -185,7 +179,7 @@ const BenefitReport: React.FC = () => {
               tenant_id: selectedTenant || undefined,
               page,
               limit: ITEMS_PER_PAGE,
-            } as any);
+            });
 
           const tenants: TenantEmployeeWithBenefits[] =
             'items' in response ? response.items : (response.tenants ?? []);
@@ -335,7 +329,7 @@ const BenefitReport: React.FC = () => {
       >
         <Typography
           variant='h4'
-          fontSize={{ xs: '25px', sm: '34px' }}
+          fontSize={{xs: '32px', lg: '48px'}}
           fontWeight={600}
           gutterBottom
           mb={0}

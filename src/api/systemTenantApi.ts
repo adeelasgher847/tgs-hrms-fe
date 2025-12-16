@@ -1,6 +1,6 @@
 import axiosInstance from './axiosInstance';
 import type { AxiosResponse } from 'axios';
-import { env } from '../config/env';
+// env not used here; remove unused import to satisfy linter
 
 export interface SystemTenant {
   id: string;
@@ -112,32 +112,51 @@ export const SystemTenantApi = {
   },
 
   getById: async (id: string): Promise<SystemTenantDetail> => {
-    const response: AxiosResponse<SystemTenantDetail> = await axiosInstance.get(
-      `/system/tenants/${id}`
-    );
-    const detail = response.data;
-    const baseURL = env.apiBaseUrl;
-    const getFullLogoUrl = (
-      logoPath: string | undefined | null
-    ): string | undefined => {
-      if (
-        !logoPath ||
-        typeof logoPath !== 'string' ||
-        logoPath === '[object Object]'
-      ) {
-        return undefined;
+    try {
+      const response: AxiosResponse<SystemTenantDetail> =
+        await axiosInstance.get(`/system/tenants/${id}`);
+
+      const detail = response.data;
+      const baseURL =
+        import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
+
+      const getFullLogoUrl = (
+        logoPath: string | undefined | null
+      ): string | undefined => {
+        if (
+          !logoPath ||
+          typeof logoPath !== 'string' ||
+          logoPath === '[object Object]'
+        ) {
+          return undefined;
+        }
+        if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
+          return logoPath;
+        }
+        if (logoPath.startsWith('/')) {
+          return `${baseURL}${logoPath}`;
+        }
+        return `${baseURL}/${logoPath}`;
+      };
+      let logoUrl = detail.logo || detail.company?.logo_url;
+      logoUrl = getFullLogoUrl(logoUrl);
+      if (logoUrl) {
+        detail.logo = logoUrl;
       }
-      if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
-        return logoPath;
-      }
-      if (logoPath.startsWith('/')) {
-        return `${baseURL}${logoPath}`;
-      }
-    };
-    let logoUrl = detail.logo || detail.company?.logo_url;
-    logoUrl = getFullLogoUrl(logoUrl);
-    if (logoUrl) {
-      detail.logo = logoUrl;
+
+      console.log('Tenant Detail API Response:', {
+        id: detail.id,
+        name: detail.name,
+        originalLogo: response.data.logo,
+        originalCompanyLogoUrl: response.data.company?.logo_url,
+        processedLogo: detail.logo,
+        baseURL,
+      });
+
+      return detail;
+    } catch (error) {
+      console.error(` Failed to fetch tenant details (id=${id}):`, error);
+      throw error;
     }
 
     return detail;
@@ -152,9 +171,7 @@ export const SystemTenantApi = {
   }): Promise<SystemTenant> => {
     if (data.logo instanceof File) {
       const formData = new FormData();
-      // Append logo file first
       formData.append('logo', data.logo);
-      // Append other fields as form fields
       formData.append('name', data.name);
       formData.append('domain', data.domain || '');
       formData.append('adminName', data.adminName || '');

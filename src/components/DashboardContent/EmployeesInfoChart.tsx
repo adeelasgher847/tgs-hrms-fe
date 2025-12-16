@@ -20,7 +20,7 @@ import {
   getEmployeeJoiningReport,
   type EmployeeJoiningReport,
 } from '../../api/employeeApi';
-import TimeRangeSelector from '../Common/TimeRangeSelector';
+import TimeRangeSelector from '../common/TimeRangeSelector';
 
 export default function EmployeesInfoChart() {
   const isMobile = useMediaQuery('(max-width:600px)');
@@ -63,7 +63,7 @@ export default function EmployeesInfoChart() {
   }, []);
 
   // const bgColor = darkMode ? '#111' : '#fff';
-  // const textColor = darkMode ? '#8f8f8f' : '#000';
+  const textColor = darkMode ? '#8f8f8f' : '#000';
   // const borderColor = darkMode ? '#252525' : '#f0f0f0';
 
   // Get unique years from API data
@@ -176,7 +176,7 @@ export default function EmployeesInfoChart() {
       >
         <Typography
           fontWeight={500}
-          fontSize={{ xs: '20px', lg: '28px' }} 
+          fontSize={{ xs: '20px', lg: '28px' }}
           lineHeight='36px'
           letterSpacing='-2%'
           color='#2C2C2C'

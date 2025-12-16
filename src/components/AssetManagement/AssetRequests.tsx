@@ -5,10 +5,8 @@ import {
   CardContent,
   Typography,
   Button,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   IconButton,
@@ -34,6 +32,7 @@ import {
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
+import AppTable from '../common/AppTable';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -43,16 +42,18 @@ import {
   type AssetRequest as ApiAssetRequest,
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
-import { DeleteConfirmationDialog } from '../Common/DeleteConfirmationDialog';
+// ConfirmationDialog, Snackbar and Alert not used in this component
+// kept imports removed to satisfy linter
+import { DeleteConfirmationDialog } from '../common/DeleteConfirmationDialog';
 import { type AssetSubcategory } from '../../api/assetApi';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
-  category_id?: string;
+  category_id: string;
   subcategory_id?: string | null;
   subcategory_name?: string;
   category?:
@@ -316,6 +317,7 @@ const AssetRequests: React.FC = () => {
 
         setSubcategories(filteredSubcategories);
       } catch (error) {
+        showError(error);
         setSubcategories([]);
         showError(error);
       } finally {
@@ -326,7 +328,7 @@ const AssetRequests: React.FC = () => {
     if (selectedCategoryId) {
       fetchSubcategories();
     }
-  }, [selectedCategoryId, categories, categories.length]);
+  }, [selectedCategoryId, categories, categories.length, showError]);
 
   const transformApiRequests = React.useCallback(
     (apiRequests: ApiAssetRequestExtended[]): AssetRequest[] => {
@@ -500,7 +502,7 @@ const AssetRequests: React.FC = () => {
         }
       }
     },
-    [currentUserId, transformApiRequests]
+    [currentUserId, transformApiRequests, showError]
   );
 
   // Re-transform requests when categories are loaded to update category names
@@ -839,7 +841,11 @@ const AssetRequests: React.FC = () => {
           gap: 1,
         }}
       >
-        <Typography variant='h4' fontWeight={600}>
+        <Typography
+          variant='h4'
+          fontWeight={600}
+          fontSize={{ xs: '32px', lg: '48px' }}
+        >
           My Asset Requests
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -939,127 +945,119 @@ const AssetRequests: React.FC = () => {
         </Box>
 
         <TabPanel value={tabValue} index={0}>
-          <TableContainer>
-            <Table>
-              <TableHead>
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>Asset Category</TableCell>
+                <TableCell>Remarks</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Requested Date</TableCell>
+                <TableCell>Processed Date</TableCell>
+                <TableCell>Rejection Reason</TableCell>
+                <TableCell align='right'>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {getFilteredRequestsByTab().length === 0 ? (
                 <TableRow>
-                  <TableCell>Asset Category</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Processed Date</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell colSpan={7} align='center' sx={{ py: 4 }}>
+                    <Typography variant='body2' color='text.secondary'>
+                      No records found
+                    </Typography>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {getFilteredRequestsByTab().length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align='center' sx={{ py: 4 }}>
-                      <Typography variant='body2' color='text.secondary'>
-                        No records found
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  getFilteredRequestsByTab().map(renderRequestRow)
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ) : (
+                getFilteredRequestsByTab().map(renderRequestRow)
+              )}
+            </TableBody>
+          </AppTable>
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
-          <TableContainer>
-            <Table>
-              <TableHead>
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>Asset Category</TableCell>
+                <TableCell>Remarks</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Requested Date</TableCell>
+                <TableCell>Processed Date</TableCell>
+                <TableCell>Rejection Reason</TableCell>
+                <TableCell align='right'>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {getFilteredRequestsByTab('pending').length === 0 ? (
                 <TableRow>
-                  <TableCell>Asset Category</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Processed Date</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell colSpan={7} align='center' sx={{ py: 4 }}>
+                    <Typography variant='body2' color='text.secondary'>
+                      No records found
+                    </Typography>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {getFilteredRequestsByTab('pending').length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align='center' sx={{ py: 4 }}>
-                      <Typography variant='body2' color='text.secondary'>
-                        No records found
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  getFilteredRequestsByTab('pending').map(renderRequestRow)
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ) : (
+                getFilteredRequestsByTab('pending').map(renderRequestRow)
+              )}
+            </TableBody>
+          </AppTable>
         </TabPanel>
 
         <TabPanel value={tabValue} index={2}>
-          <TableContainer>
-            <Table>
-              <TableHead>
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>Asset Category</TableCell>
+                <TableCell>Remarks</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Requested Date</TableCell>
+                <TableCell>Processed Date</TableCell>
+                <TableCell>Rejection Reason</TableCell>
+                <TableCell align='right'>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {getFilteredRequestsByTab('approved').length === 0 ? (
                 <TableRow>
-                  <TableCell>Asset Category</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Processed Date</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell colSpan={7} align='center' sx={{ py: 4 }}>
+                    <Typography variant='body2' color='text.secondary'>
+                      No records found
+                    </Typography>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {getFilteredRequestsByTab('approved').length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align='center' sx={{ py: 4 }}>
-                      <Typography variant='body2' color='text.secondary'>
-                        No records found
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  getFilteredRequestsByTab('approved').map(renderRequestRow)
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ) : (
+                getFilteredRequestsByTab('approved').map(renderRequestRow)
+              )}
+            </TableBody>
+          </AppTable>
         </TabPanel>
 
         <TabPanel value={tabValue} index={3}>
-          <TableContainer>
-            <Table>
-              <TableHead>
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>Asset Category</TableCell>
+                <TableCell>Remarks</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Requested Date</TableCell>
+                <TableCell>Processed Date</TableCell>
+                <TableCell>Rejection Reason</TableCell>
+                <TableCell align='right'>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {getFilteredRequestsByTab('rejected').length === 0 ? (
                 <TableRow>
-                  <TableCell>Asset Category</TableCell>
-                  <TableCell>Remarks</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested Date</TableCell>
-                  <TableCell>Processed Date</TableCell>
-                  <TableCell>Rejection Reason</TableCell>
-                  <TableCell align='right'>Actions</TableCell>
+                  <TableCell colSpan={7} align='center' sx={{ py: 4 }}>
+                    <Typography variant='body2' color='text.secondary'>
+                      No records found
+                    </Typography>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {getFilteredRequestsByTab('rejected').length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align='center' sx={{ py: 4 }}>
-                      <Typography variant='body2' color='text.secondary'>
-                        No records found
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  getFilteredRequestsByTab('rejected').map(renderRequestRow)
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ) : (
+                getFilteredRequestsByTab('rejected').map(renderRequestRow)
+              )}
+            </TableBody>
+          </AppTable>
         </TabPanel>
       </Card>
 

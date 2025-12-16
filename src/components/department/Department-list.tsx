@@ -17,16 +17,16 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
 import { DepartmentCard } from './DepartmentCard';
-import AppFormModal, { type FormField } from '../Common/AppFormModal';
+import AppFormModal, { type FormField } from '../common/AppFormModal';
 import { VALIDATION_LIMITS } from '../../constants/appConstants';
-import DeleteConfirmationDialog from '../Common/DeleteConfirmationDialog';
+import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
 import {
   departmentApiService,
   type FrontendDepartment,
 } from '../../api/departmentApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { COLORS } from '../../constants/appConstants';

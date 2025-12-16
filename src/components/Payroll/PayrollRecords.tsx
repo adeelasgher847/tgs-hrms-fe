@@ -41,10 +41,10 @@ import { useIsDarkMode } from '../../theme';
 import dayjsPluginLocalizedFormat from 'dayjs/plugin/localizedFormat';
 import { isSystemAdmin, isHRAdmin, isAdmin } from '../../utils/roleUtils';
 import { PAGINATION } from '../../constants/appConstants';
-import AppTable from '../Common/AppTable';
-import AppCard from '../Common/AppCard';
-import AppSelect from '../Common/AppSelect';
-import AppButton from '../Common/AppButton';
+import AppTable from '../common/AppTable';
+import AppCard from '../common/AppCard';
+import AppSelect from '../common/AppSelect';
+import AppButton from '../common/AppButton';
 
 dayjs.extend(dayjsPluginLocalizedFormat);
 
@@ -620,7 +620,7 @@ const PayrollRecords: React.FC = () => {
         }}
       >
         <Box>
-          <Typography variant='h4' sx={{ fontWeight: 600, color: textColor }}>
+          <Typography variant='h4' sx={{ fontWeight: 600, fontSize: { xs: '32px', lg: '48px' }, color: textColor }}>
             Payroll Records
           </Typography>
         </Box>

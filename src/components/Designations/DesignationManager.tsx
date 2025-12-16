@@ -15,14 +15,14 @@ import {
   IconButton,
   Pagination,
 } from '@mui/material';
-import AppTable from '../Common/AppTable';
+import AppTable from '../common/AppTable';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { Add as AddIcon } from '@mui/icons-material';
-import AppDropdown from '../Common/AppDropdown';
+import AppDropdown from '../common/AppDropdown';
 import { Icons } from '../../assets/icons';
 
-import AppFormModal, { type FormField } from '../Common/AppFormModal';
-import DeleteConfirmationDialog from '../Common/DeleteConfirmationDialog';
+import AppFormModal, { type FormField } from '../common/AppFormModal';
+import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
 import {
   designationApiService,
@@ -33,7 +33,7 @@ import {
   type FrontendDepartment,
 } from '../../api/departmentApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import {
   isSystemAdmin as isSystemAdminFn,
   isHRAdmin as isHRAdminFn,
@@ -91,6 +91,7 @@ export default function DesignationManager() {
   const [totalRecords, setTotalRecords] = useState<number>(0);
   const [allTenants, setAllTenants] = useState<SystemTenant[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
+  const [loadingTenants, setLoadingTenants] = useState(false);
   const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
@@ -150,11 +151,9 @@ export default function DesignationManager() {
 
         if (response.totalPages && response.total) {
           setCurrentPage(response.page);
-          setTotalPages(response.totalPages);
           setTotalRecords(response.total);
         } else {
           setCurrentPage(response.page || page);
-          setTotalPages(hasMorePages ? page + 1 : page);
           setTotalRecords(
             hasMorePages
               ? page * itemsPerPage
@@ -234,7 +233,6 @@ export default function DesignationManager() {
       setDesignations(allDesignations);
       setDepartments(Array.from(allDepartmentsMap.values()));
       setDesignationTenantMap(tenantMap);
-      setTotalPages(1);
       setTotalRecords(allDesignations.length);
       setCurrentPage(1);
     } catch (error: unknown) {
@@ -272,7 +270,6 @@ export default function DesignationManager() {
       setDesignations(frontendDesignations);
       // Reset pagination when fetching all designations
       setCurrentPage(1);
-      setTotalPages(1);
       setTotalRecords(frontendDesignations.length);
     } catch (error: unknown) {
       console.error('Error fetching all designations:', error);
@@ -556,6 +553,7 @@ export default function DesignationManager() {
                   value={selectedTenantId}
                   label={getText('Select Tenant', 'اختر المستأجر')}
                   onChange={handleTenantChange}
+                  disabled={loadingTenants}
                   sx={{
                     '.MuiOutlinedInput-notchedOutline': {
                       borderColor: 'divider',
@@ -565,11 +563,20 @@ export default function DesignationManager() {
                   <MenuItem value='all'>
                     {getText('All Tenants', 'جميع المستأجرين')}
                   </MenuItem>
-                  {allTenants.map((tenant: SystemTenant) => (
-                    <MenuItem key={tenant.id} value={tenant.id}>
-                      {tenant.name}
+                  {loadingTenants ? (
+                    <MenuItem disabled>
+                      {getText(
+                        'Loading tenants...',
+                        'جاري تحميل المستأجرين...'
+                      )}
                     </MenuItem>
-                  ))}
+                  ) : (
+                    allTenants.map((tenant: SystemTenant) => (
+                      <MenuItem key={tenant.id} value={tenant.id}>
+                        {tenant.name}
+                      </MenuItem>
+                    ))
+                  )}
                 </Select>
               </FormControl>
               <AppDropdown

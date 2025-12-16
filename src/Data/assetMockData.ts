@@ -1,26 +1,74 @@
-import type { Asset, AssetCategory, AssetRequest, MockUser, AssetStatistics } from '../types/asset';
+import type {
+  Asset,
+  AssetCategory,
+  AssetRequest,
+  MockUser,
+  AssetStatistics,
+} from '../types/asset';
 import { assetCategories } from './assetCategories';
 
 // Use comprehensive asset categories as mock data
-export const mockAssetCategories: AssetCategory[] = assetCategories.map(cat => ({
-  id: cat.id,
-  name: cat.name,
-  nameAr: cat.nameAr,
-  description: cat.description,
-  color: cat.color,
-  subcategories: cat.subcategories
-}));
+export const mockAssetCategories: AssetCategory[] = assetCategories.map(
+  cat => ({
+    id: cat.id,
+    name: cat.name,
+    nameAr: cat.nameAr,
+    description: cat.description,
+    color: cat.color,
+    subcategories: cat.subcategories,
+  })
+);
 
 // Mock Users
 export const mockUsers: MockUser[] = [
-  { id: '1', name: 'John Doe', email: 'john.doe@company.com', department: 'IT' },
-  { id: '2', name: 'Jane Smith', email: 'jane.smith@company.com', department: 'HR' },
-  { id: '3', name: 'Mike Johnson', email: 'mike.johnson@company.com', department: 'Finance' },
-  { id: '4', name: 'Sarah Wilson', email: 'sarah.wilson@company.com', department: 'Marketing' },
-  { id: '5', name: 'David Brown', email: 'david.brown@company.com', department: 'Operations' },
-  { id: '6', name: 'Lisa Davis', email: 'lisa.davis@company.com', department: 'IT' },
-  { id: '7', name: 'Tom Anderson', email: 'tom.anderson@company.com', department: 'Sales' },
-  { id: '8', name: 'Emma Taylor', email: 'emma.taylor@company.com', department: 'Legal' },
+  {
+    id: '1',
+    name: 'John Doe',
+    email: 'john.doe@company.com',
+    department: 'IT',
+  },
+  {
+    id: '2',
+    name: 'Jane Smith',
+    email: 'jane.smith@company.com',
+    department: 'HR',
+  },
+  {
+    id: '3',
+    name: 'Mike Johnson',
+    email: 'mike.johnson@company.com',
+    department: 'Finance',
+  },
+  {
+    id: '4',
+    name: 'Sarah Wilson',
+    email: 'sarah.wilson@company.com',
+    department: 'Marketing',
+  },
+  {
+    id: '5',
+    name: 'David Brown',
+    email: 'david.brown@company.com',
+    department: 'Operations',
+  },
+  {
+    id: '6',
+    name: 'Lisa Davis',
+    email: 'lisa.davis@company.com',
+    department: 'IT',
+  },
+  {
+    id: '7',
+    name: 'Tom Anderson',
+    email: 'tom.anderson@company.com',
+    department: 'Sales',
+  },
+  {
+    id: '8',
+    name: 'Emma Taylor',
+    email: 'emma.taylor@company.com',
+    department: 'Legal',
+  },
 ];
 
 // Mock Assets
@@ -30,7 +78,7 @@ export const mockAssets: Asset[] = [
     name: 'Dell Latitude 5520',
     category: {
       ...mockAssetCategories.find(cat => cat.id === 'it-equipment')!,
-      name: 'Laptop' // Use subcategory name
+      name: 'Laptop', // Use subcategory name
     },
     status: 'assigned',
     assignedTo: '1',
@@ -48,7 +96,7 @@ export const mockAssets: Asset[] = [
     name: 'HP EliteDesk 800',
     category: {
       ...mockAssetCategories.find(cat => cat.id === 'it-equipment')!,
-      name: 'Desktop'
+      name: 'Desktop',
     },
     status: 'available',
     serialNumber: 'HP001234568',
@@ -64,7 +112,7 @@ export const mockAssets: Asset[] = [
     name: 'Samsung 27" Monitor',
     category: {
       ...mockAssetCategories.find(cat => cat.id === 'it-equipment')!,
-      name: 'Monitor'
+      name: 'Monitor',
     },
     status: 'assigned',
     assignedTo: '2',
@@ -82,7 +130,7 @@ export const mockAssets: Asset[] = [
     name: 'Canon PIXMA Printer',
     category: {
       ...mockAssetCategories.find(cat => cat.id === 'it-equipment')!,
-      name: 'Printers'
+      name: 'Printers',
     },
     status: 'under_maintenance',
     serialNumber: 'CN001234570',
@@ -98,7 +146,7 @@ export const mockAssets: Asset[] = [
     name: 'iPhone 14 Pro',
     category: {
       ...mockAssetCategories.find(cat => cat.id === 'it-equipment')!,
-      name: 'Phone'
+      name: 'Phone',
     },
     status: 'assigned',
     assignedTo: '3',
@@ -234,7 +282,7 @@ export const mockAssets: Asset[] = [
     name: 'Ergonomic Office Chair',
     category: {
       ...mockAssetCategories.find(cat => cat.id === 'office-equipment')!,
-      name: 'Chairs'
+      name: 'Chairs',
     },
     status: 'available',
     serialNumber: 'CHAIR001',
@@ -250,7 +298,7 @@ export const mockAssets: Asset[] = [
     name: 'Company Vehicle - Honda Civic',
     category: {
       ...mockAssetCategories.find(cat => cat.id === 'mobility-transport')!,
-      name: 'Company Vehicle'
+      name: 'Company Vehicle',
     },
     status: 'assigned',
     assignedTo: '7',
@@ -268,7 +316,7 @@ export const mockAssets: Asset[] = [
     name: 'Microsoft Office 365 License',
     category: {
       ...mockAssetCategories.find(cat => cat.id === 'software-licenses')!,
-      name: 'Productivity Tools (MS Office, Google Workspace, Notion, Slack)'
+      name: 'Productivity Tools (MS Office, Google Workspace, Notion, Slack)',
     },
     status: 'assigned',
     assignedTo: '1',
@@ -286,7 +334,7 @@ export const mockAssets: Asset[] = [
     name: 'Safety Helmet',
     category: {
       ...mockAssetCategories.find(cat => cat.id === 'health-safety')!,
-      name: 'Safety Helmets'
+      name: 'Safety Helmets',
     },
     status: 'available',
     serialNumber: 'HELMET001',
@@ -372,8 +420,8 @@ export const getAssetsByCategory = (categoryId: string): Asset[] => {
 };
 
 export const getAvailableAssetsByCategory = (categoryId: string): Asset[] => {
-  return mockAssets.filter(asset => 
-    asset.category.id === categoryId && asset.status === 'available'
+  return mockAssets.filter(
+    asset => asset.category.id === categoryId && asset.status === 'available'
   );
 };
 
@@ -392,15 +440,25 @@ export const getRequestsByEmployee = (employeeId: string): AssetRequest[] => {
 // Statistics
 export const getAssetStatistics = (): AssetStatistics => {
   const totalAssets = mockAssets.length;
-  const availableAssets = mockAssets.filter(a => a.status === 'available').length;
+  const availableAssets = mockAssets.filter(
+    a => a.status === 'available'
+  ).length;
   const assignedAssets = mockAssets.filter(a => a.status === 'assigned').length;
-  const underMaintenanceAssets = mockAssets.filter(a => a.status === 'under_maintenance').length;
+  const underMaintenanceAssets = mockAssets.filter(
+    a => a.status === 'under_maintenance'
+  ).length;
   const retiredAssets = mockAssets.filter(a => a.status === 'retired').length;
-  
+
   const totalRequests = mockAssetRequests.length;
-  const pendingRequests = mockAssetRequests.filter(r => r.status === 'pending').length;
-  const approvedRequests = mockAssetRequests.filter(r => r.status === 'approved').length;
-  const rejectedRequests = mockAssetRequests.filter(r => r.status === 'rejected').length;
+  const pendingRequests = mockAssetRequests.filter(
+    r => r.status === 'pending'
+  ).length;
+  const approvedRequests = mockAssetRequests.filter(
+    r => r.status === 'approved'
+  ).length;
+  const rejectedRequests = mockAssetRequests.filter(
+    r => r.status === 'rejected'
+  ).length;
 
   return {
     totalAssets,

@@ -35,13 +35,13 @@ import {
   isEmployee,
   isManager,
 } from '../../utils/roleUtils';
-import ProfilePictureUpload from '../Common/ProfilePictureUpload';
+import ProfilePictureUpload from '../common/ProfilePictureUpload';
 import EmployeeProfileView from '../Employee/EmployeeProfileView';
 import EditProfileModal from './EditProfileModal';
 import { useIsDarkMode } from '../../theme';
 import { formatDate } from '../../utils/dateUtils';
-import AppButton from '../Common/AppButton';
-import AppCard from '../Common/AppCard';
+import AppButton from '../common/AppButton';
+import AppCard from '../common/AppCard';
 
 const UserProfileComponent = React.memo(() => {
   const { user: profile, loading, updateUser } = useUser();
@@ -151,15 +151,7 @@ const UserProfileComponent = React.memo(() => {
         value: formatDate(profile.created_at),
       },
     ];
-  }, [
-    profile?.first_name,
-    profile?.last_name,
-    profile?.email,
-    profile?.phone,
-    profile?.role,
-    profile?.tenant,
-    profile?.created_at,
-  ]);
+  }, [profile]);
 
   // Only show loading if we truly don't have profile data and it's still loading
   // If we have profile data, show it even if loading is true (might be fetching tenant in background)

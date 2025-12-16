@@ -14,7 +14,7 @@ import PromotionsList from './PromotionsTable';
 import { systemEmployeeApiService } from '../../api/systemEmployeeApi';
 import type { Tenant } from '../../types';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 
 const PerformanceDashboard: React.FC = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -50,7 +50,7 @@ const PerformanceDashboard: React.FC = () => {
     } finally {
       setLoadingTenants(false);
     }
-  }, [selectedTenant]);
+  }, [selectedTenant, showError]);
 
   useEffect(() => {
     fetchTenants();
@@ -58,7 +58,12 @@ const PerformanceDashboard: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant='h4' fontWeight={600} mb={2}>
+      <Typography
+        variant='h4'
+        fontWeight={600}
+        fontSize={{ xs: '32px', lg: '48px' }}
+        mb={2}
+      >
         Performance Dashboard
       </Typography>
 

@@ -45,6 +45,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
   const [formData, setFormData] = useState<DepartmentFormData>({
@@ -288,7 +289,12 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
 
   /* ---------- DESKTOP dialog ---------- */
   return (
-    <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth={isLargeScreen ? 'md' : 'sm'} 
+      fullWidth
+    >
       <DialogTitle sx={{ ...paperSx, position: 'relative' }}>
         <Typography
           sx={{

@@ -3,12 +3,10 @@ import {
   Box,
   Paper,
   Typography,
-  Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
-  TableContainer,
   TextField,
   MenuItem,
   IconButton,
@@ -37,9 +35,12 @@ import SystemEmployeeProfileView from './SystemEmployeeProfileView';
 import { formatDate } from '../../utils/dateUtils';
 import employeeApi from '../../api/employeeApi';
 import { PAGINATION } from '../../constants/appConstants';
+import AppTable from '../common/AppTable';
 
 type EmployeeWithTenantName = SystemEmployee & {
   tenantName: string;
+  departmentName?: string;
+  designationTitle?: string;
 };
 
 const TenantBasedEmployeeManager: React.FC = () => {
@@ -114,7 +115,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
     isLoadingRef.current = true;
     setLoading(true);
     try {
-      const params: any = {
+      const params: Record<string, string | number | undefined> = {
         page: currentPage,
       };
       if (filters.tenantId) params.tenantId = filters.tenantId;
@@ -128,14 +129,38 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
       // Map flat API fields to include tenantName (match by tenantId)
       const mapped: EmployeeWithTenantName[] = employeesData.map(emp => {
+        const e = emp as unknown as Record<string, unknown>;
         const tenantId =
-          (emp as any).tenantId ||
-          (emp as any).tenant_id ||
-          (emp as any).tenant?.id;
-        const matchedTenant = tenants.find(t => t.id === tenantId);
+          (typeof e.tenantId === 'string' && e.tenantId) ||
+          (typeof e.tenant_id === 'string' && e.tenant_id) ||
+          (typeof e.tenant === 'object' &&
+            e.tenant &&
+            typeof (e.tenant as Record<string, unknown>).id === 'string' &&
+            (e.tenant as Record<string, unknown>).id) ||
+          undefined;
+
+        const matchedTenant = tenants.find(t => t.id === String(tenantId));
+
+        // Safely read departmentName / designationTitle from backend shapes
+        const departmentName =
+          typeof e.departmentName === 'string'
+            ? e.departmentName
+            : typeof e.department_name === 'string'
+              ? e.department_name
+              : '';
+
+        const designationTitle =
+          typeof e.designationTitle === 'string'
+            ? e.designationTitle
+            : typeof e.designation_title === 'string'
+              ? e.designation_title
+              : '';
+
         return {
           ...emp,
           tenantName: matchedTenant ? matchedTenant.name : '', // Tenant name if available
+          departmentName,
+          designationTitle,
         };
       });
 
@@ -301,7 +326,12 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant='h5' fontWeight='bold' mb={3}>
+      <Typography
+        variant='h5'
+        fontSize={{ xs: '32px', lg: '48px' }}
+        fontWeight='bold'
+        mb={3}
+      >
         Employee List
       </Typography>
 
@@ -398,54 +428,52 @@ const TenantBasedEmployeeManager: React.FC = () => {
       </Box>
 
       <Paper sx={{ mt: 3, boxShadow: 'none' }}>
-        <TableContainer>
-          <Table stickyHeader>
-            <TableHead>
+        <AppTable>
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Tenant</TableCell>
+              <TableCell>Department</TableCell>
+              <TableCell>Designation</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Created At</TableCell>
+              <TableCell align='center'>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {loading ? (
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Tenant</TableCell>
-                <TableCell>Department</TableCell>
-                <TableCell>Designation</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Created At</TableCell>
-                <TableCell align='center'>Actions</TableCell>
+                <TableCell colSpan={7} align='center'>
+                  <CircularProgress />
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} align='center'>
-                    <CircularProgress />
+            ) : employees.length ? (
+              employees.map(emp => (
+                <TableRow key={emp.id}>
+                  <TableCell>{emp.name}</TableCell>
+                  <TableCell>{emp.tenantName || <em>—</em>}</TableCell>
+                  <TableCell>{emp.departmentName || <em>—</em>}</TableCell>
+                  <TableCell>{emp.designationTitle || <em>—</em>}</TableCell>
+                  <TableCell>{emp.status}</TableCell>
+                  <TableCell>
+                    {emp.createdAt ? formatDate(emp.createdAt) : 'N/A'}
+                  </TableCell>
+                  <TableCell align='center'>
+                    <IconButton onClick={() => handleOpenProfile(emp)}>
+                      <VisibilityIcon />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
-              ) : employees.length ? (
-                employees.map(emp => (
-                  <TableRow key={emp.id}>
-                    <TableCell>{emp.name}</TableCell>
-                    <TableCell>{emp.tenantName || <em>—</em>}</TableCell>
-                    <TableCell>{(emp as any).departmentName}</TableCell>
-                    <TableCell>{(emp as any).designationTitle}</TableCell>
-                    <TableCell>{emp.status}</TableCell>
-                    <TableCell>
-                      {emp.createdAt ? formatDate(emp.createdAt) : 'N/A'}
-                    </TableCell>
-                    <TableCell align='center'>
-                      <IconButton onClick={() => handleOpenProfile(emp)}>
-                        <VisibilityIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} align='center'>
-                    No employees found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} align='center'>
+                  No employees found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </AppTable>
       </Paper>
 
       {openProfile && selectedEmployee && (
