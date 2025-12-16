@@ -6,15 +6,11 @@ import type {
   PagedResult,
 } from '../types/benefits';
 import { seedBenefits, seedAssignments } from '../Data/benefits.ts';
-import { TIMEOUTS } from '../constants/appConstants';
 
 let benefitsDb: Benefit[] = [...seedBenefits];
 let assignmentsDb: EmployeeBenefitAssignment[] = [...seedAssignments];
 
-function simulateLatency<T>(
-  data: T,
-  ms = TIMEOUTS.SIMULATED_LATENCY
-): Promise<T> {
+function simulateLatency<T>(data: T, ms = 300): Promise<T> {
   return new Promise(resolve => setTimeout(() => resolve(data), ms));
 }
 

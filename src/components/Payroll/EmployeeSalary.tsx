@@ -119,7 +119,8 @@ const EmployeeSalaryPage: React.FC = () => {
   );
   const [configLoading, setConfigLoading] = useState(false);
 
-  const [baseSalary, setBaseSalary] = useState<number | ''>(0);
+  // `baseSalary` state was previously used for display but base components
+  // are now tracked in `basePayComponents`. Keep no separate baseSalary state.
   const [basePayComponents, setBasePayComponents] = useState<{
     basic: number | '';
     houseRent: number | '';
@@ -270,13 +271,7 @@ const EmployeeSalaryPage: React.FC = () => {
           transport: config.basePayComponents?.transport || 0,
         });
 
-        // Calculate total base salary for display/validation
-        const totalBaseSalary =
-          (config.basePayComponents?.basic || 0) +
-          (config.basePayComponents?.houseRent || 0) +
-          (config.basePayComponents?.medical || 0) +
-          (config.basePayComponents?.transport || 0);
-        setBaseSalary(totalBaseSalary || 0);
+        // total base salary is derived from `basePayComponents`
 
         // Convert config allowances to employee salary allowances format
         const configAllowances: EmployeeSalaryAllowance[] = (
@@ -326,7 +321,7 @@ const EmployeeSalaryPage: React.FC = () => {
           medical: 0,
           transport: 0,
         });
-        setBaseSalary(0);
+        // reset base salary via basePayComponents
         setAllowances([]);
         setDeductions([]);
       }
@@ -338,7 +333,7 @@ const EmployeeSalaryPage: React.FC = () => {
         medical: 0,
         transport: 0,
       });
-      setBaseSalary(0);
+      // reset base salary via basePayComponents
       setAllowances([]);
       setDeductions([]);
     } finally {
@@ -416,7 +411,7 @@ const EmployeeSalaryPage: React.FC = () => {
           });
         }
 
-        setBaseSalary(baseSalaryValue);
+        // base salary value derived from components; no separate state
         setAllowances(response.salary.allowances || []);
         setDeductions(response.salary.deductions || []);
         const effectiveDateObj = dayjs(response.salary.effectiveDate);
@@ -439,12 +434,7 @@ const EmployeeSalaryPage: React.FC = () => {
             medical: config.basePayComponents.medical || 0,
             transport: config.basePayComponents.transport || 0,
           });
-          const totalBaseSalary =
-            (config.basePayComponents.basic || 0) +
-            (config.basePayComponents.houseRent || 0) +
-            (config.basePayComponents.medical || 0) +
-            (config.basePayComponents.transport || 0);
-          setBaseSalary(totalBaseSalary);
+          // total base salary is derived from `basePayComponents`
         } else {
           // Use defaults from API response
           setBasePayComponents({
@@ -453,7 +443,7 @@ const EmployeeSalaryPage: React.FC = () => {
             medical: 0,
             transport: 0,
           });
-          setBaseSalary(response.defaults.baseSalary);
+          // base salary value derived from defaults via basePayComponents
         }
 
         setAllowances([...response.defaults.allowances]);
@@ -707,7 +697,10 @@ const EmployeeSalaryPage: React.FC = () => {
     selectedSalary,
     selectedEmployeeId,
     currentEmployeeId,
-    basePayComponents,
+    basePayComponents.basic,
+    basePayComponents.houseRent,
+    basePayComponents.medical,
+    basePayComponents.transport,
     effectiveMonth,
     effectiveYear,
     allowances,
@@ -780,7 +773,10 @@ const EmployeeSalaryPage: React.FC = () => {
     return false;
   }, [
     selectedSalary,
-    baseSalary,
+    basePayComponents.basic,
+    basePayComponents.houseRent,
+    basePayComponents.medical,
+    basePayComponents.transport,
     effectiveMonth,
     effectiveYear,
     endDate,
@@ -1298,7 +1294,6 @@ const EmployeeSalaryPage: React.FC = () => {
 
                                 // Use defaults since salary is null
                                 setSelectedSalary(null);
-                                setBaseSalary(response.defaults.baseSalary);
                                 setAllowances([
                                   ...response.defaults.allowances,
                                 ]);
@@ -1886,7 +1881,7 @@ const EmployeeSalaryPage: React.FC = () => {
                             });
                           }
 
-                          setBaseSalary(baseSalaryValue);
+                          // base salary is derived from `basePayComponents`
                           setAllowances(response.salary.allowances || []);
                           setDeductions(response.salary.deductions || []);
                           const effectiveDateObj = dayjs(
@@ -1914,12 +1909,7 @@ const EmployeeSalaryPage: React.FC = () => {
                               transport:
                                 config.basePayComponents.transport || 0,
                             });
-                            const totalBaseSalary =
-                              (config.basePayComponents.basic || 0) +
-                              (config.basePayComponents.houseRent || 0) +
-                              (config.basePayComponents.medical || 0) +
-                              (config.basePayComponents.transport || 0);
-                            setBaseSalary(totalBaseSalary);
+                            // total base salary is derived from `basePayComponents`
                           } else {
                             setBasePayComponents({
                               basic: response.defaults.baseSalary || 0,
@@ -1927,7 +1917,7 @@ const EmployeeSalaryPage: React.FC = () => {
                               medical: 0,
                               transport: 0,
                             });
-                            setBaseSalary(response.defaults.baseSalary);
+                            // defaults applied to `basePayComponents`
                           }
 
                           setAllowances([...response.defaults.allowances]);
@@ -2015,28 +2005,7 @@ const EmployeeSalaryPage: React.FC = () => {
                         [key]: numValue,
                       }));
                       // Update total base salary
-                      const updated = {
-                        ...basePayComponents,
-                        [key]: numValue,
-                      };
-                      const total =
-                        (typeof updated.basic === 'string' &&
-                        updated.basic === ''
-                          ? 0
-                          : updated.basic || 0) +
-                        (typeof updated.houseRent === 'string' &&
-                        updated.houseRent === ''
-                          ? 0
-                          : updated.houseRent || 0) +
-                        (typeof updated.medical === 'string' &&
-                        updated.medical === ''
-                          ? 0
-                          : updated.medical || 0) +
-                        (typeof updated.transport === 'string' &&
-                        updated.transport === ''
-                          ? 0
-                          : updated.transport || 0);
-                      setBaseSalary(total === 0 ? '' : total);
+                      // Update local base pay components; total computed elsewhere
                     }}
                     sx={{
                       '& .MuiOutlinedInput-root': {

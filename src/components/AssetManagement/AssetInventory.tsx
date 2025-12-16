@@ -36,17 +36,17 @@ import type {
 import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
 import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
-import { DeleteConfirmationDialog } from '../Common/DeleteConfirmationDialog';
+import { DeleteConfirmationDialog } from '../common/DeleteConfirmationDialog';
 import { assetCategories } from '../../Data/assetCategories';
 import { isHRAdmin } from '../../utils/roleUtils';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
-import AppButton from '../Common/AppButton';
-import AppTextField from '../Common/AppTextField';
-import AppSelect from '../Common/AppSelect';
-import AppTable from '../Common/AppTable';
-import AppCard from '../Common/AppCard';
+import AppCard from '../common/AppCard';
+import AppTable from '../common/AppTable';
+import AppSelect from '../common/AppSelect';
+import AppButton from '../common/AppButton';
+import AppTextField from '../common/AppTextField';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset response that may include additional user information
@@ -117,6 +117,20 @@ const AssetInventory: React.FC = () => {
 
   const hideActions = isHRAdmin(userRole);
 
+  const showSnackbar = React.useCallback(
+    (
+      message: string,
+      severity: 'success' | 'error' | 'warning' | 'info' = 'success'
+    ) => {
+      if (severity === 'success') {
+        showSuccess(message);
+      } else {
+        // Use centralized error handler for non-success notifications
+        showError(message);
+      }
+    },
+    [showSuccess, showError]
+  );
   const [pagination, setPagination] = useState<{
     total: number;
     page: number;
@@ -128,8 +142,6 @@ const AssetInventory: React.FC = () => {
     limit: PAGINATION.DEFAULT_PAGE_SIZE, // Backend returns records per page
     totalPages: 1,
   });
-
-  // Mock data for users (these might need to be fetched from API later)
   const mockUsers: MockUser[] = [
     {
       id: '1',
@@ -308,7 +320,14 @@ const AssetInventory: React.FC = () => {
 
         setAssets(transformedAssets);
       } catch (error) {
-        showError(error);
+        console.error('Failed to fetch assets:', error);
+        // Use centralized error handler when available
+        try {
+          showError(error);
+        } catch {
+          // Fallback to local snackbar
+          showSnackbar('Failed to load assets', 'error');
+        }
       } finally {
         fetchingRef.current = false;
         // Only set initial loading to false on very first load
@@ -317,7 +336,7 @@ const AssetInventory: React.FC = () => {
         }
       }
     },
-    [transformApiAssets]
+    [transformApiAssets, showError, showSnackbar]
   );
 
   // Initial load: fetch paginated assets (counts are included in API response)
@@ -675,7 +694,7 @@ const AssetInventory: React.FC = () => {
       </Box>
 
       {/* Filters and Search */}
-      <AppCard sx={{ mb: 3 }} >
+      <AppCard sx={{ mb: 3 }}>
         <Box
           sx={{
             display: 'flex',
@@ -683,12 +702,11 @@ const AssetInventory: React.FC = () => {
             gap: 2,
             alignItems: 'center',
             py: 2,
-
           }}
         >
           <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
             <AppTextField
-              placeholder='Search assets...'
+              inputProps={{ placeholder: 'Search assets...' }}
               value={searchTerm}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setSearchTerm(e.target.value)
@@ -773,7 +791,7 @@ const AssetInventory: React.FC = () => {
       </AppCard>
 
       {/* Assets Table */}
-      <AppCard pading={0}>
+      <AppCard sx={{ padding: 0 }}>
         <AppTable>
           <TableHead>
             <TableRow>
@@ -809,6 +827,7 @@ const AssetInventory: React.FC = () => {
                       )}
                     </Box>
                   </TableCell>
+
                   <TableCell>
                     <Box>
                       <Typography variant='body2' fontWeight={500}>
@@ -825,9 +844,11 @@ const AssetInventory: React.FC = () => {
                       )}
                     </Box>
                   </TableCell>
+
                   <TableCell>
                     <StatusChip status={asset.status} type='asset' />
                   </TableCell>
+
                   <TableCell>
                     {asset.assignedToName ? (
                       <Box
@@ -844,7 +865,9 @@ const AssetInventory: React.FC = () => {
                       </Typography>
                     )}
                   </TableCell>
+
                   <TableCell>{formatDate(asset.purchaseDate)}</TableCell>
+
                   {!hideActions && (
                     <TableCell align='right'>
                       <IconButton
@@ -858,6 +881,7 @@ const AssetInventory: React.FC = () => {
                       >
                         <MoreVertIcon aria-hidden='true' />
                       </IconButton>
+
                       <Menu
                         anchorEl={anchorEl}
                         open={Boolean(anchorEl) && selectedAssetId === asset.id}
@@ -875,6 +899,7 @@ const AssetInventory: React.FC = () => {
                           </ListItemIcon>
                           <ListItemText>Edit</ListItemText>
                         </MenuItem>
+
                         {asset.status !== 'under_maintenance' && (
                           <MenuItem
                             onClick={() => handleMarkAsMaintenance(asset)}
@@ -892,6 +917,7 @@ const AssetInventory: React.FC = () => {
                             <ListItemText>Mark as Maintenance</ListItemText>
                           </MenuItem>
                         )}
+
                         {asset.status === 'under_maintenance' && (
                           <MenuItem
                             onClick={() => handleMarkAsAvailable(asset)}
@@ -909,6 +935,7 @@ const AssetInventory: React.FC = () => {
                             <ListItemText>Mark as Available</ListItemText>
                           </MenuItem>
                         )}
+
                         <MenuItem
                           onClick={() => handleDeleteAsset(asset)}
                           sx={{ color: 'error.main' }}

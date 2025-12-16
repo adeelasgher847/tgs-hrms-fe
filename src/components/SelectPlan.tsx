@@ -8,19 +8,16 @@ import {
   Stack,
   Alert,
   CircularProgress,
+  Snackbar,
   Divider,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import signupApi, {
   type SubscriptionPlan,
-  type StripePriceInfo,
   type CompanyDetailsRequest,
   type LogoUploadRequest,
-  type PaymentRequest,
-} from '../../api/signupApi';
-import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
+} from '../api/signupApi';
 
 // Default plans as fallback
 const defaultPlans = [
@@ -75,7 +72,11 @@ const SelectPlan: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({ open: false, message: '', severity: 'success' });
 
   const hasFetched = useRef(false);
 
@@ -121,12 +122,10 @@ const SelectPlan: React.FC = () => {
               // Try to fetch prices from backend using Stripe price IDs
               const prices = await signupApi.getStripePrices(priceIds);
               priceInfoByPriceId = (prices || []).reduce(
-                (acc, pr: StripePriceInfo) => {
+                (acc, pr: Record<string, unknown>) => {
                   const amount =
                     typeof pr.unit_amount === 'number' ? pr.unit_amount : 0;
-                  const currency = pr.currency
-                    ? pr.currency.toUpperCase()
-                    : 'USD';
+                  const currency = pr.currency?.toUpperCase?.() || 'USD';
                   const interval = pr.interval || 'month';
                   const formattedAmount = new Intl.NumberFormat(undefined, {
                     style: 'currency',
@@ -193,9 +192,9 @@ const SelectPlan: React.FC = () => {
           });
 
           setPlans(transformedPlans);
-        } catch (e) {
+        } catch (err: unknown) {
+          console.error('Error fetching plans:', err);
           setError('Failed to load subscription plans. Using default plans.');
-          showError(e);
           // Keep default plans as fallback
         } finally {
           setLoading(false);
@@ -204,7 +203,7 @@ const SelectPlan: React.FC = () => {
 
       void fetchPlans();
     }
-  }, [navigate, showError]);
+  }, [navigate]);
 
   const handlePlanSelect = (planId: string) => {
     setSelectedPlan(planId);
@@ -245,6 +244,10 @@ const SelectPlan: React.FC = () => {
           throw new Error('Signup session not found. Please start over.');
         }
 
+        // Debug: Log company details
+        console.log('Company details from localStorage:', companyDetails);
+        console.log('SignupSessionId:', signupSessionId);
+
         // Validate company details are present and not empty
         const companyName = companyDetails?.companyName
           ? String(companyDetails.companyName).trim()
@@ -254,6 +257,11 @@ const SelectPlan: React.FC = () => {
           : '';
 
         if (!companyName || !domain) {
+          console.error('Missing company details:', {
+            companyName,
+            domain,
+            fullCompanyDetails: companyDetails,
+          });
           throw new Error(
             'Company name and domain are required. Please go back and fill in all required fields.'
           );
@@ -299,7 +307,9 @@ const SelectPlan: React.FC = () => {
             };
 
             await signupApi.uploadLogo(logoUploadData);
-          } catch {
+            console.log('Logo uploaded successfully');
+          } catch (logoError: unknown) {
+            console.error('Logo upload failed:', logoError);
             // Don't block the flow if logo upload fails
           }
         }
@@ -313,7 +323,11 @@ const SelectPlan: React.FC = () => {
 
         const checkoutSession = await signupApi.createPayment(paymentRequest);
 
-        showSuccess('Redirecting to secure payment...');
+        setSnackbar({
+          open: true,
+          message: 'Redirecting to secure payment...',
+          severity: 'success',
+        });
 
         // 4. Redirect to Stripe Checkout
         if (checkoutSession.url) {
@@ -322,8 +336,12 @@ const SelectPlan: React.FC = () => {
           throw new Error('No checkout URL received from server');
         }
       } else if (isLoginFlow) {
-        // eslint-disable-next-line no-useless-catch
+        // Login flow: User is already logged in after tenant creation
+        // Backend flow: System admin creates tenant → Admin logs in → Admin selects plan → Payment
+        // For login flow, company details are already created during tenant creation
+        // We just need to call /signup/company-details with session_id and planId
         try {
+          // Get session_id from localStorage (set during login as signupSessionId)
           const loginSignupSessionIdRaw =
             localStorage.getItem('signupSessionId');
           const loginSignupSessionId = loginSignupSessionIdRaw
@@ -333,6 +351,14 @@ const SelectPlan: React.FC = () => {
           if (!loginSignupSessionId || loginSignupSessionId.length === 0) {
             throw new Error('Session ID not found. Please log in again.');
           }
+
+          // Step 1: Update company details with selected plan
+          // Backend already has company details from tenant creation, we just need to update with planId
+          // But backend still expects companyName and domain, so we get them from the company object in login response
+          // Actually, let's check if we need to send companyName and domain or if backend can get them from session_id
+          // Based on user's description: "POST /signup/company-details with session_id aur planId"
+          // It seems backend only needs session_id and planId, but the error suggests it needs companyName and domain too
+          // Let's try sending only session_id and planId first, and if that fails, we'll get company details from user object
 
           // Get company details from localStorage (stored during login)
           const companyStr = localStorage.getItem('company');
@@ -361,7 +387,11 @@ const SelectPlan: React.FC = () => {
 
           const checkoutSession = await signupApi.createPayment(paymentRequest);
 
-          showSuccess('Redirecting to secure payment...');
+          setSnackbar({
+            open: true,
+            message: 'Redirecting to secure payment...',
+            severity: 'success',
+          });
 
           if (checkoutSession.url) {
             window.location.href = checkoutSession.url;
@@ -369,7 +399,24 @@ const SelectPlan: React.FC = () => {
             throw new Error('No checkout URL received from server');
           }
         } catch (paymentError: unknown) {
-          throw paymentError;
+          console.error(
+            'Payment creation error for logged-in user:',
+            paymentError
+          );
+          const error = paymentError as {
+            response?: { status?: number; data?: { message?: string } };
+            message?: string;
+          };
+
+          let errorMessage =
+            'Failed to create payment session. Please contact support or try again later.';
+          if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+
+          throw new Error(errorMessage);
         }
       } else {
         throw new Error('Invalid session. Please start over.');
@@ -377,42 +424,19 @@ const SelectPlan: React.FC = () => {
     } catch (err: unknown) {
       let errorMessage = 'Failed to create payment session. Please try again.';
 
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        (err as { response?: { data?: unknown } }).response?.data
-      ) {
-        const data = (err as { response?: { data?: unknown } }).response?.data;
-        if (typeof data === 'string') {
-          errorMessage = data;
-        } else if (
-          data &&
-          typeof data === 'object' &&
-          'message' in data &&
-          typeof (data as { message?: unknown }).message === 'string'
-        ) {
-          errorMessage = (data as { message?: string }).message ?? errorMessage;
-        } else if (
-          data &&
-          typeof data === 'object' &&
-          'error' in data &&
-          typeof (data as { error?: unknown }).error === 'string'
-        ) {
-          errorMessage = (data as { error?: string }).error ?? errorMessage;
-        } else if (
-          data &&
-          typeof data === 'object' &&
-          'details' in data &&
-          typeof (data as { details?: unknown }).details === 'string'
-        ) {
-          errorMessage = (data as { details?: string }).details ?? errorMessage;
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        } else if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response.data.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.response.data.details) {
+          errorMessage = err.response.data.details;
         }
-      } else if (err instanceof Error && err.message) {
+      } else if (err.message) {
         errorMessage = err.message;
       }
-      setError(errorMessage);
-      showError(err);
 
       setError(errorMessage);
     } finally {
@@ -727,12 +751,20 @@ const SelectPlan: React.FC = () => {
         </Button>
       </Box>
 
-      <ErrorSnackbar
+      <Snackbar
         open={snackbar.open}
-        message={snackbar.message}
-        severity={snackbar.severity}
-        onClose={closeSnackbar}
-      />
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

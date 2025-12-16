@@ -3,7 +3,7 @@ import LeaveForm from './LeaveForm';
 import LeaveHistory from './LeaveHistory';
 import LeaveApprovalDialog from './LeaveApprovalDialog';
 import ManagerResponseDialog from './ManagerResponseDialog';
-import { leaveApi, type CreateLeaveRequest } from '../../api/leaveApi';
+import { leaveApi } from '../../api/leaveApi';
 import type { Leave } from '../../type/levetypes';
 import { getCurrentUser, getUserName, getUserRole } from '../../utils/auth';
 import { normalizeRole } from '../../utils/permissions';
@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import HistoryIcon from '@mui/icons-material/History';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 import { PAGINATION } from '../../constants/appConstants';
@@ -97,48 +97,120 @@ const LeaveRequestPage = () => {
           res = await leaveApi.getUserLeaves(currentUserId, page);
         }
 
-        const leavesData: Leave[] = res.items.map((leave: any) => {
+        const leavesData: Leave[] = (
+          Array.isArray(res.items) ? res.items : []
+        ).map((leaveRaw: unknown) => {
+          const leave = (leaveRaw || {}) as Record<string, unknown>;
+
+          const employeeObj =
+            (leave.employee && typeof leave.employee === 'object'
+              ? (leave.employee as Record<string, unknown>)
+              : undefined) || undefined;
+          const userObj =
+            (leave.user && typeof leave.user === 'object'
+              ? (leave.user as Record<string, unknown>)
+              : undefined) || undefined;
+
+          const getString = (v: unknown) =>
+            v === null || typeof v === 'undefined' ? '' : String(v);
+
           const employeeId =
-            leave.employeeId || leave.employee?.id || leave.user?.id || '';
-          const userId = leave.user?.id || leave.employee?.id || '';
+            (typeof leave.employeeId === 'string' && leave.employeeId) ||
+            (typeof leave.employeeId === 'number' &&
+              String(leave.employeeId)) ||
+            (employeeObj &&
+              typeof employeeObj.id === 'string' &&
+              employeeObj.id) ||
+            (userObj && typeof userObj.id === 'string' && userObj.id) ||
+            '';
+
+          const userId =
+            (userObj && typeof userObj.id === 'string' && userObj.id) ||
+            (employeeObj &&
+              typeof employeeObj.id === 'string' &&
+              employeeObj.id) ||
+            '';
+
+          const employeeFirstName =
+            (employeeObj &&
+              typeof employeeObj.first_name === 'string' &&
+              employeeObj.first_name) ||
+            (userObj &&
+              typeof userObj.first_name === 'string' &&
+              userObj.first_name) ||
+            'You';
+
+          const employeeLastName =
+            (employeeObj &&
+              typeof employeeObj.last_name === 'string' &&
+              employeeObj.last_name) ||
+            (userObj &&
+              typeof userObj.last_name === 'string' &&
+              userObj.last_name) ||
+            undefined;
+
+          const employeeEmail =
+            (employeeObj &&
+              typeof employeeObj.email === 'string' &&
+              employeeObj.email) ||
+            (userObj && typeof userObj.email === 'string' && userObj.email) ||
+            '';
+
+          const leaveTypeName =
+            (leave.leaveType &&
+            typeof leave.leaveType === 'object' &&
+            typeof (leave.leaveType as Record<string, unknown>).name ===
+              'string'
+              ? ((leave.leaveType as Record<string, unknown>).name as string)
+              : undefined) || 'Unknown';
+
+          const rawStatus = getString(leave.status).toLowerCase();
+          const normalizedStatus: Leave['status'] = (
+            rawStatus === 'pending' ||
+            rawStatus === 'approved' ||
+            rawStatus === 'rejected' ||
+            rawStatus === 'withdrawn'
+              ? rawStatus
+              : 'pending'
+          ) as Leave['status'];
+          const remarksString =
+            typeof leave.remarks === 'string' ? leave.remarks : undefined;
+
+          // remarks field: could be rejection remarks (if status is rejected) or manager remarks
+          const remarks =
+            normalizedStatus === 'rejected' ? remarksString : undefined;
+
+          // managerRemarks: from approve-manager endpoint, backend returns in remarks field
+          // But we need to differentiate - if status is not rejected and remarks exists, it's manager response
+          const managerRemarks =
+            (typeof leave.managerRemarks === 'string' &&
+              leave.managerRemarks) ||
+            (typeof leave.manager_remarks === 'string' &&
+              leave.manager_remarks) ||
+            (normalizedStatus !== 'rejected' && remarksString
+              ? remarksString
+              : undefined);
+
           return {
-            id: leave.id,
-            employeeId,
-            employee: leave.employee
-              ? {
-                  id: leave.employee.id || userId,
-                  first_name: leave.employee.first_name || 'You',
-                  last_name: leave.employee.last_name,
-                  email: leave.employee.email || '',
-                }
-              : {
-                  id: userId,
-                  first_name: leave.user?.first_name || 'You',
-                  last_name: leave.user?.last_name,
-                  email: leave.user?.email || '',
-                },
-            leaveTypeId: leave.leaveTypeId || '',
-            leaveType: leave.leaveType
-              ? { id: '', name: leave.leaveType.name || 'Unknown' }
-              : { id: '', name: 'Unknown' },
-            reason: leave.reason || '',
-            // remarks field: could be rejection remarks (if status is rejected) or manager remarks
-            remarks:
-              leave.status === 'rejected' ? leave.remarks || undefined : undefined,
-            // managerRemarks: from approve-manager endpoint, backend returns in remarks field
-            // But we need to differentiate - if status is not rejected and remarks exists, it's manager response
-            managerRemarks:
-              leave.managerRemarks ||
-              leave.manager_remarks ||
-              (leave.status !== 'rejected' && leave.remarks
-                ? leave.remarks
-                : undefined),
-            startDate: leave.startDate || '',
-            endDate: leave.endDate || '',
-            status: leave.status || 'pending',
-            createdAt: leave.createdAt,
-            updatedAt: leave.updatedAt,
-          };
+            id: getString(leave.id),
+            employeeId: getString(employeeId),
+            employee: {
+              id: getString(employeeObj?.id) || getString(userId),
+              first_name: employeeFirstName,
+              last_name: employeeLastName as string | undefined,
+              email: employeeEmail,
+            },
+            leaveTypeId: getString(leave.leaveTypeId),
+            leaveType: { id: '', name: leaveTypeName },
+            reason: getString(leave.reason),
+            remarks,
+            managerRemarks,
+            startDate: getString(leave.startDate),
+            endDate: getString(leave.endDate),
+            status: normalizedStatus,
+            createdAt: leave.createdAt as string | undefined,
+            updatedAt: leave.updatedAt as string | undefined,
+          } as Leave;
         });
 
         // Update leaves state, preserving any locally updated managerRemarks if server data doesn't have it yet
@@ -180,7 +252,7 @@ const LeaveRequestPage = () => {
         else setTableLoading(false);
       }
     },
-    [currentUserId, role]
+    [currentUserId, role, currentPage, viewMode]
   );
 
   useEffect(() => {
@@ -227,7 +299,7 @@ const LeaveRequestPage = () => {
   };
 
   // Handle apply leave (called after successful API in form)
-  const handleApply = async (data: CreateLeaveRequest) => {
+  const handleApply = async () => {
     try {
       showSuccess('Leave applied successfully!');
       await loadLeaves();
@@ -288,9 +360,7 @@ const LeaveRequestPage = () => {
       // Update local state immediately to show the response right away
       setLeaves(prev =>
         prev.map(l =>
-          l.id === selectedId
-            ? { ...l, managerRemarks: comment }
-            : l
+          l.id === selectedId ? { ...l, managerRemarks: comment } : l
         )
       );
       showSuccess('Manager response saved successfully!');
@@ -303,9 +373,7 @@ const LeaveRequestPage = () => {
         // Data was saved despite the error, so update local state and reload
         setLeaves(prev =>
           prev.map(l =>
-            l.id === selectedId
-              ? { ...l, managerRemarks: comment }
-              : l
+            l.id === selectedId ? { ...l, managerRemarks: comment } : l
           )
         );
         showSuccess('Manager response saved successfully!');
@@ -356,6 +424,7 @@ const LeaveRequestPage = () => {
 
   // Fetch all leaves for export
   const _fetchAllLeavesForExport = useCallback(async (): Promise<Leave[]> => {
+    // eslint-disable-next-line no-useless-catch
     try {
       const allLeaves: Leave[] = [];
       let pageNum = 1;
@@ -377,26 +446,43 @@ const LeaveRequestPage = () => {
         totalPagesLocal = res.totalPages || 1;
         allLeaves.push(
           ...res.items.map((leave): Leave => {
-            const employeeId =
-              leave.employeeId ||
-              (
-                leave as unknown as {
-                  employee?: { id?: string };
-                  user?: { id?: string };
-                }
-              ).employee?.id ||
-              (
-                leave as unknown as {
-                  employee?: { id?: string };
-                  user?: { id?: string };
-                }
-              ).user?.id ||
-              '';
+            const leaveRec = leave as unknown as Record<string, unknown>;
+            const employeeId = String(
+              (leaveRec.employee as Record<string, unknown> | undefined)?.id ||
+                (leaveRec.user as Record<string, unknown> | undefined)?.id ||
+                (leaveRec.employeeId as string | undefined) ||
+                ''
+            );
+
+            const r = leaveRec.remarks;
+            const remarks =
+              r === null || typeof r === 'undefined' ? undefined : String(r);
+
+            const rawStatus = String(leaveRec.status ?? '').toLowerCase();
+            let normalizedStatus: import('../../type/levetypes').LeaveStatus =
+              'pending';
+            if (
+              rawStatus === 'pending' ||
+              rawStatus === 'approved' ||
+              rawStatus === 'rejected' ||
+              rawStatus === 'withdrawn'
+            ) {
+              normalizedStatus =
+                rawStatus as import('../../type/levetypes').LeaveStatus;
+            } else if (rawStatus === 'cancelled') {
+              // Backend uses 'cancelled' sometimes — map to 'rejected'
+              normalizedStatus = 'rejected';
+            }
+
             return {
               ...leave,
               employeeId,
-              leaveTypeId: leave.leaveTypeId || '',
-            };
+              leaveTypeId: leaveRec.leaveTypeId
+                ? String(leaveRec.leaveTypeId)
+                : '',
+              remarks,
+              status: normalizedStatus,
+            } as Leave;
           })
         );
         pageNum++;

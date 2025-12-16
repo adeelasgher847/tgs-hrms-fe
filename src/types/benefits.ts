@@ -1,6 +1,12 @@
 export type BenefitStatus = 'active' | 'inactive';
 
-export type BenefitType = 'health' | 'dental' | 'vision' | 'life' | 'retirement' | 'other';
+export type BenefitType =
+  | 'health'
+  | 'dental'
+  | 'vision'
+  | 'life'
+  | 'retirement'
+  | 'other';
 
 export interface Benefit {
   id: string;
@@ -34,5 +40,3 @@ export interface PagedResult<T> {
   pageSize: number;
   total: number;
 }
-
-

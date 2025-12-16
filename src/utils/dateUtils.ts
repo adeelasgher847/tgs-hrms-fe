@@ -4,9 +4,9 @@
  * @returns Formatted date string in "DD/MMM/YYYY" format, or the original string if formatting fails
  */
 export const formatDate = (
-  dateInput: string | Date | null | undefined | unknown
+  dateInput: unknown
 ): string => {
-  if (!dateInput) return 'N/A';
+  if (dateInput === null || typeof dateInput === 'undefined' || dateInput === '') return 'N/A';
 
   try {
     let date: Date;
@@ -14,13 +14,19 @@ export const formatDate = (
     if (dateInput instanceof Date) {
       date = dateInput;
     } else if (
-      dateInput &&
       typeof dateInput === 'object' &&
-      typeof dateInput.toDate === 'function'
+      dateInput !== null &&
+      typeof (dateInput as { toDate?: unknown })?.toDate === 'function'
     ) {
-      date = dateInput.toDate();
+      // dayjs-like object or similar
+      const maybeToDate = (dateInput as { toDate?: unknown }).toDate;
+      if (typeof maybeToDate === 'function') {
+        date = (maybeToDate as () => Date).call(dateInput);
+      } else {
+        date = new Date(String(dateInput));
+      }
     } else {
-      date = new Date(dateInput);
+      date = new Date(String(dateInput));
     }
     if (isNaN(date.getTime())) {
       return String(dateInput);

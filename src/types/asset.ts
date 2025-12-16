@@ -27,7 +27,11 @@ export interface AssetCategory {
   requestedItem?: string; // Specific item requested (subcategory)
 }
 
-export type AssetStatus = 'available' | 'assigned' | 'under_maintenance' | 'retired';
+export type AssetStatus =
+  | 'available'
+  | 'assigned'
+  | 'under_maintenance'
+  | 'retired';
 
 export interface AssetRequest {
   id: string;

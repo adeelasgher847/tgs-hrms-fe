@@ -27,7 +27,7 @@ import { getDefaultDashboardRoute } from '../../utils/permissions';
 import { useGoogleScript } from '../../hooks/useGoogleScript';
 import authApi from '../../api/authApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import signupApi from '../../api/signupApi';
 import { persistAuthSession } from '../../utils/authSession';
 import type { UserProfile } from '../../api/profileApi';
@@ -290,18 +290,61 @@ const Login: React.FC = () => {
         navigate(getDefaultDashboardRoute(role), { replace: true });
       }
     } catch (err: unknown) {
-      const error = err as {
-        response?: {
-          data?: {
-            field?: string;
-            message?: string;
-          };
-        };
-      };
-      const data = error?.response?.data ?? null;
-      if (data?.field === 'email') setEmailError(data.message || '');
-      else if (data?.field === 'password')
-        setPasswordError(data.message || '');
+      const error = err;
+      const data = (() => {
+        if (typeof error === 'object' && error !== null) {
+          const resp = (error as Record<string, unknown>)['response'];
+          if (typeof resp === 'object' && resp !== null) {
+            return (resp as Record<string, unknown>)['data'];
+          }
+        }
+        return null;
+      })();
+
+      // API may return different shapes: { field, message }, { errors: [{field, message}] }, or { message }
+      if (data && typeof data === 'object') {
+        const d = data as Record<string, unknown>;
+
+        const fieldVal = d['field'];
+        const messageVal = d['message'];
+
+        if (typeof fieldVal === 'string') {
+          const field = fieldVal;
+          const msg = typeof messageVal === 'string' ? messageVal : '';
+          if (field === 'email') setEmailError(msg);
+          else if (field === 'password') setPasswordError(msg);
+          else showError(msg || 'Login failed');
+        } else if (Array.isArray(d['errors'])) {
+          // Map multiple field errors to corresponding inputs
+          const errorsArr = d['errors'] as unknown[];
+          errorsArr.forEach(errItem => {
+            if (typeof errItem === 'object' && errItem !== null) {
+              const ei = errItem as Record<string, unknown>;
+              const ef = ei['field'];
+              const em = ei['message'];
+              if (ef === 'email' && typeof em === 'string') setEmailError(em);
+              else if (ef === 'password' && typeof em === 'string')
+                setPasswordError(em);
+            }
+          });
+          if (typeof messageVal === 'string') showError(messageVal);
+        } else if (typeof messageVal === 'string') {
+          const msg = messageVal;
+          if (/password|credential|invalid/i.test(msg)) {
+            setPasswordError(msg);
+          } else if (/email/i.test(msg)) {
+            setEmailError(msg);
+          } else {
+            showError(msg);
+          }
+        } else {
+          showError(
+            'Login failed. Please check your credentials and try again.'
+          );
+        }
+      } else {
+        showError('Login failed. Please check your credentials and try again.');
+      }
     } finally {
       setIsLoading(false);
     }

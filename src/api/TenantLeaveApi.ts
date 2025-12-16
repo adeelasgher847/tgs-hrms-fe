@@ -209,10 +209,15 @@ export const TenantLeaveApi = {
   getTenantDetailsById: async (
     tenantId: string
   ): Promise<TenantDetails | null> => {
-    const { data } = await axiosInstance.get<TenantDetails | null>(
-      `/system/tenants/${tenantId}`
-    );
-    return data ?? null;
+    try {
+      const { data } = await axiosInstance.get<TenantDetails | null>(
+        `/system/tenants/${tenantId}`
+      );
+      return data ?? null;
+    } catch (error) {
+      console.error('Failed to fetch tenant details:', error);
+      return null;
+    }
   },
 
   getSystemLeaveSummary: async (
