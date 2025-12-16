@@ -3,7 +3,7 @@ import LeaveForm from './LeaveForm';
 import LeaveHistory from './LeaveHistory';
 import LeaveApprovalDialog from './LeaveApprovalDialog';
 import ManagerResponseDialog from './ManagerResponseDialog';
-import { leaveApi } from '../../api/leaveApi';
+import { leaveApi, type CreateLeaveRequest } from '../../api/leaveApi';
 import type { Leave } from '../../type/levetypes';
 import { getCurrentUser, getUserName, getUserRole } from '../../utils/auth';
 import { normalizeRole } from '../../utils/permissions';
@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import HistoryIcon from '@mui/icons-material/History';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 import { PAGINATION } from '../../constants/appConstants';
@@ -299,7 +299,8 @@ const LeaveRequestPage = () => {
   };
 
   // Handle apply leave (called after successful API in form)
-  const handleApply = async () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleApply = async (_data: CreateLeaveRequest) => {
     try {
       showSuccess('Leave applied successfully!');
       await loadLeaves();
@@ -424,75 +425,69 @@ const LeaveRequestPage = () => {
 
   // Fetch all leaves for export
   const _fetchAllLeavesForExport = useCallback(async (): Promise<Leave[]> => {
-    // eslint-disable-next-line no-useless-catch
-    try {
-      const allLeaves: Leave[] = [];
-      let pageNum = 1;
-      let totalPagesLocal = 1;
-      do {
-        let res;
-        if (
-          ['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role)
-        ) {
-          res = await leaveApi.getAllLeaves(pageNum);
-        } else if (role === 'manager') {
-          res =
-            viewMode === 'you'
-              ? await leaveApi.getUserLeaves(currentUserId, pageNum)
-              : await leaveApi.getTeamLeaves(pageNum);
-        } else {
-          res = await leaveApi.getUserLeaves(currentUserId, pageNum);
-        }
-        totalPagesLocal = res.totalPages || 1;
-        allLeaves.push(
-          ...res.items.map((leave): Leave => {
-            const leaveRec = leave as unknown as Record<string, unknown>;
-            const employeeId = String(
-              (leaveRec.employee as Record<string, unknown> | undefined)?.id ||
-                (leaveRec.user as Record<string, unknown> | undefined)?.id ||
-                (leaveRec.employeeId as string | undefined) ||
-                ''
-            );
+    const allLeaves: Leave[] = [];
+    let pageNum = 1;
+    let totalPagesLocal = 1;
+    do {
+      let res;
+      if (
+        ['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role)
+      ) {
+        res = await leaveApi.getAllLeaves(pageNum);
+      } else if (role === 'manager') {
+        res =
+          viewMode === 'you'
+            ? await leaveApi.getUserLeaves(currentUserId, pageNum)
+            : await leaveApi.getTeamLeaves(pageNum);
+      } else {
+        res = await leaveApi.getUserLeaves(currentUserId, pageNum);
+      }
+      totalPagesLocal = res.totalPages || 1;
+      allLeaves.push(
+        ...res.items.map((leave): Leave => {
+          const leaveRec = leave as unknown as Record<string, unknown>;
+          const employeeId = String(
+            (leaveRec.employee as Record<string, unknown> | undefined)?.id ||
+              (leaveRec.user as Record<string, unknown> | undefined)?.id ||
+              (leaveRec.employeeId as string | undefined) ||
+              ''
+          );
 
-            const r = leaveRec.remarks;
-            const remarks =
-              r === null || typeof r === 'undefined' ? undefined : String(r);
+          const r = leaveRec.remarks;
+          const remarks =
+            r === null || typeof r === 'undefined' ? undefined : String(r);
 
-            const rawStatus = String(leaveRec.status ?? '').toLowerCase();
-            let normalizedStatus: import('../../type/levetypes').LeaveStatus =
-              'pending';
-            if (
-              rawStatus === 'pending' ||
-              rawStatus === 'approved' ||
-              rawStatus === 'rejected' ||
-              rawStatus === 'withdrawn'
-            ) {
-              normalizedStatus =
-                rawStatus as import('../../type/levetypes').LeaveStatus;
-            } else if (rawStatus === 'cancelled') {
-              // Backend uses 'cancelled' sometimes — map to 'rejected'
-              normalizedStatus = 'rejected';
-            }
+          const rawStatus = String(leaveRec.status ?? '').toLowerCase();
+          let normalizedStatus: import('../../type/levetypes').LeaveStatus =
+            'pending';
+          if (
+            rawStatus === 'pending' ||
+            rawStatus === 'approved' ||
+            rawStatus === 'rejected' ||
+            rawStatus === 'withdrawn'
+          ) {
+            normalizedStatus =
+              rawStatus as import('../../type/levetypes').LeaveStatus;
+          } else if (rawStatus === 'cancelled') {
+            // Backend uses 'cancelled' sometimes — map to 'rejected'
+            normalizedStatus = 'rejected';
+          }
 
-            return {
-              ...leave,
-              employeeId,
-              leaveTypeId: leaveRec.leaveTypeId
-                ? String(leaveRec.leaveTypeId)
-                : '',
-              remarks,
-              status: normalizedStatus,
-            } as Leave;
-          })
-        );
-        pageNum++;
-      } while (pageNum <= totalPagesLocal);
+          return {
+            ...leave,
+            employeeId,
+            leaveTypeId: leaveRec.leaveTypeId
+              ? String(leaveRec.leaveTypeId)
+              : '',
+            remarks,
+            status: normalizedStatus,
+          } as Leave;
+        })
+      );
+      pageNum++;
+    } while (pageNum <= totalPagesLocal);
 
-      return Array.from(new Map(allLeaves.map(l => [l.id, l])).values());
-    } catch (error) {
-      // Propagate error to callers (export handlers) to show a UI message
-      throw error;
-    }
+    return Array.from(new Map(allLeaves.map(l => [l.id, l])).values());
   }, [currentUserId, role, viewMode]);
 
   if (initialLoading)

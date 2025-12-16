@@ -16,7 +16,7 @@ import Navbar from './Navbar';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import '../../layout.css';
 import EmployeeInviteModal from '../Employee/EmployeeInviteModal';
-import RouteErrorBoundary from '../Common/RouteErrorBoundary';
+import RouteErrorBoundary from '../common/RouteErrorBoundary';
 
 import { useUser } from '../../hooks/useUser';
 import { useTheme } from '../../theme/hooks';
@@ -153,24 +153,28 @@ const Layout = () => {
       sidebarOpen && (
         <Box
           ref={sidebarRef}
-          className='sidebar'
           sx={{
-            backgroundColor: 'var(--dark-color)',
-            color: 'white',
-            padding: '20px',
+            backgroundColor: 'var(--white-color)',
+            color: 'var(--text-color)',
+            padding: 0,
             display: 'flex',
             flexDirection: 'column',
             direction: rtlMode ? 'rtl' : 'ltr',
-            height: { xs: '100vh', lg: 'calc(100vh - 50px)' },
-            width: '270px',
-            position: { xs: 'absolute', lg: 'fixed' },
+            height: { xs: '100vh', lg: 'auto' },
+            width: { xs: '240px', lg: '280px' },
+            position: { xs: 'absolute', lg: 'relative' },
             top: 0,
-            left: rtlMode ? 'auto' : 0,
-            right: rtlMode ? 0 : 'auto',
-            m: { xs: 0, lg: 3 },
-            mr: 0,
-            borderRadius: { xs: 0, lg: '17.6px' },
-            zIndex: 1000,
+            left: rtlMode ? 'auto' : { xs: 0, lg: 'auto' },
+            right: rtlMode ? { xs: 0, lg: 'auto' } : 'auto',
+            mt: { xs: 0, lg: 2.5 },
+            ml: { xs: 0, lg: 2.5 },
+            mb: { xs: 0, lg: 2.5 },
+            borderRadius: {
+              xs: rtlMode ? '0 20px 20px 0' : '20px 0 0 20px',
+              lg: '20px',
+            },
+            zIndex: { xs: 1000, lg: 'auto' },
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           }}
         >
           <Sidebar
@@ -193,8 +197,8 @@ const Layout = () => {
           display: 'flex',
           alignItems: 'center',
           flexShrink: 0,
-          mt: 3,
-          mb: 3,
+          px: { xs: 2, lg: 3 },
+          pt: { xs: 2, lg: 0 },
         }}
       >
         <Navbar
@@ -221,70 +225,90 @@ const Layout = () => {
   return (
     <Box
       sx={{
+        minHeight: '100vh',
+        width: '100%',
         display: 'flex',
-        height: '100vh',
-        fontFamily: 'sans-serif',
-        overflow: 'hidden',
+        justifyContent: 'center',
+        backgroundColor: 'var(--white-100-color)',
+        py: { xs: 2, md: 0 },
       }}
     >
-      {sidebarOpen && !isLargeScreen && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 999,
-          }}
-          onClick={closeSidebar}
-        />
-      )}
-
-      {/* Sidebar (rendered once, static) */}
-      {MemoizedSidebar}
-
-      {/* Main Area */}
       <Box
-        className='main-area content'
         sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'auto',
-          height: '100%',
-          transition: 'margin 0.3s ease',
-          marginLeft: isLargeScreen && sidebarOpen && !rtlMode ? '290px' : 0,
-          marginRight: isLargeScreen && sidebarOpen && rtlMode ? '274px' : 0,
           width: '100%',
-          direction: rtlMode ? 'rtl' : 'ltr',
+          maxWidth: '1440px',
+          display: 'flex',
+          fontFamily: 'SF Pro Rounded, sans-serif',
+          overflow: 'hidden',
+          borderRadius: '20px',
+          height: { xs: 'auto', md: '100vh' },
         }}
       >
-        {/* Navbar (static) */}
-        {MemoizedNavbar}
+        {sidebarOpen && !isLargeScreen && (
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 999,
+            }}
+            onClick={closeSidebar}
+          />
+        )}
 
-        {/* Scrollable Outlet */}
+        {/* Sidebar (rendered once, static) */}
+        {MemoizedSidebar}
+
+        {/* Main Area */}
         <Box
-          component='main'
-          sx={{ flex: 1, px: { xs: '7px', md: '24px' }, py: 3 }}
+          className='main-area content'
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'auto',
+            height: { xs: 'auto', md: '100vh' },
+            transition: 'margin 0.3s ease',
+            marginLeft: 0,
+            marginRight: 0,
+            width: '100%',
+            direction: rtlMode ? 'rtl' : 'ltr',
+            backgroundColor: 'var(--white-100-color)',
+          }}
         >
-          {isDashboardRoute && (loading || !user || !isAllowed) ? (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          ) : (
-            <RouteErrorBoundary>
-              <Outlet context={outletContext} />
-            </RouteErrorBoundary>
-          )}
+          {/* Navbar (static) */}
+          {MemoizedNavbar}
+
+          {/* Scrollable Outlet */}
+          <Box
+            component='main'
+            sx={{
+              flex: 1,
+              px: { xs: 2, md: 3 },
+              py: { xs: 2, md: 3 },
+              backgroundColor: 'var(--white-100-color)',
+            }}
+          >
+            {isDashboardRoute && (loading || !user || !isAllowed) ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            ) : (
+              <RouteErrorBoundary>
+                <Outlet context={outletContext} />
+              </RouteErrorBoundary>
+            )}
+          </Box>
         </Box>
       </Box>
     </Box>

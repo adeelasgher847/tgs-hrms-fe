@@ -37,7 +37,7 @@ import {
   type FrontendDepartment,
 } from '../../api/departmentApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import {
   isSystemAdmin as isSystemAdminFn,
   isHRAdmin as isHRAdminFn,

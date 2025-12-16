@@ -47,7 +47,7 @@ import { isSystemAdmin } from '../../utils/auth';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { PAGINATION } from '../../constants/appConstants';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 
 type LeaveStatus = '' | 'pending' | 'approved' | 'rejected' | 'withdrawn';
 
@@ -816,7 +816,12 @@ const CrossTenantLeaveManagement: React.FC = () => {
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ minHeight: '100vh' }} onKeyDown={handleKeyDown}>
         <Paper sx={{ p: 3, mb: 3, boxShadow: 'none' }}>
-          <Typography variant='h6' fontWeight={700} mb={2}>
+          <Typography
+            variant='h6'
+            fontWeight={700}
+            fontSize={{ xs: '32px', lg: '48px' }}
+            mb={2}
+          >
             Tenant Leave Management
           </Typography>
           <Divider sx={{ mb: 2 }} />

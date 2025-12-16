@@ -26,8 +26,8 @@ import { departmentApiService } from '../../api/departmentApi';
 import { designationApiService } from '../../api/designationApi';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
-import AppSelect from '../Common/AppSelect';
-import AppTable from '../Common/AppTable';
+import AppSelect from '../common/AppSelect';
+import AppTable from '../common/AppTable';
 
 import { PAGINATION } from '../../constants/appConstants';
 
@@ -329,7 +329,7 @@ const BenefitReport: React.FC = () => {
       >
         <Typography
           variant='h4'
-          fontSize={{ xs: '25px', sm: '34px' }}
+          fontSize={{ xs: '32px', lg: '48px' }}
           fontWeight={600}
           gutterBottom
           mb={0}

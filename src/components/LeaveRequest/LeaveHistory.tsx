@@ -1,9 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Paper,
@@ -26,6 +24,7 @@ import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
 import { PAGINATION } from '../../constants/appConstants';
+import AppTable from '../common/AppTable';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
@@ -343,8 +342,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         </Box>
       ) : (
         <Paper elevation={1} sx={{ boxShadow: 'none' }}>
-          <TableContainer>
-            <Table>
+          <AppTable>
               <TableHead>
                 <TableRow>
                   {!hideNameColumn && (isAdmin || isManager || showNames) && (
@@ -548,8 +546,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
-          </TableContainer>
+          </AppTable>
         </Paper>
       )}
 

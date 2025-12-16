@@ -158,8 +158,6 @@ export const SystemTenantApi = {
       console.error(` Failed to fetch tenant details (id=${id}):`, error);
       throw error;
     }
-
-    return detail;
   },
 
   create: async (data: {

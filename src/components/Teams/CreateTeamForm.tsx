@@ -16,7 +16,7 @@ import {
 import { useLanguage } from '../../hooks/useLanguage';
 import type { CreateTeamDto, Manager } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
-import AppButton from '../Common/AppButton';
+import AppButton from '../common/AppButton';
 import { COLORS } from '../../constants/appConstants';
 
 interface CreateTeamFormProps {

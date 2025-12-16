@@ -13,7 +13,6 @@ import {
 } from '../../utils/roleUtils';
 
 import {
-  AppBar,
   Box,
   Toolbar,
   IconButton,
@@ -26,25 +25,19 @@ import {
   ListItemIcon,
   Button,
   Paper,
-  ClickAwayListener,
-  List,
-  ListItemButton,
-  ListItemText,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import UserAvatar from '../Common/UserAvatar';
+import UserAvatar from '../common/UserAvatar';
 import MenuIcon from '@mui/icons-material/Menu';
-import SearchIcon from '@mui/icons-material/Search';
-import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
-import AddIcon from '@mui/icons-material/Add';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
+import { Icons } from '../../assets/icons';
 import PersonIcon from '@mui/icons-material/Person';
-import InventoryIcon from '@mui/icons-material/Inventory';
 import GroupIcon from '@mui/icons-material/Group';
-import FolderIcon from '@mui/icons-material/Folder';
 import TeamMembersAvatar from '../Teams/TeamMembersAvatar';
 import TeamMembersModal from '../Teams/TeamMembersModal';
 import employeeApi from '../../api/employeeApi';
@@ -74,34 +67,28 @@ const labels = {
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
-  borderRadius: '6px',
-  backgroundColor: '#efefef',
-  height: '44px',
+  borderRadius: '16px',
+  backgroundColor: 'var(--primary-color)',
+  height: '36px',
   display: 'flex',
   alignItems: 'center',
-  paddingLeft: theme.spacing(1),
+  paddingLeft: theme.spacing(1.5),
+  paddingRight: theme.spacing(1),
   width: '100%',
   [theme.breakpoints.up('md')]: {
-    width: '300px',
+    width: '400px',
     flexGrow: 0,
+    height: '44px',
   },
 }));
 
-const SearchIconWrapper = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: '#000',
-  marginRight: theme.spacing(1),
-}));
-
 const StyledInputBase = styled(InputBase)(() => ({
-  fontSize: '16px',
-  width: '100%',
+  fontSize: 'var(--body-font-size)',
+  flex: 1,
   '& .MuiInputBase-input': {
-    padding: '0 !important',
-    '&::placeholder': {
-      color: '#b3b3b3',
+    padding: 0,
+    '::placeholder': {
+      color: 'var(--dark-grey-color)',
       opacity: 1,
     },
   },
@@ -324,6 +311,8 @@ const Navbar: React.FC<NavbarProps> = ({
   onToggleSidebar,
   onOpenInviteModal,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [teamMembersModalOpen, setTeamMembersModalOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -525,7 +514,8 @@ const Navbar: React.FC<NavbarProps> = ({
   }, [searchQuery]);
 
   // Handle search input change
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
   };
 
@@ -552,7 +542,8 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   // Handle keyboard navigation in search
-  const handleSearchKeyDown = (
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _handleSearchKeyDown = (
     event: React.KeyboardEvent<HTMLInputElement>
   ) => {
     if (event.key === 'Enter') {
@@ -578,7 +569,8 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   // Close search results when clicking outside
-  const handleClickAway = (event: MouseEvent | TouchEvent) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _handleClickAway = (event: MouseEvent | TouchEvent) => {
     if (
       searchContainerRef.current &&
       !searchContainerRef.current.contains(event.target as Node)
@@ -597,342 +589,258 @@ const Navbar: React.FC<NavbarProps> = ({
   // Language context available if needed
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar
-        position='static'
+    <Box
+      sx={{
+        flexGrow: 1,
+        backgroundColor: 'var(--white-100-color)',
+        py: { xs: 0, md: 2 },
+      }}
+    >
+      <Paper
         elevation={0}
         sx={{
-          backgroundColor: 'transparent',
-          color: darkMode ? 'white' : 'black',
+          backgroundColor: { xs: 'transparent', md: 'var(--white-color)' },
+          borderRadius: { xs: 0, md: '20px' },
+          boxShadow: { xs: 'none', md: '0 1px 3px rgba(0,0,0,0.1)' },
+          px: { xs: 1.5, md: 3 },
+          py: { xs: 0.75, md: 1.5 },
         }}
       >
         <Toolbar
           disableGutters
           sx={{
-            px: { xs: 1, md: 3 },
-            gap: '10px',
-            display: { xs: 'block', sm: 'flex' },
-            justifyContent: { xs: 'center', sm: 'space-between' },
-            flexWrap: 'wrap',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: { xs: 1, md: 2 },
+            minHeight: 'auto',
           }}
         >
-          <Box sx={{ flexGrow: { xs: 1, sm: 0 }, minWidth: 0 }}>
-            <ClickAwayListener onClickAway={handleClickAway}>
-              <Box
-                ref={searchContainerRef}
+          {/* Left Side - Search (Desktop) / Menu Toggle (Mobile) */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Mobile Menu Toggle - Left Side */}
+            <IconButton
+              onClick={onToggleSidebar}
+              sx={{
+                display: { xs: 'flex', lg: 'none' },
+                color: 'var(--text-color)',
+                padding: { xs: '6px', md: '8px' },
+              }}
+              aria-label='Toggle sidebar menu'
+              aria-expanded='false'
+            >
+              <MenuIcon
+                sx={{ fontSize: { xs: '20px', md: '24px' } }}
+                aria-hidden='true'
+              />
+            </IconButton>
+
+            {/* Desktop Search */}
+            <Box
+              sx={{
+                display: { xs: 'none', md: 'flex' },
+                alignItems: 'center',
+                gap: 1,
+                flex: 1,
+                maxWidth: '300px',
+              }}
+            >
+              <Search>
+                <StyledInputBase
+                  placeholder={lang.search}
+                  inputProps={{ 'aria-label': 'search' }}
+                  sx={{
+                    color: 'var(--text-color)',
+                    '& input': {
+                      backgroundColor: 'transparent',
+                    },
+                  }}
+                />
+              </Search>
+              <IconButton
                 sx={{
-                  position: 'relative',
-                  width: '100%',
+                  backgroundColor: 'var(--primary-dark-color)',
+                  color: 'var(--white-color)',
+                  borderRadius: '16px',
+                  width: { xs: '36px', md: '44px' },
+                  height: { xs: '36px', md: '44px' },
+                  minWidth: { xs: '36px', md: '44px' },
+                  '&:hover': {
+                    backgroundColor: 'var(--primary-light-color)',
+                  },
                 }}
+                aria-label='Search'
               >
                 <Box
+                  component='img'
+                  src={Icons.search}
+                  alt='Search'
                   sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    backgroundColor: darkMode ? '#262727' : '#efefef',
-                    borderRadius: '6px',
-                    px: 1,
-                    height: '44px',
+                    width: { xs: 16, md: 20 },
+                    height: { xs: 16, md: 20 },
+                    filter: 'brightness(0) saturate(100%) invert(1)',
                   }}
-                >
-                  <Search
-                    sx={{
-                      backgroundColor: 'transparent',
-                      height: '100%',
-                      paddingLeft: 0,
-                    }}
-                  >
-                    <SearchIconWrapper>
-                      <SearchIcon
-                        sx={{
-                          color: darkMode ? '#8f8f8f' : '#000',
-                        }}
-                      />
-                    </SearchIconWrapper>
-                    <StyledInputBase
-                      inputRef={searchInputRef}
-                      fullWidth
-                      placeholder={lang.search}
-                      value={searchQuery}
-                      onChange={handleSearchChange}
-                      onKeyDown={handleSearchKeyDown}
-                      onFocus={() => {
-                        if (searchQuery.trim()) {
-                          setShowSearchResults(true);
-                        }
-                      }}
-                      onClick={e => {
-                        e.stopPropagation();
-                        if (searchQuery.trim()) {
-                          setShowSearchResults(true);
-                        }
-                      }}
-                      inputProps={{
-                        'aria-label': 'search',
-                        type: 'text',
-                        autoComplete: 'off',
-                      }}
-                      sx={{
-                        transition: 'all 0.3s ease-in-out',
-                        color: darkMode ? 'white' : 'black',
-                        width: '100%',
-                        flex: 1,
-                        minWidth: 0,
-                        cursor: 'text',
-                        '& .MuiInputBase-input': {
-                          padding: '0 !important',
-                          height: '43px',
-                          backgroundColor: 'transparent',
-                          cursor: 'text',
-                          '&::placeholder': {
-                            color: darkMode ? '#8f8f8f' : '#b3b3b3',
-                            opacity: 1,
-                          },
-                        },
-                        '&:focus-within': {
-                          '& .MuiInputBase-input': {
-                            height: '45px',
-                          },
-                        },
-                      }}
-                    />
-                  </Search>
-
-                  <Box
-                    sx={{
-                      display: { xs: 'block', sm: 'none' },
-                      borderRadius: '6px',
-                      p: '6px',
-                    }}
-                  >
-                    <IconButton
-                      onClick={handleOpenTeamMembersModal}
-                      aria-label='Open team members modal'
-                      size='small'
-                      sx={{
-                        p: '6px',
-                      }}
-                    >
-                      <AddIcon
-                        sx={{
-                          color: '#555',
-                          fontSize: '26px',
-                          width: '31px',
-                          height: '31px',
-                        }}
-                        aria-hidden='true'
-                      />
-                    </IconButton>
-                  </Box>
-                </Box>
-
-                {/* Search Results Dropdown */}
-                {(showSearchResults || isSearching) && (
-                  <Paper
-                    elevation={4}
-                    sx={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: 0,
-                      right: 0,
-                      mt: 1,
-                      maxHeight: '400px',
-                      overflow: 'auto',
-                      zIndex: 1300,
-                      backgroundColor: darkMode ? '#1e1e1e' : '#fff',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                    }}
-                  >
-                    {isSearching ? (
-                      <Box sx={{ py: 3, px: 2, textAlign: 'center' }}>
-                        <Typography
-                          sx={{
-                            fontSize: '14px',
-                            color: darkMode ? '#8f8f8f' : '#666',
-                          }}
-                        >
-                          Searching...
-                        </Typography>
-                      </Box>
-                    ) : searchResults.length > 0 ? (
-                      <List sx={{ p: 0 }}>
-                        {searchResults.map((result, index) => {
-                          const IconComponent =
-                            result.icon ||
-                            (result.type === 'route' ? (
-                              <FolderIcon fontSize='small' />
-                            ) : result.type === 'employee' ? (
-                              <PersonIcon fontSize='small' />
-                            ) : result.type === 'team' ? (
-                              <GroupIcon fontSize='small' />
-                            ) : result.type === 'asset' ? (
-                              <InventoryIcon fontSize='small' />
-                            ) : (
-                              <FolderIcon fontSize='small' />
-                            ));
-
-                          return (
-                            <ListItemButton
-                              key={`${result.type}-${result.id || result.path}-${index}`}
-                              selected={index === selectedResultIndex}
-                              onClick={() => handleSearchResultClick(result)}
-                              sx={{
-                                py: 1.5,
-                                px: 2,
-                                '&:hover': {
-                                  backgroundColor: darkMode
-                                    ? 'rgba(255, 255, 255, 0.1)'
-                                    : 'rgba(0, 0, 0, 0.04)',
-                                },
-                                '&.Mui-selected': {
-                                  backgroundColor: darkMode
-                                    ? 'rgba(255, 255, 255, 0.15)'
-                                    : 'rgba(0, 0, 0, 0.08)',
-                                  '&:hover': {
-                                    backgroundColor: darkMode
-                                      ? 'rgba(255, 255, 255, 0.2)'
-                                      : 'rgba(0, 0, 0, 0.12)',
-                                  },
-                                },
-                              }}
-                            >
-                              <ListItemIcon
-                                sx={{
-                                  minWidth: 36,
-                                  color: darkMode ? '#8f8f8f' : '#666',
-                                }}
-                              >
-                                {IconComponent}
-                              </ListItemIcon>
-                              <ListItemText
-                                primary={
-                                  <Typography
-                                    sx={{
-                                      fontSize: '14px',
-                                      fontWeight: 500,
-                                      color: darkMode ? '#fff' : '#000',
-                                    }}
-                                  >
-                                    {result.label}
-                                  </Typography>
-                                }
-                                secondary={
-                                  <Typography
-                                    sx={{
-                                      fontSize: '12px',
-                                      color: darkMode ? '#8f8f8f' : '#666',
-                                      mt: 0.5,
-                                    }}
-                                  >
-                                    {result.subtitle || result.category}
-                                  </Typography>
-                                }
-                              />
-                            </ListItemButton>
-                          );
-                        })}
-                      </List>
-                    ) : null}
-                  </Paper>
-                )}
-
-                {/* No Results Message */}
-                {showSearchResults &&
-                  searchQuery.trim() &&
-                  searchResults.length === 0 && (
-                    <Paper
-                      elevation={4}
-                      sx={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        mt: 1,
-                        zIndex: 1300,
-                        backgroundColor: darkMode ? '#1e1e1e' : '#fff',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                        p: 2,
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                          fontSize: '14px',
-                          color: darkMode ? '#8f8f8f' : '#666',
-                          textAlign: 'center',
-                        }}
-                      >
-                        No results found
-                      </Typography>
-                    </Paper>
-                  )}
-              </Box>
-            </ClickAwayListener>
+                />
+              </IconButton>
+            </Box>
           </Box>
 
           {/* Right Side */}
           <Box
             sx={{
               display: 'flex',
-              justifyContent: 'flex-end',
               alignItems: 'center',
-              mt: { xs: 1, sm: 0 },
+              gap: { xs: 0.5, lg: 1 },
             }}
           >
+            <Button
+              variant='text'
+              size='small'
+              onClick={e => setLangAnchorEl(e.currentTarget)}
+              sx={{
+                minWidth: 0,
+                px: { xs: 1, md: 1.5 },
+                py: { xs: 0.5, md: 1 },
+                color: 'var(--text-color)',
+                fontWeight: 600,
+                fontSize: { xs: '12px', md: 'var(--body-font-size)' },
+              }}
+              aria-label={`Current language: ${language === 'en' ? 'English' : 'Arabic'}. Click to change language`}
+              aria-haspopup='true'
+              aria-expanded={langMenuOpen}
+            >
+              {language === 'en' ? 'EN' : 'عربي'}
+            </Button>
+
+            {/* Team Members Avatar */}
             <Box
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: { xs: 3, md: 2 },
+                display: { xs: 'none', md: 'block' },
               }}
             >
-              {/* <IconButton
-                sx={{
-                  backgroundColor: '#4b4f73',
-                  color: 'white',
-                  width: 28,
-                  height: 28,
-                }}
-              >
-                <InfoOutlinedIcon fontSize='small' />
-              </IconButton> */}
-              <Button
-                variant='text'
-                size='small'
-                onClick={e => setLangAnchorEl(e.currentTarget)}
-                sx={{
-                  minWidth: 0,
-                  px: 0,
-                  color: textColor,
-                  fontWeight: 600,
-                }}
-                aria-label={`Current language: ${language === 'en' ? 'English' : 'Arabic'}. Click to change language`}
-                aria-haspopup='true'
-                aria-expanded={langMenuOpen}
-              >
-                {language === 'en' ? 'EN' : 'عربي'}
-              </Button>
-              <TeamMembersAvatar
-                maxAvatars={5}
-                onOpenInviteModal={onOpenInviteModal}
-                darkMode={darkMode}
-              />
+              <TeamMembersAvatar maxAvatars={5} darkMode={darkMode} />
+            </Box>
 
+            {/* Mobile Team Members Button */}
+            <IconButton
+              onClick={handleOpenTeamMembersModal}
+              sx={{
+                display: { xs: 'flex', md: 'none' },
+                backgroundColor: {
+                  xs: 'transparent',
+                  md: 'var(--white-color)',
+                },
+                borderRadius: 'var(--border-radius-lg)',
+                p: { xs: 0.75, md: 1 },
+              }}
+              aria-label='Open team members modal'
+            >
+              <GroupOutlinedIcon
+                sx={{
+                  color: 'var(--text-color)',
+                  fontSize: { xs: '18px', md: '24px' },
+                }}
+              />
+            </IconButton>
+
+            <Paper
+              elevation={0}
+              sx={{
+                backgroundColor: 'var(--light-grey-200-color)',
+                borderRadius: '16px',
+                p: { xs: 0.25, md: 0.5 },
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <IconButton
-                sx={{ xs: { padding: '8px' }, md: { padding: '0px' } }}
+                sx={{
+                  padding: { xs: '6px', md: '8px' },
+                }}
                 aria-label='Notifications'
                 aria-describedby='notifications-badge'
               >
-                <Badge variant='dot' color='error' id='notifications-badge'>
-                  <NotificationsNoneOutlinedIcon
-                    sx={{ color: textColor }}
+                <Badge
+                  variant='dot'
+                  sx={{
+                    '& .MuiBadge-dot': {
+                      backgroundColor: 'var(--secondary-color)',
+                      width: { xs: 6, md: 8 },
+                      height: { xs: 6, md: 8 },
+                    },
+                  }}
+                  id='notifications-badge'
+                >
+                  <Box
+                    component='img'
+                    src={Icons.notification}
+                    alt='Notifications'
+                    sx={{
+                      width: { xs: 18, md: 24 },
+                      height: { xs: 18, md: 24 },
+                      filter: 'brightness(0) saturate(100%)',
+                    }}
                     aria-hidden='true'
                   />
                 </Badge>
               </IconButton>
+            </Paper>
 
+            <Divider
+              orientation='vertical'
+              flexItem
+              sx={{
+                height: { xs: '32px', md: '40px' },
+                alignSelf: 'center',
+                borderColor: 'var(--light-grey-color)',
+                display: { xs: 'flex', md: 'flex' },
+              }}
+            />
+
+            {/* User Profile */}
+            <Paper
+              elevation={0}
+              sx={{
+                backgroundColor: {
+                  xs: 'transparent',
+                  md: 'var(--white-color)',
+                },
+                borderRadius: 'var(--border-radius-lg)',
+                px: { xs: 0, md: 2 },
+                py: { xs: 0, md: 1 },
+                display: 'flex',
+                alignItems: 'center',
+                gap: { xs: 0.75, md: 1.5 },
+              }}
+            >
+              <IconButton
+                onClick={handleMenuOpen}
+                sx={{ p: 0 }}
+                aria-label={`User menu for ${user ? `${user.first_name} ${user.last_name}` : 'user'}`}
+                aria-haspopup='true'
+                aria-expanded={open}
+              >
+                {user ? (
+                  <UserAvatar
+                    user={user}
+                    size={isMobile ? 32 : 40}
+                    clickable={false}
+                  />
+                ) : (
+                  <img
+                    src='./avatar.png'
+                    alt=''
+                    aria-hidden='true'
+                    style={{
+                      width: isMobile ? 32 : 40,
+                      height: isMobile ? 32 : 40,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                    }}
+                  />
+                )}
+              </IconButton>
               <Box
                 sx={{
                   display: 'flex',
@@ -941,124 +849,136 @@ const Navbar: React.FC<NavbarProps> = ({
                 }}
               >
                 <Typography
-                  variant='subtitle2'
-                  sx={{ fontWeight: 600, fontSize: '14px' }}
-                  color={textColor}
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: {
+                      xs: '11px',
+                      sm: '12px',
+                      md: 'var(--body-font-size)',
+                    },
+                    color: 'var(--black-color)',
+                    lineHeight: 1.2,
+                  }}
                 >
                   {user ? `${user.first_name} ${user.last_name}` : 'User'}
                 </Typography>
-                <Typography variant='caption' color={textColor}>
+                <Typography
+                  sx={{
+                    fontSize: {
+                      xs: '9px',
+                      sm: '10px',
+                      md: 'var(--label-font-size)',
+                    },
+                    color: 'var(--dark-grey-500-color)',
+                    lineHeight: 1.2,
+                    fontWeight: 400,
+                  }}
+                >
                   {getRoleDisplayName(user?.role)}
                 </Typography>
               </Box>
-              <IconButton
-                onClick={handleMenuOpen}
-                aria-label={`User menu for ${user ? `${user.first_name} ${user.last_name}` : 'user'}`}
-                aria-haspopup='true'
-                aria-expanded={open}
-              >
-                {user ? (
-                  <UserAvatar user={user} size={50} clickable={false} />
-                ) : (
-                  <img
-                    src='./avatar.png'
-                    alt=''
-                    aria-hidden='true'
-                    style={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                    }}
-                  />
-                )}
-              </IconButton>
-              {/* Language Toggle */}
-              {/* <ToggleButtonGroup
-                value={language}
-                exclusive
-                onChange={(_, value) => value && setLanguage(value)}
-                size='small'
-              >
-                <ToggleButton
-                  value='en'
-                  sx={{
-                    '&.Mui-selected': {
-                      backgroundColor: COLORS.PRIMARY,
-                      color: '#fff',
-                      '&:hover': {
-                        backgroundColor: COLORS.PRIMARY,
-                      },
-                    },
-                  }}
-                >
-                  EN
-                </ToggleButton>
+            </Paper>
+          </Box>
 
-                <ToggleButton
-                  value='ar'
-                  sx={{
-                    '&.Mui-selected': {
-                      backgroundColor: COLORS.PRIMARY,
-                      color: '#fff',
-                      '&:hover': {
-                        backgroundColor: COLORS.PRIMARY,
-                      },
-                    },
-                  }}
-                >
-                  عربي
-                </ToggleButton>
-              </ToggleButtonGroup> */}
-              <Menu
-                anchorEl={langAnchorEl}
-                open={langMenuOpen}
-                onClose={() => setLangAnchorEl(null)}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                PaperProps={{
-                  elevation: 4,
-                  sx: {
-                    borderRadius: '8px',
-                    minWidth: 80,
-                    p: 0,
-                  },
+          {/* Language Menu */}
+          <Menu
+            anchorEl={langAnchorEl}
+            open={langMenuOpen}
+            onClose={() => setLangAnchorEl(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{
+              elevation: 4,
+              sx: {
+                borderRadius: 'var(--border-radius-lg)',
+                minWidth: 80,
+                p: 0,
+              },
+            }}
+          >
+            {language === 'en' ? (
+              <MenuItem
+                onClick={() => {
+                  setLanguage('ar');
+                  setLangAnchorEl(null);
                 }}
               >
-                {language === 'en' ? (
-                  <MenuItem
-                    onClick={() => {
-                      setLanguage('ar');
-                      setLangAnchorEl(null);
-                    }}
-                  >
-                    عربي
-                  </MenuItem>
-                ) : (
-                  <MenuItem
-                    onClick={() => {
-                      setLanguage('en');
-                      setLangAnchorEl(null);
-                    }}
-                  >
-                    EN
-                  </MenuItem>
-                )}
-              </Menu>
-            </Box>
-            <Box>
-              <IconButton
-                onClick={onToggleSidebar}
-                sx={{ display: { xs: 'block', lg: 'none' } }}
-                aria-label='Toggle sidebar menu'
-                aria-expanded='false'
+                عربي
+              </MenuItem>
+            ) : (
+              <MenuItem
+                onClick={() => {
+                  setLanguage('en');
+                  setLangAnchorEl(null);
+                }}
               >
-                <MenuIcon sx={{ color: textColor }} aria-hidden='true' />
-              </IconButton>
-            </Box>
-          </Box>
+                EN
+              </MenuItem>
+            )}
+          </Menu>
         </Toolbar>
-      </AppBar>
+
+        {/* Mobile Search Bar - Below Navbar */}
+        <Box
+          sx={{
+            display: { xs: 'flex', md: 'none' },
+            alignItems: 'center',
+            mt: 1.5,
+            px: { xs: 0 },
+          }}
+        >
+          <Search
+            sx={{
+              flex: 1,
+              height: { xs: '36px', md: '44px' },
+              position: 'relative',
+            }}
+          >
+            <StyledInputBase
+              placeholder={lang.search}
+              inputProps={{ 'aria-label': 'search' }}
+              sx={{
+                color: 'var(--text-color)',
+                fontSize: { xs: '12px', md: 'var(--body-font-size)' },
+                pr: { xs: '40px', md: '16px' },
+                '& input': {
+                  backgroundColor: 'transparent',
+                },
+              }}
+            />
+            <IconButton
+              sx={{
+                position: 'absolute',
+                right: '4px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                backgroundColor: 'var(--primary-dark-color)',
+                color: 'var(--white-color)',
+                borderRadius: '12px',
+                width: { xs: '28px', md: '36px' },
+                height: { xs: '28px', md: '36px' },
+                minWidth: { xs: '28px', md: '36px' },
+                padding: 0,
+                '&:hover': {
+                  backgroundColor: 'var(--primary-light-color)',
+                },
+              }}
+              aria-label='Search'
+            >
+              <Box
+                component='img'
+                src={Icons.search}
+                alt='Search'
+                sx={{
+                  width: { xs: 14, md: 18 },
+                  height: { xs: 14, md: 18 },
+                  filter: 'brightness(0) saturate(100%) invert(1)',
+                }}
+              />
+            </IconButton>
+          </Search>
+        </Box>
+      </Paper>
 
       {/* Menu */}
       <Menu

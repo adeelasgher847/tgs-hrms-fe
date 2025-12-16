@@ -10,10 +10,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Paper,
@@ -23,7 +21,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import AppButton from '../Common/AppButton';
+import AppButton from '../common/AppButton';
+import AppTable from '../common/AppTable';
 
 import {
   Group as GroupIcon,
@@ -549,65 +548,61 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
               </Box>
 
               {selectedTeam.members.length > 0 ? (
-                <TableContainer component={Paper}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>{lang.members}</TableCell>
-                        <TableCell>{lang.designation}</TableCell>
-                        <TableCell>{lang.department}</TableCell>
-                        <TableCell>{lang.email}</TableCell>
-                        <TableCell>{lang.status}</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {selectedTeam.members.map(member => (
-                        <TableRow key={member.id}>
-                          <TableCell>
-                            <Box
+                <AppTable component={Paper}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>{lang.members}</TableCell>
+                      <TableCell>{lang.designation}</TableCell>
+                      <TableCell>{lang.department}</TableCell>
+                      <TableCell>{lang.email}</TableCell>
+                      <TableCell>{lang.status}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {selectedTeam.members.map(member => (
+                      <TableRow key={member.id}>
+                        <TableCell>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <Avatar
+                              src={member.user.profile_pic || undefined}
                               sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1,
+                                width: 32,
+                                height: 32,
+                                backgroundColor: generateAvatarColor(
+                                  member.user.name
+                                ),
                               }}
                             >
-                              <Avatar
-                                src={member.user.profile_pic || undefined}
-                                sx={{
-                                  width: 32,
-                                  height: 32,
-                                  backgroundColor: generateAvatarColor(
-                                    member.user.name
-                                  ),
-                                }}
-                              >
-                                {member.user.name.charAt(0)}
-                              </Avatar>
-                              <Typography variant='body2'>
-                                {member.user.name}
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell>{member.designation.title}</TableCell>
-                          <TableCell>{member.department.name}</TableCell>
-                          <TableCell>{member.user.email}</TableCell>
-                          <TableCell>
-                            <Chip
-                              label={member.status}
-                              size='small'
-                              color={
-                                member.status === 'active'
-                                  ? 'success'
-                                  : 'default'
-                              }
-                              sx={{ fontSize: '0.7rem', height: 20 }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                              {member.user.name.charAt(0)}
+                            </Avatar>
+                            <Typography variant='body2'>
+                              {member.user.name}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>{member.designation.title}</TableCell>
+                        <TableCell>{member.department.name}</TableCell>
+                        <TableCell>{member.user.email}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={member.status}
+                            size='small'
+                            color={
+                              member.status === 'active' ? 'success' : 'default'
+                            }
+                            sx={{ fontSize: '0.7rem', height: 20 }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </AppTable>
               ) : (
                 <Typography variant='body2' color='text.secondary'>
                   No members in this team.

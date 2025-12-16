@@ -121,11 +121,11 @@ const EmployeeGrowthChart: React.FC = () => {
     stroke: {
       curve: 'smooth',
       width: 3,
-      colors: ['#FF8C00'],
+      colors: ['#C61952'],
     },
     markers: {
       size: 5,
-      colors: ['#FF8C00'],
+      colors: ['#C61952'],
       strokeColors: '#fff',
       strokeWidth: 2,
       hover: {
@@ -135,12 +135,12 @@ const EmployeeGrowthChart: React.FC = () => {
     dataLabels: { enabled: false },
     xaxis: {
       categories: months,
-      labels: { style: { fontSize: '12px', colors: textColor } },
+      labels: { style: { fontSize: '11px', colors: textColor, fontStyle: 'normal' } },
     },
     yaxis: {
       labels: {
         formatter: val => `${val}`,
-        style: { fontSize: '12px', colors: textColor },
+        style: { fontSize: '11px', colors: textColor },
       },
     },
     legend: {
@@ -152,7 +152,7 @@ const EmployeeGrowthChart: React.FC = () => {
       borderColor: borderColor,
       padding: { top: 20, left: 10, right: 10, bottom: 10 },
     },
-    colors: ['#FF8C00'],
+    colors: ['#C61952'],
     tooltip: {
       theme: darkMode ? 'dark' : 'light',
       y: { formatter: (val: number) => `${val}` },
@@ -195,7 +195,7 @@ const EmployeeGrowthChart: React.FC = () => {
           gap: 2,
         }}
       >
-        <Typography fontWeight='bold' fontSize={20} color={textColor}>
+        <Typography fontWeight='bold' fontSize={{ xs: '20px', lg: '28px' }} color={textColor}>
           {labels[language]} ({selectedYear})
         </Typography>
 

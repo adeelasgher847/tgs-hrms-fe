@@ -3,12 +3,10 @@ import {
   Box,
   Paper,
   Typography,
-  Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
-  TableContainer,
   TextField,
   MenuItem,
   IconButton,
@@ -37,6 +35,7 @@ import SystemEmployeeProfileView from './SystemEmployeeProfileView';
 import { formatDate } from '../../utils/dateUtils';
 import employeeApi from '../../api/employeeApi';
 import { PAGINATION } from '../../constants/appConstants';
+import AppTable from '../common/AppTable';
 
 type EmployeeWithTenantName = SystemEmployee & {
   tenantName: string;
@@ -327,7 +326,12 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant='h5' fontWeight='bold' mb={3}>
+      <Typography
+        variant='h4'
+        fontWeight={600}
+        fontSize={{ xs: '32px', lg: '48px' }}
+        mb={3}
+      >
         Employee List
       </Typography>
 
@@ -424,54 +428,52 @@ const TenantBasedEmployeeManager: React.FC = () => {
       </Box>
 
       <Paper sx={{ mt: 3, boxShadow: 'none' }}>
-        <TableContainer>
-          <Table stickyHeader>
-            <TableHead>
+        <AppTable>
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Tenant</TableCell>
+              <TableCell>Department</TableCell>
+              <TableCell>Designation</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Created At</TableCell>
+              <TableCell align='center'>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {loading ? (
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Tenant</TableCell>
-                <TableCell>Department</TableCell>
-                <TableCell>Designation</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Created At</TableCell>
-                <TableCell align='center'>Actions</TableCell>
+                <TableCell colSpan={7} align='center'>
+                  <CircularProgress />
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} align='center'>
-                    <CircularProgress />
+            ) : employees.length ? (
+              employees.map(emp => (
+                <TableRow key={emp.id}>
+                  <TableCell>{emp.name}</TableCell>
+                  <TableCell>{emp.tenantName || <em>—</em>}</TableCell>
+                  <TableCell>{emp.departmentName || <em>—</em>}</TableCell>
+                  <TableCell>{emp.designationTitle || <em>—</em>}</TableCell>
+                  <TableCell>{emp.status}</TableCell>
+                  <TableCell>
+                    {emp.createdAt ? formatDate(emp.createdAt) : 'N/A'}
+                  </TableCell>
+                  <TableCell align='center'>
+                    <IconButton onClick={() => handleOpenProfile(emp)}>
+                      <VisibilityIcon />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
-              ) : employees.length ? (
-                employees.map(emp => (
-                  <TableRow key={emp.id}>
-                    <TableCell>{emp.name}</TableCell>
-                    <TableCell>{emp.tenantName || <em>—</em>}</TableCell>
-                    <TableCell>{emp.departmentName || <em>—</em>}</TableCell>
-                    <TableCell>{emp.designationTitle || <em>—</em>}</TableCell>
-                    <TableCell>{emp.status}</TableCell>
-                    <TableCell>
-                      {emp.createdAt ? formatDate(emp.createdAt) : 'N/A'}
-                    </TableCell>
-                    <TableCell align='center'>
-                      <IconButton onClick={() => handleOpenProfile(emp)}>
-                        <VisibilityIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} align='center'>
-                    No employees found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} align='center'>
+                  No employees found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </AppTable>
       </Paper>
 
       {openProfile && selectedEmployee && (

@@ -42,9 +42,9 @@ import { extractErrorMessage } from '../../utils/errorHandler';
 import { exportCSV } from '../../api/exportApi';
 import { env } from '../../config/env';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
-import AppButton from '../Common/AppButton';
-import AppTextField from '../Common/AppTextField';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppButton from '../common/AppButton';
+import AppTextField from '../common/AppTextField';
 import { PAGINATION } from '../../constants/appConstants';
 interface Employee {
   id: string;
@@ -874,7 +874,11 @@ const EmployeeManager: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant='h6' gutterBottom>
+      <Typography
+        variant='h4'
+        fontSize={{ xs: '32px', lg: '48px' }}
+        gutterBottom
+      >
         Employee List
       </Typography>
       {/* Add Employee Button */}
