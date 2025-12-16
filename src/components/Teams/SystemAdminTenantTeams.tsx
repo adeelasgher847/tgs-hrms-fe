@@ -32,7 +32,6 @@ import {
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { AllTenantsTeamsResponse, TenantTeam } from '../../api/teamApi';
-import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
 
 interface SystemAdminTenantTeamsProps {
@@ -56,22 +55,30 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
   const textColor = darkMode ? '#8f8f8f' : '#000';
 
   useEffect(() => {
-    const fetchTenants = async () => {
-      try {
-        setLoadingTenants(true);
-        const tenants = await SystemTenantApi.getAllTenants(false);
-        const activeTenants = tenants.filter(
-          t => t.status === 'active' && t.isDeleted === false
-        );
-        setAllTenants(activeTenants);
-      } catch {
-        // Leave tenants list empty on failure
-      } finally {
-        setLoadingTenants(false);
-      }
-    };
-
-    fetchTenants();
+    // Extract tenant list from GET:/teams/all-tenants API response
+    try {
+      setLoadingTenants(true);
+      // Extract unique tenants from the teams API response
+      const uniqueTenantsMap = new Map<string, SystemTenant>();
+      data.tenants.forEach(tenant => {
+        if (!uniqueTenantsMap.has(tenant.tenant_id)) {
+          uniqueTenantsMap.set(tenant.tenant_id, {
+            id: tenant.tenant_id,
+            name: tenant.tenant_name,
+            status: tenant.tenant_status as 'active' | 'suspended' | 'delelted',
+            isDeleted: false,
+            created_at: '',
+            updated_at: '',
+            deleted_at: null,
+          });
+        }
+      });
+      setAllTenants(Array.from(uniqueTenantsMap.values()));
+    } catch {
+      // Leave tenants list empty on failure
+    } finally {
+      setLoadingTenants(false);
+    }
   }, [data.tenants]);
 
   const allTenantsFromData = useMemo(() => data.tenants, [data.tenants]);

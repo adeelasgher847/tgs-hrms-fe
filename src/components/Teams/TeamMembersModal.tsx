@@ -14,11 +14,14 @@ import {
   CircularProgress,
   Alert,
   Divider,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import {
   Close as CloseIcon,
   Group as GroupIcon,
   Add as AddIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import UserAvatar from '../Common/UserAvatar';
 import { teamApiService } from '../../api/teamApi';
@@ -53,6 +56,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const { language } = useLanguage();
 
   // Check if user is a manager
@@ -70,6 +74,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
       loading: 'Loading team members...',
       error: 'Failed to load team members',
       team: 'Team',
+      search: 'Search members...',
     },
     ar: {
       title: 'أعضاء الفريق',
@@ -79,6 +84,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
       loading: 'جاري تحميل الأعضاء...',
       error: 'فشل في تحميل الأعضاء',
       team: 'الفريق',
+      search: 'البحث عن الأعضاء...',
     },
   };
 
@@ -125,6 +131,41 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
     onOpenInviteModal();
   };
 
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  // Filter members based on search term (starts with match for each word)
+  const filterMembers = (members: TeamMember[] | AdminTeamMember[]) => {
+    if (!searchTerm.trim()) return members;
+    const searchLower = searchTerm.toLowerCase().trim();
+    
+    // Check if any word in the field starts with the search term
+    const checkStartsWith = (text: string) => {
+      const words = text.split(/\s+/);
+      return words.some(word => word.startsWith(searchLower));
+    };
+    
+    return members.filter(member => {
+      const fullName = `${member.user?.first_name || ''} ${member.user?.last_name || ''}`.toLowerCase();
+      const email = (member.user?.email || '').toLowerCase();
+      const designation = (member.designation?.title || '').toLowerCase();
+      const department = (member.department?.name || '').toLowerCase();
+      const teamName = ((member as AdminTeamMember).team?.name || '').toLowerCase();
+      
+      return (
+        checkStartsWith(fullName) ||
+        checkStartsWith(email) ||
+        checkStartsWith(designation) ||
+        checkStartsWith(department) ||
+        checkStartsWith(teamName)
+      );
+    });
+  };
+
+  const filteredTeamMembers = filterMembers(teamMembers);
+  const filteredAdminTeamMembers = filterMembers(adminTeamMembers);
+
   return (
     <Dialog
       open={open}
@@ -152,8 +193,8 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
           <GroupIcon sx={{ color: darkMode ? '#ccc' : '#666' }} />
           <Typography variant='h6' sx={{ fontWeight: 600 }}>
             {isAdmin()
-              ? `${lang.allTeamMembers} (${adminTeamMembers.length})`
-              : `${lang.title} (${teamMembers.length})`}
+              ? `${lang.allTeamMembers} (${searchTerm ? filteredAdminTeamMembers.length : adminTeamMembers.length})`
+              : `${lang.title} (${searchTerm ? filteredTeamMembers.length : teamMembers.length})`}
           </Typography>
         </Box>
         <IconButton
@@ -204,14 +245,62 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
           </Box>
         ) : (
           <>
-            <List sx={{ p: 0 }}>
-              {isAdmin()
-                ? adminTeamMembers
-                    .filter(
-                      member =>
-                        member?.user?.first_name && member?.user?.last_name
-                    )
-                    .map(member => (
+            <Box sx={{ p: 2, borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}` }}>
+              <TextField
+                fullWidth
+                size='small'
+                placeholder={lang.search}
+                value={searchTerm}
+                onChange={handleSearch}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position='start'>
+                      <SearchIcon sx={{ color: darkMode ? '#ccc' : '#666' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+                  borderRadius: 2,
+                  '& .MuiOutlinedInput-root': {
+                    color: darkMode ? '#fff' : '#000',
+                    '& fieldset': {
+                      borderColor: darkMode ? '#555' : '#ccc',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: darkMode ? '#888' : '#999',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#484c7f',
+                    },
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: darkMode ? '#999' : '#999',
+                    opacity: 1,
+                  },
+                }}
+              />
+            </Box>
+            {(searchTerm && isAdmin() && filteredAdminTeamMembers.length === 0) ||
+            (searchTerm && !isAdmin() && filteredTeamMembers.length === 0) ? (
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Typography
+                  variant='body2'
+                  sx={{ color: darkMode ? '#ccc' : '#666' }}
+                >
+                  {lang.noMembers}
+                </Typography>
+              </Box>
+            ) : (
+              <>
+                <List sx={{ p: 0 }}>
+                  {isAdmin()
+                    ? filteredAdminTeamMembers
+                        .filter(
+                          member =>
+                            member?.user?.first_name && member?.user?.last_name
+                        )
+                        .map(member => (
                       <React.Fragment key={member.id}>
                         <ListItem
                           sx={{
@@ -303,7 +392,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
                         </ListItem>
                       </React.Fragment>
                     ))
-                : teamMembers
+                : filteredTeamMembers
                     .filter(
                       member =>
                         member?.user?.first_name && member?.user?.last_name
@@ -389,6 +478,8 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
                     ))}
             </List>
             <Divider sx={{ my: 1 }} />
+              </>
+            )}
           </>
         )}
       </DialogContent>

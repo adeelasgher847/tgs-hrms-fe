@@ -60,6 +60,7 @@ interface LeaveHistoryProps {
   isManager?: boolean;
   currentUserId?: string;
   onAction?: (id: string, action: 'approved' | 'rejected') => void;
+  onManagerResponse?: (id: string) => void;
   onWithdraw?: (id: string) => void;
   title?: string;
   showNames?: boolean;
@@ -79,6 +80,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   isManager = false,
   currentUserId,
   onAction,
+  onManagerResponse,
   onWithdraw,
   title = 'Leave History',
   showNames = false,
@@ -354,6 +356,9 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                   <TableCell>Applied</TableCell>
                   <TableCell>Reason</TableCell>
                   <TableCell>Status</TableCell>
+                  {/* Manager Response column - only visible to Admin/HR Admin */}
+                  {/* Managers see their response in Actions/Remarks column only */}
+                  {isAdmin && <TableCell>Manager Response</TableCell>}
                   <TableCell>Actions / Remarks</TableCell>
                 </TableRow>
               </TableHead>
@@ -410,6 +415,37 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                         sx={{ fontSize: 15, width: '100%' }}
                       />
                     </TableCell>
+                    {/* Manager Response - only visible to Admin/HR Admin */}
+                    {/* Managers see their response in Actions/Remarks column only */}
+                    {isAdmin && (
+                      <TableCell>
+                        {leave.managerRemarks ? (
+                          <Typography
+                            variant='body2'
+                            sx={{
+                              fontSize: 13,
+                              color: '#424242',
+                              lineHeight: 1.5,
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                            }}
+                          >
+                            {leave.managerRemarks}
+                          </Typography>
+                        ) : (
+                          <Typography
+                            variant='body2'
+                            sx={{
+                              color: '#9e9e9e',
+                              fontStyle: 'italic',
+                              fontSize: 13,
+                            }}
+                          >
+                            No response
+                          </Typography>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Box
                         sx={{
@@ -432,6 +468,25 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                           </Typography>
                         )}
 
+                        {/* Show manager response in Actions/Remarks column for managers */}
+                        {isManager &&
+                          viewMode === 'team' &&
+                          leave.managerRemarks && (
+                            <Typography
+                              variant='body2'
+                              sx={{
+                                mt: 0.5,
+                                fontSize: 13,
+                                color: '#424242',
+                                lineHeight: 1.5,
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word',
+                              }}
+                            >
+                              {leave.managerRemarks}
+                            </Typography>
+                          )}
+
                         {isAdmin && leave.status === 'pending' && onAction && (
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             <Chip
@@ -448,6 +503,22 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                             />
                           </Box>
                         )}
+
+                        {isManager &&
+                          viewMode === 'team' &&
+                          leave.status === 'pending' &&
+                          !leave.managerRemarks &&
+                          onManagerResponse && (
+                            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                              <Chip
+                                label='Manager Response'
+                                color='primary'
+                                clickable
+                                onClick={() => onManagerResponse(leave.id)}
+                                sx={{ fontWeight: 500 }}
+                              />
+                            </Box>
+                          )}
 
                         {isManager &&
                           viewMode === 'you' &&

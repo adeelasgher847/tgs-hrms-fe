@@ -18,10 +18,13 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
   Person as PersonIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
@@ -46,6 +49,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
   const { language } = useLanguage();
@@ -63,6 +67,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
       error: 'Failed to load team members',
       confirmRemove: 'Are you sure you want to remove this member?',
       memberRemoved: 'Member removed successfully',
+      search: 'Search members...',
     },
     ar: {
       name: 'الاسم',
@@ -76,6 +81,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
       error: 'فشل في تحميل أعضاء الفريق',
       confirmRemove: 'هل أنت متأكد من إزالة هذا العضو؟',
       memberRemoved: 'تم إزالة العضو بنجاح',
+      search: 'البحث عن الأعضاء...',
     },
   };
 
@@ -181,6 +187,37 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
     setPage(0);
   };
 
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setPage(0);
+  };
+
+  // Filter members based on search term (starts with match for each word)
+  const filteredMembers = members.filter(member => {
+    if (!searchTerm.trim()) return true;
+    const searchLower = searchTerm.toLowerCase().trim();
+    const fullName =
+      `${member.user?.first_name || ''} ${member.user?.last_name || ''}`.toLowerCase();
+    const email = (member.user?.email || '').toLowerCase();
+    const designation = (member.designation?.title || '').toLowerCase();
+    const department = (
+      member.designation?.department?.name || ''
+    ).toLowerCase();
+
+    // Check if any word in the field starts with the search term
+    const checkStartsWith = (text: string) => {
+      const words = text.split(/\s+/);
+      return words.some(word => word.startsWith(searchLower));
+    };
+
+    return (
+      checkStartsWith(fullName) ||
+      checkStartsWith(email) ||
+      checkStartsWith(designation) ||
+      checkStartsWith(department)
+    );
+  });
+
   const handleRemoveMember = async (member: TeamMember) => {
     setMemberToDelete(member);
     setShowDeleteConfirmDialog(true);
@@ -243,6 +280,42 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
 
   return (
     <Box>
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          fullWidth
+          size='small'
+          placeholder={lang.search}
+          value={searchTerm}
+          onChange={handleSearch}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position='start'>
+                <SearchIcon sx={{ color: darkMode ? '#ccc' : '#666' }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+            borderRadius: 2,
+            '& .MuiOutlinedInput-root': {
+              color: darkMode ? '#fff' : '#000',
+              '& fieldset': {
+                borderColor: darkMode ? '#555' : '#ccc',
+              },
+              '&:hover fieldset': {
+                borderColor: darkMode ? '#888' : '#999',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#484c7f',
+              },
+            },
+            '& .MuiInputBase-input::placeholder': {
+              color: darkMode ? '#999' : '#999',
+              opacity: 1,
+            },
+          }}
+        />
+      </Box>
       <TableContainer
         component={Paper}
         sx={{
@@ -281,7 +354,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {members
+            {filteredMembers
               .filter(
                 member => member?.user?.first_name && member?.user?.last_name
               )
@@ -340,7 +413,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
 
       <TablePagination
         component='div'
-        count={total}
+        count={searchTerm ? filteredMembers.length : total}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}

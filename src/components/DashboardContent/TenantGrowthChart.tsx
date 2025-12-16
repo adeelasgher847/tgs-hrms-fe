@@ -14,6 +14,8 @@ import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import systemDashboardApiService from '@/api/systemDashboardApi';
+import { getCurrentUser } from '../../utils/auth';
+import { isSystemAdmin } from '../../utils/roleUtils';
 
 interface Tenant {
   id: string;
@@ -45,9 +47,14 @@ const TenantGrowthChart: React.FC = () => {
 
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
-  const [selectedTenant, setSelectedTenant] = useState<string>('Ibex Tech.');
+  const [selectedTenant, setSelectedTenant] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<number>(2025);
   const [tenantGrowthData, setTenantGrowthData] = useState<TenantGrowth[]>([]);
+
+  // Check if user is system admin
+  const currentUser = getCurrentUser();
+  const userRole = currentUser?.role;
+  const isSysAdmin = isSystemAdmin(userRole);
 
   const labels = {
     en: 'Tenant Growth Overview',
@@ -55,20 +62,25 @@ const TenantGrowthChart: React.FC = () => {
   };
 
   useEffect(() => {
+    // Only fetch tenants for system admin
+    if (!isSysAdmin) {
+      setLoadingTenants(false);
+      return;
+    }
+
     const fetchTenants = async () => {
       try {
+        // Use the same API as Employee List to get all tenants
         const data = await systemEmployeeApiService.getAllTenants(true);
-        const activeTenants = data.filter(
-          t => t.status === 'active' && t.isDeleted === false
-        );
-        setTenants(activeTenants);
+        // Show all tenants (no filtering) - same as Employee List
+        setTenants((data || []) as unknown as Tenant[]);
 
-        if (activeTenants.length > 0) {
-          const ibexTenant = activeTenants.find(t => t.name === 'Ibex Tech.');
+        if (data && data.length > 0) {
+          const ibexTenant = data.find((t: any) => t.name === 'Ibex Tech.');
           if (ibexTenant) {
             setSelectedTenant(ibexTenant.id);
           } else {
-            setSelectedTenant(activeTenants[0].id);
+            setSelectedTenant((data[0] as any).id);
           }
         }
       } catch {
@@ -79,11 +91,13 @@ const TenantGrowthChart: React.FC = () => {
     };
 
     fetchTenants();
-  }, []);
+  }, [isSysAdmin]);
 
   useEffect(() => {
+    // Only fetch tenant growth data for system admin
+    if (!isSysAdmin || !selectedTenant) return;
+
     const fetchTenantGrowth = async () => {
-      if (!selectedTenant) return;
       try {
         const data = await systemDashboardApiService.getTenantGrowth(
           selectedYear,
@@ -96,7 +110,7 @@ const TenantGrowthChart: React.FC = () => {
     };
 
     fetchTenantGrowth();
-  }, [selectedTenant, selectedYear]);
+  }, [isSysAdmin, selectedTenant, selectedYear]);
 
   const months = tenantGrowthData.map(d => d.monthName);
   const employeesData = tenantGrowthData.map(d => d.employees);

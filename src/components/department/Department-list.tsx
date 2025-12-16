@@ -32,7 +32,6 @@ import ErrorSnackbar from '../Common/ErrorSnackbar';
 import {
   isSystemAdmin as isSystemAdminFn,
 } from '../../utils/roleUtils';
-import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { COLORS } from '../../constants/appConstants';
 
@@ -91,20 +90,34 @@ export const DepartmentList: React.FC = () => {
   const [loadingTenants, setLoadingTenants] = useState(false);
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
-  // Fetch tenants for system admin
+  // Fetch tenants for system admin from departments API
   useEffect(() => {
     if (!isSystemAdmin) return;
 
     const fetchTenants = async () => {
       try {
         setLoadingTenants(true);
-        const tenants = await SystemTenantApi.getAllTenants(false);
-        const activeTenants = tenants.filter(
-          t => t.status === 'active' && t.isDeleted === false
-        );
-        setAllTenants(activeTenants);
-
-        // Default to "All Tenants" - no need to set selectedTenantId
+        // Use GET:/departments API to get tenant list
+        const response =
+          await departmentApiService.getAllTenantsWithDepartments();
+        
+        // Extract unique tenants from the departments API response
+        const uniqueTenantsMap = new Map<string, SystemTenant>();
+        response.tenants.forEach(tenant => {
+          if (!uniqueTenantsMap.has(tenant.tenant_id)) {
+            uniqueTenantsMap.set(tenant.tenant_id, {
+              id: tenant.tenant_id,
+              name: tenant.tenant_name,
+              status: tenant.tenant_status as 'active' | 'suspended' | 'delelted',
+              isDeleted: false,
+              created_at: '',
+              updated_at: '',
+              deleted_at: null,
+            });
+          }
+        });
+        
+        setAllTenants(Array.from(uniqueTenantsMap.values()));
       } catch {
         // Leave tenant filter empty on failure
       } finally {
