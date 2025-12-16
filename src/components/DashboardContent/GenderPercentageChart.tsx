@@ -5,6 +5,8 @@ import {
   Stack,
   CircularProgress,
   Divider,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useOutletContext } from 'react-router-dom';
@@ -72,6 +74,8 @@ const CustomTooltip = ({
 export default function GenderPercentageChart() {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('lg'));
   const [genderData, setGenderData] = useState<GenderDataItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +85,11 @@ export default function GenderPercentageChart() {
   const bgColor = darkMode ? '#111' : '#fff';
   const borderColor = darkMode ? '#252525' : '#f0f0f0';
   const textColor = darkMode ? '#8f8f8f' : '#000';
+
+  // Responsive donut chart dimensions
+  const chartHeight = isSmallScreen ? 200 : 300;
+  const innerRadius = isSmallScreen ? 50 : 80;
+  const outerRadius = isSmallScreen ? 75 : 120;
 
   useEffect(() => {
     const fetchGenderData = async () => {
@@ -132,11 +141,14 @@ export default function GenderPercentageChart() {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: 300,
-
         }}
       >
         <CircularProgress />
-        <Typography ml={2} color={textColor} fontSize={{ xs: '20px', lg: '28px' }} >
+        <Typography
+          ml={2}
+          color={textColor}
+          fontSize={{ xs: '20px', lg: '28px' }}
+        >
           {labels.loading[language]}
         </Typography>
       </Box>
@@ -154,7 +166,12 @@ export default function GenderPercentageChart() {
           direction: language === 'ar' ? 'rtl' : 'ltr',
         }}
       >
-        <Typography fontWeight='bold' fontSize={{ xs: '16px', lg: '20px' }} mb={0.5} color={textColor}>
+        <Typography
+          fontWeight='bold'
+          fontSize={{ xs: '20px', lg: '28px' }}
+          mb={0.5}
+          color={textColor}
+        >
           {labels.activity[language]}
         </Typography>
         <Box
@@ -194,29 +211,31 @@ export default function GenderPercentageChart() {
         }}
       >
         <Typography
-          fontWeight={500}
-          fontSize={{ xs: '16px', lg: '20px' }}
-          lineHeight={{ xs: '24px', lg: '28px' }}
-          letterSpacing='-2%'
-          color='#2C2C2C'
+          sx={{
+            fontWeight: 500,
+            fontSize: { xs: '20px', lg: '28px' },
+            lineHeight: { xs: '24px', lg: '28px' },
+            letterSpacing: '-2%',
+            color: '#2C2C2C',
+          }}
         >
           {labels.activity[language]}
         </Typography>
 
-        <Stack direction='row' spacing={2} alignItems='center'>
+        <Stack direction='row' spacing={{ xs: 1, lg: 2 }} alignItems='center'>
           {genderData.map((item, index) => (
             <React.Fragment key={item.name}>
               <Stack direction='row' alignItems='center' spacing={1}>
                 <Box
                   sx={{
-                    width: 20,
-                    height: 20,
+                    width: { xs: '12px', lg: '20px' },
+                    height: { xs: '12px', lg: '20px' },
                     borderRadius: '50%',
                     backgroundColor: item.color,
                   }}
                 />
                 <Typography
-                  fontSize={{ xs: '16px', lg: '20px' }}
+                  fontSize={{ xs: '12px', lg: '20px' }}
                   lineHeight={{ xs: '24px', lg: '28px' }}
                   letterSpacing='-1%'
                   fontWeight={500}
@@ -255,21 +274,21 @@ export default function GenderPercentageChart() {
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
-          minHeight: 300,
+          minHeight: chartHeight,
           '& svg, & path': {
             outline: 'none',
             border: 'none',
           },
         }}
       >
-        <ResponsiveContainer width='100%' height={300}>
+        <ResponsiveContainer width='100%' height={chartHeight}>
           <PieChart>
             <Pie
               data={genderData}
               cx='50%'
               cy='50%'
-              innerRadius={80}
-              outerRadius={120}
+              innerRadius={innerRadius}
+              outerRadius={outerRadius}
               paddingAngle={4}
               cornerRadius={6}
               dataKey='value'
@@ -299,21 +318,25 @@ export default function GenderPercentageChart() {
           }}
         >
           <Typography
-            fontSize='14px'
-            lineHeight='20px'
-            letterSpacing='-1%'
-            fontWeight={400}
-            color='#888888'
-            sx={{ mb: 0.5 }}
+            sx={{
+              fontSize: { xs: '10px', lg: '14px' },
+              lineHeight: { xs: '14px', lg: '20px' },
+              letterSpacing: '-1%',
+              fontWeight: 400,
+              color: '#888888',
+              mb: 0.5,
+            }}
           >
             {labels.activeEmployees[language]}
           </Typography>
           <Typography
-            fontWeight={500}
-            fontSize='28px'
-            lineHeight='36px'
-            letterSpacing='-2%'
-            color='#2C2C2C'
+            sx={{
+              fontWeight: 500,
+              fontSize: { xs: '18px', lg: '28px' },
+              lineHeight: { xs: '24px', lg: '36px' },
+              letterSpacing: '-2%',
+              color: '#2C2C2C',
+            }}
           >
             {totalEmployees}
           </Typography>
