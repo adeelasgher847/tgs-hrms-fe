@@ -4,7 +4,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { leaveApi, type LeaveType } from '../../api/leaveApi';
-import AppButton from '../Common/AppButton';
+import AppButton from '../common/AppButton';
 
 interface LeaveFormProps {
   onSubmit?: (data: {

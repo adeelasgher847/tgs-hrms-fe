@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AppButton from '../../Common/AppButton';
+import AppButton from '../../common/AppButton';
 import { Icons } from '../../../assets/icons';
 import {
   getAttendanceThisMonth,
@@ -12,6 +12,8 @@ import {
 
 export default function AvailabilityCardsGrid() {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  // darkMode is reserved for future use
+  void darkMode;
   const { language } = useLanguage();
   const navigate = useNavigate();
 
@@ -126,8 +128,8 @@ export default function AvailabilityCardsGrid() {
       >
         <Typography
           fontWeight={500}
-          fontSize='28px'
-          lineHeight='36px'
+          fontSize={{ xs: '20px', lg: '28px' }}
+          lineHeight={{ xs: '28px', lg: '36px' }}
           letterSpacing='-2%'
           color='#2C2C2C'
         >

@@ -21,8 +21,8 @@ import {
 } from '../../api/leaveReportApi';
 import employeeApi from '../../api/employeeApi';
 import { useIsDarkMode } from '../../theme';
-import AppCard from '../Common/AppCard';
-import AppTable from '../Common/AppTable';
+import AppCard from '../common/AppCard';
+import AppTable from '../common/AppTable';
 
 const getCardStyle = (darkMode: boolean) => ({
   flex: '1 1 calc(33.33% - 16px)',

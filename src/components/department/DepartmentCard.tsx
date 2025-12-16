@@ -24,10 +24,10 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
   onDelete,
   isRtl = false,
 }) => {
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
-  const bgColor = darkMode ? '#111' : '#fff';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
-  const borderColor = darkMode ? '#333' : '#f0f0f0';
+  // const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  // const bgColor = darkMode ? '#111' : '#fff';
+  // const textColor = darkMode ? '#8f8f8f' : '#000';
+  // const borderColor = darkMode ? '#333' : '#f0f0f0';
 
   return (
     <Card
@@ -47,7 +47,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
         <Typography
           component='h2'
           fontWeight={500}
-          fontSize='28px'
+          fontSize={{ xs: '20px', lg: '28px' }}
           lineHeight='36px'
           letterSpacing='-2%'
           color='#2C2C2C'
@@ -62,7 +62,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
         {(isRtl ? department.descriptionAr : department.description) && (
           <Typography
             fontWeight={400}
-            fontSize='var(--body-font-size)'
+            fontSize={{ xs: '16px', lg: 'var(--body-font-size)' }}
             lineHeight='var(--body-line-height)'
             letterSpacing='var(--body-letter-spacing)'
             color='#2C2C2C'
@@ -77,13 +77,15 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
       </CardContent>
 
       {(onEdit || onDelete) && (
-        <CardActions sx={{ p: 0, justifyContent: 'flex-start', gap: 1 }}>
+        <CardActions
+          sx={{ p: 0, justifyContent: 'flex-start', gap: { xs: 0.5, sm: 1 } }}
+        >
           {onEdit && (
             <IconButton
               onClick={() => onEdit(department)}
               size='small'
               sx={{
-                p: 1,
+                p: { xs: 0.5, sm: 1 },
                 '&:hover': {
                   backgroundColor: 'transparent',
                 },
@@ -94,8 +96,8 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                 src={Icons.edit}
                 alt='Edit'
                 sx={{
-                  width: 20,
-                  height: 20,
+                  width: { xs: 16, sm: 20 },
+                  height: { xs: 16, sm: 20 },
                 }}
               />
             </IconButton>
@@ -106,7 +108,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               onClick={() => onDelete(department)}
               size='small'
               sx={{
-                p: 1,
+                p: { xs: 0.5, sm: 1 },
                 '&:hover': {
                   backgroundColor: 'transparent',
                 },
@@ -117,8 +119,8 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                 src={Icons.delete}
                 alt='Delete'
                 sx={{
-                  width: 20,
-                  height: 20,
+                  width: { xs: 16, sm: 20 },
+                  height: { xs: 16, sm: 20 },
                 }}
               />
             </IconButton>

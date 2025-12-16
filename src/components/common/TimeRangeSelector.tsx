@@ -17,6 +17,8 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   allTimeLabel = 'All Time',
   language = 'en',
 }) => {
+  // language parameter is reserved for future use
+  void language;
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
 
@@ -68,7 +70,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
         >
           <Typography
             sx={{
-              fontSize: 'var(--body-font-size)',
+              fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
               fontWeight: 500,
               color: 'var(--primary-dark-color)',
             }}
@@ -128,7 +130,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             >
               <Typography
                 sx={{
-                  fontSize: 'var(--body-font-size)',
+                  fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
                   fontWeight: 500,
                   color:
                     value === 'all-time' || value === null

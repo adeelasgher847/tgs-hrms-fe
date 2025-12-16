@@ -6,10 +6,8 @@ import {
   Chip,
   CircularProgress,
   Alert,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Dialog,
@@ -30,9 +28,10 @@ import systemEmployeeApiService, {
   type Benefit,
 } from '../../api/systemEmployeeApi';
 import { leaveApi, type LeaveType } from '../../api/leaveApi';
-import UserAvatar from '../Common/UserAvatar';
+import UserAvatar from '../common/UserAvatar';
 import KpiDetailCard from '../KPI/KPICardDetail';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import AppTable from '../common/AppTable';
 
 interface Props {
   open: boolean;
@@ -216,68 +215,66 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
               >
                 Leaves
               </Typography>
-              <TableContainer>
-                <Table size='small'>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: 'rgba(33,150,243,0.08)' }}>
-                      <TableCell>Type</TableCell>
-                      <TableCell>From</TableCell>
-                      <TableCell>To</TableCell>
-                      <TableCell>Reason</TableCell>
-                      <TableCell>Status</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {leaves.length ? (
-                      leaves.map((leave, idx) => {
-                        // Get leave type name from API response (leaveType object) or fallback to mapping
-                        const leaveTypeName =
-                          leave.leaveType?.name ||
-                          (leave.leaveTypeId && leaveTypes[leave.leaveTypeId]
-                            ? leaveTypes[leave.leaveTypeId]
-                            : null);
+              <AppTable>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: 'rgba(33,150,243,0.08)' }}>
+                    <TableCell>Type</TableCell>
+                    <TableCell>From</TableCell>
+                    <TableCell>To</TableCell>
+                    <TableCell>Reason</TableCell>
+                    <TableCell>Status</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {leaves.length ? (
+                    leaves.map((leave, idx) => {
+                      // Get leave type name from API response (leaveType object) or fallback to mapping
+                      const leaveTypeName =
+                        leave.leaveType?.name ||
+                        (leave.leaveTypeId && leaveTypes[leave.leaveTypeId]
+                          ? leaveTypes[leave.leaveTypeId]
+                          : null);
 
-                        return (
-                          <TableRow key={leave.id || idx}>
-                            <TableCell>
-                              {leaveTypeName || leave.leaveTypeId || '—'}
-                            </TableCell>
-                            <TableCell>
-                              {new Date(leave.startDate).toLocaleDateString()}
-                            </TableCell>
-                            <TableCell>
-                              {new Date(leave.endDate).toLocaleDateString()}
-                            </TableCell>
-                            <TableCell>{leave.reason || '—'}</TableCell>
-                            <TableCell>
-                              <Chip
-                                label={leave.status}
-                                size='small'
-                                sx={{
-                                  bgcolor:
-                                    leave.status.toLowerCase() === 'approved'
-                                      ? 'success.main'
-                                      : leave.status.toLowerCase() === 'pending'
-                                        ? 'warning.main'
-                                        : 'error.main',
-                                  color: '#fff',
-                                  fontWeight: 600,
-                                }}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} align='center'>
-                          No leaves found
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                      return (
+                        <TableRow key={leave.id || idx}>
+                          <TableCell>
+                            {leaveTypeName || leave.leaveTypeId || '—'}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(leave.startDate).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(leave.endDate).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>{leave.reason || '—'}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={leave.status}
+                              size='small'
+                              sx={{
+                                bgcolor:
+                                  leave.status.toLowerCase() === 'approved'
+                                    ? 'success.main'
+                                    : leave.status.toLowerCase() === 'pending'
+                                      ? 'warning.main'
+                                      : 'error.main',
+                                color: '#fff',
+                                fontWeight: 600,
+                              }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} align='center'>
+                        No leaves found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </AppTable>
             </Paper>
 
             <Paper
@@ -292,47 +289,45 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
               >
                 Assigned Assets
               </Typography>
-              <TableContainer>
-                <Table size='small'>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: 'rgba(255,152,0,0.08)' }}>
-                      <TableCell>Asset Name</TableCell>
-                      <TableCell>Category</TableCell>
-                      <TableCell>Status</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {assets.length ? (
-                      assets.map((asset, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell>{asset.name}</TableCell>
-                          <TableCell>{asset.category}</TableCell>
-                          <TableCell>
-                            <Chip
-                              label={asset.status}
-                              size='small'
-                              sx={{
-                                bgcolor:
-                                  asset.status.toLowerCase() === 'assigned'
-                                    ? 'success.main'
-                                    : 'error.main',
-                                color: '#fff',
-                                fontWeight: 600,
-                              }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={3} align='center'>
-                          No assets assigned
+              <AppTable>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: 'rgba(255,152,0,0.08)' }}>
+                    <TableCell>Asset Name</TableCell>
+                    <TableCell>Category</TableCell>
+                    <TableCell>Status</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {assets.length ? (
+                    assets.map((asset, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{asset.name}</TableCell>
+                        <TableCell>{asset.category}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={asset.status}
+                            size='small'
+                            sx={{
+                              bgcolor:
+                                asset.status.toLowerCase() === 'assigned'
+                                  ? 'success.main'
+                                  : 'error.main',
+                              color: '#fff',
+                              fontWeight: 600,
+                            }}
+                          />
                         </TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={3} align='center'>
+                        No assets assigned
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </AppTable>
             </Paper>
 
             <Paper
@@ -753,53 +748,51 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
               >
                 Promotions
               </Typography>
-              <TableContainer>
-                <Table size='small'>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: 'rgba(156,39,176,0.08)' }}>
-                      <TableCell>Previous Designation</TableCell>
-                      <TableCell>New Designation</TableCell>
-                      <TableCell>Effective Date</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Remarks</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {profile.promotions?.length ? (
-                      profile.promotions.map((p, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell>{p.previousDesignation}</TableCell>
-                          <TableCell>{p.newDesignation}</TableCell>
-                          <TableCell>
-                            {new Date(p.effectiveDate).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={p.status}
-                              size='small'
-                              sx={{
-                                bgcolor:
-                                  p.status.toLowerCase() === 'approved'
-                                    ? 'success.main'
-                                    : 'warning.main',
-                                color: '#fff',
-                                fontWeight: 600,
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell>{p.remarks || '—'}</TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} align='center'>
-                          No promotion records
+              <AppTable>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: 'rgba(156,39,176,0.08)' }}>
+                    <TableCell>Previous Designation</TableCell>
+                    <TableCell>New Designation</TableCell>
+                    <TableCell>Effective Date</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Remarks</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {profile.promotions?.length ? (
+                    profile.promotions.map((p, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{p.previousDesignation}</TableCell>
+                        <TableCell>{p.newDesignation}</TableCell>
+                        <TableCell>
+                          {new Date(p.effectiveDate).toLocaleDateString()}
                         </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={p.status}
+                            size='small'
+                            sx={{
+                              bgcolor:
+                                p.status.toLowerCase() === 'approved'
+                                  ? 'success.main'
+                                  : 'warning.main',
+                              color: '#fff',
+                              fontWeight: 600,
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>{p.remarks || '—'}</TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} align='center'>
+                        No promotion records
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </AppTable>
             </Paper>
 
             <Paper
@@ -814,56 +807,54 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
               >
                 Performance Reviews
               </Typography>
-              <TableContainer>
-                <Table size='small'>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: 'rgba(76,175,80,0.08)' }}>
-                      <TableCell>Cycle</TableCell>
-                      <TableCell>Overall Score</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Recommendation</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {profile.performanceReviews?.length ? (
-                      profile.performanceReviews.map((pr, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell>{pr.cycle}</TableCell>
-                          <TableCell>
-                            <Chip
-                              label={`${pr.overallScore ?? '—'} ★`}
-                              icon={<Star />}
-                              color='warning'
-                              size='small'
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={pr.status}
-                              size='small'
-                              sx={{
-                                bgcolor:
-                                  pr.status.toLowerCase() === 'completed'
-                                    ? 'success.main'
-                                    : 'warning.main',
-                                color: '#fff',
-                                fontWeight: 600,
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell>{pr.recommendation || '—'}</TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} align='center'>
-                          No performance reviews
+              <AppTable>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: 'rgba(76,175,80,0.08)' }}>
+                    <TableCell>Cycle</TableCell>
+                    <TableCell>Overall Score</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Recommendation</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {profile.performanceReviews?.length ? (
+                    profile.performanceReviews.map((pr, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{pr.cycle}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={`${pr.overallScore ?? '—'} ★`}
+                            icon={<Star />}
+                            color='warning'
+                            size='small'
+                          />
                         </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={pr.status}
+                            size='small'
+                            sx={{
+                              bgcolor:
+                                pr.status.toLowerCase() === 'completed'
+                                  ? 'success.main'
+                                  : 'warning.main',
+                              color: '#fff',
+                              fontWeight: 600,
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>{pr.recommendation || '—'}</TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} align='center'>
+                        No performance reviews
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </AppTable>
             </Paper>
           </Box>
         )}

@@ -3,10 +3,8 @@ import {
   Box,
   Button,
   Paper,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -48,6 +46,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { type Dayjs } from 'dayjs';
 import employeeApi from '../../api/employeeApi';
 import { PAGINATION } from '../../constants/appConstants';
+import AppTable from '../common/AppTable';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -1137,7 +1136,11 @@ const EmployeeSalaryPage: React.FC = () => {
       >
         <Typography
           variant='h4'
-          sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000' }}
+          sx={{
+            fontWeight: 600,
+            fontSize: { xs: '32px', lg: '48px' },
+            color: darkMode ? '#fff' : '#000',
+          }}
         >
           Employee Salary Structure
         </Typography>
@@ -1169,163 +1172,153 @@ const EmployeeSalaryPage: React.FC = () => {
             <CircularProgress />
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    Employee
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  Employee
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  Department
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  Designation
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  Base Salary
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  Status
+                </TableCell>
+                <TableCell
+                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                >
+                  Actions
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {employees.map(item => (
+                <TableRow key={item.employee.id} hover>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box>
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            color: darkMode ? '#fff' : '#000',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {`${item.employee.user.first_name} ${item.employee.user.last_name}`}
+                        </Typography>
+                        <Typography
+                          variant='caption'
+                          sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
+                        >
+                          {item.employee.user.email}
+                        </Typography>
+                      </Box>
+                    </Box>
                   </TableCell>
+                  <TableCell>{item.employee.department.name}</TableCell>
+                  <TableCell>{item.employee.designation.title}</TableCell>
                   <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                    sx={{
+                      color: darkMode ? '#fff' : '#000',
+                      fontWeight: 500,
+                    }}
                   >
-                    Department
+                    {item.salary
+                      ? formatCurrency(item.salary.baseSalary)
+                      : 'Not Assigned'}
                   </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    Designation
+                  <TableCell>
+                    {item.salary ? (
+                      <Chip
+                        label={item.salary.status}
+                        color={
+                          item.salary.status === 'active'
+                            ? 'success'
+                            : 'default'
+                        }
+                        size='small'
+                      />
+                    ) : (
+                      <Chip label='inactive' size='small' />
+                    )}
                   </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    Base Salary
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    Status
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
-                  >
-                    Actions
+                  <TableCell>
+                    <Stack direction='row' spacing={1}>
+                      {item.salary ? (
+                        <>
+                          <IconButton
+                            size='small'
+                            onClick={() => handleViewSalary(item)}
+                            sx={{ color: theme.palette.primary.main }}
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
+                          <IconButton
+                            size='small'
+                            onClick={() => handleEditSalary(item)}
+                            sx={{ color: theme.palette.primary.main }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </>
+                      ) : (
+                        <Button
+                          size='small'
+                          variant='outlined'
+                          onClick={async () => {
+                            setSelectedEmployee(item);
+                            setSelectedEmployeeId(item.employee.id);
+
+                            try {
+                              // Fetch defaults for this employee
+                              const response =
+                                await payrollApi.getEmployeeSalary(
+                                  item.employee.id
+                                );
+
+                              // Use defaults since salary is null
+                              setSelectedSalary(null);
+                              setAllowances([...response.defaults.allowances]);
+                              setDeductions([...response.defaults.deductions]);
+                              const effectiveDateObj = dayjs(
+                                response.defaults.effectiveDate
+                              );
+                              setEffectiveMonth(effectiveDateObj.month() + 1);
+                              setEffectiveYear(effectiveDateObj.year());
+                              setEndDate(null);
+                              setStatus('active');
+                              setNotes('');
+                              setEditModalOpen(true);
+                            } catch {
+                              snackbar.error('Failed to load salary defaults');
+                            }
+                          }}
+                        >
+                          Assign
+                        </Button>
+                      )}
+                    </Stack>
                   </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {employees.map(item => (
-                  <TableRow key={item.employee.id} hover>
-                    <TableCell>
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                      >
-                        <Box>
-                          <Typography
-                            variant='body2'
-                            sx={{
-                              color: darkMode ? '#fff' : '#000',
-                              fontWeight: 500,
-                            }}
-                          >
-                            {`${item.employee.user.first_name} ${item.employee.user.last_name}`}
-                          </Typography>
-                          <Typography
-                            variant='caption'
-                            sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
-                          >
-                            {item.employee.user.email}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell>{item.employee.department.name}</TableCell>
-                    <TableCell>{item.employee.designation.title}</TableCell>
-                    <TableCell
-                      sx={{
-                        color: darkMode ? '#fff' : '#000',
-                        fontWeight: 500,
-                      }}
-                    >
-                      {item.salary
-                        ? formatCurrency(item.salary.baseSalary)
-                        : 'Not Assigned'}
-                    </TableCell>
-                    <TableCell>
-                      {item.salary ? (
-                        <Chip
-                          label={item.salary.status}
-                          color={
-                            item.salary.status === 'active'
-                              ? 'success'
-                              : 'default'
-                          }
-                          size='small'
-                        />
-                      ) : (
-                        <Chip label='inactive' size='small' />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction='row' spacing={1}>
-                        {item.salary ? (
-                          <>
-                            <IconButton
-                              size='small'
-                              onClick={() => handleViewSalary(item)}
-                              sx={{ color: theme.palette.primary.main }}
-                            >
-                              <VisibilityIcon />
-                            </IconButton>
-                            <IconButton
-                              size='small'
-                              onClick={() => handleEditSalary(item)}
-                              sx={{ color: theme.palette.primary.main }}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </>
-                        ) : (
-                          <Button
-                            size='small'
-                            variant='outlined'
-                            onClick={async () => {
-                              setSelectedEmployee(item);
-                              setSelectedEmployeeId(item.employee.id);
-
-                              try {
-                                // Fetch defaults for this employee
-                                const response =
-                                  await payrollApi.getEmployeeSalary(
-                                    item.employee.id
-                                  );
-
-                                // Use defaults since salary is null
-                                setSelectedSalary(null);
-                                setAllowances([
-                                  ...response.defaults.allowances,
-                                ]);
-                                setDeductions([
-                                  ...response.defaults.deductions,
-                                ]);
-                                const effectiveDateObj = dayjs(
-                                  response.defaults.effectiveDate
-                                );
-                                setEffectiveMonth(effectiveDateObj.month() + 1);
-                                setEffectiveYear(effectiveDateObj.year());
-                                setEndDate(null);
-                                setStatus('active');
-                                setNotes('');
-                                setEditModalOpen(true);
-                              } catch {
-                                snackbar.error(
-                                  'Failed to load salary defaults'
-                                );
-                              }
-                            }}
-                          >
-                            Assign
-                          </Button>
-                        )}
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ))}
+            </TableBody>
+          </AppTable>
         )}
         {!loading && totalPages > 1 && (
           <Box display='flex' justifyContent='center' p={2}>
@@ -1608,95 +1601,91 @@ const EmployeeSalaryPage: React.FC = () => {
                       <CircularProgress size={24} />
                     </Box>
                   ) : (
-                    <TableContainer
+                    <AppTable
                       component={Paper}
                       sx={{
                         backgroundColor: darkMode ? '#2d2d2d' : '#f9f9f9',
                         border: `1px solid ${theme.palette.divider}`,
                       }}
                     >
-                      <Table size='small'>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell
-                              sx={{
-                                color: darkMode ? '#fff' : '#000',
-                                fontWeight: 600,
-                              }}
-                            >
-                              Effective Date
-                            </TableCell>
-                            <TableCell
-                              sx={{
-                                color: darkMode ? '#fff' : '#000',
-                                fontWeight: 600,
-                              }}
-                            >
-                              End Date
-                            </TableCell>
-                            <TableCell
-                              sx={{
-                                color: darkMode ? '#fff' : '#000',
-                                fontWeight: 600,
-                              }}
-                            >
-                              Base Salary
-                            </TableCell>
-                            <TableCell
-                              sx={{
-                                color: darkMode ? '#fff' : '#000',
-                                fontWeight: 600,
-                              }}
-                            >
-                              Status
-                            </TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {salaryHistory
-                            .filter(s => s.id !== selectedSalary?.id)
-                            .map(salary => (
-                              <TableRow key={salary.id} hover>
-                                <TableCell
-                                  sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
-                                >
-                                  {dayjs(salary.effectiveDate).format(
-                                    'MMM DD, YYYY'
-                                  )}
-                                </TableCell>
-                                <TableCell
-                                  sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
-                                >
-                                  {salary.endDate
-                                    ? dayjs(salary.endDate).format(
-                                        'MMM DD, YYYY'
-                                      )
-                                    : 'N/A'}
-                                </TableCell>
-                                <TableCell
-                                  sx={{
-                                    color: darkMode ? '#fff' : '#000',
-                                    fontWeight: 500,
-                                  }}
-                                >
-                                  {formatCurrency(salary.baseSalary)}
-                                </TableCell>
-                                <TableCell>
-                                  <Chip
-                                    label={salary.status}
-                                    color={
-                                      salary.status === 'active'
-                                        ? 'success'
-                                        : 'default'
-                                    }
-                                    size='small'
-                                  />
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell
+                            sx={{
+                              color: darkMode ? '#fff' : '#000',
+                              fontWeight: 600,
+                            }}
+                          >
+                            Effective Date
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              color: darkMode ? '#fff' : '#000',
+                              fontWeight: 600,
+                            }}
+                          >
+                            End Date
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              color: darkMode ? '#fff' : '#000',
+                              fontWeight: 600,
+                            }}
+                          >
+                            Base Salary
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              color: darkMode ? '#fff' : '#000',
+                              fontWeight: 600,
+                            }}
+                          >
+                            Status
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {salaryHistory
+                          .filter(s => s.id !== selectedSalary?.id)
+                          .map(salary => (
+                            <TableRow key={salary.id} hover>
+                              <TableCell
+                                sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
+                              >
+                                {dayjs(salary.effectiveDate).format(
+                                  'MMM DD, YYYY'
+                                )}
+                              </TableCell>
+                              <TableCell
+                                sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
+                              >
+                                {salary.endDate
+                                  ? dayjs(salary.endDate).format('MMM DD, YYYY')
+                                  : 'N/A'}
+                              </TableCell>
+                              <TableCell
+                                sx={{
+                                  color: darkMode ? '#fff' : '#000',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {formatCurrency(salary.baseSalary)}
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={salary.status}
+                                  color={
+                                    salary.status === 'active'
+                                      ? 'success'
+                                      : 'default'
+                                  }
+                                  size='small'
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </AppTable>
                   )}
                 </Box>
               )}

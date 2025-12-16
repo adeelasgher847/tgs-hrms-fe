@@ -19,6 +19,7 @@ export interface Leave {
   };
   reason: string;
   remarks?: string;
+  managerRemarks?: string;
   startDate: string;
   endDate: string;
   totalDays?: number;

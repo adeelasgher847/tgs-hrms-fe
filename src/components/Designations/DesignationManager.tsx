@@ -15,16 +15,14 @@ import {
   IconButton,
   Pagination,
 } from '@mui/material';
-import AppTable from '../Common/AppTable';
+import AppTable from '../common/AppTable';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import {
-  Add as AddIcon,
-} from '@mui/icons-material';
-import AppDropdown from '../Common/AppDropdown';
+import { Add as AddIcon } from '@mui/icons-material';
+import AppDropdown from '../common/AppDropdown';
 import { Icons } from '../../assets/icons';
 
-import AppFormModal, { type FormField } from '../Common/AppFormModal';
-import DeleteConfirmationDialog from '../Common/DeleteConfirmationDialog';
+import AppFormModal, { type FormField } from '../common/AppFormModal';
+import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
 import {
   designationApiService,
@@ -35,13 +33,13 @@ import {
   type FrontendDepartment,
 } from '../../api/departmentApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import {
   isSystemAdmin as isSystemAdminFn,
   isHRAdmin as isHRAdminFn,
 } from '../../utils/roleUtils';
-import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
+import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import { PAGINATION } from '../../constants/appConstants';
 // import { extractErrorMessage } from '../../utils/errorHandler';
 
@@ -106,13 +104,10 @@ export default function DesignationManager() {
     const fetchTenants = async () => {
       try {
         setLoadingTenants(true);
-        const tenants = await SystemTenantApi.getAllTenants(false);
-        const activeTenants = tenants.filter(
-          t => t.status === 'active' && t.isDeleted === false
-        );
-        setAllTenants(activeTenants);
-
-        // Default to "All Tenants" - no need to set selectedTenantId
+        // Use the same API as Employee List to get all tenants
+        const data = await systemEmployeeApiService.getAllTenants(true);
+        // Show all tenants (no filtering) - same as Employee List
+        setAllTenants((data || []) as unknown as SystemTenant[]);
       } catch {
         // Ignore; tenant filter list will simply be empty
       } finally {
@@ -275,7 +270,6 @@ export default function DesignationManager() {
       setDesignations(frontendDesignations);
       // Reset pagination when fetching all designations
       setCurrentPage(1);
-      setTotalPages(1);
       setTotalRecords(frontendDesignations.length);
     } catch (error: unknown) {
       console.error('Error fetching all designations:', error);
@@ -522,14 +516,14 @@ export default function DesignationManager() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          flexWrap: 'wrap',
+          flexWrap: 'nowrap',
           mb: 3,
           gap: 2,
         }}
       >
         <Typography
           fontWeight={500}
-          fontSize='48px'
+          fontSize={{ xs: '32px', lg: '48px' }}
           lineHeight='44px'
           letterSpacing='-2%'
           color='#2C2C2C'
@@ -542,7 +536,7 @@ export default function DesignationManager() {
             display: 'flex',
             gap: 2,
             alignItems: 'center',
-            flexWrap: 'wrap',
+            flexWrap: 'nowrap',
           }}
         >
           {isSystemAdmin ? (
@@ -627,15 +621,33 @@ export default function DesignationManager() {
                   bgcolor: 'var(--primary-dark-color)',
                   color: '#FFFFFF',
                   boxShadow: 'none',
-                  minWidth: 200,
-                  py: 1,
+                  minWidth: { xs: 'auto', sm: 200 },
+                  px: { xs: 1.5, sm: 2 },
+                  py: { xs: 0.75, sm: 1 },
+                  '& .MuiButton-startIcon': {
+                    marginRight: { xs: 0.5, sm: 1 },
+                    '& > *:nth-of-type(1)': {
+                      fontSize: { xs: '18px', sm: '20px' },
+                    },
+                  },
                   '&:hover': {
                     bgcolor: 'var(--primary-dark-color)',
                     boxShadow: 'none',
                   },
                 }}
               >
-                {getText('Create Designation', 'إنشاء مسمى وظيفي')}
+                <Box
+                  component='span'
+                  sx={{ display: { xs: 'none', sm: 'inline' } }}
+                >
+                  {getText('Create Designation', 'إنشاء مسمى وظيفي')}
+                </Box>
+                <Box
+                  component='span'
+                  sx={{ display: { xs: 'inline', sm: 'none' } }}
+                >
+                  {getText('Create', 'إنشاء')}
+                </Box>
               </Button>
             </>
           )}
@@ -669,7 +681,7 @@ export default function DesignationManager() {
           <Typography
             variant='body2'
             sx={{
-              fontSize: '16px',
+              fontSize: { xs: '14px', lg: '16px' },
               lineHeight: 'var(--body-line-height)',
               color: 'var(--dark-grey-color)',
             }}
@@ -686,7 +698,7 @@ export default function DesignationManager() {
             variant='body2'
             sx={{
               mb: 2,
-              fontSize: '16px',
+              fontSize: { xs: '14px', lg: '16px' },
               lineHeight: 'var(--body-line-height)',
               color: 'var(--dark-grey-color)',
             }}
@@ -729,7 +741,7 @@ export default function DesignationManager() {
               <TableCell
                 align='center'
                 sx={{
-                  minWidth: 120,
+                  minWidth: { xs: 80, sm: 120 },
                 }}
               >
                 {getText('Actions', 'الإجراءات')}
@@ -822,7 +834,7 @@ export default function DesignationManager() {
                       <Box
                         sx={{
                           display: 'flex',
-                          gap: 1,
+                          gap: { xs: 0.5, sm: 1 },
                           justifyContent: 'center',
                         }}
                       >
@@ -835,7 +847,7 @@ export default function DesignationManager() {
                           title={getText('Edit', 'تعديل')}
                           aria-label={`Edit designation ${getText(designation.title, designation.titleAr)}`}
                           sx={{
-                            p: 1,
+                            p: { xs: 0.5, sm: 1 },
                             '&:hover': {
                               backgroundColor: 'transparent',
                             },
@@ -846,8 +858,8 @@ export default function DesignationManager() {
                             src={Icons.edit}
                             alt='Edit'
                             sx={{
-                              width: 20,
-                              height: 20,
+                              width: { xs: 16, sm: 20 },
+                              height: { xs: 16, sm: 20 },
                             }}
                           />
                         </IconButton>
@@ -861,7 +873,7 @@ export default function DesignationManager() {
                             title={getText('Delete', 'حذف')}
                             aria-label={`Delete designation ${getText(designation.title, designation.titleAr)}`}
                             sx={{
-                              p: 1,
+                              p: { xs: 0.5, sm: 1 },
                               '&:hover': {
                                 backgroundColor: 'transparent',
                               },
@@ -872,8 +884,8 @@ export default function DesignationManager() {
                               src={Icons.delete}
                               alt='Delete'
                               sx={{
-                                width: 20,
-                                height: 20,
+                                width: { xs: 16, sm: 20 },
+                                height: { xs: 16, sm: 20 },
                               }}
                             />
                           </IconButton>

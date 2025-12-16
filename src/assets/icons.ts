@@ -1,5 +1,3 @@
-import { add } from 'date-fns';
-
 export const Icons = {
   logoSidebar: '/logo-sidebar.svg',
   logoWhite: '/logo-white.svg',

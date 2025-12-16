@@ -40,11 +40,11 @@ import DateNavigation from './DateNavigation';
 import { useTheme } from '../../theme/hooks';
 import { formatDate } from '../../utils/dateUtils';
 // systemEmployeeApiService removed; not used after cleanup
-import { SystemTenantApi } from '../../api/systemTenantApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
-import AppButton from '../Common/AppButton';
-import AppTable from '../Common/AppTable';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppButton from '../common/AppButton';
+import AppTable from '../common/AppTable';
+import systemEmployeeApiService from '../../api/systemEmployeeApi';
 
 type TenantOption = { id: string; name: string };
 
@@ -684,6 +684,149 @@ const AttendanceTable = () => {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _fetchEmployeesFromAttendance = async (
+    _viewOverride?: 'my' | 'all'
+  ) => {
+    try {
+      const currentView = _viewOverride || adminView;
+
+      if (currentView === 'my') {
+        setEmployees([]);
+        return;
+      }
+
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        setEmployees([]);
+        return;
+      }
+
+      const currentUser = JSON.parse(storedUser);
+      const isSystemAdminFlag = isSystemAdmin(currentUser.role);
+      const isAdminFlag = isAdmin(currentUser.role);
+      const isNetworkAdminFlag = isNetworkAdmin(currentUser.role);
+      const isHRAdminFlag = isHRAdmin(currentUser.role);
+
+      let tenantIdForEmployees: string | undefined =
+        selectedTenant || undefined;
+
+      if (
+        !isSystemAdminFlag &&
+        (isAdminFlag || isNetworkAdminFlag || isHRAdminFlag)
+      ) {
+        const adminTenantId = getAdminTenantId(currentUser);
+        if (adminTenantId) {
+          tenantIdForEmployees = adminTenantId;
+        }
+      }
+      const userIdMapByEmail = new Map<string, string>();
+      const userIdMapByName = new Map<string, string>();
+
+      if (isSystemAdminFlag) {
+        const systemAttendanceResponse =
+          await attendanceApi.getSystemAllAttendance();
+
+        systemAttendanceResponse.tenants.forEach(tenant => {
+          if (
+            tenantIdForEmployees &&
+            tenant.tenant_id !== tenantIdForEmployees
+          ) {
+            return;
+          }
+
+          if (tenant.tenant_status !== 'active') {
+            return;
+          }
+
+          tenant.employees.forEach(emp => {
+            if (emp.user_id && emp.first_name) {
+              const fullName =
+                `${emp.first_name} ${emp.last_name || ''}`.trim();
+
+              if (emp.email) {
+                userIdMapByEmail.set(emp.email.toLowerCase(), emp.user_id);
+              }
+              if (fullName) {
+                userIdMapByName.set(fullName.toLowerCase(), emp.user_id);
+              }
+            }
+          });
+        });
+      }
+
+      const response = await systemEmployeeApiService.getSystemEmployees({
+        tenantId: tenantIdForEmployees,
+        page: null,
+      });
+
+      const employeesData = Array.isArray(response)
+        ? response
+        : 'items' in response && Array.isArray(response.items)
+          ? response.items
+          : [];
+
+      const employeeOptions = employeesData
+        .map((emp: unknown) => {
+          const empObj = (emp as Record<string, unknown>) || {};
+          let employeeName = 'Unknown';
+          let employeeEmail = String(empObj.email || '').toLowerCase();
+
+          const userObj = (empObj.user as Record<string, unknown>) || {};
+          const userFirstName = String(
+            userObj.first_name || empObj.first_name || ''
+          );
+          const userLastName = String(
+            userObj.last_name || empObj.last_name || ''
+          );
+          const userEmail = String(
+            userObj.email || empObj.email || ''
+          ).toLowerCase();
+
+          if (userFirstName) {
+            employeeName =
+              `${userFirstName}${userLastName ? ` ${userLastName}` : ''}`.trim();
+          } else if (empObj.firstName && empObj.lastName) {
+            employeeName =
+              `${String(empObj.firstName)} ${String(empObj.lastName)}`.trim();
+          } else if (empObj.name) {
+            employeeName = String(empObj.name);
+          } else if (userEmail) {
+            employeeName = userEmail;
+          }
+
+          employeeEmail = userEmail || employeeEmail;
+
+          let employeeUserId: string | undefined;
+
+          if (userObj.id) {
+            employeeUserId = String(userObj.id);
+          } else if (employeeEmail && userIdMapByEmail.has(employeeEmail)) {
+            employeeUserId = userIdMapByEmail.get(employeeEmail);
+          } else if (
+            employeeName &&
+            userIdMapByName.has(employeeName.toLowerCase())
+          ) {
+            employeeUserId = userIdMapByName.get(employeeName.toLowerCase());
+          } else if (empObj.user_id) {
+            employeeUserId = String(empObj.user_id);
+          } else if (empObj.id) {
+            employeeUserId = String(empObj.id);
+          }
+
+          return {
+            id: employeeUserId!,
+            name: employeeName,
+          };
+        })
+        .filter(emp => emp.id && emp.name !== 'Unknown');
+      setEmployees(employeeOptions);
+    } catch (error) {
+      setEmployees([]);
+      showError(error);
+    }
+  };
+
   const getAdminTenantId = (currentUser: unknown): string | undefined => {
     try {
       const storedTenantId = localStorage.getItem('tenant_id');
@@ -985,16 +1128,21 @@ const AttendanceTable = () => {
     // so that /attendance/system/all is hit right away on button click.
     fetchAttendance('all', undefined, '', '');
 
-    // 👉 Load tenants from system-wide attendance (only for system admin)
+    // 👉 Load tenants using same API as Employee List (only for system admin)
     // Run this in parallel so it doesn't delay the attendance API call.
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      const currentUser = JSON.parse(storedUser);
-      const isSystemAdminFlag = isSystemAdmin(currentUser.role);
+      try {
+        const currentUser = JSON.parse(storedUser);
+        const isSystemAdminFlag = isSystemAdmin(currentUser.role);
 
-      if (isSystemAdminFlag) {
-        // No await here – let tenants load in background
-        fetchTenantsFromSystemAttendance();
+        if (isSystemAdminFlag) {
+          console.log('handleAllAttendance: Loading tenants for system admin');
+          // No await here – let tenants load in background
+          fetchTenantsFromSystemAttendance();
+        }
+      } catch (error) {
+        console.error('Error in handleAllAttendance:', error);
       }
     }
 
@@ -1004,73 +1152,20 @@ const AttendanceTable = () => {
     try {
       setTenantsLoading(true);
 
-      // Use SystemTenantApi to get ALL tenants (not just those with attendance)
-      // Fetch all tenants (without pagination limit)
-      const allTenants = await SystemTenantApi.getAllTenants(false); // false = exclude deleted
+      // Use the same API as Employee List to get all tenants
+      const allTenants = await systemEmployeeApiService.getAllTenants(true);
 
-      // Filter ACTIVE tenants only - STRICT filtering to exclude suspended and deleted
-      // Convert status to lowercase for case-insensitive comparison
-      const activeTenants = allTenants.filter((tUnknown: unknown) => {
-        const t = (tUnknown as Record<string, unknown>) || {};
-        // Get status in lowercase for comparison
-        const statusLower = String(t.status || '')
-          .toLowerCase()
-          .trim();
+      console.log('Fetched tenants from API:', allTenants);
 
-        // STRICT CHECK 1: Status must be exactly 'active'
-        const isActive = statusLower === 'active';
+      // Use tenants directly like Employee List does - map to the expected format
+      const tenantOptions = (allTenants || [])
+        .map((t: Record<string, unknown>) => ({
+          id: (t.id || t.tenant_id || '') as string,
+          name: (t.name || t.tenant_name || '') as string,
+        }))
+        .filter((t: { id: string; name: string }) => t.id && t.name); // Only keep tenants with valid id and name
 
-        // STRICT CHECK 2: Must not be deleted (check multiple fields)
-        const isNotDeleted =
-          t.isDeleted === false &&
-          !t.deleted_at &&
-          t.deleted_at === null &&
-          statusLower !== 'deleted';
-        const isNotSuspended =
-          statusLower !== 'suspended' && statusLower !== 'suspend';
-        const shouldInclude = isActive && isNotDeleted && isNotSuspended;
-        return shouldInclude;
-      });
-
-      console.log('Fetched all tenants:', {
-        total: allTenants.length,
-        active: activeTenants.length,
-        allTenantsStatus: allTenants.map((tUnknown: unknown) => {
-          const t = (tUnknown as Record<string, unknown>) || {};
-          return {
-            name: t.name,
-            status: t.status,
-            isDeleted: t.isDeleted,
-            deleted_at: t.deleted_at,
-          };
-        }),
-      });
-      const tenantOptions = activeTenants
-        .filter((tUnknown: unknown) => {
-          const t = (tUnknown as Record<string, unknown>) || {};
-          const statusLower = String(t.status || '')
-            .toLowerCase()
-            .trim();
-          const isActive = statusLower === 'active';
-          const isNotDeleted = t.isDeleted === false && !t.deleted_at;
-          const isNotSuspended = statusLower !== 'suspended';
-
-          return isActive && isNotDeleted && isNotSuspended;
-        })
-        .map((tUnknown: unknown) => {
-          const t = (tUnknown as Record<string, unknown>) || {};
-          return {
-            id: String(t.id || ''),
-            name: String(t.name || ''),
-          } as TenantOption;
-        });
-      console.log('🔍 Final tenant verification:', {
-        totalFetched: allTenants.length,
-        afterFilter: activeTenants.length,
-        finalDropdown: tenantOptions.length,
-        finalTenants: tenantOptions.map(t => t.name),
-      });
-
+      console.log('Mapped tenant options:', tenantOptions);
       setTenants(tenantOptions);
       console.log(' Set tenants in dropdown:', {
         count: tenantOptions.length,
@@ -1104,10 +1199,42 @@ const AttendanceTable = () => {
         );
       }
     } catch (error) {
+      console.error('Error fetching tenants:', error);
       setTenants([]);
       showError(error);
     } finally {
       setTenantsLoading(false);
+    }
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _fetchEmployeesFromSystemAttendance = async (_tenantId?: string) => {
+    try {
+      const response = await attendanceApi.getSystemAllAttendance();
+      const uniqueEmployees = new Map<string, { id: string; name: string }>();
+
+      response.tenants.forEach(tenant => {
+        if (_tenantId && tenant.tenant_id !== _tenantId) return;
+
+        tenant.employees.forEach(emp => {
+          if (emp.user_id && emp.first_name) {
+            const employeeId = emp.user_id;
+            const employeeName =
+              emp.first_name + (emp.last_name ? ` ${emp.last_name}` : '');
+            if (!uniqueEmployees.has(employeeId)) {
+              uniqueEmployees.set(employeeId, {
+                id: employeeId,
+                name: employeeName,
+              });
+            }
+          }
+        });
+      });
+
+      setEmployees(Array.from(uniqueEmployees.values()));
+    } catch (error) {
+      setEmployees([]);
+      showError(error);
     }
   };
 
@@ -1146,6 +1273,26 @@ const AttendanceTable = () => {
     // use stable ref to call the latest fetchAttendance implementation
     fetchAttendanceRef.current?.('my', undefined, '', '');
   }, []);
+
+  // Load tenants when system admin views "All Attendance" - using same API as Employee List
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser || adminView !== 'all') return;
+
+    try {
+      const currentUser = JSON.parse(storedUser);
+      const isSystemAdminFlag = isSystemAdmin(currentUser.role);
+
+      if (isSystemAdminFlag && tenants.length === 0 && !tenantsLoading) {
+        console.log('Loading tenants for system admin in All Attendance view');
+        fetchTenantsFromSystemAttendance();
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminView]);
+
   useEffect(() => {
     if (adminView === 'all' && isSystemAdminUser) {
       // Use stable ref to avoid including fetchAttendance in deps
@@ -1363,7 +1510,7 @@ const AttendanceTable = () => {
 
   return (
     <Box>
-      <Typography variant='h4' gutterBottom>
+      <Typography variant='h4' fontSize={{xs: '32px', lg: '48px'}} gutterBottom>
         Attendance Management
       </Typography>
       {!isManager && !isAdminLike && (

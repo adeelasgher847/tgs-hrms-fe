@@ -114,8 +114,8 @@ const SelectPlan: React.FC = () => {
     if (!hasFetched.current) {
       hasFetched.current = true;
       const fetchPlans = async () => {
-        setLoading(true);
         try {
+          setLoading(true);
           const subscriptionPlans: SubscriptionPlan[] =
             await signupApi.getSubscriptionPlans();
 
@@ -211,36 +211,8 @@ const SelectPlan: React.FC = () => {
               price,
               duration,
               description: descriptionText,
-              features:
-                features.length > 0
-                  ? features
-                  : [
-                      { text: 'Basic HRMS features', included: true },
-                      {
-                        text: 'Employee profile management with essential details',
-                        included: true,
-                      },
-                      {
-                        text: 'Department and designation setup',
-                        included: true,
-                      },
-                      {
-                        text: 'Leave request and approval workflow (basic)',
-                        included: true,
-                      },
-                      {
-                        text: 'Attendance tracking (manual entry)',
-                        included: true,
-                      },
-                      {
-                        text: 'Standard reports (PDF/Excel export)',
-                        included: true,
-                      },
-                    ],
-              popular:
-                index === 1 ||
-                plan.name.toLowerCase().includes('pro') ||
-                plan.name.toLowerCase().includes('standard'),
+              features,
+              popular: index === 1,
             };
           });
 
@@ -386,6 +358,7 @@ const SelectPlan: React.FC = () => {
             throw new Error('Session ID not found. Please log in again.');
           }
 
+          // Get company details from localStorage (stored during login)
           const companyStr = localStorage.getItem('company');
           const company = companyStr ? JSON.parse(companyStr) : null;
 
@@ -525,7 +498,7 @@ const SelectPlan: React.FC = () => {
         sx={{
           color: 'var(--text-color)',
           fontWeight: 700,
-          fontSize: '48px',
+          fontSize: { xs: '32px', lg: '48px' },
           mb: 1,
           textAlign: 'center',
         }}
@@ -537,7 +510,7 @@ const SelectPlan: React.FC = () => {
           color: 'var(--dark-grey-color)',
           mb: 5,
           textAlign: 'center',
-          fontSize: '24px',
+          fontSize: { xs: '16px', lg: '24px' },
           fontWeight: 400,
         }}
       >
@@ -674,7 +647,7 @@ const SelectPlan: React.FC = () => {
                   <Typography
                     sx={{
                       color: 'var(--text-color)',
-                      fontSize: 'var(--body-font-size)',
+                      fontSize: { xs: '16px', lg: 'var(--body-font-size)' },
                       lineHeight: 1.5,
                     }}
                   >
@@ -704,7 +677,7 @@ const SelectPlan: React.FC = () => {
                   width: '100%',
                   fontWeight: 500,
                   textTransform: 'none',
-                  fontSize: 'var(--body-font-size)',
+                  fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
                   '&:hover': {
                     backgroundColor:
                       selectedPlan === plan.id
@@ -742,7 +715,7 @@ const SelectPlan: React.FC = () => {
             borderRadius: '12px',
             fontWeight: 500,
             textTransform: 'none',
-            fontSize: 'var(--body-font-size)',
+            fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
             '&:hover': {
               borderColor: 'var(--dark-grey-color)',
               backgroundColor: 'var(--white-100-color)',
@@ -763,7 +736,7 @@ const SelectPlan: React.FC = () => {
             borderRadius: '12px',
             fontWeight: 500,
             textTransform: 'none',
-            fontSize: 'var(--body-font-size)',
+            fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
             '&:hover': {
               backgroundColor: 'var(--primary-light-color)',
             },

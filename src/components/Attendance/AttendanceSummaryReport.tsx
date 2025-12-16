@@ -20,7 +20,7 @@ import {
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import attendanceSummaryApi from '../../api/reportApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { PAGINATION } from '../../constants/appConstants';
 
 interface AttendanceSummaryItem {
@@ -249,7 +249,11 @@ const AttendanceSummaryReport: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant='h4' gutterBottom>
+      <Typography
+        variant='h4'
+        fontSize={{ xs: '32px', lg: '48px' }}
+        gutterBottom
+      >
         Attendance Summary Report
       </Typography>
 

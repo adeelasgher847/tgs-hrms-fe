@@ -52,12 +52,12 @@ import { assetCategories } from '../../Data/assetCategories';
 import type { AxiosError } from 'axios';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
-import AppButton from '../Common/AppButton';
-import AppTextField from '../Common/AppTextField';
-import AppSelect from '../Common/AppSelect';
-import AppTable from '../Common/AppTable';
-import AppCard from '../Common/AppCard';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppButton from '../common/AppButton';
+import AppTextField from '../common/AppTextField';
+import AppSelect from '../common/AppSelect';
+import AppTable from '../common/AppTable';
+import AppCard from '../common/AppCard';
 import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset request response that may include additional fields
@@ -448,7 +448,7 @@ const RequestManagement: React.FC = () => {
     } catch {
       assetsFetchedRef.current = false; // Reset on error so it can retry
     }
-  }, [showError]);
+  }, []);
 
   // Fetch data from API
   const fetchRequests = React.useCallback(
@@ -505,6 +505,7 @@ const RequestManagement: React.FC = () => {
 
           if (allMatchFilter && testResponse.total && testResponse.totalPages) {
             // Backend supports filtering - use normal pagination
+            backendSupportsFiltering = true;
 
             // Build API filters for the requested page
             const apiFilters: {
@@ -547,7 +548,7 @@ const RequestManagement: React.FC = () => {
             let currentPage = 1;
             let hasMorePages = true;
             const maxPages = 100; // Safety limit
-
+            let totalFromBackend = testResponse.total || 0;
             let totalPagesFromBackend = testResponse.totalPages || 1;
 
             // Fetch all pages
@@ -576,9 +577,6 @@ const RequestManagement: React.FC = () => {
               // Update totalPages if we got new info
               if (pageResponse.totalPages) {
                 totalPagesFromBackend = pageResponse.totalPages;
-              }
-              if (pageResponse.total) {
-                totalFromBackend = pageResponse.total;
               }
 
               hasMorePages =
@@ -1538,7 +1536,11 @@ const RequestManagement: React.FC = () => {
           gap: 1,
         }}
       >
-        <Typography variant='h4' fontWeight={600}>
+        <Typography
+          variant='h4'
+          fontSize={{ xs: '32px', lg: '48px' }}
+          fontWeight={600}
+        >
           Asset Request Management
         </Typography>
       </Box>

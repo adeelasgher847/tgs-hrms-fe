@@ -28,9 +28,9 @@ import {
   validatePasswordStrength,
 } from '../../utils/validation';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
-import AppInputField from '../Common/AppInputField';
-import AuthSidebar from '../Common/AuthSidebar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppInputField from '../common/AppInputField';
+import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
 
 const Signup: React.FC = () => {
@@ -299,15 +299,17 @@ const Signup: React.FC = () => {
         display: 'flex',
         justifyContent: 'center',
         backgroundColor: 'var(--white-100-color)',
+        overflowX: 'hidden',
       }}
     >
       <Box
         sx={{
           width: '100%',
-          maxWidth: '1440px',
+          maxWidth: '1700px',
           display: 'flex',
           flexDirection: { xs: 'column', lg: 'row' },
           overflow: 'hidden',
+          boxSizing: 'border-box',
         }}
       >
         <AuthSidebar />
@@ -319,19 +321,19 @@ const Signup: React.FC = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: { xs: '24px 16px', md: '48px' },
+            padding: { xs: '16px 12px', sm: '24px 16px', md: '48px' },
             backgroundColor: { xs: '#3083DC', lg: 'var(--white-100-color)' },
             overflowY: 'auto',
-            borderTopLeftRadius: { xs: '30px', lg: '12px' },
-            borderTopRightRadius: { xs: '30px', lg: 0 },
-            borderBottomLeftRadius: { xs: 0, lg: '12px' },
+            overflowX: 'hidden',
             position: 'relative',
             zIndex: 1,
             marginLeft: { xs: 0, lg: '-12px' },
-            paddingLeft: { xs: '16px', lg: 'calc(48px + 12px)' },
-            paddingRight: { xs: '16px', lg: '48px' },
+            paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
+            paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
             pt: { xs: '60px', lg: '48px' },
+            boxSizing: 'border-box',
+            minWidth: 0,
           }}
         >
           <Box
@@ -354,12 +356,15 @@ const Signup: React.FC = () => {
           </Box>
           <Box
             sx={{
+              // maxWidth: { xs: '100%', sm: 520 },
               width: '100%',
-              maxWidth: 520,
               mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
               borderRadius: { xs: '30px', lg: 0 },
-              p: { xs: 3, sm: 4 },
+              p: { xs: 2, sm: 3, md: 4 },
+              mt: { xs: '60px', sm: '70px', lg: 0 },
+              boxSizing: 'border-box',
+              minWidth: 0,
             }}
           >
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
@@ -407,9 +412,26 @@ const Signup: React.FC = () => {
                 {error}
               </Alert>
             )}
-            <Box component='form' onSubmit={handleSubmit}>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                <Box sx={{ flex: 1 }}>
+            <Box
+              component='form'
+              onSubmit={handleSubmit}
+              sx={{
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                overflowX: 'hidden',
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: { xs: 1, sm: 2 },
+                  mb: { xs: 1.5, sm: 2 },
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                   <AppInputField
                     name='first_name'
                     label='First Name'
@@ -423,7 +445,7 @@ const Signup: React.FC = () => {
                     placeholder='Waleed'
                   />
                 </Box>
-                <Box sx={{ flex: 1 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                   <AppInputField
                     name='last_name'
                     label='Last Name'
@@ -442,11 +464,13 @@ const Signup: React.FC = () => {
                 sx={{
                   display: 'flex',
                   flexDirection: 'row',
-                  gap: 2,
-                  mb: 2,
+                  gap: { xs: 1, sm: 2 },
+                  mb: { xs: 1.5, sm: 2 },
+                  width: '100%',
+                  boxSizing: 'border-box',
                 }}
               >
-                <Box sx={{ flex: 1 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                   <AppInputField
                     name='email'
                     label='Email'
@@ -473,7 +497,7 @@ const Signup: React.FC = () => {
                   />
                 </Box>
                 <Box
-                  sx={{ flex: 1, position: 'relative' }}
+                  sx={{ flex: 1, position: 'relative', minWidth: 0 }}
                   className='signup-phone-input'
                 >
                   <AppInputField
@@ -541,11 +565,13 @@ const Signup: React.FC = () => {
                 sx={{
                   display: 'flex',
                   flexDirection: 'row',
-                  gap: 2,
-                  mb: 2,
+                  gap: { xs: 1, sm: 2 },
+                  mb: { xs: 1.5, sm: 2 },
+                  width: '100%',
+                  boxSizing: 'border-box',
                 }}
               >
-                <Box sx={{ flex: 1 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                   <AppInputField
                     name='password'
                     label='Password'
@@ -577,7 +603,7 @@ const Signup: React.FC = () => {
                     }}
                   />
                 </Box>
-                <Box sx={{ flex: 1 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                   <AppInputField
                     name='confirmPassword'
                     label='Confirm Password'
@@ -610,7 +636,13 @@ const Signup: React.FC = () => {
                   />
                 </Box>
               </Box>
-              <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column' }}>
+              <Box
+                sx={{
+                  mb: { xs: 2, sm: 3 },
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
                 <FormControlLabel
                   control={
                     <Checkbox

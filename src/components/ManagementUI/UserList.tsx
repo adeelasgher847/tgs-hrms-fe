@@ -23,7 +23,7 @@ import {
   designations,
   users as mockUsers,
 } from '../../Data/userMock';
-import AppButton from '../Common/AppButton';
+import AppButton from '../common/AppButton';
 import { COLORS } from '../../constants/appConstants';
 
 const UserList: React.FC = () => {

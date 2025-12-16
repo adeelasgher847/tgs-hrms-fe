@@ -36,17 +36,17 @@ import type {
 import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
 import AssetModal from './AssetModal';
 import StatusChip from './StatusChip';
-import { DeleteConfirmationDialog } from '../Common/DeleteConfirmationDialog';
+import { DeleteConfirmationDialog } from '../common/DeleteConfirmationDialog';
 import { assetCategories } from '../../Data/assetCategories';
 import { isHRAdmin } from '../../utils/roleUtils';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import AppCard from '../Common/AppCard';
-import AppTable from '../Common/AppTable';
-import AppSelect from '../Common/AppSelect';
-import AppButton from '../Common/AppButton';
-import AppTextField from '../Common/AppTextField';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import AppCard from '../common/AppCard';
+import AppTable from '../common/AppTable';
+import AppSelect from '../common/AppSelect';
+import AppButton from '../common/AppButton';
+import AppTextField from '../common/AppTextField';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset response that may include additional user information
@@ -117,17 +117,20 @@ const AssetInventory: React.FC = () => {
 
   const hideActions = isHRAdmin(userRole);
 
-  const showSnackbar = (
-    message: string,
-    severity: 'success' | 'error' | 'warning' | 'info' = 'success'
-  ) => {
-    if (severity === 'success') {
-      showSuccess(message);
-    } else {
-      // Use centralized error handler for non-success notifications
-      showError(message);
-    }
-  };
+  const showSnackbar = React.useCallback(
+    (
+      message: string,
+      severity: 'success' | 'error' | 'warning' | 'info' = 'success'
+    ) => {
+      if (severity === 'success') {
+        showSuccess(message);
+      } else {
+        // Use centralized error handler for non-success notifications
+        showError(message);
+      }
+    },
+    [showSuccess, showError]
+  );
   const [pagination, setPagination] = useState<{
     total: number;
     page: number;
@@ -621,7 +624,11 @@ const AssetInventory: React.FC = () => {
           gap: 1,
         }}
       >
-        <Typography variant='h4' fontWeight={600}>
+        <Typography
+          variant='h4'
+          fontSize={{ xs: '32px', lg: '48px' }}
+          fontWeight={600}
+        >
           Asset Inventory
         </Typography>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>

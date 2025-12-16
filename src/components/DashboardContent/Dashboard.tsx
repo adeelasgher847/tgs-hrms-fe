@@ -50,6 +50,8 @@ const labels = {
 
 const Dashboard: React.FC = () => {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  // darkMode is reserved for future use
+  void darkMode;
   const { language } = useLanguage();
   const lang = labels[language];
   const theme = useTheme();
@@ -142,7 +144,7 @@ const Dashboard: React.FC = () => {
           color: '#2C2C2C',
           textAlign: { xs: 'left' },
           fontWeight: 500,
-          fontSize: '48px',
+          fontSize: { xs: '32px', lg: '48px' },
           lineHeight: '44px',
           letterSpacing: '-2%',
           mb: 3,

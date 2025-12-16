@@ -8,9 +8,9 @@ import attendanceApi from '../../api/attendanceApi';
 import { Link as RouterLink } from 'react-router-dom';
 import { useOutletContext } from 'react-router-dom';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
-import AppButton from '../Common/AppButton';
-import AppCard from '../Common/AppCard';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppButton from '../common/AppButton';
+import AppCard from '../common/AppCard';
 
 interface OutletContext {
   darkMode: boolean;

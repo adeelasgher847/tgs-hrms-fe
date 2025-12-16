@@ -11,9 +11,9 @@ import {
   Select,
 } from '@mui/material';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
-import AppInputField from '../Common/AppInputField';
-import AuthSidebar from '../Common/AuthSidebar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppInputField from '../common/AppInputField';
+import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
 
 const CompanyDetails: React.FC = () => {
@@ -220,15 +220,17 @@ const CompanyDetails: React.FC = () => {
         display: 'flex',
         justifyContent: 'center',
         backgroundColor: 'var(--white-100-color)',
+        overflowX: 'hidden',
       }}
     >
       <Box
         sx={{
           width: '100%',
-          maxWidth: '1440px',
+          // maxWidth: '1440px',
           display: 'flex',
           flexDirection: { xs: 'column', lg: 'row' },
           overflow: 'hidden',
+          boxSizing: 'border-box',
         }}
       >
         <AuthSidebar />
@@ -264,30 +266,32 @@ const CompanyDetails: React.FC = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: { xs: '24px 16px', md: '48px' },
+            padding: { xs: '16px 12px', sm: '24px 16px', md: '48px' },
             backgroundColor: { xs: '#3083DC', lg: 'var(--white-100-color)' },
             overflowY: 'auto',
-            borderTopLeftRadius: { xs: '30px', lg: '12px' },
-            borderTopRightRadius: { xs: '30px', lg: 0 },
-            borderBottomLeftRadius: { xs: 0, lg: '12px' },
+            overflowX: 'hidden',
             position: 'relative',
             zIndex: 1,
             marginLeft: { xs: 0, lg: '-12px' },
-            paddingLeft: { xs: '16px', lg: 'calc(48px + 12px)' },
-            paddingRight: { xs: '16px', lg: '48px' },
+            paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
+            paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
             pt: { xs: '60px', lg: '48px' },
+            boxSizing: 'border-box',
+            minWidth: 0,
           }}
         >
           <Box
             sx={{
+              // maxWidth: { xs: '100%', sm: '500px' },
               width: '100%',
-              maxWidth: '500px',
+              mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
               borderRadius: { xs: '30px', lg: 0 },
-              padding: { xs: '24px', lg: 0 },
-              paddingTop: { xs: '32px', lg: 0 },
-              paddingBottom: { xs: '32px', lg: 0 },
+              p: { xs: 2, sm: 3, md: 4 },
+              mt: { xs: '60px', sm: '70px', lg: 0 },
+              boxSizing: 'border-box',
+              minWidth: 0,
             }}
           >
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
@@ -361,7 +365,17 @@ const CompanyDetails: React.FC = () => {
               </Alert>
             )}
 
-            <Box component='form' onSubmit={handleSubmit} noValidate>
+            <Box
+              component='form'
+              onSubmit={handleSubmit}
+              noValidate
+              sx={{
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                overflowX: 'hidden',
+              }}
+            >
               <Box sx={{ mb: 2 }}>
                 <AppInputField
                   name='companyName'
@@ -540,7 +554,7 @@ const CompanyDetails: React.FC = () => {
                     color: { xs: '#001218', lg: 'var(--black-color)' },
                     backgroundColor: 'transparent',
                     borderRadius: '12px',
-                    fontSize: 'var(--body-font-size)',
+                    fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
                     textTransform: 'none',
                     padding: { xs: '8px 32px', lg: '8px 30px' },
                     height: { xs: '40px', lg: 'auto' },
@@ -562,7 +576,7 @@ const CompanyDetails: React.FC = () => {
                     color: 'var(--white-color)',
                     fontWeight: 600,
                     borderRadius: '12px',
-                    fontSize: 'var(--body-font-size)',
+                    fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
                     textTransform: 'none',
                     padding: { xs: '8px 32px', lg: '8px 30px' },
                     height: { xs: '40px', lg: 'auto' },

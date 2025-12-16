@@ -175,6 +175,27 @@ class LeaveApiService {
     return response.data;
   }
 
+  async approveManagerLeave(
+    id: string,
+    data: { managerRemarks: string }
+  ): Promise<LeaveResponse> {
+    // Ensure managerRemarks is trimmed and not empty
+    const trimmedRemarks = data.managerRemarks?.trim() || '';
+    if (!trimmedRemarks) {
+      throw new Error('Manager remarks cannot be empty');
+    }
+    
+    // Backend expects 'remarks' field, not 'managerRemarks'
+    const payload = {
+      remarks: trimmedRemarks,
+    };
+    const response = await axiosInstance.patch<LeaveResponse>(
+      `${this.baseUrl}/${id}/approve-manager`,
+      payload
+    );
+    return response.data;
+  }
+
   async getLeaveTypes(
     params: { page?: number; limit?: number } = { page: 1, limit: 50 }
   ): Promise<LeaveTypeListResponse> {
