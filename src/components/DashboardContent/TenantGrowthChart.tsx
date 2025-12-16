@@ -76,11 +76,11 @@ const TenantGrowthChart: React.FC = () => {
         setTenants((data || []) as unknown as Tenant[]);
 
         if (data && data.length > 0) {
-          const ibexTenant = data.find((t: any) => t.name === 'Ibex Tech.');
+          const ibexTenant = data.find((t: Record<string, unknown>) => t.name === 'Ibex Tech.');
           if (ibexTenant) {
-            setSelectedTenant(ibexTenant.id);
+            setSelectedTenant(ibexTenant.id as string);
           } else {
-            setSelectedTenant((data[0] as any).id);
+            setSelectedTenant((data[0] as Record<string, unknown>).id as string);
           }
         }
       } catch {

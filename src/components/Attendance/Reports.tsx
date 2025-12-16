@@ -11,21 +11,18 @@ import {
   IconButton,
   Pagination,
   TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
   leaveReportApi,
   type EmployeeReport,
   type LeaveSummaryItem,
+  type TeamMember,
 } from '../../api/leaveReportApi';
 import employeeApi from '../../api/employeeApi';
 import { useIsDarkMode } from '../../theme';
-import AppCard from '../Common/AppCard';
-import AppTable from '../Common/AppTable';
+import AppCard from '../common/AppCard';
+import AppTable from '../common/AppTable';
 
 const getCardStyle = (darkMode: boolean) => ({
   flex: '1 1 calc(33.33% - 16px)',
@@ -34,14 +31,6 @@ const getCardStyle = (darkMode: boolean) => ({
   borderRadius: '0.5rem',
   backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
 });
-
-interface TeamMemberSummary {
-  name: string;
-  email: string;
-  department: string;
-  designation: string;
-  totalLeaveDays: number;
-}
 
 interface LeaveBalance {
   leaveTypeName: string;
@@ -53,22 +42,23 @@ interface LeaveBalance {
 
 const Reports: React.FC = () => {
   const darkMode = useIsDarkMode();
-  const [tab, setTab] = useState(0);
+  const [tab] = useState(0);
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
   const [allLeaveReports, setAllLeaveReports] = useState<EmployeeReport[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
+  const [, setTotalPages] = useState(1);
+  const [, setTotalRecords] = useState(0);
   const [paginationLimit, setPaginationLimit] = useState(25); // Backend limit, default 25
   const [loading, setLoading] = useState(true);
   const [loadingTab, setLoadingTab] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
-  const [allEmployees, setAllEmployees] = useState<Array<{ id: string; name: string }>>([]);
-  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [, setAllEmployees] = useState<Array<{ id: string; name: string }>>([]);
+  const [, setTeamSummary] = useState<TeamMember[]>([]);
+  const [, setLoadingEmployees] = useState(false);
   const [userInfo, setUserInfo] = useState<{
     userId: string | null;
     isManager: boolean;
@@ -133,8 +123,7 @@ const Reports: React.FC = () => {
     }
   }, [isAdminView, userInfo]);
 
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) =>
-    setTab(newValue);
+  // handleTabChange removed — `tab` is not dynamically changed in this component
 
   const handleMonthChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -152,13 +141,7 @@ const Reports: React.FC = () => {
   };
 
   // Extract employee names from fetched allEmployees for the filter dropdown
-  const availableEmployees = useMemo(() => {
-    if (!allEmployees || allEmployees.length === 0) return [];
-    return allEmployees
-      .map(emp => emp.name)
-      .filter((name): name is string => !!name)
-      .sort();
-  }, [allEmployees]);
+  // availableEmployees not used — derived list removed
 
   const filteredEmployeeReports = useMemo(() => {
     if (!allLeaveReports || allLeaveReports.length === 0) return [];
@@ -639,8 +622,8 @@ const Reports: React.FC = () => {
         <Box>
           {error && <Typography color='error'>{error}</Typography>}
           <AppCard
-            pading={0}
             sx={{
+              padding: 0,
               backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
             }}
           >
@@ -1022,8 +1005,8 @@ const Reports: React.FC = () => {
               </Box>
 
               <AppCard
-                noShadow
                 sx={{
+                  boxShadow: 'none',
                   backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
                 }}
               >

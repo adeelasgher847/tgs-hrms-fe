@@ -42,9 +42,9 @@ import { extractErrorMessage } from '../../utils/errorHandler';
 import { exportCSV } from '../../api/exportApi';
 import { env } from '../../config/env';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
-import AppButton from '../Common/AppButton';
-import AppTextField from '../Common/AppTextField';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppButton from '../common/AppButton';
+import AppTextField from '../common/AppTextField';
 import { PAGINATION } from '../../constants/appConstants';
 interface Employee {
   id: string;
@@ -306,7 +306,7 @@ const EmployeeManager: React.FC = () => {
       setLoading(false);
       isLoadingRef.current = false;
     }
-  }, [departmentFilter, designationFilter]);
+  }, [departmentFilter, designationFilter, showError]);
 
   // Mark initial mount as complete after first render
   useEffect(() => {
@@ -745,29 +745,32 @@ const EmployeeManager: React.FC = () => {
     setDesignationFilter('');
   };
 
-  const handleResendInvite = useCallback(async (employee: Employee) => {
-    try {
-      // Immediately update the status to "Invite Sent" in the local state
-      setAllEmployees(prev =>
-        prev.map(emp =>
-          emp.id === employee.id ? { ...emp, status: 'Invite Sent' } : emp
-        )
-      );
+  const handleResendInvite = useCallback(
+    async (employee: Employee) => {
+      try {
+        // Immediately update the status to "Invite Sent" in the local state
+        setAllEmployees(prev =>
+          prev.map(emp =>
+            emp.id === employee.id ? { ...emp, status: 'Invite Sent' } : emp
+          )
+        );
 
-      await employeeApi.resendInvite(employee.id);
-      showSuccess(`Invite resent successfully to ${employee.name}!`);
-    } catch (error: unknown) {
-      // If API call fails, revert the status back to "Invite Expired"
-      setAllEmployees(prev =>
-        prev.map(emp =>
-          emp.id === employee.id ? { ...emp, status: 'Invite Expired' } : emp
-        )
-      );
+        await employeeApi.resendInvite(employee.id);
+        showSuccess(`Invite resent successfully to ${employee.name}!`);
+      } catch (error: unknown) {
+        // If API call fails, revert the status back to "Invite Expired"
+        setAllEmployees(prev =>
+          prev.map(emp =>
+            emp.id === employee.id ? { ...emp, status: 'Invite Expired' } : emp
+          )
+        );
 
-      const errorResult = extractErrorMessage(error);
-      showError(errorResult.message);
-    }
-  }, []);
+        const errorResult = extractErrorMessage(error);
+        showError(errorResult.message);
+      }
+    },
+    [showSuccess, showError]
+  );
 
   const handleViewEmployee = useCallback((employee: Employee) => {
     setViewingEmployee(employee);

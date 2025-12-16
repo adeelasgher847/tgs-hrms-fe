@@ -44,4 +44,3 @@ export const showInfoToast = (message: string) => {
     draggable: true,
   });
 };
-

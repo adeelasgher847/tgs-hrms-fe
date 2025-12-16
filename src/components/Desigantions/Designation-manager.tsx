@@ -25,8 +25,8 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 
-import DesignationModal from './DesignationModal';
-import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
+import DesignationModal from '../Desigantions/Designation-modal';
+import DeleteConfirmationDialog from './Delete-confirmation-dialog';
 import { useLanguage } from '../../hooks/useLanguage';
 import {
   designationApiService,
@@ -42,9 +42,8 @@ import {
   isSystemAdmin as isSystemAdminFn,
   isHRAdmin as isHRAdminFn,
 } from '../../utils/roleUtils';
+import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
-import systemEmployeeApiService from '../../api/systemEmployeeApi';
-import { COLORS, PAGINATION } from '../../constants/appConstants';
 // import { extractErrorMessage } from '../../utils/errorHandler';
 
 export default function DesignationManager() {
@@ -85,7 +84,7 @@ export default function DesignationManager() {
   const [allTenants, setAllTenants] = useState<SystemTenant[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
   const [loadingTenants, setLoadingTenants] = useState(false);
-  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
+  const itemsPerPage = 25;
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
   const getText = (en: string, ar: string) => (language === 'ar' ? ar : en);
@@ -97,12 +96,15 @@ export default function DesignationManager() {
     const fetchTenants = async () => {
       try {
         setLoadingTenants(true);
-        // Use the same API as Employee List to get all tenants
-        const data = await systemEmployeeApiService.getAllTenants(true);
-        // Show all tenants (no filtering) - same as Employee List
-        setAllTenants((data || []) as unknown as SystemTenant[]);
-      } catch {
-        // Ignore; tenant filter list will simply be empty
+        const tenants = await SystemTenantApi.getAllTenants(false);
+        const activeTenants = tenants.filter(
+          t => t.status === 'active' && t.isDeleted === false
+        );
+        setAllTenants(activeTenants);
+
+        // Default to "All Tenants" - no need to set selectedTenantId
+      } catch (error) {
+        console.error('Error fetching tenants:', error);
       } finally {
         setLoadingTenants(false);
       }
@@ -524,7 +526,7 @@ export default function DesignationManager() {
                   minWidth: 200,
                   fontWeight: 600,
                   py: 1,
-                  backgroundColor: COLORS.PRIMARY,
+                  backgroundColor: '#464b8a',
                 }}
               >
                 {getText('Create Designation', 'إنشاء مسمى وظيفي')}
@@ -704,9 +706,8 @@ export default function DesignationManager() {
                                   setModalOpen(true);
                                 }}
                                 title={getText('Edit', 'تعديل')}
-                                aria-label={`Edit designation ${getText(designation.title, designation.titleAr)}`}
                               >
-                                <EditIcon fontSize='small' aria-hidden='true' />
+                                <EditIcon fontSize='small' />
                               </IconButton>
                               {!isHRAdmin && (
                                 <IconButton
@@ -717,12 +718,8 @@ export default function DesignationManager() {
                                     setDeleteDialogOpen(true);
                                   }}
                                   title={getText('Delete', 'حذف')}
-                                  aria-label={`Delete designation ${getText(designation.title, designation.titleAr)}`}
                                 >
-                                  <DeleteIcon
-                                    fontSize='small'
-                                    aria-hidden='true'
-                                  />
+                                  <DeleteIcon fontSize='small' />
                                 </IconButton>
                               )}
                             </Box>
@@ -772,23 +769,12 @@ export default function DesignationManager() {
 
       <DeleteConfirmationDialog
         open={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setDesignationToDelete(null);
-        }}
+        onClose={() => setDeleteDialogOpen(false)}
         onConfirm={handleDeleteDesignation}
-        message={
-          designationToDelete
-            ? getText(
-                `Are you sure you want to delete "${getText(designationToDelete.title, designationToDelete.titleAr)}"? This action cannot be undone.`,
-                `هل أنت متأكد أنك تريد حذف "${getText(designationToDelete.title, designationToDelete.titleAr)}"؟ لا يمكن التراجع عن هذا الإجراء.`
-              )
-            : ''
-        }
-        itemName={
+        designationTitle={
           designationToDelete
             ? getText(designationToDelete.title, designationToDelete.titleAr)
-            : undefined
+            : ''
         }
         isRTL={isRTL}
       />

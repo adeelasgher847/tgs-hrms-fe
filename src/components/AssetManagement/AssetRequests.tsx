@@ -43,16 +43,18 @@ import {
   type AssetRequest as ApiAssetRequest,
 } from '../../api/assetApi';
 import StatusChip from './StatusChip';
-import { DeleteConfirmationDialog } from '../Common/DeleteConfirmationDialog';
+// ConfirmationDialog, Snackbar and Alert not used in this component
+// kept imports removed to satisfy linter
+import { DeleteConfirmationDialog } from '../common/DeleteConfirmationDialog';
 import { type AssetSubcategory } from '../../api/assetApi';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../Common/ErrorSnackbar';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
-  category_id?: string;
+  category_id: string;
   subcategory_id?: string | null;
   subcategory_name?: string;
   category?:
@@ -316,6 +318,7 @@ const AssetRequests: React.FC = () => {
 
         setSubcategories(filteredSubcategories);
       } catch (error) {
+        showError(error);
         setSubcategories([]);
         showError(error);
       } finally {
@@ -326,7 +329,7 @@ const AssetRequests: React.FC = () => {
     if (selectedCategoryId) {
       fetchSubcategories();
     }
-  }, [selectedCategoryId, categories, categories.length]);
+  }, [selectedCategoryId, categories, categories.length, showError]);
 
   const transformApiRequests = React.useCallback(
     (apiRequests: ApiAssetRequestExtended[]): AssetRequest[] => {
@@ -500,7 +503,7 @@ const AssetRequests: React.FC = () => {
         }
       }
     },
-    [currentUserId, transformApiRequests]
+    [currentUserId, transformApiRequests, showError]
   );
 
   // Re-transform requests when categories are loaded to update category names

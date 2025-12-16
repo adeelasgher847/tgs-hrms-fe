@@ -565,9 +565,13 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         }}
       >
         {(() => {
-          // Always show pagination if there are multiple pages
-          // This ensures users can always navigate between pages, even from the last page
-          const shouldShowPagination = totalPages > 1;
+          // When admin filters by employee:
+          // - Hide pagination if filtered records are less than or equal to page limit
+          // - Show pagination only if filtered records exceed page limit
+          // Otherwise, show pagination if there are multiple pages
+          const shouldShowPagination = isEmployeeFiltered
+            ? filteredTotalItems > ITEMS_PER_PAGE
+            : totalPages > 1;
 
           return shouldShowPagination ? (
             <Pagination

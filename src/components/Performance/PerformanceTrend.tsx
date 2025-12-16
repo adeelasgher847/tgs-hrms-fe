@@ -22,10 +22,10 @@ import {
   type SystemEmployee,
 } from '../../api/systemEmployeeApi';
 import { formatDate } from '../../utils/dateUtils';
-import AppCard from '../Common/AppCard';
-import AppTextField from '../Common/AppTextField';
-import AppSelect from '../Common/AppSelect';
-import AppTable from '../Common/AppTable';
+import AppCard from '../common/AppCard';
+import AppTextField from '../common/AppTextField';
+import AppSelect from '../common/AppSelect';
+import AppTable from '../common/AppTable';
 import { PAGINATION } from '../../constants/appConstants';
 
 interface PerformanceTrendProps {

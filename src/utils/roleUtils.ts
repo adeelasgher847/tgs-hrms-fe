@@ -67,7 +67,11 @@ export const isNetworkAdmin = (role: UserRole): boolean => {
  * @returns True if the user is an HR admin
  */
 export const isHRAdmin = (role: UserRole): boolean => {
-  return hasRole(role, 'hr-admin') || hasRole(role, 'hr_admin') || hasRole(role, 'HR-Admin');
+  return (
+    hasRole(role, 'hr-admin') ||
+    hasRole(role, 'hr_admin') ||
+    hasRole(role, 'HR-Admin')
+  );
 };
 
 /**

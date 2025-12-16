@@ -84,7 +84,6 @@ export const validatePasswordStrength = (password: string): string | null => {
   const hasUpper = /[A-Z]/.test(pwd);
   const hasLower = /[a-z]/.test(pwd);
   const hasNumber = /[0-9]/.test(pwd);
-  const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
 
   if (!hasMinLength) {
     return 'Password must be at least 8 characters long.';
@@ -98,11 +97,7 @@ export const validatePasswordStrength = (password: string): string | null => {
   if (!hasNumber) {
     return 'Password must include at least 1 number (0-9).';
   }
-  if (!hasSpecial) {
-    return 'Password must include at least 1 special character (e.g. !@#$).';
-  }
+  // Special characters are optional — do not enforce them here
 
   return null;
 };
-
-

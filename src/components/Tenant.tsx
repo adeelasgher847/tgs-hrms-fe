@@ -2,8 +2,11 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
+  Button,
   useMediaQuery,
+  Paper,
   IconButton,
+  Snackbar,
   Alert,
   CircularProgress,
   useTheme,
@@ -12,18 +15,24 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   Switch,
   Tooltip,
   MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
   Chip,
+  Card,
   Pagination,
   Avatar,
 } from '@mui/material';
-
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -36,16 +45,8 @@ import {
   SystemTenantApi,
   type SystemTenant,
   type SystemTenantDetail,
-} from '../../api/systemTenantApi';
-import { formatDate } from '../../utils/dateUtils';
-import { env } from '../../config/env';
-import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
-import AppButton from '../common/AppButton';
-import AppSelect from '../common/AppSelect';
-import AppTable from '../common/AppTable';
-import AppCard from '../common/AppCard';
-import { PAGINATION } from '../../constants/appConstants';
+} from '../api/systemTenantApi';
+import { formatDate } from '../utils/dateUtils';
 
 type StatusFilterOption = 'All' | 'active' | 'suspended' | 'deleted';
 
@@ -63,7 +64,12 @@ export const TenantPage: React.FC = () => {
 
   const [tenants, setTenants] = useState<SystemTenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error',
+  });
+  const { showError } = useErrorHandler();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilterOption>('All');
 
@@ -97,7 +103,7 @@ export const TenantPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
+  const itemsPerPage = 25;
 
   const fetchTenants = useCallback(async () => {
     try {
@@ -135,8 +141,19 @@ export const TenantPage: React.FC = () => {
       const start = (currentPage - 1) * itemsPerPage;
       const end = start + itemsPerPage;
       setTenants(filtered.slice(start, end));
-    } catch {
-      showError('Failed to fetch tenants');
+    } catch (err) {
+      console.error(err);
+      // Use centralized error handler for consistent UX
+      try {
+        showError(err);
+      } catch {
+        // Fallback to local snackbar if showError fails
+        setSnackbar({
+          open: true,
+          message: 'Failed to fetch tenants',
+          severity: 'error',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -165,12 +182,20 @@ export const TenantPage: React.FC = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      showError('Please select an image file');
+      setSnackbar({
+        open: true,
+        message: 'Please select an image file',
+        severity: 'error',
+      });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      showError('File size should be less than 5MB');
+      setSnackbar({
+        open: true,
+        message: 'File size should be less than 5MB',
+        severity: 'error',
+      });
       return;
     }
     if (logoPreview) {
@@ -198,19 +223,31 @@ export const TenantPage: React.FC = () => {
       !adminName.trim() ||
       !adminEmail.trim()
     ) {
-      showError('All fields are required');
+      setSnackbar({
+        open: true,
+        message: 'All fields are required',
+        severity: 'error',
+      });
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(adminEmail.trim())) {
-      showError('Please enter a valid admin email');
+      setSnackbar({
+        open: true,
+        message: 'Please enter a valid admin email',
+        severity: 'error',
+      });
       return;
     }
 
     const nameRegex = /^[A-Za-z\s]+$/;
     if (!nameRegex.test(name.trim()) || !nameRegex.test(adminName.trim())) {
-      showError('Names can only contain letters and spaces');
+      setSnackbar({
+        open: true,
+        message: 'Names can only contain letters and spaces',
+        severity: 'error',
+      });
       return;
     }
 
@@ -233,11 +270,25 @@ export const TenantPage: React.FC = () => {
         tenantData.logo = selectedLogoFile;
       }
 
+      console.log('Creating tenant with data:', {
+        name: tenantData.name,
+        domain: tenantData.domain,
+        logo: tenantData.logo?.name || 'No logo',
+        adminName: tenantData.adminName,
+        adminEmail: tenantData.adminEmail,
+      });
+
       await SystemTenantApi.create(tenantData);
       fetchTenants();
-      showSuccess('Tenant created successfully');
+      setSnackbar({
+        open: true,
+        message: 'Tenant created successfully',
+        severity: 'success',
+      });
       closeCreateModal();
     } catch (error) {
+      console.error('Error creating tenant:', error);
+
       let errorMessage = 'Failed to create tenant';
 
       const maybeAxiosError = error as {
@@ -256,6 +307,7 @@ export const TenantPage: React.FC = () => {
           .map(e => `${e.field}: ${e.message}`)
           .join(', ');
         errorMessage = `Validation errors: ${errorMessages}`;
+        console.error('Validation errors:', errors);
       } else if (maybeAxiosError.response?.data?.message) {
         errorMessage = maybeAxiosError.response.data.message;
       }
@@ -270,14 +322,22 @@ export const TenantPage: React.FC = () => {
         errorMessage = 'Tenant already exists';
       }
 
-      showError(errorMessage);
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
     } finally {
       setUploadingLogo(false);
     }
   };
   const handleUpdate = async () => {
     if (!editTenantId || !editCompanyName.trim() || !editDomain.trim()) {
-      showError('Company name and domain are required');
+      setSnackbar({
+        open: true,
+        message: 'Company name and domain are required',
+        severity: 'error',
+      });
       return;
     }
 
@@ -307,7 +367,11 @@ export const TenantPage: React.FC = () => {
       setTenants(prev =>
         prev.map(t => (t.id === editTenantId ? { ...t, ...updatedTenant } : t))
       );
-      showSuccess('Tenant updated successfully');
+      setSnackbar({
+        open: true,
+        message: 'Tenant updated successfully',
+        severity: 'success',
+      });
       setIsEditOpen(false);
       // Reset edit form
       setEditTenantId(null);
@@ -320,8 +384,13 @@ export const TenantPage: React.FC = () => {
       }
       setEditLogoPreview(null);
       fetchTenants();
-    } catch {
-      showError('Failed to update tenant');
+    } catch (error) {
+      console.error('Failed to update tenant:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to update tenant',
+        severity: 'error',
+      });
     } finally {
       setUploadingEditLogo(false);
     }
@@ -332,12 +401,20 @@ export const TenantPage: React.FC = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      showError('Please select an image file');
+      setSnackbar({
+        open: true,
+        message: 'Please select an image file',
+        severity: 'error',
+      });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      showError('File size should be less than 5MB');
+      setSnackbar({
+        open: true,
+        message: 'File size should be less than 5MB',
+        severity: 'error',
+      });
       return;
     }
 
@@ -368,14 +445,21 @@ export const TenantPage: React.FC = () => {
       setTenants(prev =>
         prev.map(t => (t.id === updatedTenant.id ? updatedTenant : t))
       );
-      showSuccess(
-        `Tenant "${tenant.name}" status changed to "${
+      setSnackbar({
+        open: true,
+        message: `Tenant "${tenant.name}" status changed to "${
           updatedTenant.status.charAt(0).toUpperCase() +
           updatedTenant.status.slice(1).toLowerCase()
-        }"`
-      );
-    } catch {
-      showError('Failed to update status');
+        }"`,
+        severity: 'success',
+      });
+    } catch (err) {
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to update status',
+        severity: 'error',
+      });
     }
   };
 
@@ -384,9 +468,17 @@ export const TenantPage: React.FC = () => {
     try {
       await SystemTenantApi.remove(selectedTenant.id);
       fetchTenants();
-      showSuccess('Tenant deleted successfully');
+      setSnackbar({
+        open: true,
+        message: 'Tenant deleted successfully',
+        severity: 'success',
+      });
     } catch {
-      showError('Failed to delete tenant');
+      setSnackbar({
+        open: true,
+        message: 'Failed to delete tenant',
+        severity: 'error',
+      });
     } finally {
       setIsDeleteOpen(false);
     }
@@ -396,9 +488,17 @@ export const TenantPage: React.FC = () => {
     try {
       await SystemTenantApi.restore(id);
       fetchTenants();
-      showSuccess('Tenant restored successfully');
+      setSnackbar({
+        open: true,
+        message: 'Tenant restored successfully',
+        severity: 'success',
+      });
     } catch {
-      showError('Failed to restore tenant');
+      setSnackbar({
+        open: true,
+        message: 'Failed to restore tenant',
+        severity: 'error',
+      });
     }
   };
 
@@ -409,7 +509,11 @@ export const TenantPage: React.FC = () => {
       setTenantDetail(detail);
       setIsDetailOpen(true);
     } catch {
-      showError('Failed to load tenant details');
+      setSnackbar({
+        open: true,
+        message: 'Failed to load tenant details',
+        severity: 'error',
+      });
     }
   };
 
@@ -434,7 +538,9 @@ export const TenantPage: React.FC = () => {
 
         // Convert relative path to full URL if needed
         if (logoUrl && typeof logoUrl === 'string' && logoUrl.startsWith('/')) {
-          logoUrl = `${env.apiBaseUrl}${logoUrl}`;
+          const baseURL =
+            import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
+          logoUrl = `${baseURL}${logoUrl}`;
         }
 
         if (
@@ -445,14 +551,20 @@ export const TenantPage: React.FC = () => {
           setEditLogo(logoUrl);
           setEditLogoPreview(logoUrl);
         }
-      } catch {
+      } catch (err) {
+        console.log('Could not fetch tenant details:', err);
         // Set domain from tenant object as fallback
         setEditDomain('');
       }
 
       setIsEditOpen(true);
-    } catch {
-      showError('Failed to load tenant details');
+    } catch (error) {
+      console.error('Failed to open edit modal:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to load tenant details',
+        severity: 'error',
+      });
     }
   };
 
@@ -472,29 +584,25 @@ export const TenantPage: React.FC = () => {
         </Typography>
 
         <Box display='flex' flexWrap='wrap' gap={2}>
-          <AppSelect
-            label='Status'
-            size='small'
-            sx={{ minWidth: 140 }}
-            value={statusFilter}
-            onChange={(event: SelectChangeEvent<StatusFilterOption>) => {
-              const value = event.target.value as StatusFilterOption;
-              setStatusFilter(value);
-            }}
-          >
-            <MenuItem value='All'>All</MenuItem>
-            <MenuItem value='active'>Active</MenuItem>
-            <MenuItem value='suspended'>Suspended</MenuItem>
-            <MenuItem value='deleted'>Deleted</MenuItem>
-          </AppSelect>
-          <AppButton
-            variant='contained'
-            variantType='primary'
-            onClick={() => setIsFormOpen(true)}
-            startIcon={<AddIcon />}
-          >
-            Create Tenant
-          </AppButton>
+          <FormControl size='small' sx={{ minWidth: 140 }}>
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={statusFilter}
+              label='Status'
+              onChange={(event: SelectChangeEvent<StatusFilterOption>) => {
+                const value = event.target.value as StatusFilterOption;
+                setStatusFilter(value);
+              }}
+            >
+              <MenuItem value='All'>All</MenuItem>
+              <MenuItem value='active'>Active</MenuItem>
+              <MenuItem value='suspended'>Suspended</MenuItem>
+              <MenuItem value='deleted'>Deleted</MenuItem>
+            </Select>
+          </FormControl>
+          <Button variant='contained' onClick={() => setIsFormOpen(true)}>
+            <AddIcon /> Create Tenant
+          </Button>
         </Box>
       </Box>
 
@@ -504,106 +612,99 @@ export const TenantPage: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <AppCard sx={{ padding: 0, borderRadius: 1, overflow: 'hidden' }}>
-          <AppTable>
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <strong>Name</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Status</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Created</strong>
-                </TableCell>
-                <TableCell align='center'>
-                  <strong>Actions</strong>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {tenants.map(t => (
-                <TableRow key={t.id} hover>
-                  <TableCell>{t.name}</TableCell>
-                  <TableCell>
-                    {!t.isDeleted && (
-                      <Switch
-                        checked={t.status === 'active'}
-                        onChange={() => toggleStatus(t)}
-                        color='primary'
-                        aria-label={`Toggle status for tenant ${t.name}`}
-                        role='switch'
-                        aria-checked={t.status === 'active'}
-                      />
-                    )}
-                    {t.isDeleted
-                      ? 'Deleted'
-                      : t.status.charAt(0).toUpperCase() +
-                        t.status.slice(1).toLowerCase()}
-                  </TableCell>
-                  <TableCell>{formatDate(t.created_at)}</TableCell>
-                  <TableCell align='center'>
-                    {!t.isDeleted ? (
-                      <>
-                        <Tooltip title='View Details'>
-                          <IconButton
-                            onClick={() => handleViewDetails(t)}
-                            aria-label={`View details for tenant ${t.name}`}
-                          >
-                            <VisibilityIcon aria-hidden='true' />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title='Edit Tenant'>
-                          <IconButton
-                            color='primary'
-                            onClick={() => handleOpenEdit(t)}
-                            aria-label={`Edit tenant ${t.name}`}
-                          >
-                            <EditIcon aria-hidden='true' />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title='Delete'>
-                          <IconButton
-                            color='error'
-                            onClick={() => {
-                              setSelectedTenant(t);
-                              setIsDeleteOpen(true);
-                            }}
-                            aria-label={`Delete tenant ${t.name}`}
-                          >
-                            <DeleteIcon aria-hidden='true' />
-                          </IconButton>
-                        </Tooltip>
-                      </>
-                    ) : (
-                      <Tooltip title='Restore Tenant'>
-                        <IconButton
-                          color='success'
-                          onClick={() => handleRestore(t.id)}
-                          aria-label={`Restore tenant ${t.name}`}
-                        >
-                          <RestoreIcon aria-hidden='true' />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-
-              {tenants.length === 0 && (
+        <Paper sx={{ borderRadius: 1, overflow: 'hidden', boxShadow: 'none' }}>
+          <TableContainer>
+            <Table>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={4} align='center'>
-                    <Alert severity='info' sx={{ my: 2, borderRadius: 2 }}>
-                      No tenants found.
-                    </Alert>
+                  <TableCell>
+                    <strong>Name</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Status</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Created</strong>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <strong>Actions</strong>
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </AppTable>
-        </AppCard>
+              </TableHead>
+              <TableBody>
+                {tenants.map(t => (
+                  <TableRow key={t.id} hover>
+                    <TableCell>{t.name}</TableCell>
+                    <TableCell>
+                      {!t.isDeleted && (
+                        <Switch
+                          checked={t.status === 'active'}
+                          onChange={() => toggleStatus(t)}
+                          color='primary'
+                        />
+                      )}
+                      {t.isDeleted
+                        ? 'Deleted'
+                        : t.status.charAt(0).toUpperCase() +
+                          t.status.slice(1).toLowerCase()}
+                    </TableCell>
+                    <TableCell>{formatDate(t.created_at)}</TableCell>
+                    <TableCell align='center'>
+                      {!t.isDeleted ? (
+                        <>
+                          <Tooltip title='View Details'>
+                            <IconButton onClick={() => handleViewDetails(t)}>
+                              <VisibilityIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title='Edit Tenant'>
+                            <IconButton
+                              color='primary'
+                              onClick={() => handleOpenEdit(t)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+
+                          <Tooltip title='Delete'>
+                            <IconButton
+                              color='error'
+                              onClick={() => {
+                                setSelectedTenant(t);
+                                setIsDeleteOpen(true);
+                              }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      ) : (
+                        <Tooltip title='Restore Tenant'>
+                          <IconButton
+                            color='success'
+                            onClick={() => handleRestore(t.id)}
+                          >
+                            <RestoreIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+
+                {tenants.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} align='center'>
+                      <Alert severity='info' sx={{ my: 2, borderRadius: 2 }}>
+                        No tenants found.
+                      </Alert>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       )}
       {(() => {
         // Get current page record count
@@ -655,7 +756,7 @@ export const TenantPage: React.FC = () => {
           {tenantDetail ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               {/* Tenant + Logo Section */}
-              <AppCard
+              <Card
                 sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 3 }}
               >
                 {(() => {
@@ -672,7 +773,10 @@ export const TenantPage: React.FC = () => {
 
                   // If logo is a relative path, convert it to full URL
                   if (logoUrl && logoUrl.startsWith('/')) {
-                    logoUrl = `${env.apiBaseUrl}${logoUrl}`;
+                    const baseURL =
+                      import.meta.env.VITE_API_BASE_URL ||
+                      'http://localhost:5173';
+                    logoUrl = `${baseURL}${logoUrl}`;
                   }
 
                   const isValidLogo =
@@ -730,7 +834,7 @@ export const TenantPage: React.FC = () => {
                     {tenantDetail.name}
                   </Typography>
                 </Box>
-              </AppCard>
+              </Card>
               <Box
                 sx={{
                   display: 'grid',
@@ -739,7 +843,7 @@ export const TenantPage: React.FC = () => {
                 }}
               >
                 {/* Tenant Info */}
-                <AppCard variant='outlined' sx={{ p: 2 }}>
+                <Card variant='outlined' sx={{ p: 2 }}>
                   <Typography
                     variant='subtitle1'
                     color='primary'
@@ -774,11 +878,11 @@ export const TenantPage: React.FC = () => {
                       {formatDate(tenantDetail.created_at)}
                     </Typography>
                   </Box>
-                </AppCard>
+                </Card>
 
                 {/* Company Info */}
                 {tenantDetail.company && (
-                  <AppCard variant='outlined' sx={{ p: 2 }}>
+                  <Card variant='outlined' sx={{ p: 2 }}>
                     <Typography
                       variant='subtitle1'
                       color='primary'
@@ -806,11 +910,11 @@ export const TenantPage: React.FC = () => {
                         />
                       </Typography>
                     </Box>
-                  </AppCard>
+                  </Card>
                 )}
 
                 {/* Summary */}
-                <AppCard variant='outlined' sx={{ p: 2 }}>
+                <Card variant='outlined' sx={{ p: 2 }}>
                   <Typography
                     variant='subtitle1'
                     color='primary'
@@ -827,12 +931,12 @@ export const TenantPage: React.FC = () => {
                       <strong>Employees:</strong> {tenantDetail.employeeCount}
                     </Typography>
                   </Box>
-                </AppCard>
+                </Card>
               </Box>
 
               {/* Departments */}
               {tenantDetail.departments?.length > 0 && (
-                <AppCard variant='outlined' sx={{ p: 2 }}>
+                <Card variant='outlined' sx={{ p: 2 }}>
                   <Typography
                     variant='subtitle1'
                     color='primary'
@@ -850,7 +954,7 @@ export const TenantPage: React.FC = () => {
                       />
                     ))}
                   </Box>
-                </AppCard>
+                </Card>
               )}
             </Box>
           ) : (
@@ -861,14 +965,13 @@ export const TenantPage: React.FC = () => {
         </DialogContent>
 
         <DialogActions sx={{ p: 2 }}>
-          <AppButton
+          <Button
             onClick={() => setIsDetailOpen(false)}
             variant='contained'
-            variantType='primary'
             sx={{ minWidth: 80 }}
           >
             Close
-          </AppButton>
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -918,16 +1021,15 @@ export const TenantPage: React.FC = () => {
               onChange={handleLogoFileChange}
             />
             <label htmlFor='logo-upload-button'>
-              <AppButton
+              <Button
                 variant='outlined'
-                variantType='secondary'
                 component='span'
                 startIcon={<CloudUploadIcon />}
                 fullWidth
                 sx={{ mb: 2 }}
               >
                 {selectedLogoFile ? 'Change Logo' : 'Upload Company Logo'}
-              </AppButton>
+              </Button>
             </label>
             {logoPreview && (
               <Box
@@ -959,9 +1061,8 @@ export const TenantPage: React.FC = () => {
                   onClick={handleRemoveLogoFile}
                   color='error'
                   size='small'
-                  aria-label='Remove logo file'
                 >
-                  <CloseIcon aria-hidden='true' />
+                  <CloseIcon />
                 </IconButton>
               </Box>
             )}
@@ -994,17 +1095,11 @@ export const TenantPage: React.FC = () => {
           />
         </DialogContent>
         <DialogActions>
-          <AppButton
-            onClick={closeCreateModal}
-            disabled={uploadingLogo}
-            variantType='secondary'
-            variant='outlined'
-          >
+          <Button onClick={closeCreateModal} disabled={uploadingLogo}>
             Cancel
-          </AppButton>
-          <AppButton
+          </Button>
+          <Button
             variant='contained'
-            variantType='primary'
             onClick={handleCreate}
             disabled={uploadingLogo}
           >
@@ -1016,7 +1111,7 @@ export const TenantPage: React.FC = () => {
             ) : (
               'Save'
             )}
-          </AppButton>
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -1035,21 +1130,10 @@ export const TenantPage: React.FC = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <AppButton
-            onClick={() => setIsDeleteOpen(false)}
-            variantType='secondary'
-            variant='outlined'
-          >
-            Cancel
-          </AppButton>
-          <AppButton
-            color='error'
-            variant='contained'
-            variantType='danger'
-            onClick={handleDelete}
-          >
+          <Button onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+          <Button color='error' variant='contained' onClick={handleDelete}>
             Delete
-          </AppButton>
+          </Button>
         </DialogActions>
       </Dialog>
       {/* Edit Tenant Modal */}
@@ -1108,16 +1192,15 @@ export const TenantPage: React.FC = () => {
               onChange={handleEditLogoFileChange}
             />
             <label htmlFor='edit-logo-upload-button'>
-              <AppButton
+              <Button
                 variant='outlined'
-                variantType='secondary'
                 component='span'
                 startIcon={<CloudUploadIcon />}
                 fullWidth
                 sx={{ mb: 2 }}
               >
                 {editLogoFile ? 'Change Logo' : 'Upload Company Logo'}
-              </AppButton>
+              </Button>
             </label>
             {(editLogoPreview || editLogo) && (
               <Box
@@ -1152,9 +1235,8 @@ export const TenantPage: React.FC = () => {
                     onClick={handleRemoveEditLogoFile}
                     color='error'
                     size='small'
-                    aria-label='Remove logo file'
                   >
-                    <CloseIcon aria-hidden='true' />
+                    <CloseIcon />
                   </IconButton>
                 )}
               </Box>
@@ -1162,7 +1244,7 @@ export const TenantPage: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <AppButton
+          <Button
             onClick={() => {
               setIsEditOpen(false);
               // Reset edit form
@@ -1177,14 +1259,11 @@ export const TenantPage: React.FC = () => {
               setEditLogoPreview(null);
             }}
             disabled={uploadingEditLogo}
-            variantType='secondary'
-            variant='outlined'
           >
             Cancel
-          </AppButton>
-          <AppButton
+          </Button>
+          <Button
             variant='contained'
-            variantType='primary'
             onClick={handleUpdate}
             disabled={uploadingEditLogo}
           >
@@ -1196,17 +1275,19 @@ export const TenantPage: React.FC = () => {
             ) : (
               'Update'
             )}
-          </AppButton>
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Snackbar */}
-      <ErrorSnackbar
+      <Snackbar
         open={snackbar.open}
-        message={snackbar.message}
-        severity={snackbar.severity}
-        onClose={closeSnackbar}
-      />
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
+      </Snackbar>
     </Box>
   );
 };

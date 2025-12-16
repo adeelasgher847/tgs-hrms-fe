@@ -36,7 +36,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        boxShadow:'none'
+        boxShadow: 'none',
       }}
     >
       <CardContent

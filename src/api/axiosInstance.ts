@@ -10,45 +10,56 @@ const axiosInstance = axios.create({
   },
 });
 
+// Request interceptor to attach token and handle FormData header
 axiosInstance.interceptors.request.use(
   config => {
-    const token = authService.getAccessToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    try {
+      const token = authService.getAccessToken();
+      if (token) {
+        (config.headers as Record<string, unknown>).Authorization = `Bearer ${token}`;
+      }
 
-    if (config.data instanceof FormData) {
-      delete config.headers['Content-Type'];
+      // If payload is FormData, remove Content-Type so browser/axios adds boundary
+      if (config.data instanceof FormData) {
+        delete (config.headers as Record<string, unknown>)['Content-Type'];
+      }
+    } catch (e) {
+      void e;
     }
-
     return config;
   },
   error => Promise.reject(error)
 );
 
+// Response interceptor: use centralized axiosErrorHandler with safe try/catch
 axiosInstance.interceptors.response.use(undefined, async (error: unknown) => {
-  if (!axiosErrorHandler.isAxiosError(error)) {
-    return Promise.reject(error);
+  try {
+    if (!axiosErrorHandler.isAxiosError(error)) {
+      return Promise.reject(error);
+    }
+
+    const axiosError = error as AxiosError;
+    const originalRequest = (axiosError.config as AxiosRequestConfig & {
+      _retry?: boolean;
+    }) || undefined;
+
+    const handlerResult = axiosErrorHandler.handleError(axiosError, originalRequest ?? null);
+
+    if (handlerResult.shouldLogout) {
+      return Promise.reject(handlerResult.error ?? axiosError);
+    }
+
+    if (handlerResult.shouldRetry && originalRequest) {
+      return handleTokenRefresh(originalRequest);
+    }
+
+    return Promise.reject(handlerResult.error ?? axiosError);
+  } catch (err) {
+    return Promise.reject(err);
   }
-
-  const axiosError = error as AxiosError;
-  const originalRequest = axiosError.config as
-    | (AxiosRequestConfig & { _retry?: boolean })
-    | null;
-
-  const handlerResult = axiosErrorHandler.handleError(error, originalRequest);
-
-  if (handlerResult.shouldLogout) {
-    return Promise.reject(handlerResult.error);
-  }
-
-  if (handlerResult.shouldRetry && originalRequest) {
-    return handleTokenRefresh(originalRequest);
-  }
-
-  return Promise.reject(handlerResult.error);
 });
 
+// Helper to refresh token and retry the original request
 async function handleTokenRefresh(
   originalRequest: AxiosRequestConfig & { _retry?: boolean }
 ): Promise<unknown> {
@@ -73,8 +84,7 @@ async function handleTokenRefresh(
 
     authService.processQueueSuccess(newToken);
 
-    axiosInstance.defaults.headers.common['Authorization'] =
-      `Bearer ${newToken}`;
+    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
     originalRequest.headers = {
       ...(originalRequest.headers ?? {}),
@@ -86,7 +96,7 @@ async function handleTokenRefresh(
     authService.processQueueError(refreshError);
 
     if (axiosErrorHandler.shouldTriggerLogout(refreshError)) {
-      axiosErrorHandler.handleLogout(refreshError);
+      axiosErrorHandler.handleLogout();
     } else {
       authService.clearTokens();
       window.location.href = '/';

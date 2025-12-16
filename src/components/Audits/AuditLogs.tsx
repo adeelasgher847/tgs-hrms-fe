@@ -58,9 +58,9 @@ const AuditLogs: React.FC = () => {
         // Use the same API as Employee List to get all tenants
         const data = await systemEmployeeApiService.getAllTenants(true);
         // Show all tenants (no filtering) - same as Employee List
-        const allTenants = (data || []).map((t: any) => ({
-          id: t.id,
-          name: t.name || t.tenant_name || '',
+        const allTenants = (data || []).map((t: Record<string, unknown>) => ({
+          id: t.id as string,
+          name: (t.name || t.tenant_name || '') as string,
         }));
         setTenants(allTenants);
       } catch {
