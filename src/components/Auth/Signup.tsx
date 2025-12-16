@@ -305,7 +305,7 @@ const Signup: React.FC = () => {
       <Box
         sx={{
           width: '100%',
-          maxWidth: '1440px',
+          // maxWidth: '1700px',
           display: 'flex',
           flexDirection: { xs: 'column', lg: 'row' },
           overflow: 'hidden',
@@ -327,13 +327,15 @@ const Signup: React.FC = () => {
             overflowX: 'hidden',
             position: 'relative',
             zIndex: 1,
-            marginLeft: { xs: 0, lg: '-12px' },
+            marginLeft: { xs: 0, lg: '-24px' },
             paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
             paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
             pt: { xs: '60px', lg: '48px' },
             boxSizing: 'border-box',
             minWidth: 0,
+            borderTopLeftRadius: { xs: 0, lg: '30px' },
+            borderBottomLeftRadius: { xs: 0, lg: '30px' },
           }}
         >
           <Box
@@ -356,7 +358,7 @@ const Signup: React.FC = () => {
           </Box>
           <Box
             sx={{
-              maxWidth: { xs: '100%', sm: 520 },
+              // maxWidth: { xs: '100%', sm: '90%' },
               width: '100%',
               mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },

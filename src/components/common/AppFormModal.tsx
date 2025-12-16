@@ -129,10 +129,9 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           pt: { xs: 2, sm: 4 },
         }}
       >
-        {/* ✅ CONTENT CONTAINER */}
         <Box
           sx={{
-            maxWidth: '480px', // 👈 container width
+            maxWidth: '480px', 
             width: '100%',
             mx: 'auto',
           }}
@@ -186,7 +185,6 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
         </Box>
       </DialogContent>
 
-      {/* ---------- ACTIONS ---------- */}
       <DialogActions
         sx={{
           p: 0,
@@ -221,9 +219,9 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             color: '#fff',
             px: 4,
             boxShadow: 'none',
-            '&:hover': {
-              bgcolor: COLORS.PRIMARY,
-            },
+            // '&:hover': {
+            //   bgcolor: COLORS.PRIMARY,
+            // },
             '&:disabled': {
               bgcolor: '#99c0e9',
             },
