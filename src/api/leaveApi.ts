@@ -35,6 +35,7 @@ export interface LeaveResponse {
   createdAt?: string;
   approvedAt?: string | null;
   remarks?: string | null;
+  managerRemarks?: string | null;
 }
 
 export interface LeaveWithUser extends LeaveResponse {
@@ -185,12 +186,14 @@ class LeaveApiService {
       throw new Error('Manager remarks cannot be empty');
     }
     
-    // Backend expects 'remarks' field, not 'managerRemarks'
+    // Use the correct endpoint: PATCH /leaves/{id}/manager-remarks
+    // Backend expects 'remarks' field in request body, but returns 'managerRemarks' in response
     const payload = {
       remarks: trimmedRemarks,
     };
+    
     const response = await axiosInstance.patch<LeaveResponse>(
-      `${this.baseUrl}/${id}/approve-manager`,
+      `${this.baseUrl}/${id}/manager-remarks`,
       payload
     );
     return response.data;
