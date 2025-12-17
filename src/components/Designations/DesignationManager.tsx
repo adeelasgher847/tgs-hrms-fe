@@ -630,10 +630,10 @@ export default function DesignationManager() {
                       fontSize: { xs: '18px', sm: '20px' },
                     },
                   },
-                  '&:hover': {
-                    bgcolor: 'var(--primary-dark-color)',
-                    boxShadow: 'none',
-                  },
+                  // '&:hover': {
+                  //   bgcolor: 'var(--primary-dark-color)',
+                  //   boxShadow: 'none',
+                  // },
                 }}
               >
                 <Box
@@ -848,9 +848,9 @@ export default function DesignationManager() {
                           aria-label={`Edit designation ${getText(designation.title, designation.titleAr)}`}
                           sx={{
                             p: { xs: 0.5, sm: 1 },
-                            '&:hover': {
-                              backgroundColor: 'transparent',
-                            },
+                            // '&:hover': {
+                            //   backgroundColor: 'transparent',
+                            // },
                           }}
                         >
                           <Box
@@ -874,9 +874,9 @@ export default function DesignationManager() {
                             aria-label={`Delete designation ${getText(designation.title, designation.titleAr)}`}
                             sx={{
                               p: { xs: 0.5, sm: 1 },
-                              '&:hover': {
-                                backgroundColor: 'transparent',
-                              },
+                              // '&:hover': {
+                              //   backgroundColor: 'transparent',
+                              // },
                             }}
                           >
                             <Box

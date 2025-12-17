@@ -11,10 +11,21 @@ interface AppInputFieldProps extends Omit<TextFieldProps, 'label'> {
   label: string;
   labelClassName?: string;
   containerSx?: object;
+  inputBackgroundColor?: string;
 }
 
 const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
-  ({ label, labelClassName = 'label', containerSx, sx, ...rest }, ref) => {
+  (
+    {
+      label,
+      labelClassName = 'label',
+      containerSx,
+      sx,
+      inputBackgroundColor,
+      ...rest
+    },
+    ref
+  ) => {
     // Check if this is a phone input (has PhoneInput in InputProps)
     const isPhoneInput = rest.InputProps?.startAdornment !== undefined;
 
@@ -27,7 +38,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
           sx={{
             display: 'block',
             mb: 0.5,
-            fontWeight: { xs: 400, lg: 600 },
+            fontWeight: { xs: 400, lg: 500 },
             fontSize: { xs: '14px', lg: '20px' },
             lineHeight: 'var(--subheading2-line-height)',
             letterSpacing: 'var(--subheading2-letter-spacing)',
@@ -44,7 +55,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
               xs: `0.5px solid ${rest.error ? '#d32f2f' : '#BDBDBD'}`,
               sm: `1px solid ${rest.error ? '#d32f2f' : '#BDBDBD'}`,
             },
-            backgroundColor: { xs: '#EFEFEF', sm: '#FFFFFF' },
+            backgroundColor: inputBackgroundColor,
             overflow: 'visible',
           }}
         >
@@ -71,7 +82,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
               },
               '& .MuiOutlinedInput-input': {
                 color: 'var(--text-color)',
-                fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
+                fontSize: { xs: '16px', sm: '14px' },
                 display: isPhoneInput ? 'none' : undefined,
                 padding: rest.multiline
                   ? undefined
@@ -83,7 +94,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
               },
               '& .MuiOutlinedInput-input:-webkit-autofill': {
                 padding: rest.multiline ? undefined : '10px 16px !important',
-                WebkitBoxShadow: '0 0 0 1000px #EFEFEF inset',
+                WebkitBoxShadow: `0 0 0 1000px ${inputBackgroundColor || '#EFEFEF'} inset`,
                 WebkitTextFillColor: 'var(--text-color)',
               },
               '& .MuiInputLabel-root': {

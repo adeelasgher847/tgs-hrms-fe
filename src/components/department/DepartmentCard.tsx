@@ -85,9 +85,9 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               size='small'
               sx={{
                 p: { xs: 0.5, sm: 1 },
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                },
+                // '&:hover': {
+                //   backgroundColor: 'transparent',
+                // },
               }}
             >
               <Box
@@ -108,9 +108,9 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               size='small'
               sx={{
                 p: { xs: 0.5, sm: 1 },
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                },
+                // '&:hover': {
+                //   backgroundColor: 'transparent',
+                // },
               }}
             >
               <Box

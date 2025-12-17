@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   Button,
-  Alert,
   CircularProgress,
   FormControl,
   MenuItem,
@@ -20,9 +19,7 @@ const CompanyDetails: React.FC = () => {
   const navigate = useNavigate();
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const { snackbar, showSuccess, closeSnackbar } = useErrorHandler();
+  const { snackbar, showSuccess, showError, closeSnackbar } = useErrorHandler();
 
   const [formData, setFormData] = useState({
     companyName: '',
@@ -49,8 +46,6 @@ const CompanyDetails: React.FC = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setFieldErrors(prev => ({ ...prev, [name]: '' }));
-    setError(null);
-    setSuccess(null);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,12 +53,12 @@ const CompanyDetails: React.FC = () => {
     if (file) {
       // Validate file size (10MB)
       if (file.size > 10 * 1024 * 1024) {
-        setError('File size must be less than 10MB');
+        showError(new Error('File size must be less than 10MB'));
         return;
       }
       // Validate file type
       if (!file.type.match(/^image\/(jpeg|jpg|png|gif)$/)) {
-        setError('Only JPEG, PNG and GIF formats are allowed');
+        showError(new Error('Only JPEG, PNG and GIF formats are allowed'));
         return;
       }
       setSelectedImage(file);
@@ -72,7 +67,6 @@ const CompanyDetails: React.FC = () => {
         setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
-      setError(null);
     }
   };
 
@@ -123,8 +117,6 @@ const CompanyDetails: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
-    setSuccess(null);
 
     if (!validateForm()) {
       return;
@@ -157,7 +149,6 @@ const CompanyDetails: React.FC = () => {
 
       localStorage.setItem('companyDetails', JSON.stringify(companyData));
 
-      setSuccess('Company details saved successfully!');
       showSuccess(
         lang === 'ar'
           ? 'تم حفظ تفاصيل الشركة بنجاح!'
@@ -191,17 +182,18 @@ const CompanyDetails: React.FC = () => {
             ...prev,
             [field]: String(errorData.message),
           }));
-          setError(null);
         } else {
-          setError(String(errorData));
+          showError(new Error(String(errorData)));
         }
       } else if (error.response?.data?.errors) {
         const errorMessages = Object.values(error.response.data.errors).flat();
-        setError(String(errorMessages.join(', ')));
+        showError(new Error(String(errorMessages.join(', '))));
       } else if (error.message) {
-        setError(error.message);
+        showError(error);
       } else {
-        setError('Failed to save company details. Please try again.');
+        showError(
+          new Error('Failed to save company details. Please try again.')
+        );
       }
     } finally {
       setLoading(false);
@@ -226,7 +218,7 @@ const CompanyDetails: React.FC = () => {
       <Box
         sx={{
           width: '100%',
-          maxWidth: '1440px',
+          // maxWidth: '1440px',
           display: 'flex',
           flexDirection: { xs: 'column', lg: 'row' },
           overflow: 'hidden',
@@ -272,22 +264,24 @@ const CompanyDetails: React.FC = () => {
             overflowX: 'hidden',
             position: 'relative',
             zIndex: 1,
-            marginLeft: { xs: 0, lg: '-12px' },
+            marginLeft: { xs: 0, lg: '-24px' },
             paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
             paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
             pt: { xs: '60px', lg: '48px' },
             boxSizing: 'border-box',
             minWidth: 0,
+            borderTopLeftRadius: { xs: 0, lg: '30px' },
+            borderBottomLeftRadius: { xs: 0, lg: '30px' },
           }}
         >
           <Box
             sx={{
-              maxWidth: { xs: '100%', sm: '500px' },
+              // maxWidth: { xs: '100%', sm: '500px' },
               width: '100%',
               mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
-              borderRadius: { xs: '30px', lg: 0 },
+              borderRadius: { xs: '20px', lg: 0 },
               p: { xs: 2, sm: 3, md: 4 },
               mt: { xs: '60px', sm: '70px', lg: 0 },
               boxSizing: 'border-box',
@@ -312,12 +306,10 @@ const CompanyDetails: React.FC = () => {
             <Typography
               variant='h1'
               sx={{
-                fontSize: { xs: '26px', sm: '30px', lg: '48px' },
+                fontSize: { xs: '32px', lg: '48px' },
                 fontWeight: 700,
-                lineHeight: { xs: '40px', lg: 'auto' },
-                letterSpacing: { xs: '-2%', lg: 'normal' },
-                color: { xs: '#001218', lg: 'inherit' },
                 mb: 1,
+                color: { xs: '#001218', lg: 'inherit' },
               }}
             >
               Company Details
@@ -326,44 +318,14 @@ const CompanyDetails: React.FC = () => {
             <Typography
               className='body'
               sx={{
-                fontSize: { xs: '14px', sm: '16px', lg: '24px' },
-                fontWeight: { xs: 400, lg: 'inherit' },
-                lineHeight: { xs: '20px', lg: 'inherit' },
-                letterSpacing: { xs: '-1%', lg: 'inherit' },
                 color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
-                mb: { xs: 3, lg: 4 },
+                mb: 3,
+                fontSize: { xs: '16px', lg: '24px' },
+                fontWeight: 400,
               }}
             >
               Tell us more about your company.
             </Typography>
-
-            {error && (
-              <Alert
-                severity='error'
-                sx={{
-                  mb: 2,
-                  '& .MuiAlert-message': {
-                    fontSize: { xs: '12px', sm: '14px' },
-                  },
-                }}
-              >
-                {error}
-              </Alert>
-            )}
-
-            {success && (
-              <Alert
-                severity='success'
-                sx={{
-                  mb: 2,
-                  '& .MuiAlert-message': {
-                    fontSize: { xs: '12px', sm: '14px' },
-                  },
-                }}
-              >
-                {success}
-              </Alert>
-            )}
 
             <Box
               component='form'
@@ -412,7 +374,7 @@ const CompanyDetails: React.FC = () => {
                   className='label'
                   sx={{
                     fontSize: { xs: '14px', lg: '20px' },
-                    fontWeight: { xs: 400, lg: 600 },
+                    fontWeight: { xs: 400, lg: 500 },
                     lineHeight: { xs: '20px', lg: 'auto' },
                     letterSpacing: { xs: '-1%', lg: 'normal' },
                     display: 'block',
@@ -438,10 +400,10 @@ const CompanyDetails: React.FC = () => {
                       backgroundColor: 'var(--white-color)',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
-                      '&:hover': {
-                        backgroundColor: 'var(--light-grey-100-color)',
-                        borderColor: 'var(--primary-dark-color)',
-                      },
+                      // '&:hover': {
+                      //   backgroundColor: 'var(--light-grey-100-color)',
+                      //   borderColor: 'var(--primary-dark-color)',
+                      // },
                     }}
                   >
                     <input
@@ -466,7 +428,7 @@ const CompanyDetails: React.FC = () => {
                     <Typography
                       className='label'
                       sx={{
-                        fontSize: { xs: '14px', lg: 'inherit' },
+                        fontSize: { xs: '16px', lg: 'inherit' },
                         fontWeight: { xs: 400, lg: 'inherit' },
                         lineHeight: { xs: '20px', lg: 'inherit' },
                         letterSpacing: { xs: '-1%', lg: 'inherit' },
@@ -478,7 +440,7 @@ const CompanyDetails: React.FC = () => {
                     </Typography>
                     <Typography
                       sx={{
-                        fontSize: '12px',
+                        fontSize: '14px',
                         fontWeight: { xs: 400, lg: 'inherit' },
                         lineHeight: { xs: '16px', lg: 'inherit' },
                         color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
@@ -523,10 +485,10 @@ const CompanyDetails: React.FC = () => {
                         backgroundColor: 'var(--secondary-color)',
                         color: 'var(--white-color)',
                         padding: 0,
-                        '&:hover': {
-                          backgroundColor: 'var(--secondary-color)',
-                          opacity: 0.8,
-                        },
+                        // '&:hover': {
+                        //   backgroundColor: 'var(--secondary-color)',
+                        //   opacity: 0.8,
+                        // },
                       }}
                     >
                       ×
@@ -550,19 +512,20 @@ const CompanyDetails: React.FC = () => {
                   onClick={handleBack}
                   disabled={loading}
                   sx={{
-                    borderColor: { xs: '#001218', lg: 'var(--black-color)' },
-                    color: { xs: '#001218', lg: 'var(--black-color)' },
+                    borderColor: '#2C2C2C',
+                    color: { xs: '#2C2C2C', lg: '#2C2C2C' },
                     backgroundColor: 'transparent',
                     borderRadius: '12px',
-                    fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
+                    fontSize: { xs: '16px', lg: 'var(--body-font-size)' },
+                    fontWeight: { xs: 700, lg: 400 },
                     textTransform: 'none',
                     padding: { xs: '8px 32px', lg: '8px 30px' },
                     height: { xs: '40px', lg: 'auto' },
                     gap: { xs: '4px', lg: 0 },
-                    '&:hover': {
-                      borderColor: 'var(--primary-dark-color)',
-                      backgroundColor: 'rgba(48, 131, 220, 0.1)',
-                    },
+                    // '&:hover': {
+                    //   borderColor: 'var(--primary-dark-color)',
+                    //   backgroundColor: 'rgba(48, 131, 220, 0.1)',
+                    // },
                   }}
                 >
                   Back
@@ -574,16 +537,16 @@ const CompanyDetails: React.FC = () => {
                   sx={{
                     backgroundColor: 'var(--primary-dark-color)',
                     color: 'var(--white-color)',
-                    fontWeight: 600,
                     borderRadius: '12px',
-                    fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
+                    fontSize: { xs: '16px', lg: 'var(--body-font-size)' },
+                    fontWeight: { xs: 700, lg: 400 },
                     textTransform: 'none',
                     padding: { xs: '8px 32px', lg: '8px 30px' },
                     height: { xs: '40px', lg: 'auto' },
                     gap: { xs: '4px', lg: 0 },
-                    '&:hover': {
-                      backgroundColor: 'var(--primary-light-color)',
-                    },
+                    // '&:hover': {
+                    //   backgroundColor: 'var(--primary-light-color)',
+                    // },
                     '&:disabled': {
                       backgroundColor: 'var(--grey-color)',
                     },

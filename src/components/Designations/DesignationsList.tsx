@@ -70,10 +70,10 @@ export default function DesignationsList({
             sx={{
               width: '100%',
               transition: 'all 0.2s ease-in-out',
-              '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: '0 4px 12px 0 rgb(0 0 0 / 0.15)',
-              },
+              // '&:hover': {
+              //   transform: 'translateY(-2px)',
+              //   boxShadow: '0 4px 12px 0 rgb(0 0 0 / 0.15)',
+              // },
             }}
           >
             <CardContent sx={{ p: 2.5 }}>
@@ -128,7 +128,7 @@ export default function DesignationsList({
                     aria-label={`Edit designation ${getText(designation.title, designation.titleAr)}`}
                     sx={{
                       color: 'primary.main',
-                      '&:hover': { bgcolor: 'primary.50' },
+                      // '&:hover': { bgcolor: 'primary.50' },
                     }}
                   >
                     <EditIcon sx={{ fontSize: 18 }} aria-hidden='true' />
@@ -139,7 +139,7 @@ export default function DesignationsList({
                     aria-label={`Delete designation ${getText(designation.title, designation.titleAr)}`}
                     sx={{
                       color: 'error.main',
-                      '&:hover': { bgcolor: 'error.50' },
+                      // '&:hover': { bgcolor: 'error.50' },
                     }}
                   >
                     <DeleteIcon sx={{ fontSize: 18 }} aria-hidden='true' />

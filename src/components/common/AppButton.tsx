@@ -21,9 +21,9 @@ const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
     textTransform: 'uppercase',
     borderRadius: '12px',
     fontWeight: 500,
-    '&:hover': {
-      backgroundColor: 'primary.dark',
-    },
+    // '&:hover': {
+    //   backgroundColor: 'primary.dark',
+    // },
     '&:disabled': {
       backgroundColor: '#ccc',
     },
@@ -34,10 +34,10 @@ const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
     textTransform: 'uppercase',
     borderRadius: '12px',
     fontWeight: 500,
-    '&:hover': {
-      borderColor: 'primary.dark',
-      backgroundColor: 'rgba(72,76,127,0.08)',
-    },
+    // '&:hover': {
+    //   borderColor: 'primary.dark',
+    //   backgroundColor: 'rgba(72,76,127,0.08)',
+    // },
     '&:disabled': {
       borderColor: '#ccc',
       color: '#ccc',
@@ -49,9 +49,9 @@ const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
     textTransform: 'uppercase',
     borderRadius: '12px',
     fontWeight: 500,
-    '&:hover': {
-      backgroundColor: 'error.dark',
-    },
+    // '&:hover': {
+    //   backgroundColor: 'error.dark',
+    // },
     '&:disabled': {
       backgroundColor: '#f2b8b5',
     },
@@ -61,10 +61,10 @@ const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
     color: 'text.primary',
     textTransform: 'none',
     borderRadius: '12px',
-    '&:hover': {
-      backgroundColor: 'action.hover',
-      borderColor: 'transparent',
-    },
+    // '&:hover': {
+    //   backgroundColor: 'action.hover',
+    //   borderColor: 'transparent',
+    // },
   },
 };
 

@@ -35,9 +35,9 @@ export function AppTable({ children, sx, ...rest }: AppTableProps) {
     },
     '& .MuiTableBody-root .MuiTableRow-root': {
       backgroundColor: '#FFFFFF',
-      '&:hover': {
-        backgroundColor: 'rgba(224, 236, 250, 0.3)',
-      },
+      // '&:hover': {
+      //   backgroundColor: 'rgba(224, 236, 250, 0.3)',
+      // },
       '& .MuiTableCell-root': {
         borderBottom: '0.5px solid #E0E0E0',
         padding: { xs: '8px 12px', sm: '16px' },

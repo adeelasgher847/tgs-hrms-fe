@@ -69,19 +69,34 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
     }
   };
 
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      fullWidth
-      maxWidth={maxWidth}
+      fullWidth={!isLargeScreen}
+      maxWidth={false}
       PaperProps={{
         sx: {
           borderRadius: { xs: '20px', sm: '30px' },
-          padding: { xs: '20px 16px', sm: '32px 24px' },
-          maxWidth: '600px',
-          width: '100%',
-          gap: 2,
+          padding: {
+            xs: '20px 16px',
+            sm: '24px 20px',
+            lg: '32px 20px',
+          },
+          width: {
+            xs: '100%',
+            sm: '90%',
+            lg: '527px',
+          },
+          maxWidth: {
+            xs: '100%',
+            sm: '90%',
+            lg: '527px',
+          },
+          backgroundColor: '#FFFFFF',
+          margin: { xs: '16px', lg: 'auto' },
         },
       }}
       sx={{
@@ -90,18 +105,18 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
         },
       }}
     >
-      {/* ---------- TITLE ---------- */}
       <DialogTitle
         sx={{
           p: 0,
+          pb: 2,
           position: 'relative',
           textAlign: isRtl ? 'right' : 'left',
         }}
       >
         <Typography
           fontWeight={500}
-          fontSize={{ xs: '16px', sm: '28px' }}
-          lineHeight={{ xs: '28px', sm: '36px' }}
+          fontSize={{ xs: '16px', sm: '24px', lg: '28px' }}
+          lineHeight={{ xs: '28px', sm: '32px', lg: '36px' }}
           color='#2C2C2C'
         >
           {title}
@@ -122,19 +137,19 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
         </IconButton>
       </DialogTitle>
 
-      {/* ---------- CONTENT ---------- */}
       <DialogContent
         sx={{
           p: 0,
-          pt: { xs: 2, sm: 4 },
+          pt: 0,
+          pb: 2,
+          px: 2,
         }}
       >
-        {/* ✅ CONTENT CONTAINER */}
         <Box
           sx={{
-            maxWidth: '480px', // 👈 container width
             width: '100%',
-            mx: 'auto',
+            mt: 2,
+            mb: 1,
           }}
         >
           <Box
@@ -143,7 +158,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             sx={{
               display: 'flex',
               flexDirection: 'column',
-              gap: { xs: 2, sm: 4 },
+              gap: 2,
               width: '100%',
               direction: isRtl ? 'rtl' : 'ltr',
             }}
@@ -162,6 +177,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
                       placeholder={field.placeholder}
                       error={!!field.error}
                       helperText={field.error}
+                      inputBackgroundColor='#F8F8F8'
                     />
                   ) : (
                     <AppInputField
@@ -178,6 +194,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
                       error={!!field.error}
                       helperText={field.error}
                       required={field.required}
+                      inputBackgroundColor='#F8F8F8'
                     />
                   ))}
               </Box>
@@ -186,11 +203,10 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
         </Box>
       </DialogContent>
 
-      {/* ---------- ACTIONS ---------- */}
       <DialogActions
         sx={{
           p: 0,
-          pt: { xs: 2, sm: 4 },
+          pt: 0,
           gap: 1,
           justifyContent: 'flex-end',
         }}
@@ -201,9 +217,11 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           sx={{
             borderRadius: '12px',
             textTransform: 'none',
-            border: '1px solid #BDBDBD',
+            border: '1px solid #2C2C2C',
             color: '#2C2C2C',
             px: 4,
+            fontWeight: 400,
+            fontSize: { xs: '14px', sm: '16px' },
           }}
         >
           {cancelLabel}
@@ -217,15 +235,16 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           sx={{
             borderRadius: '12px',
             textTransform: 'none',
-            bgcolor: 'var(--primary-dark-color)',
-            color: '#fff',
+            color: '#FFFFFF',
             px: 4,
-            boxShadow: 'none',
-            '&:hover': {
-              bgcolor: COLORS.PRIMARY,
-            },
+            fontWeight: 400,
+            fontSize: { xs: '14px', sm: '16px' },
+            backgroundColor: '#3083DC',
+            // '&:hover': {
+            //   bgcolor: COLORS.PRIMARY,
+            // },
             '&:disabled': {
-              bgcolor: '#99c0e9',
+              // bgcolor: '#99c0e9',
             },
           }}
         >

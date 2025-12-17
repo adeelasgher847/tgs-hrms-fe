@@ -1855,8 +1855,10 @@ const Navbar: React.FC<NavbarProps> = ({
           >
             <Search
               sx={{
-                flex: 1,
-                height: { xs: '36px', md: '44px' },
+                display: { xs: 'flex', md: 'none' },
+                alignItems: 'center',
+                mt: 1.5,
+                px: { xs: 0 },
                 position: 'relative',
               }}
             >
