@@ -538,10 +538,10 @@ const SelectPlan: React.FC = () => {
               transformOrigin: 'center',
               willChange: 'transform',
               cursor: 'pointer',
-              '&:hover': {
-                transform: 'scale(1.02)',
-                boxShadow: '0 12px 28px rgba(0,0,0,0.18)',
-              },
+              // '&:hover': {
+              //   transform: 'scale(1.02)',
+              //   boxShadow: '0 12px 28px rgba(0,0,0,0.18)',
+              // },
               mx: { xs: 1.5, sm: 2, md: 0 },
             }}
           >
@@ -676,12 +676,12 @@ const SelectPlan: React.FC = () => {
                       : '0 6px 16px rgba(42, 18, 179, 0.4)',
                   fontWeight: 700,
                   letterSpacing: 0.5,
-                  '&:hover': {
-                    background:
-                      selectedPlan === plan.id
-                        ? 'linear-gradient(90deg,rgb(21, 128, 61) 0%,rgb(22, 163, 74) 100%)'
-                        : 'linear-gradient(90deg,rgb(87, 91, 144) 0%,rgb(91, 95, 152) 100%)',
-                  },
+                  // '&:hover': {
+                  //   background:
+                  //     selectedPlan === plan.id
+                  //       ? 'linear-gradient(90deg,rgb(21, 128, 61) 0%,rgb(22, 163, 74) 100%)'
+                  //       : 'linear-gradient(90deg,rgb(87, 91, 144) 0%,rgb(91, 95, 152) 100%)',
+                  // },
                 }}
               >
                 {selectedPlan === plan.id ? 'SELECTED' : 'SELECT'}
@@ -712,10 +712,10 @@ const SelectPlan: React.FC = () => {
             color: '#484c7f',
             px: 4,
             py: 1.5,
-            '&:hover': {
-              borderColor: '#484c7f',
-              backgroundColor: 'rgba(72, 76, 127, 0.1)',
-            },
+            // '&:hover': {
+            //   borderColor: '#484c7f',
+            //   backgroundColor: 'rgba(72, 76, 127, 0.1)',
+            // },
           }}
         >
           Back
@@ -731,10 +731,10 @@ const SelectPlan: React.FC = () => {
             px: 4,
             py: 1.5,
             fontWeight: 600,
-            '&:hover': {
-              background:
-                'linear-gradient(90deg,rgb(87, 91, 144) 0%,rgb(91, 95, 152) 100%)',
-            },
+            // '&:hover': {
+            //   background:
+            //     'linear-gradient(90deg,rgb(87, 91, 144) 0%,rgb(91, 95, 152) 100%)',
+            // },
             '&:disabled': {
               backgroundColor: '#ccc',
             },

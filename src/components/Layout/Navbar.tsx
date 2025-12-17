@@ -665,9 +665,9 @@ const Navbar: React.FC<NavbarProps> = ({
                   width: { xs: '36px', md: '44px' },
                   height: { xs: '36px', md: '44px' },
                   minWidth: { xs: '36px', md: '44px' },
-                  '&:hover': {
-                    backgroundColor: 'var(--primary-light-color)',
-                  },
+                  // '&:hover': {
+                  //   backgroundColor: 'var(--primary-light-color)',
+                  // },
                 }}
                 aria-label='Search'
               >
@@ -959,9 +959,9 @@ const Navbar: React.FC<NavbarProps> = ({
                 height: { xs: '28px', md: '36px' },
                 minWidth: { xs: '28px', md: '36px' },
                 padding: 0,
-                '&:hover': {
-                  backgroundColor: 'var(--primary-light-color)',
-                },
+                // '&:hover': {
+                //   backgroundColor: 'var(--primary-light-color)',
+                // },
               }}
               aria-label='Search'
             >

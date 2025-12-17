@@ -694,7 +694,7 @@ const Signup: React.FC = () => {
                           textDecoration: 'none',
                           fontWeight: 500,
                           fontSize: 'inherit',
-                          '&:hover': { textDecoration: 'underline' },
+                          // '&:hover': { textDecoration: 'underline' },
                         }}
                       >
                         Terms{' '}
@@ -707,7 +707,7 @@ const Signup: React.FC = () => {
                           textDecoration: 'none',
                           fontWeight: 500,
                           fontSize: 'inherit',
-                          '&:hover': { textDecoration: 'underline' },
+                          // '&:hover': { textDecoration: 'underline' },
                         }}
                       >
                         Privacy policy
@@ -737,9 +737,9 @@ const Signup: React.FC = () => {
                     height: { xs: '40px', lg: 'auto' },
                     gap: { xs: '4px', lg: 0 },
                     width: { xs: '100%', lg: 'auto' },
-                    '&:hover': {
-                      backgroundColor: 'var(--primary-light-color)',
-                    },
+                    // '&:hover': {
+                    //   backgroundColor: 'var(--primary-light-color)',
+                    // },
                     '&:disabled': { backgroundColor: 'var(--grey-color)' },
                   }}
                 >
@@ -771,7 +771,7 @@ const Signup: React.FC = () => {
                     textDecoration: 'none',
                     fontWeight: 500,
                     fontSize: 'inherit',
-                    '&:hover': { textDecoration: 'underline' },
+                    // '&:hover': { textDecoration: 'underline' },
                   }}
                 >
                   {' '}

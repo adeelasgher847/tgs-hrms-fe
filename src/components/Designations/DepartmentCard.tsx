@@ -24,13 +24,13 @@ export default function DepartmentCard({
           ? `2px solid ${department.color}`
           : '2px solid transparent',
         bgcolor: isSelected ? `${department.color}08` : 'background.paper',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 4px 12px 0 rgb(0 0 0 / 0.15)',
-          bgcolor: isSelected
-            ? `${department.color}12`
-            : `${department.color}04`,
-        },
+        // '&:hover': {
+        //   transform: 'translateY(-2px)',
+        //   boxShadow: '0 4px 12px 0 rgb(0 0 0 / 0.15)',
+        //   bgcolor: isSelected
+        //     ? `${department.color}12`
+        //     : `${department.color}04`,
+        // },
       }}
       onClick={onClick}
     >

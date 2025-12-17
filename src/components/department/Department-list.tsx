@@ -439,9 +439,9 @@ export const DepartmentList: React.FC = () => {
                   '.MuiOutlinedInput-notchedOutline': {
                     borderColor: borderColor,
                   },
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: borderColor,
-                  },
+                  // '&:hover .MuiOutlinedInput-notchedOutline': {
+                  //   borderColor: borderColor,
+                  // },
                   '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
                     borderColor: borderColor,
                   },
@@ -563,7 +563,7 @@ export const DepartmentList: React.FC = () => {
               sx={{
                 backgroundColor: COLORS.PRIMARY,
                 boxShadow: 'none',
-                '&:hover': { boxShadow: 'none' },
+                // '&:hover': { boxShadow: 'none' },
               }}
             >
               {lang.createFirst}
