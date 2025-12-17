@@ -230,6 +230,15 @@ const SelectPlan: React.FC = () => {
     }
   }, [navigate, showError]);
 
+  // Auto-select the 2nd plan when plans are loaded and user is coming from company details page
+  useEffect(() => {
+    const companyDetails = localStorage.getItem('companyDetails');
+    // Only auto-select if coming from company details page (has companyDetails) and no plan is selected yet
+    if (companyDetails && plans.length >= 2 && !selectedPlan && !loading) {
+      setSelectedPlan(plans[1].id);
+    }
+  }, [plans, loading, selectedPlan]);
+
   const handlePlanSelect = (planId: string) => {
     setSelectedPlan(planId);
   };

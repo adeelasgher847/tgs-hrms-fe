@@ -30,6 +30,7 @@ interface AppDropdownProps
   placeholder?: string;
   error?: boolean;
   helperText?: string;
+  inputBackgroundColor?: string;
 }
 
 const ArrowIcon = ({ open }: { open: boolean }) => (
@@ -60,6 +61,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
       placeholder = 'Select...',
       error = false,
       helperText,
+      inputBackgroundColor,
       sx,
       ...rest
     },
@@ -92,7 +94,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
           sx={{
             width: '100%',
             '& .MuiOutlinedInput-root': {
-              backgroundColor: '#FFFFFF',
+              backgroundColor: inputBackgroundColor || '#FFFFFF',
               borderRadius: '12px',
               minHeight: '48px',
               width: '100%',

@@ -41,7 +41,7 @@ interface MenuItem {
   subItems?: SubItem[];
 }
 
-type IconSize = number | { xs?: number; lg?: number };
+type IconSize = number | string | { xs?: number | string; lg?: number | string };
 
 const MenuIcon: React.FC<{
   icon: string | React.ReactNode;
@@ -496,7 +496,7 @@ export default function Sidebar({
                         icon={item.icon}
                         iconFill={item.iconFill}
                         isActive={isActive}
-                        size={{ xs: 20, lg: 24 }}
+                        size={{ xs: '18px', lg: '18px' }}
                       />
                     </ListItemIcon>
                     <ListItemText
@@ -562,7 +562,7 @@ export default function Sidebar({
                         isActive={
                           !!(item.path && location.pathname.includes(item.path))
                         }
-                        size={{ xs: 20, lg: 24 }}
+                        size={{ xs: '18px', lg: '18px' }}
                       />
                     </ListItemIcon>
                     <ListItemText
@@ -620,7 +620,7 @@ export default function Sidebar({
                           icon={item.icon}
                           iconFill={item.iconFill}
                           isActive={isParentActive}
-                          size={{ xs: 20, lg: 24 }}
+                          size={{ xs: '18px', lg: '18px' }}
                         />
                       </ListItemIcon>
                       <ListItemText
@@ -664,7 +664,7 @@ export default function Sidebar({
                               handleSubItemClick(item.label, sub.label)
                             }
                             sx={{
-                              pl: { xs: 4, lg: 6 },
+                              pl: { xs: 7.5, lg: 8 },
                               py: 1,
                               fontSize: {
                                 xs: '14px',

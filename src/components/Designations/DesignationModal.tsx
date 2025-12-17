@@ -77,9 +77,6 @@ export default function DesignationModal({
   }, [open]);
 
   useEffect(() => {
-    if (open) {
-      departmentApiService.getAllDepartments().then(setDepartments);
-    }
     if (designation) {
       setTitle(designation.title);
       setTitleAr(designation.titleAr || '');
@@ -180,25 +177,49 @@ export default function DesignationModal({
       className='Ramish first'
       open={open}
       onClose={handleClose}
-      fullScreen={false} // ❌ force disable fullscreen
+      fullScreen={false}
+      fullWidth={!isLargeScreen}
+      maxWidth={false}
       PaperProps={{
         sx: {
-          width: '100%',
-          maxWidth: isLargeScreen ? 800 : 600, // larger width on large screens
-          borderRadius: 1,
-          m: 2, // margin around
+          width: {
+            xs: '100%',
+            sm: '90%',
+            md: '600px',
+            lg: '527px', // Fixed width on large screens
+          },
+          maxWidth: {
+            xs: '100%',
+            sm: '90%',
+            md: '600px',
+            lg: '527px',
+          },
+          borderRadius: { xs: '20px', sm: '30px' },
+          padding: {
+            xs: '20px 16px',
+            sm: '24px 20px',
+            lg: '32px 20px', // 32px top/bottom, 20px left/right on large screens
+          },
+          backgroundColor: '#FFFFFF',
+          margin: { xs: '16px', lg: 'auto' },
         },
       }}
       sx={{
         '& .MuiDialog-paper': {
-          width: '100%',
-          maxWidth: isLargeScreen ? 800 : 600, // larger width on large screens
-          margin: '16px', // keeps it centered with spacing
+          margin: { xs: '16px', lg: 'auto' },
+        },
+        '& .MuiBackdrop-root': {
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
         },
       }}
       dir={isRTL ? 'rtl' : 'ltr'}
     >
-      <DialogTitle>
+      <DialogTitle
+        sx={{
+          p: 0,
+          pb: 2,
+        }}
+      >
         <Box
           sx={{
             display: 'flex',
@@ -221,8 +242,21 @@ export default function DesignationModal({
         </Box>
       </DialogTitle>
 
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
+      <DialogContent
+        sx={{
+          p: 0,
+          pt: 0, // No top padding since title has bottom padding
+          pb: { xs: 2, sm: 3, lg: '32px' }, // 32px spacing between content and actions on large screens
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: { xs: 2, sm: 3, lg: '32px' }, // 32px gap on large screens
+            pt: { xs: 1, lg: 0 },
+          }}
+        >
           <TextField
             select
             label={getText('Department', 'القسم')}
@@ -232,6 +266,11 @@ export default function DesignationModal({
             helperText={errors.departmentId}
             fullWidth
             required
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: '#F8F8F8',
+              },
+            }}
           >
             {departments.map(dept => (
               <MenuItem key={dept.id} value={dept.id}>
@@ -255,6 +294,11 @@ export default function DesignationModal({
             inputProps={{
               dir: 'ltr',
             }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: '#F8F8F8',
+              },
+            }}
           />
           {/* <TextField
             label={getText(
@@ -274,7 +318,14 @@ export default function DesignationModal({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, pt: 2 }}>
+      <DialogActions
+        sx={{
+          p: 0,
+          pt: 0,
+          px: 2,
+          pb: 2,
+        }}
+      >
         <Button onClick={handleClose} color='inherit' size='large'>
           {getText('Cancel', 'إلغاء')}
         </Button>

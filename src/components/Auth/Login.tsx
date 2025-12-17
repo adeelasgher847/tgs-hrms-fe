@@ -363,13 +363,15 @@ const Login: React.FC = () => {
             overflowX: 'hidden',
             position: 'relative',
             zIndex: 1,
-            marginLeft: { xs: 0, lg: '-12px' },
-            // paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
-            // paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
+            marginLeft: { xs: 0, lg: '-20px' },
+            paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
+            paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
             // pt: { xs: '60px', lg: '48px' },
             boxSizing: 'border-box',
             minWidth: 0,
+            borderTopLeftRadius: { xs: 0, lg: '20px' },
+            borderBottomLeftRadius: { xs: 0, lg: '20px' },
           }}
         >
           <Box
@@ -392,7 +394,7 @@ const Login: React.FC = () => {
           </Box>
           <Box
             sx={{
-              // maxWidth: { xs: '100%', sm: 520 },
+              // maxWidth: { xs: '100%', sm: '90%' },
               width: '100%',
               mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
@@ -417,17 +419,13 @@ const Login: React.FC = () => {
             <Typography
               variant='h1'
               sx={{
-                fontSize: { xs: '24px', sm: '32px', lg: '48px' },
+                fontSize: { xs: '32px', lg: '48px' },
                 fontWeight: 700,
                 mb: 1,
                 color: { xs: '#001218', lg: 'inherit' },
               }}
             >
-              {isLoading
-                ? 'Signing in...'
-                : lang === 'ar'
-                  ? 'تسجيل الدخول'
-                  : 'Sign In'}
+              {lang === 'ar' ? 'تسجيل الدخول' : 'Sign In'}
             </Typography>
             <Typography
               sx={{

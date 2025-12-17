@@ -485,10 +485,10 @@ export const DepartmentList: React.FC = () => {
                     fontSize: { xs: '18px', sm: '20px' },
                   },
                 },
-                '&:hover': {
-                  bgcolor: COLORS.PRIMARY,
-                  boxShadow: 'none',
-                },
+                // '&:hover': {
+                //   bgcolor: COLORS.PRIMARY,
+                //   boxShadow: 'none',
+                // },
               }}
             >
               <Box
