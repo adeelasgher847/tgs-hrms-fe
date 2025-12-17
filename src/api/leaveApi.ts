@@ -165,13 +165,10 @@ class LeaveApiService {
     return response.data;
   }
 
-  async rejectLeave(
-    id: string,
-    data?: { remarks?: string }
-  ): Promise<LeaveResponse> {
+  async rejectLeave(id: string): Promise<LeaveResponse> {
+    // Admin/HR admin rejectLeave API no longer accepts remarks parameter
     const response = await axiosInstance.put<LeaveResponse>(
-      `${this.baseUrl}/${id}/reject`,
-      data
+      `${this.baseUrl}/${id}/reject`
     );
     return response.data;
   }
@@ -194,6 +191,45 @@ class LeaveApiService {
     
     const response = await axiosInstance.patch<LeaveResponse>(
       `${this.baseUrl}/${id}/manager-remarks`,
+      payload
+    );
+    return response.data;
+  }
+
+  async approveLeaveByManager(
+    id: string,
+    data?: { remarks?: string }
+  ): Promise<LeaveResponse> {
+    // PATCH:/leaves/{id}/approve-manager
+    // Remarks are optional for approval
+    const payload = data?.remarks?.trim()
+      ? { remarks: data.remarks.trim() }
+      : {};
+    
+    const response = await axiosInstance.patch<LeaveResponse>(
+      `${this.baseUrl}/${id}/approve-manager`,
+      payload
+    );
+    return response.data;
+  }
+
+  async rejectLeaveByManager(
+    id: string,
+    data: { remarks: string }
+  ): Promise<LeaveResponse> {
+    // PATCH:/leaves/{id}/reject-manager
+    // Remarks are required for rejection
+    const trimmedRemarks = data.remarks?.trim() || '';
+    if (!trimmedRemarks) {
+      throw new Error('Rejection remarks cannot be empty');
+    }
+    
+    const payload = {
+      remarks: trimmedRemarks,
+    };
+    
+    const response = await axiosInstance.patch<LeaveResponse>(
+      `${this.baseUrl}/${id}/reject-manager`,
       payload
     );
     return response.data;

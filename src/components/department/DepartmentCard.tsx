@@ -8,7 +8,6 @@ import {
   Divider,
 } from '@mui/material';
 import type { Department } from '../../types';
-import { useOutletContext } from 'react-router-dom';
 import { Icons } from '../../assets/icons';
 
 interface DepartmentCardProps {

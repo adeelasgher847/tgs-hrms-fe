@@ -59,6 +59,7 @@ interface LeaveHistoryProps {
   isManager?: boolean;
   currentUserId?: string;
   onAction?: (id: string, action: 'approved' | 'rejected') => void;
+  onManagerAction?: (id: string, action: 'approved' | 'rejected') => void;
   onManagerResponse?: (id: string) => void;
   onWithdraw?: (id: string) => void;
   title?: string;
@@ -79,6 +80,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   isManager = false,
   currentUserId,
   onAction,
+  onManagerAction,
   onManagerResponse,
   onWithdraw,
   title = 'Leave History',
@@ -343,209 +345,252 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
       ) : (
         <Paper elevation={1} sx={{ boxShadow: 'none' }}>
           <AppTable>
-              <TableHead>
-                <TableRow>
-                  {!hideNameColumn && (isAdmin || isManager || showNames) && (
-                    <TableCell>Name</TableCell>
-                  )}
-                  <TableCell>Type</TableCell>
-                  <TableCell>From</TableCell>
-                  <TableCell>To</TableCell>
-                  <TableCell>Applied</TableCell>
-                  <TableCell>Reason</TableCell>
-                  <TableCell>Status</TableCell>
-                  {/* Manager Response column - only visible to Admin/HR Admin */}
-                  {/* Managers see their response in Actions/Remarks column only */}
-                  {isAdmin && <TableCell>Manager Response</TableCell>}
-                  <TableCell>Actions / Remarks</TableCell>
-                </TableRow>
-              </TableHead>
+            <TableHead>
+              <TableRow>
+                {!hideNameColumn && (isAdmin || isManager || showNames) && (
+                  <TableCell>Name</TableCell>
+                )}
+                <TableCell>Type</TableCell>
+                <TableCell>From</TableCell>
+                <TableCell>To</TableCell>
+                <TableCell>Applied</TableCell>
+                <TableCell>Reason</TableCell>
+                <TableCell>Status</TableCell>
+                {isAdmin && <TableCell>Manager Remarks</TableCell>}
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
 
-              <TableBody>
-                {paginatedLeaves.map((leave, index) => (
-                  <TableRow key={leave.id || index}>
-                    {!hideNameColumn && (isAdmin || isManager || showNames) && (
-                      <TableCell>
-                        {leave.employee?.first_name || 'N/A'}
-                      </TableCell>
-                    )}
-                    <TableCell>{leave.leaveType?.name || 'Unknown'}</TableCell>
-                    <TableCell>{formatDate(leave.startDate)}</TableCell>
-                    <TableCell>{formatDate(leave.endDate)}</TableCell>
-                    <TableCell>{formatDate(leave.createdAt)}</TableCell>
-                    <TableCell>
-                      <Tooltip
-                        title={leave.reason || 'N/A'}
-                        placement='top'
-                        arrow
-                        slotProps={{
-                          tooltip: {
-                            sx: {
-                              position: 'relative',
-                              left: '-115px',
-                            },
+            <TableBody>
+              {paginatedLeaves.map((leave, index) => (
+                <TableRow key={leave.id || index}>
+                  {!hideNameColumn && (isAdmin || isManager || showNames) && (
+                    <TableCell>{leave.employee?.first_name || 'N/A'}</TableCell>
+                  )}
+                  <TableCell>{leave.leaveType?.name || 'Unknown'}</TableCell>
+                  <TableCell>{formatDate(leave.startDate)}</TableCell>
+                  <TableCell>{formatDate(leave.endDate)}</TableCell>
+                  <TableCell>{formatDate(leave.createdAt)}</TableCell>
+                  <TableCell>
+                    <Tooltip
+                      title={leave.reason || 'N/A'}
+                      placement='top'
+                      arrow
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            position: 'relative',
+                            left: '-115px',
                           },
+                        },
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontSize: 14,
+                          maxWidth: { xs: 120, sm: 200, md: 260 },
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                         }}
                       >
-                        <Typography
-                          sx={{
-                            fontSize: 14,
-                            maxWidth: { xs: 120, sm: 200, md: 260 },
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                        >
-                          {leave.reason || 'N/A'}
-                        </Typography>
-                      </Tooltip>
-                    </TableCell>
+                        {leave.reason || 'N/A'}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      icon={statusConfig[leave.status]?.icon}
+                      label={
+                        leave.status
+                          ? leave.status.charAt(0).toUpperCase() +
+                            leave.status.slice(1)
+                          : 'Unknown'
+                      }
+                      color={statusConfig[leave.status]?.color}
+                      sx={{ fontSize: 15, width: '100%' }}
+                    />
+                  </TableCell>
+                  {/* Manager Response - only visible to Admin/HR Admin */}
+                  {/* Managers see their response in Actions/Remarks column only */}
+                  {isAdmin && (
                     <TableCell>
-                      <Chip
-                        icon={statusConfig[leave.status]?.icon}
-                        label={
-                          leave.status
-                            ? leave.status.charAt(0).toUpperCase() +
-                              leave.status.slice(1)
-                            : 'Unknown'
-                        }
-                        color={statusConfig[leave.status]?.color}
-                        sx={{ fontSize: 15, width: '100%' }}
-                      />
-                    </TableCell>
-                    {/* Manager Response - only visible to Admin/HR Admin */}
-                    {/* Managers see their response in Actions/Remarks column only */}
-                    {isAdmin && (
-                      <TableCell>
-                        {leave.managerRemarks ? (
+                      {leave.managerRemarks ? (
+                        <Tooltip title={leave.managerRemarks} arrow>
                           <Typography
                             variant='body2'
                             sx={{
                               fontSize: 13,
                               color: '#424242',
-                              lineHeight: 1.5,
-                              whiteSpace: 'pre-wrap',
-                              wordBreak: 'break-word',
+                              maxWidth: 250,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
                             }}
                           >
-                            {leave.managerRemarks}
+                            {leave.managerRemarks.length > 50
+                              ? `${leave.managerRemarks.substring(0, 50)}...`
+                              : leave.managerRemarks}
                           </Typography>
-                        ) : (
-                          <Typography
-                            variant='body2'
-                            sx={{
-                              color: '#9e9e9e',
-                              fontStyle: 'italic',
-                              fontSize: 13,
-                            }}
-                          >
-                            No response
-                          </Typography>
-                        )}
-                      </TableCell>
-                    )}
-                    <TableCell>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 1,
-                        }}
-                      >
-                        {leave.status === 'rejected' && leave.remarks && (
-                          <Typography
-                            variant='body2'
-                            sx={{
-                              mt: 0.5,
-                              fontSize: 13,
-                              p: 0.5,
-                              borderRadius: 1,
-                            }}
-                          >
-                            {leave.remarks}
-                          </Typography>
+                        </Tooltip>
+                      ) : (
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            color: '#9e9e9e',
+                            fontStyle: 'italic',
+                            fontSize: 13,
+                          }}
+                        >
+                          No response
+                        </Typography>
+                      )}
+                    </TableCell>
+                  )}
+                  <TableCell>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1,
+                      }}
+                    >
+                      {/* For admin/HR admin: Don't show remarks in Actions column, only show buttons */}
+                      {/* For non-admin users: Show rejection remarks */}
+                      {!isAdmin &&
+                        leave.status === 'rejected' &&
+                        leave.remarks && (
+                          <Tooltip title={leave.remarks} arrow>
+                            <Typography
+                              variant='body2'
+                              sx={{
+                                mt: 0.5,
+                                fontSize: 13,
+                                p: 0.5,
+                                borderRadius: 1,
+                                maxWidth: 250,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              {leave.remarks.length > 50
+                                ? `${leave.remarks.substring(0, 50)}...`
+                                : leave.remarks}
+                            </Typography>
+                          </Tooltip>
                         )}
 
-                        {/* Show manager response in Actions/Remarks column for managers */}
-                        {isManager &&
-                          viewMode === 'team' &&
-                          leave.managerRemarks && (
+                      {/* Show manager response in Actions/Remarks column for managers */}
+                      {isManager &&
+                        viewMode === 'team' &&
+                        leave.managerRemarks && (
+                          <Tooltip title={leave.managerRemarks} arrow>
                             <Typography
                               variant='body2'
                               sx={{
                                 mt: 0.5,
                                 fontSize: 13,
                                 color: '#424242',
-                                lineHeight: 1.5,
-                                whiteSpace: 'pre-wrap',
-                                wordBreak: 'break-word',
+                                maxWidth: 250,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
                               }}
                             >
-                              {leave.managerRemarks}
+                              {leave.managerRemarks.length > 50
+                                ? `${leave.managerRemarks.substring(0, 50)}...`
+                                : leave.managerRemarks}
                             </Typography>
-                          )}
+                          </Tooltip>
+                        )}
 
-                        {isAdmin && leave.status === 'pending' && onAction && (
-                          <Box sx={{ display: 'flex', gap: 1 }}>
+                      {isAdmin && leave.status === 'pending' && onAction && (
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Chip
+                            label='Approve'
+                            color='success'
+                            clickable
+                            onClick={() => onAction(leave.id, 'approved')}
+                          />
+                          <Chip
+                            label='Reject'
+                            color='error'
+                            clickable
+                            onClick={() => onAction(leave.id, 'rejected')}
+                          />
+                        </Box>
+                      )}
+
+                      {isManager &&
+                        viewMode === 'team' &&
+                        leave.status === 'pending' &&
+                        onManagerAction && (
+                          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                             <Chip
                               label='Approve'
                               color='success'
                               clickable
-                              onClick={() => onAction(leave.id, 'approved')}
+                              onClick={() =>
+                                onManagerAction(leave.id, 'approved')
+                              }
                             />
                             <Chip
                               label='Reject'
                               color='error'
                               clickable
-                              onClick={() => onAction(leave.id, 'rejected')}
+                              onClick={() =>
+                                onManagerAction(leave.id, 'rejected')
+                              }
                             />
                           </Box>
                         )}
 
-                        {isManager &&
-                          viewMode === 'team' &&
-                          leave.status === 'pending' &&
-                          !leave.managerRemarks &&
-                          onManagerResponse && (
-                            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                              <Chip
-                                label='Manager Response'
-                                color='primary'
-                                clickable
-                                onClick={() => onManagerResponse(leave.id)}
-                                sx={{ fontWeight: 500 }}
-                              />
-                            </Box>
-                          )}
-
-                        {isManager &&
-                          viewMode === 'you' &&
-                          onWithdraw &&
-                          leave.status === 'pending' && (
+                      {isManager &&
+                        viewMode === 'team' &&
+                        leave.status === 'pending' &&
+                        !onManagerAction &&
+                        !leave.managerRemarks &&
+                        onManagerResponse && (
+                          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                             <Chip
-                              label='Withdraw'
-                              color='warning'
+                              label='Manager Response'
+                              color='primary'
                               clickable
-                              onClick={() => onWithdraw(leave.id)}
+                              onClick={() => onManagerResponse(leave.id)}
+                              sx={{ fontWeight: 500 }}
                             />
-                          )}
+                          </Box>
+                        )}
 
-                        {!isAdmin &&
-                          !isManager &&
-                          onWithdraw &&
-                          leave.status === 'pending' && (
-                            <Chip
-                              label='Withdraw'
-                              color='warning'
-                              clickable
-                              onClick={() => onWithdraw(leave.id)}
-                            />
-                          )}
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
+                      {isManager &&
+                        viewMode === 'you' &&
+                        onWithdraw &&
+                        leave.status === 'pending' && (
+                          <Chip
+                            label='Withdraw'
+                            color='warning'
+                            clickable
+                            onClick={() => onWithdraw(leave.id)}
+                          />
+                        )}
+
+                      {!isAdmin &&
+                        !isManager &&
+                        onWithdraw &&
+                        leave.status === 'pending' && (
+                          <Chip
+                            label='Withdraw'
+                            color='warning'
+                            clickable
+                            onClick={() => onWithdraw(leave.id)}
+                          />
+                        )}
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
           </AppTable>
         </Paper>
       )}

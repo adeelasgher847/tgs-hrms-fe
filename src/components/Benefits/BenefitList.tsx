@@ -126,8 +126,8 @@ const BenefitList: React.FC = () => {
       setModalOpen(false);
       setEditingBenefit(null);
       fetchBenefits();
-    } catch {
-      showError('Failed to save benefit.');
+    } catch (error) {
+      showError(error);
     }
   };
 
