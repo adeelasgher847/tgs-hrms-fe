@@ -240,7 +240,10 @@ const Layout = () => {
           display: 'flex',
           fontFamily: 'SF Pro Rounded, sans-serif',
           overflow: 'hidden',
-          borderRadius: '20px',
+          borderRadius: {
+            xs: '20px',
+            lg: '20px 0 0 20px', 
+          },
           height: { xs: 'auto', md: '100vh' },
         }}
       >

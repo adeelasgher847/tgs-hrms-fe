@@ -103,9 +103,9 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                 borderColor: error ? '#d32f2f' : '#BDBDBD',
                 borderWidth: '1px',
               },
-              '&:hover fieldset': {
-                borderColor: error ? '#d32f2f' : '#BDBDBD',
-              },
+              // '&:hover fieldset': {
+              //   borderColor: error ? '#d32f2f' : '#BDBDBD',
+              // },
               '&.Mui-focused fieldset': {
                 borderColor: error ? '#d32f2f' : '#BDBDBD',
                 borderWidth: '1px',
@@ -169,15 +169,15 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                     lineHeight: 'var(--label-line-height)',
                     letterSpacing: 'var(--label-letter-spacing)',
                     color: '#2C2C2C',
-                    '&:hover': {
-                      backgroundColor: 'var(--primary-color)',
-                    },
+                    // '&:hover': {
+                    //   backgroundColor: 'var(--primary-color)',
+                    // },
                     '&.Mui-selected': {
                       backgroundColor: 'var(--primary-dark-color)',
                       color: '#FFFFFF',
-                      '&:hover': {
-                        backgroundColor: 'var(--primary-dark-color)',
-                      },
+                      // '&:hover': {
+                      //   backgroundColor: 'var(--primary-dark-color)',
+                      // },
                     },
                   },
                 },

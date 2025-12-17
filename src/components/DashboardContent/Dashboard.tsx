@@ -347,7 +347,7 @@ const Dashboard: React.FC = () => {
                     backgroundColor: 'primary.main',
                     color: 'white',
                     borderRadius: '6px',
-                    '&:hover': { backgroundColor: 'primary.dark' },
+                    // '&:hover': { backgroundColor: 'primary.dark' },
                   }}
                 >
                   <DownloadIcon />

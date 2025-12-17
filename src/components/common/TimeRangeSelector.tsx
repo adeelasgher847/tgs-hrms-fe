@@ -63,9 +63,9 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             cursor: 'pointer',
             minWidth: '120px',
             transition: 'background-color 0.2s',
-            '&:hover': {
-              backgroundColor: 'var(--primary-color)',
-            },
+            // '&:hover': {
+            //   backgroundColor: 'var(--primary-color)',
+            // },
           }}
         >
           <Typography
@@ -120,12 +120,12 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                   value === 'all-time' || value === null
                     ? 'var(--primary-dark-color)'
                     : 'transparent',
-                '&:hover': {
-                  backgroundColor:
-                    value === 'all-time' || value === null
-                      ? 'var(--primary-dark-color)'
-                      : 'rgba(48, 131, 220, 0.1)',
-                },
+                // '&:hover': {
+                //   backgroundColor:
+                //     value === 'all-time' || value === null
+                //       ? 'var(--primary-dark-color)'
+                //       : 'rgba(48, 131, 220, 0.1)',
+                // },
               }}
             >
               <Typography
@@ -162,11 +162,11 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                       index === 0
                         ? 'none'
                         : '1px solid rgba(48, 131, 220, 0.2)',
-                    '&:hover': {
-                      backgroundColor: isSelected
-                        ? 'var(--primary-dark-color)'
-                        : 'rgba(48, 131, 220, 0.1)',
-                    },
+                    // '&:hover': {
+                    //   backgroundColor: isSelected
+                    //     ? 'var(--primary-dark-color)'
+                    //     : 'rgba(48, 131, 220, 0.1)',
+                    // },
                   }}
                 >
                   <Typography

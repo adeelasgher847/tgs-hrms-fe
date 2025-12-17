@@ -26,9 +26,9 @@ export function AppSelect({
     '& .MuiOutlinedInput-notchedOutline': {
       borderColor: 'divider',
     },
-    '&:hover .MuiOutlinedInput-notchedOutline': {
-      borderColor: 'primary.main',
-    },
+    // '&:hover .MuiOutlinedInput-notchedOutline': {
+    //   borderColor: 'primary.main',
+    // },
     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
       borderColor: 'primary.main',
     },
