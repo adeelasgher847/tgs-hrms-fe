@@ -419,17 +419,13 @@ const Login: React.FC = () => {
             <Typography
               variant='h1'
               sx={{
-                fontSize: { xs: '24px', sm: '32px', lg: '48px' },
+                fontSize: { xs: '32px', lg: '48px' },
                 fontWeight: 700,
                 mb: 1,
                 color: { xs: '#001218', lg: 'inherit' },
               }}
             >
-              {isLoading
-                ? 'Signing in...'
-                : lang === 'ar'
-                  ? 'تسجيل الدخول'
-                  : 'Sign In'}
+              {lang === 'ar' ? 'تسجيل الدخول' : 'Sign In'}
             </Typography>
             <Typography
               sx={{

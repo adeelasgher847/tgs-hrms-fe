@@ -343,8 +343,6 @@ const Signup: React.FC = () => {
               display: { xs: 'flex', lg: 'none' },
               position: 'absolute',
               top: { xs: 32, sm: 40 },
-              left: '50%',
-              transform: 'translateX(-50%)',
               zIndex: 2,
               alignItems: 'center',
             }}
@@ -362,7 +360,7 @@ const Signup: React.FC = () => {
               width: '100%',
               mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
-              borderRadius: { xs: '30px', lg: 0 },
+              borderRadius: { xs: '20px', lg: 0 },
               p: { xs: 2, sm: 3, md: 4 },
               mt: { xs: '60px', sm: '70px', lg: 0 },
               boxSizing: 'border-box',
@@ -383,7 +381,7 @@ const Signup: React.FC = () => {
             <Typography
               variant='h1'
               sx={{
-                fontSize: { xs: '24px', sm: '32px', lg: '48px' },
+                fontSize: { xs: '32px', lg: '48px' },
                 fontWeight: 700,
                 mb: 1,
                 color: { xs: '#001218', lg: 'inherit' },
@@ -395,7 +393,7 @@ const Signup: React.FC = () => {
               sx={{
                 color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
                 mb: 3,
-                fontSize: { xs: '14px', sm: '16px', lg: '24px' },
+                fontSize: { xs: '16px', lg: '24px' },
                 fontWeight: 400,
               }}
             >
@@ -534,7 +532,8 @@ const Signup: React.FC = () => {
                               outline: 'none',
                               padding: '0',
                               margin: '0',
-                              fontSize: isMobile ? '12px' : '1rem',
+                              fontSize: isMobile ? '14px' : '16px',
+                              fontWeight: 400,
                               fontFamily:
                                 '"Roboto", "Helvetica", "Arial", sans-serif',
                               backgroundColor: 'transparent',
@@ -660,7 +659,8 @@ const Signup: React.FC = () => {
                     <Typography
                       className='label'
                       sx={{
-                        fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
+                        fontSize: { xs: '14px', sm: '16px' },
+                        fontWeight: 400,
                       }}
                     >
                       Remember me
@@ -682,7 +682,8 @@ const Signup: React.FC = () => {
                     <Typography
                       className='label'
                       sx={{
-                        fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
+                        fontSize: { xs: '14px', sm: '16px' },
+                        fontWeight: 400,
                       }}
                     >
                       I agree to all the{' '}
@@ -729,7 +730,7 @@ const Signup: React.FC = () => {
                     backgroundColor: 'var(--primary-dark-color)',
                     color: 'var(--white-color)',
                     fontWeight: 600,
-                    borderRadius: 'var(--border-radius-lg)',
+                    borderRadius: '12px',
                     fontSize: 'var(--body-font-size)',
                     textTransform: 'none',
                     padding: { xs: '8px 32px', lg: '8px 32px' },
@@ -757,10 +758,11 @@ const Signup: React.FC = () => {
                 className='label'
                 sx={{
                   color: 'var(--dark-grey-color)',
-                  fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
+                  fontSize: { xs: '14px', sm: '16px' },
+                  fontWeight: 400,
                 }}
               >
-                Don't have an account?
+                Already have an account?
                 <Link
                   component={RouterLink}
                   to='/'
