@@ -41,7 +41,10 @@ interface MenuItem {
   subItems?: SubItem[];
 }
 
-type IconSize = number | { xs?: number; lg?: number };
+type IconSize =
+  | number
+  | string
+  | { xs?: number | string; lg?: number | string };
 
 const MenuIcon: React.FC<{
   icon: string | React.ReactNode;
@@ -473,12 +476,12 @@ export default function Sidebar({
                         ? 'var(--light-grey-200-color)'
                         : 'transparent',
                       borderRadius: isActive ? 'var(--border-radius-lg)' : 0,
-                      '&:hover': {
-                        backgroundColor: isActive
-                          ? 'var(--light-grey-200-color)'
-                          : 'var(--white-100-color)',
-                        borderRadius: 'var(--border-radius-lg)',
-                      },
+                      // '&:hover': {
+                      //   backgroundColor: isActive
+                      //     ? 'var(--light-grey-200-color)'
+                      //     : 'var(--white-100-color)',
+                      //   borderRadius: 'var(--border-radius-lg)',
+                      // },
                     }}
                     aria-label={`Navigate to ${item.label}`}
                     aria-current={isActive ? 'page' : undefined}
@@ -496,7 +499,7 @@ export default function Sidebar({
                         icon={item.icon}
                         iconFill={item.iconFill}
                         isActive={isActive}
-                        size={{ xs: 20, lg: 24 }}
+                        size={{ xs: '18px', lg: '18px' }}
                       />
                     </ListItemIcon>
                     <ListItemText
@@ -539,13 +542,13 @@ export default function Sidebar({
                         item.path && location.pathname.includes(item.path)
                           ? 'var(--border-radius-lg)'
                           : 0,
-                      '&:hover': {
-                        backgroundColor:
-                          item.path && location.pathname.includes(item.path)
-                            ? 'var(--light-grey-200-color)'
-                            : 'var(--white-100-color)',
-                        borderRadius: 'var(--border-radius-lg)',
-                      },
+                      // '&:hover': {
+                      //   backgroundColor:
+                      //     item.path && location.pathname.includes(item.path)
+                      //       ? 'var(--light-grey-200-color)'
+                      //       : 'var(--white-100-color)',
+                      //   borderRadius: 'var(--border-radius-lg)',
+                      // },
                     }}
                   >
                     <ListItemIcon
@@ -562,7 +565,7 @@ export default function Sidebar({
                         isActive={
                           !!(item.path && location.pathname.includes(item.path))
                         }
-                        size={{ xs: 20, lg: 24 }}
+                        size={{ xs: '18px', lg: '18px' }}
                       />
                     </ListItemIcon>
                     <ListItemText
@@ -596,12 +599,12 @@ export default function Sidebar({
                         borderRadius: isParentActive
                           ? 'var(--border-radius-lg)'
                           : 0,
-                        '&:hover': {
-                          backgroundColor: isParentActive
-                            ? 'var(--light-grey-200-color)'
-                            : 'var(--white-100-color)',
-                          borderRadius: 'var(--border-radius-lg)',
-                        },
+                        // '&:hover': {
+                        //   backgroundColor: isParentActive
+                        //     ? 'var(--light-grey-200-color)'
+                        //     : 'var(--white-100-color)',
+                        //   borderRadius: 'var(--border-radius-lg)',
+                        // },
                       }}
                       aria-label={`${item.label} menu`}
                       aria-expanded={isParentActive}
@@ -620,7 +623,7 @@ export default function Sidebar({
                           icon={item.icon}
                           iconFill={item.iconFill}
                           isActive={isParentActive}
-                          size={{ xs: 20, lg: 24 }}
+                          size={{ xs: '18px', lg: '18px' }}
                         />
                       </ListItemIcon>
                       <ListItemText
@@ -664,7 +667,7 @@ export default function Sidebar({
                               handleSubItemClick(item.label, sub.label)
                             }
                             sx={{
-                              pl: { xs: 4, lg: 6 },
+                              pl: { xs: 7.5, lg: 8 },
                               py: 1,
                               fontSize: {
                                 xs: '14px',
@@ -674,10 +677,10 @@ export default function Sidebar({
                                 activeSubItem === sub.label
                                   ? 'var(--primary-dark-color)'
                                   : 'var(--text-color)',
-                              '&:hover': {
-                                backgroundColor: 'var(--white-100-color)',
-                                borderRadius: 'var(--border-radius-lg)',
-                              },
+                              // '&:hover': {
+                              //   backgroundColor: 'var(--white-100-color)',
+                              //   borderRadius: 'var(--border-radius-lg)',
+                              // },
                             }}
                             role='menuitem'
                             aria-label={`Navigate to ${sub.label}`}
@@ -784,10 +787,10 @@ export default function Sidebar({
             pl: 0.25,
             py: 1.5,
             borderRadius: 'var(--border-radius-lg)',
-            '&:hover': {
-              backgroundColor: 'rgba(198, 25, 82, 0.1)',
-              borderRadius: 'var(--border-radius-lg)',
-            },
+            // '&:hover': {
+            //   backgroundColor: 'rgba(198, 25, 82, 0.1)',
+            //   borderRadius: 'var(--border-radius-lg)',
+            // },
           }}
         >
           <ListItemIcon

@@ -341,7 +341,7 @@ const Login: React.FC = () => {
       <Box
         sx={{
           width: '100%',
-          maxWidth: '1440px',
+          // maxWidth: '1440px',
           display: 'flex',
           flexDirection: { xs: 'column', lg: 'row' },
           overflow: 'hidden',
@@ -363,13 +363,15 @@ const Login: React.FC = () => {
             overflowX: 'hidden',
             position: 'relative',
             zIndex: 1,
-            marginLeft: { xs: 0, lg: '-12px' },
+            marginLeft: { xs: 0, lg: '-20px' },
             paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
             paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
             pt: { xs: '60px', lg: '48px' },
             boxSizing: 'border-box',
             minWidth: 0,
+            borderTopLeftRadius: { xs: 0, lg: '20px' },
+            borderBottomLeftRadius: { xs: 0, lg: '20px' },
           }}
         >
           <Box
@@ -392,7 +394,7 @@ const Login: React.FC = () => {
           </Box>
           <Box
             sx={{
-              maxWidth: { xs: '100%', sm: 520 },
+              // maxWidth: { xs: '100%', sm: '90%' },
               width: '100%',
               mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
@@ -417,17 +419,13 @@ const Login: React.FC = () => {
             <Typography
               variant='h1'
               sx={{
-                fontSize: { xs: '24px', sm: '32px', lg: '48px' },
+                fontSize: { xs: '32px', lg: '48px' },
                 fontWeight: 700,
                 mb: 1,
                 color: { xs: '#001218', lg: 'inherit' },
               }}
             >
-              {isLoading
-                ? 'Signing in...'
-                : lang === 'ar'
-                  ? 'تسجيل الدخول'
-                  : 'Sign In'}
+              {lang === 'ar' ? 'تسجيل الدخول' : 'Sign In'}
             </Typography>
             <Typography
               sx={{
@@ -486,10 +484,10 @@ const Login: React.FC = () => {
                       mb: 1,
                       borderRadius: '12px',
                       width: '100%',
-                      '&:hover': {
-                        borderColor: 'var(--primary-dark-color)',
-                        backgroundColor: 'transparent',
-                      },
+                      // '&:hover': {
+                      //   borderColor: 'var(--primary-dark-color)',
+                      //   backgroundColor: 'transparent',
+                      // },
                     }}
                   >
                     <Box
@@ -541,71 +539,73 @@ const Login: React.FC = () => {
               <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
                 <Box
                   sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 0.5,
+                    position: 'relative',
                   }}
                 >
-                  <Typography
-                    component='label'
-                    htmlFor='password'
-                    className='label'
-                    sx={{
-                      fontSize: { xs: '14px', lg: '20px' },
-                      fontWeight: { xs: 400, lg: 600 },
+                  <AppInputField
+                    name='password'
+                    label={lang === 'ar' ? 'كلمة المرور' : 'Password'}
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    fullWidth
+                    value={password}
+                    onChange={e => {
+                      setPassword(e.target.value);
+                      setPasswordError('');
+                      setError(null);
                     }}
-                  >
-                    {lang === 'ar' ? 'كلمة المرور' : 'Password'}
-                  </Typography>
+                    disabled={isLoading}
+                    error={Boolean(passwordError)}
+                    helperText={passwordError}
+                    placeholder='********'
+                    containerSx={{
+                      '& label': {
+                        position: 'relative',
+                        width: '100%',
+                        '&::after': {
+                          content: '""',
+                          position: 'absolute',
+                          right: 0,
+                          top: 0,
+                        },
+                      },
+                    }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position='end'>
+                          <IconButton
+                            onClick={handleTogglePassword}
+                            edge='end'
+                            sx={{ color: 'var(--dark-grey-color)' }}
+                          >
+                            {showPassword ? (
+                              <VisibilityOff sx={{ width: 20, height: 20 }} />
+                            ) : (
+                              <Visibility sx={{ width: 20, height: 20 }} />
+                            )}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
                   <Link
                     component={RouterLink}
                     to='/forget'
                     sx={{
+                      position: 'absolute',
+                      top: { xs: '2px', lg: '2px' },
+                      right: 0,
                       color: 'var(--primary-dark-color)',
                       textDecoration: 'none',
                       fontWeight: 500,
                       fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
-                      '&:hover': { textDecoration: 'underline' },
+                      zIndex: 1,
+                      // '&:hover': { textDecoration: 'underline' },
                     }}
                   >
                     {lang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
                   </Link>
                 </Box>
-                <AppInputField
-                  name='password'
-                  label=''
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  fullWidth
-                  value={password}
-                  onChange={e => {
-                    setPassword(e.target.value);
-                    setPasswordError('');
-                    setError(null);
-                  }}
-                  disabled={isLoading}
-                  error={Boolean(passwordError)}
-                  helperText={passwordError}
-                  placeholder='********'
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position='end'>
-                        <IconButton
-                          onClick={handleTogglePassword}
-                          edge='end'
-                          sx={{ color: 'var(--dark-grey-color)' }}
-                        >
-                          {showPassword ? (
-                            <VisibilityOff sx={{ width: 20, height: 20 }} />
-                          ) : (
-                            <Visibility sx={{ width: 20, height: 20 }} />
-                          )}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
               </Box>
               <Box
                 sx={{
@@ -655,9 +655,9 @@ const Login: React.FC = () => {
                     height: { xs: '40px', lg: 'auto' },
                     gap: { xs: '4px', lg: 0 },
                     width: { xs: '100%', lg: 'auto' },
-                    '&:hover': {
-                      backgroundColor: 'var(--primary-light-color)',
-                    },
+                    // '&:hover': {
+                    //   backgroundColor: 'var(--primary-light-color)',
+                    // },
                     '&:disabled': { backgroundColor: 'var(--grey-color)' },
                   }}
                 >
@@ -692,7 +692,7 @@ const Login: React.FC = () => {
                     textDecoration: 'none',
                     fontWeight: 500,
                     fontSize: 'inherit',
-                    '&:hover': { textDecoration: 'underline' },
+                    // '&:hover': { textDecoration: 'underline' },
                   }}
                 >
                   {lang === 'ar' ? 'سجل هنا' : 'Sign up here'}

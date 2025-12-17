@@ -3,12 +3,10 @@ import {
   Box,
   Typography,
   Paper,
-  Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
-  TableContainer,
   CircularProgress,
   FormControl,
   Select,
@@ -22,6 +20,7 @@ import attendanceSummaryApi from '../../api/reportApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import { PAGINATION } from '../../constants/appConstants';
+import AppTable from '../common/AppTable';
 
 interface AttendanceSummaryItem {
   employeeName?: string;
@@ -249,7 +248,11 @@ const AttendanceSummaryReport: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant='h4' fontSize={{xs: '32px', lg: '48px'}} gutterBottom>
+      <Typography
+        variant='h4'
+        fontSize={{ xs: '32px', lg: '48px' }}
+        gutterBottom
+      >
         Attendance Summary Report
       </Typography>
 
@@ -309,64 +312,58 @@ const AttendanceSummaryReport: React.FC = () => {
         </Box>
       ) : (
         <Paper sx={{ mt: 2, boxShadow: 'none' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <b>Employee Name</b>
-                  </TableCell>
-                  <TableCell>
-                    <b>Department</b>
-                  </TableCell>
-                  <TableCell>
-                    <b>Designation</b>
-                  </TableCell>
-                  <TableCell align='center'>
-                    <b>Working Days</b>
-                  </TableCell>
-                  <TableCell align='center'>
-                    <b>Presents</b>
-                  </TableCell>
-                  <TableCell align='center'>
-                    <b>Absents</b>
-                  </TableCell>
-                  <TableCell align='center'>
-                    <b>Informed Leaves</b>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {safeData.length > 0 ? (
-                  safeData.map((row, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>{row.employeeName ?? '--'}</TableCell>
-                      <TableCell>{row.department ?? '--'}</TableCell>
-                      <TableCell>{row.designation ?? '--'}</TableCell>
-                      <TableCell align='center'>
-                        {row.workingDays ?? '--'}
-                      </TableCell>
-                      <TableCell align='center'>
-                        {row.presents ?? '--'}
-                      </TableCell>
-                      <TableCell align='center'>
-                        {row.absents ?? '--'}
-                      </TableCell>
-                      <TableCell align='center'>
-                        {row.informedLeaves ?? '--'}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} align='center'>
-                      No data found
+          <AppTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  <b>Employee Name</b>
+                </TableCell>
+                <TableCell>
+                  <b>Department</b>
+                </TableCell>
+                <TableCell>
+                  <b>Designation</b>
+                </TableCell>
+                <TableCell align='center'>
+                  <b>Working Days</b>
+                </TableCell>
+                <TableCell align='center'>
+                  <b>Presents</b>
+                </TableCell>
+                <TableCell align='center'>
+                  <b>Absents</b>
+                </TableCell>
+                <TableCell align='center'>
+                  <b>Informed Leaves</b>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {safeData.length > 0 ? (
+                safeData.map((row, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>{row.employeeName ?? '--'}</TableCell>
+                    <TableCell>{row.department ?? '--'}</TableCell>
+                    <TableCell>{row.designation ?? '--'}</TableCell>
+                    <TableCell align='center'>
+                      {row.workingDays ?? '--'}
+                    </TableCell>
+                    <TableCell align='center'>{row.presents ?? '--'}</TableCell>
+                    <TableCell align='center'>{row.absents ?? '--'}</TableCell>
+                    <TableCell align='center'>
+                      {row.informedLeaves ?? '--'}
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} align='center'>
+                    No data found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </AppTable>
         </Paper>
       )}
 

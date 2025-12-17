@@ -216,9 +216,9 @@ const TenantGrowthChart: React.FC = () => {
                 '& fieldset': {
                   borderColor: borderColor,
                 },
-                '&:hover fieldset': {
-                  borderColor: borderColor,
-                },
+                // '&:hover fieldset': {
+                //   borderColor: borderColor,
+                // },
                 '&.Mui-focused fieldset': {
                   borderColor: borderColor,
                 },

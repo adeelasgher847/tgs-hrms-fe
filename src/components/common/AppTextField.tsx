@@ -15,9 +15,9 @@ const variantStyles: Record<AppTextFieldVariant, SxProps<Theme>> = {
       '& fieldset': {
         borderColor: 'divider',
       },
-      '&:hover fieldset': {
-        borderColor: 'primary.main',
-      },
+      // '&:hover fieldset': {
+      //   borderColor: 'primary.main',
+      // },
       '&.Mui-focused fieldset': {
         borderColor: 'primary.main',
       },
