@@ -1510,7 +1510,11 @@ const AttendanceTable = () => {
 
   return (
     <Box>
-      <Typography variant='h4' fontSize={{xs: '32px', lg: '48px'}} gutterBottom>
+      <Typography
+        variant='h4'
+        fontSize={{ xs: '32px', lg: '48px' }}
+        gutterBottom
+      >
         Attendance Management
       </Typography>
       {!isManager && !isAdminLike && (

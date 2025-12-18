@@ -48,6 +48,7 @@ const LeaveRequestPage = () => {
   const [actionType, setActionType] = useState<'approved' | 'rejected' | null>(
     null
   );
+  const [isManagerAction, setIsManagerAction] = useState(false);
   const [managerResponseDialogOpen, setManagerResponseDialogOpen] =
     useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
@@ -174,22 +175,43 @@ const LeaveRequestPage = () => {
               : 'pending'
           ) as Leave['status'];
           const remarksString =
-            typeof leave.remarks === 'string' ? leave.remarks : undefined;
+            typeof leave.remarks === 'string' && leave.remarks.trim()
+              ? leave.remarks.trim()
+              : undefined;
 
-          // remarks field: could be rejection remarks (if status is rejected) or manager remarks
-          const remarks =
-            normalizedStatus === 'rejected' ? remarksString : undefined;
-
-          // managerRemarks: from approve-manager endpoint, backend returns in remarks field
-          // But we need to differentiate - if status is not rejected and remarks exists, it's manager response
-          const managerRemarks =
+          // Check for managerRemarks in dedicated fields first
+          const managerRemarksFromField =
             (typeof leave.managerRemarks === 'string' &&
-              leave.managerRemarks) ||
+            leave.managerRemarks.trim()
+              ? leave.managerRemarks.trim()
+              : undefined) ||
             (typeof leave.manager_remarks === 'string' &&
-              leave.manager_remarks) ||
-            (normalizedStatus !== 'rejected' && remarksString
+            leave.manager_remarks.trim()
+              ? leave.manager_remarks.trim()
+              : undefined);
+
+          // According to API response pattern:
+          // - When manager approves/rejects: remarks has value, managerRemarks is null
+          // - When admin approves (after manager response): managerRemarks has value, remarks might be empty
+          // For admin/HR admin view: ALL manager responses should go to managerRemarks column
+          // So if remarks exist and managerRemarks is null, treat remarks as manager remarks
+          const managerRemarks =
+            managerRemarksFromField ||
+            (remarksString && !managerRemarksFromField
               ? remarksString
               : undefined);
+
+          // remarks field: Only keep if it wasn't already used as managerRemarks
+          // For admin/HR admin view, we don't show remarks in Actions column anyway (only buttons)
+          // Keep remarks only if it's rejected status and not already treated as managerRemarks
+          // This ensures that for admin view, all manager responses go to managerRemarks column
+          const remarks =
+            normalizedStatus === 'rejected' &&
+            remarksString &&
+            !managerRemarksFromField &&
+            managerRemarks !== remarksString
+              ? remarksString
+              : undefined;
 
           return {
             id: getString(leave.id),
@@ -318,23 +340,50 @@ const LeaveRequestPage = () => {
   const handleConfirm = async (reason?: string) => {
     if (!selectedId || !actionType) return;
     try {
-      if (actionType === 'approved') {
-        await leaveApi.approveLeave(selectedId);
-        setLeaves(prev =>
-          prev.map(l =>
-            l.id === selectedId ? { ...l, status: 'approved' } : l
-          )
-        );
+      if (isManagerAction) {
+        // Manager approval/rejection
+        if (actionType === 'approved') {
+          await leaveApi.approveLeaveByManager(
+            selectedId,
+            reason?.trim() ? { remarks: reason.trim() } : undefined
+          );
+        } else {
+          if (!reason || !reason.trim()) {
+            showError('Rejection remarks are required');
+            return;
+          }
+          await leaveApi.rejectLeaveByManager(selectedId, {
+            remarks: reason.trim(),
+          });
+        }
       } else {
-        await leaveApi.rejectLeave(selectedId, { remarks: reason });
-        setLeaves(prev =>
-          prev.map(l =>
-            l.id === selectedId
-              ? { ...l, status: 'rejected', remarks: reason ?? l.remarks }
-              : l
-          )
-        );
+        // Admin approval/rejection
+        if (actionType === 'approved') {
+          await leaveApi.approveLeave(selectedId);
+        } else {
+          // Admin/HR admin rejectLeave API no longer accepts remarks parameter
+          await leaveApi.rejectLeave(selectedId);
+        }
       }
+
+      // Update local state
+      setLeaves(prev =>
+        prev.map(l => {
+          if (l.id === selectedId) {
+            const updated: Leave = {
+              ...l,
+              status: actionType === 'approved' ? 'approved' : 'rejected',
+            };
+            // Only set remarks for manager actions (admin/HR admin rejections don't have remarks)
+            if (isManagerAction && reason) {
+              updated.managerRemarks = reason;
+            }
+            return updated;
+          }
+          return l;
+        })
+      );
+
       showSuccess(
         actionType === 'approved'
           ? 'Leave approved successfully!'
@@ -347,6 +396,7 @@ const LeaveRequestPage = () => {
     } finally {
       setDialogOpen(false);
       setActionType(null);
+      setIsManagerAction(false);
       setSelectedId(null);
     }
   };
@@ -411,10 +461,19 @@ const LeaveRequestPage = () => {
     }
   };
 
-  // Open approval/reject dialog
+  // Open approval/reject dialog (for admin/HR admin)
   const handleAction = (id: string, action: 'approved' | 'rejected') => {
     setSelectedId(id);
     setActionType(action);
+    setIsManagerAction(false);
+    setDialogOpen(true);
+  };
+
+  // Open approval/reject dialog (for managers)
+  const handleManagerAction = (id: string, action: 'approved' | 'rejected') => {
+    setSelectedId(id);
+    setActionType(action);
+    setIsManagerAction(true);
     setDialogOpen(true);
   };
 
@@ -628,6 +687,9 @@ const LeaveRequestPage = () => {
                 isManager={role === 'manager'}
                 currentUserId={currentUserId || undefined}
                 viewMode={viewMode}
+                onManagerAction={
+                  viewMode === 'team' ? handleManagerAction : undefined
+                }
                 onManagerResponse={
                   viewMode === 'team' ? handleOpenManagerResponse : undefined
                 }
@@ -665,9 +727,17 @@ const LeaveRequestPage = () => {
 
       <LeaveApprovalDialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={() => {
+          setDialogOpen(false);
+          setActionType(null);
+          setIsManagerAction(false);
+          setSelectedId(null);
+        }}
         onConfirm={reason => handleConfirm(reason)}
         action={actionType || 'approved'}
+        allowComments={isManagerAction}
+        commentLabel={isManagerAction ? 'Remarks (Optional)' : undefined}
+        showRemarksField={isManagerAction}
       />
 
       <ManagerResponseDialog

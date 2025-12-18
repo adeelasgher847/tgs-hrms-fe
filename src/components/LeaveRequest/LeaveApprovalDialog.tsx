@@ -16,6 +16,7 @@ interface LeaveApprovalDialogProps {
   action: 'approved' | 'rejected';
   allowComments?: boolean; // For managers, always show comment field
   commentLabel?: string; // Custom label for comment field
+  showRemarksField?: boolean; // Whether to show remarks field (false for admin/HR admin rejections)
 }
 
 const LeaveApprovalDialog = ({
@@ -25,6 +26,7 @@ const LeaveApprovalDialog = ({
   action,
   allowComments = false,
   commentLabel = 'Comments',
+  showRemarksField = true, // Default to true for backward compatibility
 }: LeaveApprovalDialogProps) => {
   const [reason, setReason] = useState('');
 
@@ -34,7 +36,8 @@ const LeaveApprovalDialog = ({
 
   const actionText = action === 'approved' ? 'Approve' : 'Reject';
   const actionLower = action === 'approved' ? 'approve' : 'reject';
-  const showCommentField = allowComments || action === 'rejected';
+  // Show comment field if: allowComments is true OR (action is rejected AND showRemarksField is true)
+  const showCommentField = allowComments || (action === 'rejected' && showRemarksField);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth='xs' fullWidth>
@@ -63,6 +66,7 @@ const LeaveApprovalDialog = ({
           onClick={() => onConfirm(showCommentField ? reason : undefined)}
           variant='contained'
           color={action === 'approved' ? 'success' : 'error'}
+          disabled={showCommentField && action === 'rejected' && !reason.trim()}
         >
           Yes
         </Button>

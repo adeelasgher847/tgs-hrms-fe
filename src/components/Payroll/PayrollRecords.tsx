@@ -620,7 +620,14 @@ const PayrollRecords: React.FC = () => {
         }}
       >
         <Box>
-          <Typography variant='h4' sx={{ fontWeight: 600, fontSize: { xs: '32px', lg: '48px' }, color: textColor }}>
+          <Typography
+            variant='h4'
+            sx={{
+              fontWeight: 600,
+              fontSize: { xs: '32px', lg: '48px' },
+              color: textColor,
+            }}
+          >
             Payroll Records
           </Typography>
         </Box>
