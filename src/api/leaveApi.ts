@@ -35,6 +35,7 @@ export interface LeaveResponse {
   createdAt?: string;
   approvedAt?: string | null;
   remarks?: string | null;
+  managerRemarks?: string | null;
 }
 
 export interface LeaveWithUser extends LeaveResponse {
@@ -164,13 +165,10 @@ class LeaveApiService {
     return response.data;
   }
 
-  async rejectLeave(
-    id: string,
-    data?: { remarks?: string }
-  ): Promise<LeaveResponse> {
+  async rejectLeave(id: string): Promise<LeaveResponse> {
+    // Admin/HR admin rejectLeave API no longer accepts remarks parameter
     const response = await axiosInstance.put<LeaveResponse>(
-      `${this.baseUrl}/${id}/reject`,
-      data
+      `${this.baseUrl}/${id}/reject`
     );
     return response.data;
   }
@@ -185,12 +183,53 @@ class LeaveApiService {
       throw new Error('Manager remarks cannot be empty');
     }
     
-    // Backend expects 'remarks' field, not 'managerRemarks'
+    // Use the correct endpoint: PATCH /leaves/{id}/manager-remarks
+    // Backend expects 'remarks' field in request body, but returns 'managerRemarks' in response
     const payload = {
       remarks: trimmedRemarks,
     };
+    
+    const response = await axiosInstance.patch<LeaveResponse>(
+      `${this.baseUrl}/${id}/manager-remarks`,
+      payload
+    );
+    return response.data;
+  }
+
+  async approveLeaveByManager(
+    id: string,
+    data?: { remarks?: string }
+  ): Promise<LeaveResponse> {
+    // PATCH:/leaves/{id}/approve-manager
+    // Remarks are optional for approval
+    const payload = data?.remarks?.trim()
+      ? { remarks: data.remarks.trim() }
+      : {};
+    
     const response = await axiosInstance.patch<LeaveResponse>(
       `${this.baseUrl}/${id}/approve-manager`,
+      payload
+    );
+    return response.data;
+  }
+
+  async rejectLeaveByManager(
+    id: string,
+    data: { remarks: string }
+  ): Promise<LeaveResponse> {
+    // PATCH:/leaves/{id}/reject-manager
+    // Remarks are required for rejection
+    const trimmedRemarks = data.remarks?.trim() || '';
+    if (!trimmedRemarks) {
+      throw new Error('Rejection remarks cannot be empty');
+    }
+    
+    const payload = {
+      remarks: trimmedRemarks,
+    };
+    
+    const response = await axiosInstance.patch<LeaveResponse>(
+      `${this.baseUrl}/${id}/reject-manager`,
       payload
     );
     return response.data;
