@@ -548,7 +548,6 @@ const RequestManagement: React.FC = () => {
             let currentPage = 1;
             let hasMorePages = true;
             const maxPages = 100; // Safety limit
-            let totalFromBackend = testResponse.total || 0;
             let totalPagesFromBackend = testResponse.totalPages || 1;
 
             // Fetch all pages
