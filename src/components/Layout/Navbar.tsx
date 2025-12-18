@@ -652,7 +652,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 alignItems: 'center',
                 gap: 1,
                 flex: 1,
-                maxWidth: '300px',
+                maxWidth: '400px',
                 position: 'relative',
               }}
             >
@@ -820,7 +820,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 display: { xs: 'none', md: 'block' },
               }}
             >
-              <TeamMembersAvatar maxAvatars={5} darkMode={darkMode} />
+              <TeamMembersAvatar maxAvatars={2} darkMode={darkMode} />
             </Box>
 
             {/* Mobile Team Members Button */}

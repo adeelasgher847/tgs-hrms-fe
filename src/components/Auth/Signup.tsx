@@ -111,7 +111,6 @@ const Signup: React.FC = () => {
       return next;
     });
 
-    setError(null);
     setSuccess(null);
   };
 
@@ -119,7 +118,6 @@ const Signup: React.FC = () => {
     const phoneValue = value || '';
     setFormData(prev => ({ ...prev, phone: phoneValue }));
     setFieldErrors(prev => ({ ...prev, phone: '' }));
-    setError(null);
     setSuccess(null);
   };
 
@@ -260,6 +258,17 @@ const Signup: React.FC = () => {
         message?: string;
       };
 
+      // Clear all field errors and general error first
+      setError(null);
+      setFieldErrors({
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        password: '',
+        confirmPassword: '',
+      });
+
       if (error.response?.data?.message) {
         const errorData = error.response.data.message;
         if (
@@ -273,17 +282,85 @@ const Signup: React.FC = () => {
             ...prev,
             [field]: String(errorData.message),
           }));
-          setError(null);
         } else {
+          // For small screens, show in Alert banner
           setError(String(errorData));
+          // For large screens, try to determine which field the error relates to
+          const errorMsg = String(errorData).toLowerCase();
+          if (errorMsg.includes('email') || errorMsg.includes('e-mail')) {
+            setFieldErrors(prev => ({ ...prev, email: String(errorData) }));
+          } else if (errorMsg.includes('password')) {
+            setFieldErrors(prev => ({ ...prev, password: String(errorData) }));
+          } else if (errorMsg.includes('phone')) {
+            setFieldErrors(prev => ({ ...prev, phone: String(errorData) }));
+          } else if (errorMsg.includes('first') || errorMsg.includes('name')) {
+            setFieldErrors(prev => ({
+              ...prev,
+              first_name: String(errorData),
+            }));
+          } else {
+            // Default to email field for general errors
+            setFieldErrors(prev => ({ ...prev, email: String(errorData) }));
+          }
         }
       } else if (error.response?.data?.errors) {
-        const errorMessages = Object.values(error.response.data.errors).flat();
+        // Handle field-specific errors from errors object
+        const errors = error.response.data.errors;
+        const errorMessages = Object.values(errors).flat();
+        // For small screens, show in Alert banner
         setError(String(errorMessages.join(', ')));
+        // For large screens, show on specific fields
+        setFieldErrors(prev => {
+          const newErrors = { ...prev };
+          if (errors.first_name) {
+            newErrors.first_name = Array.isArray(errors.first_name)
+              ? errors.first_name.join(', ')
+              : String(errors.first_name);
+          }
+          if (errors.last_name) {
+            newErrors.last_name = Array.isArray(errors.last_name)
+              ? errors.last_name.join(', ')
+              : String(errors.last_name);
+          }
+          if (errors.email) {
+            newErrors.email = Array.isArray(errors.email)
+              ? errors.email.join(', ')
+              : String(errors.email);
+          }
+          if (errors.phone) {
+            newErrors.phone = Array.isArray(errors.phone)
+              ? errors.phone.join(', ')
+              : String(errors.phone);
+          }
+          if (errors.password) {
+            newErrors.password = Array.isArray(errors.password)
+              ? errors.password.join(', ')
+              : String(errors.password);
+          }
+          return newErrors;
+        });
       } else if (error.message) {
+        // For small screens, show in Alert banner
         setError(error.message);
+        // For large screens, try to determine which field the error relates to
+        const errorMsg = String(error.message).toLowerCase();
+        const errorMessage = String(error.message);
+        if (errorMsg.includes('email') || errorMsg.includes('e-mail')) {
+          setFieldErrors(prev => ({ ...prev, email: errorMessage }));
+        } else if (errorMsg.includes('password')) {
+          setFieldErrors(prev => ({ ...prev, password: errorMessage }));
+        } else if (errorMsg.includes('phone')) {
+          setFieldErrors(prev => ({ ...prev, phone: errorMessage }));
+        } else {
+          setFieldErrors(prev => ({ ...prev, email: errorMessage }));
+        }
       } else {
-        setError('Failed to create account. Please try again.');
+        const defaultError = 'Failed to create account. Please try again.';
+        setError(defaultError);
+        setFieldErrors(prev => ({
+          ...prev,
+          email: defaultError,
+        }));
       }
     } finally {
       setLoading(false);
@@ -403,6 +480,7 @@ const Signup: React.FC = () => {
               <Alert
                 severity='error'
                 sx={{
+                  display: { xs: 'block', sm: 'none' },
                   mb: 2,
                   '& .MuiAlert-message': {
                     fontSize: { xs: '12px', sm: '14px' },
@@ -443,6 +521,7 @@ const Signup: React.FC = () => {
                     error={Boolean(fieldErrors.first_name)}
                     helperText={fieldErrors.first_name}
                     placeholder='Waleed'
+                    hideErrorsOnSmallScreen={true}
                   />
                 </Box>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -457,6 +536,7 @@ const Signup: React.FC = () => {
                     error={Boolean(fieldErrors.last_name)}
                     helperText={fieldErrors.last_name}
                     placeholder='Ahmed'
+                    hideErrorsOnSmallScreen={true}
                   />
                 </Box>
               </Box>
@@ -494,6 +574,7 @@ const Signup: React.FC = () => {
                     error={Boolean(fieldErrors.email)}
                     helperText={fieldErrors.email}
                     placeholder='Waleed@xyz.com'
+                    hideErrorsOnSmallScreen={true}
                   />
                 </Box>
                 <Box
@@ -511,6 +592,7 @@ const Signup: React.FC = () => {
                     disabled={loading}
                     error={Boolean(fieldErrors.phone)}
                     helperText={fieldErrors.phone}
+                    hideErrorsOnSmallScreen={true}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment
@@ -585,6 +667,7 @@ const Signup: React.FC = () => {
                     error={Boolean(fieldErrors.password)}
                     helperText={fieldErrors.password}
                     placeholder='********'
+                    hideErrorsOnSmallScreen={true}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position='end'>
@@ -616,6 +699,7 @@ const Signup: React.FC = () => {
                     disabled={loading}
                     error={Boolean(fieldErrors.confirmPassword)}
                     helperText={fieldErrors.confirmPassword}
+                    hideErrorsOnSmallScreen={true}
                     placeholder='********'
                     InputProps={{
                       endAdornment: (
@@ -717,9 +801,16 @@ const Signup: React.FC = () => {
                 />
               </Box>
               {termsError && (
-                <Alert severity='error' sx={{ mb: 2 }}>
+                <Typography
+                  sx={{
+                    color: '#d32f2f',
+                    fontSize: { xs: '12px', sm: '14px' },
+                    mb: 1,
+                    textAlign: 'center',
+                  }}
+                >
                   {termsError}
-                </Alert>
+                </Typography>
               )}
               <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
                 <Button
