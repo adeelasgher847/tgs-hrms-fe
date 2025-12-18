@@ -514,8 +514,7 @@ const Navbar: React.FC<NavbarProps> = ({
   }, [searchQuery]);
 
   // Handle search input change
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
   };
 
@@ -542,8 +541,7 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   // Handle keyboard navigation in search
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _handleSearchKeyDown = (
+  const handleSearchKeyDown = (
     event: React.KeyboardEvent<HTMLInputElement>
   ) => {
     if (event.key === 'Enter') {
@@ -569,15 +567,26 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   // Close search results when clicking outside
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _handleClickAway = (event: MouseEvent | TouchEvent) => {
-    if (
-      searchContainerRef.current &&
-      !searchContainerRef.current.contains(event.target as Node)
-    ) {
-      setShowSearchResults(false);
+  React.useEffect(() => {
+    const handleClickAway = (event: MouseEvent | TouchEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowSearchResults(false);
+      }
+    };
+
+    if (showSearchResults) {
+      document.addEventListener('mousedown', handleClickAway);
+      document.addEventListener('touchstart', handleClickAway);
     }
-  };
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickAway);
+      document.removeEventListener('touchstart', handleClickAway);
+    };
+  }, [showSearchResults]);
 
   // Close search results on route change
   React.useEffect(() => {
@@ -637,17 +646,23 @@ const Navbar: React.FC<NavbarProps> = ({
 
             {/* Desktop Search */}
             <Box
+              ref={searchContainerRef}
               sx={{
                 display: { xs: 'none', md: 'flex' },
                 alignItems: 'center',
                 gap: 1,
                 flex: 1,
                 maxWidth: '300px',
+                position: 'relative',
               }}
             >
               <Search>
                 <StyledInputBase
+                  inputRef={searchInputRef}
                   placeholder={lang.search}
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  onKeyDown={handleSearchKeyDown}
                   inputProps={{ 'aria-label': 'search' }}
                   sx={{
                     color: 'var(--text-color)',
@@ -665,9 +680,9 @@ const Navbar: React.FC<NavbarProps> = ({
                   width: { xs: '36px', md: '44px' },
                   height: { xs: '36px', md: '44px' },
                   minWidth: { xs: '36px', md: '44px' },
-                  '&:hover': {
-                    backgroundColor: 'var(--primary-light-color)',
-                  },
+                  // '&:hover': {
+                  //   backgroundColor: 'var(--primary-light-color)',
+                  // },
                 }}
                 aria-label='Search'
               >
@@ -682,6 +697,93 @@ const Navbar: React.FC<NavbarProps> = ({
                   }}
                 />
               </IconButton>
+              
+              {/* Search Results Dropdown */}
+              {showSearchResults && searchResults.length > 0 && (
+                <Paper
+                  elevation={4}
+                  sx={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    mt: 1,
+                    maxHeight: '400px',
+                    overflowY: 'auto',
+                    zIndex: 1300,
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                  }}
+                >
+                  {searchResults.map((result, index) => (
+                    <Box
+                      key={`${result.type}-${result.id || result.path}-${index}`}
+                      onClick={() => handleSearchResultClick(result)}
+                      sx={{
+                        px: 2,
+                        py: 1.5,
+                        cursor: 'pointer',
+                        backgroundColor:
+                          selectedResultIndex === index
+                            ? 'var(--light-grey-200-color)'
+                            : 'transparent',
+                        '&:hover': {
+                          backgroundColor: 'var(--light-grey-200-color)',
+                        },
+                        borderBottom:
+                          index < searchResults.length - 1
+                            ? '1px solid var(--light-grey-color)'
+                            : 'none',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1.5,
+                        }}
+                      >
+                        {result.icon && (
+                          <Box sx={{ color: 'var(--text-color)' }}>
+                            {result.icon}
+                          </Box>
+                        )}
+                        <Box sx={{ flex: 1 }}>
+                          <Typography
+                            sx={{
+                              fontSize: 'var(--body-font-size)',
+                              fontWeight: 500,
+                              color: 'var(--text-color)',
+                            }}
+                          >
+                            {result.label}
+                          </Typography>
+                          {result.subtitle && (
+                            <Typography
+                              sx={{
+                                fontSize: 'var(--label-font-size)',
+                                color: 'var(--dark-grey-color)',
+                                mt: 0.5,
+                              }}
+                            >
+                              {result.subtitle}
+                            </Typography>
+                          )}
+                          <Typography
+                            sx={{
+                              fontSize: 'var(--label-font-size)',
+                              color: 'var(--dark-grey-color)',
+                              mt: 0.25,
+                            }}
+                          >
+                            {result.category}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  ))}
+                </Paper>
+              )}
             </Box>
           </Box>
 
@@ -920,11 +1022,13 @@ const Navbar: React.FC<NavbarProps> = ({
 
         {/* Mobile Search Bar - Below Navbar */}
         <Box
+          ref={searchContainerRef}
           sx={{
             display: { xs: 'flex', md: 'none' },
             alignItems: 'center',
             mt: 1.5,
             px: { xs: 0 },
+            position: 'relative',
           }}
         >
           <Search
@@ -935,7 +1039,11 @@ const Navbar: React.FC<NavbarProps> = ({
             }}
           >
             <StyledInputBase
+              inputRef={searchInputRef}
               placeholder={lang.search}
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               inputProps={{ 'aria-label': 'search' }}
               sx={{
                 color: 'var(--text-color)',
@@ -954,14 +1062,15 @@ const Navbar: React.FC<NavbarProps> = ({
                 transform: 'translateY(-50%)',
                 backgroundColor: 'var(--primary-dark-color)',
                 color: 'var(--white-color)',
-                borderRadius: '12px',
+                borderRadius: '8px',
                 width: { xs: '28px', md: '36px' },
                 height: { xs: '28px', md: '36px' },
                 minWidth: { xs: '28px', md: '36px' },
                 padding: 0,
-                '&:hover': {
-                  backgroundColor: 'var(--primary-light-color)',
-                },
+                marginRight: 1.5,
+                // '&:hover': {
+                //   backgroundColor: 'var(--primary-light-color)',
+                // },
               }}
               aria-label='Search'
             >
@@ -977,6 +1086,93 @@ const Navbar: React.FC<NavbarProps> = ({
               />
             </IconButton>
           </Search>
+          
+          {/* Mobile Search Results Dropdown */}
+          {showSearchResults && searchResults.length > 0 && (
+            <Paper
+              elevation={4}
+              sx={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                mt: 1,
+                maxHeight: '400px',
+                overflowY: 'auto',
+                zIndex: 1300,
+                borderRadius: '12px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              }}
+            >
+              {searchResults.map((result, index) => (
+                <Box
+                  key={`${result.type}-${result.id || result.path}-${index}`}
+                  onClick={() => handleSearchResultClick(result)}
+                  sx={{
+                    px: 2,
+                    py: 1.5,
+                    cursor: 'pointer',
+                    backgroundColor:
+                      selectedResultIndex === index
+                        ? 'var(--light-grey-200-color)'
+                        : 'transparent',
+                    '&:hover': {
+                      backgroundColor: 'var(--light-grey-200-color)',
+                    },
+                    borderBottom:
+                      index < searchResults.length - 1
+                        ? '1px solid var(--light-grey-color)'
+                        : 'none',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                    }}
+                  >
+                    {result.icon && (
+                      <Box sx={{ color: 'var(--text-color)' }}>
+                        {result.icon}
+                      </Box>
+                    )}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        sx={{
+                          fontSize: 'var(--body-font-size)',
+                          fontWeight: 500,
+                          color: 'var(--text-color)',
+                        }}
+                      >
+                        {result.label}
+                      </Typography>
+                      {result.subtitle && (
+                        <Typography
+                          sx={{
+                            fontSize: 'var(--label-font-size)',
+                            color: 'var(--dark-grey-color)',
+                            mt: 0.5,
+                          }}
+                        >
+                          {result.subtitle}
+                        </Typography>
+                      )}
+                      <Typography
+                        sx={{
+                          fontSize: 'var(--label-font-size)',
+                          color: 'var(--dark-grey-color)',
+                          mt: 0.25,
+                        }}
+                      >
+                        {result.category}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              ))}
+            </Paper>
+          )}
         </Box>
       </Paper>
 

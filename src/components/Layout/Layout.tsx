@@ -227,7 +227,7 @@ const Layout = () => {
       sx={{
         minHeight: '100vh',
         width: '100%',
-        display: 'flex',
+        // display: 'flex',
         justifyContent: 'center',
         backgroundColor: 'var(--white-100-color)',
         py: { xs: 2, md: 0 },
@@ -236,11 +236,14 @@ const Layout = () => {
       <Box
         sx={{
           width: '100%',
-          maxWidth: '1440px',
+          // maxWidth: '1440px',
           display: 'flex',
           fontFamily: 'SF Pro Rounded, sans-serif',
           overflow: 'hidden',
-          borderRadius: '20px',
+          borderRadius: {
+            xs: '20px',
+            lg: '20px 0 0 20px', 
+          },
           height: { xs: 'auto', md: '100vh' },
         }}
       >

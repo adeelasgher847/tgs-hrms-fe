@@ -218,6 +218,15 @@ const SelectPlan: React.FC = () => {
     }
   }, [navigate, showError]);
 
+  // Auto-select the 2nd plan when plans are loaded and user is coming from company details page
+  useEffect(() => {
+    const companyDetails = localStorage.getItem('companyDetails');
+    // Only auto-select if coming from company details page (has companyDetails) and no plan is selected yet
+    if (companyDetails && plans.length >= 2 && !selectedPlan && !loading) {
+      setSelectedPlan(plans[1].id);
+    }
+  }, [plans, loading, selectedPlan]);
+
   const handlePlanSelect = (planId: string) => {
     setSelectedPlan(planId);
   };
@@ -538,12 +547,12 @@ const SelectPlan: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               minHeight: 420,
-              '&:hover': {
-                boxShadow:
-                  selectedPlan === plan.id
-                    ? '0 0 0 3px rgba(48, 131, 220, 0.5), 0 12px 28px rgba(48, 131, 220, 0.35), 0 0 25px rgba(48, 131, 220, 0.2)'
-                    : '0 8px 24px rgba(0,0,0,0.15)',
-              },
+              // '&:hover': {
+              //   boxShadow:
+              //     selectedPlan === plan.id
+              //       ? '0 0 0 3px rgba(48, 131, 220, 0.5), 0 12px 28px rgba(48, 131, 220, 0.35), 0 0 25px rgba(48, 131, 220, 0.2)'
+              //       : '0 8px 24px rgba(0,0,0,0.15)',
+              // },
             }}
           >
             {/* Card Header */}
@@ -666,12 +675,12 @@ const SelectPlan: React.FC = () => {
                   fontWeight: 500,
                   textTransform: 'none',
                   fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
-                  '&:hover': {
-                    backgroundColor:
-                      selectedPlan === plan.id
-                        ? 'var(--text-color)'
-                        : 'var(--dark-grey-color)',
-                  },
+                  // '&:hover': {
+                  //   backgroundColor:
+                  //     selectedPlan === plan.id
+                  //       ? 'var(--text-color)'
+                  //       : 'var(--dark-grey-color)',
+                  // },
                 }}
               >
                 Choose Plan
@@ -704,10 +713,10 @@ const SelectPlan: React.FC = () => {
             fontWeight: 500,
             textTransform: 'none',
             fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
-            '&:hover': {
-              borderColor: 'var(--dark-grey-color)',
-              backgroundColor: 'var(--white-100-color)',
-            },
+            // '&:hover': {
+            //   borderColor: 'var(--dark-grey-color)',
+            //   backgroundColor: 'var(--white-100-color)',
+            // },
           }}
         >
           Back
@@ -725,9 +734,9 @@ const SelectPlan: React.FC = () => {
             fontWeight: 500,
             textTransform: 'none',
             fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
-            '&:hover': {
-              backgroundColor: 'var(--primary-light-color)',
-            },
+            // '&:hover': {
+            //   backgroundColor: 'var(--primary-light-color)',
+            // },
             '&:disabled': {
               backgroundColor: 'var(--grey-color)',
               color: 'var(--white-color)',
