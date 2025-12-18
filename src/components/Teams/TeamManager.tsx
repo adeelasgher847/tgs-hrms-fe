@@ -200,19 +200,15 @@ const TeamManager: React.FC<TeamManagerProps> = ({
     description?: string;
     manager_id: string;
   }) => {
-    try {
-      const newTeam = await teamApiService.createTeam(teamData);
-      setTeams(prev => [newTeam, ...prev]);
-      setShowCreateForm(false);
+    const newTeam = await teamApiService.createTeam(teamData);
+    setTeams(prev => [newTeam, ...prev]);
+    setShowCreateForm(false);
 
-      // Show success toast
-      snackbar.success(lang.teamCreated);
+    // Show success toast
+    snackbar.success(lang.teamCreated);
 
-      // Trigger refresh for other components
-      window.dispatchEvent(new CustomEvent('teamUpdated'));
-    } catch {
-      throw error;
-    }
+    // Trigger refresh for other components
+    window.dispatchEvent(new CustomEvent('teamUpdated'));
   };
 
   const handleTeamUpdated = async () => {

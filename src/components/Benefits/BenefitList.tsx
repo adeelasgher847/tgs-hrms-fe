@@ -126,8 +126,8 @@ const BenefitList: React.FC = () => {
       setModalOpen(false);
       setEditingBenefit(null);
       fetchBenefits();
-    } catch {
-      showError('Failed to save benefit.');
+    } catch (error) {
+      showError(error);
     }
   };
 
@@ -214,7 +214,11 @@ const BenefitList: React.FC = () => {
   return (
     <Box>
       <Box display='flex' alignItems='center' gap={1} mb={2}>
-        <Typography variant='h4' fontWeight={600} fontSize={{xs: '32px', lg: '48px'}}>
+        <Typography
+          variant='h4'
+          fontWeight={600}
+          fontSize={{ xs: '32px', lg: '48px' }}
+        >
           Benefit Management
         </Typography>
       </Box>

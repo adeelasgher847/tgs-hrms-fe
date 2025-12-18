@@ -151,8 +151,16 @@ class TeamApiService {
     const response = await axiosInstance.post<Team>(this.baseUrl, teamData);
     const newTeam = response.data;
 
+    // Try to add manager as a member, but don't fail team creation if this fails
+    // The team is already created successfully at this point
     if (newTeam.id && teamData.manager_id) {
-      await this.addMemberToTeam(newTeam.id, teamData.manager_id);
+      try {
+        await this.addMemberToTeam(newTeam.id, teamData.manager_id);
+      } catch (error) {
+        // Log the error but don't throw - team creation was successful
+        // The manager can be added manually later if needed
+        console.warn('Failed to add manager as team member:', error);
+      }
     }
 
     return newTeam;

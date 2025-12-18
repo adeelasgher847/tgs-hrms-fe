@@ -329,7 +329,7 @@ const BenefitReport: React.FC = () => {
       >
         <Typography
           variant='h4'
-          fontSize={{xs: '32px', lg: '48px'}}
+          fontSize={{ xs: '32px', lg: '48px' }}
           fontWeight={600}
           gutterBottom
           mb={0}
