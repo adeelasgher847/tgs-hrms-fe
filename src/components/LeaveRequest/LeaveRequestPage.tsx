@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import LeaveForm from './LeaveForm';
 import LeaveHistory from './LeaveHistory';
 import LeaveApprovalDialog from './LeaveApprovalDialog';
-import ManagerResponseDialog from './ManagerResponseDialog';
-import { leaveApi, type CreateLeaveRequest } from '../../api/leaveApi';
+import { leaveApi } from '../../api/leaveApi';
 import type { Leave } from '../../type/levetypes';
 import { getCurrentUser, getUserName, getUserRole } from '../../utils/auth';
 import { normalizeRole } from '../../utils/permissions';
@@ -48,7 +47,6 @@ const LeaveRequestPage = () => {
   const [actionType, setActionType] = useState<'approved' | 'rejected' | null>(
     null
   );
-  const [isManagerAction, setIsManagerAction] = useState(false);
   const [managerResponseDialogOpen, setManagerResponseDialogOpen] =
     useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
@@ -175,43 +173,22 @@ const LeaveRequestPage = () => {
               : 'pending'
           ) as Leave['status'];
           const remarksString =
-            typeof leave.remarks === 'string' && leave.remarks.trim()
-              ? leave.remarks.trim()
-              : undefined;
+            typeof leave.remarks === 'string' ? leave.remarks : undefined;
 
-          // Check for managerRemarks in dedicated fields first
-          const managerRemarksFromField =
-            (typeof leave.managerRemarks === 'string' &&
-            leave.managerRemarks.trim()
-              ? leave.managerRemarks.trim()
-              : undefined) ||
-            (typeof leave.manager_remarks === 'string' &&
-            leave.manager_remarks.trim()
-              ? leave.manager_remarks.trim()
-              : undefined);
-
-          // According to API response pattern:
-          // - When manager approves/rejects: remarks has value, managerRemarks is null
-          // - When admin approves (after manager response): managerRemarks has value, remarks might be empty
-          // For admin/HR admin view: ALL manager responses should go to managerRemarks column
-          // So if remarks exist and managerRemarks is null, treat remarks as manager remarks
-          const managerRemarks =
-            managerRemarksFromField ||
-            (remarksString && !managerRemarksFromField
-              ? remarksString
-              : undefined);
-
-          // remarks field: Only keep if it wasn't already used as managerRemarks
-          // For admin/HR admin view, we don't show remarks in Actions column anyway (only buttons)
-          // Keep remarks only if it's rejected status and not already treated as managerRemarks
-          // This ensures that for admin view, all manager responses go to managerRemarks column
+          // remarks field: could be rejection remarks (if status is rejected) or manager remarks
           const remarks =
-            normalizedStatus === 'rejected' &&
-            remarksString &&
-            !managerRemarksFromField &&
-            managerRemarks !== remarksString
+            normalizedStatus === 'rejected' ? remarksString : undefined;
+
+          // managerRemarks: from approve-manager endpoint, backend returns in remarks field
+          // But we need to differentiate - if status is not rejected and remarks exists, it's manager response
+          const managerRemarks =
+            (typeof leave.managerRemarks === 'string' &&
+              leave.managerRemarks) ||
+            (typeof leave.manager_remarks === 'string' &&
+              leave.manager_remarks) ||
+            (normalizedStatus !== 'rejected' && remarksString
               ? remarksString
-              : undefined;
+              : undefined);
 
           return {
             id: getString(leave.id),
@@ -225,33 +202,17 @@ const LeaveRequestPage = () => {
             leaveTypeId: getString(leave.leaveTypeId),
             leaveType: { id: '', name: leaveTypeName },
             reason: getString(leave.reason),
-            remarks,
-            managerRemarks,
+            remarks:
+              typeof leave.remarks === 'string' ? leave.remarks : undefined,
             startDate: getString(leave.startDate),
             endDate: getString(leave.endDate),
-            status: normalizedStatus,
+            status: (getString(leave.status) as Leave['status']) || 'pending',
             createdAt: leave.createdAt as string | undefined,
             updatedAt: leave.updatedAt as string | undefined,
           } as Leave;
         });
 
-        // Update leaves state, preserving any locally updated managerRemarks if server data doesn't have it yet
-        setLeaves(prevLeaves => {
-          const newLeavesMap = new Map(leavesData.map(l => [l.id, l]));
-          // Preserve managerRemarks from previous state if not in server response
-          prevLeaves.forEach(prevLeave => {
-            if (
-              prevLeave.managerRemarks &&
-              !newLeavesMap.get(prevLeave.id)?.managerRemarks
-            ) {
-              const existingLeave = newLeavesMap.get(prevLeave.id);
-              if (existingLeave) {
-                existingLeave.managerRemarks = prevLeave.managerRemarks;
-              }
-            }
-          });
-          return Array.from(newLeavesMap.values());
-        });
+        setLeaves(Array.from(new Map(leavesData.map(l => [l.id, l])).values()));
 
         const hasMorePages = leavesData.length === ITEMS_PER_PAGE;
         if (res.totalPages && res.total) {
@@ -321,8 +282,7 @@ const LeaveRequestPage = () => {
   };
 
   // Handle apply leave (called after successful API in form)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleApply = async (_data: CreateLeaveRequest) => {
+  const handleApply = async () => {
     try {
       showSuccess('Leave applied successfully!');
       await loadLeaves();
@@ -336,7 +296,7 @@ const LeaveRequestPage = () => {
     showError(message || 'Failed to apply leave');
   };
 
-  // Handle approve/reject (for admin/HR admin)
+  // Handle approve/reject
   const handleConfirm = async (reason?: string) => {
     if (!selectedId || !actionType) return;
     try {
@@ -389,8 +349,6 @@ const LeaveRequestPage = () => {
           ? 'Leave approved successfully!'
           : 'Leave rejected successfully!'
       );
-      // Reload leaves to get updated data from server
-      await loadLeaves({ page: currentPage, view: viewMode });
     } catch (error: unknown) {
       showError(error);
     } finally {
@@ -399,49 +357,6 @@ const LeaveRequestPage = () => {
       setIsManagerAction(false);
       setSelectedId(null);
     }
-  };
-
-  // Handle manager response (comments only)
-  const handleManagerResponse = async (comment: string) => {
-    if (!selectedId) return;
-    try {
-      await leaveApi.approveManagerLeave(selectedId, {
-        managerRemarks: comment,
-      });
-      // Update local state immediately to show the response right away
-      setLeaves(prev =>
-        prev.map(l =>
-          l.id === selectedId ? { ...l, managerRemarks: comment } : l
-        )
-      );
-      showSuccess('Manager response saved successfully!');
-      // Reload leaves to get updated data from server
-      await loadLeaves({ page: currentPage, view: viewMode });
-    } catch (error: unknown) {
-      // Check if error is "Missing Fields Error" - backend saves data but returns 400
-      const errorMessage = getErrorMessage(error);
-      if (errorMessage && errorMessage.includes('Missing Fields Error')) {
-        // Data was saved despite the error, so update local state and reload
-        setLeaves(prev =>
-          prev.map(l =>
-            l.id === selectedId ? { ...l, managerRemarks: comment } : l
-          )
-        );
-        showSuccess('Manager response saved successfully!');
-        await loadLeaves({ page: currentPage, view: viewMode });
-      } else {
-        showError(error);
-      }
-    } finally {
-      setManagerResponseDialogOpen(false);
-      setSelectedId(null);
-    }
-  };
-
-  // Open manager response dialog
-  const handleOpenManagerResponse = (id: string) => {
-    setSelectedId(id);
-    setManagerResponseDialogOpen(true);
   };
 
   // Withdraw leave
@@ -484,69 +399,75 @@ const LeaveRequestPage = () => {
 
   // Fetch all leaves for export
   const _fetchAllLeavesForExport = useCallback(async (): Promise<Leave[]> => {
-    const allLeaves: Leave[] = [];
-    let pageNum = 1;
-    let totalPagesLocal = 1;
-    do {
-      let res;
-      if (
-        ['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role)
-      ) {
-        res = await leaveApi.getAllLeaves(pageNum);
-      } else if (role === 'manager') {
-        res =
-          viewMode === 'you'
-            ? await leaveApi.getUserLeaves(currentUserId, pageNum)
-            : await leaveApi.getTeamLeaves(pageNum);
-      } else {
-        res = await leaveApi.getUserLeaves(currentUserId, pageNum);
-      }
-      totalPagesLocal = res.totalPages || 1;
-      allLeaves.push(
-        ...res.items.map((leave): Leave => {
-          const leaveRec = leave as unknown as Record<string, unknown>;
-          const employeeId = String(
-            (leaveRec.employee as Record<string, unknown> | undefined)?.id ||
-              (leaveRec.user as Record<string, unknown> | undefined)?.id ||
-              (leaveRec.employeeId as string | undefined) ||
-              ''
-          );
+    // eslint-disable-next-line no-useless-catch
+    try {
+      const allLeaves: Leave[] = [];
+      let pageNum = 1;
+      let totalPagesLocal = 1;
+      do {
+        let res;
+        if (
+          ['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role)
+        ) {
+          res = await leaveApi.getAllLeaves(pageNum);
+        } else if (role === 'manager') {
+          res =
+            viewMode === 'you'
+              ? await leaveApi.getUserLeaves(currentUserId, pageNum)
+              : await leaveApi.getTeamLeaves(pageNum);
+        } else {
+          res = await leaveApi.getUserLeaves(currentUserId, pageNum);
+        }
+        totalPagesLocal = res.totalPages || 1;
+        allLeaves.push(
+          ...res.items.map((leave): Leave => {
+            const leaveRec = leave as unknown as Record<string, unknown>;
+            const employeeId = String(
+              (leaveRec.employee as Record<string, unknown> | undefined)?.id ||
+                (leaveRec.user as Record<string, unknown> | undefined)?.id ||
+                (leaveRec.employeeId as string | undefined) ||
+                ''
+            );
 
-          const r = leaveRec.remarks;
-          const remarks =
-            r === null || typeof r === 'undefined' ? undefined : String(r);
+            const r = leaveRec.remarks;
+            const remarks =
+              r === null || typeof r === 'undefined' ? undefined : String(r);
 
-          const rawStatus = String(leaveRec.status ?? '').toLowerCase();
-          let normalizedStatus: import('../../type/levetypes').LeaveStatus =
-            'pending';
-          if (
-            rawStatus === 'pending' ||
-            rawStatus === 'approved' ||
-            rawStatus === 'rejected' ||
-            rawStatus === 'withdrawn'
-          ) {
-            normalizedStatus =
-              rawStatus as import('../../type/levetypes').LeaveStatus;
-          } else if (rawStatus === 'cancelled') {
-            // Backend uses 'cancelled' sometimes — map to 'rejected'
-            normalizedStatus = 'rejected';
-          }
+            const rawStatus = String(leaveRec.status ?? '').toLowerCase();
+            let normalizedStatus: import('../../type/levetypes').LeaveStatus =
+              'pending';
+            if (
+              rawStatus === 'pending' ||
+              rawStatus === 'approved' ||
+              rawStatus === 'rejected' ||
+              rawStatus === 'withdrawn'
+            ) {
+              normalizedStatus =
+                rawStatus as import('../../type/levetypes').LeaveStatus;
+            } else if (rawStatus === 'cancelled') {
+              // Backend uses 'cancelled' sometimes — map to 'rejected'
+              normalizedStatus = 'rejected';
+            }
 
-          return {
-            ...leave,
-            employeeId,
-            leaveTypeId: leaveRec.leaveTypeId
-              ? String(leaveRec.leaveTypeId)
-              : '',
-            remarks,
-            status: normalizedStatus,
-          } as Leave;
-        })
-      );
-      pageNum++;
-    } while (pageNum <= totalPagesLocal);
+            return {
+              ...leave,
+              employeeId,
+              leaveTypeId: leaveRec.leaveTypeId
+                ? String(leaveRec.leaveTypeId)
+                : '',
+              remarks,
+              status: normalizedStatus,
+            } as Leave;
+          })
+        );
+        pageNum++;
+      } while (pageNum <= totalPagesLocal);
 
-    return Array.from(new Map(allLeaves.map(l => [l.id, l])).values());
+      return Array.from(new Map(allLeaves.map(l => [l.id, l])).values());
+    } catch (error) {
+      // Propagate error to callers (export handlers) to show a UI message
+      throw error;
+    }
   }, [currentUserId, role, viewMode]);
 
   if (initialLoading)
@@ -687,9 +608,6 @@ const LeaveRequestPage = () => {
                 isManager={role === 'manager'}
                 currentUserId={currentUserId || undefined}
                 viewMode={viewMode}
-                onManagerAction={
-                  viewMode === 'team' ? handleManagerAction : undefined
-                }
                 onManagerResponse={
                   viewMode === 'team' ? handleOpenManagerResponse : undefined
                 }
@@ -738,15 +656,6 @@ const LeaveRequestPage = () => {
         allowComments={isManagerAction}
         commentLabel={isManagerAction ? 'Remarks (Optional)' : undefined}
         showRemarksField={isManagerAction}
-      />
-
-      <ManagerResponseDialog
-        open={managerResponseDialogOpen}
-        onClose={() => {
-          setManagerResponseDialogOpen(false);
-          setSelectedId(null);
-        }}
-        onConfirm={handleManagerResponse}
       />
 
       <Dialog
