@@ -106,11 +106,11 @@ const Forget = () => {
         <Box
           sx={{
             width: '100%',
-            maxWidth: { xs: '100%', sm: '400px', md: '420px' },
+            // maxWidth: { xs: '100%', sm: '400px' },
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            mb: 3,
+            mb: 6,
           }}
         >
           <Box
@@ -118,10 +118,10 @@ const Forget = () => {
             src={Icons.logoWhite}
             alt='Workonnect.ai Logo'
             sx={{
-              width: { xs: '100%', sm: '400px', md: '420px' },
-              maxWidth: { xs: '100%', sm: '400px', md: '420px' },
+              width: { xs: '100%' },
+              maxWidth: { xs: '100%', md: '520px' },
               height: 'auto',
-              maxHeight: { xs: 40, sm: 48 },
+              // maxHeight: { xs: 40, sm: 48 },
               objectFit: 'contain',
             }}
           />
@@ -132,8 +132,8 @@ const Forget = () => {
             backgroundColor: '#FFFFFF',
             borderRadius: '20px',
             padding: { xs: 3, sm: 4, md: 5 },
-            width: { xs: '100%', sm: '400px', md: '420px' },
-            maxWidth: { xs: '100%', sm: '400px', md: '420px' },
+            width: { xs: '100%' },
+            maxWidth: { xs: '100%', sm: '400px', md: '520px' },
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             boxSizing: 'border-box',
             border: '1px solid #E0E0E0',
@@ -147,16 +147,16 @@ const Forget = () => {
               mb: 3,
             }}
           >
-              <Box
-                component='img'
-                src={Icons.sent}
-                alt='Email Sent'
-                sx={{
-                  width: { xs: '80px', sm: '80px' },
-                  height: { xs: '80px', sm: '80px' },
-                }}
-              />
-            </Box>
+            <Box
+              component='img'
+              src={Icons.sent}
+              alt='Email Sent'
+              sx={{
+                width: { xs: '80px', sm: '80px' },
+                height: { xs: '80px', sm: '80px' },
+              }}
+            />
+          </Box>
 
           <Typography
             variant='h1'
@@ -246,11 +246,11 @@ const Forget = () => {
       <Box
         sx={{
           width: '100%',
-          maxWidth: { xs: '100%', sm: '400px', md: '420px' },
+          // maxWidth: { xs: '100%', sm: '400px', md: '420px' },
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          mb: 3,
+          mb: 6,
         }}
       >
         <Box
@@ -258,10 +258,10 @@ const Forget = () => {
           src={Icons.logoWhite}
           alt='Workonnect.ai Logo'
           sx={{
-            width: { xs: '100%', sm: '400px', md: '420px' },
-            maxWidth: { xs: '100%', sm: '400px', md: '420px' },
-            height: 'auto',
-            maxHeight: { xs: 40, sm: 48 },
+            width: { xs: '100%' },
+            maxWidth: { xs: '100%', md: '520px' },
+            // height: 'auto',
+            // maxHeight: { xs: 40, sm: 48 },
             objectFit: 'contain',
           }}
         />
@@ -271,9 +271,10 @@ const Forget = () => {
         sx={{
           backgroundColor: '#FFFFFF',
           borderRadius: '20px',
-          padding: { xs: 3, sm: 4, md: 5 },
-          width: { xs: '100%', sm: '400px', md: '420px' },
-          maxWidth: { xs: '100%', sm: '400px', md: '420px' },
+          py: { xs: 3, sm: 4, md: 5 },
+          px: { xs: 3, sm: 4, md: 8 },
+          width: { xs: '100%' },
+          maxWidth: { xs: '100%', sm: '400px', md: '520px' },
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
           boxSizing: 'border-box',
         }}

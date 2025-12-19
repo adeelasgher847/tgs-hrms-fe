@@ -56,6 +56,7 @@ import WorkIcon from '@mui/icons-material/Work';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import EventIcon from '@mui/icons-material/Event';
 import DescriptionIcon from '@mui/icons-material/Description';
+import SearchIcon from '@mui/icons-material/Search';
 import { departmentApiService } from '../../api/departmentApi';
 import { designationApiService } from '../../api/designationApi';
 import benefitsApi from '../../api/benefitApi';
@@ -1484,9 +1485,9 @@ const Navbar: React.FC<NavbarProps> = ({
                     width: { xs: '36px', md: '44px' },
                     height: { xs: '36px', md: '44px' },
                     minWidth: { xs: '36px', md: '44px' },
-                    // '&:hover': {
-                    //   backgroundColor: 'var(--primary-light-color)',
-                    // },
+                    '&:hover': {
+                      backgroundColor: 'var(--primary-dark-color)',
+                    },
                   }}
                   aria-label='Search'
                 >
