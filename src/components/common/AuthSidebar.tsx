@@ -54,7 +54,7 @@ const AuthSidebar: React.FC = () => {
                 lineHeight: 1.2,
               }}
             >
-              Workonnect – Let’s Manage Better
+              Workonnect - Let's Management Better
             </Typography>
 
             <Box

@@ -1484,9 +1484,9 @@ const Navbar: React.FC<NavbarProps> = ({
                     width: { xs: '36px', md: '44px' },
                     height: { xs: '36px', md: '44px' },
                     minWidth: { xs: '36px', md: '44px' },
-                    '&:hover': {
-                      backgroundColor: 'var(--primary-light-color)',
-                    },
+                    // '&:hover': {
+                    //   backgroundColor: 'var(--primary-light-color)',
+                    // },
                   }}
                   aria-label='Search'
                 >
@@ -1537,9 +1537,9 @@ const Navbar: React.FC<NavbarProps> = ({
                               '&.Mui-selected': {
                                 backgroundColor: 'var(--primary-dark-color)',
                                 color: 'var(--white-color)',
-                                '&:hover': {
-                                  backgroundColor: 'var(--primary-dark-color)',
-                                },
+                                // '&:hover': {
+                                //   backgroundColor: 'var(--primary-dark-color)',
+                                // },
                               },
                             }}
                           >
@@ -1641,7 +1641,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 display: { xs: 'none', md: 'block' },
               }}
             >
-              <TeamMembersAvatar maxAvatars={5} darkMode={darkMode} />
+              <TeamMembersAvatar maxAvatars={2} darkMode={darkMode} />
             </Box>
 
             {/* Mobile Team Members Button */}

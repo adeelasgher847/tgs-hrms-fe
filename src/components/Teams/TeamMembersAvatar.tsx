@@ -14,10 +14,16 @@ import {
   ListItemAvatar,
   ListItemText,
   IconButton,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import UserAvatar from '../common/UserAvatar';
 import { Avatar } from '@mui/material';
-import { Group as GroupIcon, Close as CloseIcon } from '@mui/icons-material';
+import {
+  Group as GroupIcon,
+  Close as CloseIcon,
+  Search as SearchIcon,
+} from '@mui/icons-material';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
 
@@ -46,6 +52,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
   );
   const [loading, setLoading] = useState(true);
   const [showAllMembersDialog, setShowAllMembersDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { language } = useLanguage();
 
@@ -60,6 +67,8 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       designation: 'Designation',
       team: 'Team',
       allTeamMembers: 'All Team Members',
+      viewAllTeamMembers: 'View all {count} team members',
+      searchMember: 'Search member...',
     },
     ar: {
       teamMembers: 'أعضاء الفريق',
@@ -71,6 +80,8 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       designation: 'المسمى الوظيفي',
       team: 'الفريق',
       allTeamMembers: 'جميع أعضاء الفريق',
+      viewAllTeamMembers: 'عرض جميع {count} أعضاء الفريق',
+      searchMember: 'بحث عن عضو...',
     },
   };
 
@@ -432,44 +443,25 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       );
     }
 
-    const displayMembers = validMembers.slice(0, maxAvatars);
-    const remainingCount = validMembers.length - maxAvatars;
+    const displayMembers = validMembers.slice(0, 2);
+    const remainingCount = validMembers.length - 2;
+    const totalCount = validMembers.length;
 
     return (
       <>
         <Stack
           direction='row'
           spacing={-1}
-          sx={{ display: { xs: 'none', md: 'flex' } }}
+          sx={{ display: { xs: 'none', md: 'flex' }, borderRadius: '16px' }}
         >
           {displayMembers.map(member => renderAvatar(member)).filter(Boolean)}
 
           {remainingCount > 0 && (
             <Tooltip
-              title={
-                <Box sx={{ p: 1 }}>
-                  <Typography
-                    variant='subtitle2'
-                    sx={{ color: 'white', mb: 1, fontWeight: 600 }}
-                  >
-                    {remainingCount} more team members:
-                  </Typography>
-                  {validMembers.slice(maxAvatars).map(member => (
-                    <Typography
-                      key={member.id}
-                      variant='body2'
-                      sx={{
-                        color: 'white',
-                        mb: 0.5,
-                        fontSize: '0.8rem',
-                      }}
-                    >
-                      • {member.user?.first_name} {member.user?.last_name} (
-                      {member.designation?.title})
-                    </Typography>
-                  ))}
-                </Box>
-              }
+              title={lang.viewAllTeamMembers.replace(
+                '{count}',
+                String(totalCount)
+              )}
               arrow
               placement='bottom'
             >
@@ -502,12 +494,19 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
         <Dialog
           open={showAllMembersDialog}
           onClose={() => setShowAllMembersDialog(false)}
-          maxWidth='sm'
-          fullWidth
+          maxWidth='xs'
           PaperProps={{
             sx: {
               backgroundColor: darkMode ? '#2d2d2d' : '#fff',
               color: darkMode ? '#fff' : '#000',
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '420px',
+            },
+          }}
+          sx={{
+            '& .MuiDialog-paper': {
+              borderRadius: '24px !important',
             },
           }}
         >
@@ -516,45 +515,168 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}`,
+              // borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}`,
+              pb: 2,
             }}
           >
             <Typography variant='h6' sx={{ fontWeight: 600 }}>
-              {lang.teamMembers} ({teamMembers.length})
+              {lang.allTeamMembers}{' '}
+              <Box component='span' sx={{ color: '#878787' }}>
+                (
+                {(() => {
+                  const validMembers = teamMembers.filter(
+                    member =>
+                      member?.user?.first_name && member?.user?.last_name
+                  );
+                  const filteredMembers = validMembers.filter(member => {
+                    if (!searchQuery.trim()) return true;
+                    const query = searchQuery.toLowerCase();
+                    const fullName =
+                      `${member.user?.first_name || ''} ${member.user?.last_name || ''}`.toLowerCase();
+                    const email = (member.user?.email || '').toLowerCase();
+                    const designation = (
+                      member.designation?.title || ''
+                    ).toLowerCase();
+                    const department = (
+                      member.department?.name || ''
+                    ).toLowerCase();
+                    return (
+                      fullName.includes(query) ||
+                      email.includes(query) ||
+                      designation.includes(query) ||
+                      department.includes(query)
+                    );
+                  });
+                  return filteredMembers.length;
+                })()}
+                )
+              </Box>
             </Typography>
             <IconButton
-              onClick={() => setShowAllMembersDialog(false)}
+              onClick={() => {
+                setShowAllMembersDialog(false);
+                setSearchQuery('');
+              }}
               sx={{ color: darkMode ? '#ccc' : '#666' }}
             >
               <CloseIcon />
             </IconButton>
           </DialogTitle>
           <DialogContent sx={{ p: 0 }}>
-            {teamMembers.length === 0 ? (
-              <Box sx={{ p: 3, textAlign: 'center' }}>
-                <Typography
-                  variant='body2'
-                  sx={{ color: darkMode ? '#ccc' : '#666' }}
+            <Box
+              sx={{
+                p: 2,
+              }}
+            >
+              <TextField
+                fullWidth
+                size='small'
+                placeholder={lang.searchMember}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position='start'>
+                      <SearchIcon sx={{ color: darkMode ? '#999' : '#999' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  borderRadius: '8px',
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: darkMode ? '#2d2d2d' : '#f8f8f8',
+                    color: darkMode ? '#fff' : '#000',
+                    borderRadius: '8px',
+                    '& fieldset': {
+                      borderColor: darkMode ? '#555' : '#bdbdbd',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: darkMode ? '#777' : '#ccc',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#484c7f',
+                    },
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: darkMode ? '#999' : '#999',
+                    opacity: 1,
+                  },
+                }}
+              />
+            </Box>
+            {(() => {
+              const validMembers = teamMembers.filter(
+                member => member?.user?.first_name && member?.user?.last_name
+              );
+
+              const filteredMembers = validMembers.filter(member => {
+                if (!searchQuery.trim()) return true;
+                const query = searchQuery.toLowerCase();
+                const fullName =
+                  `${member.user?.first_name || ''} ${member.user?.last_name || ''}`.toLowerCase();
+                const email = (member.user?.email || '').toLowerCase();
+                const designation = (
+                  member.designation?.title || ''
+                ).toLowerCase();
+                const department = (
+                  member.department?.name || ''
+                ).toLowerCase();
+                return (
+                  fullName.includes(query) ||
+                  email.includes(query) ||
+                  designation.includes(query) ||
+                  department.includes(query)
+                );
+              });
+
+              if (filteredMembers.length === 0) {
+                return (
+                  <Box sx={{ p: 3, textAlign: 'center' }}>
+                    <Typography
+                      variant='body2'
+                      sx={{ color: darkMode ? '#ccc' : '#666' }}
+                    >
+                      {searchQuery ? 'No members found' : lang.noMembers}
+                    </Typography>
+                  </Box>
+                );
+              }
+
+              return (
+                <List
+                  sx={{
+                    p: 0,
+                    maxHeight: '320px',
+                    overflow: 'auto',
+                    '&::-webkit-scrollbar': {
+                      width: '8px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                      background: 'transparent',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                      background: '#bdbdbd',
+                      borderRadius: '4px',
+                      '&:hover': {
+                        background: '#9e9e9e',
+                      },
+                    },
+                    // Firefox
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#bdbdbd transparent',
+                  }}
                 >
-                  {lang.noMembers}
-                </Typography>
-              </Box>
-            ) : (
-              <List sx={{ p: 0 }}>
-                {teamMembers
-                  .filter(
-                    member =>
-                      member?.user?.first_name && member?.user?.last_name
-                  )
-                  .map(member => (
+                  {filteredMembers.map(member => (
                     <ListItem
                       key={member.id}
                       sx={{
-                        borderBottom: `1px solid ${darkMode ? '#444' : '#f0f0f0'}`,
+                        borderBottom: `2px solid ${darkMode ? '#888888' : '#888888'}`,
+                        py: 1.5,
+                        px: 2,
                         '&:last-child': { borderBottom: 'none' },
                       }}
                     >
-                      <ListItemAvatar>
+                      <ListItemAvatar sx={{ minWidth: 48 }}>
                         <UserAvatar
                           user={{
                             id: member.user?.id,
@@ -573,54 +695,67 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                             sx={{
                               fontWeight: 600,
                               color: darkMode ? '#fff' : '#000',
+                              mb: 0.25,
                             }}
                           >
                             {member.user?.first_name} {member.user?.last_name}
                           </Typography>
                         }
                         secondary={
-                          <Box sx={{ mt: 0.5 }}>
+                          <Box>
                             <Typography
                               variant='body2'
                               sx={{
-                                color: darkMode ? '#ccc' : '#666',
-                                mb: 0.5,
+                                color: darkMode ? '#999' : '#666',
+                                mb: 0.75,
+                                fontSize: '0.875rem',
                               }}
                             >
                               {member.user?.email}
                             </Typography>
                             <Box
-                              sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}
+                              sx={{
+                                display: 'flex',
+                                gap: 0.75,
+                                flexWrap: 'wrap',
+                                mt: 0.5,
+                              }}
                             >
-                              <Chip
-                                label={member.designation?.title || 'N/A'}
-                                size='small'
-                                sx={{
-                                  backgroundColor: '#484c7f',
-                                  color: 'white',
-                                  fontSize: '0.7rem',
-                                  height: 20,
-                                }}
-                              />
-                              <Chip
-                                label={member.department?.name || 'N/A'}
-                                size='small'
-                                variant='outlined'
-                                sx={{
-                                  borderColor: darkMode ? '#666' : '#ccc',
-                                  color: darkMode ? '#ccc' : '#666',
-                                  fontSize: '0.7rem',
-                                  height: 20,
-                                }}
-                              />
+                              {member.department?.name && (
+                                <Chip
+                                  label={member.department.name}
+                                  size='small'
+                                  sx={{
+                                    backgroundColor: '#e0e0e0',
+                                    color: '#666',
+                                    fontSize: '0.7rem',
+                                    height: 22,
+                                    fontWeight: 400,
+                                  }}
+                                />
+                              )}
+                              {member.designation?.title && (
+                                <Chip
+                                  label={member.designation.title}
+                                  size='small'
+                                  sx={{
+                                    backgroundColor: '#6054f4',
+                                    color: 'white',
+                                    fontSize: '0.7rem',
+                                    height: 22,
+                                    fontWeight: 400,
+                                  }}
+                                />
+                              )}
                             </Box>
                           </Box>
                         }
                       />
                     </ListItem>
                   ))}
-              </List>
-            )}
+                </List>
+              );
+            })()}
           </DialogContent>
         </Dialog>
       </>
@@ -665,15 +800,16 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       );
     }
 
-    const displayMembers = validMembers.slice(0, maxAvatars);
-    const remainingCount = validMembers.length - maxAvatars;
+    const displayMembers = validMembers.slice(0, 2);
+    const remainingCount = validMembers.length - 2;
+    const totalCount = validMembers.length;
 
     return (
       <>
         <Stack
           direction='row'
           spacing={-1}
-          sx={{ display: { xs: 'none', md: 'flex' } }}
+          sx={{ display: { xs: 'none', md: 'flex' }, borderRadius: '16px' }}
         >
           {displayMembers
             .map(member => renderAdminAvatar(member))
@@ -681,30 +817,10 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
 
           {remainingCount > 0 && (
             <Tooltip
-              title={
-                <Box sx={{ p: 1 }}>
-                  <Typography
-                    variant='subtitle2'
-                    sx={{ color: 'white', mb: 1, fontWeight: 600 }}
-                  >
-                    {remainingCount} more team members:
-                  </Typography>
-                  {validMembers.slice(maxAvatars).map(member => (
-                    <Typography
-                      key={member.id}
-                      variant='body2'
-                      sx={{
-                        color: 'white',
-                        mb: 0.5,
-                        fontSize: '0.8rem',
-                      }}
-                    >
-                      • {member.user?.first_name} {member.user?.last_name} (
-                      {member.designation?.title}) - {member.team?.name}
-                    </Typography>
-                  ))}
-                </Box>
-              }
+              title={lang.viewAllTeamMembers.replace(
+                '{count}',
+                String(totalCount)
+              )}
               arrow
               placement='bottom'
             >
@@ -737,12 +853,19 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
         <Dialog
           open={showAllMembersDialog}
           onClose={() => setShowAllMembersDialog(false)}
-          maxWidth='sm'
-          fullWidth
+          maxWidth='xs'
           PaperProps={{
             sx: {
               backgroundColor: darkMode ? '#2d2d2d' : '#fff',
               color: darkMode ? '#fff' : '#000',
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '420px',
+            },
+          }}
+          sx={{
+            '& .MuiDialog-paper': {
+              borderRadius: '24px !important',
             },
           }}
         >
@@ -751,45 +874,181 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}`,
+              // borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}`,
+              pb: 2,
             }}
           >
             <Typography variant='h6' sx={{ fontWeight: 600 }}>
-              {lang.allTeamMembers} ({adminTeamMembers.length})
+              {lang.allTeamMembers}{' '}
+              <Box component='span' sx={{ color: '#878787' }}>
+                (
+                {(() => {
+                  const validMembers = adminTeamMembers.filter(
+                    member =>
+                      member?.user?.first_name && member?.user?.last_name
+                  );
+                  const filteredMembers = validMembers.filter(member => {
+                    if (!searchQuery.trim()) return true;
+                    const query = searchQuery.toLowerCase();
+                    const fullName =
+                      `${member.user?.first_name || ''} ${member.user?.last_name || ''}`.toLowerCase();
+                    const email = (member.user?.email || '').toLowerCase();
+                    const designation = (
+                      member.designation?.title || ''
+                    ).toLowerCase();
+                    const department = (
+                      member.department?.name || ''
+                    ).toLowerCase();
+                    const teamName = (member.team?.name || '').toLowerCase();
+                    return (
+                      fullName.includes(query) ||
+                      email.includes(query) ||
+                      designation.includes(query) ||
+                      department.includes(query) ||
+                      teamName.includes(query)
+                    );
+                  });
+                  return filteredMembers.length;
+                })()}
+                )
+              </Box>
             </Typography>
             <IconButton
-              onClick={() => setShowAllMembersDialog(false)}
+              onClick={() => {
+                setShowAllMembersDialog(false);
+                setSearchQuery('');
+              }}
               sx={{ color: darkMode ? '#ccc' : '#666' }}
             >
               <CloseIcon />
             </IconButton>
           </DialogTitle>
-          <DialogContent sx={{ p: 0 }}>
-            {adminTeamMembers.length === 0 ? (
-              <Box sx={{ p: 3, textAlign: 'center' }}>
-                <Typography
-                  variant='body2'
-                  sx={{ color: darkMode ? '#ccc' : '#666' }}
+          <DialogContent
+            sx={{
+              p: 0,
+              '&::-webkit-scrollbar': {
+                display: 'none',
+              },
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
+          >
+            <Box
+              sx={{
+                p: 2,
+              }}
+            >
+              <TextField
+                fullWidth
+                size='small'
+                placeholder={lang.searchMember}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position='start'>
+                      <SearchIcon sx={{ color: darkMode ? '#999' : '#999' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  borderRadius: '8px',
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: darkMode ? '#2d2d2d' : '#f8f8f8',
+                    color: darkMode ? '#fff' : '#000',
+                    borderRadius: '8px',
+                    '& fieldset': {
+                      borderColor: darkMode ? '#555' : '#bdbdbd',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: darkMode ? '#777' : '#ccc',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#484c7f',
+                    },
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: darkMode ? '#999' : '#999',
+                    opacity: 1,
+                  },
+                }}
+              />
+            </Box>
+            {(() => {
+              const validMembers = adminTeamMembers.filter(
+                member => member?.user?.first_name && member?.user?.last_name
+              );
+
+              const filteredMembers = validMembers.filter(member => {
+                if (!searchQuery.trim()) return true;
+                const query = searchQuery.toLowerCase();
+                const fullName =
+                  `${member.user?.first_name || ''} ${member.user?.last_name || ''}`.toLowerCase();
+                const email = (member.user?.email || '').toLowerCase();
+                const designation = (
+                  member.designation?.title || ''
+                ).toLowerCase();
+                const department = (
+                  member.department?.name || ''
+                ).toLowerCase();
+                const teamName = (member.team?.name || '').toLowerCase();
+                return (
+                  fullName.includes(query) ||
+                  email.includes(query) ||
+                  designation.includes(query) ||
+                  department.includes(query) ||
+                  teamName.includes(query)
+                );
+              });
+
+              if (filteredMembers.length === 0) {
+                return (
+                  <Box sx={{ p: 3, textAlign: 'center' }}>
+                    <Typography
+                      variant='body2'
+                      sx={{ color: darkMode ? '#ccc' : '#666' }}
+                    >
+                      {searchQuery ? 'No members found' : lang.noMembers}
+                    </Typography>
+                  </Box>
+                );
+              }
+
+              return (
+                <List
+                  sx={{
+                    p: 0,
+                    maxHeight: '320px',
+                    overflow: 'auto',
+                    '&::-webkit-scrollbar': {
+                      width: '8px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                      background: 'transparent',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                      background: '#bdbdbd',
+                      borderRadius: '4px',
+                      '&:hover': {
+                        background: '#9e9e9e',
+                      },
+                    },
+                    // Firefox
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#bdbdbd transparent',
+                  }}
                 >
-                  {lang.noMembers}
-                </Typography>
-              </Box>
-            ) : (
-              <List sx={{ p: 0 }}>
-                {adminTeamMembers
-                  .filter(
-                    member =>
-                      member?.user?.first_name && member?.user?.last_name
-                  )
-                  .map(member => (
+                  {filteredMembers.map(member => (
                     <ListItem
                       key={member.id}
                       sx={{
-                        borderBottom: `1px solid ${darkMode ? '#444' : '#f0f0f0'}`,
+                        borderBottom: `1px solid ${darkMode ? '#444' : '#dcdcdc'}`,
+                        py: 1.5,
+                        px: 2,
                         '&:last-child': { borderBottom: 'none' },
                       }}
                     >
-                      <ListItemAvatar>
+                      <ListItemAvatar sx={{ minWidth: 48 }}>
                         <UserAvatar
                           user={{
                             id: member.user?.id,
@@ -808,64 +1067,80 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                             sx={{
                               fontWeight: 600,
                               color: darkMode ? '#fff' : '#000',
+                              mb: 0.25,
                             }}
                           >
                             {member.user?.first_name} {member.user?.last_name}
                           </Typography>
                         }
                         secondary={
-                          <Box sx={{ mt: 0.5 }}>
+                          <Box>
                             <Typography
                               variant='body2'
                               sx={{
-                                color: darkMode ? '#ccc' : '#666',
-                                mb: 0.5,
+                                color: darkMode ? '#999' : '#666',
+                                mb: 0.75,
+                                fontSize: '0.875rem',
                               }}
                             >
                               {member.user?.email}
                             </Typography>
                             <Box
-                              sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}
+                              sx={{
+                                display: 'flex',
+                                gap: 0.75,
+                                flexWrap: 'wrap',
+                                mt: 0.5,
+                              }}
                             >
-                              <Chip
-                                label={member.designation?.title || 'N/A'}
-                                size='small'
-                                sx={{
-                                  backgroundColor: '#484c7f',
-                                  color: 'white',
-                                  fontSize: '0.7rem',
-                                  height: 20,
-                                }}
-                              />
-                              <Chip
-                                label={member.team?.name || 'N/A'}
-                                size='small'
-                                sx={{
-                                  backgroundColor: '#1976d2',
-                                  color: 'white',
-                                  fontSize: '0.7rem',
-                                  height: 20,
-                                }}
-                              />
-                              <Chip
-                                label={member.department?.name || 'N/A'}
-                                size='small'
-                                variant='outlined'
-                                sx={{
-                                  borderColor: darkMode ? '#666' : '#ccc',
-                                  color: darkMode ? '#ccc' : '#666',
-                                  fontSize: '0.7rem',
-                                  height: 20,
-                                }}
-                              />
+                              {member.department?.name && (
+                                <Chip
+                                  label={member.department.name}
+                                  size='small'
+                                  sx={{
+                                    backgroundColor: '#e0e0e0',
+                                    color: '#666',
+                                    fontSize: '0.7rem',
+                                    height: 22,
+                                    fontWeight: 400,
+                                  }}
+                                />
+                              )}
+                              {member.designation?.title && (
+                                <Chip
+                                  label={member.designation.title}
+                                  size='small'
+                                  sx={{
+                                    backgroundColor: '#9c27b0',
+                                    color: 'white',
+                                    fontSize: '0.7rem',
+                                    height: 22,
+                                    fontWeight: 400,
+                                  }}
+                                />
+                              )}
+                              {member.team?.name && (
+                                <Chip
+                                  label={member.team.name}
+                                  size='small'
+                                  sx={{
+                                    backgroundColor: '#008b95',
+                                    color: 'white',
+                                    fontSize: '0.7rem',
+                                    height: 22,
+                                    fontWeight: 400,
+                                  }}
+                                />
+                              )}
                             </Box>
                           </Box>
                         }
                       />
                     </ListItem>
                   ))}
-              </List>
-            )}
+                </List>
+              );
+            })()}
           </DialogContent>
         </Dialog>
       </>

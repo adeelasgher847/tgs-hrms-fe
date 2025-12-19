@@ -5,7 +5,6 @@ import {
   MenuItem,
   Typography,
   Box,
-  FormHelperText,
   type SelectProps,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -71,22 +70,43 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
 
     return (
       <Box sx={containerSx}>
-        <Typography
-          component='label'
-          htmlFor={rest.id || (rest.name ? `dropdown-${rest.name}` : undefined)}
-          className={labelClassName}
+        <Box
           sx={{
-            display: 'block',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
             mb: 0.5,
-            fontWeight: 500,
-            fontSize: 'var(--subheading2-font-size)',
-            lineHeight: 'var(--subheading2-line-height)',
-            letterSpacing: 'var(--subheading2-letter-spacing)',
-            color: '#2C2C2C',
           }}
         >
-          {label}
-        </Typography>
+          <Typography
+            component='label'
+            htmlFor={rest.id || (rest.name ? `dropdown-${rest.name}` : undefined)}
+            className={labelClassName}
+            sx={{
+              fontWeight: 500,
+              fontSize: 'var(--subheading2-font-size)',
+              lineHeight: 'var(--subheading2-line-height)',
+              letterSpacing: 'var(--subheading2-letter-spacing)',
+              color: '#2C2C2C',
+            }}
+          >
+            {label}
+          </Typography>
+          {error && helperText && (
+            <Typography
+              sx={{
+                fontSize: { xs: '12px', sm: '14px' },
+                lineHeight: 'var(--label-line-height)',
+                color: '#d32f2f',
+                fontWeight: 400,
+                textAlign: 'right',
+                ml: 2,
+              }}
+            >
+              {helperText}
+            </Typography>
+          )}
+        </Box>
         <FormControl
           ref={ref}
           fullWidth
@@ -193,18 +213,6 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
               </MenuItem>
             ))}
           </Select>
-          {helperText && (
-            <FormHelperText
-              sx={{
-                margin: '4px 0 0 0',
-                fontSize: 'var(--label-font-size)',
-                lineHeight: 'var(--label-line-height)',
-                color: error ? '#d32f2f' : 'rgba(0, 0, 0, 0.6)',
-              }}
-            >
-              {helperText}
-            </FormHelperText>
-          )}
         </FormControl>
       </Box>
     );
