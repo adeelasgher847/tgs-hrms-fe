@@ -27,7 +27,6 @@ const labels = {
   activeEmployees: { en: 'Active Employees', ar: 'الموظفين النشطين' },
   male: { en: 'Male', ar: 'ذكر' },
   female: { en: 'Female', ar: 'أنثى' },
-  loading: { en: 'Loading...', ar: 'جاري التحميل...' },
   error: {
     en: 'Failed to load total employee data. Please try again later.',
     ar: 'Failed to load total employee data. Please try again later.',
@@ -144,13 +143,6 @@ export default function GenderPercentageChart() {
         }}
       >
         <CircularProgress />
-        <Typography
-          ml={2}
-          color={textColor}
-          fontSize={{ xs: '20px', lg: '28px' }}
-        >
-          {labels.loading[language]}
-        </Typography>
       </Box>
     );
   }
