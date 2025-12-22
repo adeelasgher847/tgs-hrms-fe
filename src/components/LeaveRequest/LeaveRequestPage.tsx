@@ -53,7 +53,9 @@ const LeaveRequestPage = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Currently selected leave (used for dialogs like manager response)
-  const selectedLeave = selectedId ? leaves.find(l => l.id === selectedId) : undefined;
+  const selectedLeave = selectedId
+    ? leaves.find(l => l.id === selectedId)
+    : undefined;
 
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
   const previousViewModeRef = useRef<'team' | 'you'>(viewMode);
@@ -179,12 +181,14 @@ const LeaveRequestPage = () => {
             typeof leave.remarks === 'string' ? leave.remarks : undefined;
 
           // remarks field: could be rejection remarks (if status is rejected)
-          const remarks = normalizedStatus === 'rejected' ? remarksString : undefined;
+          const remarks =
+            normalizedStatus === 'rejected' ? remarksString : undefined;
 
           // managerRemarks: from approve-manager endpoint, backend may return in managerRemarks or manager_remarks
           // If status is not rejected and remarksString exists, treat it as manager response
           const managerRemarks =
-            (typeof leave.managerRemarks === 'string' && leave.managerRemarks) ||
+            (typeof leave.managerRemarks === 'string' &&
+              leave.managerRemarks) ||
             (typeof leave.manager_remarks === 'string' &&
               leave.manager_remarks) ||
             (normalizedStatus !== 'rejected' && remarksString
@@ -617,7 +621,9 @@ const LeaveRequestPage = () => {
                 onManagerResponse={
                   viewMode === 'team' ? handleOpenManagerResponse : undefined
                 }
-                onManagerAction={role === 'manager' ? handleManagerAction : undefined}
+                onManagerAction={
+                  role === 'manager' ? handleManagerAction : undefined
+                }
                 onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
                 currentPage={currentPage}
                 totalPages={totalPages}

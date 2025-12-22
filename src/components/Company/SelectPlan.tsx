@@ -135,11 +135,16 @@ const SelectPlan: React.FC = () => {
                 (acc, pr: unknown) => {
                   const p = pr as Record<string, unknown>;
                   const amount =
-                    typeof p.unit_amount === 'number' ? (p.unit_amount as number) : 0;
-                  const currency =
-                    (typeof p.currency === 'string' ? p.currency : 'USD').toUpperCase();
+                    typeof p.unit_amount === 'number'
+                      ? (p.unit_amount as number)
+                      : 0;
+                  const currency = (
+                    typeof p.currency === 'string' ? p.currency : 'USD'
+                  ).toUpperCase();
                   const interval =
-                    typeof p.interval === 'string' ? (p.interval as string) : 'month';
+                    typeof p.interval === 'string'
+                      ? (p.interval as string)
+                      : 'month';
                   const formattedAmount = new Intl.NumberFormat(undefined, {
                     style: 'currency',
                     currency,
@@ -153,8 +158,8 @@ const SelectPlan: React.FC = () => {
                     typeof p.priceId === 'string'
                       ? (p.priceId as string)
                       : typeof p.id === 'string'
-                      ? (p.id as string)
-                      : '';
+                        ? (p.id as string)
+                        : '';
                   if (priceId) {
                     acc[priceId] = {
                       formatted: formattedAmount,
