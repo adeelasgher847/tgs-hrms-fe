@@ -46,6 +46,11 @@ export const Icons = {
   avatar3: '/avatar3.png',
   avatarJpg: '/avatar.jpg',
   avatarWebp: '/avatar.webp',
+
+  google: '/google.svg',
+  lock: '/lockkey.svg',
+  back: '/back.svg',
+  sent: '/sent.svg',
 } as const;
 
 export type IconName = keyof typeof Icons;

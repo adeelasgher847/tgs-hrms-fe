@@ -12,6 +12,7 @@ interface AppInputFieldProps extends Omit<TextFieldProps, 'label'> {
   labelClassName?: string;
   containerSx?: object;
   inputBackgroundColor?: string;
+  hideErrorsOnSmallScreen?: boolean;
 }
 
 const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
@@ -22,6 +23,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
       containerSx,
       sx,
       inputBackgroundColor,
+      hideErrorsOnSmallScreen = false,
       ...rest
     },
     ref
@@ -31,22 +33,50 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
 
     return (
       <Box sx={containerSx}>
-        <Typography
-          component='label'
-          htmlFor={rest.id || (rest.name ? `input-${rest.name}` : undefined)}
-          className={labelClassName}
+        <Box
           sx={{
-            display: 'block',
-            mb: 0.5,
-            fontWeight: { xs: 400, lg: 500 },
-            fontSize: { xs: '14px', lg: '20px' },
-            lineHeight: 'var(--subheading2-line-height)',
-            letterSpacing: 'var(--subheading2-letter-spacing)',
-            color: '#2C2C2C',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            // mb: 0.5,
           }}
         >
-          {label}
-        </Typography>
+          <Typography
+            component='label'
+            htmlFor={rest.id || (rest.name ? `input-${rest.name}` : undefined)}
+            className={labelClassName}
+            sx={{
+              fontWeight: { xs: 400, lg: 500 },
+              fontSize: { xs: '14px', lg: '20px' },
+              lineHeight: 'var(--subheading2-line-height)',
+              letterSpacing: 'var(--subheading2-letter-spacing)',
+              color: '#2C2C2C',
+            }}
+          >
+            {label}
+          </Typography>
+          {rest.error && rest.helperText && (
+            <Typography
+              title={String(rest.helperText)}
+              sx={{
+                display: hideErrorsOnSmallScreen
+                  ? { xs: 'none', sm: 'block' }
+                  : 'block',
+                fontSize: { xs: '12px', sm: '14px' },
+                lineHeight: '1.2',
+                color: '#d32f2f',
+                fontWeight: 400,
+                textAlign: 'right',
+                ml: 2,
+                whiteSpace: 'nowrap',
+                overflow: 'visible',
+                textOverflow: 'clip',
+              }}
+            >
+              {rest.helperText}
+            </Typography>
+          )}
+        </Box>
         <Box
           sx={{
             position: 'relative',
@@ -118,14 +148,19 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
             }}
           />
         </Box>
-        {rest.helperText && (
+        {rest.error && rest.helperText && !hideErrorsOnSmallScreen && (
           <FormHelperText
+            title={String(rest.helperText)}
             error={rest.error}
             sx={{
-              margin: '4px 0 0 0',
-              fontSize: { xs: '10px', sm: 'var(--label-font-size)' },
+              display: { xs: 'block', sm: 'none' },
+              // margin: '4px 0 0 0',
+              fontSize: { xs: '12px', sm: 'var(--label-font-size)' },
               lineHeight: 'var(--label-line-height)',
-              color: rest.error ? '#d32f2f' : 'rgba(0, 0, 0, 0.6)',
+              color: '#d32f2f',
+              whiteSpace: 'nowrap',
+              overflow: 'visible',
+              textOverflow: 'clip',
             }}
           >
             {rest.helperText}
