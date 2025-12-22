@@ -1875,7 +1875,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 sx={{
                   color: 'var(--text-color)',
                   fontSize: { xs: '12px', md: 'var(--body-font-size)' },
-                  pr: { xs: '48px', md: '16px' },
+                  pr: { xs: '16px', md: '16px' },
                   '& input': {
                     backgroundColor: 'transparent',
                   },

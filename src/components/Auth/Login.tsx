@@ -17,8 +17,6 @@ import {
   InputAdornment,
   CircularProgress,
 } from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useUser } from '../../hooks/useUser';
 import { getDefaultDashboardRoute } from '../../utils/permissions';
 import { useGoogleScript } from '../../hooks/useGoogleScript';
@@ -31,6 +29,7 @@ import type { UserProfile } from '../../api/profileApi';
 import AppInputField from '../common/AppInputField';
 import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
+import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
 
 // Extend Window interface for Google Sign-In
 declare global {
@@ -563,9 +562,9 @@ const Login: React.FC = () => {
                           sx={{ color: 'var(--dark-grey-color)' }}
                         >
                           {showPassword ? (
-                            <VisibilityOff sx={{ width: 20, height: 20 }} />
+                            <IoEyeOutline />
                           ) : (
-                            <Visibility sx={{ width: 20, height: 20 }} />
+                            <IoEyeOffOutline />
                           )}
                         </IconButton>
                       </InputAdornment>
@@ -679,7 +678,7 @@ const Login: React.FC = () => {
                     align='center'
                     className='label'
                     sx={{
-                      color: 'var(--dark-grey-color)',
+                      color: '#2D3748',
                       fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
                     }}
                   >
