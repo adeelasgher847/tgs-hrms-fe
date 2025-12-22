@@ -99,6 +99,7 @@ const Forget = () => {
           padding: { xs: 2, sm: 3 },
           position: 'relative',
           boxSizing: 'border-box',
+          gap: { sm: '16px', lg: '20px' },
         }}
       >
         <Box
