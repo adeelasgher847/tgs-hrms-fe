@@ -1484,9 +1484,9 @@ const Navbar: React.FC<NavbarProps> = ({
                     width: { xs: '36px', md: '44px' },
                     height: { xs: '36px', md: '44px' },
                     minWidth: { xs: '36px', md: '44px' },
-                    // '&:hover': {
-                    //   backgroundColor: 'var(--primary-light-color)',
-                    // },
+                    '&:hover': {
+                      backgroundColor: 'var(--primary-dark-color)',
+                    },
                   }}
                   aria-label='Search'
                 >
@@ -1531,9 +1531,9 @@ const Navbar: React.FC<NavbarProps> = ({
                             sx={{
                               px: 2,
                               py: 1.5,
-                              '&:hover': {
-                                backgroundColor: 'var(--primary-color)',
-                              },
+                              // '&:hover': {
+                              //   backgroundColor: 'var(--primary-color)',
+                              // },
                               '&.Mui-selected': {
                                 backgroundColor: 'var(--primary-dark-color)',
                                 color: 'var(--white-color)',
@@ -1912,7 +1912,7 @@ const Navbar: React.FC<NavbarProps> = ({
                   minWidth: { xs: '28px', md: '36px' },
                   padding: 0,
                   '&:hover': {
-                    backgroundColor: 'var(--primary-light-color)',
+                    backgroundColor: 'var(--primary-dark-color)',
                   },
                 }}
                 aria-label='Search'
@@ -1959,15 +1959,15 @@ const Navbar: React.FC<NavbarProps> = ({
                         sx={{
                           px: 2,
                           py: 1.5,
-                          '&:hover': {
-                            backgroundColor: 'var(--primary-color)',
-                          },
+                          // '&:hover': {
+                          //   backgroundColor: 'var(--primary-color)',
+                          // },
                           '&.Mui-selected': {
                             backgroundColor: 'var(--primary-dark-color)',
                             color: 'var(--white-color)',
-                            '&:hover': {
-                              backgroundColor: 'var(--primary-dark-color)',
-                            },
+                            // '&:hover': {
+                            //   backgroundColor: 'var(--primary-dark-color)',
+                            // },
                           },
                         }}
                       >

@@ -245,6 +245,23 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           }
           arrow
           placement='bottom'
+          componentsProps={{
+            tooltip: {
+              sx: {
+                backgroundColor: 'rgba(0, 0, 0, 0.87) !important',
+                color: 'white !important',
+                fontSize: '12px !important',
+                padding: '8px 12px !important',
+                borderRadius: '4px !important',
+                maxWidth: '300px',
+              },
+            },
+            arrow: {
+              sx: {
+                color: 'rgba(0, 0, 0, 0.87) !important',
+              },
+            },
+          }}
         >
           <UserAvatar
             user={{
@@ -463,7 +480,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                 String(totalCount)
               )}
               arrow
-              placement='bottom'
+              placement='top'
             >
               <Avatar
                 onClick={() => setShowAllMembersDialog(true)}
@@ -739,7 +756,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                                   label={member.designation.title}
                                   size='small'
                                   sx={{
-                                    backgroundColor: '#6054f4',
+                                    backgroundColor: '#6155F5',
                                     color: 'white',
                                     fontSize: '0.7rem',
                                     height: 22,

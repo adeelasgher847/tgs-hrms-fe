@@ -101,12 +101,12 @@ const Forget = () => {
           py: { xs: 4, sm: 5, md: 6 },
           position: 'relative',
           boxSizing: 'border-box',
+          gap: { xs: '48px', sm: '54px', lg: '64px' },
         }}
       >
         <Box
           sx={{
-            width: '100%',
-            maxWidth: { xs: '100%', sm: '400px', md: '420px' },
+            maxWidth: { xs: '100%', sm: '540px', md: '540px' },
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -118,10 +118,10 @@ const Forget = () => {
             src={Icons.logoWhite}
             alt='Workonnect.ai Logo'
             sx={{
-              width: { xs: '100%', sm: '400px', md: '420px' },
-              maxWidth: { xs: '100%', sm: '400px', md: '420px' },
+              width: { xs: '100%', sm: '540px', md: '540px' },
+              maxWidth: { xs: '100%', sm: '540px', md: '540px' },
               height: 'auto',
-              maxHeight: { xs: 40, sm: 48 },
+              maxHeight: { xs: 'auto', sm: '74px' },
               objectFit: 'contain',
             }}
           />
@@ -129,14 +129,15 @@ const Forget = () => {
 
         <Box
           sx={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: '#F8F8F8',
             borderRadius: '20px',
             padding: { xs: 3, sm: 4, md: 5 },
-            width: { xs: '100%', sm: '400px', md: '420px' },
-            maxWidth: { xs: '100%', sm: '400px', md: '420px' },
+            width: { xs: '100%', sm: '540px', md: '540px' },
+            maxWidth: { xs: '100%', sm: '540px', md: '540px' },
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             boxSizing: 'border-box',
             border: '1px solid #E0E0E0',
+            
           }}
         >
           <Box
@@ -147,16 +148,16 @@ const Forget = () => {
               mb: 3,
             }}
           >
-              <Box
-                component='img'
-                src={Icons.sent}
-                alt='Email Sent'
-                sx={{
-                  width: { xs: '80px', sm: '80px' },
-                  height: { xs: '80px', sm: '80px' },
-                }}
-              />
-            </Box>
+            <Box
+              component='img'
+              src={Icons.sent}
+              alt='Email Sent'
+              sx={{
+                width: { xs: '80px', sm: '80px' },
+                height: { xs: '80px', sm: '80px' },
+              }}
+            />
+          </Box>
 
           <Typography
             variant='h1'
@@ -241,6 +242,7 @@ const Forget = () => {
         py: { xs: 4, sm: 5, md: 6 },
         position: 'relative',
         boxSizing: 'border-box',
+        gap: { xs: '48px', sm: '54px', lg: '64px' },
       }}
     >
       <Box
@@ -251,6 +253,7 @@ const Forget = () => {
           justifyContent: 'center',
           alignItems: 'center',
           mb: 3,
+          gap: 5,
         }}
       >
         <Box
@@ -258,10 +261,10 @@ const Forget = () => {
           src={Icons.logoWhite}
           alt='Workonnect.ai Logo'
           sx={{
-            width: { xs: '100%', sm: '400px', md: '420px' },
-            maxWidth: { xs: '100%', sm: '400px', md: '420px' },
-            height: 'auto',
-            maxHeight: { xs: 40, sm: 48 },
+            width: { xs: '100%', sm: '540px', md: '540px' },
+            // maxWidth: { xs: '100%', sm: '400px', md: '420px' },
+            height: '74px',
+            maxHeight: { xs: 'auto', sm: '74px' },
             objectFit: 'contain',
           }}
         />
@@ -269,11 +272,14 @@ const Forget = () => {
 
       <Box
         sx={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: '#F8F8F8',
           borderRadius: '20px',
-          padding: { xs: 3, sm: 4, md: 5 },
-          width: { xs: '100%', sm: '400px', md: '420px' },
-          maxWidth: { xs: '100%', sm: '400px', md: '420px' },
+          paddingLeft: { xs: 3, sm: '74px', md: '74px' },
+          paddingRight: { xs: 3, sm: '74px', md: '74px' },
+          paddingTop: { xs: 2, sm: 4, md: 4 },
+          paddingBottom: { xs: 4, sm: 5, md: 6 },
+          width: { xs: '100%', sm: '540px', md: '540px' },
+          maxWidth: { xs: '100%', sm: '540px', md: '540px' },
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
           boxSizing: 'border-box',
         }}
@@ -284,6 +290,7 @@ const Forget = () => {
             justifyContent: 'center',
             alignItems: 'center',
             mb: 3,
+            
           }}
         >
           <Box
