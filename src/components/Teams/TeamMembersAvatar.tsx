@@ -43,7 +43,7 @@ interface TeamMembersAvatarProps {
 }
 
 const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
-  maxAvatars = 4,
+  // maxAvatars = 4,
   darkMode = false,
 }) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -86,6 +86,48 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
   };
 
   const lang = labels[language];
+
+  // Shared tooltip style to match Figma speech-bubble
+  const sharedTooltipProps = {
+    arrow: true,
+    placement: 'top' as const,
+    componentsProps: {
+      tooltip: {
+        sx: {
+          bgcolor: '#ffffff',
+          color: '#6b6b6b',
+          border: '1px solid #e6e6e6',
+          borderRadius: '8px',
+          fontSize: '13px',
+          px: 2,
+          py: 1,
+          boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
+          maxWidth: 'none',
+          whiteSpace: 'nowrap',
+          textAlign: 'center',
+          '& .MuiTooltip-arrow': {
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: '#ffffff',
+            '&:before': {
+              border: '1px solid #e6e6e6',
+              boxShadow: 'none',
+              backgroundClip: 'padding-box',
+            },
+          },
+        },
+      },
+      arrow: {
+        sx: { left: '50%', transform: 'translateX(-50%)' },
+      },
+    },
+    PopperProps: {
+      modifiers: [
+        { name: 'offset', options: { offset: [0, 12] } },
+        { name: 'flip', enabled: false },
+      ],
+    },
+  };
 
   // Generate from name
   const generateInitials = (firstName: string, lastName: string): string => {
@@ -168,18 +210,16 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       return (
         <Tooltip
           key={member.id}
+          {...sharedTooltipProps}
           title={
             <Box sx={{ p: 1 }}>
               <Typography
                 variant='subtitle2'
-                sx={{ fontWeight: 600, color: 'white' }}
+                sx={{ fontWeight: 600, color: 'inherit' }}
               >
                 {fullName}
               </Typography>
-              <Typography
-                variant='caption'
-                sx={{ color: 'rgba(255,255,255,0.8)' }}
-              >
+              <Typography variant='caption' sx={{ color: 'inherit' }}>
                 {member.user.email || 'N/A'}
               </Typography>
               <Box sx={{ mt: 1 }}>
@@ -197,7 +237,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               <Typography
                 variant='caption'
                 sx={{
-                  color: 'rgba(255,255,255,0.7)',
+                  color: 'inherit',
                   display: 'block',
                   mt: 0.5,
                 }}
@@ -207,7 +247,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               <Typography
                 variant='caption'
                 sx={{
-                  color: 'rgba(255,255,255,0.7)',
+                  color: 'inherit',
                   display: 'block',
                   mt: 0.5,
                 }}
@@ -248,20 +288,27 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           componentsProps={{
             tooltip: {
               sx: {
-                backgroundColor: 'rgba(0, 0, 0, 0.87) !important',
-                color: 'white !important',
-                fontSize: '12px !important',
-                padding: '8px 12px !important',
-                borderRadius: '4px !important',
-                maxWidth: '300px',
+                bgcolor: '#ffffff',
+                color: '#6b6b6b',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                border: '1px solid #e6e6e6',
+                borderRadius: '8px',
+                fontSize: '13px',
+                px: 1.5,
+                py: 0.75,
+                maxWidth: 'none',
+                whiteSpace: 'nowrap',
+                textAlign: 'center',
               },
             },
             arrow: {
               sx: {
-                color: 'rgba(0, 0, 0, 0.87) !important',
+                color: '#ffffff',
+                '&:before': { boxShadow: 'none', border: 'none' },
               },
             },
           }}
+          PopperProps={{ modifiers: [{ name: 'flip', enabled: false }] }}
         >
           <UserAvatar
             user={{
@@ -306,18 +353,16 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       return (
         <Tooltip
           key={member.id}
+          {...sharedTooltipProps}
           title={
             <Box sx={{ p: 1 }}>
               <Typography
                 variant='subtitle2'
-                sx={{ fontWeight: 600, color: 'white' }}
+                sx={{ fontWeight: 600, color: 'inherit' }}
               >
                 {fullName}
               </Typography>
-              <Typography
-                variant='caption'
-                sx={{ color: 'rgba(255,255,255,0.8)' }}
-              >
+              <Typography variant='caption' sx={{ color: 'inherit' }}>
                 {member.user.email || 'N/A'}
               </Typography>
               <Box sx={{ mt: 1 }}>
@@ -335,7 +380,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               <Typography
                 variant='caption'
                 sx={{
-                  color: 'rgba(255,255,255,0.7)',
+                  color: 'inherit',
                   display: 'block',
                   mt: 0.5,
                 }}
@@ -373,6 +418,30 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
           }
           arrow
           placement='bottom'
+          componentsProps={{
+            tooltip: {
+              sx: {
+                bgcolor: '#ffffff',
+                color: '#6b6b6b',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                border: '1px solid #e6e6e6',
+                borderRadius: '8px',
+                fontSize: '13px',
+                px: 1.5,
+                py: 0.75,
+                maxWidth: 'none',
+                whiteSpace: 'nowrap',
+                textAlign: 'center',
+              },
+            },
+            arrow: {
+              sx: {
+                color: '#ffffff',
+                '&:before': { boxShadow: 'none', border: 'none' },
+              },
+            },
+          }}
+          PopperProps={{ modifiers: [{ name: 'flip', enabled: false }] }}
         >
           <UserAvatar
             user={{
@@ -479,8 +548,30 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                 '{count}',
                 String(totalCount)
               )}
-              arrow
-              placement='top'
+              {...sharedTooltipProps}
+              placement='bottom'
+              componentsProps={{
+                tooltip: {
+                  sx: {
+                    ...sharedTooltipProps.componentsProps.tooltip.sx,
+                    // position arrow at bottom-left corner
+                    '& .MuiTooltip-arrow': {
+                      left: 12,
+                      transform: 'none',
+                      color: '#ffffff',
+                      '&:before': {
+                        boxShadow: 'none',
+                        border: '1px solid #e6e6e6',
+                        backgroundClip: 'padding-box',
+                      },
+                    },
+                  },
+                },
+                arrow: {
+                  sx: { left: 12, transform: 'none' },
+                },
+              }}
+              PopperProps={{ modifiers: [{ name: 'flip', enabled: false }] }}
             >
               <Avatar
                 onClick={() => setShowAllMembersDialog(true)}
@@ -666,7 +757,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                     maxHeight: '320px',
                     overflow: 'auto',
                     '&::-webkit-scrollbar': {
-                      width: '8px',
+                      width: '1px',
                     },
                     '&::-webkit-scrollbar-track': {
                       background: 'transparent',
@@ -838,8 +929,29 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                 '{count}',
                 String(totalCount)
               )}
-              arrow
+              {...sharedTooltipProps}
               placement='bottom'
+              componentsProps={{
+                tooltip: {
+                  sx: {
+                    ...sharedTooltipProps.componentsProps.tooltip.sx,
+                    '& .MuiTooltip-arrow': {
+                      left: 12,
+                      transform: 'none',
+                      color: '#ffffff',
+                      '&:before': {
+                        boxShadow: 'none',
+                        border: '1px solid #e6e6e6',
+                        backgroundClip: 'padding-box',
+                      },
+                    },
+                  },
+                },
+                arrow: {
+                  sx: { left: 12, transform: 'none' },
+                },
+              }}
+              PopperProps={{ modifiers: [{ name: 'flip', enabled: false }] }}
             >
               <Avatar
                 onClick={() => setShowAllMembersDialog(true)}
@@ -1128,7 +1240,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                                   label={member.designation.title}
                                   size='small'
                                   sx={{
-                                    backgroundColor: '#9c27b0',
+                                    backgroundColor: '#6054f4',
                                     color: 'white',
                                     fontSize: '0.7rem',
                                     height: 22,

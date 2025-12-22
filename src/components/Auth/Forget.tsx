@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { Box, Typography, Button, Link, CircularProgress } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
@@ -11,12 +11,11 @@ import AppInputField from '../common/AppInputField';
 import { Icons } from '../../assets/icons';
 
 const Forget = () => {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
+  const { snackbar, showError, closeSnackbar } = useErrorHandler();
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -106,11 +105,12 @@ const Forget = () => {
       >
         <Box
           sx={{
-            maxWidth: { xs: '100%', sm: '540px', md: '540px' },
+            width: '100%',
+            // maxWidth: { xs: '100%', sm: '400px' },
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            mb: 3,
+            mb: 6,
           }}
         >
           <Box
@@ -118,10 +118,10 @@ const Forget = () => {
             src={Icons.logoWhite}
             alt='Workonnect.ai Logo'
             sx={{
-              width: { xs: '100%', sm: '540px', md: '540px' },
-              maxWidth: { xs: '100%', sm: '540px', md: '540px' },
+              width: { xs: '100%' },
+              maxWidth: { xs: '100%', md: '520px' },
               height: 'auto',
-              maxHeight: { xs: 'auto', sm: '74px' },
+              // maxHeight: { xs: 40, sm: 48 },
               objectFit: 'contain',
             }}
           />
@@ -132,8 +132,8 @@ const Forget = () => {
             backgroundColor: '#F8F8F8',
             borderRadius: '20px',
             padding: { xs: 3, sm: 4, md: 5 },
-            width: { xs: '100%', sm: '540px', md: '540px' },
-            maxWidth: { xs: '100%', sm: '540px', md: '540px' },
+            width: { xs: '100%' },
+            maxWidth: { xs: '100%', sm: '400px', md: '520px' },
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             boxSizing: 'border-box',
             border: '1px solid #E0E0E0',
@@ -248,12 +248,11 @@ const Forget = () => {
       <Box
         sx={{
           width: '100%',
-          maxWidth: { xs: '100%', sm: '400px', md: '420px' },
+          // maxWidth: { xs: '100%', sm: '400px', md: '420px' },
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          mb: 3,
-          gap: 5,
+          mb: 6,
         }}
       >
         <Box
@@ -261,10 +260,10 @@ const Forget = () => {
           src={Icons.logoWhite}
           alt='Workonnect.ai Logo'
           sx={{
-            width: { xs: '100%', sm: '540px', md: '540px' },
-            // maxWidth: { xs: '100%', sm: '400px', md: '420px' },
-            height: '74px',
-            maxHeight: { xs: 'auto', sm: '74px' },
+            width: { xs: '100%' },
+            maxWidth: { xs: '100%', md: '520px' },
+            // height: 'auto',
+            // maxHeight: { xs: 40, sm: 48 },
             objectFit: 'contain',
           }}
         />
@@ -274,12 +273,10 @@ const Forget = () => {
         sx={{
           backgroundColor: '#F8F8F8',
           borderRadius: '20px',
-          paddingLeft: { xs: 3, sm: '74px', md: '74px' },
-          paddingRight: { xs: 3, sm: '74px', md: '74px' },
-          paddingTop: { xs: 2, sm: 4, md: 4 },
-          paddingBottom: { xs: 4, sm: 5, md: 6 },
-          width: { xs: '100%', sm: '540px', md: '540px' },
-          maxWidth: { xs: '100%', sm: '540px', md: '540px' },
+          py: { xs: 3, sm: 4, md: 5 },
+          px: { xs: 3, sm: 4, md: 8 },
+          width: { xs: '100%' },
+          maxWidth: { xs: '100%', sm: '400px', md: '520px' },
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
           boxSizing: 'border-box',
         }}

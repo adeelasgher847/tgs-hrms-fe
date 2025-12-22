@@ -19,7 +19,6 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import GoogleIcon from '../../assets/icons/google.svg';
 import { useUser } from '../../hooks/useUser';
 import { getDefaultDashboardRoute } from '../../utils/permissions';
 import { useGoogleScript } from '../../hooks/useGoogleScript';
@@ -32,7 +31,6 @@ import type { UserProfile } from '../../api/profileApi';
 import AppInputField from '../common/AppInputField';
 import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
-import Icon from 'react-multi-date-picker/components/icon';
 
 // Extend Window interface for Google Sign-In
 declare global {
@@ -77,6 +75,25 @@ const Login: React.FC = () => {
   const [passwordError, setPasswordError] = useState<string>('');
   const { snackbar, showError, closeSnackbar } = useErrorHandler();
   const [isLoading, setIsLoading] = useState(false);
+
+  // User-preferred fallback message for password errors
+  const USER_PASSWORD_MSG = 'incorrect pasword.Please try agin.';
+
+  const normalizePasswordError = (msg?: unknown) => {
+    const raw = msg === undefined || msg === null ? '' : String(msg);
+    const lower = raw.toLowerCase();
+    // If message is empty or generic/small, prefer the USER_PASSWORD_MSG
+    if (!raw) return USER_PASSWORD_MSG;
+    if (
+      lower.includes('incorrect') ||
+      lower.includes('invalid credentials') ||
+      lower.includes('wrong password') ||
+      lower.includes('invalid')
+    ) {
+      return USER_PASSWORD_MSG;
+    }
+    return raw;
+  };
 
   useEffect(() => {
     const rememberedStr = localStorage.getItem('rememberedLogin');
@@ -311,7 +328,7 @@ const Login: React.FC = () => {
       if (data?.field === 'email') {
         setEmailError(data.message || '');
       } else if (data?.field === 'password') {
-        setPasswordError(data.message || '');
+        setPasswordError(normalizePasswordError(data.message));
       } else if (data?.errors) {
         // Handle field-specific errors from errors object
         if (data.errors.email) {
@@ -324,7 +341,7 @@ const Login: React.FC = () => {
           const passwordErr = Array.isArray(data.errors.password)
             ? data.errors.password.join(', ')
             : String(data.errors.password);
-          setPasswordError(passwordErr);
+          setPasswordError(normalizePasswordError(passwordErr));
         }
         // If no specific field errors, check for general message
         if (!data.errors.email && !data.errors.password && data?.message) {
@@ -333,7 +350,7 @@ const Login: React.FC = () => {
           if (errorMsg.includes('email') || errorMsg.includes('e-mail')) {
             setEmailError(data.message);
           } else {
-            setPasswordError(data.message);
+            setPasswordError(normalizePasswordError(data.message));
           }
         }
       } else if (data?.message) {
@@ -343,7 +360,7 @@ const Login: React.FC = () => {
           setEmailError(data.message);
         } else {
           // Default to password field for general login errors
-          setPasswordError(data.message);
+          setPasswordError(normalizePasswordError(data.message));
         }
       } else if (error.message) {
         // Try to determine which field the error relates to based on message content
@@ -351,10 +368,11 @@ const Login: React.FC = () => {
         if (errorMsg.includes('email') || errorMsg.includes('e-mail')) {
           setEmailError(error.message);
         } else {
-          setPasswordError(error.message);
+          setPasswordError(normalizePasswordError(error.message));
         }
       } else {
-        setPasswordError('Failed to login. Please try again.');
+        // Use the user's requested default message for unknown login errors
+        setPasswordError(USER_PASSWORD_MSG);
       }
     } finally {
       setIsLoading(false);
@@ -401,7 +419,7 @@ const Login: React.FC = () => {
             paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
             paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
-            pt: { xs: '60px', lg: '48px' },
+            // pt: { xs: '60px', lg: '48px' },
             boxSizing: 'border-box',
             minWidth: 0,
             borderTopLeftRadius: { xs: 0, lg: '20px' },
@@ -549,7 +567,7 @@ const Login: React.FC = () => {
               </Box>
               <Box
                 sx={{
-                  mb: { xs: 2, sm: 3 },
+                  mb: { xs: 1, sm: 3 },
                   display: 'flex',
                   flexDirection: 'row',
                   alignItems: 'center',

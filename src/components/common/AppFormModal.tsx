@@ -12,7 +12,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { COLORS } from '../../constants/appConstants';
+// import { COLORS } from '../../constants/appConstants';
 import AppInputField from './AppInputField';
 import AppDropdown from './AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -57,7 +57,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   isSubmitting = false,
   hasChanges = true,
   isRtl = false,
-  maxWidth = 'sm',
+  // maxWidth = 'sm',
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));

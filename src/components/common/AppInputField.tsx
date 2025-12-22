@@ -57,6 +57,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
           </Typography>
           {rest.error && rest.helperText && (
             <Typography
+              title={String(rest.helperText)}
               sx={{
                 display: hideErrorsOnSmallScreen
                   ? { xs: 'none', sm: 'block' }
@@ -66,11 +67,10 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
                 color: '#d32f2f',
                 fontWeight: 400,
                 textAlign: 'right',
-                ml: 1,
-                flexShrink: 0,
-                maxWidth: { xs: '50%', sm: '55%' },
-                wordBreak: 'break-word',
-                overflowWrap: 'break-word',
+                ml: 2,
+                whiteSpace: 'nowrap',
+                overflow: 'visible',
+                textOverflow: 'clip',
               }}
             >
               {rest.helperText}
@@ -150,6 +150,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
         </Box>
         {rest.error && rest.helperText && !hideErrorsOnSmallScreen && (
           <FormHelperText
+            title={String(rest.helperText)}
             error={rest.error}
             sx={{
               display: { xs: 'block', sm: 'none' },
@@ -157,6 +158,9 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
               fontSize: { xs: '12px', sm: 'var(--label-font-size)' },
               lineHeight: 'var(--label-line-height)',
               color: '#d32f2f',
+              whiteSpace: 'nowrap',
+              overflow: 'visible',
+              textOverflow: 'clip',
             }}
           >
             {rest.helperText}
