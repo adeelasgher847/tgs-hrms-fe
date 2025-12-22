@@ -32,13 +32,19 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
     const isPhoneInput = rest.InputProps?.startAdornment !== undefined;
 
     return (
-      <Box sx={containerSx}>
+      <Box
+        sx={{
+          ...containerSx,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}
+      >
         <Box
           sx={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            // mb: 0.5,
           }}
         >
           <Typography
