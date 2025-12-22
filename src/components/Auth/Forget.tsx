@@ -242,7 +242,7 @@ const Forget = () => {
         py: { xs: 4, sm: 5, md: 6 },
         position: 'relative',
         boxSizing: 'border-box',
-        gap: { xs: '48px', sm: '54px', lg: '64px' },
+        gap: {sm: '16px', lg: '20px'},
       }}
     >
       <Box
