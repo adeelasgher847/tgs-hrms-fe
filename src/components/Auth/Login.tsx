@@ -31,7 +31,6 @@ import type { UserProfile } from '../../api/profileApi';
 import AppInputField from '../common/AppInputField';
 import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
-// removed unused imports: GoogleIcon and Icon
 
 // Extend Window interface for Google Sign-In
 declare global {
@@ -474,7 +473,7 @@ const Login: React.FC = () => {
               sx={{
                 fontSize: { xs: '32px', lg: '48px' },
                 fontWeight: 700,
-                mb: 1,
+                // mb: 0.5,
                 color: { xs: '#001218', lg: 'inherit' },
               }}
             >
@@ -517,7 +516,9 @@ const Login: React.FC = () => {
                   placeholder='Waleed@xyz.com'
                 />
               </Box>
-              <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+              <Box 
+              // sx={{ mb: { xs: 0.5, sm: 1 } }}
+              >
                 <AppInputField
                   name='password'
                   label={lang === 'ar' ? 'كلمة المرور' : 'Password'}

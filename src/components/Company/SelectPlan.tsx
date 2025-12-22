@@ -16,6 +16,7 @@ import signupApi, {
   type CompanyDetailsRequest,
   type LogoUploadRequest,
   type PaymentRequest,
+  type StripePriceInfo,
 } from '../../api/signupApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
@@ -132,18 +133,17 @@ const SelectPlan: React.FC = () => {
             try {
               const prices = await signupApi.getStripePrices(priceIds);
               priceInfoByPriceId = (prices || []).reduce(
-                (acc, pr: unknown) => {
-                  const p = pr as Record<string, unknown>;
+                (acc, pr: StripePriceInfo) => {
                   const amount =
-                    typeof p.unit_amount === 'number'
-                      ? (p.unit_amount as number)
+                    typeof pr.unit_amount === 'number'
+                      ? (pr.unit_amount as number)
                       : 0;
                   const currency = (
-                    typeof p.currency === 'string' ? p.currency : 'USD'
+                    typeof pr.currency === 'string' ? pr.currency : 'USD'
                   ).toUpperCase();
                   const interval =
-                    typeof p.interval === 'string'
-                      ? (p.interval as string)
+                    typeof pr.interval === 'string'
+                      ? (pr.interval as string)
                       : 'month';
                   const formattedAmount = new Intl.NumberFormat(undefined, {
                     style: 'currency',
@@ -154,18 +154,10 @@ const SelectPlan: React.FC = () => {
                   const intervalLabel =
                     interval.charAt(0).toUpperCase() + interval.slice(1);
                   // priceId might be returned as `priceId` or `id` depending on API
-                  const priceId =
-                    typeof p.priceId === 'string'
-                      ? (p.priceId as string)
-                      : typeof p.id === 'string'
-                        ? (p.id as string)
-                        : '';
-                  if (priceId) {
-                    acc[priceId] = {
-                      formatted: formattedAmount,
-                      intervalLabel,
-                    };
-                  }
+                  acc[pr.priceId] = {
+                    formatted: formattedAmount,
+                    intervalLabel,
+                  };
                   return acc;
                 },
                 {} as Record<

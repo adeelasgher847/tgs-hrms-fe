@@ -47,8 +47,9 @@ const LeaveRequestPage = () => {
   const [actionType, setActionType] = useState<'approved' | 'rejected' | null>(
     null
   );
-  const [managerResponseDialogOpen, setManagerResponseDialogOpen] =
-    useState(false);
+  const [isManagerAction, setIsManagerAction] = useState(false);
+  // const [managerResponseDialogOpen, setManagerResponseDialogOpen] =
+  //   useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -168,32 +169,32 @@ const LeaveRequestPage = () => {
               ? ((leave.leaveType as Record<string, unknown>).name as string)
               : undefined) || 'Unknown';
 
-          const rawStatus = getString(leave.status).toLowerCase();
-          const normalizedStatus: Leave['status'] = (
-            rawStatus === 'pending' ||
-            rawStatus === 'approved' ||
-            rawStatus === 'rejected' ||
-            rawStatus === 'withdrawn'
-              ? rawStatus
-              : 'pending'
-          ) as Leave['status'];
-          const remarksString =
-            typeof leave.remarks === 'string' ? leave.remarks : undefined;
+          // const rawStatus = getString(leave.status).toLowerCase();
+          // const normalizedStatus: Leave['status'] = (
+          //   rawStatus === 'pending' ||
+          //   rawStatus === 'approved' ||
+          //   rawStatus === 'rejected' ||
+          //   rawStatus === 'withdrawn'
+          //     ? rawStatus
+          //     : 'pending'
+          // ) as Leave['status'];
+          // const remarksString =
+          //   typeof leave.remarks === 'string' ? leave.remarks : undefined;
 
           // remarks field: could be rejection remarks (if status is rejected)
-          const remarks =
-            normalizedStatus === 'rejected' ? remarksString : undefined;
+          // const remarks =
+          //   normalizedStatus === 'rejected' ? remarksString : undefined;
 
           // managerRemarks: from approve-manager endpoint, backend may return in managerRemarks or manager_remarks
           // If status is not rejected and remarksString exists, treat it as manager response
-          const managerRemarks =
-            (typeof leave.managerRemarks === 'string' &&
-              leave.managerRemarks) ||
-            (typeof leave.manager_remarks === 'string' &&
-              leave.manager_remarks) ||
-            (normalizedStatus !== 'rejected' && remarksString
-              ? remarksString
-              : undefined);
+          // const managerRemarks =
+          //   (typeof leave.managerRemarks === 'string' &&
+          //     leave.managerRemarks) ||
+          //   (typeof leave.manager_remarks === 'string' &&
+          //     leave.manager_remarks) ||
+          //   (normalizedStatus !== 'rejected' && remarksString
+          //     ? remarksString
+          //     : undefined);
 
           return {
             id: getString(leave.id),
@@ -207,8 +208,7 @@ const LeaveRequestPage = () => {
             leaveTypeId: getString(leave.leaveTypeId),
             leaveType: { id: '', name: leaveTypeName },
             reason: getString(leave.reason),
-            remarks: remarks,
-            managerRemarks: managerRemarks,
+            remarks: typeof leave.remarks === 'string' ? leave.remarks : undefined,
             startDate: getString(leave.startDate),
             endDate: getString(leave.endDate),
             status: (getString(leave.status) as Leave['status']) || 'pending',
@@ -390,7 +390,10 @@ const LeaveRequestPage = () => {
   };
 
   // Open approval/reject dialog (for managers)
-  const handleManagerAction = (id: string, action: 'approved' | 'rejected') => {
+  const handleOpenManagerResponse = (
+    id: string,
+    action: 'approved' | 'rejected'
+  ) => {
     setSelectedId(id);
     setActionType(action);
     setIsManagerAction(true);
@@ -400,11 +403,6 @@ const LeaveRequestPage = () => {
   const handleWithdraw = (id: string) => {
     setSelectedId(id);
     setWithdrawDialogOpen(true);
-  };
-
-  const handleOpenManagerResponse = (id: string) => {
-    setSelectedId(id);
-    setManagerResponseDialogOpen(true);
   };
 
   // Fetch all leaves for export
@@ -618,7 +616,7 @@ const LeaveRequestPage = () => {
                 isManager={role === 'manager'}
                 currentUserId={currentUserId || undefined}
                 viewMode={viewMode}
-                onManagerResponse={
+                onManagerAction={
                   viewMode === 'team' ? handleOpenManagerResponse : undefined
                 }
                 onManagerAction={

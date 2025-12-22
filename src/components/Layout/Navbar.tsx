@@ -1531,9 +1531,9 @@ const Navbar: React.FC<NavbarProps> = ({
                             sx={{
                               px: 2,
                               py: 1.5,
-                              '&:hover': {
-                                backgroundColor: 'var(--primary-color)',
-                              },
+                              // '&:hover': {
+                              //   backgroundColor: 'var(--primary-color)',
+                              // },
                               '&.Mui-selected': {
                                 backgroundColor: 'var(--primary-dark-color)',
                                 color: 'var(--white-color)',
@@ -1849,16 +1849,14 @@ const Navbar: React.FC<NavbarProps> = ({
               display: { xs: 'flex', md: 'none' },
               alignItems: 'center',
               mt: 1.5,
-              px: { xs: 0 },
               position: 'relative',
+              pr: { xs: 1.5, md: 0 },
             }}
           >
             <Search
               sx={{
                 display: { xs: 'flex', md: 'none' },
                 alignItems: 'center',
-                mt: 1.5,
-                px: { xs: 0 },
                 position: 'relative',
               }}
             >
@@ -1877,7 +1875,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 sx={{
                   color: 'var(--text-color)',
                   fontSize: { xs: '12px', md: 'var(--body-font-size)' },
-                  pr: { xs: '40px', md: '16px' },
+                  pr: { xs: '48px', md: '16px' },
                   '& input': {
                     backgroundColor: 'transparent',
                   },
@@ -1888,7 +1886,7 @@ const Navbar: React.FC<NavbarProps> = ({
                   size={14}
                   sx={{
                     position: 'absolute',
-                    right: '40px',
+                    right: { xs: '48px', md: '40px' },
                     color: 'var(--text-color)',
                   }}
                 />
@@ -1901,18 +1899,18 @@ const Navbar: React.FC<NavbarProps> = ({
                 }}
                 sx={{
                   position: 'absolute',
-                  right: '4px',
+                  right: { xs: '12px', md: '4px' },
                   top: '50%',
                   transform: 'translateY(-50%)',
                   backgroundColor: 'var(--primary-dark-color)',
                   color: 'var(--white-color)',
-                  borderRadius: '12px',
+                  borderRadius: { xs: '8px', md: '12px' },
                   width: { xs: '28px', md: '36px' },
                   height: { xs: '28px', md: '36px' },
                   minWidth: { xs: '28px', md: '36px' },
                   padding: 0,
                   '&:hover': {
-                    backgroundColor: 'var(--primary-light-color)',
+                    backgroundColor: 'var(--primary-dark-color)',
                   },
                 }}
                 aria-label='Search'
@@ -1959,15 +1957,15 @@ const Navbar: React.FC<NavbarProps> = ({
                         sx={{
                           px: 2,
                           py: 1.5,
-                          '&:hover': {
-                            backgroundColor: 'var(--primary-color)',
-                          },
+                          // '&:hover': {
+                          //   backgroundColor: 'var(--primary-color)',
+                          // },
                           '&.Mui-selected': {
                             backgroundColor: 'var(--primary-dark-color)',
                             color: 'var(--white-color)',
-                            '&:hover': {
-                              backgroundColor: 'var(--primary-dark-color)',
-                            },
+                            // '&:hover': {
+                            //   backgroundColor: 'var(--primary-dark-color)',
+                            // },
                           },
                         }}
                       >

@@ -38,7 +38,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            mb: 0.5,
+            // mb: 0.5,
           }}
         >
           <Typography
@@ -63,7 +63,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
                   ? { xs: 'none', sm: 'block' }
                   : 'block',
                 fontSize: { xs: '12px', sm: '14px' },
-                lineHeight: 'var(--label-line-height)',
+                lineHeight: '1.2',
                 color: '#d32f2f',
                 fontWeight: 400,
                 textAlign: 'right',
@@ -154,7 +154,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
             error={rest.error}
             sx={{
               display: { xs: 'block', sm: 'none' },
-              margin: '4px 0 0 0',
+              // margin: '4px 0 0 0',
               fontSize: { xs: '12px', sm: 'var(--label-font-size)' },
               lineHeight: 'var(--label-line-height)',
               color: '#d32f2f',

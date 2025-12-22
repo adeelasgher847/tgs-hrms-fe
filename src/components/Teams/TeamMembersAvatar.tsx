@@ -43,7 +43,7 @@ interface TeamMembersAvatarProps {
 }
 
 const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
-  maxAvatars = 4,
+  // maxAvatars = 4,
   darkMode = false,
 }) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -529,8 +529,8 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       );
     }
 
-    const displayMembers = validMembers.slice(0, maxAvatars);
-    const remainingCount = Math.max(0, validMembers.length - maxAvatars);
+    const displayMembers = validMembers.slice(0, 2);
+    const remainingCount = Math.max(0, validMembers.length - 2);
     const totalCount = validMembers.length;
 
     return (
@@ -847,7 +847,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                                   label={member.designation.title}
                                   size='small'
                                   sx={{
-                                    backgroundColor: '#6054f4',
+                                    backgroundColor: '#6155F5',
                                     color: 'white',
                                     fontSize: '0.7rem',
                                     height: 22,
@@ -908,8 +908,8 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       );
     }
 
-    const displayMembers = validMembers.slice(0, maxAvatars);
-    const remainingCount = Math.max(0, validMembers.length - maxAvatars);
+    const displayMembers = validMembers.slice(0, 2);
+    const remainingCount = Math.max(0, validMembers.length - 2);
     const totalCount = validMembers.length;
 
     return (

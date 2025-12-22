@@ -11,7 +11,6 @@ import AppInputField from '../common/AppInputField';
 import { Icons } from '../../assets/icons';
 
 const Forget = () => {
-  // navigation not required in this view
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -101,6 +100,7 @@ const Forget = () => {
           py: { xs: 4, sm: 5, md: 6 },
           position: 'relative',
           boxSizing: 'border-box',
+          gap: { xs: '48px', sm: '54px', lg: '64px' },
         }}
       >
         <Box
@@ -129,7 +129,7 @@ const Forget = () => {
 
         <Box
           sx={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: '#F8F8F8',
             borderRadius: '20px',
             padding: { xs: 3, sm: 4, md: 5 },
             width: { xs: '100%' },
@@ -137,6 +137,7 @@ const Forget = () => {
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             boxSizing: 'border-box',
             border: '1px solid #E0E0E0',
+            
           }}
         >
           <Box
@@ -241,6 +242,7 @@ const Forget = () => {
         py: { xs: 4, sm: 5, md: 6 },
         position: 'relative',
         boxSizing: 'border-box',
+        gap: { xs: '48px', sm: '54px', lg: '64px' },
       }}
     >
       <Box
@@ -269,7 +271,7 @@ const Forget = () => {
 
       <Box
         sx={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: '#F8F8F8',
           borderRadius: '20px',
           py: { xs: 3, sm: 4, md: 5 },
           px: { xs: 3, sm: 4, md: 8 },
@@ -285,6 +287,7 @@ const Forget = () => {
             justifyContent: 'center',
             alignItems: 'center',
             mb: 3,
+            
           }}
         >
           <Box

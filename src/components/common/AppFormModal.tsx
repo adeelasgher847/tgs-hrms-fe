@@ -12,7 +12,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-// COLORS not used here; keep styles local to this component
 import AppInputField from './AppInputField';
 import AppDropdown from './AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
