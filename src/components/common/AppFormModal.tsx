@@ -57,7 +57,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   isSubmitting = false,
   hasChanges = true,
   isRtl = false,
-  // maxWidth = 'sm',
+  maxWidth = 'sm',
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -76,7 +76,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
       open={open}
       onClose={onClose}
       fullWidth={!isLargeScreen}
-      maxWidth={false}
+      maxWidth={maxWidth}
       PaperProps={{
         sx: {
           borderRadius: { xs: '20px', sm: '30px' },
