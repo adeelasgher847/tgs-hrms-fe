@@ -48,8 +48,8 @@ const LeaveRequestPage = () => {
     null
   );
   const [isManagerAction, setIsManagerAction] = useState(false);
-  // const [managerResponseDialogOpen, setManagerResponseDialogOpen] =
-  //   useState(false);
+  const [managerResponseDialogOpen, setManagerResponseDialogOpen] =
+    useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -208,7 +208,8 @@ const LeaveRequestPage = () => {
             leaveTypeId: getString(leave.leaveTypeId),
             leaveType: { id: '', name: leaveTypeName },
             reason: getString(leave.reason),
-            remarks: typeof leave.remarks === 'string' ? leave.remarks : undefined,
+            remarks:
+              typeof leave.remarks === 'string' ? leave.remarks : undefined,
             startDate: getString(leave.startDate),
             endDate: getString(leave.endDate),
             status: (getString(leave.status) as Leave['status']) || 'pending',

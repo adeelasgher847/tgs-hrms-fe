@@ -227,30 +227,6 @@ const CompanyDetails: React.FC = () => {
       >
         <AuthSidebar />
 
-        {/* Mobile / Tablet Logo */}
-        <Box
-          sx={{
-            display: { xs: 'flex', lg: 'none' },
-            position: 'absolute',
-            top: { xs: '32px', sm: '40px' },
-            left: '50%',
-            transform: 'translateX(-50%)',
-            alignItems: 'center',
-            zIndex: 2,
-          }}
-        >
-          <Box
-            component='img'
-            src={Icons.logoWhite}
-            alt='Logo'
-            sx={{
-              height: 'auto',
-              width: 'auto',
-              maxHeight: '40px',
-            }}
-          />
-        </Box>
-
         <Box
           sx={{
             flex: 1,
@@ -268,22 +244,49 @@ const CompanyDetails: React.FC = () => {
             paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
             paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
-            pt: { xs: '60px', lg: '48px' },
+            pt: { xs: '30px', lg: '48px' },
             boxSizing: 'border-box',
             minWidth: 0,
             borderTopLeftRadius: { xs: 0, lg: '30px' },
             borderBottomLeftRadius: { xs: 0, lg: '30px' },
           }}
         >
+          {/* Mobile / Tablet Logo */}
           <Box
             sx={{
-              // maxWidth: { xs: '100%', sm: '500px' },
+              display: { xs: 'flex', lg: 'none' },
+              width: '90%',
+              justifyContent: 'center',
+              alignItems: 'center',
+              mb: { xs: 6, lg: 0 },
+              position: { xs: 'relative', lg: 'absolute' },
+              top: { xs: 1, lg: 32 },
+              left: { xs: 'auto', lg: '50%' },
+              transform: { xs: 'none', lg: 'translateX(-50%)' },
+              zIndex: 2,
+            }}
+          >
+            <Box
+              component='img'
+              src={Icons.logoWhite}
+              alt='Logo'
+              sx={{
+                width: { xs: '100%', lg: 'auto' },
+                maxWidth: { xs: '100%', md: '520px', lg: 'none' },
+                maxHeight: { xs: 'auto', lg: 40 },
+                objectFit: 'contain',
+              }}
+            />
+          </Box>
+          <Box
+            sx={{
+              // maxWidth: { xs: '100%', sm: '90%' },
               width: '100%',
               mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
               borderRadius: { xs: '20px', lg: 0 },
               p: { xs: 2, sm: 3, md: 4 },
-              mt: { xs: '60px', sm: '70px', lg: 0 },
+              mt: { xs: 0, lg: 0 },
               boxSizing: 'border-box',
               minWidth: 0,
             }}
