@@ -173,13 +173,16 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth='sm'
-      fullWidth
+      maxWidth={false}
       PaperProps={{
         sx: {
           backgroundColor: darkMode ? '#2d2d2d' : '#fff',
           color: darkMode ? '#fff' : '#000',
           borderRadius: 2,
+          width: { xs: '100%', lg: '800px' },
+          maxWidth: { xs: '100%', lg: '800px' },
+          maxHeight: { xs: '90vh', lg: '85vh' },
+          height: { xs: 'auto', lg: '700px' },
         },
       }}
     >
@@ -208,7 +211,13 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 0 }}>
+      <DialogContent
+        sx={{
+          p: 0,
+          overflowY: 'auto',
+          maxHeight: { xs: 'calc(90vh - 120px)', lg: 'calc(80vh - 120px)' },
+        }}
+      >
         {loading ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <CircularProgress />
