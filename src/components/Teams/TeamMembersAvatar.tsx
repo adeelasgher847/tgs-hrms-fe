@@ -529,8 +529,8 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       );
     }
 
-    const displayMembers = validMembers.slice(0, 2);
-    const remainingCount = validMembers.length - 2;
+    const displayMembers = validMembers.slice(0, maxAvatars);
+    const remainingCount = Math.max(0, validMembers.length - maxAvatars);
     const totalCount = validMembers.length;
 
     return (
@@ -908,8 +908,8 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
       );
     }
 
-    const displayMembers = validMembers.slice(0, 2);
-    const remainingCount = validMembers.length - 2;
+    const displayMembers = validMembers.slice(0, maxAvatars);
+    const remainingCount = Math.max(0, validMembers.length - maxAvatars);
     const totalCount = validMembers.length;
 
     return (

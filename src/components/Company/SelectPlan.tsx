@@ -13,7 +13,6 @@ import {
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import signupApi, {
   type SubscriptionPlan,
-  type StripePriceInfo,
   type CompanyDetailsRequest,
   type LogoUploadRequest,
   type PaymentRequest,
@@ -133,11 +132,14 @@ const SelectPlan: React.FC = () => {
             try {
               const prices = await signupApi.getStripePrices(priceIds);
               priceInfoByPriceId = (prices || []).reduce(
-                (acc, pr: Record<string, any>) => {
+                (acc, pr: unknown) => {
+                  const p = pr as Record<string, unknown>;
                   const amount =
-                    typeof pr.unit_amount === 'number' ? pr.unit_amount : 0;
-                  const currency = (pr.currency || 'USD').toUpperCase();
-                  const interval = pr.interval || 'month';
+                    typeof p.unit_amount === 'number' ? (p.unit_amount as number) : 0;
+                  const currency =
+                    (typeof p.currency === 'string' ? p.currency : 'USD').toUpperCase();
+                  const interval =
+                    typeof p.interval === 'string' ? (p.interval as string) : 'month';
                   const formattedAmount = new Intl.NumberFormat(undefined, {
                     style: 'currency',
                     currency,
@@ -146,10 +148,19 @@ const SelectPlan: React.FC = () => {
                   }).format(amount / 100);
                   const intervalLabel =
                     interval.charAt(0).toUpperCase() + interval.slice(1);
-                  acc[pr.priceId] = {
-                    formatted: formattedAmount,
-                    intervalLabel,
-                  };
+                  // priceId might be returned as `priceId` or `id` depending on API
+                  const priceId =
+                    typeof p.priceId === 'string'
+                      ? (p.priceId as string)
+                      : typeof p.id === 'string'
+                      ? (p.id as string)
+                      : '';
+                  if (priceId) {
+                    acc[priceId] = {
+                      formatted: formattedAmount,
+                      intervalLabel,
+                    };
+                  }
                   return acc;
                 },
                 {} as Record<

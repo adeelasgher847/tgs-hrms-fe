@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { Box, Typography, Button, Link, CircularProgress } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
@@ -11,12 +11,12 @@ import AppInputField from '../common/AppInputField';
 import { Icons } from '../../assets/icons';
 
 const Forget = () => {
-  const navigate = useNavigate();
+  // navigation not required in this view
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
+  const { snackbar, showError, closeSnackbar } = useErrorHandler();
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

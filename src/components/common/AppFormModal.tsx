@@ -12,7 +12,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { COLORS } from '../../constants/appConstants';
+// COLORS not used here; keep styles local to this component
 import AppInputField from './AppInputField';
 import AppDropdown from './AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -76,7 +76,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
       open={open}
       onClose={onClose}
       fullWidth={!isLargeScreen}
-      maxWidth={false}
+      maxWidth={maxWidth}
       PaperProps={{
         sx: {
           borderRadius: { xs: '20px', sm: '30px' },
@@ -240,9 +240,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             fontWeight: 400,
             fontSize: { xs: '14px', sm: '16px' },
             backgroundColor: '#3083DC',
-            // '&:hover': {
-            //   bgcolor: COLORS.PRIMARY,
-            // },
+            // '&:hover': { backgroundColor: '#2b78c9' },
             '&:disabled': {
               // bgcolor: '#99c0e9',
             },

@@ -19,7 +19,6 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import GoogleIcon from '../../assets/icons/google.svg';
 import { useUser } from '../../hooks/useUser';
 import { getDefaultDashboardRoute } from '../../utils/permissions';
 import { useGoogleScript } from '../../hooks/useGoogleScript';
@@ -32,7 +31,7 @@ import type { UserProfile } from '../../api/profileApi';
 import AppInputField from '../common/AppInputField';
 import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
-import Icon from 'react-multi-date-picker/components/icon';
+// removed unused imports: GoogleIcon and Icon
 
 // Extend Window interface for Google Sign-In
 declare global {

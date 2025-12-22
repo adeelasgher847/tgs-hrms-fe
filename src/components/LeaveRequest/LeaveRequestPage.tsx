@@ -52,6 +52,9 @@ const LeaveRequestPage = () => {
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // Currently selected leave (used for dialogs like manager response)
+  const selectedLeave = selectedId ? leaves.find(l => l.id === selectedId) : undefined;
+
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
   const previousViewModeRef = useRef<'team' | 'you'>(viewMode);
   const previousPageRef = useRef<number>(1);
@@ -175,15 +178,13 @@ const LeaveRequestPage = () => {
           const remarksString =
             typeof leave.remarks === 'string' ? leave.remarks : undefined;
 
-          // remarks field: could be rejection remarks (if status is rejected) or manager remarks
-          const remarks =
-            normalizedStatus === 'rejected' ? remarksString : undefined;
+          // remarks field: could be rejection remarks (if status is rejected)
+          const remarks = normalizedStatus === 'rejected' ? remarksString : undefined;
 
-          // managerRemarks: from approve-manager endpoint, backend returns in remarks field
-          // But we need to differentiate - if status is not rejected and remarks exists, it's manager response
+          // managerRemarks: from approve-manager endpoint, backend may return in managerRemarks or manager_remarks
+          // If status is not rejected and remarksString exists, treat it as manager response
           const managerRemarks =
-            (typeof leave.managerRemarks === 'string' &&
-              leave.managerRemarks) ||
+            (typeof leave.managerRemarks === 'string' && leave.managerRemarks) ||
             (typeof leave.manager_remarks === 'string' &&
               leave.manager_remarks) ||
             (normalizedStatus !== 'rejected' && remarksString
@@ -202,8 +203,8 @@ const LeaveRequestPage = () => {
             leaveTypeId: getString(leave.leaveTypeId),
             leaveType: { id: '', name: leaveTypeName },
             reason: getString(leave.reason),
-            remarks:
-              typeof leave.remarks === 'string' ? leave.remarks : undefined,
+            remarks: remarks,
+            managerRemarks: managerRemarks,
             startDate: getString(leave.startDate),
             endDate: getString(leave.endDate),
             status: (getString(leave.status) as Leave['status']) || 'pending',
@@ -395,6 +396,11 @@ const LeaveRequestPage = () => {
   const handleWithdraw = (id: string) => {
     setSelectedId(id);
     setWithdrawDialogOpen(true);
+  };
+
+  const handleOpenManagerResponse = (id: string) => {
+    setSelectedId(id);
+    setManagerResponseDialogOpen(true);
   };
 
   // Fetch all leaves for export
@@ -611,6 +617,7 @@ const LeaveRequestPage = () => {
                 onManagerResponse={
                   viewMode === 'team' ? handleOpenManagerResponse : undefined
                 }
+                onManagerAction={role === 'manager' ? handleManagerAction : undefined}
                 onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -657,6 +664,37 @@ const LeaveRequestPage = () => {
         commentLabel={isManagerAction ? 'Remarks (Optional)' : undefined}
         showRemarksField={isManagerAction}
       />
+
+      {/* Manager response dialog - shows manager remarks or response */}
+      <Dialog
+        open={managerResponseDialogOpen}
+        onClose={() => {
+          setManagerResponseDialogOpen(false);
+          setSelectedId(null);
+        }}
+        aria-labelledby='manager-response-dialog-title'
+        aria-describedby='manager-response-dialog-description'
+      >
+        <DialogTitle id='manager-response-dialog-title'>
+          Manager Response
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id='manager-response-dialog-description'>
+            {selectedLeave?.managerRemarks || 'No remarks provided by manager.'}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setManagerResponseDialogOpen(false);
+              setSelectedId(null);
+            }}
+            color='primary'
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={withdrawDialogOpen}
