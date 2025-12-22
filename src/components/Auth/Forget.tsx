@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { Box, Typography, Button, Link, CircularProgress } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
@@ -11,12 +11,11 @@ import AppInputField from '../common/AppInputField';
 import { Icons } from '../../assets/icons';
 
 const Forget = () => {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
+  const { snackbar, showError, closeSnackbar } = useErrorHandler();
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -98,15 +97,15 @@ const Forget = () => {
           justifyContent: 'center',
           backgroundColor: 'var(--primary-dark-color)',
           padding: { xs: 2, sm: 3 },
-          py: { xs: 4, sm: 5, md: 6 },
           position: 'relative',
           boxSizing: 'border-box',
+          gap: { sm: '16px', lg: '20px' },
         }}
       >
         <Box
           sx={{
             width: '100%',
-            // maxWidth: { xs: '100%', sm: '400px' },
+            // maxWidth: { xs: '100%', sm: '400px', md: '420px' },
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -120,7 +119,7 @@ const Forget = () => {
             sx={{
               width: { xs: '100%' },
               maxWidth: { xs: '100%', md: '520px' },
-              height: 'auto',
+              // height: 'auto',
               // maxHeight: { xs: 40, sm: 48 },
               objectFit: 'contain',
             }}
@@ -129,14 +128,14 @@ const Forget = () => {
 
         <Box
           sx={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: '#F8F8F8',
             borderRadius: '20px',
-            padding: { xs: 3, sm: 4, md: 5 },
+            py: { xs: 3, sm: 4, md: 5 },
+            px: { xs: 3, sm: 4, md: 8 },
             width: { xs: '100%' },
             maxWidth: { xs: '100%', sm: '400px', md: '520px' },
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             boxSizing: 'border-box',
-            border: '1px solid #E0E0E0',
           }}
         >
           <Box
@@ -175,7 +174,7 @@ const Forget = () => {
             sx={{
               fontSize: { xs: '14px', sm: '16px' },
               textAlign: 'center',
-              mb: 4,
+              mb: 3,
               color: '#888888',
               fontWeight: 400,
             }}
@@ -241,6 +240,7 @@ const Forget = () => {
         py: { xs: 4, sm: 5, md: 6 },
         position: 'relative',
         boxSizing: 'border-box',
+        gap: { sm: '16px', lg: '20px' },
       }}
     >
       <Box
@@ -269,7 +269,7 @@ const Forget = () => {
 
       <Box
         sx={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: '#F8F8F8',
           borderRadius: '20px',
           py: { xs: 3, sm: 4, md: 5 },
           px: { xs: 3, sm: 4, md: 8 },

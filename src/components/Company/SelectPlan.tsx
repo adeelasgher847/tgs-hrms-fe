@@ -13,10 +13,10 @@ import {
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import signupApi, {
   type SubscriptionPlan,
-  type StripePriceInfo,
   type CompanyDetailsRequest,
   type LogoUploadRequest,
   type PaymentRequest,
+  type StripePriceInfo,
 } from '../../api/signupApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
@@ -133,7 +133,7 @@ const SelectPlan: React.FC = () => {
             try {
               const prices = await signupApi.getStripePrices(priceIds);
               priceInfoByPriceId = (prices || []).reduce(
-                (acc, pr: Record<string, any>) => {
+                (acc, pr: StripePriceInfo) => {
                   const amount =
                     typeof pr.unit_amount === 'number' ? pr.unit_amount : 0;
                   const currency = (pr.currency || 'USD').toUpperCase();

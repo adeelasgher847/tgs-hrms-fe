@@ -19,7 +19,6 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import GoogleIcon from '../../assets/icons/google.svg';
 import { useUser } from '../../hooks/useUser';
 import { getDefaultDashboardRoute } from '../../utils/permissions';
 import { useGoogleScript } from '../../hooks/useGoogleScript';
@@ -32,7 +31,6 @@ import type { UserProfile } from '../../api/profileApi';
 import AppInputField from '../common/AppInputField';
 import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
-import Icon from 'react-multi-date-picker/components/icon';
 
 // Extend Window interface for Google Sign-In
 declare global {
@@ -421,7 +419,7 @@ const Login: React.FC = () => {
             paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
             paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
-            // pt: { xs: '60px', lg: '48px' },
+            pt: { xs: '30px', lg: '48px' },
             boxSizing: 'border-box',
             minWidth: 0,
             borderTopLeftRadius: { xs: 0, lg: '20px' },
@@ -431,19 +429,27 @@ const Login: React.FC = () => {
           <Box
             sx={{
               display: { xs: 'flex', lg: 'none' },
-              position: 'absolute',
-              top: { xs: 32, sm: 40 },
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 2,
+              width: '90%',
+              justifyContent: 'center',
               alignItems: 'center',
+              mb: { xs: 6, lg: 0 },
+              position: { xs: 'relative', lg: 'absolute' },
+              top: { xs: 10, lg: 32 },
+              left: { xs: 'auto', lg: '50%' },
+              transform: { xs: 'none', lg: 'translateX(-50%)' },
+              zIndex: 2,
             }}
           >
             <Box
               component='img'
               src={Icons.logoWhite}
               alt='Logo'
-              sx={{ maxHeight: 40 }}
+              sx={{
+                width: { xs: '100%', lg: 'auto' },
+                maxWidth: { xs: '100%', md: '520px', lg: 'none' },
+                maxHeight: { xs: 'auto', lg: 40 },
+                objectFit: 'contain',
+              }}
             />
           </Box>
           <Box
@@ -454,7 +460,7 @@ const Login: React.FC = () => {
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
               borderRadius: { xs: '30px', lg: 0 },
               p: { xs: 2, sm: 3, md: 4 },
-              mt: { xs: '60px', sm: '70px', lg: 0 },
+              mt: { xs: 0, lg: 0 },
               boxSizing: 'border-box',
               minWidth: 0,
             }}
@@ -475,7 +481,7 @@ const Login: React.FC = () => {
               sx={{
                 fontSize: { xs: '32px', lg: '48px' },
                 fontWeight: 700,
-                mb: 1,
+                // mb: 0.5,
                 color: { xs: '#001218', lg: 'inherit' },
               }}
             >
@@ -518,7 +524,9 @@ const Login: React.FC = () => {
                   placeholder='Waleed@xyz.com'
                 />
               </Box>
-              <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+              <Box
+              // sx={{ mb: { xs: 0.5, sm: 1 } }}
+              >
                 <AppInputField
                   name='password'
                   label={lang === 'ar' ? 'كلمة المرور' : 'Password'}

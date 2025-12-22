@@ -47,8 +47,9 @@ const LeaveRequestPage = () => {
   const [actionType, setActionType] = useState<'approved' | 'rejected' | null>(
     null
   );
-  const [managerResponseDialogOpen, setManagerResponseDialogOpen] =
-    useState(false);
+  const [isManagerAction, setIsManagerAction] = useState(false);
+  // const [managerResponseDialogOpen, setManagerResponseDialogOpen] =
+  //   useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -163,32 +164,32 @@ const LeaveRequestPage = () => {
               ? ((leave.leaveType as Record<string, unknown>).name as string)
               : undefined) || 'Unknown';
 
-          const rawStatus = getString(leave.status).toLowerCase();
-          const normalizedStatus: Leave['status'] = (
-            rawStatus === 'pending' ||
-            rawStatus === 'approved' ||
-            rawStatus === 'rejected' ||
-            rawStatus === 'withdrawn'
-              ? rawStatus
-              : 'pending'
-          ) as Leave['status'];
-          const remarksString =
-            typeof leave.remarks === 'string' ? leave.remarks : undefined;
+          // const rawStatus = getString(leave.status).toLowerCase();
+          // const normalizedStatus: Leave['status'] = (
+          //   rawStatus === 'pending' ||
+          //   rawStatus === 'approved' ||
+          //   rawStatus === 'rejected' ||
+          //   rawStatus === 'withdrawn'
+          //     ? rawStatus
+          //     : 'pending'
+          // ) as Leave['status'];
+          // const remarksString =
+          //   typeof leave.remarks === 'string' ? leave.remarks : undefined;
 
           // remarks field: could be rejection remarks (if status is rejected) or manager remarks
-          const remarks =
-            normalizedStatus === 'rejected' ? remarksString : undefined;
+          // const remarks =
+          //   normalizedStatus === 'rejected' ? remarksString : undefined;
 
           // managerRemarks: from approve-manager endpoint, backend returns in remarks field
           // But we need to differentiate - if status is not rejected and remarks exists, it's manager response
-          const managerRemarks =
-            (typeof leave.managerRemarks === 'string' &&
-              leave.managerRemarks) ||
-            (typeof leave.manager_remarks === 'string' &&
-              leave.manager_remarks) ||
-            (normalizedStatus !== 'rejected' && remarksString
-              ? remarksString
-              : undefined);
+          // const managerRemarks =
+          //   (typeof leave.managerRemarks === 'string' &&
+          //     leave.managerRemarks) ||
+          //   (typeof leave.manager_remarks === 'string' &&
+          //     leave.manager_remarks) ||
+          //   (normalizedStatus !== 'rejected' && remarksString
+          //     ? remarksString
+          //     : undefined);
 
           return {
             id: getString(leave.id),
@@ -385,7 +386,10 @@ const LeaveRequestPage = () => {
   };
 
   // Open approval/reject dialog (for managers)
-  const handleManagerAction = (id: string, action: 'approved' | 'rejected') => {
+  const handleOpenManagerResponse = (
+    id: string,
+    action: 'approved' | 'rejected'
+  ) => {
     setSelectedId(id);
     setActionType(action);
     setIsManagerAction(true);
@@ -608,7 +612,7 @@ const LeaveRequestPage = () => {
                 isManager={role === 'manager'}
                 currentUserId={currentUserId || undefined}
                 viewMode={viewMode}
-                onManagerResponse={
+                onManagerAction={
                   viewMode === 'team' ? handleOpenManagerResponse : undefined
                 }
                 onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
