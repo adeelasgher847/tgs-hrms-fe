@@ -708,7 +708,7 @@ export default function Sidebar({
         </List>
       </Box>
 
-      <Box sx={{ px: 3, pb: 3, pt: 2, bottom: 0, zIndex: 10 }}>
+      <Box sx={{ px: 3, pb: 3, pt: 2, mt: 'auto', flexShrink: 0 }}>
         <Box
           display='flex'
           alignItems='center'
