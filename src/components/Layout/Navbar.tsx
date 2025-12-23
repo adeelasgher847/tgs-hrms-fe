@@ -8,6 +8,7 @@ import { useProfilePicture } from '../../context/ProfilePictureContext';
 import { env } from '../../config/env';
 import {
   getRoleDisplayName,
+  getRoleName,
   isManager,
   isEmployee,
 } from '../../utils/roleUtils';
@@ -63,6 +64,14 @@ import { leaveApi } from '../../api/leaveApi';
 import { mockPolicies } from '../../Data/HrmockData';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import { isSystemAdmin } from '../../utils/auth';
+import {
+  isDashboardPathAllowedForRole,
+  isMenuVisibleForRole,
+  isSubMenuVisibleForRole,
+} from '../../utils/permissions';
+import { normalizeRole } from '../../utils/permissions';
+import { isSystemAdmin as roleIsSystemAdmin } from '../../utils/roleUtils';
+import { searchApiService, type SearchResultItem } from '../../api/searchApi';
 
 const labels = {
   en: {
@@ -130,7 +139,10 @@ interface SearchResult {
     | 'policy'
     | 'holiday'
     | 'tenant'
-    | 'project';
+    | 'project'
+    | 'asset-request'
+    | 'attendance'
+    | 'payroll';
   id?: string;
   icon?: React.ReactNode;
   subtitle?: string;
@@ -146,25 +158,38 @@ const normalizeText = (text: string): string[] => {
     .filter(word => word.length > 0); // Remove empty strings
 };
 
+// Enhanced search function that returns a relevance score for better matching
+interface SearchMatch {
+  matches: boolean;
+  score: number; // Higher score = better match
+}
+
 // Optimized helper function to search through all text fields of an object
-// Now supports multi-word matching - all query words must match
+// Returns both match status and relevance score for better sorting
 const searchInObject = (
   obj: Record<string, unknown> | unknown,
   query: string,
   maxDepth: number = 3,
   currentDepth: number = 0
-): boolean => {
-  if (!obj || typeof obj !== 'object' || currentDepth >= maxDepth) return false;
+): SearchMatch => {
+  if (!obj || typeof obj !== 'object' || currentDepth >= maxDepth) {
+    return { matches: false, score: 0 };
+  }
 
   // Split query into individual words
   const queryWords = normalizeText(query);
-  if (queryWords.length === 0) return false;
+  if (queryWords.length === 0) return { matches: false, score: 0 };
 
   const visited = new WeakSet<object>(); // Prevent circular reference issues
-  const allTextFields: string[] = []; // Collect all text fields for matching
+  const priorityTextFields: string[] = []; // High priority fields (name, title, email, etc.)
+  const secondaryTextFields: string[] = []; // Other fields
 
   // Optimized recursive search to collect all text fields
-  const collectTextFields = (value: unknown, depth: number): void => {
+  const collectTextFields = (
+    value: unknown,
+    depth: number,
+    isPriority: boolean
+  ): void => {
     if (value === null || value === undefined || depth >= maxDepth) return;
 
     // Handle circular references for objects only
@@ -175,13 +200,22 @@ const searchInObject = (
 
     // Collect string values
     if (typeof value === 'string' && value.trim().length > 0) {
-      allTextFields.push(value);
+      if (isPriority) {
+        priorityTextFields.push(value);
+      } else {
+        secondaryTextFields.push(value);
+      }
       return;
     }
 
     // Collect number values as strings
     if (typeof value === 'number') {
-      allTextFields.push(value.toString());
+      const numStr = value.toString();
+      if (isPriority) {
+        priorityTextFields.push(numStr);
+      } else {
+        secondaryTextFields.push(numStr);
+      }
       return;
     }
 
@@ -191,7 +225,7 @@ const searchInObject = (
     // Array search
     if (Array.isArray(value)) {
       for (const item of value) {
-        collectTextFields(item, depth + 1);
+        collectTextFields(item, depth + 1, isPriority);
       }
       return;
     }
@@ -202,13 +236,15 @@ const searchInObject = (
       'name',
       'title',
       'label',
-      'description',
       'email',
       'phone',
       'firstName',
       'lastName',
       'first_name',
       'last_name',
+    ];
+    const secondaryFields = [
+      'description',
       'department',
       'designation',
       'category',
@@ -216,44 +252,72 @@ const searchInObject = (
       'status',
       'type',
       'code',
-      'id',
     ];
     const allFields = Object.keys(valueObj);
 
     // Search priority fields first
     for (const key of priorityFields) {
       if (key in valueObj) {
-        collectTextFields(valueObj[key], depth + 1);
+        collectTextFields(valueObj[key], depth + 1, true);
+      }
+    }
+
+    // Search secondary fields
+    for (const key of secondaryFields) {
+      if (key in valueObj) {
+        collectTextFields(valueObj[key], depth + 1, false);
       }
     }
 
     // Then search remaining fields
     for (const key of allFields) {
-      if (!priorityFields.includes(key)) {
-        collectTextFields(valueObj[key], depth + 1);
+      if (!priorityFields.includes(key) && !secondaryFields.includes(key)) {
+        collectTextFields(valueObj[key], depth + 1, false);
       }
     }
   };
 
   // Collect all text fields from the object
-  collectTextFields(obj, currentDepth);
+  collectTextFields(obj, currentDepth, false);
 
-  // Combine all text fields into one searchable string
-  const combinedText = allTextFields.join(' ').toLowerCase();
+  // Combine priority and secondary text fields
+  const priorityText = priorityTextFields.join(' ').toLowerCase();
+  const secondaryText = secondaryTextFields.join(' ').toLowerCase();
+  const combinedText = `${priorityText} ${secondaryText}`.toLowerCase();
 
-  // Check if all query words are found in the combined text
-  // This allows words to match across different fields
-  return queryWords.every(queryWord => {
-    // Direct substring match (fastest)
-    if (combinedText.includes(queryWord)) return true;
+  // Calculate relevance score
+  let score = 0;
+  let allWordsMatch = true;
 
-    // Word boundary match for better accuracy
+  // Check if all query words are found
+  for (const queryWord of queryWords) {
     const wordRegex = new RegExp(
       `\\b${queryWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
       'i'
     );
-    return wordRegex.test(combinedText);
-  });
+
+    // Check priority fields first (higher score)
+    if (wordRegex.test(priorityText)) {
+      score += 10; // High score for priority field match
+    } else if (wordRegex.test(secondaryText)) {
+      score += 5; // Lower score for secondary field match
+    } else if (combinedText.includes(queryWord)) {
+      score += 2; // Lowest score for substring match
+    } else {
+      allWordsMatch = false;
+    }
+  }
+
+  // Bonus for exact match in priority fields
+  const exactQuery = query.toLowerCase().trim();
+  if (priorityText.includes(exactQuery)) {
+    score += 20; // Big bonus for exact match
+  }
+
+  return {
+    matches: allWordsMatch,
+    score: score,
+  };
 };
 
 // Flattened list of all searchable routes - includes all menu items from sidebar
@@ -533,6 +597,134 @@ const Navbar: React.FC<NavbarProps> = ({
   const { user, clearUser } = useUser();
   const { updateProfilePicture } = useProfilePicture();
 
+  // Get current user role for permission checking
+  // Role can be a string or an object with name property
+  const currentUserRole = React.useMemo(() => {
+    if (!user) return '';
+
+    // Try to get role from user object
+    const role = user.role || (user as any)?.role_name;
+
+    if (!role) return '';
+
+    // Use getRoleName utility to properly extract role name
+    return getRoleName(role);
+  }, [user]);
+
+  // Helper function to check if a route is allowed for current user
+  const isRouteAllowed = React.useCallback(
+    (route: SearchResult): boolean => {
+      // If no role, deny access (user not logged in)
+      if (
+        !currentUserRole ||
+        currentUserRole.trim() === '' ||
+        currentUserRole === 'Unknown'
+      ) {
+        return false;
+      }
+
+      if (!route.path) {
+        // Dashboard route - check if allowed
+        return isDashboardPathAllowedForRole('', currentUserRole);
+      }
+
+      // Check if path is allowed for current role
+      return isDashboardPathAllowedForRole(route.path, currentUserRole);
+    },
+    [currentUserRole]
+  );
+
+  // Helper functions to check if user can search specific data types
+  const canSearchEmployees = React.useCallback((): boolean => {
+    // If no role, deny access
+    if (
+      !currentUserRole ||
+      currentUserRole.trim() === '' ||
+      currentUserRole === 'Unknown'
+    ) {
+      return false;
+    }
+    // Check if employees menu is visible for role
+    return isMenuVisibleForRole('employees', currentUserRole);
+  }, [currentUserRole]);
+
+  const canSearchTeams = React.useCallback((): boolean => {
+    // If no role, deny access
+    if (
+      !currentUserRole ||
+      currentUserRole.trim() === '' ||
+      currentUserRole === 'Unknown'
+    ) {
+      return false;
+    }
+    return isMenuVisibleForRole('teams', currentUserRole);
+  }, [currentUserRole]);
+
+  const canSearchAssets = React.useCallback((): boolean => {
+    // If no role, deny access
+    if (
+      !currentUserRole ||
+      currentUserRole.trim() === '' ||
+      currentUserRole === 'Unknown'
+    ) {
+      return false;
+    }
+    return isMenuVisibleForRole('assets', currentUserRole);
+  }, [currentUserRole]);
+
+  const canSearchDepartments = React.useCallback((): boolean => {
+    // If no role, deny access
+    if (
+      !currentUserRole ||
+      currentUserRole.trim() === '' ||
+      currentUserRole === 'Unknown'
+    ) {
+      return false;
+    }
+    return isMenuVisibleForRole('department', currentUserRole);
+  }, [currentUserRole]);
+
+  const canSearchBenefits = React.useCallback((): boolean => {
+    // If no role, deny access
+    if (
+      !currentUserRole ||
+      currentUserRole.trim() === '' ||
+      currentUserRole === 'Unknown'
+    ) {
+      return false;
+    }
+    return isMenuVisibleForRole('benefits', currentUserRole);
+  }, [currentUserRole]);
+
+  const canSearchLeaves = React.useCallback((): boolean => {
+    // If no role, deny access
+    if (
+      !currentUserRole ||
+      currentUserRole.trim() === '' ||
+      currentUserRole === 'Unknown'
+    ) {
+      return false;
+    }
+    // Leaves are part of attendance/leave-analytics
+    return (
+      isMenuVisibleForRole('attendance', currentUserRole) ||
+      isMenuVisibleForRole('leave-analytics', currentUserRole)
+    );
+  }, [currentUserRole]);
+
+  const canSearchTenants = React.useCallback((): boolean => {
+    // If no role, deny access
+    if (
+      !currentUserRole ||
+      currentUserRole.trim() === '' ||
+      currentUserRole === 'Unknown'
+    ) {
+      return false;
+    }
+    // Only system-admin can search tenants
+    return roleIsSystemAdmin(currentUserRole);
+  }, [currentUserRole]);
+
   // Get current user's tenantId for tenant-specific search
   const getCurrentTenantId = React.useCallback((): string | null => {
     try {
@@ -623,46 +815,224 @@ const Navbar: React.FC<NavbarProps> = ({
     setTeamMembersModalOpen(false);
   };
 
-  // Memoized route search with optimized multi-word matching
-  // All query words must match in any of the route's searchable fields
-  const searchRoutes = React.useCallback((query: string): SearchResult[] => {
-    const queryWords = normalizeText(query);
-    if (queryWords.length === 0) return [];
+  // Memoized route search with relevance scoring for better matching
+  // Only searches routes that are allowed for current user role
+  const searchRoutes = React.useCallback(
+    (query: string): SearchResult[] => {
+      const queryWords = normalizeText(query);
+      if (queryWords.length === 0) return [];
 
-    return searchableRoutes
-      .filter(route => {
-        // Collect all searchable text from the route
-        const searchableTexts = [
-          route.label,
-          route.category,
-          route.path,
-          route.subtitle,
-        ]
-          .filter((text): text is string => Boolean(text))
-          .map(text => text.toLowerCase());
+      const exactQuery = query.toLowerCase().trim();
+      const normalizedQuery = queryWords.join(' '); // Normalized query phrase
 
-        // Combine all text into one searchable string
-        const combinedText = searchableTexts.join(' ');
-        if (!combinedText) return false;
+      return searchableRoutes
+        .filter(route => isRouteAllowed(route)) // Filter by permissions first
+        .map(route => {
+          // Collect all searchable text from the route
+          const label = (route.label || '').toLowerCase();
+          const category = (route.category || '').toLowerCase();
+          const path = (route.path || '').toLowerCase();
+          const subtitle = (route.subtitle || '').toLowerCase();
 
-        // Check if all query words are found in the combined text
-        // This allows words to match across different fields (e.g., "employee" in label, "list" in category)
-        return queryWords.every(queryWord => {
-          // Direct substring match (fastest)
-          if (combinedText.includes(queryWord)) return true;
+          // Priority fields (label gets highest priority)
+          const priorityText = label;
+          const secondaryText = `${category} ${path} ${subtitle}`.trim();
+          const combinedText = `${priorityText} ${secondaryText}`.toLowerCase();
 
-          // Word boundary match for better accuracy
-          const wordRegex = new RegExp(
-            `\\b${queryWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
-            'i'
-          );
-          return wordRegex.test(combinedText);
-        });
-      })
-      .slice(0, 5);
-  }, []);
+          if (!combinedText) return { route, score: 0, matches: false };
 
-  // Optimized search functionality with caching and request cancellation
+          // Calculate relevance score
+          let score = 0;
+          let allWordsMatch = true;
+
+          // Check for exact phrase match first (highest priority)
+          if (label.includes(normalizedQuery)) {
+            score += 30; // Very high score for phrase match in label
+          } else if (combinedText.includes(normalizedQuery)) {
+            score += 20; // High score for phrase match anywhere
+          }
+
+          // Check each word individually
+          for (const queryWord of queryWords) {
+            const wordRegex = new RegExp(
+              `\\b${queryWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+              'i'
+            );
+
+            // Check priority field (label) first
+            if (wordRegex.test(label)) {
+              score += 15; // High score for label match
+            } else if (wordRegex.test(category)) {
+              score += 10; // Medium score for category match
+            } else if (wordRegex.test(path)) {
+              score += 8; // Lower score for path match
+            } else if (wordRegex.test(subtitle)) {
+              score += 5; // Lower score for subtitle match
+            } else if (combinedText.includes(queryWord)) {
+              score += 2; // Lowest score for substring match
+            } else {
+              allWordsMatch = false;
+            }
+          }
+
+          // Bonus for exact match in label
+          if (label === exactQuery) {
+            score += 40; // Maximum bonus for exact label match
+          } else if (label.includes(exactQuery)) {
+            score += 25; // Big bonus for exact label match
+          } else if (label.startsWith(exactQuery)) {
+            score += 20; // Bonus for label starting with query
+          }
+
+          // Bonus for consecutive word matches in label (phrase matching)
+          if (queryWords.length > 1) {
+            const labelWords = normalizeText(label);
+            let consecutiveMatches = 0;
+            let queryIndex = 0;
+            for (
+              let i = 0;
+              i < labelWords.length && queryIndex < queryWords.length;
+              i++
+            ) {
+              if (
+                labelWords[i].includes(queryWords[queryIndex]) ||
+                queryWords[queryIndex].includes(labelWords[i])
+              ) {
+                consecutiveMatches++;
+                queryIndex++;
+              }
+            }
+            if (consecutiveMatches === queryWords.length) {
+              score += 15; // Bonus for all words matching in order
+            }
+          }
+
+          // Penalty for Dashboard route if query doesn't match well
+          // This prevents Dashboard from appearing when searching for specific items
+          // Only show Dashboard if query is very short (1-2 chars) or explicitly matches "dashboard"
+          if (label === 'dashboard') {
+            const isDashboardQuery =
+              exactQuery === 'dashboard' ||
+              exactQuery === 'dash' ||
+              exactQuery.length <= 2;
+            if (!isDashboardQuery && score < 15) {
+              score = 0; // Don't show Dashboard if query doesn't match well
+              allWordsMatch = false;
+            }
+          }
+
+          return { route, score, matches: allWordsMatch };
+        })
+        .filter(({ matches }) => matches)
+        .sort((a, b) => b.score - a.score) // Sort by relevance (highest first)
+        .slice(0, 5)
+        .map(({ route }) => route);
+    },
+    [isRouteAllowed]
+  );
+
+  // Helper function to map API search results to SearchResult format
+  const mapApiResultToSearchResult = (
+    item: SearchResultItem,
+    module: string
+  ): SearchResult | null => {
+    const metadata = item.metadata || {};
+
+    switch (module) {
+      case 'employees': {
+        return {
+          label: item.title,
+          path: 'EmployeeManager',
+          category: (metadata.designation as string) || 'Employee',
+          type: 'employee',
+          id: item.id,
+          icon: <PersonIcon fontSize='small' />,
+          subtitle: item.description,
+        };
+      }
+      case 'leaves': {
+        return {
+          label: item.title,
+          path: 'leaves',
+          category: 'Leave Request',
+          type: 'leave',
+          id: item.id,
+          icon: <EventIcon fontSize='small' />,
+          subtitle: item.description,
+        };
+      }
+      case 'assets': {
+        return {
+          label: item.title,
+          path: 'assets',
+          category: 'Asset',
+          type: 'asset',
+          id: item.id,
+          icon: <InventoryIcon fontSize='small' />,
+          subtitle: item.description,
+        };
+      }
+      case 'asset-requests': {
+        return {
+          label: item.title,
+          path: 'assets/requests',
+          category: 'Asset Request',
+          type: 'asset-request',
+          id: item.id,
+          icon: <InventoryIcon fontSize='small' />,
+          subtitle: item.description,
+        };
+      }
+      case 'teams': {
+        return {
+          label: item.title,
+          path: 'teams',
+          category: 'Team',
+          type: 'team',
+          id: item.id,
+          icon: <GroupIcon fontSize='small' />,
+          subtitle: item.description,
+        };
+      }
+      case 'attendance': {
+        return {
+          label: item.title,
+          path: 'AttendanceCheck',
+          category: 'Attendance',
+          type: 'attendance',
+          id: item.id,
+          icon: <EventIcon fontSize='small' />,
+          subtitle: item.description,
+        };
+      }
+      case 'benefits': {
+        return {
+          label: item.title,
+          path: 'benefits-list',
+          category: 'Benefit',
+          type: 'benefit',
+          id: item.id,
+          icon: <CardGiftcardIcon fontSize='small' />,
+          subtitle: item.description,
+        };
+      }
+      case 'payroll': {
+        return {
+          label: item.title,
+          path: 'payroll-records',
+          category: 'Payroll',
+          type: 'payroll',
+          id: item.id,
+          icon: <DescriptionIcon fontSize='small' />,
+          subtitle: item.description,
+        };
+      }
+      default:
+        return null;
+    }
+  };
+
+  // Optimized search functionality with backend API integration
   React.useEffect(() => {
     // Cancel previous request
     if (abortControllerRef.current) {
@@ -682,7 +1052,18 @@ const Navbar: React.FC<NavbarProps> = ({
       return;
     }
 
-    const query = searchQuery.toLowerCase().trim();
+    const query = searchQuery.trim();
+
+    // Minimum 2 characters for API search (as per API requirements)
+    if (query.length < 2) {
+      // For queries less than 2 characters, only search routes
+      const routeResults = searchRoutes(query.toLowerCase());
+      setSearchResults(routeResults.slice(0, 15));
+      setShowSearchResults(routeResults.length > 0);
+      setSelectedResultIndex(-1);
+      setIsSearching(false);
+      return;
+    }
 
     // Create new AbortController for this search
     const abortController = new AbortController();
@@ -700,8 +1081,11 @@ const Navbar: React.FC<NavbarProps> = ({
 
       try {
         // 1. Search routes (instant, no API call) - use memoized function
-        const routeResults = searchRoutes(query);
-        results.push(...routeResults);
+        // Routes are always searchable (frontend-only) and filtered by permissions
+        const routeResults = searchRoutes(query.toLowerCase());
+        if (routeResults.length > 0) {
+          results.push(...routeResults);
+        }
 
         // Early exit if we have enough results
         if (
@@ -715,512 +1099,115 @@ const Navbar: React.FC<NavbarProps> = ({
           return;
         }
 
-        // Check cache validity
-        const now = Date.now();
-        const cacheValid =
-          now - dataCacheRef.current.cacheTime < CACHE_DURATION;
-
-        // 2. Search employees - with caching and tenant filtering
+        // 2. Call backend search API
         if (!abortController.signal.aborted) {
           try {
-            let allEmployees = dataCacheRef.current.employees;
             const currentTenantId = getCurrentTenantId();
+            const searchParams: {
+              query: string;
+              limit?: number;
+              tenantId?: string;
+            } = {
+              query: query,
+              limit: 10, // Default limit per module
+            };
 
-            if (!allEmployees || !cacheValid) {
-              allEmployees =
-                await employeeApi.getAllEmployeesWithoutPagination();
-              dataCacheRef.current.employees = allEmployees;
-              dataCacheRef.current.cacheTime = now;
+            // Add tenantId only if user is system admin and tenantId is available
+            if (canSearchTenants() && currentTenantId) {
+              searchParams.tenantId = currentTenantId;
             }
 
-            if (!abortController.signal.aborted) {
-              // Filter by tenant if tenantId is available (tenant-specific search)
-              let filteredEmployees = allEmployees || [];
-              if (currentTenantId && allEmployees) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                filteredEmployees = allEmployees.filter((emp: any) => {
-                  const empTenantId =
-                    emp.tenantId || emp.tenant_id || emp.tenant?.id || '';
-                  return String(empTenantId).trim() === currentTenantId;
-                });
-              }
+            const apiResponse = await searchApiService.search(searchParams);
 
-              const employeeMatches = filteredEmployees
-                .filter(emp => searchInObject(emp, query))
-                .slice(0, 5)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((emp: any) => {
-                  const fullName =
-                    `${emp.firstName || ''} ${emp.lastName || ''}`.trim() ||
-                    emp.name ||
-                    emp.email ||
-                    'Employee';
-                  const subtitle = [
-                    emp.email,
-                    emp.phone,
-                    emp.department?.name,
-                    emp.designation?.title,
-                    emp.department?.description,
-                  ]
-                    .filter(Boolean)
-                    .join(' • ');
-
-                  return {
-                    label: fullName,
-                    path: 'EmployeeManager',
-                    category:
-                      emp.department?.name ||
-                      emp.designation?.title ||
-                      'Employee',
-                    type: 'employee' as const,
-                    id: emp.id,
-                    icon: <PersonIcon fontSize='small' />,
-                    subtitle: subtitle || 'Employee',
-                  };
-                });
-
-              results.push(...employeeMatches);
-
-              // Early exit check
-              if (
-                results.length >= MAX_RESULTS &&
-                !abortController.signal.aborted
-              ) {
-                setSearchResults(results.slice(0, MAX_RESULTS));
-                setShowSearchResults(true);
-                setSelectedResultIndex(-1);
-                setIsSearching(false);
-                return;
-              }
-            }
-          } catch (error) {
-            if (!abortController.signal.aborted) {
-              console.error('Error searching employees:', error);
-            }
-          }
-        }
-
-        // 3. Search teams - with caching, tenant filtering, and parallel execution
-        if (!abortController.signal.aborted) {
-          try {
-            let teams = dataCacheRef.current.teams;
-            const currentTenantId = getCurrentTenantId();
-
-            if (!teams || !cacheValid) {
-              const teamsResponse = await teamApiService.getAllTeams(null);
-              teams = teamsResponse.items || [];
-              dataCacheRef.current.teams = teams;
-              dataCacheRef.current.cacheTime = now;
-            }
-
-            if (!abortController.signal.aborted) {
-              // Filter by tenant if tenantId is available (tenant-specific search)
-              // Note: Teams API may already filter by tenant, but we ensure it here
-              let filteredTeams = teams;
-              if (currentTenantId) {
-                // Teams might not have direct tenantId, so we rely on API filtering
-                // But we can still filter if the data includes tenant info
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                filteredTeams = teams.filter((team: any) => {
-                  // If team has tenant_id, filter by it
-                  if (team.tenant_id || team.tenantId) {
-                    const teamTenantId =
-                      team.tenant_id || team.tenantId || team.tenant?.id || '';
-                    return String(teamTenantId).trim() === currentTenantId;
+            // Map API results to SearchResult format
+            if (apiResponse.results) {
+              // Employees
+              if (apiResponse.results.employees) {
+                apiResponse.results.employees.forEach(item => {
+                  const mapped = mapApiResultToSearchResult(item, 'employees');
+                  if (mapped && results.length < MAX_RESULTS) {
+                    results.push(mapped);
                   }
-                  // If no tenant info, include it (API likely already filtered)
-                  return true;
                 });
               }
 
-              const teamMatches = filteredTeams
-                .filter((team: Team) => searchInObject(team, query))
-                .slice(0, 3)
-                .map((team: Team) => ({
-                  label: team.name || 'Team',
-                  path: 'teams',
-                  category: 'Team',
-                  type: 'team' as const,
-                  id: team.id,
-                  icon: <GroupIcon fontSize='small' />,
-                  subtitle: team.description || 'Team',
-                }));
-
-              results.push(...teamMatches);
-
-              // Early exit check
-              if (
-                results.length >= MAX_RESULTS &&
-                !abortController.signal.aborted
-              ) {
-                setSearchResults(results.slice(0, MAX_RESULTS));
-                setShowSearchResults(true);
-                setSelectedResultIndex(-1);
-                setIsSearching(false);
-                return;
-              }
-            }
-          } catch (error) {
-            if (!abortController.signal.aborted) {
-              console.error('Error searching teams:', error);
-            }
-          }
-        }
-
-        // 4. Search assets - optimized with caching, tenant filtering, and early exit
-        if (!abortController.signal.aborted && results.length < MAX_RESULTS) {
-          try {
-            let allAssets = dataCacheRef.current.assets;
-            const currentTenantId = getCurrentTenantId();
-
-            if (!allAssets || !cacheValid) {
-              // Fetch only first page for better performance (50 assets)
-              const assetsResponse = await assetApi.getAllAssets({
-                page: 1,
-                limit: 50,
-              });
-              allAssets = assetsResponse.assets || [];
-              dataCacheRef.current.assets = allAssets;
-              dataCacheRef.current.cacheTime = now;
-            }
-
-            if (!abortController.signal.aborted && allAssets) {
-              // Filter by tenant if tenantId is available (tenant-specific search)
-              let filteredAssets = allAssets;
-              if (currentTenantId) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                filteredAssets = allAssets.filter((asset: any) => {
-                  const assetTenantId =
-                    asset.tenantId ||
-                    asset.tenant_id ||
-                    asset.tenant?.id ||
-                    asset.category?.tenantId ||
-                    asset.category?.tenant_id ||
-                    '';
-                  return String(assetTenantId).trim() === currentTenantId;
-                });
-              }
-
-              const assetMatches = filteredAssets
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .filter((asset: any) => searchInObject(asset, query))
-                .slice(0, 3)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((asset: any) => {
-                  const categoryName =
-                    asset.category?.name || asset.categoryName || 'Asset';
-                  const subcategoryName =
-                    asset.subcategory?.name || asset.subcategoryName || '';
-                  const assignedToName =
-                    asset.assignedToUser?.name || asset.assignedToName || '';
-
-                  const subtitle = [
-                    categoryName,
-                    subcategoryName,
-                    assignedToName,
-                    asset.category?.description,
-                    asset.subcategory?.description,
-                  ]
-                    .filter(Boolean)
-                    .join(' • ');
-
-                  return {
-                    label: asset.name || 'Asset',
-                    path: 'assets',
-                    category: 'Asset',
-                    type: 'asset' as const,
-                    id: asset.id,
-                    icon: <InventoryIcon fontSize='small' />,
-                    subtitle: subtitle || 'Asset',
-                  };
-                });
-
-              results.push(...assetMatches);
-            }
-          } catch (error) {
-            if (!abortController.signal.aborted) {
-              console.error('Error searching assets:', error);
-            }
-          }
-        }
-
-        // 5. Search departments - with caching and tenant filtering
-        if (!abortController.signal.aborted && results.length < MAX_RESULTS) {
-          try {
-            let departments = dataCacheRef.current.departments;
-            const currentTenantId = getCurrentTenantId();
-
-            if (!departments || !cacheValid) {
-              departments = await departmentApiService.getAllDepartments();
-              dataCacheRef.current.departments = departments;
-              dataCacheRef.current.cacheTime = now;
-            }
-
-            if (!abortController.signal.aborted) {
-              let filteredDepartments = departments;
-              if (currentTenantId) {
-                filteredDepartments = (departments || []).filter(
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (dept: any) => {
-                    const deptTenantId = dept.tenantId || dept.tenant_id || '';
-                    return String(deptTenantId).trim() === currentTenantId;
+              // Leaves
+              if (apiResponse.results.leaves && canSearchLeaves()) {
+                apiResponse.results.leaves.forEach(item => {
+                  const mapped = mapApiResultToSearchResult(item, 'leaves');
+                  if (mapped && results.length < MAX_RESULTS) {
+                    results.push(mapped);
                   }
-                );
+                });
               }
 
-              const departmentMatches = (filteredDepartments || [])
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .filter((dept: any) => searchInObject(dept, query))
-                .slice(0, 3)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((dept: any) => ({
-                  label: dept.name || 'Department',
-                  path: 'departments',
-                  category: 'Department',
-                  type: 'department' as const,
-                  id: dept.id,
-                  icon: <BusinessIcon fontSize='small' />,
-                  subtitle: dept.description || 'Department',
-                }));
-
-              results.push(...departmentMatches);
-            }
-          } catch (error) {
-            if (!abortController.signal.aborted) {
-              console.error('Error searching departments:', error);
-            }
-          }
-        }
-
-        // 6. Search designations - with caching and tenant filtering
-        if (!abortController.signal.aborted && results.length < MAX_RESULTS) {
-          try {
-            let designations = dataCacheRef.current.designations;
-            const currentTenantId = getCurrentTenantId();
-
-            if (!designations || !cacheValid) {
-              designations = await designationApiService.getAllDesignations();
-              dataCacheRef.current.designations = designations;
-              dataCacheRef.current.cacheTime = now;
-            }
-
-            if (!abortController.signal.aborted) {
-              let filteredDesignations = designations;
-              if (currentTenantId) {
-                filteredDesignations = (designations || []).filter(
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (desig: any) => {
-                    const desigTenantId =
-                      desig.tenantId || desig.tenant_id || '';
-                    return String(desigTenantId).trim() === currentTenantId;
+              // Assets
+              if (apiResponse.results.assets && canSearchAssets()) {
+                apiResponse.results.assets.forEach(item => {
+                  const mapped = mapApiResultToSearchResult(item, 'assets');
+                  if (mapped && results.length < MAX_RESULTS) {
+                    results.push(mapped);
                   }
-                );
-              }
-
-              const designationMatches = (filteredDesignations || [])
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .filter((desig: any) => searchInObject(desig, query))
-                .slice(0, 3)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((desig: any) => ({
-                  label: desig.title || 'Designation',
-                  path: 'Designations',
-                  category: 'Designation',
-                  type: 'designation' as const,
-                  id: desig.id,
-                  icon: <WorkIcon fontSize='small' />,
-                  subtitle: desig.department?.name || 'Designation',
-                }));
-
-              results.push(...designationMatches);
-            }
-          } catch (error) {
-            if (!abortController.signal.aborted) {
-              console.error('Error searching designations:', error);
-            }
-          }
-        }
-
-        // 7. Search benefits - with caching and tenant filtering
-        if (!abortController.signal.aborted && results.length < MAX_RESULTS) {
-          try {
-            let benefits = dataCacheRef.current.benefits;
-            const currentTenantId = getCurrentTenantId();
-
-            if (!benefits || !cacheValid) {
-              benefits = await benefitsApi.getBenefits(null);
-              dataCacheRef.current.benefits = benefits;
-              dataCacheRef.current.cacheTime = now;
-            }
-
-            if (!abortController.signal.aborted) {
-              let filteredBenefits = benefits;
-              if (currentTenantId) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                filteredBenefits = (benefits || []).filter((benefit: any) => {
-                  const benefitTenantId =
-                    benefit.tenant_id || benefit.tenantId || '';
-                  return String(benefitTenantId).trim() === currentTenantId;
                 });
               }
 
-              const benefitMatches = (filteredBenefits || [])
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .filter((benefit: any) => searchInObject(benefit, query))
-                .slice(0, 3)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((benefit: any) => ({
-                  label: benefit.name || 'Benefit',
-                  path: 'benefits-list',
-                  category: 'Benefit',
-                  type: 'benefit' as const,
-                  id: benefit.id,
-                  icon: <CardGiftcardIcon fontSize='small' />,
-                  subtitle:
-                    `${benefit.type || ''} • ${benefit.status || ''}`.trim(),
-                }));
-
-              results.push(...benefitMatches);
-            }
-          } catch (error) {
-            if (!abortController.signal.aborted) {
-              console.error('Error searching benefits:', error);
-            }
-          }
-        }
-
-        // 8. Search leave requests - with caching and tenant filtering
-        if (!abortController.signal.aborted && results.length < MAX_RESULTS) {
-          try {
-            let leaves = dataCacheRef.current.leaves;
-            const currentTenantId = getCurrentTenantId();
-
-            if (!leaves || !cacheValid) {
-              const leavesResponse = await leaveApi.getAllLeaves(1);
-              leaves = leavesResponse.items || [];
-              dataCacheRef.current.leaves = leaves;
-              dataCacheRef.current.cacheTime = now;
-            }
-
-            if (!abortController.signal.aborted && leaves) {
-              let filteredLeaves = leaves;
-              if (currentTenantId) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                filteredLeaves = (leaves || []).filter((leave: any) => {
-                  const leaveTenantId = leave.tenantId || leave.tenant_id || '';
-                  return String(leaveTenantId).trim() === currentTenantId;
+              // Asset Requests
+              if (apiResponse.results.assetRequests && canSearchAssets()) {
+                apiResponse.results.assetRequests.forEach(item => {
+                  const mapped = mapApiResultToSearchResult(
+                    item,
+                    'asset-requests'
+                  );
+                  if (mapped && results.length < MAX_RESULTS) {
+                    results.push(mapped);
+                  }
                 });
               }
 
-              const leaveMatches = (filteredLeaves || [])
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .filter((leave: any) => searchInObject(leave, query))
-                .slice(0, 3)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((leave: any) => {
-                  const userName =
-                    leave.user?.name ||
-                    `${leave.user?.first_name || ''} ${leave.user?.last_name || ''}`.trim() ||
-                    'Employee';
-                  return {
-                    label: `${userName} - Leave Request`,
-                    path: 'leaves',
-                    category: 'Leave Request',
-                    type: 'leave' as const,
-                    id: leave.id,
-                    icon: <EventIcon fontSize='small' />,
-                    subtitle:
-                      `${leave.status || ''} • ${leave.startDate || ''} to ${leave.endDate || ''}`.trim(),
-                  };
+              // Teams
+              if (apiResponse.results.teams && canSearchTeams()) {
+                apiResponse.results.teams.forEach(item => {
+                  const mapped = mapApiResultToSearchResult(item, 'teams');
+                  if (mapped && results.length < MAX_RESULTS) {
+                    results.push(mapped);
+                  }
                 });
+              }
 
-              results.push(...leaveMatches);
+              // Attendance
+              if (apiResponse.results.attendance && canSearchLeaves()) {
+                apiResponse.results.attendance.forEach(item => {
+                  const mapped = mapApiResultToSearchResult(item, 'attendance');
+                  if (mapped && results.length < MAX_RESULTS) {
+                    results.push(mapped);
+                  }
+                });
+              }
+
+              // Benefits
+              if (apiResponse.results.benefits && canSearchBenefits()) {
+                apiResponse.results.benefits.forEach(item => {
+                  const mapped = mapApiResultToSearchResult(item, 'benefits');
+                  if (mapped && results.length < MAX_RESULTS) {
+                    results.push(mapped);
+                  }
+                });
+              }
+
+              // Payroll
+              if (apiResponse.results.payroll) {
+                apiResponse.results.payroll.forEach(item => {
+                  const mapped = mapApiResultToSearchResult(item, 'payroll');
+                  if (mapped && results.length < MAX_RESULTS) {
+                    results.push(mapped);
+                  }
+                });
+              }
             }
           } catch (error) {
             if (!abortController.signal.aborted) {
-              console.error('Error searching leaves:', error);
-            }
-          }
-        }
-
-        // 9. Search policies - from mock data (no API yet)
-        if (!abortController.signal.aborted && results.length < MAX_RESULTS) {
-          try {
-            let policies = dataCacheRef.current.policies;
-
-            if (!policies || !cacheValid) {
-              policies = mockPolicies;
-              dataCacheRef.current.policies = policies;
-              dataCacheRef.current.cacheTime = now;
-            }
-
-            if (!abortController.signal.aborted) {
-              const policyMatches = (policies || [])
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .filter((policy: any) => searchInObject(policy, query))
-                .slice(0, 2)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((policy: any) => ({
-                  label: policy.name || 'Policy',
-                  path: 'policies',
-                  category: 'Policy',
-                  type: 'policy' as const,
-                  id: policy.id,
-                  icon: <DescriptionIcon fontSize='small' />,
-                  subtitle:
-                    `${policy.type || ''} • ${policy.effectiveDate || ''}`.trim(),
-                }));
-
-              results.push(...policyMatches);
-            }
-          } catch (error) {
-            if (!abortController.signal.aborted) {
-              console.error('Error searching policies:', error);
-            }
-          }
-        }
-
-        // 10. Search tenants (only for system admin)
-        if (
-          !abortController.signal.aborted &&
-          results.length < MAX_RESULTS &&
-          isSystemAdmin()
-        ) {
-          try {
-            let tenants = dataCacheRef.current.tenants;
-
-            if (!tenants || !cacheValid) {
-              const tenantsResponse = await SystemTenantApi.getAll({
-                page: 1,
-                limit: 50,
-              });
-              tenants = tenantsResponse.data || [];
-              dataCacheRef.current.tenants = tenants;
-              dataCacheRef.current.cacheTime = now;
-            }
-
-            if (!abortController.signal.aborted) {
-              const tenantMatches = (tenants || [])
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .filter((tenant: any) => searchInObject(tenant, query))
-                .slice(0, 3)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((tenant: any) => ({
-                  label: tenant.name || 'Tenant',
-                  path: 'tenant',
-                  category: 'Tenant',
-                  type: 'tenant' as const,
-                  id: tenant.id,
-                  icon: <BusinessIcon fontSize='small' />,
-                  subtitle:
-                    `${tenant.status || ''} • ${tenant.domain || ''}`.trim(),
-                }));
-
-              results.push(...tenantMatches);
-            }
-          } catch (error) {
-            if (!abortController.signal.aborted) {
-              console.error('Error searching tenants:', error);
+              console.error('Error calling search API:', error);
+              // Continue with route results even if API fails
             }
           }
         }
@@ -1243,7 +1230,7 @@ const Navbar: React.FC<NavbarProps> = ({
           setIsSearching(false);
         }
       }
-    }, 400); // Increased debounce to 400ms for better performance
+    }, 400); // Debounce: 400ms for better performance
 
     return () => {
       if (searchTimeoutRef.current) {
@@ -1254,7 +1241,18 @@ const Navbar: React.FC<NavbarProps> = ({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, searchRoutes, getCurrentTenantId]);
+  }, [
+    searchQuery,
+    searchRoutes,
+    getCurrentTenantId,
+    canSearchEmployees,
+    canSearchTeams,
+    canSearchAssets,
+    canSearchDepartments,
+    canSearchBenefits,
+    canSearchLeaves,
+    canSearchTenants,
+  ]);
 
   // Handle search input change
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1264,45 +1262,139 @@ const Navbar: React.FC<NavbarProps> = ({
 
   // Handle search result click - navigates to specific item in the module
   const handleSearchResultClick = (result: SearchResult) => {
+    // Clear search state
     setSearchQuery('');
     setShowSearchResults(false);
+    setSelectedResultIndex(-1);
 
+    // Ensure we have a valid result
+    if (!result) return;
+
+    // Navigate based on result type with proper state for opening exact records
     if (result.type === 'employee' && result.id) {
       // Navigate to employee manager and open the specific employee view
       navigate('/dashboard/EmployeeManager', {
-        state: { employeeId: result.id, viewEmployee: true },
+        state: {
+          employeeId: result.id,
+          viewEmployee: true,
+          fromSearch: true, // Flag to indicate navigation from search
+        },
+        replace: false, // Allow back navigation
       });
     } else if (result.type === 'team' && result.id) {
       // Navigate to teams page and highlight/select the specific team
       navigate('/dashboard/teams', {
-        state: { teamId: result.id, viewTeam: true },
+        state: {
+          teamId: result.id,
+          viewTeam: true,
+          fromSearch: true,
+        },
+        replace: false,
       });
     } else if (result.type === 'asset' && result.id) {
       // Navigate to assets page and open the specific asset view/edit modal
       navigate('/dashboard/assets', {
-        state: { assetId: result.id, viewAsset: true },
+        state: {
+          assetId: result.id,
+          viewAsset: true,
+          fromSearch: true,
+        },
+        replace: false,
       });
     } else if (result.type === 'department' && result.id) {
-      // Navigate to departments page
-      navigate('/dashboard/departments');
+      // Navigate to departments page with department ID
+      navigate('/dashboard/departments', {
+        state: {
+          departmentId: result.id,
+          fromSearch: true,
+        },
+        replace: false,
+      });
     } else if (result.type === 'designation' && result.id) {
-      // Navigate to designations page
-      navigate('/dashboard/Designations');
+      // Navigate to designations page with designation ID
+      navigate('/dashboard/Designations', {
+        state: {
+          designationId: result.id,
+          fromSearch: true,
+        },
+        replace: false,
+      });
     } else if (result.type === 'benefit' && result.id) {
-      // Navigate to benefits list page
-      navigate('/dashboard/benefits-list');
+      // Navigate to benefits list page with benefit ID
+      navigate('/dashboard/benefits-list', {
+        state: {
+          benefitId: result.id,
+          fromSearch: true,
+        },
+        replace: false,
+      });
     } else if (result.type === 'leave' && result.id) {
-      // Navigate to leave requests page
-      navigate('/dashboard/leaves');
+      // Navigate to leave requests page with leave ID
+      navigate('/dashboard/leaves', {
+        state: {
+          leaveId: result.id,
+          fromSearch: true,
+        },
+        replace: false,
+      });
     } else if (result.type === 'policy' && result.id) {
-      // Navigate to policies page
-      navigate('/dashboard/policies');
+      // Navigate to policies page with policy ID
+      navigate('/dashboard/policies', {
+        state: {
+          policyId: result.id,
+          fromSearch: true,
+        },
+        replace: false,
+      });
     } else if (result.type === 'tenant' && result.id) {
-      // Navigate to tenant page
-      navigate('/dashboard/tenant');
+      // Navigate to tenant page with tenant ID
+      navigate('/dashboard/tenant', {
+        state: {
+          tenantId: result.id,
+          fromSearch: true,
+        },
+        replace: false,
+      });
+    } else if (result.type === 'asset-request' && result.id) {
+      // Navigate to asset requests page with request ID
+      navigate('/dashboard/assets/requests', {
+        state: {
+          requestId: result.id,
+          viewRequest: true,
+          fromSearch: true,
+        },
+        replace: false,
+      });
+    } else if (result.type === 'attendance' && result.id) {
+      // Navigate to attendance page with attendance ID
+      navigate('/dashboard/AttendanceCheck', {
+        state: {
+          attendanceId: result.id,
+          fromSearch: true,
+        },
+        replace: false,
+      });
+    } else if (result.type === 'payroll' && result.id) {
+      // Navigate to payroll records page with payroll ID
+      navigate('/dashboard/payroll-records', {
+        state: {
+          payrollId: result.id,
+          viewPayroll: true,
+          fromSearch: true,
+        },
+        replace: false,
+      });
     } else {
-      // Navigate to route
-      navigate(`/dashboard/${result.path}`);
+      // Navigate to route (for route-type results)
+      // Handle empty path (Dashboard route)
+      let path = '/dashboard';
+      if (result.path && result.path.trim() !== '') {
+        path = `/dashboard/${result.path}`;
+      }
+      navigate(path, {
+        state: { fromSearch: true },
+        replace: false,
+      });
     }
   };
 
@@ -1312,11 +1404,18 @@ const Navbar: React.FC<NavbarProps> = ({
   ) => {
     if (event.key === 'Enter') {
       event.preventDefault();
+      // Only navigate if user has selected a result or there's exactly one result
+      // Don't auto-navigate if there are multiple results - let user choose
       if (selectedResultIndex >= 0 && searchResults[selectedResultIndex]) {
         handleSearchResultClick(searchResults[selectedResultIndex]);
-      } else if (searchResults.length > 0) {
+      } else if (searchResults.length === 1) {
+        // Only auto-navigate if there's exactly one result
         handleSearchResultClick(searchResults[0]);
+      } else if (searchResults.length > 1) {
+        // If multiple results, just show them (don't navigate)
+        setShowSearchResults(true);
       }
+      // If no results, do nothing (don't navigate to dashboard)
     } else if (event.key === 'ArrowDown') {
       event.preventDefault();
       setSelectedResultIndex(prev =>
@@ -1333,7 +1432,14 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   // Close search results when clicking outside
-  const handleClickAway = () => {
+  const handleClickAway = (event: MouseEvent | TouchEvent) => {
+    if (
+      searchContainerRef.current &&
+      event.target instanceof Node &&
+      searchContainerRef.current.contains(event.target)
+    ) {
+      return;
+    }
     setShowSearchResults(false);
   };
 
@@ -1432,11 +1538,11 @@ const Navbar: React.FC<NavbarProps> = ({
               <Box
                 ref={searchContainerRef}
                 sx={{
-                  display: { xs: 'none', md: 'flex' },
+                  display: { xs: 'none', sm: 'none', md: 'flex' },
                   alignItems: 'center',
                   gap: 1,
                   flex: 1,
-                  maxWidth: '400px',
+                  maxWidth: { md: '350px', lg: '400px', xl: '450px' },
                   position: 'relative',
                 }}
               >
@@ -1473,9 +1579,15 @@ const Navbar: React.FC<NavbarProps> = ({
                 </Search>
                 <IconButton
                   onClick={() => {
-                    if (searchResults.length > 0) {
+                    // Only navigate if there's exactly one result
+                    // Otherwise, just show the results dropdown
+                    if (searchResults.length === 1) {
                       handleSearchResultClick(searchResults[0]);
+                    } else if (searchResults.length > 1) {
+                      // Show results dropdown if multiple results
+                      setShowSearchResults(true);
                     }
+                    // If no results, do nothing (don't navigate)
                   }}
                   sx={{
                     backgroundColor: 'var(--primary-dark-color)',
@@ -1505,18 +1617,22 @@ const Navbar: React.FC<NavbarProps> = ({
                 {showSearchResults && searchResults.length > 0 && (
                   <Paper
                     elevation={4}
+                    onClick={e => e.stopPropagation()}
+                    onMouseDown={e => e.stopPropagation()}
+                    onTouchStart={e => e.stopPropagation()}
                     sx={{
                       position: 'absolute',
                       top: '100%',
                       left: 0,
                       right: 0,
                       mt: 1,
-                      maxHeight: '400px',
+                      maxHeight: { md: '350px', lg: '400px', xl: '450px' },
                       overflow: 'auto',
                       zIndex: 1300,
                       borderRadius: '12px',
                       backgroundColor: 'var(--white-color)',
                       boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                      width: '100%',
                     }}
                   >
                     <List sx={{ p: 0 }}>
@@ -1527,12 +1643,34 @@ const Navbar: React.FC<NavbarProps> = ({
                         >
                           <ListItemButton
                             selected={selectedResultIndex === index}
-                            onClick={() => handleSearchResultClick(result)}
+                            onClick={e => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleSearchResultClick(result);
+                            }}
+                            onMouseDown={e => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onTouchEnd={e => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleSearchResultClick(result);
+                            }}
+                            onTouchStart={e => {
+                              e.stopPropagation();
+                            }}
                             sx={{
                               px: 2,
                               py: 1.5,
+                              cursor: 'pointer',
+                              touchAction: 'manipulation',
+                              WebkitTapHighlightColor: 'transparent',
                               '&:hover': {
                                 backgroundColor: 'var(--primary-color)',
+                              },
+                              '&:active': {
+                                backgroundColor: 'var(--primary-dark-color)',
                               },
                               '&.Mui-selected': {
                                 backgroundColor: 'var(--primary-dark-color)',
@@ -1846,19 +1984,19 @@ const Navbar: React.FC<NavbarProps> = ({
           <Box
             ref={searchContainerRef}
             sx={{
-              display: { xs: 'flex', md: 'none' },
+              display: { xs: 'flex', sm: 'flex', md: 'none' },
               alignItems: 'center',
               mt: 1.5,
-              px: { xs: 0 },
+              px: { xs: 0, sm: 0 },
               position: 'relative',
+              width: '100%',
             }}
           >
             <Search
               sx={{
-                display: { xs: 'flex', md: 'none' },
+                display: { xs: 'flex', sm: 'flex', md: 'none' },
                 alignItems: 'center',
-                mt: 1.5,
-                px: { xs: 0 },
+                width: '100%',
                 position: 'relative',
               }}
             >
@@ -1895,9 +2033,15 @@ const Navbar: React.FC<NavbarProps> = ({
               )}
               <IconButton
                 onClick={() => {
-                  if (searchResults.length > 0) {
+                  // Only navigate if there's exactly one result
+                  // Otherwise, just show the results dropdown
+                  if (searchResults.length === 1) {
                     handleSearchResultClick(searchResults[0]);
+                  } else if (searchResults.length > 1) {
+                    // Show results dropdown if multiple results
+                    setShowSearchResults(true);
                   }
+                  // If no results, do nothing (don't navigate)
                 }}
                 sx={{
                   position: 'absolute',
@@ -1933,18 +2077,22 @@ const Navbar: React.FC<NavbarProps> = ({
             {showSearchResults && searchResults.length > 0 && (
               <Paper
                 elevation={4}
+                onClick={e => e.stopPropagation()}
+                onMouseDown={e => e.stopPropagation()}
+                onTouchStart={e => e.stopPropagation()}
                 sx={{
                   position: 'absolute',
                   top: '100%',
                   left: 0,
                   right: 0,
                   mt: 1,
-                  maxHeight: '300px',
+                  maxHeight: { xs: '250px', sm: '300px' },
                   overflow: 'auto',
                   zIndex: 1300,
                   borderRadius: '12px',
                   backgroundColor: 'var(--white-color)',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                  width: '100%',
                 }}
               >
                 <List sx={{ p: 0 }}>
@@ -1955,12 +2103,34 @@ const Navbar: React.FC<NavbarProps> = ({
                     >
                       <ListItemButton
                         selected={selectedResultIndex === index}
-                        onClick={() => handleSearchResultClick(result)}
+                        onClick={e => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSearchResultClick(result);
+                        }}
+                        onMouseDown={e => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchEnd={e => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSearchResultClick(result);
+                        }}
+                        onTouchStart={e => {
+                          e.stopPropagation();
+                        }}
                         sx={{
                           px: 2,
                           py: 1.5,
+                          cursor: 'pointer',
+                          touchAction: 'manipulation',
+                          WebkitTapHighlightColor: 'transparent',
                           '&:hover': {
                             backgroundColor: 'var(--primary-color)',
+                          },
+                          '&:active': {
+                            backgroundColor: 'var(--primary-dark-color)',
                           },
                           '&.Mui-selected': {
                             backgroundColor: 'var(--primary-dark-color)',
