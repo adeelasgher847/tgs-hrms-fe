@@ -425,11 +425,7 @@ export default function Sidebar({
       <Box
         sx={{
           flex: 1,
-          maxHeight: {
-            xs: 'none',
-            md: '330px',
-            xl: 'none',
-          },
+          minHeight: 0,
           overflowY: 'auto',
           '&::-webkit-scrollbar': { display: 'none' },
           px: 1,
