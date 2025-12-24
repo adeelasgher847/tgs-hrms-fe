@@ -160,6 +160,15 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
               gap: 2,
               width: '100%',
               direction: isRtl ? 'rtl' : 'ltr',
+              // Ensure dropdown labels and input labels are readable on small screens
+              '& .subheading2': {
+                fontSize: { xs: '13px', sm: 'var(--subheading2-font-size)' },
+                fontWeight: { xs: '400', sm: 'var(--subheading2-font-weight)' },
+              },
+              '& .MuiInputLabel-root': {
+                fontSize: { xs: '13px', sm: 'var(--label-font-size)' },
+                fontWeight: { xs: '400', sm: 'var(--label-font-weight)' },
+              },
             }}
           >
             {fields.map(field => (

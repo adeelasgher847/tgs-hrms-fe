@@ -30,6 +30,7 @@ interface AppDropdownProps
   error?: boolean;
   helperText?: string;
   inputBackgroundColor?: string;
+  showLabel?: boolean;
 }
 
 const ArrowIcon = ({ open }: { open: boolean }) => (
@@ -61,6 +62,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
       error = false,
       helperText,
       inputBackgroundColor,
+      showLabel = true,
       sx,
       ...rest
     },
@@ -70,43 +72,47 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
 
     return (
       <Box sx={containerSx}>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            mb: 0.5,
-          }}
-        >
-          <Typography
-            component='label'
-            htmlFor={rest.id || (rest.name ? `dropdown-${rest.name}` : undefined)}
-            className={labelClassName}
+        {showLabel && (
+          <Box
             sx={{
-              fontWeight: 500,
-              fontSize: 'var(--subheading2-font-size)',
-              lineHeight: 'var(--subheading2-line-height)',
-              letterSpacing: 'var(--subheading2-letter-spacing)',
-              color: '#2C2C2C',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              mb: 0.5,
             }}
           >
-            {label}
-          </Typography>
-          {error && helperText && (
             <Typography
+              component='label'
+              htmlFor={
+                rest.id || (rest.name ? `dropdown-${rest.name}` : undefined)
+              }
+              className={labelClassName}
               sx={{
-                fontSize: { xs: '12px', sm: '14px' },
-                lineHeight: 'var(--label-line-height)',
-                color: '#d32f2f',
-                fontWeight: 400,
-                textAlign: 'right',
-                ml: 2,
+                fontWeight: 500,
+                fontSize: 'var(--subheading2-font-size)',
+                lineHeight: 'var(--subheading2-line-height)',
+                letterSpacing: 'var(--subheading2-letter-spacing)',
+                color: '#2C2C2C',
               }}
             >
-              {helperText}
+              {label}
             </Typography>
-          )}
-        </Box>
+            {error && helperText && (
+              <Typography
+                sx={{
+                  fontSize: { xs: '12px', sm: '14px' },
+                  lineHeight: 'var(--label-line-height)',
+                  color: '#d32f2f',
+                  fontWeight: 400,
+                  textAlign: 'right',
+                  ml: 2,
+                }}
+              >
+                {helperText}
+              </Typography>
+            )}
+          </Box>
+        )}
         <FormControl
           ref={ref}
           fullWidth

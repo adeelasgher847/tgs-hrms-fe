@@ -4,7 +4,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   FormControl,
   InputLabel,
@@ -12,6 +11,9 @@ import {
   MenuItem,
   Box,
   Typography,
+  IconButton,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -21,6 +23,8 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import type { Asset, MockUser } from '../../types/asset';
 import { assetApi, type AssetSubcategory } from '../../api/assetApi';
+import AppButton from '../common/AppButton';
+import { Close as CloseIcon } from '@mui/icons-material';
 
 interface AssetCategory {
   id: string;
@@ -61,6 +65,8 @@ const AssetModal: React.FC<AssetModalProps> = ({
   loading = false,
   title,
 }) => {
+  const theme = useTheme();
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [, setSelectedWarrantyDate] = useState<Date | null>(null);
   const [categories, setCategories] = useState<AssetCategory[]>([]);
@@ -117,9 +123,11 @@ const AssetModal: React.FC<AssetModalProps> = ({
     reset,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isValid, isDirty },
   } = useForm({
     resolver: yupResolver(schema),
+    mode: 'onChange',
+    reValidateMode: 'onChange',
     defaultValues: {
       name: '',
       category: '',
@@ -300,6 +308,9 @@ const AssetModal: React.FC<AssetModalProps> = ({
     });
   };
 
+  // Disable submit when loading or form invalid. For edit mode, require form to be dirty.
+  const submitDisabled = loading || !isValid || (asset ? !isDirty : false);
+
   const handleClose = () => {
     reset();
     setSelectedDate(new Date());
@@ -312,23 +323,74 @@ const AssetModal: React.FC<AssetModalProps> = ({
       <Dialog
         open={open}
         onClose={handleClose}
-        maxWidth='md'
-        fullWidth
+        fullScreen={false}
+        fullWidth={!isLargeScreen}
+        maxWidth={false}
         PaperProps={{
           sx: {
+            width: {
+              xs: '100%',
+              sm: '90%',
+              md: '600px',
+              lg: '527px',
+            },
+            maxWidth: {
+              xs: '100%',
+              sm: '90%',
+              md: '600px',
+              lg: '527px',
+            },
+            borderRadius: { xs: '20px', sm: '30px' },
+            padding: {
+              xs: '20px 16px',
+              sm: '24px 20px',
+              lg: '32px 20px',
+            },
+            backgroundColor: '#FFFFFF',
+            margin: { xs: '16px', lg: 'auto' },
             maxHeight: '90vh',
           },
         }}
+        sx={{
+          '& .MuiDialog-paper': {
+            margin: { xs: '16px', lg: 'auto' },
+          },
+          '& .MuiBackdrop-root': {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          },
+        }}
       >
-        <DialogTitle>
-          <Typography variant='h6' fontWeight={600}>
-            {title || (asset ? 'Edit Asset' : 'Add New Asset')}
-          </Typography>
+        <DialogTitle sx={{ p: 0, pb: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Typography variant='h6'>
+              {title || (asset ? 'Edit Asset' : 'Add New Asset')}
+            </Typography>
+            <IconButton
+              onClick={handleClose}
+              size='small'
+              aria-label='Close asset modal'
+            >
+              <CloseIcon aria-hidden='true' />
+            </IconButton>
+          </Box>
         </DialogTitle>
 
         <form onSubmit={handleSubmit(handleFormSubmit)}>
-          <DialogContent>
-            <Box sx={{ pt: 1 }}>
+          <DialogContent sx={{ p: 0, pt: 0, pb: { xs: 2, sm: 3, lg: '32px' } }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: { xs: 2, sm: 3, lg: '32px' },
+                pt: { xs: 1, lg: 0 },
+              }}
+            >
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                   <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
@@ -487,23 +549,30 @@ const AssetModal: React.FC<AssetModalProps> = ({
             </Box>
           </DialogContent>
 
-          <DialogActions sx={{ padding: '16px 24px', gap: 1 }}>
-            <Button
+          <DialogActions sx={{ p: 0, pt: 0, px: 2, pb: 2 }}>
+            <AppButton
               onClick={handleClose}
               variant='outlined'
+              variantType='secondary'
               disabled={loading}
-              sx={{ minWidth: 80 }}
+              sx={{
+                color: '#000000',
+                borderColor: '#000000',
+                backgroundColor: 'transparent',
+                '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
+              }}
             >
               Cancel
-            </Button>
-            <Button
+            </AppButton>
+            <AppButton
               type='submit'
               variant='contained'
-              disabled={loading}
-              sx={{ minWidth: 80 }}
+              variantType='primary'
+              disabled={submitDisabled}
+              sx={{ bgcolor: 'var(--primary-dark-color)', color: '#FFFFFF' }}
             >
               {loading ? 'Saving...' : asset ? 'Update' : 'Create'}
-            </Button>
+            </AppButton>
           </DialogActions>
         </form>
       </Dialog>
