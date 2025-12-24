@@ -12,7 +12,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-// import { COLORS } from '../../constants/appConstants';
 import AppInputField from './AppInputField';
 import AppDropdown from './AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -40,6 +39,11 @@ interface AppFormModalProps {
   fields: FormField[];
   submitLabel?: string;
   cancelLabel?: string;
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+  };
   isSubmitting?: boolean;
   hasChanges?: boolean;
   isRtl?: boolean;
@@ -54,6 +58,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   fields,
   submitLabel = 'Create',
   cancelLabel = 'Cancel',
+  secondaryAction,
   isSubmitting = false,
   hasChanges = true,
   isRtl = false,
@@ -95,7 +100,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             sm: '90%',
             lg: '527px',
           },
-          backgroundColor: '#FFFFFF',
+          backgroundColor: theme.palette.background.paper,
           margin: { xs: '16px', lg: 'auto' },
         },
       }}
@@ -117,7 +122,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           fontWeight={500}
           fontSize={{ xs: '16px', sm: '24px', lg: '28px' }}
           lineHeight={{ xs: '28px', sm: '32px', lg: '36px' }}
-          color='#2C2C2C'
+          sx={{ color: theme.palette.text.primary }}
         >
           {title}
         </Typography>
@@ -130,7 +135,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             top: 0,
             right: isRtl ? 'auto' : 0,
             left: isRtl ? 0 : 'auto',
-            color: '#2C2C2C',
+            color: theme.palette.text.secondary,
           }}
         >
           <CloseIcon fontSize={isSmallScreen ? 'small' : 'medium'} />
@@ -161,6 +166,15 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
               gap: 2,
               width: '100%',
               direction: isRtl ? 'rtl' : 'ltr',
+              // Ensure dropdown labels and input labels are readable on small screens
+              '& .subheading2': {
+                fontSize: { xs: '13px', sm: 'var(--subheading2-font-size)' },
+                fontWeight: { xs: '400', sm: 'var(--subheading2-font-weight)' },
+              },
+              '& .MuiInputLabel-root': {
+                fontSize: { xs: '13px', sm: 'var(--label-font-size)' },
+                fontWeight: { xs: '400', sm: 'var(--label-font-weight)' },
+              },
             }}
           >
             {fields.map(field => (
@@ -177,7 +191,11 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
                       placeholder={field.placeholder}
                       error={!!field.error}
                       helperText={field.error}
-                      inputBackgroundColor='#F8F8F8'
+                      inputBackgroundColor={
+                        theme.palette.mode === 'dark'
+                          ? theme.palette.background.default
+                          : '#F8F8F8'
+                      }
                     />
                   ) : (
                     <AppInputField
@@ -194,7 +212,11 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
                       error={!!field.error}
                       helperText={field.error}
                       required={field.required}
-                      inputBackgroundColor='#F8F8F8'
+                      inputBackgroundColor={
+                        theme.palette.mode === 'dark'
+                          ? theme.palette.background.default
+                          : '#F8F8F8'
+                      }
                     />
                   ))}
               </Box>
@@ -213,19 +235,42 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
       >
         <Button
           onClick={onClose}
-          disabled={isSubmitting}
           sx={{
             borderRadius: '12px',
             textTransform: 'none',
-            border: '1px solid #2C2C2C',
-            color: '#2C2C2C',
+            border: `1px solid ${theme.palette.divider}`,
+            color: theme.palette.text.primary,
             px: 4,
             fontWeight: 400,
             fontSize: { xs: '14px', sm: '16px' },
+            '&:hover': {
+              border: `1px solid ${theme.palette.divider}`,
+              backgroundColor: theme.palette.action.hover,
+            },
           }}
         >
           {cancelLabel}
         </Button>
+        {secondaryAction && (
+          <Button
+            onClick={secondaryAction.onClick}
+            disabled={secondaryAction.disabled}
+            sx={{
+              borderRadius: '12px',
+              textTransform: 'none',
+              px: 4,
+              fontWeight: 400,
+              bgcolor: 'var(--primary-dark-color)',
+              color: '#FFFFFF',
+              fontSize: { xs: '14px', sm: '16px' },
+              '&:disabled': {
+                opacity: 0.7,
+              },
+            }}
+          >
+            {secondaryAction.label}
+          </Button>
+        )}
 
         <Button
           type='submit'
@@ -235,16 +280,17 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           sx={{
             borderRadius: '12px',
             textTransform: 'none',
-            color: '#FFFFFF',
+            color: theme.palette.primary.contrastText,
             px: 4,
             fontWeight: 400,
             fontSize: { xs: '14px', sm: '16px' },
-            backgroundColor: '#3083DC',
-            // '&:hover': {
-            //   bgcolor: COLORS.PRIMARY,
-            // },
+            backgroundColor: theme.palette.primary.main,
+            '&:hover': {
+              backgroundColor: theme.palette.primary.dark,
+            },
             '&:disabled': {
-              // bgcolor: '#99c0e9',
+              backgroundColor: theme.palette.mode === 'dark' ? '#555555' : '#ccc',
+              color: theme.palette.mode === 'dark' ? '#888888' : '#999999',
             },
           }}
         >

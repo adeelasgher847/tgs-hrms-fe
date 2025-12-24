@@ -51,6 +51,7 @@ export const Icons = {
   lock: '/lockkey.svg',
   back: '/back.svg',
   sent: '/sent.svg',
+  password: '/password.svg',
 } as const;
 
 export type IconName = keyof typeof Icons;

@@ -10,64 +10,76 @@ const AuthSidebar: React.FC = () => {
         backgroundColor: 'var(--primary-dark-color)',
         justifyContent: 'center',
         alignItems: 'center',
+        minHeight: '100vh',
+        position: 'sticky',
+        top: 0,
       }}
     >
       <Box
         sx={{
           width: '100%',
-          maxWidth: '720px',
-          pl: '86px',
-          pr: 4,
+          maxWidth: { lg: '720px', xl: '800px' },
+          pl: { lg: '86px', xl: '100px' },
+          pr: { lg: 4, xl: 5 },
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
-          gap: 10,
+          height: '100%',
+          minHeight: '100vh',
         }}
       >
-        {/* Logo */}
-        <Box>
+        <Box
+          sx={{
+            alignSelf: 'flex-start',
+            mt: { lg: '88px', xl: '100px' },
+            flexShrink: 0,
+          }}
+        >
           <Box
             component='img'
             src={Icons.logoWhite}
             alt='Logo'
             sx={{
-              maxHeight: 40,
+              maxHeight: { lg: 40, xl: 48 },
               width: 'auto',
             }}
           />
         </Box>
 
-        <Box>
-          <Box
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: { lg: '50px', xl: '69px' },
+            alignSelf: 'center',
+            flex: 1,
+            mt: { lg: '80px', xl: '100px' },
+            mb: { lg: '80px', xl: '100px' },
+          }}
+        >
+          <Typography
+            variant='h1'
             sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 4,
+              fontSize: { lg: '48px', xl: '56px' },
+              fontWeight: 500,
+              color: 'var(--white-color)',
+              lineHeight: 1.2,
             }}
           >
-            <Typography
-              variant='h1'
-              sx={{
-                fontSize: '48px',
-                fontWeight: 500,
-                color: 'var(--white-color)',
-                lineHeight: 1.2,
-              }}
-            >
-              Workonnect - Let's Management Better
-            </Typography>
+            Workonnect - Let's Management Better
+          </Typography>
 
-            <Box
-              component='img'
-              src={Icons.authSidebar}
-              alt='Illustration'
-              sx={{
-                width: '100%',
-                maxWidth: '500px',
-                height: 'auto',
-              }}
-            />
-          </Box>
+          <Box
+            component='img'
+            src={Icons.authSidebar}
+            alt='Illustration'
+            sx={{
+              width: '100%',
+              maxWidth: { lg: '500px', xl: '600px' },
+              height: 'auto',
+            }}
+          />
         </Box>
       </Box>
     </Box>

@@ -1,5 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { Box, Typography, Paper, ClickAwayListener } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Paper,
+  ClickAwayListener,
+  useTheme,
+} from '@mui/material';
 import { Icons } from '../../assets/icons';
 
 interface TimeRangeSelectorProps {
@@ -19,6 +25,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 }) => {
   // language parameter is reserved for future use
   void language;
+  const theme = useTheme();
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
 
@@ -56,23 +63,24 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 1,
-            backgroundColor: 'var(--primary-color)',
+            backgroundColor: theme.palette.background.paper,
+            border: `1px solid ${theme.palette.divider}`,
             borderRadius: 'var(--border-radius-lg)',
             px: 2,
             py: 1,
             cursor: 'pointer',
             minWidth: '120px',
             transition: 'background-color 0.2s',
-            // '&:hover': {
-            //   backgroundColor: 'var(--primary-color)',
-            // },
+            '&:hover': {
+              backgroundColor: theme.palette.action.hover,
+            },
           }}
         >
           <Typography
             sx={{
               fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
               fontWeight: 500,
-              color: 'var(--primary-dark-color)',
+              color: theme.palette.text.primary,
             }}
           >
             {displayValue}
@@ -87,7 +95,9 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s',
               filter:
-                'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)',
+                theme.palette.mode === 'dark'
+                  ? 'brightness(0) saturate(100%) invert(56%)'
+                  : 'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)',
             }}
           />
         </Box>
@@ -102,11 +112,14 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               left: 0,
               mt: 1,
               minWidth: '120px',
-              backgroundColor: 'var(--primary-color)',
+              backgroundColor: theme.palette.background.paper,
               borderRadius: 'var(--border-radius-lg)',
               overflow: 'hidden',
               zIndex: 1000,
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              boxShadow:
+                theme.palette.mode === 'dark'
+                  ? '0 4px 6px rgba(0, 0, 0, 0.3)'
+                  : '0 4px 6px rgba(0, 0, 0, 0.1)',
             }}
           >
             {/* All Time Option */}
@@ -118,7 +131,9 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 cursor: 'pointer',
                 backgroundColor:
                   value === 'all-time' || value === null
-                    ? 'var(--primary-dark-color)'
+                    ? theme.palette.mode === 'dark'
+                      ? 'var(--primary-light-color)'
+                      : 'var(--primary-dark-color)'
                     : 'transparent',
                 // '&:hover': {
                 //   backgroundColor:
@@ -135,7 +150,9 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                   color:
                     value === 'all-time' || value === null
                       ? 'var(--white-color)'
-                      : 'var(--primary-dark-color)',
+                      : theme.palette.mode === 'dark'
+                        ? 'var(--primary-light-color)'
+                        : 'var(--primary-dark-color)',
                 }}
               >
                 {allTimeLabel}
@@ -156,12 +173,14 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                     py: 1.5,
                     cursor: 'pointer',
                     backgroundColor: isSelected
-                      ? 'var(--primary-dark-color)'
+                      ? theme.palette.mode === 'dark'
+                        ? 'var(--primary-light-color)'
+                        : 'var(--primary-dark-color)'
                       : 'transparent',
                     borderTop:
                       index === 0
                         ? 'none'
-                        : '1px solid rgba(48, 131, 220, 0.2)',
+                        : `1px solid ${theme.palette.divider}`,
                     // '&:hover': {
                     //   backgroundColor: isSelected
                     //     ? 'var(--primary-dark-color)'
@@ -175,7 +194,9 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                       fontWeight: 500,
                       color: isSelected
                         ? 'var(--white-color)'
-                        : 'var(--primary-dark-color)',
+                        : theme.palette.mode === 'dark'
+                          ? 'var(--primary-light-color)'
+                          : 'var(--primary-dark-color)',
                     }}
                   >
                     {optionValue.toString()}

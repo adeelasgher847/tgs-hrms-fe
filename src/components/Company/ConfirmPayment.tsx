@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
@@ -11,6 +11,7 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import signupApi from '../../api/signupApi';
 import authApi, { type LoginResponse } from '../../api/authApi';
+import billingApi from '../../api/billingApi';
 import { useUser } from '../../hooks/useUser';
 import { getStoredUser, persistAuthSession } from '../../utils/authSession';
 
@@ -62,6 +63,40 @@ const cleanupPendingSignupData = () => {
   }
 };
 
+type PendingEmployeePayment = {
+  checkoutSessionId: string;
+  returnTo?: string;
+  createdAt?: string;
+};
+
+const readPendingEmployeePayment = (): PendingEmployeePayment | null => {
+  try {
+    const raw = sessionStorage.getItem('pendingEmployeePayment');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PendingEmployeePayment>;
+    if (!parsed.checkoutSessionId || typeof parsed.checkoutSessionId !== 'string')
+      return null;
+    return {
+      checkoutSessionId: parsed.checkoutSessionId,
+      returnTo: typeof parsed.returnTo === 'string' ? parsed.returnTo : undefined,
+      createdAt:
+        typeof parsed.createdAt === 'string' ? parsed.createdAt : undefined,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const cleanupPendingEmployeePayment = () => {
+  try {
+    sessionStorage.removeItem('pendingEmployeePayment');
+  } catch {
+    // ignore
+  }
+};
+
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
 const ConfirmPayment: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -69,6 +104,8 @@ const ConfirmPayment: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const { updateUser, refreshUser } = useUser();
+  const pendingEmployeePayment = readPendingEmployeePayment();
+  const hasStartedRef = useRef(false);
 
   const loginWithPendingCredentials = useCallback(async () => {
     const credsStr = sessionStorage.getItem('pendingSignupCredentials');
@@ -116,12 +153,89 @@ const ConfirmPayment: React.FC = () => {
     try {
       setLoading(true);
 
-      const sessionId = searchParams.get('session_id');
+      const sessionId =
+        searchParams.get('session_id') ||
+        searchParams.get('checkoutSessionId') ||
+        searchParams.get('checkout_session_id');
       const signupSessionId = searchParams.get('signupSessionId');
       const accessToken = localStorage.getItem('accessToken');
 
+      const isEmployeeFlow = Boolean(pendingEmployeePayment);
       const isSignupFlow = Boolean(signupSessionId);
       const isLoginFlow = Boolean(accessToken && !signupSessionId);
+
+      if (isEmployeeFlow) {
+        const effectiveSessionId = sessionId || pendingEmployeePayment?.checkoutSessionId;
+
+        if (!accessToken) {
+          throw new Error('Please login again to confirm the employee payment.');
+        }
+
+        if (!effectiveSessionId) {
+          throw new Error('Missing payment session information');
+        }
+
+        // Stripe can redirect back before the payment state is fully settled (or before
+        // webhooks are processed). In that case backend may temporarily return 400.
+        // Also, React StrictMode can double-run effects in dev; we guard against that
+        // separately via `hasStartedRef`.
+        await sleep(1200);
+
+        const maxAttempts = 5;
+        let employeePaymentResult: unknown = null;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          try {
+            employeePaymentResult = await billingApi.confirmEmployeePayment({
+              checkoutSessionId: effectiveSessionId,
+            });
+            break;
+          } catch (e: unknown) {
+            const status =
+              e && typeof e === 'object' && 'response' in e
+                ? ((e as { response?: { status?: number } }).response?.status ??
+                    null)
+                : null;
+
+            const isRetriable = status === 400;
+            const isLastAttempt = attempt === maxAttempts - 1;
+
+            if (isRetriable && !isLastAttempt) {
+              // Backoff a bit more each attempt.
+              await sleep(800 * (attempt + 1));
+              continue;
+            }
+
+            throw e;
+          }
+        }
+
+        const status =
+          typeof (employeePaymentResult as Record<string, unknown>)?.status ===
+          'string'
+            ? String((employeePaymentResult as Record<string, unknown>).status)
+            : undefined;
+        const ok =
+          (typeof (employeePaymentResult as Record<string, unknown>)?.success ===
+            'boolean' &&
+            Boolean((employeePaymentResult as Record<string, unknown>).success)) ||
+          status === 'succeeded' ||
+          status === 'success';
+
+        if (!ok) {
+          throw new Error('Payment was not successful');
+        }
+
+        cleanupPendingEmployeePayment();
+        setSuccess(true);
+
+        // Give the dashboard a brief moment to mount after context is updated
+        await new Promise(resolve => setTimeout(resolve, 200));
+        navigate(pendingEmployeePayment?.returnTo || '/dashboard/EmployeeManager', {
+          replace: true,
+        });
+        return;
+      }
 
       if (!sessionId) {
         throw new Error('Missing payment session information');
@@ -183,13 +297,26 @@ const ConfirmPayment: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchParams, navigate, loginWithPendingCredentials, hydrateUserContext]);
+  }, [
+    searchParams,
+    navigate,
+    loginWithPendingCredentials,
+    hydrateUserContext,
+    pendingEmployeePayment,
+  ]);
 
   useEffect(() => {
+    // Prevent duplicate confirmation calls (React StrictMode in dev can run effects twice).
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
     handlePaymentConfirmation();
   }, [handlePaymentConfirmation]);
 
   const handleRetry = () => {
+    if (pendingEmployeePayment?.returnTo) {
+      navigate(pendingEmployeePayment.returnTo);
+      return;
+    }
     navigate('/signup/select-plan');
   };
 
@@ -289,8 +416,9 @@ const ConfirmPayment: React.FC = () => {
             Payment Successful!
           </Typography>
           <Typography color='text.secondary' sx={{ mb: 3 }}>
-            Your account has been created successfully. Redirecting to
-            dashboard...
+            {pendingEmployeePayment
+              ? 'Your employee payment has been confirmed. Redirecting to employees...'
+              : 'Your account has been created successfully. Redirecting to dashboard...'}
           </Typography>
           <CircularProgress size={24} />
         </Paper>

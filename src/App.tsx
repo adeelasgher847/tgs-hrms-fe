@@ -37,6 +37,9 @@ const ConfirmPayment = lazy(
 );
 const SignupSuccess = lazy(() => import('./components/Auth/SignupSuccess'));
 const Error404 = lazy(() => import('./components/common/Error404'));
+const EmployeePaymentReturn = lazy(
+  () => import('./components/Employee/EmployeePaymentReturn')
+);
 
 const Dashboard = lazy(() => import('./components/DashboardContent/Dashboard'));
 const DepartmentList = lazy(() =>
@@ -153,6 +156,9 @@ function App() {
                   element={<ConfirmPayment />}
                 />
                 <Route path='/signup/success' element={<SignupSuccess />} />
+
+                {/* Stripe may redirect employee payments back to /employees */}
+                <Route path='/employees' element={<EmployeePaymentReturn />} />
 
                 <Route
                   path='/dashboard/*'

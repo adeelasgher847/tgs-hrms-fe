@@ -69,6 +69,10 @@ export default function DesignationsList({
           <Card
             sx={{
               width: '100%',
+              backgroundColor: theme.palette.background.paper,
+              boxShadow: theme.palette.mode === 'dark' 
+                ? '0 1px 3px rgba(0,0,0,0.3)' 
+                : '0 1px 3px rgba(0,0,0,0.1)',
               transition: 'all 0.2s ease-in-out',
               // '&:hover': {
               //   transform: 'translateY(-2px)',
@@ -114,6 +118,7 @@ export default function DesignationsList({
                       sx={{
                         lineHeight: 1.3,
                         wordBreak: 'break-word',
+                        color: theme.palette.text.primary,
                       }}
                     >
                       {getText(designation.title, designation.titleAr)}
@@ -127,8 +132,10 @@ export default function DesignationsList({
                     onClick={() => onEdit(designation)}
                     aria-label={`Edit designation ${getText(designation.title, designation.titleAr)}`}
                     sx={{
-                      color: 'primary.main',
-                      // '&:hover': { bgcolor: 'primary.50' },
+                      color: theme.palette.primary.main,
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.hover,
+                      },
                     }}
                   >
                     <EditIcon sx={{ fontSize: 18 }} aria-hidden='true' />
@@ -138,8 +145,10 @@ export default function DesignationsList({
                     onClick={() => onDelete(designation)}
                     aria-label={`Delete designation ${getText(designation.title, designation.titleAr)}`}
                     sx={{
-                      color: 'error.main',
-                      // '&:hover': { bgcolor: 'error.50' },
+                      color: theme.palette.error.main,
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.hover,
+                      },
                     }}
                   >
                     <DeleteIcon sx={{ fontSize: 18 }} aria-hidden='true' />

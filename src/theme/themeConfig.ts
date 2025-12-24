@@ -5,9 +5,9 @@ import type { ThemeOptions } from '@mui/material/styles';
 const lightPalette = {
   mode: 'light' as 'light' | 'dark',
   primary: {
-    main: '#45407A',
-    light: '#605bd4',
-    dark: '#2d2a4f',
+    main: '#3083DC',
+    light: '#5ba0f0',
+    dark: '#2462a5',
     contrastText: '#ffffff',
   },
   secondary: {
@@ -46,8 +46,8 @@ const lightPalette = {
     label: '#000000',
   },
   button: {
-    primary: '#45407A',
-    primaryHover: '#5b56a0',
+    primary: '#3083DC',
+    primaryHover: '#5ba0f0',
     secondary: '#464b8a',
     secondaryHover: '#6b6fa8',
   },
@@ -63,9 +63,9 @@ const lightPalette = {
 const darkPalette = {
   mode: 'dark' as 'light' | 'dark',
   primary: {
-    main: '#605bd4',
-    light: '#726df0',
-    dark: '#4a47a8',
+    main: '#2462a5', // --primary-light-color
+    light: '#5ba0f0',
+    dark: '#1a4d7a',
     contrastText: '#ffffff',
   },
   secondary: {
@@ -104,8 +104,8 @@ const darkPalette = {
     label: '#cccccc',
   },
   button: {
-    primary: '#605bd4',
-    primaryHover: '#726df0',
+    primary: '#2462a5', // --primary-light-color
+    primaryHover: '#5ba0f0',
     secondary: '#6b6fa8',
     secondaryHover: '#8a8fc7',
   },

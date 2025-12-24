@@ -6,6 +6,7 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  useTheme,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -43,17 +44,15 @@ interface RecentActivityLogsProps {
 }
 
 const RecentActivityLogs: React.FC<RecentActivityLogsProps> = ({ logs }) => {
+  const theme = useTheme();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
-
-  const bgColor = darkMode ? '#111' : '#fff';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
 
   return (
     <Paper
       sx={{
         p: 3,
         borderRadius: '20px',
-        backgroundColor: bgColor,
+        backgroundColor: theme.palette.background.paper,
         boxShadow: 'none',
         height: 420,
         width: '100%',
@@ -65,9 +64,7 @@ const RecentActivityLogs: React.FC<RecentActivityLogsProps> = ({ logs }) => {
       <Typography
         variant='h6'
         fontWeight='bold'
-        color={textColor}
-        mb={2}
-        sx={{ flexShrink: 0 }}
+        sx={{ color: theme.palette.text.primary, mb: 2, flexShrink: 0 }}
       >
         Recent Activity Logs
       </Typography>
@@ -83,11 +80,15 @@ const RecentActivityLogs: React.FC<RecentActivityLogsProps> = ({ logs }) => {
               width: '8px',
             },
             '&::-webkit-scrollbar-thumb': {
-              backgroundColor: darkMode ? '#444' : '#ccc',
+              backgroundColor:
+                theme.palette.mode === 'dark' ? '#444' : '#ccc',
               borderRadius: '4px',
             },
             '&::-webkit-scrollbar-track': {
-              backgroundColor: darkMode ? '#111' : '#f5f5f5',
+              backgroundColor:
+                theme.palette.mode === 'dark'
+                  ? theme.palette.background.default
+                  : '#f5f5f5',
               borderRadius: '4px',
             },
           }}
@@ -97,24 +98,29 @@ const RecentActivityLogs: React.FC<RecentActivityLogsProps> = ({ logs }) => {
               key={log.id}
               sx={{
                 mb: 1,
-                borderBottom: '1px solid',
-                borderColor: darkMode ? '#333' : '#eee',
+                borderBottom: `1px solid ${theme.palette.divider}`,
               }}
             >
               <ListItemIcon>{getLogIcon(log.action, log.method)}</ListItemIcon>
               <ListItemText
                 primary={log.action || 'System Activity'}
                 secondary={timeAgo(log.createdAt)}
-                primaryTypographyProps={{ color: textColor }}
+                primaryTypographyProps={{
+                  color: theme.palette.text.primary,
+                }}
                 secondaryTypographyProps={{
-                  color: darkMode ? '#666' : '#999',
+                  color: theme.palette.text.secondary,
                 }}
               />
             </ListItem>
           ))}
         </List>
       ) : (
-        <Typography color={textColor} textAlign='center' mt={5}>
+        <Typography
+          sx={{ color: theme.palette.text.secondary }}
+          textAlign='center'
+          mt={5}
+        >
           No recent activity logs found
         </Typography>
       )}
