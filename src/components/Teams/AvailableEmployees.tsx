@@ -487,8 +487,8 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                         label={employee.designation?.title || 'N/A'}
                         size='small'
                         sx={{
-                          backgroundColor: '#484c7f',
-                          color: 'white',
+                          backgroundColor: '#3083DC',
+                          color: '#FFFFFF',
                           fontSize: '0.75rem',
                         }}
                       />
@@ -573,16 +573,17 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
         </DialogContent>
         <DialogActions>
           <AppButton
+            variantType='secondary'
             variant='outlined'
             text='Cancel'
             onClick={handleCloseTeamDialog}
           />
           <AppButton
+            variantType='primary'
             variant='contained'
             text='Add to Team'
             onClick={handleConfirmAddToTeam}
             disabled={!selectedTeamId}
-            sx={{ backgroundColor: COLORS.PRIMARY }}
           />
         </DialogActions>
       </Dialog>
@@ -687,16 +688,17 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
         </DialogContent>
         <DialogActions>
           <AppButton
+            variantType='secondary'
             variant='outlined'
             text='Cancel'
             onClick={handleCloseConfirmDialog}
           />
           <AppButton
+            variantType='primary'
             variant='contained'
             text='Add to Team'
             onClick={handleConfirmAddToTeamFinal}
             disabled={!selectedTeamId}
-            sx={{ backgroundColor: COLORS.PRIMARY }}
           />
         </DialogActions>
       </Dialog>

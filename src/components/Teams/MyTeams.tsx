@@ -248,9 +248,12 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   size='small'
                   icon={<PersonIcon />}
                   sx={{
-                    backgroundColor: COLORS.PRIMARY,
-                    color: 'white',
+                    backgroundColor: '#3083DC',
+                    color: '#FFFFFF',
                     fontSize: '0.75rem',
+                    '& .MuiChip-icon': {
+                      color: '#F8F8F8',
+                    },
                   }}
                 />
               </Box>
@@ -263,12 +266,12 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   startIcon={<GroupIcon />}
                   onClick={() => handleViewMembers(team)}
                   sx={{
-                    borderColor: COLORS.PRIMARY,
-                    color: COLORS.PRIMARY,
+                    borderColor: '#3083DC',
+                    color: '#3083DC',
                     backgroundColor: 'transparent',
                     '&:hover': {
-                      borderColor: COLORS.PRIMARY,
-                      backgroundColor: 'rgba(72, 76, 127, 0.1)',
+                      borderColor: '#3083DC',
+                      backgroundColor: 'rgba(48, 131, 220, 0.1)',
                     },
                   }}
                 >
@@ -281,12 +284,12 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   startIcon={<AddIcon />}
                   onClick={() => handleAddMember(team)}
                   sx={{
-                    borderColor: COLORS.PRIMARY,
-                    color: COLORS.PRIMARY,
+                    borderColor: '#3083DC',
+                    color: '#3083DC',
                     backgroundColor: 'transparent',
                     '&:hover': {
-                      borderColor: COLORS.PRIMARY,
-                      backgroundColor: 'rgba(72, 76, 127, 0.1)',
+                      borderColor: '#3083DC',
+                      backgroundColor: 'rgba(48, 131, 220, 0.1)',
                     },
                   }}
                 >
@@ -382,7 +385,6 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
             variant='contained'
             variantType='primary'
             disabled={!selectedEmployeeId}
-            sx={{ backgroundColor: '#484c7f' }}
           >
             {lang.add}
           </AppButton>

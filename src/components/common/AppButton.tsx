@@ -16,8 +16,8 @@ interface AppButtonProps extends Omit<ButtonProps, 'children'> {
 
 const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
   primary: {
-    backgroundColor: 'primary.main',
-    color: 'common.white',
+    backgroundColor: '#3083DC',
+    color: '#FFFFFF',
     textTransform: 'uppercase',
     borderRadius: '12px',
     fontWeight: 500,
@@ -29,8 +29,8 @@ const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
     },
   },
   secondary: {
-    borderColor: 'primary.main',
-    color: 'primary.main',
+    borderColor: '#3083DC',
+    color: '#3083DC',
     textTransform: 'uppercase',
     borderRadius: '12px',
     fontWeight: 500,
@@ -45,7 +45,7 @@ const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
   },
   danger: {
     backgroundColor: 'error.main',
-    color: 'common.white',
+    color: '#FFFFFF',
     textTransform: 'uppercase',
     borderRadius: '12px',
     fontWeight: 500,

@@ -13,10 +13,10 @@ import {
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import signupApi, {
   type SubscriptionPlan,
-  type StripePriceInfo,
   type CompanyDetailsRequest,
   type LogoUploadRequest,
   type PaymentRequest,
+  type StripePriceInfo,
 } from '../../api/signupApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
@@ -119,7 +119,7 @@ const SelectPlan: React.FC = () => {
           const subscriptionPlans: SubscriptionPlan[] =
             await signupApi.getSubscriptionPlans();
 
-          // Fetch Stripe prices using stripePriceId from each plan
+          // Gather price IDs (if any) from plans
           const priceIds = subscriptionPlans
             .map(p => p.stripePriceId)
             .filter((id): id is string => Boolean(id));
@@ -128,17 +128,15 @@ const SelectPlan: React.FC = () => {
             string,
             { formatted: string; intervalLabel: string }
           > = {};
+
           if (priceIds.length > 0) {
             try {
-              // Try to fetch prices from backend using Stripe price IDs
               const prices = await signupApi.getStripePrices(priceIds);
               priceInfoByPriceId = (prices || []).reduce(
                 (acc, pr: StripePriceInfo) => {
                   const amount =
                     typeof pr.unit_amount === 'number' ? pr.unit_amount : 0;
-                  const currency = pr.currency
-                    ? pr.currency.toUpperCase()
-                    : 'USD';
+                  const currency = (pr.currency || 'USD').toUpperCase();
                   const interval = pr.interval || 'month';
                   const formattedAmount = new Intl.NumberFormat(undefined, {
                     style: 'currency',
@@ -160,8 +158,7 @@ const SelectPlan: React.FC = () => {
                 >
               );
             } catch {
-              // Fallback to default prices if API is not available
-              // Fallback: Use default prices based on plan index
+              // Fallback prices if stripe API fails
               priceIds.forEach((priceId, index) => {
                 const fallbackPrices = ['$9', '$19', '$30'];
                 const fallbackIntervals = ['Month', 'Month', 'Month'];
@@ -193,9 +190,24 @@ const SelectPlan: React.FC = () => {
             const price = priceInfo ? priceInfo.formatted : '$—';
             const duration = priceInfo ? priceInfo.intervalLabel : 'Month';
 
+            let planName = plan.name;
+            if (plan.name.toLowerCase().includes('basic')) {
+              planName = 'Basic Plan';
+            } else if (
+              plan.name.toLowerCase().includes('pro') ||
+              plan.name.toLowerCase().includes('standard')
+            ) {
+              planName = 'Pro Plan';
+            } else if (
+              plan.name.toLowerCase().includes('enterprise') ||
+              plan.name.toLowerCase().includes('premium')
+            ) {
+              planName = 'Enterprise Plan';
+            }
+
             return {
               id: plan.id,
-              name: plan.name,
+              name: planName,
               price,
               duration,
               description: descriptionText,
@@ -205,9 +217,9 @@ const SelectPlan: React.FC = () => {
           });
 
           setPlans(transformedPlans);
-        } catch (e) {
+        } catch (err: unknown) {
           setError('Failed to load subscription plans. Using default plans.');
-          showError(e);
+          showError(err);
           // Keep default plans as fallback
         } finally {
           setLoading(false);

@@ -289,6 +289,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
             </FormControl>
             <DialogActions sx={{ padding: 0 }}>
               <AppButton
+                variantType='secondary'
                 variant='outlined'
                 text={lang.cancel}
                 onClick={handleClose}
@@ -296,6 +297,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
               />
               <AppButton
                 type='submit'
+                variantType='primary'
                 variant='contained'
                 text={loading ? lang.loading : lang.create}
                 disabled={
@@ -304,7 +306,6 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
                   !formData.name.trim() ||
                   !formData.manager_id
                 }
-                sx={{ backgroundColor: COLORS.PRIMARY }}
                 startIcon={loading ? <CircularProgress size={16} /> : null}
               />
             </DialogActions>

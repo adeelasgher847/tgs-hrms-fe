@@ -32,6 +32,7 @@ import AppButton from '../common/AppButton';
 import { COLORS } from '../../constants/appConstants';
 import UserAvatar from '../common/UserAvatar';
 import AppTable from '../common/AppTable';
+import { Icons } from '../../assets/icons';
 
 interface TeamMemberListProps {
   teamId: string;
@@ -384,8 +385,8 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
                     label={member.designation?.title || 'N/A'}
                     size='small'
                     sx={{
-                      backgroundColor: '#484c7f',
-                      color: 'white',
+                      backgroundColor: '#3083DC',
+                      color: '#FFFFFF',
                       fontSize: '0.75rem',
                     }}
                   />
@@ -397,10 +398,18 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
                   <IconButton
                     size='small'
                     onClick={() => handleRemoveMember(member)}
-                    sx={{ color: '#d32f2f' }}
+                    sx={{ padding: { xs: 0.5, sm: 1 } }}
                     title={lang.removeMember}
                   >
-                    <DeleteIcon />
+                    <Box
+                      component='img'
+                      src={Icons.delete}
+                      alt='Delete'
+                      sx={{
+                        width: { xs: 18, sm: 20 },
+                        height: { xs: 18, sm: 20 },
+                      }}
+                    />
                   </IconButton>
                 </TableCell>
               </TableRow>
@@ -490,15 +499,16 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
         </DialogContent>
         <DialogActions>
           <AppButton
+            variantType='secondary'
             variant='outlined'
             text='Cancel'
             onClick={() => setShowDeleteConfirmDialog(false)}
           />
           <AppButton
+            variantType='danger'
             variant='contained'
             text='Remove Member'
             onClick={handleConfirmRemoveMember}
-            sx={{ backgroundColor: COLORS.ERROR }}
           />
         </DialogActions>
       </Dialog>

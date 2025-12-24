@@ -370,6 +370,7 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
 
         <DialogActions>
           <AppButton
+            variantType='secondary'
             variant='outlined'
             text={lang.cancel}
             onClick={handleClose}
@@ -377,6 +378,7 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
           />
           <AppButton
             type='submit'
+            variantType='primary'
             variant='contained'
             text={loading ? lang.loading : lang.update}
             disabled={
@@ -384,7 +386,6 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
               // Note: manager_id is optional in UpdateTeamDto, so we don't require it
               // Button enables when name or description changes, even if manager is not selected
             }
-            sx={{ backgroundColor: COLORS.PRIMARY }}
             startIcon={loading ? <CircularProgress size={16} /> : null}
           />
         </DialogActions>

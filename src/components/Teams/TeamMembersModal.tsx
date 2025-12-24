@@ -367,8 +367,8 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
                                         }
                                         size='small'
                                         sx={{
-                                          backgroundColor: '#484c7f',
-                                          color: 'white',
+                                          backgroundColor: '#3083DC',
+                                          color: '#FFFFFF',
                                           fontSize: '0.7rem',
                                           height: 20,
                                         }}
@@ -470,8 +470,8 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
                                         }
                                         size='small'
                                         sx={{
-                                          backgroundColor: '#484c7f',
-                                          color: 'white',
+                                          backgroundColor: '#3083DC',
+                                          color: '#FFFFFF',
                                           fontSize: '0.7rem',
                                           height: 20,
                                         }}

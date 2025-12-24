@@ -448,9 +448,9 @@ const ResetPassword = () => {
                           borderRadius: '8px',
                           fontSize: '14px',
                           fontFamily: 'Open Sans, sans-serif',
-                          '&:hover': {
-                            bgcolor: 'grey.200',
-                          },
+                          // '&:hover': {
+                          //   bgcolor: 'grey.200',
+                          // },
                         }}
                       >
                         {loading ? (

@@ -16,11 +16,9 @@ import {
   IconButton,
   InputAdornment,
   CircularProgress,
-  Alert,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import GoogleIcon from '../../assets/icons/google.svg';
 import { useUser } from '../../hooks/useUser';
 import { getDefaultDashboardRoute } from '../../utils/permissions';
 import { useGoogleScript } from '../../hooks/useGoogleScript';
@@ -75,9 +73,27 @@ const Login: React.FC = () => {
 
   const [emailError, setEmailError] = useState<string>('');
   const [passwordError, setPasswordError] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
   const { snackbar, showError, closeSnackbar } = useErrorHandler();
   const [isLoading, setIsLoading] = useState(false);
+
+  // User-preferred fallback message for password errors
+  const USER_PASSWORD_MSG = 'incorrect pasword.Please try agin.';
+
+  const normalizePasswordError = (msg?: unknown) => {
+    const raw = msg === undefined || msg === null ? '' : String(msg);
+    const lower = raw.toLowerCase();
+    // If message is empty or generic/small, prefer the USER_PASSWORD_MSG
+    if (!raw) return USER_PASSWORD_MSG;
+    if (
+      lower.includes('incorrect') ||
+      lower.includes('invalid credentials') ||
+      lower.includes('wrong password') ||
+      lower.includes('invalid')
+    ) {
+      return USER_PASSWORD_MSG;
+    }
+    return raw;
+  };
 
   useEffect(() => {
     const rememberedStr = localStorage.getItem('rememberedLogin');
@@ -130,7 +146,6 @@ const Login: React.FC = () => {
     const value = e.target.value;
     setEmail(value);
     setEmailError(''); // Clear email error when user types
-    setError(null); // Clear general error when user types
 
     // Only auto-fill password if email matches remembered email exactly
     if (remembered && value === remembered.email) {
@@ -237,7 +252,6 @@ const Login: React.FC = () => {
     let valid = true;
     setEmailError('');
     setPasswordError('');
-    setError(null);
 
     if (!email) {
       setEmailError(
@@ -306,21 +320,59 @@ const Login: React.FC = () => {
         message?: string;
       };
       const data = error?.response?.data ?? null;
+
+      // Clear previous errors
+      setEmailError('');
+      setPasswordError('');
+
       if (data?.field === 'email') {
         setEmailError(data.message || '');
-        setError(null);
       } else if (data?.field === 'password') {
-        setPasswordError(data.message || '');
-        setError(null);
-      } else if (data?.message) {
-        setError(String(data.message));
+        setPasswordError(normalizePasswordError(data.message));
       } else if (data?.errors) {
-        const errorMessages = Object.values(data.errors).flat();
-        setError(String(errorMessages.join(', ')));
+        // Handle field-specific errors from errors object
+        if (data.errors.email) {
+          const emailErr = Array.isArray(data.errors.email)
+            ? data.errors.email.join(', ')
+            : String(data.errors.email);
+          setEmailError(emailErr);
+        }
+        if (data.errors.password) {
+          const passwordErr = Array.isArray(data.errors.password)
+            ? data.errors.password.join(', ')
+            : String(data.errors.password);
+          setPasswordError(normalizePasswordError(passwordErr));
+        }
+        // If no specific field errors, check for general message
+        if (!data.errors.email && !data.errors.password && data?.message) {
+          // Try to determine which field the error relates to based on message content
+          const errorMsg = String(data.message).toLowerCase();
+          if (errorMsg.includes('email') || errorMsg.includes('e-mail')) {
+            setEmailError(data.message);
+          } else {
+            setPasswordError(normalizePasswordError(data.message));
+          }
+        }
+      } else if (data?.message) {
+        // Try to determine which field the error relates to based on message content
+        const errorMsg = String(data.message).toLowerCase();
+        if (errorMsg.includes('email') || errorMsg.includes('e-mail')) {
+          setEmailError(data.message);
+        } else {
+          // Default to password field for general login errors
+          setPasswordError(normalizePasswordError(data.message));
+        }
       } else if (error.message) {
-        setError(error.message);
+        // Try to determine which field the error relates to based on message content
+        const errorMsg = String(error.message).toLowerCase();
+        if (errorMsg.includes('email') || errorMsg.includes('e-mail')) {
+          setEmailError(error.message);
+        } else {
+          setPasswordError(normalizePasswordError(error.message));
+        }
       } else {
-        setError('Failed to login. Please try again.');
+        // Use the user's requested default message for unknown login errors
+        setPasswordError(USER_PASSWORD_MSG);
       }
     } finally {
       setIsLoading(false);
@@ -367,7 +419,7 @@ const Login: React.FC = () => {
             paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
             paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
-            pt: { xs: '60px', lg: '48px' },
+            pt: { xs: '30px', lg: '48px' },
             boxSizing: 'border-box',
             minWidth: 0,
             borderTopLeftRadius: { xs: 0, lg: '20px' },
@@ -377,19 +429,27 @@ const Login: React.FC = () => {
           <Box
             sx={{
               display: { xs: 'flex', lg: 'none' },
-              position: 'absolute',
-              top: { xs: 32, sm: 40 },
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 2,
+              width: '90%',
+              justifyContent: 'center',
               alignItems: 'center',
+              mb: { xs: 6, lg: 0 },
+              position: { xs: 'relative', lg: 'absolute' },
+              top: { xs: 10, lg: 32 },
+              left: { xs: 'auto', lg: '50%' },
+              transform: { xs: 'none', lg: 'translateX(-50%)' },
+              zIndex: 2,
             }}
           >
             <Box
               component='img'
               src={Icons.logoWhite}
               alt='Logo'
-              sx={{ maxHeight: 40 }}
+              sx={{
+                width: { xs: '100%', lg: 'auto' },
+                maxWidth: { xs: '100%', md: '520px', lg: 'none' },
+                maxHeight: { xs: 'auto', lg: 40 },
+                objectFit: 'contain',
+              }}
             />
           </Box>
           <Box
@@ -400,7 +460,7 @@ const Login: React.FC = () => {
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
               borderRadius: { xs: '30px', lg: 0 },
               p: { xs: 2, sm: 3, md: 4 },
-              mt: { xs: '60px', sm: '70px', lg: 0 },
+              mt: { xs: 0, lg: 0 },
               boxSizing: 'border-box',
               minWidth: 0,
             }}
@@ -421,11 +481,11 @@ const Login: React.FC = () => {
               sx={{
                 fontSize: { xs: '32px', lg: '48px' },
                 fontWeight: 700,
-                mb: 1,
+                // mb: 0.5,
                 color: { xs: '#001218', lg: 'inherit' },
               }}
             >
-              {lang === 'ar' ? 'تسجيل الدخول' : 'Sign In'}
+              {lang === 'ar' ? 'تسجيل الدخول' : 'Login'}
             </Typography>
             <Typography
               sx={{
@@ -436,22 +496,9 @@ const Login: React.FC = () => {
               }}
             >
               {lang === 'ar'
-                ? 'وصول مجاني إلى لوحة التحكم الخاصة بنا.'
-                : 'Free access to our dashboard.'}
+                ? 'أدخل بياناتك للمتابعة'
+                : 'Enter your details to continue'}
             </Typography>
-            {error && (
-              <Alert
-                severity='error'
-                sx={{
-                  mb: 2,
-                  '& .MuiAlert-message': {
-                    fontSize: { xs: '12px', sm: '14px' },
-                  },
-                }}
-              >
-                {error}
-              </Alert>
-            )}
             <Box
               component='form'
               onSubmit={handleSubmit}
@@ -462,65 +509,6 @@ const Login: React.FC = () => {
                 overflowX: 'hidden',
               }}
             >
-              <Box sx={{ textAlign: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Button
-                    variant='outlined'
-                    onClick={initGoogleButton}
-                    sx={{
-                      color: 'var(--text-color)',
-                      borderColor: '#BDBDBD',
-                      textTransform: 'none',
-                      fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
-                      py: 1.1,
-                      px: 2,
-                      mb: 1,
-                      borderRadius: '12px',
-                      width: '100%',
-                      // '&:hover': {
-                      //   borderColor: 'var(--primary-dark-color)',
-                      //   backgroundColor: 'transparent',
-                      // },
-                    }}
-                  >
-                    <Box
-                      component='img'
-                      src={GoogleIcon}
-                      alt='Google logo'
-                      sx={{
-                        height: 16,
-                        width: 16,
-                        minWidth: 16,
-                        ...(lang === 'ar' ? { ml: '8px' } : { mr: '8px' }),
-                      }}
-                    />
-                    {lang === 'ar'
-                      ? 'تسجيل الدخول باستخدام جوجل'
-                      : 'Sign in with Google'}
-                  </Button>
-                  <Box
-                    id='googleBtn'
-                    ref={googleBtnRef}
-                    sx={{ display: 'none' }}
-                  />
-                </Box>
-                <Divider
-                  sx={{
-                    color: 'var(--dark-grey-color)',
-                    my: 2,
-                    '&::before, &::after': { borderColor: '#BDBDBD' },
-                  }}
-                >
-                  <Box px={1.5}>{lang === 'ar' ? 'أو' : 'OR'}</Box>
-                </Divider>
-              </Box>
               <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
                 <AppInputField
                   name='email'
@@ -533,85 +521,65 @@ const Login: React.FC = () => {
                   disabled={isLoading}
                   error={Boolean(emailError)}
                   helperText={emailError}
-                  placeholder='name@example.com'
+                  placeholder='Waleed@xyz.com'
                 />
               </Box>
-              <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
-                <Box
-                  sx={{
-                    position: 'relative',
+              <Box
+              // sx={{ mb: { xs: 0.5, sm: 1 } }}
+              >
+                <AppInputField
+                  name='password'
+                  label={lang === 'ar' ? 'كلمة المرور' : 'Password'}
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  fullWidth
+                  value={password}
+                  onChange={e => {
+                    setPassword(e.target.value);
+                    setPasswordError('');
                   }}
-                >
-                  <AppInputField
-                    name='password'
-                    label={lang === 'ar' ? 'كلمة المرور' : 'Password'}
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    fullWidth
-                    value={password}
-                    onChange={e => {
-                      setPassword(e.target.value);
-                      setPasswordError('');
-                      setError(null);
-                    }}
-                    disabled={isLoading}
-                    error={Boolean(passwordError)}
-                    helperText={passwordError}
-                    placeholder='********'
-                    containerSx={{
-                      '& label': {
-                        position: 'relative',
-                        width: '100%',
-                        '&::after': {
-                          content: '""',
-                          position: 'absolute',
-                          right: 0,
-                          top: 0,
-                        },
+                  disabled={isLoading}
+                  error={Boolean(passwordError)}
+                  helperText={passwordError}
+                  placeholder='********'
+                  containerSx={{
+                    '& label': {
+                      position: 'relative',
+                      width: '100%',
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        right: 0,
+                        top: 0,
                       },
-                    }}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position='end'>
-                          <IconButton
-                            onClick={handleTogglePassword}
-                            edge='end'
-                            sx={{ color: 'var(--dark-grey-color)' }}
-                          >
-                            {showPassword ? (
-                              <VisibilityOff sx={{ width: 20, height: 20 }} />
-                            ) : (
-                              <Visibility sx={{ width: 20, height: 20 }} />
-                            )}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <Link
-                    component={RouterLink}
-                    to='/forget'
-                    sx={{
-                      position: 'absolute',
-                      top: { xs: '2px', lg: '2px' },
-                      right: 0,
-                      color: 'var(--primary-dark-color)',
-                      textDecoration: 'none',
-                      fontWeight: 500,
-                      fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
-                      zIndex: 1,
-                      // '&:hover': { textDecoration: 'underline' },
-                    }}
-                  >
-                    {lang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
-                  </Link>
-                </Box>
+                    },
+                  }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        <IconButton
+                          onClick={handleTogglePassword}
+                          edge='end'
+                          sx={{ color: 'var(--dark-grey-color)' }}
+                        >
+                          {showPassword ? (
+                            <VisibilityOff sx={{ width: 20, height: 20 }} />
+                          ) : (
+                            <Visibility sx={{ width: 20, height: 20 }} />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
               </Box>
               <Box
                 sx={{
-                  mb: { xs: 2, sm: 3 },
+                  mb: { xs: 1, sm: 3 },
                   display: 'flex',
-                  flexDirection: 'column',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                 }}
               >
                 <FormControlLabel
@@ -638,6 +606,19 @@ const Login: React.FC = () => {
                     </Typography>
                   }
                 />
+                <Link
+                  component={RouterLink}
+                  to='/forget'
+                  sx={{
+                    color: 'var(--primary-dark-color)',
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                    fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
+                    // '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  {lang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot Password?'}
+                </Link>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
                 <Button
@@ -648,13 +629,13 @@ const Login: React.FC = () => {
                     backgroundColor: 'var(--primary-dark-color)',
                     color: 'var(--white-color)',
                     fontWeight: 600,
-                    borderRadius: 'var(--border-radius-lg)',
-                    fontSize: 'var(--body-font-size)',
+                    borderRadius: '12px',
+                    fontSize: '16px',
                     textTransform: 'none',
                     padding: { xs: '8px 32px', lg: '8px 32px' },
                     height: { xs: '40px', lg: 'auto' },
                     gap: { xs: '4px', lg: 0 },
-                    width: { xs: '100%', lg: 'auto' },
+                    width: { xs: '100%', lg: '200px' },
                     // '&:hover': {
                     //   backgroundColor: 'var(--primary-light-color)',
                     // },
@@ -669,35 +650,97 @@ const Login: React.FC = () => {
                   ) : lang === 'ar' ? (
                     'تسجيل الدخول'
                   ) : (
-                    'Sign In'
+                    'Login'
                   )}
                 </Button>
               </Box>
-              <Typography
-                align='center'
-                className='label'
-                sx={{
-                  color: 'var(--dark-grey-color)',
-                  fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
-                }}
-              >
-                {lang === 'ar'
-                  ? 'ليس لديك حساب بعد؟ '
-                  : "Don't have an account yet? "}
-                <Link
-                  component={RouterLink}
-                  to='/Signup'
+              <Box sx={{ textAlign: 'center', mb: 2 }}>
+                <Divider
                   sx={{
-                    color: 'var(--primary-dark-color)',
-                    textDecoration: 'none',
-                    fontWeight: 500,
-                    fontSize: 'inherit',
-                    // '&:hover': { textDecoration: 'underline' },
+                    color: 'var(--dark-grey-color)',
+                    my: 2,
+                    '&::before, &::after': { borderColor: '#BDBDBD' },
                   }}
                 >
-                  {lang === 'ar' ? 'سجل هنا' : 'Sign up here'}
-                </Link>
-              </Typography>
+                  <Box px={1.5} fontSize={{ xs: '14px', lg: '20px' }}>
+                    {lang === 'ar' ? 'أو' : 'OR'}
+                  </Box>
+                </Divider>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 1.5,
+                  }}
+                >
+                  <Typography
+                    align='center'
+                    className='label'
+                    sx={{
+                      color: 'var(--dark-grey-color)',
+                      fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
+                    }}
+                  >
+                    {lang === 'ar'
+                      ? 'ليس لديك حساب؟ '
+                      : "Don't have an account? "}
+                    <Link
+                      component={RouterLink}
+                      to='/Signup'
+                      sx={{
+                        color: 'var(--primary-dark-color)',
+                        textDecoration: 'none',
+                        fontWeight: 500,
+                        fontSize: 'inherit',
+                        // '&:hover': { textDecoration: 'underline' },
+                      }}
+                    >
+                      {lang === 'ar' ? 'سجل' : 'Sign Up'}
+                    </Link>
+                  </Typography>
+                  <Button
+                    variant='outlined'
+                    onClick={initGoogleButton}
+                    sx={{
+                      color: 'var(--text-color)',
+                      borderColor: '#BDBDBD',
+                      textTransform: 'none',
+                      fontSize: { xs: '12px', sm: '24px' },
+                      fontWeight: 600,
+                      py: 1.1,
+                      px: 2,
+                      mb: 1,
+                      borderRadius: '12px',
+                      width: '100%',
+                      // '&:hover': {
+                      //   borderColor: 'var(--primary-dark-color)',
+                      //   backgroundColor: 'transparent',
+                      // },
+                    }}
+                  >
+                    <Box
+                      component='img'
+                      src={Icons.google}
+                      alt='Google logo'
+                      sx={{
+                        height: '32px',
+                        width: '32px',
+                        ...(lang === 'ar' ? { ml: '8px' } : { mr: '8px' }),
+                      }}
+                    />
+                    {lang === 'ar'
+                      ? 'تسجيل الدخول باستخدام جوجل'
+                      : 'Continue with Google'}
+                  </Button>
+                  <Box
+                    id='googleBtn'
+                    ref={googleBtnRef}
+                    sx={{ display: 'none' }}
+                  />
+                </Box>
+              </Box>
             </Box>
           </Box>
         </Box>
