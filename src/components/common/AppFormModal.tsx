@@ -39,6 +39,11 @@ interface AppFormModalProps {
   fields: FormField[];
   submitLabel?: string;
   cancelLabel?: string;
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+  };
   isSubmitting?: boolean;
   hasChanges?: boolean;
   isRtl?: boolean;
@@ -53,6 +58,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   fields,
   submitLabel = 'Create',
   cancelLabel = 'Cancel',
+  secondaryAction,
   isSubmitting = false,
   hasChanges = true,
   isRtl = false,
@@ -221,7 +227,6 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
       >
         <Button
           onClick={onClose}
-          disabled={isSubmitting}
           sx={{
             borderRadius: '12px',
             textTransform: 'none',
@@ -234,28 +239,28 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
         >
           {cancelLabel}
         </Button>
+        {secondaryAction && (
+          <Button
+            onClick={secondaryAction.onClick}
+            disabled={secondaryAction.disabled}
+            sx={{
+              borderRadius: '12px',
+              textTransform: 'none',
+              px: 4,
+              fontWeight: 400,
+              bgcolor: 'var(--primary-dark-color)',
+              color: '#FFFFFF',
+              fontSize: { xs: '14px', sm: '16px' },
+              '&:disabled': {
+                opacity: 0.7,
+              },
+            }}
+          >
+            {secondaryAction.label}
+          </Button>
+        )}
 
-        <Button
-          type='submit'
-          variant='contained'
-          disabled={isSubmitting || !hasChanges}
-          onClick={handleSubmit}
-          sx={{
-            borderRadius: '12px',
-            textTransform: 'none',
-            color: '#FFFFFF',
-            px: 4,
-            fontWeight: 400,
-            fontSize: { xs: '14px', sm: '16px' },
-            backgroundColor: '#3083DC',
-            // '&:hover': { backgroundColor: '#2b78c9' },
-            '&:disabled': {
-              // bgcolor: '#99c0e9',
-            },
-          }}
-        >
-          {isSubmitting ? 'Saving...' : submitLabel}
-        </Button>
+        {/*  */}
       </DialogActions>
     </Dialog>
   );

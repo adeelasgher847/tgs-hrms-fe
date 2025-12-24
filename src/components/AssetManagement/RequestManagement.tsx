@@ -7,14 +7,10 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   MenuItem,
   Tabs,
   Tab,
-  InputAdornment,
+  TextField,
   Avatar,
   Tooltip,
   Menu,
@@ -26,7 +22,6 @@ import {
   Alert,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
   Visibility as ViewIcon,
@@ -36,12 +31,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import type {
-  AssetRequest,
-  Asset,
-  AssetCategory,
-  AssetStatus,
-} from '../../types/asset';
+import type { AssetRequest, Asset, AssetStatus } from '../../types/asset';
 import {
   assetApi,
   type AssetRequest as ApiAssetRequest,
@@ -53,11 +43,12 @@ import type { AxiosError } from 'axios';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
-import AppButton from '../common/AppButton';
-import AppTextField from '../common/AppTextField';
+// AppButton not used in this file after switching to AppFormModal
 import AppSelect from '../common/AppSelect';
 import AppTable from '../common/AppTable';
 import AppCard from '../common/AppCard';
+import AppSearch from '../common/AppSearch';
+import AppFormModal, { type FormField } from '../common/AppFormModal';
 import { PAGINATION } from '../../constants/appConstants';
 
 // Extended interface for API asset request response that may include additional fields
@@ -70,28 +61,16 @@ interface ApiAssetRequestExtended extends Omit<ApiAssetRequest, 'category_id'> {
     description?: string | null;
     icon?: string | null;
   };
-  subcategory_name?: string;
   subcategory?:
-    | {
-        id: string;
-        name: string;
-        description?: string | null;
-      }
-    | string
     | {
         id?: string;
         name?: string;
         description?: string | null;
-        title?: string;
-        subcategory_name?: string;
-        subcategoryName?: string;
-        display_name?: string;
-        label?: string;
-      };
+      }
+    | string
+    | null;
   subcategory_name?: string;
-  subcategoryId?: string;
   subcategoryName?: string;
-  rejection_reason?: string | null;
   requestedByName?: string;
   employee_id?: string;
   employee_name?: string;
@@ -119,7 +98,7 @@ interface ApiAssetRequestExtended extends Omit<ApiAssetRequest, 'category_id'> {
 const normalizeRequestStatus = (
   status: string
 ): 'pending' | 'approved' | 'rejected' | 'cancelled' => {
-  const normalized = status.toLowerCase().trim();
+  const normalized = (status || '').toLowerCase().trim();
   switch (normalized) {
     case 'pending':
       return 'pending';
@@ -185,6 +164,7 @@ const RequestManagement: React.FC = () => {
     statusFilter?: string;
   } | null>(null);
   const assetsFetchedRef = React.useRef(false); // Track if assets have been fetched
+  const backendSupportsFilteringRef = React.useRef(false); // feature-detect whether backend supports status filtering
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
   const lastTabRef = React.useRef(0); // Track last tab to detect tab changes
   const [searchTerm, setSearchTerm] = useState('');
@@ -210,7 +190,12 @@ const RequestManagement: React.FC = () => {
     }
   };
 
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<{
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  }>({
     page: 1,
     limit: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
@@ -222,7 +207,7 @@ const RequestManagement: React.FC = () => {
     handleSubmit,
     reset,
     watch,
-    // setValue,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
@@ -297,7 +282,7 @@ const RequestManagement: React.FC = () => {
             name: mainCategoryName,
             nameAr: mainCategoryName,
             description: '',
-            color: '#757575',
+            color: 'var(--primary-dark-color)',
             requestedItem: subcategoryName || undefined,
           },
           subcategoryId: subcategoryId || undefined,
@@ -427,7 +412,7 @@ const RequestManagement: React.FC = () => {
                   name: categoryName,
                   nameAr: categoryName,
                   description: '',
-                  color: '#757575',
+                  color: 'var(--primary-dark-color)',
                 },
             status: apiAsset.status as AssetStatus,
             assignedTo: apiAsset.assigned_to as string | undefined,
@@ -505,7 +490,7 @@ const RequestManagement: React.FC = () => {
 
           if (allMatchFilter && testResponse.total && testResponse.totalPages) {
             // Backend supports filtering - use normal pagination
-            backendSupportsFiltering = true;
+            backendSupportsFilteringRef.current = true;
 
             // Build API filters for the requested page
             const apiFilters: {
@@ -755,7 +740,7 @@ const RequestManagement: React.FC = () => {
                     name: categoryName,
                     nameAr: categoryName,
                     description: '',
-                    color: '#757575',
+                    color: 'var(--primary-dark-color)',
                   },
               status: apiAsset.status as AssetStatus,
               assignedTo: apiAsset.assigned_to as string | undefined,
@@ -969,8 +954,9 @@ const RequestManagement: React.FC = () => {
   }, [assets, selectedRequest]);
 
   // Get filtered requests for display (status filtering is done by backend, only search is client-side)
-  const getFilteredRequestsByTab = () => {
-    return filteredRequests;
+  const getFilteredRequestsByTab = (status?: string) => {
+    if (!status || status === 'all') return filteredRequests;
+    return filteredRequests.filter(r => r.status === status);
   };
 
   const handleProcessRequest = (request: AssetRequest) => {
@@ -1240,7 +1226,7 @@ const RequestManagement: React.FC = () => {
                   name: categoryName,
                   nameAr: categoryName,
                   description: '',
-                  color: '#757575',
+                  color: 'var(--primary-dark-color)',
                   subcategories: [],
                 },
             status: apiAsset.status as AssetStatus,
@@ -1340,7 +1326,7 @@ const RequestManagement: React.FC = () => {
                   name: mainCategoryName || 'Unknown Category',
                   nameAr: apiRequest.asset_category || 'Unknown Category',
                   description: '',
-                  color: '#757575',
+                  color: 'var(--primary-dark-color)',
                   requestedItem: subcategoryName || apiRequest.asset_category,
                 },
             remarks: apiRequest.remarks,
@@ -1404,6 +1390,276 @@ const RequestManagement: React.FC = () => {
     };
   }, [statusCounts]);
 
+  const viewModalFields = React.useMemo((): FormField[] => {
+    if (!selectedRequest) return [];
+
+    return [
+      {
+        name: 'headingEmployeeInfo',
+        label: '',
+        value: '',
+        onChange: () => {},
+        component: (
+          <Box sx={{ mb: 1 }}>
+            <Typography fontWeight={600} className='subheading2'>
+              Employee Information
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        name: 'employeeInfo',
+        label: 'Employee',
+        value: selectedRequest.employeeName || '',
+        onChange: () => {},
+        component: (
+          <Box>
+            <Typography variant='body1' fontWeight={600}>
+              {selectedRequest.employeeName}
+            </Typography>
+            <Typography variant='caption' color='text.secondary'>
+              {selectedRequest.category.name}
+            </Typography>
+            {(selectedRequest.subcategoryName ||
+              selectedRequest.category.requestedItem) && (
+              <Typography
+                variant='caption'
+                color='text.secondary'
+                sx={{ display: 'block', mt: 0.5 }}
+              >
+                {selectedRequest.subcategoryName ||
+                  selectedRequest.category.requestedItem}
+              </Typography>
+            )}
+          </Box>
+        ),
+      },
+      {
+        name: 'headingRequestInfo',
+        label: '',
+        value: '',
+        onChange: () => {},
+        component: (
+          <Box sx={{ mt: 1 }}>
+            <Typography fontWeight={600} className='subheading2'>
+              Request Information
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        name: 'status',
+        label: 'Status',
+        value: selectedRequest.status || '',
+        onChange: () => {},
+        component: (
+          <StatusChip status={selectedRequest.status} type='request' />
+        ),
+      },
+      {
+        name: 'requestedDate',
+        label: 'Requested Date',
+        value: selectedRequest.requestedDate || '',
+        onChange: () => {},
+        component: (
+          <Typography>{formatDate(selectedRequest.requestedDate)}</Typography>
+        ),
+      },
+      {
+        name: 'headingEmployeeRemarks',
+        label: '',
+        value: '',
+        onChange: () => {},
+        component: (
+          <Box sx={{ mt: 1 }}>
+            <Typography fontWeight={600} className='subheading2'>
+              Employee Remarks
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        name: 'remarks',
+        label: 'Remarks',
+        value: selectedRequest.remarks || '',
+        onChange: () => {},
+        component: selectedRequest.remarks ? (
+          <Typography variant='body2'>{selectedRequest.remarks}</Typography>
+        ) : (
+          <Typography variant='body2' color='text.secondary'>
+            No remarks
+          </Typography>
+        ),
+      },
+      {
+        name: 'headingProcessing',
+        label: '',
+        value: '',
+        onChange: () => {},
+        component: (
+          <Box sx={{ mt: 1 }}>
+            <Typography fontWeight={600} className='subheading2'>
+              Processing Information
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        name: 'processing',
+        label: 'Processing Information',
+        value: selectedRequest.processedDate || '',
+        onChange: () => {},
+        component: (
+          <Box>
+            {selectedRequest.processedDate && (
+              <Typography variant='body2'>
+                <strong>Processed Date:</strong>{' '}
+                {new Date(selectedRequest.processedDate).toLocaleDateString()}
+              </Typography>
+            )}
+            {selectedRequest.processedByName && (
+              <Typography variant='body2'>
+                <strong>Processed By:</strong> {selectedRequest.processedByName}
+              </Typography>
+            )}
+            {selectedRequest.assignedAssetName && (
+              <Alert severity='success' sx={{ mt: 1 }}>
+                <Typography variant='body2'>
+                  <strong>Assigned Asset:</strong>{' '}
+                  {selectedRequest.assignedAssetName}
+                </Typography>
+              </Alert>
+            )}
+            {selectedRequest.rejectionReason &&
+              selectedRequest.rejectionReason.trim() !== '' && (
+                <Alert severity='error' sx={{ mt: 1 }}>
+                  <Typography variant='body2'>
+                    <strong>Rejection Reason:</strong>{' '}
+                    {selectedRequest.rejectionReason}
+                  </Typography>
+                </Alert>
+              )}
+          </Box>
+        ),
+      },
+    ];
+  }, [selectedRequest]);
+
+  const processModalFields = React.useMemo((): FormField[] => {
+    return [
+      {
+        name: 'action',
+        label: 'Action',
+        value: '',
+        onChange: () => {},
+        component: (
+          <Controller
+            name='action'
+            control={control}
+            render={({ field }) => (
+              <AppSelect
+                label='Action'
+                fullWidth
+                error={!!errors.action}
+                disabled={loading}
+                {...field}
+              >
+                <MenuItem value='approve'>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <ApproveIcon color='success' />
+                    Approve Request
+                  </Box>
+                </MenuItem>
+                <MenuItem value='reject'>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <RejectIcon color='error' />
+                    Reject Request
+                  </Box>
+                </MenuItem>
+              </AppSelect>
+            )}
+          />
+        ),
+      },
+      {
+        name: 'assignedAssetId',
+        label: 'Assign Asset',
+        value: '',
+        onChange: () => {},
+        component: (
+          <Controller
+            name='assignedAssetId'
+            control={control}
+            render={({ field }) => (
+              <AppSelect
+                label='Assign Asset'
+                fullWidth
+                error={!!errors.assignedAssetId}
+                disabled={loading || availableAssets.length === 0}
+                {...field}
+              >
+                {availableAssets.length === 0 ? (
+                  <MenuItem disabled>No available assets found</MenuItem>
+                ) : (
+                  availableAssets.map(asset => (
+                    <MenuItem key={asset.id} value={asset.id}>
+                      <Box>
+                        <Typography variant='body2' fontWeight={500}>
+                          {asset.name}
+                        </Typography>
+                        <Typography variant='caption' color='text.secondary'>
+                          {asset.category.name} - {asset.status}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  ))
+                )}
+              </AppSelect>
+            )}
+          />
+        ),
+      },
+      {
+        name: 'rejectionReason',
+        label: 'Rejection Reason (Optional)',
+        value: '',
+        onChange: () => {},
+        component: (
+          <Controller
+            name='rejectionReason'
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label='Rejection Reason (Optional)'
+                sx={{ width: '100%' }}
+                multiline
+                rows={3}
+                placeholder='Optionally provide a reason for rejection...'
+                error={!!errors.rejectionReason}
+                helperText={errors.rejectionReason?.message}
+                disabled={loading}
+              />
+            )}
+          />
+        ),
+      },
+      {
+        name: 'remarksInfo',
+        label: 'Employee Remarks',
+        value: '',
+        onChange: () => {},
+        component: selectedRequest?.remarks ? (
+          <Alert severity='info'>
+            <Typography variant='body2'>
+              <strong>Employee Remarks:</strong> {selectedRequest.remarks}
+            </Typography>
+          </Alert>
+        ) : undefined,
+      },
+    ];
+  }, [control, errors, loading, availableAssets, selectedRequest]);
+
   if (initialLoading) {
     return (
       <Box
@@ -1415,7 +1671,7 @@ const RequestManagement: React.FC = () => {
         }}
       >
         <Stack alignItems='center' py={4}>
-          <CircularProgress />
+          <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
         </Stack>
       </Box>
     );
@@ -1425,7 +1681,9 @@ const RequestManagement: React.FC = () => {
     <TableRow key={request.id} hover>
       <TableCell>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+          <Avatar
+            sx={{ width: 32, height: 32, bgcolor: 'var(--primary-dark-color)' }}
+          >
             {request.employeeName.charAt(0)}
           </Avatar>
           <Box>
@@ -1590,19 +1848,12 @@ const RequestManagement: React.FC = () => {
 
       {/* Search */}
       <AppCard sx={{ mb: 3 }}>
-        <AppTextField
+        <AppSearch
           placeholder='Search requests by employee, category, or status...'
           value={searchTerm}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setSearchTerm(e.target.value)
           }
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position='start'>
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
           sx={{ borderRadius: 2, width: '100%' }}
         />
       </AppCard>
@@ -1613,11 +1864,28 @@ const RequestManagement: React.FC = () => {
           <Tabs
             value={tabValue}
             onChange={(e, newValue) => setTabValue(newValue)}
+            sx={{
+              '& .MuiTabs-indicator': {
+                backgroundColor: 'var(--primary-dark-color)',
+              },
+            }}
           >
-            <Tab label='All Requests' />
-            <Tab label='Pending Approval' />
-            <Tab label='Approved' />
-            <Tab label='Rejected' />
+            <Tab
+              label='All Requests'
+              sx={{ '&.Mui-selected': { color: 'var(--primary-dark-color)' } }}
+            />
+            <Tab
+              label='Pending Approval'
+              sx={{ '&.Mui-selected': { color: 'var(--primary-dark-color)' } }}
+            />
+            <Tab
+              label='Approved'
+              sx={{ '&.Mui-selected': { color: 'var(--primary-dark-color)' } }}
+            />
+            <Tab
+              label='Rejected'
+              sx={{ '&.Mui-selected': { color: 'var(--primary-dark-color)' } }}
+            />
           </Tabs>
         </Box>
 
@@ -1766,373 +2034,56 @@ const RequestManagement: React.FC = () => {
         </Box>
       )}
 
-      {/* Process Request Modal */}
-      <Dialog
+      {/* Process Request Modal (shared) */}
+      <AppFormModal
         open={isProcessModalOpen}
         onClose={() => setIsProcessModalOpen(false)}
-        maxWidth='sm'
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-          },
-        }}
-      >
-        <DialogTitle>
-          <Typography variant='h6' fontWeight={600}>
-            {selectedRequest?.status === 'approved'
+        onSubmit={() => void handleSubmit(handleProcessSubmit)()}
+        title={
+          selectedRequest?.status === 'approved'
+            ? 'Assign Asset'
+            : 'Process Asset Request'
+        }
+        fields={processModalFields}
+        cancelLabel='Cancel'
+        submitLabel={
+          loading
+            ? 'Processing...'
+            : selectedRequest?.status === 'approved'
               ? 'Assign Asset'
-              : 'Process Asset Request'}
-          </Typography>
-          {selectedRequest && (
-            <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
-              {selectedRequest.employeeName} - {selectedRequest.category.name}
-              {(
-                selectedRequest.category as AssetCategory & {
-                  requestedItem?: string;
-                }
-              ).requestedItem &&
-                (
-                  selectedRequest.category as AssetCategory & {
-                    requestedItem?: string;
-                  }
-                ).requestedItem !== selectedRequest.category.name && (
-                  <span style={{ color: '#1976d2', fontWeight: 500 }}>
-                    {' '}
-                    -{' '}
-                    {
-                      (
-                        selectedRequest.category as AssetCategory & {
-                          requestedItem?: string;
-                        }
-                      ).requestedItem
-                    }
-                  </span>
-                )}
-            </Typography>
-          )}
-        </DialogTitle>
+              : selectedAction === 'approve'
+                ? 'Approve'
+                : 'Reject'
+        }
+        isSubmitting={loading}
+        hasChanges={
+          !(selectedAction === 'approve' && availableAssets.length === 0)
+        }
+        maxWidth='sm'
+        secondaryAction={{
+          label: 'Reject',
+          onClick: () => {
+            // set form action to reject then submit
+            setValue('action', 'reject');
+            void handleSubmit(handleProcessSubmit)();
+          },
+          disabled: loading,
+        }}
+      />
 
-        <form onSubmit={handleSubmit(handleProcessSubmit)}>
-          <DialogContent>
-            <Box sx={{ pt: 1 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 2,
-                  flexDirection: 'column',
-                }}
-              >
-                {selectedRequest?.status !== 'approved' && (
-                  <Box>
-                    <Controller
-                      name='action'
-                      control={control}
-                      render={({ field }) => (
-                        <AppSelect
-                          label='Action'
-                          fullWidth
-                          error={!!errors.action}
-                          disabled={loading}
-                          {...field}
-                        >
-                          <MenuItem value='approve'>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1,
-                              }}
-                            >
-                              <ApproveIcon color='success' />
-                              Approve Request
-                            </Box>
-                          </MenuItem>
-                          <MenuItem value='reject'>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1,
-                              }}
-                            >
-                              <RejectIcon color='error' />
-                              Reject Request
-                            </Box>
-                          </MenuItem>
-                        </AppSelect>
-                      )}
-                    />
-                  </Box>
-                )}
-
-                {(selectedAction === 'approve' ||
-                  selectedRequest?.status === 'approved') && (
-                  <Box>
-                    <Controller
-                      name='assignedAssetId'
-                      control={control}
-                      render={({ field }) => (
-                        <AppSelect
-                          label='Assign Asset'
-                          fullWidth
-                          error={!!errors.assignedAssetId}
-                          disabled={loading || availableAssets.length === 0}
-                          {...field}
-                        >
-                          {availableAssets.length === 0 ? (
-                            <MenuItem disabled>
-                              No available assets found
-                            </MenuItem>
-                          ) : (
-                            availableAssets.map(asset => (
-                              <MenuItem key={asset.id} value={asset.id}>
-                                <Box>
-                                  <Typography variant='body2' fontWeight={500}>
-                                    {asset.name}
-                                  </Typography>
-                                  <Typography
-                                    variant='caption'
-                                    color='text.secondary'
-                                  >
-                                    {asset.category.name} - {asset.status}
-                                  </Typography>
-                                </Box>
-                              </MenuItem>
-                            ))
-                          )}
-                        </AppSelect>
-                      )}
-                    />
-                    {availableAssets.length === 0 && (
-                      <Alert severity='error' sx={{ mt: 1 }}>
-                        <Typography variant='body2'>
-                          <strong>No available assets</strong>
-                        </Typography>
-                      </Alert>
-                    )}
-                  </Box>
-                )}
-
-                {selectedAction === 'reject' &&
-                  selectedRequest?.status !== 'approved' && (
-                    <Box>
-                      <Controller
-                        name='rejectionReason'
-                        control={control}
-                        render={({ field }) => (
-                          <AppTextField
-                            {...field}
-                            label='Rejection Reason (Optional)'
-                            sx={{ width: '100%' }}
-                            multiline
-                            rows={3}
-                            placeholder='Optionally provide a reason for rejection...'
-                            error={!!errors.rejectionReason}
-                            helperText={errors.rejectionReason?.message}
-                            disabled={loading}
-                          />
-                        )}
-                      />
-                    </Box>
-                  )}
-
-                {selectedRequest?.remarks && (
-                  <Box>
-                    <Alert severity='info'>
-                      <Typography variant='body2'>
-                        <strong>Employee Remarks:</strong>{' '}
-                        {selectedRequest.remarks}
-                      </Typography>
-                    </Alert>
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          </DialogContent>
-
-          <DialogActions sx={{ padding: '16px 24px', gap: 1 }}>
-            <AppButton
-              onClick={() => setIsProcessModalOpen(false)}
-              variant='outlined'
-              variantType='secondary'
-              disabled={loading}
-              sx={{ minWidth: 80 }}
-            >
-              Cancel
-            </AppButton>
-            <AppButton
-              type='submit'
-              variant='contained'
-              variantType='primary'
-              disabled={
-                loading ||
-                (selectedAction === 'approve' && availableAssets.length === 0)
-              }
-              sx={{ minWidth: 80 }}
-            >
-              {loading
-                ? 'Processing...'
-                : selectedRequest?.status === 'approved'
-                  ? 'Assign Asset'
-                  : selectedAction === 'approve'
-                    ? 'Approve'
-                    : 'Reject'}
-            </AppButton>
-          </DialogActions>
-        </form>
-      </Dialog>
-
-      {/* View Details Modal */}
-      <Dialog
+      {/* View Details Modal (shared) */}
+      <AppFormModal
         open={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
+        onSubmit={() => setIsViewModalOpen(false)}
+        title='Request Details'
+        fields={viewModalFields}
+        cancelLabel='Close'
+        submitLabel='Close'
+        isSubmitting={false}
+        hasChanges={false}
         maxWidth='md'
-        fullWidth
-      >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar sx={{ bgcolor: 'primary.main' }}>
-            {selectedRequest?.employeeName.charAt(0)}
-          </Avatar>
-          Request Details
-        </DialogTitle>
-        <DialogContent>
-          {selectedRequest && (
-            <Box sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {/* Employee Information */}
-                <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                  <AppCard variant='outlined' sx={{ p: 2, height: '100%' }}>
-                    <Typography variant='h6' gutterBottom color='primary'>
-                      Employee Information
-                    </Typography>
-                    <Box
-                      sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
-                    >
-                      <Typography variant='body2'>
-                        <strong>Name:</strong> {selectedRequest.employeeName}
-                      </Typography>
-                    </Box>
-                  </AppCard>
-                </Box>
-
-                {/* Request Information */}
-                <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                  <AppCard variant='outlined' sx={{ p: 2, height: '100%' }}>
-                    <Typography variant='h6' gutterBottom color='primary'>
-                      Request Information
-                    </Typography>
-                    <Box
-                      sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
-                    >
-                      <Typography variant='body2'>
-                        <strong>Category:</strong>{' '}
-                        {selectedRequest.category.name}
-                      </Typography>
-                      <Typography variant='body2'>
-                        <strong>Status:</strong>
-                        <Box component='span' sx={{ ml: 1 }}>
-                          <StatusChip
-                            status={selectedRequest.status}
-                            type='request'
-                          />
-                        </Box>
-                      </Typography>
-                      <Typography variant='body2'>
-                        <strong>Requested Date:</strong>{' '}
-                        {new Date(
-                          selectedRequest.requestedDate
-                        ).toLocaleDateString()}
-                      </Typography>
-                    </Box>
-                  </AppCard>
-                </Box>
-
-                {/* Remarks */}
-                {selectedRequest.remarks && (
-                  <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                    <AppCard variant='outlined' sx={{ p: 2 }}>
-                      <Typography variant='h6' gutterBottom color='primary'>
-                        Employee Remarks
-                      </Typography>
-                      <Typography
-                        variant='body2'
-                        sx={{ fontStyle: 'italic', color: 'text.secondary' }}
-                      >
-                        "{selectedRequest.remarks}"
-                      </Typography>
-                    </AppCard>
-                  </Box>
-                )}
-
-                {/* Processing Information */}
-                {(selectedRequest.processedDate ||
-                  selectedRequest.assignedAssetName ||
-                  selectedRequest.rejectionReason) && (
-                  <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                    <AppCard variant='outlined' sx={{ p: 2 }}>
-                      <Typography variant='h6' gutterBottom color='primary'>
-                        Processing Information
-                      </Typography>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 1,
-                        }}
-                      >
-                        {selectedRequest.processedDate && (
-                          <Typography variant='body2'>
-                            <strong>Processed Date:</strong>{' '}
-                            {new Date(
-                              selectedRequest.processedDate
-                            ).toLocaleDateString()}
-                          </Typography>
-                        )}
-                        {selectedRequest.processedByName && (
-                          <Typography variant='body2'>
-                            <strong>Processed By:</strong>{' '}
-                            {selectedRequest.processedByName}
-                          </Typography>
-                        )}
-                        {selectedRequest.assignedAssetName && (
-                          <Alert severity='success' sx={{ mt: 1 }}>
-                            <Typography variant='body2'>
-                              <strong>Assigned Asset:</strong>{' '}
-                              {selectedRequest.assignedAssetName}
-                            </Typography>
-                          </Alert>
-                        )}
-                        {selectedRequest.rejectionReason &&
-                          selectedRequest.rejectionReason !== null &&
-                          selectedRequest.rejectionReason.trim() !== '' && (
-                            <Alert severity='error' sx={{ mt: 1 }}>
-                              <Typography variant='body2'>
-                                <strong>Rejection Reason:</strong>{' '}
-                                {selectedRequest.rejectionReason}
-                              </Typography>
-                            </Alert>
-                          )}
-                      </Box>
-                    </AppCard>
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <AppButton
-            onClick={() => setIsViewModalOpen(false)}
-            variant='contained'
-            variantType='primary'
-            sx={{ minWidth: 80 }}
-          >
-            Close
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+      />
 
       {/* Snackbar for notifications */}
       <ErrorSnackbar
