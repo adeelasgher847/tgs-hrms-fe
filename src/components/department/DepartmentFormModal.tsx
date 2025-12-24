@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Button,
   Box,
   IconButton,
   useMediaQuery,
@@ -17,6 +16,7 @@ import {
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
 import type { SxProps, Theme } from '@mui/material/styles';
+import AppButton from '../common/AppButton';
 import type {
   Department,
   DepartmentFormData,
@@ -25,7 +25,6 @@ import type {
 import {
   TIMEOUTS,
   VALIDATION_LIMITS,
-  COLORS,
 } from '../../constants/appConstants';
 
 interface DepartmentFormModalProps {
@@ -162,7 +161,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         gap: 3,
         mt: 2,
         direction: isRtl ? 'rtl' : 'ltr',
-        color: darkMode ? '#e0e0e0' : undefined,
+        color: theme.palette.text.primary,
       }}
     >
       {/* Department name */}
@@ -174,10 +173,25 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         error={!!errors.name}
         helperText={errors.name}
         required
-        InputLabelProps={{ sx: { color: darkMode ? '#ccc' : undefined } }}
+        InputLabelProps={{
+          sx: { color: theme.palette.text.secondary },
+        }}
         InputProps={{
           sx: {
-            color: darkMode ? '#fff' : 'inherit',
+            color: theme.palette.text.primary,
+          },
+        }}
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            '& fieldset': {
+              borderColor: theme.palette.divider,
+            },
+            '&:hover fieldset': {
+              borderColor: theme.palette.divider,
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: theme.palette.primary.main,
+            },
           },
         }}
       />
@@ -192,10 +206,25 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         helperText={errors.description}
         multiline
         rows={3}
-        InputLabelProps={{ sx: { color: darkMode ? '#ccc' : undefined } }}
+        InputLabelProps={{
+          sx: { color: theme.palette.text.secondary },
+        }}
         InputProps={{
           sx: {
-            color: darkMode ? '#fff' : 'inherit',
+            color: theme.palette.text.primary,
+          },
+        }}
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            '& fieldset': {
+              borderColor: theme.palette.divider,
+            },
+            '&:hover fieldset': {
+              borderColor: theme.palette.divider,
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: theme.palette.primary.main,
+            },
           },
         }}
       />
@@ -213,35 +242,38 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   /* ---------- action buttons ---------- */
   const actionButtons = (
     <>
-      <Button onClick={onClose} disabled={isSubmitting}>
-        {isRtl ? 'إلغاء' : 'Cancel'}
-      </Button>
-      <Button
+      <AppButton
+        variantType='secondary'
+        onClick={onClose}
+        disabled={isSubmitting}
+        text={isRtl ? 'إلغاء' : 'Cancel'}
+      />
+      <AppButton
+        variantType='primary'
         type='submit'
-        variant='contained'
         disabled={isSubmitting || !hasChanges}
         onClick={handleSubmit}
-        sx={{ bgcolor: COLORS.PRIMARY }}
-      >
-        {isSubmitting
-          ? isRtl
-            ? 'جاري الحفظ...'
-            : 'Saving...'
-          : isEditing
+        text={
+          isSubmitting
             ? isRtl
-              ? 'تحديث'
-              : 'Update'
-            : isRtl
-              ? 'إنشاء'
-              : 'Create'}
-      </Button>
+              ? 'جاري الحفظ...'
+              : 'Saving...'
+            : isEditing
+              ? isRtl
+                ? 'تحديث'
+                : 'Update'
+              : isRtl
+                ? 'إنشاء'
+                : 'Create'
+        }
+      />
     </>
   );
 
   const paperSx: SxProps<Theme> = {
     direction: isRtl ? 'rtl' : 'ltr',
-    backgroundColor: darkMode ? '#1e1e1e' : '#fff',
-    color: darkMode ? '#e0e0e0' : undefined,
+    backgroundColor: theme.palette.background.paper,
+    color: theme.palette.text.primary,
   };
 
   /* ---------- MOBILE drawer ---------- */
@@ -269,11 +301,9 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
               onClick={onClose}
               size='small'
               aria-label='Close dialog'
+              sx={{ color: theme.palette.text.secondary }}
             >
-              <CloseIcon
-                sx={{ color: darkMode ? '#fff' : undefined }}
-                aria-hidden='true'
-              />
+              <CloseIcon aria-hidden='true' />
             </IconButton>
           </Box>
           {formContent}
@@ -314,7 +344,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
             right: isRtl ? 'auto' : 8,
             left: isRtl ? 8 : 'auto',
             top: 8,
-            color: darkMode ? '#fff' : undefined,
+            color: theme.palette.text.secondary,
           }}
         >
           <CloseIcon />

@@ -95,7 +95,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             sm: '90%',
             lg: '527px',
           },
-          backgroundColor: '#FFFFFF',
+          backgroundColor: theme.palette.background.paper,
           margin: { xs: '16px', lg: 'auto' },
         },
       }}
@@ -117,7 +117,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           fontWeight={500}
           fontSize={{ xs: '16px', sm: '24px', lg: '28px' }}
           lineHeight={{ xs: '28px', sm: '32px', lg: '36px' }}
-          color='#2C2C2C'
+          sx={{ color: theme.palette.text.primary }}
         >
           {title}
         </Typography>
@@ -130,7 +130,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             top: 0,
             right: isRtl ? 'auto' : 0,
             left: isRtl ? 0 : 'auto',
-            color: '#2C2C2C',
+            color: theme.palette.text.secondary,
           }}
         >
           <CloseIcon fontSize={isSmallScreen ? 'small' : 'medium'} />
@@ -177,7 +177,11 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
                       placeholder={field.placeholder}
                       error={!!field.error}
                       helperText={field.error}
-                      inputBackgroundColor='#F8F8F8'
+                      inputBackgroundColor={
+                        theme.palette.mode === 'dark'
+                          ? theme.palette.background.default
+                          : '#F8F8F8'
+                      }
                     />
                   ) : (
                     <AppInputField
@@ -194,7 +198,11 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
                       error={!!field.error}
                       helperText={field.error}
                       required={field.required}
-                      inputBackgroundColor='#F8F8F8'
+                      inputBackgroundColor={
+                        theme.palette.mode === 'dark'
+                          ? theme.palette.background.default
+                          : '#F8F8F8'
+                      }
                     />
                   ))}
               </Box>
@@ -217,11 +225,15 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           sx={{
             borderRadius: '12px',
             textTransform: 'none',
-            border: '1px solid #2C2C2C',
-            color: '#2C2C2C',
+            border: `1px solid ${theme.palette.divider}`,
+            color: theme.palette.text.primary,
             px: 4,
             fontWeight: 400,
             fontSize: { xs: '14px', sm: '16px' },
+            '&:hover': {
+              border: `1px solid ${theme.palette.divider}`,
+              backgroundColor: theme.palette.action.hover,
+            },
           }}
         >
           {cancelLabel}
@@ -235,16 +247,17 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           sx={{
             borderRadius: '12px',
             textTransform: 'none',
-            color: '#FFFFFF',
+            color: theme.palette.primary.contrastText,
             px: 4,
             fontWeight: 400,
             fontSize: { xs: '14px', sm: '16px' },
-            backgroundColor: '#3083DC',
-            // '&:hover': {
-            //   bgcolor: COLORS.PRIMARY,
-            // },
+            backgroundColor: theme.palette.primary.main,
+            '&:hover': {
+              backgroundColor: theme.palette.primary.dark,
+            },
             '&:disabled': {
-              // bgcolor: '#99c0e9',
+              backgroundColor: theme.palette.mode === 'dark' ? '#555555' : '#ccc',
+              color: theme.palette.mode === 'dark' ? '#888888' : '#999999',
             },
           }}
         >

@@ -7,6 +7,7 @@ import {
   CircularProgress,
   TextField,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
@@ -36,12 +37,9 @@ interface TenantGrowth {
 }
 
 const EmployeeGrowthChart: React.FC = () => {
+  const theme = useTheme();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
-
-  const bgColor = darkMode ? '#111' : '#fff';
-  const borderColor = darkMode ? '#252525' : '#f0f0f0';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
 
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
@@ -135,21 +133,27 @@ const EmployeeGrowthChart: React.FC = () => {
     dataLabels: { enabled: false },
     xaxis: {
       categories: months,
-      labels: { style: { fontSize: '11px', colors: textColor, fontStyle: 'normal' } },
+      labels: {
+        style: {
+          fontSize: '11px',
+          colors: theme.palette.text.primary,
+          fontStyle: 'normal',
+        },
+      },
     },
     yaxis: {
       labels: {
         formatter: val => `${val}`,
-        style: { fontSize: '11px', colors: textColor },
+        style: { fontSize: '11px', colors: theme.palette.text.primary },
       },
     },
     legend: {
       position: 'top',
       horizontalAlign: language === 'ar' ? 'left' : 'right',
-      labels: { colors: textColor },
+      labels: { colors: theme.palette.text.primary },
     },
     grid: {
-      borderColor: borderColor,
+      borderColor: theme.palette.divider,
       padding: { top: 20, left: 10, right: 10, bottom: 10 },
     },
     colors: ['#C61952'],
@@ -175,9 +179,9 @@ const EmployeeGrowthChart: React.FC = () => {
   return (
     <Box
       sx={{
-        border: `1px solid ${borderColor}`,
+        border: `1px solid ${theme.palette.divider}`,
         borderRadius: '0.375rem',
-        backgroundColor: bgColor,
+        backgroundColor: theme.palette.background.paper,
         direction: language === 'ar' ? 'rtl' : 'ltr',
         height: 400,
         display: 'flex',
@@ -195,7 +199,11 @@ const EmployeeGrowthChart: React.FC = () => {
           gap: 2,
         }}
       >
-        <Typography fontWeight='bold' fontSize={{ xs: '20px', lg: '28px' }} color={textColor}>
+        <Typography
+          fontWeight='bold'
+          fontSize={{ xs: '20px', lg: '28px' }}
+          sx={{ color: theme.palette.text.primary }}
+        >
           {labels[language]} ({selectedYear})
         </Typography>
 
@@ -211,9 +219,10 @@ const EmployeeGrowthChart: React.FC = () => {
               value={selectedTenant}
               onChange={e => setSelectedTenant(e.target.value)}
               sx={{
-                color: textColor,
+                color: theme.palette.text.primary,
+                backgroundColor: theme.palette.background.paper,
                 '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: borderColor,
+                  borderColor: theme.palette.divider,
                 },
                 '.MuiSelect-select': {
                   display: 'flex',
@@ -222,6 +231,32 @@ const EmployeeGrowthChart: React.FC = () => {
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
+                },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: theme.palette.background.paper,
+                    '& .MuiMenuItem-root': {
+                      color: theme.palette.text.primary,
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                      '&.Mui-selected': {
+                        backgroundColor:
+                          theme.palette.mode === 'dark'
+                            ? 'var(--primary-light-color)'
+                            : 'var(--primary-dark-color)',
+                        color: '#ffffff',
+                        '&:hover': {
+                          backgroundColor:
+                            theme.palette.mode === 'dark'
+                              ? 'var(--primary-light-color)'
+                              : 'var(--primary-dark-color)',
+                        },
+                      },
+                    },
+                  },
                 },
               }}
             >
@@ -257,9 +292,36 @@ const EmployeeGrowthChart: React.FC = () => {
               displayEmpty
               disabled={availableMonths.length === 0}
               sx={{
-                color: textColor,
+                color: theme.palette.text.primary,
+                backgroundColor: theme.palette.background.paper,
                 '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: borderColor,
+                  borderColor: theme.palette.divider,
+                },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: theme.palette.background.paper,
+                    '& .MuiMenuItem-root': {
+                      color: theme.palette.text.primary,
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                      '&.Mui-selected': {
+                        backgroundColor:
+                          theme.palette.mode === 'dark'
+                            ? 'var(--primary-light-color)'
+                            : 'var(--primary-dark-color)',
+                        color: '#ffffff',
+                        '&:hover': {
+                          backgroundColor:
+                            theme.palette.mode === 'dark'
+                              ? 'var(--primary-light-color)'
+                              : 'var(--primary-dark-color)',
+                        },
+                      },
+                    },
+                  },
                 },
               }}
             >
@@ -290,15 +352,15 @@ const EmployeeGrowthChart: React.FC = () => {
             sx={{
               width: { xs: '100%', sm: 120 },
               '& .MuiOutlinedInput-root': {
-                color: textColor,
+                color: theme.palette.text.primary,
                 '& fieldset': {
-                  borderColor: borderColor,
+                  borderColor: theme.palette.divider,
                 },
                 // '&:hover fieldset': {
-                //   borderColor: borderColor,
+                //   borderColor: theme.palette.divider,
                 // },
                 '&.Mui-focused fieldset': {
-                  borderColor: borderColor,
+                  borderColor: theme.palette.divider,
                 },
               },
             }}

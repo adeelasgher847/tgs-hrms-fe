@@ -7,13 +7,13 @@ import {
   Typography,
   Box,
   IconButton,
+  useTheme,
 } from '@mui/material';
 import {
   Close as CloseIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
 import AppButton from './AppButton';
-import { COLORS } from '../../constants/appConstants';
 import { useOutletContext } from 'react-router-dom';
 
 interface DeleteConfirmationDialogProps {
@@ -43,11 +43,10 @@ export const DeleteConfirmationDialog: React.FC<
   isRTL = false,
   loading = false,
 }) => {
+  const theme = useTheme();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
-
-  const bgColor = darkMode ? COLORS.DARK_CARD_BG : COLORS.LIGHT_CARD_BG;
-  const textColor = darkMode ? COLORS.DARK_TEXT : COLORS.LIGHT_TEXT;
-  const borderColor = darkMode ? COLORS.DARK_BORDER : COLORS.LIGHT_BORDER;
+  // darkMode is reserved for future use
+  void darkMode;
 
   const dialogTitle = title || (isRTL ? 'تأكيد الحذف' : 'Confirm Delete');
   const dialogMessage = itemName
@@ -63,13 +62,15 @@ export const DeleteConfirmationDialog: React.FC<
       PaperProps={{
         sx: {
           direction: isRTL ? 'rtl' : 'ltr',
-          backgroundColor: bgColor,
-          color: textColor,
-          border: `1px solid ${borderColor}`,
+          backgroundColor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+          border: `1px solid ${theme.palette.divider}`,
         },
       }}
     >
-      <DialogTitle sx={{ textAlign: 'center', pb: 1, color: textColor }}>
+      <DialogTitle
+        sx={{ textAlign: 'center', pb: 1, color: theme.palette.text.primary }}
+      >
         <Box
           sx={{
             display: 'flex',
@@ -78,7 +79,9 @@ export const DeleteConfirmationDialog: React.FC<
             position: 'relative',
           }}
         >
-          <Typography variant='h6'>{dialogTitle}</Typography>
+          <Typography variant='h6' sx={{ color: theme.palette.text.primary }}>
+            {dialogTitle}
+          </Typography>
           <IconButton
             onClick={onClose}
             size='small'
@@ -89,7 +92,7 @@ export const DeleteConfirmationDialog: React.FC<
               position: 'absolute',
               right: isRTL ? 'auto' : 8,
               left: isRTL ? 8 : 'auto',
-              color: textColor,
+              color: theme.palette.text.secondary,
             }}
           >
             <CloseIcon aria-hidden='true' />
@@ -100,12 +103,12 @@ export const DeleteConfirmationDialog: React.FC<
       <DialogContent>
         <Box sx={{ textAlign: 'center' }}>
           <WarningIcon
-            sx={{ fontSize: 64, color: COLORS.WARNING, mb: 2 }}
+            sx={{ fontSize: 64, color: theme.palette.warning.main, mb: 2 }}
             aria-hidden='true'
           />
           <Typography
             variant='body1'
-            sx={{ mb: 2, lineHeight: 1.6, color: textColor }}
+            sx={{ mb: 2, lineHeight: 1.6, color: theme.palette.text.primary }}
           >
             {dialogMessage}
           </Typography>

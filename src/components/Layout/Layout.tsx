@@ -154,8 +154,8 @@ const Layout = () => {
         <Box
           ref={sidebarRef}
           sx={{
-            backgroundColor: 'var(--white-color)',
-            color: 'var(--text-color)',
+            backgroundColor: muiTheme.palette.background.paper,
+            color: muiTheme.palette.text.primary,
             padding: 0,
             display: 'flex',
             flexDirection: 'column',
@@ -174,7 +174,10 @@ const Layout = () => {
               lg: '20px',
             },
             zIndex: { xs: 1000, lg: 'auto' },
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            boxShadow:
+              muiTheme.palette.mode === 'dark'
+                ? '0 1px 3px rgba(0,0,0,0.3)'
+                : '0 1px 3px rgba(0,0,0,0.1)',
           }}
         >
           <Sidebar
@@ -186,7 +189,7 @@ const Layout = () => {
           />
         </Box>
       ),
-    [sidebarOpen, rtlMode, darkMode, closeSidebar, handleSetDarkMode]
+    [sidebarOpen, rtlMode, darkMode, closeSidebar, handleSetDarkMode, muiTheme]
   );
 
   const MemoizedNavbar = useMemo(
@@ -229,7 +232,7 @@ const Layout = () => {
         width: '100%',
         // display: 'flex',
         justifyContent: 'center',
-        backgroundColor: 'var(--white-100-color)',
+        backgroundColor: muiTheme.palette.background.default,
         py: { xs: 2, md: 0 },
       }}
     >
@@ -242,7 +245,7 @@ const Layout = () => {
           overflow: 'hidden',
           borderRadius: {
             xs: '20px',
-            lg: '20px 0 0 20px', 
+            lg: '20px 0 0 20px',
           },
           height: { xs: 'auto', md: '100vh' },
         }}
@@ -255,7 +258,10 @@ const Layout = () => {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              backgroundColor:
+                muiTheme.palette.mode === 'dark'
+                  ? 'rgba(0, 0, 0, 0.7)'
+                  : 'rgba(0, 0, 0, 0.5)',
               zIndex: 999,
             }}
             onClick={closeSidebar}
@@ -279,7 +285,7 @@ const Layout = () => {
             marginRight: 0,
             width: '100%',
             direction: rtlMode ? 'rtl' : 'ltr',
-            backgroundColor: 'var(--white-100-color)',
+            backgroundColor: muiTheme.palette.background.default,
           }}
         >
           {/* Navbar (static) */}
@@ -292,7 +298,7 @@ const Layout = () => {
               flex: 1,
               px: { xs: 2, md: 3 },
               py: { xs: 2, md: 3 },
-              backgroundColor: 'var(--white-100-color)',
+              backgroundColor: muiTheme.palette.background.default,
             }}
           >
             {isDashboardRoute && (loading || !user || !isAllowed) ? (

@@ -84,10 +84,8 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const { darkMode } = useOutletContext<OutletContext>();
 
   // Dark mode styles
-  const textColor = darkMode ? '#8f8f8f' : '#000';
-  const secondaryTextColor = darkMode
-    ? '#9a9a9a'
-    : theme.palette.text.secondary;
+  const textColor = theme.palette.text.primary;
+  const secondaryTextColor = theme.palette.text.secondary;
 
   // Handle resend invite
   const handleResendInvite = (employee: Employee) => {
@@ -171,9 +169,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                 key={emp.id}
                 sx={{
                   '&:hover': {
-                    backgroundColor: darkMode
-                      ? 'rgba(255,255,255,0.08)'
-                      : 'rgba(0,0,0,0.04)',
+                    backgroundColor: theme.palette.action.hover,
                   },
                 }}
               >

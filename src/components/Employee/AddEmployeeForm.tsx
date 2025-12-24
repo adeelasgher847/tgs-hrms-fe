@@ -28,7 +28,6 @@ import {
 import { rolesApiService, type Role } from '../../api/rolesApi';
 import { validateEmailAddress } from '../../utils/validation';
 import AppButton from '../common/AppButton';
-import { COLORS } from '../../constants/appConstants';
 
 // Types
 type FormValues = EmployeeDto & {
@@ -701,6 +700,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                       boxSizing: 'border-box',
                       flex: 1,
                       height: '100%',
+                      color: darkMode ? '#eeeeee' : '#2C2C2C',
                     }}
                     countrySelectorStyleProps={{
                       buttonStyle: {
@@ -711,6 +711,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
+                        color: darkMode ? '#eeeeee' : '#2C2C2C',
                       },
                     }}
                     className='phone-input-textfield-adornment'
@@ -1158,8 +1159,11 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
             <Box
               sx={{
                 p: 2,
-                bgcolor: '#484c7f',
-                color: 'info.contrastText',
+                bgcolor:
+                  theme.palette.mode === 'dark'
+                    ? 'var(--primary-light-color)'
+                    : '#484c7f',
+                color: '#ffffff',
                 borderRadius: 1,
                 textAlign: 'center',
               }}
@@ -1182,9 +1186,9 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
         >
           <AppButton
             variant='contained'
+            variantType='primary'
             type='submit'
             disabled={!hasChanges || submitting || !isFormComplete()}
-            sx={{ backgroundColor: COLORS.PRIMARY }}
             startIcon={
               submitting ? (
                 <Box

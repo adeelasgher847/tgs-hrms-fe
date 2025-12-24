@@ -11,6 +11,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  useTheme,
 } from '@mui/material';
 import { Work, Business, Email, CalendarToday } from '@mui/icons-material';
 import employeeApi from '../../api/employeeApi';
@@ -25,6 +26,7 @@ import { formatDate } from '../../utils/dateUtils';
 import AppTable from '../common/AppTable';
 
 const EmployeeProfileView: React.FC = () => {
+  const theme = useTheme();
   const [profile, setProfile] = useState<EmployeeFullProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -250,7 +252,7 @@ const EmployeeProfileView: React.FC = () => {
         <Divider sx={{ mb: 2 }} />
         <AppTable sx={{ minWidth: 350 }}>
           <TableHead>
-            <TableRow sx={{ backgroundColor: 'rgba(76, 175, 80, 0.08)' }}>
+            <TableRow>
               <TableCell>Date</TableCell>
               <TableCell>Check In</TableCell>
               <TableCell>Check Out</TableCell>
@@ -265,8 +267,7 @@ const EmployeeProfileView: React.FC = () => {
                   <TableRow
                     key={index}
                     sx={{
-                      backgroundColor:
-                        index % 2 === 0 ? 'background.default' : 'grey.50',
+                      backgroundColor: theme.palette.background.default,
                     }}
                   >
                     <TableCell>{formatDate(log.date)}</TableCell>
@@ -301,7 +302,7 @@ const EmployeeProfileView: React.FC = () => {
         <Divider sx={{ mb: 2 }} />
         <AppTable sx={{ minWidth: 350 }}>
           <TableHead>
-            <TableRow sx={{ backgroundColor: 'rgba(33, 150, 243, 0.08)' }}>
+            <TableRow>
               <TableCell>Type</TableCell>
               <TableCell>From</TableCell>
               <TableCell>To</TableCell>
@@ -325,8 +326,7 @@ const EmployeeProfileView: React.FC = () => {
                   <TableRow
                     key={idx}
                     sx={{
-                      backgroundColor:
-                        idx % 2 === 0 ? 'background.default' : 'grey.50',
+                      backgroundColor: theme.palette.background.default,
                     }}
                   >
                     <TableCell>

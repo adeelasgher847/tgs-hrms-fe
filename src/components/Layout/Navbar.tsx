@@ -88,7 +88,8 @@ const labels = {
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
   borderRadius: '16px',
-  backgroundColor: 'var(--primary-color)',
+  backgroundColor:
+    theme.palette.mode === 'dark' ? theme.palette.action.hover : '#e0ecfa',
   height: '36px',
   display: 'flex',
   alignItems: 'center',
@@ -102,13 +103,13 @@ const Search = styled('div')(({ theme }) => ({
   },
 }));
 
-const StyledInputBase = styled(InputBase)(() => ({
+const StyledInputBase = styled(InputBase)(({ theme }) => ({
   fontSize: 'var(--body-font-size)',
   flex: 1,
   '& .MuiInputBase-input': {
     padding: 0,
     '::placeholder': {
-      color: 'var(--dark-grey-color)',
+      color: theme.palette.text.secondary,
       opacity: 1,
     },
   },
@@ -1377,23 +1378,31 @@ const Navbar: React.FC<NavbarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const textColor = darkMode ? '#8f8f8f' : '#000';
   // Language context available if needed
 
   return (
     <Box
       sx={{
         flexGrow: 1,
-        backgroundColor: 'var(--white-100-color)',
+        backgroundColor: theme.palette.background.default,
         py: { xs: 0, md: 2 },
       }}
     >
       <Paper
         elevation={0}
         sx={{
-          backgroundColor: { xs: 'transparent', md: 'var(--white-color)' },
+          backgroundColor: {
+            xs: 'transparent',
+            md: theme.palette.background.paper,
+          },
           borderRadius: { xs: 0, md: '20px' },
-          boxShadow: { xs: 'none', md: '0 1px 3px rgba(0,0,0,0.1)' },
+          boxShadow: {
+            xs: 'none',
+            md:
+              theme.palette.mode === 'dark'
+                ? '0 1px 3px rgba(0,0,0,0.3)'
+                : '0 1px 3px rgba(0,0,0,0.1)',
+          },
           px: { xs: 1.5, md: 3 },
           py: { xs: 0.75, md: 1.5 },
         }}
@@ -1415,14 +1424,17 @@ const Navbar: React.FC<NavbarProps> = ({
               onClick={onToggleSidebar}
               sx={{
                 display: { xs: 'flex', lg: 'none' },
-                color: 'var(--text-color)',
+                color: theme.palette.text.primary,
                 padding: { xs: '6px', md: '8px' },
               }}
               aria-label='Toggle sidebar menu'
               aria-expanded='false'
             >
               <MenuIcon
-                sx={{ fontSize: { xs: '20px', md: '24px' } }}
+                sx={{
+                  fontSize: { xs: '20px', md: '24px' },
+                  color: theme.palette.text.primary,
+                }}
                 aria-hidden='true'
               />
             </IconButton>
@@ -1454,7 +1466,7 @@ const Navbar: React.FC<NavbarProps> = ({
                       }
                     }}
                     sx={{
-                      color: 'var(--text-color)',
+                      color: theme.palette.text.primary,
                       '& input': {
                         backgroundColor: 'transparent',
                       },
@@ -1466,7 +1478,7 @@ const Navbar: React.FC<NavbarProps> = ({
                       sx={{
                         position: 'absolute',
                         right: '50px',
-                        color: 'var(--text-color)',
+                        color: theme.palette.text.primary,
                       }}
                     />
                   )}
@@ -1479,13 +1491,14 @@ const Navbar: React.FC<NavbarProps> = ({
                   }}
                   sx={{
                     backgroundColor: 'var(--primary-dark-color)',
-                    color: 'var(--white-color)',
+                    color: '#ffffff',
                     borderRadius: '16px',
                     width: { xs: '36px', md: '44px' },
                     height: { xs: '36px', md: '44px' },
                     minWidth: { xs: '36px', md: '44px' },
                     '&:hover': {
                       backgroundColor: 'var(--primary-dark-color)',
+                      opacity: 0.9,
                     },
                   }}
                   aria-label='Search'
@@ -1515,8 +1528,11 @@ const Navbar: React.FC<NavbarProps> = ({
                       overflow: 'auto',
                       zIndex: 1300,
                       borderRadius: '12px',
-                      backgroundColor: 'var(--white-color)',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                      backgroundColor: theme.palette.background.paper,
+                      boxShadow:
+                        theme.palette.mode === 'dark'
+                          ? '0 4px 20px rgba(0,0,0,0.5)'
+                          : '0 4px 20px rgba(0,0,0,0.15)',
                     }}
                   >
                     <List sx={{ p: 0 }}>
@@ -1536,7 +1552,7 @@ const Navbar: React.FC<NavbarProps> = ({
                               // },
                               '&.Mui-selected': {
                                 backgroundColor: 'var(--primary-dark-color)',
-                                color: 'var(--white-color)',
+                                color: '#ffffff',
                                 // '&:hover': {
                                 //   backgroundColor: 'var(--primary-dark-color)',
                                 // },
@@ -1566,7 +1582,7 @@ const Navbar: React.FC<NavbarProps> = ({
                                 color:
                                   selectedResultIndex === index
                                     ? 'rgba(255,255,255,0.7)'
-                                    : 'var(--dark-grey-color)',
+                                    : theme.palette.text.secondary,
                               }}
                             />
                           </ListItemButton>
@@ -1589,7 +1605,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         mt: 1,
                         zIndex: 1300,
                         borderRadius: '12px',
-                        backgroundColor: 'var(--white-color)',
+                        backgroundColor: theme.palette.background.paper,
                         p: 2,
                         textAlign: 'center',
                       }}
@@ -1597,7 +1613,7 @@ const Navbar: React.FC<NavbarProps> = ({
                       <Typography
                         sx={{
                           fontSize: 'var(--body-font-size)',
-                          color: 'var(--dark-grey-color)',
+                          color: theme.palette.text.secondary,
                         }}
                       >
                         No results found
@@ -1624,7 +1640,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 minWidth: 0,
                 px: { xs: 1, md: 1.5 },
                 py: { xs: 0.5, md: 1 },
-                color: 'var(--text-color)',
+                color: theme.palette.text.primary,
                 fontWeight: 600,
                 fontSize: { xs: '12px', md: 'var(--body-font-size)' },
               }}
@@ -1651,7 +1667,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 display: { xs: 'flex', md: 'none' },
                 backgroundColor: {
                   xs: 'transparent',
-                  md: 'var(--white-color)',
+                  md: 'var(--primary-color)',
                 },
                 borderRadius: 'var(--border-radius-lg)',
                 p: { xs: 0.75, md: 1 },
@@ -1660,7 +1676,7 @@ const Navbar: React.FC<NavbarProps> = ({
             >
               <GroupOutlinedIcon
                 sx={{
-                  color: 'var(--text-color)',
+                  color: theme.palette.text.primary,
                   fontSize: { xs: '18px', md: '24px' },
                 }}
               />
@@ -1669,7 +1685,10 @@ const Navbar: React.FC<NavbarProps> = ({
             <Paper
               elevation={0}
               sx={{
-                backgroundColor: 'var(--light-grey-200-color)',
+                backgroundColor:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.action.hover
+                    : '#efefef',
                 borderRadius: '16px',
                 p: { xs: 0.25, md: 0.5 },
                 display: 'flex',
@@ -1702,7 +1721,11 @@ const Navbar: React.FC<NavbarProps> = ({
                     sx={{
                       width: { xs: 18, md: 24 },
                       height: { xs: 18, md: 24 },
-                      filter: 'brightness(0) saturate(100%)',
+                      filter:
+                        theme.palette.mode === 'dark'
+                          ? 'brightness(0) saturate(100%) invert(56%)'
+                          : 'brightness(0) saturate(100%)',
+                      transition: 'filter 0.2s ease',
                     }}
                     aria-hidden='true'
                   />
@@ -1716,7 +1739,7 @@ const Navbar: React.FC<NavbarProps> = ({
               sx={{
                 height: { xs: '32px', md: '40px' },
                 alignSelf: 'center',
-                borderColor: 'var(--light-grey-color)',
+                borderColor: theme.palette.divider,
                 display: { xs: 'flex', md: 'flex' },
               }}
             />
@@ -1727,7 +1750,7 @@ const Navbar: React.FC<NavbarProps> = ({
               sx={{
                 backgroundColor: {
                   xs: 'transparent',
-                  md: 'var(--white-color)',
+                  md: theme.palette.background.paper,
                 },
                 borderRadius: 'var(--border-radius-lg)',
                 px: { xs: 0, md: 2 },
@@ -1779,7 +1802,7 @@ const Navbar: React.FC<NavbarProps> = ({
                       sm: '12px',
                       md: 'var(--body-font-size)',
                     },
-                    color: 'var(--black-color)',
+                    color: theme.palette.text.primary,
                     lineHeight: 1.2,
                   }}
                 >
@@ -1792,7 +1815,7 @@ const Navbar: React.FC<NavbarProps> = ({
                       sm: '10px',
                       md: 'var(--label-font-size)',
                     },
-                    color: 'var(--dark-grey-500-color)',
+                    color: theme.palette.text.secondary,
                     lineHeight: 1.2,
                     fontWeight: 400,
                   }}
@@ -1873,7 +1896,7 @@ const Navbar: React.FC<NavbarProps> = ({
                   }
                 }}
                 sx={{
-                  color: 'var(--text-color)',
+                  color: theme.palette.text.primary,
                   fontSize: { xs: '12px', md: 'var(--body-font-size)' },
                   pr: { xs: '16px', md: '16px' },
                   '& input': {
@@ -1887,7 +1910,7 @@ const Navbar: React.FC<NavbarProps> = ({
                   sx={{
                     position: 'absolute',
                     right: { xs: '48px', md: '40px' },
-                    color: 'var(--text-color)',
+                    color: theme.palette.text.primary,
                   }}
                 />
               )}
@@ -1903,15 +1926,16 @@ const Navbar: React.FC<NavbarProps> = ({
                   top: '50%',
                   transform: 'translateY(-50%)',
                   backgroundColor: 'var(--primary-dark-color)',
-                  color: 'var(--white-color)',
+                  color: '#ffffff',
                   borderRadius: { xs: '8px', md: '12px' },
                   width: { xs: '28px', md: '36px' },
                   height: { xs: '28px', md: '36px' },
                   minWidth: { xs: '28px', md: '36px' },
                   padding: 0,
-                  '&:hover': {
-                    backgroundColor: 'var(--primary-dark-color)',
-                  },
+                  // '&:hover': {
+                  //   backgroundColor: 'var(--primary-dark-color)',
+                  //   opacity: 0.9,
+                  // },
                 }}
                 aria-label='Search'
               >
@@ -1941,8 +1965,11 @@ const Navbar: React.FC<NavbarProps> = ({
                   overflow: 'auto',
                   zIndex: 1300,
                   borderRadius: '12px',
-                  backgroundColor: 'var(--white-color)',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                  backgroundColor: theme.palette.background.paper,
+                  boxShadow:
+                    theme.palette.mode === 'dark'
+                      ? '0 4px 20px rgba(0,0,0,0.5)'
+                      : '0 4px 20px rgba(0,0,0,0.15)',
                 }}
               >
                 <List sx={{ p: 0 }}>
@@ -1958,13 +1985,13 @@ const Navbar: React.FC<NavbarProps> = ({
                           px: 2,
                           py: 1.5,
                           // '&:hover': {
-                          //   backgroundColor: 'var(--primary-color)',
+                          //   backgroundColor: theme.palette.action.hover,
                           // },
                           '&.Mui-selected': {
-                            backgroundColor: 'var(--primary-dark-color)',
-                            color: 'var(--white-color)',
+                            backgroundColor: theme.palette.primary.main,
+                            color: theme.palette.primary.contrastText,
                             // '&:hover': {
-                            //   backgroundColor: 'var(--primary-dark-color)',
+                            //   backgroundColor: theme.palette.primary.dark,
                             // },
                           },
                         }}
@@ -1992,7 +2019,7 @@ const Navbar: React.FC<NavbarProps> = ({
                             color:
                               selectedResultIndex === index
                                 ? 'rgba(255,255,255,0.7)'
-                                : 'var(--dark-grey-color)',
+                                : theme.palette.text.secondary,
                           }}
                         />
                       </ListItemButton>
@@ -2015,7 +2042,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     mt: 1,
                     zIndex: 1300,
                     borderRadius: '12px',
-                    backgroundColor: 'var(--white-color)',
+                    backgroundColor: theme.palette.background.paper,
                     p: 2,
                     textAlign: 'center',
                   }}
@@ -2023,7 +2050,7 @@ const Navbar: React.FC<NavbarProps> = ({
                   <Typography
                     sx={{
                       fontSize: '12px',
-                      color: 'var(--dark-grey-color)',
+                      color: theme.palette.text.secondary,
                     }}
                   >
                     No results found
@@ -2047,17 +2074,17 @@ const Navbar: React.FC<NavbarProps> = ({
             borderRadius: '10px',
             width: 280,
             p: 2,
-            backgroundColor: darkMode ? '#111' : '#fff',
+            backgroundColor: theme.palette.background.paper,
           },
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
           {user && <UserAvatar user={user} size={40} clickable={false} />}
           <Box>
-            <Typography fontWeight={600} color={textColor}>
+            <Typography fontWeight={600} color={theme.palette.text.primary}>
               {user ? `${user.first_name} ${user.last_name}` : 'User'}
             </Typography>
-            <Typography variant='body2' color={textColor}>
+            <Typography variant='body2' color={theme.palette.text.secondary}>
               {user?.email || ''}
             </Typography>
           </Box>
@@ -2075,11 +2102,13 @@ const Navbar: React.FC<NavbarProps> = ({
             <ListItemIcon>
               <GroupOutlinedIcon
                 fontSize='small'
-                sx={{ color: textColor }}
+                sx={{ color: theme.palette.text.primary }}
                 aria-hidden='true'
               />
             </ListItemIcon>
-            <Typography color={textColor}>{lang.members}</Typography>
+            <Typography color={theme.palette.text.primary}>
+              {lang.members}
+            </Typography>
           </MenuItem>
         )}
         <MenuItem
@@ -2092,11 +2121,11 @@ const Navbar: React.FC<NavbarProps> = ({
           <ListItemIcon>
             <AdminPanelSettings
               fontSize='small'
-              sx={{ color: textColor }}
+              sx={{ color: theme.palette.text.primary }}
               aria-hidden='true'
             />
           </ListItemIcon>
-          <Typography color={textColor}>Profile</Typography>
+          <Typography color={theme.palette.text.primary}>Profile</Typography>
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -2108,21 +2137,25 @@ const Navbar: React.FC<NavbarProps> = ({
           <ListItemIcon>
             <SettingsIcon
               fontSize='small'
-              sx={{ color: textColor }}
+              sx={{ color: theme.palette.text.primary }}
               aria-hidden='true'
             />
           </ListItemIcon>
-          <Typography color={textColor}>{lang.settings}</Typography>
+          <Typography color={theme.palette.text.primary}>
+            {lang.settings}
+          </Typography>
         </MenuItem>
         <MenuItem onClick={handleLogout} aria-label='Sign out'>
           <ListItemIcon>
             <LogoutIcon
               fontSize='small'
-              sx={{ color: textColor }}
+              sx={{ color: theme.palette.text.primary }}
               aria-hidden='true'
             />
           </ListItemIcon>
-          <Typography color={textColor}>{lang.signout}</Typography>
+          <Typography color={theme.palette.text.primary}>
+            {lang.signout}
+          </Typography>
         </MenuItem>
         {/* <Divider sx={{ my: 1 }} /> */}
       </Menu>

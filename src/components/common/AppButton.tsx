@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Button,
+  useTheme,
   type ButtonProps,
   type SxProps,
   type Theme,
@@ -14,60 +15,6 @@ interface AppButtonProps extends Omit<ButtonProps, 'children'> {
   children?: React.ReactNode;
 }
 
-const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
-  primary: {
-    backgroundColor: 'primary.main',
-    color: 'common.white',
-    textTransform: 'uppercase',
-    borderRadius: '12px',
-    fontWeight: 500,
-    // '&:hover': {
-    //   backgroundColor: 'primary.dark',
-    // },
-    '&:disabled': {
-      backgroundColor: '#ccc',
-    },
-  },
-  secondary: {
-    borderColor: 'primary.main',
-    color: 'primary.main',
-    textTransform: 'uppercase',
-    borderRadius: '12px',
-    fontWeight: 500,
-    // '&:hover': {
-    //   borderColor: 'primary.dark',
-    //   backgroundColor: 'rgba(72,76,127,0.08)',
-    // },
-    '&:disabled': {
-      borderColor: '#ccc',
-      color: '#ccc',
-    },
-  },
-  danger: {
-    backgroundColor: 'error.main',
-    color: 'common.white',
-    textTransform: 'uppercase',
-    borderRadius: '12px',
-    fontWeight: 500,
-    // '&:hover': {
-    //   backgroundColor: 'error.dark',
-    // },
-    '&:disabled': {
-      backgroundColor: '#f2b8b5',
-    },
-  },
-  ghost: {
-    borderColor: 'transparent',
-    color: 'text.primary',
-    textTransform: 'none',
-    borderRadius: '12px',
-    // '&:hover': {
-    //   backgroundColor: 'action.hover',
-    //   borderColor: 'transparent',
-    // },
-  },
-};
-
 export function AppButton({
   variantType = 'primary',
   sx,
@@ -75,7 +22,76 @@ export function AppButton({
   children,
   ...rest
 }: AppButtonProps) {
-  const baseSx = variantStyles[variantType] || {};
+  const theme = useTheme();
+
+  const getVariantStyles = (): SxProps<Theme> => {
+    const isDark = theme.palette.mode === 'dark';
+
+    const baseStyles: Record<AppButtonVariant, SxProps<Theme>> = {
+      primary: {
+        backgroundColor: 'primary.main',
+        color: 'common.white',
+        textTransform: 'none',
+        borderRadius: '12px',
+        fontWeight: 400,
+        '&:hover': {
+          backgroundColor: 'primary.dark',
+        },
+        '&:disabled': {
+          backgroundColor: isDark ? '#555555' : '#ccc',
+          color: isDark ? '#888888' : '#999999',
+        },
+      },
+      secondary: {
+        borderColor: 'primary.main',
+        borderWidth: 1,
+        borderStyle: 'solid',
+        color: 'primary.main',
+        textTransform: 'none',
+        borderRadius: '12px',
+        fontWeight: 400,
+        '&:hover': {
+          borderColor: 'primary.dark',
+          backgroundColor: 'action.hover',
+        },
+        '&:disabled': {
+          borderColor: isDark ? '#555555' : '#ccc',
+          color: isDark ? '#555555' : '#ccc',
+        },
+      },
+      danger: {
+        backgroundColor: 'error.main',
+        color: 'common.white',
+        textTransform: 'none',
+        borderRadius: '12px',
+        fontWeight: 400,
+        '&:hover': {
+          backgroundColor: 'error.dark',
+        },
+        '&:disabled': {
+          backgroundColor: isDark ? '#5a3a3a' : '#f2b8b5',
+          color: isDark ? '#888888' : '#999999',
+        },
+      },
+      ghost: {
+        borderColor: 'transparent',
+        color: 'text.primary',
+        textTransform: 'none',
+        borderRadius: '12px',
+        '&:disabled': {
+          color: isDark ? '#555555' : '#ccc',
+        },
+        '&:hover': {
+          backgroundColor: 'action.hover',
+          borderColor: 'transparent',
+        },
+      },
+    };
+
+    return baseStyles[variantType] || {};
+  };
+
+  const baseSx = getVariantStyles();
 
   return (
     <Button {...rest} sx={[baseSx as SxProps<Theme>, sx as SxProps<Theme>]}>

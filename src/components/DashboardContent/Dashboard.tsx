@@ -16,7 +16,6 @@ import {
   IconButton,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
-import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import systemDashboardApiService, {
   type SystemDashboardResponse,
@@ -49,9 +48,6 @@ const labels = {
 };
 
 const Dashboard: React.FC = () => {
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
-  // darkMode is reserved for future use
-  void darkMode;
   const { language } = useLanguage();
   const lang = labels[language];
   const theme = useTheme();
@@ -141,7 +137,7 @@ const Dashboard: React.FC = () => {
       <Typography
         sx={{
           direction: language === 'ar' ? 'rtl' : 'ltr',
-          color: '#2C2C2C',
+          color: theme.palette.text.primary,
           textAlign: { xs: 'left' },
           fontWeight: 500,
           fontSize: { xs: '32px', lg: '48px' },
@@ -163,11 +159,11 @@ const Dashboard: React.FC = () => {
           }}
         >
           <Paper
-            elevation={3}
+            elevation={0}
             sx={{
               width: '100%',
               borderRadius: '20px',
-              backgroundColor: 'unset',
+              backgroundColor: 'transparent',
               boxShadow: 'none',
             }}
           >
@@ -192,13 +188,15 @@ const Dashboard: React.FC = () => {
           </Paper>
 
           <Paper
-            elevation={3}
+            elevation={0}
             sx={{
               p: { xs: 2, sm: 3 },
               width: '100%',
               borderRadius: '20px',
               backgroundColor: theme.palette.background.paper,
-              boxShadow: 'none',
+              boxShadow: theme.palette.mode === 'dark' 
+                ? '0 1px 3px rgba(0,0,0,0.3)' 
+                : '0 1px 3px rgba(0,0,0,0.1)',
             }}
           >
             <TenantGrowthChart />
@@ -219,10 +217,10 @@ const Dashboard: React.FC = () => {
               sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}
             >
               <Paper
-                elevation={3}
+                elevation={0}
                 sx={{
                   borderRadius: '20px',
-                  backgroundColor: 'unset',
+                  backgroundColor: 'transparent',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 3,
@@ -273,16 +271,65 @@ const Dashboard: React.FC = () => {
                     <Table size='small' stickyHeader>
                       <TableHead>
                         <TableRow>
-                          <TableCell>Tenant</TableCell>
-                          <TableCell align='right'>Active Employees</TableCell>
+                          <TableCell
+                            sx={{
+                              backgroundColor:
+                                theme.palette.mode === 'dark'
+                                  ? 'var(--primary-light-color)'
+                                  : 'var(--primary-color)',
+                              color:
+                                theme.palette.mode === 'dark'
+                                  ? '#ffffff'
+                                  : '#2C2C2C',
+                              fontWeight: 700,
+                            }}
+                          >
+                            Tenant
+                          </TableCell>
+                          <TableCell
+                            align='right'
+                            sx={{
+                              backgroundColor:
+                                theme.palette.mode === 'dark'
+                                  ? 'var(--primary-light-color)'
+                                  : 'var(--primary-color)',
+                              color:
+                                theme.palette.mode === 'dark'
+                                  ? '#ffffff'
+                                  : '#2C2C2C',
+                              fontWeight: 700,
+                            }}
+                          >
+                            Active Employees
+                          </TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {dashboardData?.activeEmployeesPerTenant?.map(
                           (row, idx) => (
-                            <TableRow key={idx}>
-                              <TableCell>{row.tenantName}</TableCell>
-                              <TableCell align='right'>
+                            <TableRow
+                              key={idx}
+                              sx={{
+                                '&:hover': {
+                                  backgroundColor: theme.palette.action.hover,
+                                },
+                              }}
+                            >
+                              <TableCell
+                                sx={{
+                                  color: theme.palette.text.primary,
+                                  borderBottom: `0.5px solid ${theme.palette.divider}`,
+                                }}
+                              >
+                                {row.tenantName}
+                              </TableCell>
+                              <TableCell
+                                align='right'
+                                sx={{
+                                  color: theme.palette.text.primary,
+                                  borderBottom: `0.5px solid ${theme.palette.divider}`,
+                                }}
+                              >
                                 {row.activeCount}
                               </TableCell>
                             </TableRow>
@@ -318,12 +365,14 @@ const Dashboard: React.FC = () => {
           </Grid>
 
           <Paper
-            elevation={3}
+            elevation={0}
             sx={{
               p: { xs: 2, sm: 3 },
               borderRadius: '20px',
               backgroundColor: theme.palette.background.paper,
-              boxShadow: 'none',
+              boxShadow: theme.palette.mode === 'dark' 
+                ? '0 1px 3px rgba(0,0,0,0.3)' 
+                : '0 1px 3px rgba(0,0,0,0.1)',
             }}
           >
             <Box
@@ -336,7 +385,11 @@ const Dashboard: React.FC = () => {
                 gap: 1,
               }}
             >
-              <Typography variant='h6' fontWeight='bold'>
+              <Typography 
+                variant='h6' 
+                fontWeight='bold'
+                sx={{ color: theme.palette.text.primary }}
+              >
                 System Logs
               </Typography>
               <Tooltip title='Export Recent 1000 system logs'>
@@ -344,10 +397,10 @@ const Dashboard: React.FC = () => {
                   color='primary'
                   onClick={handleExportLogs}
                   sx={{
-                    backgroundColor: 'primary.main',
-                    color: 'white',
+                    backgroundColor: theme.palette.primary.main,
+                    color: theme.palette.primary.contrastText,
                     borderRadius: '6px',
-                    // '&:hover': { backgroundColor: 'primary.dark' },
+                    '&:hover': { backgroundColor: theme.palette.primary.dark },
                   }}
                 >
                   <DownloadIcon />
@@ -359,11 +412,81 @@ const Dashboard: React.FC = () => {
               <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Action</TableCell>
-                    <TableCell>Entity</TableCell>
-                    <TableCell>User Role</TableCell>
-                    <TableCell>Tenant Id</TableCell>
-                    <TableCell>Timestamp</TableCell>
+                    <TableCell
+                      sx={{
+                        backgroundColor:
+                          theme.palette.mode === 'dark'
+                            ? 'var(--primary-light-color)'
+                            : 'var(--primary-color)',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? '#ffffff'
+                            : '#2C2C2C',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Action
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        backgroundColor:
+                          theme.palette.mode === 'dark'
+                            ? 'var(--primary-light-color)'
+                            : 'var(--primary-color)',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? '#ffffff'
+                            : '#2C2C2C',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Entity
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        backgroundColor:
+                          theme.palette.mode === 'dark'
+                            ? 'var(--primary-light-color)'
+                            : 'var(--primary-color)',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? '#ffffff'
+                            : '#2C2C2C',
+                        fontWeight: 700,
+                      }}
+                    >
+                      User Role
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        backgroundColor:
+                          theme.palette.mode === 'dark'
+                            ? 'var(--primary-light-color)'
+                            : 'var(--primary-color)',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? '#ffffff'
+                            : '#2C2C2C',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Tenant Id
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        backgroundColor:
+                          theme.palette.mode === 'dark'
+                            ? 'var(--primary-light-color)'
+                            : 'var(--primary-color)',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? '#ffffff'
+                            : '#2C2C2C',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Timestamp
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -375,18 +498,63 @@ const Dashboard: React.FC = () => {
                     </TableRow>
                   ) : logs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} align='center'>
+                      <TableCell
+                        colSpan={7}
+                        align='center'
+                        sx={{ color: theme.palette.text.secondary }}
+                      >
                         No logs found
                       </TableCell>
                     </TableRow>
                   ) : (
                     logs.map(log => (
-                      <TableRow key={log.id} hover>
-                        <TableCell>{log.action}</TableCell>
-                        <TableCell>{log.entityType}</TableCell>
-                        <TableCell>{log.userRole || '-'}</TableCell>
-                        <TableCell>{log.tenantId}</TableCell>
-                        <TableCell>
+                      <TableRow
+                        key={log.id}
+                        hover
+                        sx={{
+                          '&:hover': {
+                            backgroundColor: theme.palette.action.hover,
+                          },
+                        }}
+                      >
+                        <TableCell
+                          sx={{
+                            color: theme.palette.text.primary,
+                            borderBottom: `0.5px solid ${theme.palette.divider}`,
+                          }}
+                        >
+                          {log.action}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color: theme.palette.text.primary,
+                            borderBottom: `0.5px solid ${theme.palette.divider}`,
+                          }}
+                        >
+                          {log.entityType}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color: theme.palette.text.primary,
+                            borderBottom: `0.5px solid ${theme.palette.divider}`,
+                          }}
+                        >
+                          {log.userRole || '-'}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color: theme.palette.text.primary,
+                            borderBottom: `0.5px solid ${theme.palette.divider}`,
+                          }}
+                        >
+                          {log.tenantId}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color: theme.palette.text.primary,
+                            borderBottom: `0.5px solid ${theme.palette.divider}`,
+                          }}
+                        >
                           {new Date(log.createdAt).toLocaleString()}
                         </TableCell>
                       </TableRow>
@@ -420,7 +588,10 @@ const Dashboard: React.FC = () => {
 
             {estimatedTotalRecords > 0 && (
               <Box display='flex' justifyContent='center' mt={1}>
-                <Typography variant='body2' color='textSecondary'>
+                <Typography 
+                  variant='body2' 
+                  sx={{ color: theme.palette.text.secondary }}
+                >
                   Showing page {currentPage} of {estimatedTotalPages} (
                   {estimatedTotalRecords} total records)
                 </Typography>
@@ -442,8 +613,10 @@ const Dashboard: React.FC = () => {
             sx={{
               p: 3,
               borderRadius: '20px',
-              backgroundColor: 'var(--white-color)',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              backgroundColor: theme.palette.background.paper,
+              boxShadow: theme.palette.mode === 'dark' 
+                ? '0 1px 3px rgba(0,0,0,0.3)' 
+                : '0 1px 3px rgba(0,0,0,0.1)',
             }}
           >
             <EmployeesInfoChart />
@@ -464,8 +637,10 @@ const Dashboard: React.FC = () => {
                 flex: 1,
                 p: 3,
                 borderRadius: '20px',
-                backgroundColor: 'var(--white-color)',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                backgroundColor: theme.palette.background.paper,
+                boxShadow: theme.palette.mode === 'dark' 
+                  ? '0 1px 3px rgba(0,0,0,0.3)' 
+                  : '0 1px 3px rgba(0,0,0,0.1)',
               }}
             >
               <AvailabilityCardsGrid />
@@ -478,8 +653,10 @@ const Dashboard: React.FC = () => {
                 flex: 1,
                 p: 3,
                 borderRadius: '20px',
-                backgroundColor: 'var(--white-color)',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                backgroundColor: theme.palette.background.paper,
+                boxShadow: theme.palette.mode === 'dark' 
+                  ? '0 1px 3px rgba(0,0,0,0.3)' 
+                  : '0 1px 3px rgba(0,0,0,0.1)',
               }}
             >
               <GenderPercentageChart />

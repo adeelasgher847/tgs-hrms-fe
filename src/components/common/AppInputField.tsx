@@ -4,6 +4,7 @@ import {
   Typography,
   Box,
   FormHelperText,
+  useTheme,
   type TextFieldProps,
 } from '@mui/material';
 
@@ -28,6 +29,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
     },
     ref
   ) => {
+    const theme = useTheme();
     // Check if this is a phone input (has PhoneInput in InputProps)
     const isPhoneInput = rest.InputProps?.startAdornment !== undefined;
 
@@ -56,7 +58,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
               fontSize: { xs: '14px', lg: '20px' },
               lineHeight: 'var(--subheading2-line-height)',
               letterSpacing: 'var(--subheading2-letter-spacing)',
-              color: '#2C2C2C',
+              color: theme.palette.text.primary,
             }}
           >
             {label}
@@ -70,7 +72,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
                   : 'block',
                 fontSize: { xs: '12px', sm: '14px' },
                 lineHeight: '1.2',
-                color: '#d32f2f',
+                color: theme.palette.error.main,
                 fontWeight: 400,
                 textAlign: 'right',
                 ml: 2,
@@ -88,8 +90,8 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
             position: 'relative',
             borderRadius: '12px',
             border: {
-              xs: `0.5px solid ${rest.error ? '#d32f2f' : '#BDBDBD'}`,
-              sm: `1px solid ${rest.error ? '#d32f2f' : '#BDBDBD'}`,
+              xs: `0.5px solid ${rest.error ? theme.palette.error.main : theme.palette.divider}`,
+              sm: `1px solid ${rest.error ? theme.palette.error.main : theme.palette.divider}`,
             },
             backgroundColor: inputBackgroundColor,
             overflow: 'visible',
@@ -117,21 +119,21 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
                 },
               },
               '& .MuiOutlinedInput-input': {
-                color: 'var(--text-color)',
+                color: theme.palette.text.primary,
                 fontSize: { xs: '16px', sm: '14px' },
                 display: isPhoneInput ? 'none' : undefined,
                 padding: rest.multiline
                   ? undefined
                   : { xs: '8px 12px', sm: '10px 16px' },
                 '&::placeholder': {
-                  color: '#A3A3A3',
+                  color: theme.palette.text.secondary,
                   opacity: 1,
                 },
               },
               '& .MuiOutlinedInput-input:-webkit-autofill': {
                 padding: rest.multiline ? undefined : '10px 16px !important',
-                WebkitBoxShadow: `0 0 0 1000px ${inputBackgroundColor || '#EFEFEF'} inset`,
-                WebkitTextFillColor: 'var(--text-color)',
+                WebkitBoxShadow: `0 0 0 1000px ${inputBackgroundColor || (theme.palette.mode === 'dark' ? theme.palette.background.default : '#EFEFEF')} inset`,
+                WebkitTextFillColor: theme.palette.text.primary,
               },
               '& .MuiInputLabel-root': {
                 display: 'none',
@@ -163,7 +165,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
               // margin: '4px 0 0 0',
               fontSize: { xs: '12px', sm: 'var(--label-font-size)' },
               lineHeight: 'var(--label-line-height)',
-              color: '#d32f2f',
+              color: theme.palette.error.main,
               whiteSpace: 'nowrap',
               overflow: 'visible',
               textOverflow: 'clip',

@@ -3,6 +3,7 @@ import {
   Typography,
   useMediaQuery,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import {
@@ -23,6 +24,7 @@ import {
 import TimeRangeSelector from '../common/TimeRangeSelector';
 
 export default function EmployeesInfoChart() {
+  const theme = useTheme();
   const isMobile = useMediaQuery('(max-width:600px)');
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
@@ -62,9 +64,6 @@ export default function EmployeesInfoChart() {
     fetchJoiningData();
   }, []);
 
-  // const bgColor = darkMode ? '#111' : '#fff';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
-  // const borderColor = darkMode ? '#252525' : '#f0f0f0';
 
   // Get unique years from API data
   const availableYears = [...new Set(joiningData.map(item => item.year))].sort(
@@ -179,7 +178,7 @@ export default function EmployeesInfoChart() {
           fontSize={{ xs: '20px', lg: '28px' }}
           lineHeight='36px'
           letterSpacing='-2%'
-          color='#2C2C2C'
+          sx={{ color: theme.palette.text.primary }}
         >
           {chartTitle[language]}
         </Typography>
@@ -245,7 +244,7 @@ export default function EmployeesInfoChart() {
                         isMobile ? `rotate(-45, ${x}, ${y})` : undefined
                       }
                       textAnchor={isMobile ? 'end' : 'middle'}
-                      fill={textColor}
+                      fill={theme.palette.text.primary}
                     >
                       {payload.value}
                     </text>
@@ -253,27 +252,46 @@ export default function EmployeesInfoChart() {
                 }}
                 height={isMobile ? 50 : 30}
                 interval={0}
-                axisLine={{ stroke: '#f0f0f0' }}
-                tickLine={{ stroke: '#f0f0f0' }}
+                axisLine={{
+                  stroke:
+                    theme.palette.mode === 'dark'
+                      ? theme.palette.divider
+                      : '#f0f0f0',
+                }}
+                tickLine={{
+                  stroke:
+                    theme.palette.mode === 'dark'
+                      ? theme.palette.divider
+                      : '#f0f0f0',
+                }}
               />
 
               <YAxis
-                stroke='#f0f0f0'
-                axisLine={{ stroke: '#f0f0f0' }}
+                stroke={
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.divider
+                    : '#f0f0f0'
+                }
+                axisLine={{
+                  stroke:
+                    theme.palette.mode === 'dark'
+                      ? theme.palette.divider
+                      : '#f0f0f0',
+                }}
                 tickLine={false}
                 tick={false}
               />
 
               <Tooltip
                 contentStyle={{
-                  backgroundColor: darkMode ? '#1e1e1e' : '#fff',
-                  border: '1px solid #ccc',
+                  backgroundColor: theme.palette.background.paper,
+                  border: `1px solid ${theme.palette.divider}`,
                   borderRadius: '6px',
-                  color: darkMode ? '#fff' : '#000',
+                  color: theme.palette.text.primary,
                   fontSize: '14px',
                 }}
                 labelStyle={{
-                  color: darkMode ? '#ccc' : '#333',
+                  color: theme.palette.text.secondary,
                   fontWeight: 600,
                 }}
               />
