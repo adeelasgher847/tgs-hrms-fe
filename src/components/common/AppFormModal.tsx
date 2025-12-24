@@ -12,7 +12,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-// import { COLORS } from '../../constants/appConstants';
 import AppInputField from './AppInputField';
 import AppDropdown from './AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -37,12 +36,16 @@ interface AppFormModalProps {
   onClose: () => void;
   onSubmit: () => void;
   title: string;
-  fields: FormField[];
+  fields?: FormField[];
+  children?: ReactNode;
   submitLabel?: string;
   cancelLabel?: string;
   isSubmitting?: boolean;
   hasChanges?: boolean;
   isRtl?: boolean;
+  showCancelButton?: boolean;
+  showSubmitButton?: boolean;
+  paperSx?: object;
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 }
 
@@ -51,12 +54,16 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   onClose,
   onSubmit,
   title,
-  fields,
+  fields = [],
+  children,
   submitLabel = 'Create',
   cancelLabel = 'Cancel',
   isSubmitting = false,
   hasChanges = true,
   isRtl = false,
+  showCancelButton = true,
+  showSubmitButton = true,
+  paperSx,
   maxWidth = 'sm',
 }) => {
   const theme = useTheme();
@@ -97,6 +104,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           },
           backgroundColor: '#FFFFFF',
           margin: { xs: '16px', lg: 'auto' },
+          ...(paperSx || {}),
         },
       }}
       sx={{
@@ -143,6 +151,8 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           pt: 0,
           pb: 2,
           px: 2,
+          maxHeight: '70vh',
+          overflowY: 'auto',
         }}
       >
         <Box
@@ -152,53 +162,67 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             mb: 1,
           }}
         >
-          <Box
-            component='form'
-            onSubmit={handleSubmit}
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-              width: '100%',
-              direction: isRtl ? 'rtl' : 'ltr',
-            }}
-          >
-            {fields.map(field => (
-              <Box key={field.name} width='100%'>
-                {field.component ||
-                  (field.type === 'dropdown' && field.options ? (
-                    <AppDropdown
-                      label={field.label}
-                      options={field.options}
-                      value={field.value}
-                      onChange={(e: SelectChangeEvent<string | number>) =>
-                        field.onChange(e.target.value)
-                      }
-                      placeholder={field.placeholder}
-                      error={!!field.error}
-                      helperText={field.error}
-                      inputBackgroundColor='#F8F8F8'
-                    />
-                  ) : (
-                    <AppInputField
-                      label={field.label}
-                      name={field.name}
-                      value={field.value as string}
-                      onChange={e => field.onChange(e.target.value)}
-                      placeholder={field.placeholder}
-                      multiline={field.multiline || field.type === 'textarea'}
-                      rows={
-                        field.rows ||
-                        (field.type === 'textarea' ? 3 : undefined)
-                      }
-                      error={!!field.error}
-                      helperText={field.error}
-                      required={field.required}
-                      inputBackgroundColor='#F8F8F8'
-                    />
-                  ))}
+          <Box component='form' onSubmit={handleSubmit}>
+            {children || (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  width: '100%',
+                  direction: isRtl ? 'rtl' : 'ltr',
+                  // Ensure dropdown labels and input labels are readable on small screens
+                  '& .subheading2': {
+                    fontSize: { xs: '13px', sm: 'var(--subheading2-font-size)' },
+                    fontWeight: {
+                      xs: '400',
+                      sm: 'var(--subheading2-font-weight)',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    fontSize: { xs: '13px', sm: 'var(--label-font-size)' },
+                    fontWeight: { xs: '400', sm: 'var(--label-font-weight)' },
+                  },
+                }}
+              >
+                {fields.map(field => (
+                  <Box key={field.name} width='100%'>
+                    {field.component ||
+                      (field.type === 'dropdown' && field.options ? (
+                        <AppDropdown
+                          label={field.label}
+                          options={field.options}
+                          value={field.value}
+                          onChange={(e: SelectChangeEvent<string | number>) =>
+                            field.onChange(e.target.value)
+                          }
+                          placeholder={field.placeholder}
+                          error={!!field.error}
+                          helperText={field.error}
+                          inputBackgroundColor='#F8F8F8'
+                        />
+                      ) : (
+                        <AppInputField
+                          label={field.label}
+                          name={field.name}
+                          value={field.value as string}
+                          onChange={e => field.onChange(e.target.value)}
+                          placeholder={field.placeholder}
+                          multiline={field.multiline || field.type === 'textarea'}
+                          rows={
+                            field.rows ||
+                            (field.type === 'textarea' ? 3 : undefined)
+                          }
+                          error={!!field.error}
+                          helperText={field.error}
+                          required={field.required}
+                          inputBackgroundColor='#F8F8F8'
+                        />
+                      ))}
+                  </Box>
+                ))}
               </Box>
-            ))}
+            )}
           </Box>
         </Box>
       </DialogContent>
@@ -211,45 +235,52 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           justifyContent: 'flex-end',
         }}
       >
-        <Button
-          onClick={onClose}
-          disabled={isSubmitting}
-          sx={{
-            borderRadius: '12px',
-            textTransform: 'none',
-            border: '1px solid #2C2C2C',
-            color: '#2C2C2C',
-            px: 4,
-            fontWeight: 400,
-            fontSize: { xs: '14px', sm: '16px' },
-          }}
-        >
-          {cancelLabel}
-        </Button>
+        {showCancelButton && (
+          <Button
+            onClick={onClose}
+            disabled={isSubmitting}
+            sx={{
+              borderRadius: '12px',
+              textTransform: 'none',
+              border: '1px solid var(--primary-dark-color)',
+              color: 'var(--primary-dark-color)',
+              px: 4,
+              fontWeight: 400,
+              fontSize: { xs: '14px', sm: '16px' },
+              '&:hover': {
+                border: '1px solid var(--primary-dark-color)',
+                backgroundColor: 'var(--primary-color)',
+              },
+            }}
+          >
+            {cancelLabel}
+          </Button>
+        )}
 
-        <Button
-          type='submit'
-          variant='contained'
-          disabled={isSubmitting || !hasChanges}
-          onClick={handleSubmit}
-          sx={{
-            borderRadius: '12px',
-            textTransform: 'none',
-            color: '#FFFFFF',
-            px: 4,
-            fontWeight: 400,
-            fontSize: { xs: '14px', sm: '16px' },
-            backgroundColor: '#3083DC',
-            // '&:hover': {
-            //   bgcolor: COLORS.PRIMARY,
-            // },
-            '&:disabled': {
-              // bgcolor: '#99c0e9',
-            },
-          }}
-        >
-          {isSubmitting ? 'Saving...' : submitLabel}
-        </Button>
+        {showSubmitButton && (
+          <Button
+            type='submit'
+            variant='contained'
+            disabled={isSubmitting || !hasChanges}
+            onClick={handleSubmit}
+            sx={{
+              borderRadius: '12px',
+              textTransform: 'none',
+              color: '#FFFFFF',
+              px: 4,
+              fontWeight: 400,
+              fontSize: { xs: '14px', sm: '16px' },
+              backgroundColor: 'var(--primary-dark-color)',
+              '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+              '&:disabled': {
+                backgroundColor: 'var(--grey-color)',
+                color: '#FFFFFF',
+              },
+            }}
+          >
+            {isSubmitting ? 'Saving...' : submitLabel}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

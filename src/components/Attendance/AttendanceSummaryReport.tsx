@@ -21,6 +21,8 @@ import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../common/AppTable';
+import AppDropdown from '../common/AppDropdown';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 interface AttendanceSummaryItem {
   employeeName?: string;
@@ -265,63 +267,27 @@ const AttendanceSummaryReport: React.FC = () => {
         alignItems='center'
         gap={2}
       >
-        <FormControl
-          size='small'
-          sx={{
+        <AppDropdown
+          label='Filter'
+          value={filter}
+          onChange={(e: SelectChangeEvent<string | number>) => {
+            setFilter(
+              e.target.value as 'thisMonth' | 'prevMonth' | '60days' | '90days'
+            );
+          }}
+          options={[
+            { value: 'thisMonth', label: 'This Month' },
+            { value: 'prevMonth', label: 'Previous Month' },
+            { value: '60days', label: 'Last 60 Days' },
+            { value: '90days', label: 'Last 90 Days' },
+          ]}
+          containerSx={{
             width: '200px',
             minWidth: '200px',
             maxWidth: '200px',
             flexShrink: 0,
-            '& .MuiOutlinedInput-root': {
-              borderRadius: '12px',
-              fontSize: '16px',
-              color: '#3284dc',
-              '& fieldset': {
-                borderColor: '#3083DC',
-                borderWidth: '1px',
-              },
-              '&:hover fieldset': {
-                borderColor: '#3083DC',
-              },
-              '&.Mui-focused fieldset': {
-                borderColor: '#3083DC',
-              },
-            },
-            '& .MuiInputLabel-root': {
-              color: '#3284dc',
-              fontSize: '16px',
-            },
-            '& .MuiInputLabel-root.Mui-focused': {
-              color: '#3284dc',
-            },
-            '& .MuiSelect-select': {
-              color: '#3284dc',
-              fontSize: '16px',
-            },
-            '& .MuiSvgIcon-root': {
-              color: '#3284dc',
-            },
           }}
-        >
-          <Select
-            value={filter}
-            onChange={e => {
-              setFilter(
-                e.target.value as
-                  | 'thisMonth'
-                  | 'prevMonth'
-                  | '60days'
-                  | '90days'
-              );
-            }}
-            displayEmpty
-          >
-            <MenuItem value='thisMonth'>This Month</MenuItem>
-            <MenuItem value='prevMonth'>Previous Month</MenuItem>
-            <MenuItem value='60days'>Last 60 Days</MenuItem>
-            <MenuItem value='90days'>Last 90 Days</MenuItem>
-          </Select>
-        </FormControl>
+        />
 
         <Tooltip title='Export All Attendance'>
           <IconButton

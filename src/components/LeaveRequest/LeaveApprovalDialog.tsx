@@ -4,10 +4,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   Typography,
   TextField,
 } from '@mui/material';
+import AppButton from '../common/AppButton';
 
 interface LeaveApprovalDialogProps {
   open: boolean;
@@ -62,17 +62,17 @@ const LeaveApprovalDialog = ({
         )}
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
-        <Button
+        <AppButton
           onClick={() => onConfirm(showCommentField ? reason : undefined)}
           variant='contained'
-          color={action === 'approved' ? 'success' : 'error'}
+          variantType={action === 'approved' ? 'primary' : 'danger'}
           disabled={showCommentField && action === 'rejected' && !reason.trim()}
         >
           Yes
-        </Button>
-        <Button onClick={onClose} variant='outlined' color='inherit'>
+        </AppButton>
+        <AppButton onClick={onClose} variant='outlined' variantType='secondary'>
           No
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

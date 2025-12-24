@@ -30,6 +30,7 @@ interface AppDropdownProps
   error?: boolean;
   helperText?: string;
   inputBackgroundColor?: string;
+  showLabel?: boolean;
 }
 
 const ArrowIcon = ({ open }: { open: boolean }) => (
@@ -61,6 +62,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
       error = false,
       helperText,
       inputBackgroundColor,
+      showLabel = true,
       sx,
       ...rest
     },
@@ -69,56 +71,73 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
     const [open, setOpen] = useState(false);
 
     return (
-      <Box sx={containerSx}>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            mb: 0.5,
-          }}
-        >
-          <Typography
-            component='label'
-            htmlFor={rest.id || (rest.name ? `dropdown-${rest.name}` : undefined)}
-            className={labelClassName}
+      <Box
+        sx={{ padding: 0, margin: 0, boxSizing: 'border-box', ...containerSx }}
+      >
+        {showLabel && (
+          <Box
             sx={{
-              fontWeight: 500,
-              fontSize: 'var(--subheading2-font-size)',
-              lineHeight: 'var(--subheading2-line-height)',
-              letterSpacing: 'var(--subheading2-letter-spacing)',
-              color: '#2C2C2C',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              mb: 0.5,
+              padding: 0,
+              margin: 0,
             }}
           >
-            {label}
-          </Typography>
-          {error && helperText && (
             <Typography
+              component='label'
+              htmlFor={
+                rest.id || (rest.name ? `dropdown-${rest.name}` : undefined)
+              }
+              className={labelClassName}
               sx={{
-                fontSize: { xs: '12px', sm: '14px' },
-                lineHeight: 'var(--label-line-height)',
-                color: '#d32f2f',
-                fontWeight: 400,
-                textAlign: 'right',
-                ml: 2,
+                fontWeight: 500,
+                fontSize: 'var(--subheading2-font-size)',
+                lineHeight: 'var(--subheading2-line-height)',
+                letterSpacing: 'var(--subheading2-letter-spacing)',
+                color: '#2C2C2C',
               }}
             >
-              {helperText}
+              {label}
             </Typography>
-          )}
-        </Box>
+            {error && helperText && (
+              <Typography
+                sx={{
+                  fontSize: { xs: '12px', sm: '14px' },
+                  lineHeight: 'var(--label-line-height)',
+                  color: '#d32f2f',
+                  fontWeight: 400,
+                  textAlign: 'right',
+                  ml: 2,
+                }}
+              >
+                {helperText}
+              </Typography>
+            )}
+          </Box>
+        )}
         <FormControl
           ref={ref}
           fullWidth
           error={error}
           sx={{
             width: '100%',
+            margin: 0,
+            padding: 0,
+            boxSizing: 'border-box',
             '& .MuiOutlinedInput-root': {
               backgroundColor: inputBackgroundColor || '#FFFFFF',
               borderRadius: '12px',
-              minHeight: '48px',
+              height: '36px',
+              maxHeight: '36px',
               width: '100%',
               padding: '0 !important',
+              margin: '0 !important',
+              '& > input': {
+                padding: '0 !important',
+                margin: '0 !important',
+              },
               '& fieldset': {
                 borderColor: error ? '#d32f2f' : '#BDBDBD',
                 borderWidth: '1px',
@@ -132,7 +151,9 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
               },
             },
             '& .MuiInputBase-input': {
-              padding: '12px 16px !important',
+              padding: '0px !important',
+              paddingRight: '0px !important',
+              margin: '0 !important',
             },
             '& .MuiSelect-select': {
               color: '#2C2C2C',
@@ -140,10 +161,35 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
               lineHeight: 'var(--label-line-height)',
               letterSpacing: 'var(--label-letter-spacing)',
               fontWeight: 400,
-              padding: '12px 16px !important',
-              paddingRight: '40px !important',
+              padding: '0px !important',
+              paddingRight: '0px !important',
+              margin: '0 !important',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+            },
+            '& .MuiOutlinedInput-input': {
+              padding: '0px !important',
+              paddingRight: '0px !important',
+              margin: '0 !important',
+              textAlign: 'center',
+            },
+            '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
+              {
+                padding: '0px !important',
+                paddingRight: '0px !important',
+                margin: '0 !important',
+                width: '100%',
+                boxSizing: 'border-box',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+              },
+            '& [class*="MuiNativeSelect-root"]': {
+              padding: '0 !important',
+              margin: '0 !important',
             },
             '& .MuiSelect-icon': {
               color: '#2C2C2C',

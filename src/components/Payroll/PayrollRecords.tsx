@@ -3,13 +3,8 @@ import {
   Alert,
   Box,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
   IconButton,
-  MenuItem,
   Paper,
   Pagination,
   Stack,
@@ -23,14 +18,14 @@ import {
   Typography,
   Chip,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import dayjs from 'dayjs';
 import { useTheme } from '@mui/material/styles';
 import { useOutletContext } from 'react-router-dom';
-import EditIcon from '@mui/icons-material/Edit';
-import CloseIcon from '@mui/icons-material/Close';
-import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
 import GenerateIcon from '@mui/icons-material/PlayCircleFilledRounded';
+import { IoEyeOutline } from 'react-icons/io5';
 import { useUser } from '../../hooks/useUser';
+import { Icons } from '../../assets/icons';
 import {
   payrollApi,
   type PayrollRecord,
@@ -43,8 +38,9 @@ import { isSystemAdmin, isHRAdmin, isAdmin } from '../../utils/roleUtils';
 import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../common/AppTable';
 import AppCard from '../common/AppCard';
-import AppSelect from '../common/AppSelect';
 import AppButton from '../common/AppButton';
+import AppDropdown from '../common/AppDropdown';
+import AppFormModal from '../common/AppFormModal';
 
 dayjs.extend(dayjsPluginLocalizedFormat);
 
@@ -607,6 +603,18 @@ const PayrollRecords: React.FC = () => {
         backgroundColor: bgColor,
         minHeight: '100vh',
         color: textColor,
+        '& .MuiButton-contained': {
+          backgroundColor: 'var(--primary-dark-color)',
+          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+        },
+        '& .MuiButton-outlined': {
+          borderColor: 'var(--primary-dark-color)',
+          color: 'var(--primary-dark-color)',
+          '&:hover': {
+            borderColor: 'var(--primary-dark-color)',
+            backgroundColor: 'var(--primary-color)',
+          },
+        },
       }}
     >
       <Box
@@ -648,19 +656,28 @@ const PayrollRecords: React.FC = () => {
           spacing={2}
           alignItems='flex-start'
         >
-          <AppSelect
+          <AppDropdown
             label='Month'
             value={month}
-            size='small'
-            sx={{ minWidth: 160 }}
-            onChange={event => setMonth(Number(event.target.value))}
-          >
-            {monthOptions.map(option => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </AppSelect>
+            onChange={(event: SelectChangeEvent<string | number>) =>
+              setMonth(Number(event.target.value))
+            }
+            options={monthOptions.map(option => ({
+              value: option.value,
+              label: option.label,
+            }))}
+            placeholder='Month'
+            showLabel={false}
+            containerSx={{ minWidth: 160 }}
+            inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+            sx={{
+              '& .MuiSelect-select': { color: effectiveDarkMode ? '#fff' : '#000' },
+              '& .MuiSelect-icon': { color: effectiveDarkMode ? '#fff' : '#000' },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: theme.palette.divider },
+              },
+            }}
+          />
 
           <TextField
             label='Year'
@@ -779,26 +796,40 @@ const PayrollRecords: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <AppSelect
+          <AppDropdown
             label='Employee'
-            size='small'
-            sx={{ minWidth: 220 }}
             value={employeeFilter}
-            onChange={event => setEmployeeFilter(event.target.value as string)}
-          >
-            <MenuItem value=''>All employees</MenuItem>
-            {recordEmployees.length === 0 ? (
-              <MenuItem value='' disabled>
-                No employees for this period
-              </MenuItem>
-            ) : (
-              recordEmployees.map(emp => (
-                <MenuItem key={emp.id} value={emp.id}>
-                  {emp.name}
-                </MenuItem>
-              ))
-            )}
-          </AppSelect>
+            onChange={(event: SelectChangeEvent<string | number>) =>
+              setEmployeeFilter(String(event.target.value || ''))
+            }
+            options={
+              recordEmployees.length === 0
+                ? [{ value: '', label: 'No employees for this period' }]
+                : [
+                    { value: '', label: 'All employees' },
+                    ...recordEmployees.map(emp => ({
+                      value: emp.id,
+                      label: emp.name,
+                    })),
+                  ]
+            }
+            placeholder={
+              recordEmployees.length === 0
+                ? 'No employees for this period'
+                : 'All employees'
+            }
+            showLabel={false}
+            disabled={recordEmployees.length === 0}
+            containerSx={{ minWidth: 220 }}
+            inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+            sx={{
+              '& .MuiSelect-select': { color: effectiveDarkMode ? '#fff' : '#000' },
+              '& .MuiSelect-icon': { color: effectiveDarkMode ? '#fff' : '#000' },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: theme.palette.divider },
+              },
+            }}
+          />
         </Box>
         {loading ? (
           <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
@@ -886,7 +917,7 @@ const PayrollRecords: React.FC = () => {
                           size='small'
                           onClick={() => openDetails(record)}
                         >
-                          <VisibilityIcon fontSize='small' />
+                          <IoEyeOutline size={18} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title='Update status'>
@@ -896,7 +927,12 @@ const PayrollRecords: React.FC = () => {
                             onClick={() => openStatusDialog(record)}
                             disabled={updatingStatus}
                           >
-                            <EditIcon fontSize='small' />
+                            <Box
+                              component='img'
+                              src={Icons.edit}
+                              alt='Edit'
+                              sx={{ width: 18, height: 18 }}
+                            />
                           </IconButton>
                         </span>
                       </Tooltip>
@@ -929,35 +965,18 @@ const PayrollRecords: React.FC = () => {
         )}
       </Paper>
 
-      <Dialog
+      <AppFormModal
         open={detailsOpen && !!selectedRecord}
         onClose={closeDetails}
+        onSubmit={() => {}}
+        title='Payroll Breakdown'
+        cancelLabel='Close'
+        showSubmitButton={false}
         maxWidth='md'
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff',
-          },
-        }}
+        paperSx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
       >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Typography variant='h6'>Payroll Breakdown</Typography>
-          <AppButton onClick={closeDetails} variantType='ghost' color='inherit'>
-            <CloseIcon />
-          </AppButton>
-        </DialogTitle>
-        <DialogContent
-          sx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
-        >
-          {selectedRecord && (
-            <Stack spacing={3}>
+        {selectedRecord && (
+          <Stack spacing={3}>
               <Box>
                 <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
                   Employee Details
@@ -1245,37 +1264,25 @@ const PayrollRecords: React.FC = () => {
                   </Typography>
                 </Box>
               )}
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <AppButton
-            onClick={closeDetails}
-            variantType='secondary'
-            variant='outlined'
-          >
-            Close
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+          </Stack>
+        )}
+      </AppFormModal>
 
       {/* Status dialog */}
-      <Dialog
+      <AppFormModal
         open={statusDialogOpen && !!statusRecord}
         onClose={closeStatusDialog}
+        onSubmit={handleStatusUpdate}
+        title='Update Payroll Status'
+        submitLabel={updatingStatus ? 'Updating...' : 'Update Status'}
+        cancelLabel='Cancel'
+        isSubmitting={updatingStatus}
+        hasChanges={true}
         maxWidth='sm'
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff',
-          },
-        }}
+        paperSx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
       >
-        <DialogTitle>Update Payroll Status</DialogTitle>
-        <DialogContent>
-          {statusRecord && (
-            <Stack spacing={2}>
+        {statusRecord && (
+          <Stack spacing={2}>
               <Typography
                 variant='body2'
                 sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
@@ -1285,19 +1292,27 @@ const PayrollRecords: React.FC = () => {
                   : statusRecord.employee_id}{' '}
                 — {statusRecord.month}/{statusRecord.year}
               </Typography>
-              <AppSelect
+              <AppDropdown
                 label='Status'
                 value={statusValue}
-                onChange={event =>
+                onChange={(event: SelectChangeEvent<string | number>) =>
                   setStatusValue(event.target.value as 'unpaid' | 'paid')
                 }
-              >
-                {statusOptions.map(option => (
-                  <MenuItem key={option} value={option}>
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                  </MenuItem>
-                ))}
-              </AppSelect>
+                options={statusOptions.map(option => ({
+                  value: option,
+                  label: option.charAt(0).toUpperCase() + option.slice(1),
+                }))}
+                placeholder='Status'
+                showLabel
+                inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+                sx={{
+                  '& .MuiSelect-select': { color: effectiveDarkMode ? '#fff' : '#000' },
+                  '& .MuiSelect-icon': { color: effectiveDarkMode ? '#fff' : '#000' },
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: theme.palette.divider },
+                  },
+                }}
+              />
               <TextField
                 label='Remarks'
                 multiline
@@ -1308,60 +1323,45 @@ const PayrollRecords: React.FC = () => {
                 }
                 placeholder='Optional remarks (e.g. payment method)'
               />
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <AppButton
-            onClick={closeStatusDialog}
-            variantType='secondary'
-            variant='outlined'
-          >
-            Cancel
-          </AppButton>
-          <AppButton
-            onClick={handleStatusUpdate}
-            variantType='primary'
-            variant='contained'
-            disabled={updatingStatus}
-            startIcon={
-              updatingStatus ? <CircularProgress size={16} /> : undefined
-            }
-            sx={{ textTransform: 'none' }}
-          >
-            {updatingStatus ? 'Updating...' : 'Update Status'}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+          </Stack>
+        )}
+      </AppFormModal>
 
-      <Dialog
+      <AppFormModal
         open={generateDialogOpen}
         onClose={() => setGenerateDialogOpen(false)}
+        onSubmit={handleGenerate}
+        title='Generate Payroll'
+        submitLabel={generating ? 'Generating...' : 'Generate Payroll'}
+        cancelLabel='Cancel'
+        isSubmitting={generating}
+        hasChanges={employeesForGenerateDialog.length > 0}
         maxWidth='sm'
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff',
-          },
-        }}
+        paperSx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
       >
-        <DialogTitle>Generate Payroll</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} marginTop={2}>
-            <AppSelect
+        <Stack spacing={2} marginTop={2}>
+            <AppDropdown
               label='Month'
               value={generateMonth}
-              size='small'
-              sx={{ minWidth: 160 }}
-              onChange={event => setGenerateMonth(Number(event.target.value))}
-            >
-              {monthOptions.map(option => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </AppSelect>
+              onChange={(event: SelectChangeEvent<string | number>) =>
+                setGenerateMonth(Number(event.target.value))
+              }
+              options={monthOptions.map(option => ({
+                value: option.value,
+                label: option.label,
+              }))}
+              placeholder='Month'
+              showLabel={false}
+              containerSx={{ minWidth: 160 }}
+              inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+              sx={{
+                '& .MuiSelect-select': { color: effectiveDarkMode ? '#fff' : '#000' },
+                '& .MuiSelect-icon': { color: effectiveDarkMode ? '#fff' : '#000' },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': { borderColor: theme.palette.divider },
+                },
+              }}
+            />
             <TextField
               label='Year'
               type='number'
@@ -1376,30 +1376,50 @@ const PayrollRecords: React.FC = () => {
                 setGenerateYear(numValue);
               }}
             />
-            <AppSelect
+            <AppDropdown
               label='Employee'
-              size='small'
-              sx={{ minWidth: 220 }}
               value={generateEmployeeId}
-              onChange={event =>
-                setGenerateEmployeeId(event.target.value as string)
+              onChange={(event: SelectChangeEvent<string | number>) =>
+                setGenerateEmployeeId(String(event.target.value || ''))
               }
-            >
-              <MenuItem value=''>All employees</MenuItem>
-              {employeesForGenerateDialog.length === 0 ? (
-                <MenuItem value='' disabled>
-                  {employees.length === 0
+              options={
+                employeesForGenerateDialog.length === 0
+                  ? [
+                      {
+                        value: '',
+                        label:
+                          employees.length === 0
+                            ? 'No employees with salary configuration'
+                            : 'All employees are already processed',
+                      },
+                    ]
+                  : [
+                      { value: '', label: 'All employees' },
+                      ...employeesForGenerateDialog.map(emp => ({
+                        value: emp.id,
+                        label: emp.name,
+                      })),
+                    ]
+              }
+              placeholder={
+                employeesForGenerateDialog.length === 0
+                  ? employees.length === 0
                     ? 'No employees with salary configuration'
-                    : 'All employees are already processed'}
-                </MenuItem>
-              ) : (
-                employeesForGenerateDialog.map(emp => (
-                  <MenuItem key={emp.id} value={emp.id}>
-                    {emp.name}
-                  </MenuItem>
-                ))
-              )}
-            </AppSelect>
+                    : 'All employees are already processed'
+                  : 'All employees'
+              }
+              showLabel={false}
+              disabled={employeesForGenerateDialog.length === 0}
+              containerSx={{ minWidth: 220 }}
+              inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+              sx={{
+                '& .MuiSelect-select': { color: effectiveDarkMode ? '#fff' : '#000' },
+                '& .MuiSelect-icon': { color: effectiveDarkMode ? '#fff' : '#000' },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': { borderColor: theme.palette.divider },
+                },
+              }}
+            />
             {employeesForGenerateDialog.length === 0 &&
               employees.length > 0 && (
                 <Alert severity='warning' sx={{ m: 0 }}>
@@ -1408,33 +1428,8 @@ const PayrollRecords: React.FC = () => {
                   generated to avoid duplicates.
                 </Alert>
               )}
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <AppButton
-            onClick={() => setGenerateDialogOpen(false)}
-            variantType='secondary'
-            variant='outlined'
-          >
-            Cancel
-          </AppButton>
-          <AppButton
-            onClick={handleGenerate}
-            variantType='primary'
-            variant='contained'
-            disabled={generating || employeesForGenerateDialog.length === 0}
-            startIcon={generating ? <CircularProgress size={16} /> : undefined}
-            sx={{ textTransform: 'none' }}
-            title={
-              employeesForGenerateDialog.length === 0
-                ? 'No employees available for payroll generation'
-                : ''
-            }
-          >
-            {generating ? 'Generating...' : 'Generate Payroll'}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+        </Stack>
+      </AppFormModal>
     </Box>
   );
 };

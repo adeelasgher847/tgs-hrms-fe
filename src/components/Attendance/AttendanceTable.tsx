@@ -44,7 +44,9 @@ import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppButton from '../common/AppButton';
 import AppTable from '../common/AppTable';
+import AppDropdown from '../common/AppDropdown';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 type TenantOption = { id: string; name: string };
 
@@ -1633,83 +1635,50 @@ const AttendanceTable = () => {
               )}
 
               {adminView === 'all' && isSystemAdminUser && (
-                <FormControl size='small' sx={{ minWidth: 220 }}>
-                  <InputLabel>Tenant</InputLabel>
-                  <Select
-                    value={selectedTenant}
-                    label='Tenant'
-                    disabled={tenantsLoading}
-                    onChange={e => handleTenantChange(e.target.value)}
-                  >
-                    <MenuItem value=''>
-                      <em>All Tenants</em>
-                    </MenuItem>
-
-                    {tenants.map(tenant => (
-                      <MenuItem key={tenant.id} value={tenant.id}>
-                        {tenant.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <AppDropdown
+                  label='Tenant'
+                  value={selectedTenant || ''}
+                  onChange={(e: SelectChangeEvent<string | number>) =>
+                    handleTenantChange(e.target.value as string)
+                  }
+                  options={[
+                    { value: '', label: 'All Tenants' },
+                    ...tenants.map(tenant => ({
+                      value: tenant.id,
+                      label: tenant.name,
+                    })),
+                  ]}
+                  disabled={tenantsLoading}
+                  containerSx={{ minWidth: 220 }}
+                />
               )}
 
               {canViewAllAttendance && adminView === 'all' && (
-                <TextField
-                  select
+                <AppDropdown
                   label='SELECT EMPLOYEE'
-                  value={selectedEmployee}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleEmployeeChange(e.target.value)
+                  value={selectedEmployee || ''}
+                  onChange={(e: SelectChangeEvent<string | number>) =>
+                    handleEmployeeChange(e.target.value as string)
                   }
-                  sx={{
+                  options={[
+                    { value: '', label: 'All Employees' },
+                    ...employees.map(emp => ({
+                      value: emp.id,
+                      label: emp.name,
+                    })),
+                  ]}
+                  placeholder='SELECT EMPLOYEE'
+                  showLabel={false}
+                  containerSx={{
                     width: '200px',
                     minWidth: '200px',
                     maxWidth: '200px',
                     flexShrink: 0,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '12px',
-                      fontSize: '16px',
-                      color: '#3284dc',
-                      textTransform: 'uppercase',
-                      width: '100%',
-                      '& fieldset': {
-                        borderColor: '#3083DC',
-                        borderWidth: '1px',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: '#3083DC',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#3083DC',
-                      },
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: '#3284dc',
-                      fontSize: '16px',
-                      textTransform: 'uppercase',
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: '#3284dc',
-                    },
-                    '& .MuiSelect-select': {
-                      color: '#3284dc',
-                      textTransform: 'uppercase',
-                      fontSize: '16px',
-                    },
-                    '& .MuiSvgIcon-root': {
-                      color: '#3284dc',
-                    },
+                    padding: 0,
+                    margin: 0,
+                    boxSizing: 'border-box',
                   }}
-                  size='small'
-                >
-                  <MenuItem value=''>All Employees</MenuItem>
-                  {employees.map(emp => (
-                    <MenuItem key={emp.id} value={emp.id}>
-                      {emp.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                />
               )}
               <Box
                 sx={{
@@ -2070,57 +2039,30 @@ const AttendanceTable = () => {
             </Box>
             {/* Team Employee Filter - for team attendance (regular users) */}
             {teamEmployees.length > 0 && (
-              <TextField
-                select
+              <AppDropdown
                 label='SELECT EMPLOYEE'
-                value={selectedTeamEmployee}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  handleTeamEmployeeChange(e.target.value)
+                value={selectedTeamEmployee || ''}
+                onChange={(e: SelectChangeEvent<string | number>) =>
+                  handleTeamEmployeeChange(e.target.value as string)
                 }
-                sx={{
+                options={[
+                  { value: '', label: 'All Employees' },
+                  ...teamEmployees.map(emp => ({
+                    value: emp.id,
+                    label: emp.name,
+                  })),
+                ]}
+                placeholder='SELECT EMPLOYEE'
+                showLabel={false}
+                containerSx={{
                   width: '200px',
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '12px',
-                    fontSize: '16px',
-                    color: '#3284dc',
-                    textTransform: 'uppercase',
-                    '& fieldset': {
-                      borderColor: '#3083DC',
-                      borderWidth: '1px',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: '#3083DC',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#3083DC',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: '#3284dc',
-                    fontSize: '16px',
-                    textTransform: 'uppercase',
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#3284dc',
-                  },
-                  '& .MuiSelect-select': {
-                    color: '#3284dc',
-                    textTransform: 'uppercase',
-                    fontSize: '16px',
-                  },
-                  '& .MuiSvgIcon-root': {
-                    color: '#3284dc',
-                  },
+                  minWidth: '200px',
+                  maxWidth: '200px',
+                  flexShrink: 0,
+                  padding: 0,
+                  margin: 0,
                 }}
-                size='small'
-              >
-                <MenuItem value=''>All Employees</MenuItem>
-                {teamEmployees.map(emp => (
-                  <MenuItem key={emp.id} value={emp.id}>
-                    {emp.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             )}
             <AppButton
               variant='outlined'
@@ -2356,57 +2298,28 @@ const AttendanceTable = () => {
             </Box>
             {/* Team Employee Filter - for manager team attendance */}
             {teamEmployees.length > 0 && (
-              <TextField
-                select
+              <AppDropdown
                 label='SELECT EMPLOYEE'
-                value={selectedTeamEmployee}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  handleTeamEmployeeChange(e.target.value)
+                value={selectedTeamEmployee || ''}
+                onChange={(e: SelectChangeEvent<string | number>) =>
+                  handleTeamEmployeeChange(e.target.value as string)
                 }
-                sx={{
+                options={[
+                  { value: '', label: 'All Employees' },
+                  ...teamEmployees.map(emp => ({
+                    value: emp.id,
+                    label: emp.name,
+                  })),
+                ]}
+                placeholder='SELECT EMPLOYEE'
+                showLabel={false}
+                containerSx={{
                   width: '200px',
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '12px',
-                    fontSize: '16px',
-                    color: '#3284dc',
-                    textTransform: 'uppercase',
-                    '& fieldset': {
-                      borderColor: '#3083DC',
-                      borderWidth: '1px',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: '#3083DC',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#3083DC',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: '#3284dc',
-                    fontSize: '16px',
-                    textTransform: 'uppercase',
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#3284dc',
-                  },
-                  '& .MuiSelect-select': {
-                    color: '#3284dc',
-                    textTransform: 'uppercase',
-                    fontSize: '16px',
-                  },
-                  '& .MuiSvgIcon-root': {
-                    color: '#3284dc',
-                  },
+                  minWidth: '200px',
+                  maxWidth: '200px',
+                  flexShrink: 0,
                 }}
-                size='small'
-              >
-                <MenuItem value=''>All Employees</MenuItem>
-                {teamEmployees.map(emp => (
-                  <MenuItem key={emp.id} value={emp.id}>
-                    {emp.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             )}
             <AppButton
               variant='outlined'

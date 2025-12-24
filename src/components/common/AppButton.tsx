@@ -21,6 +21,7 @@ const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
     textTransform: 'uppercase',
     borderRadius: '12px',
     fontWeight: 500,
+    fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
     // '&:hover': {
     //   backgroundColor: 'primary.dark',
     // },
@@ -34,6 +35,7 @@ const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
     textTransform: 'uppercase',
     borderRadius: '12px',
     fontWeight: 500,
+    fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
     // '&:hover': {
     //   borderColor: 'primary.dark',
     //   backgroundColor: 'rgba(72,76,127,0.08)',
@@ -49,6 +51,7 @@ const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
     textTransform: 'uppercase',
     borderRadius: '12px',
     fontWeight: 500,
+    fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
     // '&:hover': {
     //   backgroundColor: 'error.dark',
     // },
@@ -61,6 +64,7 @@ const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
     color: 'text.primary',
     textTransform: 'none',
     borderRadius: '12px',
+    fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
     // '&:hover': {
     //   backgroundColor: 'action.hover',
     //   borderColor: 'transparent',

@@ -8,8 +8,6 @@ import {
   Chip,
   Typography,
   Box,
-  TextField,
-  MenuItem,
   Pagination,
   IconButton,
   Tooltip,
@@ -25,6 +23,8 @@ import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
 import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../common/AppTable';
+import AppDropdown from '../common/AppDropdown';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
@@ -266,7 +266,13 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <AccessTimeIcon color='primary' sx={{ fontSize: 32, mr: 1 }} />
+          <AccessTimeIcon
+            sx={{
+              fontSize: 32,
+              mr: 1,
+              color: 'var(--primary-dark-color)',
+            }}
+          />
           <Typography variant='h5' fontWeight={600}>
             {title}
           </Typography>
@@ -274,25 +280,20 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {!hideDropdown && (isAdmin || isManager) && (
-            <TextField
-              select
-              size='small'
-              value={selectedEmployee}
-              onChange={e => setSelectedEmployee(e.target.value)}
-              sx={{ minWidth: 200 }}
-              SelectProps={{
-                displayEmpty: true,
-                renderValue: (value: unknown) =>
-                  value === '' ? 'All Employees' : String(value),
-              }}
-            >
-              <MenuItem value=''>All Employees</MenuItem>
-              {employeeNames.map(name => (
-                <MenuItem key={name} value={name}>
-                  {name}
-                </MenuItem>
-              ))}
-            </TextField>
+            <AppDropdown
+              label='All Employees'
+              value={selectedEmployee || ''}
+              onChange={(e: SelectChangeEvent<string | number>) =>
+                setSelectedEmployee(String(e.target.value || ''))
+              }
+              options={[
+                { value: '', label: 'All Employees' },
+                ...employeeNames.map(name => ({ value: name, label: name })),
+              ]}
+              placeholder='All Employees'
+              showLabel={false}
+              containerSx={{ minWidth: 200 }}
+            />
           )}
 
           <Tooltip
@@ -303,20 +304,21 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               onClick={handleDownloadCSV}
               disabled={exporting}
               sx={{
-                backgroundColor: 'primary.main',
+                backgroundColor: 'var(--primary-dark-color)',
                 borderRadius: '6px',
                 padding: '6px',
                 color: 'white',
                 '&:hover': {
-                  backgroundColor: 'primary.dark',
+                  backgroundColor: 'var(--primary-dark-color)',
                 },
                 '&:disabled': {
-                  backgroundColor: 'primary.light',
+                  backgroundColor: 'var(--primary-color)',
+                  color: 'var(--primary-dark-color)',
                 },
               }}
             >
               {exporting ? (
-                <CircularProgress size={20} sx={{ color: 'white' }} />
+                <CircularProgress size={20} sx={{ color: 'currentColor' }} />
               ) : (
                 <FileDownloadIcon />
               )}

@@ -135,9 +135,16 @@ const SelectPlan: React.FC = () => {
               priceInfoByPriceId = (prices || []).reduce(
                 (acc, pr: StripePriceInfo) => {
                   const amount =
-                    typeof pr.unit_amount === 'number' ? pr.unit_amount : 0;
-                  const currency = (pr.currency || 'USD').toUpperCase();
-                  const interval = pr.interval || 'month';
+                    typeof pr.unit_amount === 'number'
+                      ? (pr.unit_amount as number)
+                      : 0;
+                  const currency = (
+                    typeof pr.currency === 'string' ? pr.currency : 'USD'
+                  ).toUpperCase();
+                  const interval =
+                    typeof pr.interval === 'string'
+                      ? (pr.interval as string)
+                      : 'month';
                   const formattedAmount = new Intl.NumberFormat(undefined, {
                     style: 'currency',
                     currency,
@@ -146,6 +153,7 @@ const SelectPlan: React.FC = () => {
                   }).format(amount / 100);
                   const intervalLabel =
                     interval.charAt(0).toUpperCase() + interval.slice(1);
+                  // priceId might be returned as `priceId` or `id` depending on API
                   acc[pr.priceId] = {
                     formatted: formattedAmount,
                     intervalLabel,

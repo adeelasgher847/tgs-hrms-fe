@@ -182,7 +182,8 @@ const AttendanceCheck = () => {
             sx={{
               minWidth: { xs: 100, sm: 120, md: 140 },
               height: { xs: 36, sm: 40 },
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              fontSize: '1.1rem',
+              fontWeight: 600,
               px: { xs: 1, sm: 2 },
               textTransform: 'none',
             }}
