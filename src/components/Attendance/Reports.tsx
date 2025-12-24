@@ -605,10 +605,10 @@ const Reports: React.FC = () => {
                 color='primary'
                 onClick={handleExport}
                 sx={{
-                  backgroundColor: 'primary.main',
+                  backgroundColor: '#3083DC',
                   borderRadius: '6px',
                   color: 'white',
-                  '&:hover': { backgroundColor: 'primary.dark' },
+                  '&:hover': { backgroundColor: '#3083DC' },
                 }}
               >
                 <FileDownloadIcon />

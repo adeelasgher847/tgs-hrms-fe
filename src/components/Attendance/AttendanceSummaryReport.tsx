@@ -249,8 +249,11 @@ const AttendanceSummaryReport: React.FC = () => {
   return (
     <Box>
       <Typography
-        variant='h4'
+        fontWeight={500}
         fontSize={{ xs: '32px', lg: '48px' }}
+        lineHeight='44px'
+        letterSpacing='-2%'
+        color='#2C2C2C'
         gutterBottom
       >
         Attendance Summary Report
@@ -262,7 +265,44 @@ const AttendanceSummaryReport: React.FC = () => {
         alignItems='center'
         gap={2}
       >
-        <FormControl size='small' sx={{ minWidth: 160 }}>
+        <FormControl
+          size='small'
+          sx={{
+            width: '200px',
+            minWidth: '200px',
+            maxWidth: '200px',
+            flexShrink: 0,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '12px',
+              fontSize: '16px',
+              color: '#3284dc',
+              '& fieldset': {
+                borderColor: '#3083DC',
+                borderWidth: '1px',
+              },
+              '&:hover fieldset': {
+                borderColor: '#3083DC',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#3083DC',
+              },
+            },
+            '& .MuiInputLabel-root': {
+              color: '#3284dc',
+              fontSize: '16px',
+            },
+            '& .MuiInputLabel-root.Mui-focused': {
+              color: '#3284dc',
+            },
+            '& .MuiSelect-select': {
+              color: '#3284dc',
+              fontSize: '16px',
+            },
+            '& .MuiSvgIcon-root': {
+              color: '#3284dc',
+            },
+          }}
+        >
           <Select
             value={filter}
             onChange={e => {
@@ -274,6 +314,7 @@ const AttendanceSummaryReport: React.FC = () => {
                   | '90days'
               );
             }}
+            displayEmpty
           >
             <MenuItem value='thisMonth'>This Month</MenuItem>
             <MenuItem value='prevMonth'>Previous Month</MenuItem>
@@ -287,12 +328,12 @@ const AttendanceSummaryReport: React.FC = () => {
             color='primary'
             onClick={handleDownload}
             sx={{
-              backgroundColor: 'primary.main',
+              backgroundColor: '#3083DC',
               borderRadius: '6px',
               padding: '6px',
               color: 'white',
               '&:hover': {
-                backgroundColor: 'primary.dark',
+                backgroundColor: '#3083DC',
               },
             }}
           >
@@ -384,7 +425,13 @@ const AttendanceSummaryReport: React.FC = () => {
       {/* Pagination Info */}
       {safeData.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1} mb={2}>
-          <Typography variant='body2' color='textSecondary'>
+          <Typography
+            fontWeight={400}
+            fontSize='16px'
+            lineHeight='24px'
+            letterSpacing='-1%'
+            color='#2C2C2C'
+          >
             Showing page {currentPage} of {totalPages} ({totalRecords} total
             records)
           </Typography>

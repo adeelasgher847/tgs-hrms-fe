@@ -1511,8 +1511,11 @@ const AttendanceTable = () => {
   return (
     <Box>
       <Typography
-        variant='h4'
+        fontWeight={500}
         fontSize={{ xs: '32px', lg: '48px' }}
+        lineHeight='44px'
+        letterSpacing='-2%'
+        color='#2C2C2C'
         gutterBottom
       >
         Attendance Management
@@ -1567,6 +1570,13 @@ const AttendanceTable = () => {
                     variant={adminView === 'my' ? 'contained' : 'outlined'}
                     variantType={adminView === 'my' ? 'primary' : 'secondary'}
                     onClick={handleMyAttendance}
+                    sx={{
+                      width: '200px',
+                      minWidth: '200px',
+                      maxWidth: '200px',
+                      boxSizing: 'border-box',
+                      flexShrink: 0,
+                    }}
                   >
                     My Attendance
                   </AppButton>
@@ -1574,6 +1584,13 @@ const AttendanceTable = () => {
                     variant={adminView === 'all' ? 'contained' : 'outlined'}
                     variantType={adminView === 'all' ? 'primary' : 'secondary'}
                     onClick={handleAllAttendance}
+                    sx={{
+                      width: '200px',
+                      minWidth: '200px',
+                      maxWidth: '200px',
+                      boxSizing: 'border-box',
+                      flexShrink: 0,
+                    }}
                   >
                     All Attendance
                   </AppButton>
@@ -1586,6 +1603,13 @@ const AttendanceTable = () => {
                     variant={managerView === 'my' ? 'contained' : 'outlined'}
                     variantType={managerView === 'my' ? 'primary' : 'secondary'}
                     onClick={handleManagerMyAttendance}
+                    sx={{
+                      width: '200px',
+                      minWidth: '200px',
+                      maxWidth: '200px',
+                      boxSizing: 'border-box',
+                      flexShrink: 0,
+                    }}
                   >
                     My Attendance
                   </AppButton>
@@ -1595,6 +1619,13 @@ const AttendanceTable = () => {
                       managerView === 'team' ? 'primary' : 'secondary'
                     }
                     onClick={handleManagerTeamAttendance}
+                    sx={{
+                      width: '200px',
+                      minWidth: '200px',
+                      maxWidth: '200px',
+                      boxSizing: 'border-box',
+                      flexShrink: 0,
+                    }}
                   >
                     Team Attendance
                   </AppButton>
@@ -1626,12 +1657,50 @@ const AttendanceTable = () => {
               {canViewAllAttendance && adminView === 'all' && (
                 <TextField
                   select
-                  label='Select Employee'
+                  label='SELECT EMPLOYEE'
                   value={selectedEmployee}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     handleEmployeeChange(e.target.value)
                   }
-                  sx={{ minWidth: 200 }}
+                  sx={{
+                    width: '200px',
+                    minWidth: '200px',
+                    maxWidth: '200px',
+                    flexShrink: 0,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                      fontSize: '16px',
+                      color: '#3284dc',
+                      textTransform: 'uppercase',
+                      width: '100%',
+                      '& fieldset': {
+                        borderColor: '#3083DC',
+                        borderWidth: '1px',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#3083DC',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#3083DC',
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: '#3284dc',
+                      fontSize: '16px',
+                      textTransform: 'uppercase',
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#3284dc',
+                    },
+                    '& .MuiSelect-select': {
+                      color: '#3284dc',
+                      textTransform: 'uppercase',
+                      fontSize: '16px',
+                    },
+                    '& .MuiSvgIcon-root': {
+                      color: '#3284dc',
+                    },
+                  }}
                   size='small'
                 >
                   <MenuItem value=''>All Employees</MenuItem>
@@ -1642,7 +1711,14 @@ const AttendanceTable = () => {
                   ))}
                 </TextField>
               )}
-              <Box>
+              <Box
+                sx={{
+                  width: '200px',
+                  minWidth: '200px',
+                  maxWidth: '200px',
+                  flexShrink: 0,
+                }}
+              >
                 <DatePicker
                   range
                   numberOfMonths={2}
@@ -1684,15 +1760,14 @@ const AttendanceTable = () => {
                     }
                   }}
                   format='MM/DD/YYYY'
-                  placeholder='Start Date - End Date'
+                  placeholder='START DATE - END DATE'
                   style={{
                     width: '100%',
                     height: '40px',
                     padding: '6.5px 14px',
-                    border: '1px solid rgba(0, 0, 0, 0.23)',
-                    borderRadius: '4px',
+                    border: '1px solid #3083DC',
+                    borderRadius: '12px',
                     fontSize: '16px',
-                    fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
                     outline: 'none',
                   }}
                   containerStyle={{
@@ -1715,6 +1790,14 @@ const AttendanceTable = () => {
                 variant='contained'
                 variantType='primary'
                 onClick={handleFilterChange}
+                sx={{
+                  width: '200px',
+                  minWidth: '200px',
+                  maxWidth: '200px',
+                  borderRadius: '12px',
+                  boxSizing: 'border-box',
+                  flexShrink: 0,
+                }}
               >
                 Clear Filters
               </AppButton>
@@ -1772,12 +1855,12 @@ const AttendanceTable = () => {
                     }
                   }}
                   sx={{
-                    backgroundColor: 'primary.main',
+                    backgroundColor: '#3083DC',
                     borderRadius: '6px',
                     padding: '6px',
                     color: 'white',
                     '&:hover': {
-                      backgroundColor: 'primary.dark',
+                      backgroundColor: '#3083DC',
                     },
                   }}
                 >
@@ -1863,7 +1946,13 @@ const AttendanceTable = () => {
 
           {totalItems > 0 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <Typography variant='body2' color='text.secondary'>
+              <Typography
+                fontWeight={400}
+                fontSize='16px'
+                lineHeight='24px'
+                letterSpacing='-1%'
+                color='#2C2C2C'
+              >
                 Showing all {totalItems} records
               </Typography>
             </Box>
@@ -1881,7 +1970,15 @@ const AttendanceTable = () => {
               mb: 2,
             }}
           >
-            <Typography variant='h6'>Team Attendance</Typography>
+            <Typography
+              fontWeight={500}
+              fontSize={{ xs: '20px', lg: '28px' }}
+              lineHeight='36px'
+              letterSpacing='-2%'
+              color='#2C2C2C'
+            >
+              Team Attendance
+            </Typography>
           </Box>
 
           <Box
@@ -1893,7 +1990,7 @@ const AttendanceTable = () => {
               flexWrap: 'wrap',
             }}
           >
-            <Box>
+            <Box sx={{ width: '200px' }}>
               <DatePicker
                 range
                 numberOfMonths={2}
@@ -1950,8 +2047,8 @@ const AttendanceTable = () => {
                   width: '100%',
                   height: '40px',
                   padding: '6.5px 14px',
-                  border: '1px solid rgba(0, 0, 0, 0.23)',
-                  borderRadius: '4px',
+                  border: '1px solid #3083DC',
+                  borderRadius: '12px',
                   fontSize: '16px',
                   fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
                   outline: 'none',
@@ -1975,12 +2072,46 @@ const AttendanceTable = () => {
             {teamEmployees.length > 0 && (
               <TextField
                 select
-                label='Select Employee'
+                label='SELECT EMPLOYEE'
                 value={selectedTeamEmployee}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleTeamEmployeeChange(e.target.value)
                 }
-                sx={{ minWidth: 200 }}
+                sx={{
+                  width: '200px',
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    color: '#3284dc',
+                    textTransform: 'uppercase',
+                    '& fieldset': {
+                      borderColor: '#3083DC',
+                      borderWidth: '1px',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#3083DC',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#3083DC',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: '#3284dc',
+                    fontSize: '16px',
+                    textTransform: 'uppercase',
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#3284dc',
+                  },
+                  '& .MuiSelect-select': {
+                    color: '#3284dc',
+                    textTransform: 'uppercase',
+                    fontSize: '16px',
+                  },
+                  '& .MuiSvgIcon-root': {
+                    color: '#3284dc',
+                  },
+                }}
                 size='small'
               >
                 <MenuItem value=''>All Employees</MenuItem>
@@ -2112,6 +2243,14 @@ const AttendanceTable = () => {
                 (managerView as string) === 'my' ? 'primary' : 'secondary'
               }
               onClick={handleManagerMyAttendance}
+              sx={{
+                width: '200px',
+                minWidth: '200px',
+                maxWidth: '200px',
+                borderRadius: '12px',
+                boxSizing: 'border-box',
+                flexShrink: 0,
+              }}
             >
               My Attendance
             </AppButton>
@@ -2119,11 +2258,26 @@ const AttendanceTable = () => {
               variant={managerView === 'team' ? 'contained' : 'outlined'}
               variantType={managerView === 'team' ? 'primary' : 'secondary'}
               onClick={handleManagerTeamAttendance}
+              sx={{
+                width: '200px',
+                minWidth: '200px',
+                maxWidth: '200px',
+                borderRadius: '12px',
+                boxSizing: 'border-box',
+                flexShrink: 0,
+              }}
             >
               Team Attendance
             </AppButton>
 
-            <Box>
+            <Box
+              sx={{
+                width: '200px',
+                minWidth: '200px',
+                maxWidth: '200px',
+                flexShrink: 0,
+              }}
+            >
               <DatePicker
                 range
                 numberOfMonths={2}
@@ -2179,8 +2333,8 @@ const AttendanceTable = () => {
                   width: '100%',
                   height: '40px',
                   padding: '6.5px 14px',
-                  border: '1px solid rgba(0, 0, 0, 0.23)',
-                  borderRadius: '4px',
+                  border: '1px solid #3083DC',
+                  borderRadius: '12px',
                   fontSize: '16px',
                   fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
                   outline: 'none',
@@ -2204,12 +2358,46 @@ const AttendanceTable = () => {
             {teamEmployees.length > 0 && (
               <TextField
                 select
-                label='Select Employee'
+                label='SELECT EMPLOYEE'
                 value={selectedTeamEmployee}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleTeamEmployeeChange(e.target.value)
                 }
-                sx={{ minWidth: 200 }}
+                sx={{
+                  width: '200px',
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    color: '#3284dc',
+                    textTransform: 'uppercase',
+                    '& fieldset': {
+                      borderColor: '#3083DC',
+                      borderWidth: '1px',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#3083DC',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#3083DC',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: '#3284dc',
+                    fontSize: '16px',
+                    textTransform: 'uppercase',
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#3284dc',
+                  },
+                  '& .MuiSelect-select': {
+                    color: '#3284dc',
+                    textTransform: 'uppercase',
+                    fontSize: '16px',
+                  },
+                  '& .MuiSvgIcon-root': {
+                    color: '#3284dc',
+                  },
+                }}
                 size='small'
               >
                 <MenuItem value=''>All Employees</MenuItem>
@@ -2229,6 +2417,14 @@ const AttendanceTable = () => {
                 setTeamCurrentNavigationDate('all');
                 setSelectedTeamEmployee('');
                 fetchTeamAttendance(1);
+              }}
+              sx={{
+                width: '200px',
+                minWidth: '200px',
+                maxWidth: '200px',
+                borderRadius: '12px',
+                boxSizing: 'border-box',
+                flexShrink: 0,
               }}
             >
               Clear Filters

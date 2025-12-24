@@ -139,17 +139,21 @@ const AttendanceCheck = () => {
       >
         <Box>
           <Typography
-            variant='h5'
-            fontWeight='bold'
-            color='var(--dark-color)'
-            sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
+            fontWeight={500}
+            fontSize={{ xs: '32px', lg: '48px' }}
+            lineHeight='44px'
+            letterSpacing='-2%'
+            color='#2C2C2C'
           >
             Attendance Management
           </Typography>
           <Typography
-            variant='body2'
-            color='text.secondary'
-            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+            fontWeight={400}
+            fontSize={{ xs: '16px', lg: '16px' }}
+            lineHeight='24px'
+            letterSpacing='-1%'
+            color='#2C2C2C'
+            sx={{ mt: 1 }}
           >
             {isAdminUser ||
             isSystemAdminUser ||
@@ -164,7 +168,7 @@ const AttendanceCheck = () => {
         {status === 'Not Checked In' || status === 'Checked Out' ? (
           <AppButton
             variant='contained'
-            color='success'
+            variantType='primary'
             text='Check In'
             onClick={handleCheckIn}
             disabled={loading}
@@ -179,15 +183,14 @@ const AttendanceCheck = () => {
               minWidth: { xs: 100, sm: 120, md: 140 },
               height: { xs: 36, sm: 40 },
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              fontWeight: 600,
-              borderRadius: 1,
               px: { xs: 1, sm: 2 },
+              textTransform: 'none',
             }}
           />
         ) : (
           <AppButton
             variant='contained'
-            color='warning'
+            variantType='primary'
             text='Check Out'
             onClick={handleCheckOut}
             disabled={loading}
@@ -204,9 +207,8 @@ const AttendanceCheck = () => {
               minWidth: { xs: 100, sm: 120, md: 140 },
               height: { xs: 36, sm: 40 },
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              fontWeight: 600,
-              borderRadius: 1,
               px: { xs: 1, sm: 2 },
+              textTransform: 'none',
             }}
           />
         )}
@@ -235,7 +237,13 @@ const AttendanceCheck = () => {
             boxShadow: 'unset',
           }}
         >
-          <Typography variant='h6' fontWeight='bold'>
+          <Typography
+            fontWeight={500}
+            fontSize={{ xs: '20px', lg: '28px' }}
+            lineHeight='36px'
+            letterSpacing='-2%'
+            color='#2C2C2C'
+          >
             Good{' '}
             {new Date().getHours() < 12
               ? 'morning'
@@ -245,10 +253,11 @@ const AttendanceCheck = () => {
             , {userName}
           </Typography>
           <Typography
-            variant='h4'
-            color='var(--dark-color)'
+            fontWeight={500}
             fontSize='20px'
-            fontWeight='bold'
+            lineHeight='28px'
+            letterSpacing='-1%'
+            color='#2C2C2C'
             mb={3}
             sx={{ fontFamily: 'monospace' }}
           >
@@ -278,17 +287,20 @@ const AttendanceCheck = () => {
               />
               <Box>
                 <Typography
-                  variant='body2'
-                  color='text.secondary'
-                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                  fontWeight={400}
+                  fontSize={{ xs: '14px', lg: '14px' }}
+                  lineHeight='20px'
+                  letterSpacing='-1%'
+                  color='#2C2C2C'
                 >
                   Check In Time
                 </Typography>
                 <Typography
-                  variant='h6'
-                  fontWeight='bold'
+                  fontWeight={500}
+                  fontSize={{ xs: '20px', lg: '20px' }}
+                  lineHeight='28px'
+                  letterSpacing='-1%'
                   color='success.main'
-                  sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}
                 >
                   {punchInTime || '--:--'}
                 </Typography>
@@ -313,17 +325,20 @@ const AttendanceCheck = () => {
               />
               <Box>
                 <Typography
-                  variant='body2'
-                  color='text.secondary'
-                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                  fontWeight={400}
+                  fontSize={{ xs: '14px', lg: '14px' }}
+                  lineHeight='20px'
+                  letterSpacing='-1%'
+                  color='#2C2C2C'
                 >
                   Check Out Time
                 </Typography>
                 <Typography
-                  variant='h6'
-                  fontWeight='bold'
+                  fontWeight={500}
+                  fontSize={{ xs: '20px', lg: '20px' }}
+                  lineHeight='28px'
+                  letterSpacing='-1%'
                   color='warning.main'
-                  sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}
                 >
                   {punchOutTime || '--:--'}
                 </Typography>
