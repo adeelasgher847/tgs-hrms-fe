@@ -102,6 +102,25 @@ const EmployeeManager: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
+  // If Stripe redirects back to this page with a session_id, forward to the unified
+  // confirmation screen (which will finalize the employee after payment).
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(location.search);
+      const sessionId = sp.get('session_id');
+      if (!sessionId) return;
+
+      const pending = sessionStorage.getItem('pendingEmployeePayment');
+      if (!pending) return;
+
+      navigate(`/signup/confirm-payment?session_id=${encodeURIComponent(sessionId)}`, {
+        replace: true,
+      });
+    } catch {
+      // ignore
+    }
+  }, [location.search, navigate]);
+
   // Pagination state - now for client-side pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [paginationLimit, setPaginationLimit] = useState(
@@ -438,9 +457,50 @@ const EmployeeManager: React.FC = () => {
 
       return { success: true };
     } catch (err: unknown) {
-      // Debug: Log the actual error structure
-      if (err && typeof err === 'object' && 'response' in err) {
-        // Error has response property
+      // Handle payment-required flow (backend returns checkoutUrl + checkoutSessionId)
+      const paymentCandidate = err as {
+        response?: {
+          data?: Record<string, unknown>;
+          status?: number;
+        };
+      };
+
+      const data = paymentCandidate?.response?.data ?? null;
+      const requiresPayment =
+        Boolean(data && (data.requiresPayment === true || data.requires_payment === true)) ||
+        false;
+      const checkoutUrl =
+        typeof (data as Record<string, unknown> | null)?.checkoutUrl === 'string'
+          ? ((data as Record<string, unknown>).checkoutUrl as string)
+          : typeof (data as Record<string, unknown> | null)?.checkout_url === 'string'
+            ? ((data as Record<string, unknown>).checkout_url as string)
+            : null;
+      const checkoutSessionId =
+        typeof (data as Record<string, unknown> | null)?.checkoutSessionId === 'string'
+          ? ((data as Record<string, unknown>).checkoutSessionId as string)
+          : typeof (data as Record<string, unknown> | null)?.checkout_session_id === 'string'
+            ? ((data as Record<string, unknown>).checkout_session_id as string)
+            : typeof (data as Record<string, unknown> | null)?.session_id === 'string'
+              ? ((data as Record<string, unknown>).session_id as string)
+              : null;
+
+      if (requiresPayment && checkoutUrl && checkoutSessionId) {
+        try {
+          sessionStorage.setItem(
+            'pendingEmployeePayment',
+            JSON.stringify({
+              checkoutSessionId,
+              returnTo: `${location.pathname}${location.search}`,
+              createdAt: new Date().toISOString(),
+            })
+          );
+        } catch {
+          // ignore storage errors
+        }
+
+        showSuccess('Redirecting to secure payment...');
+        window.location.href = checkoutUrl;
+        return { success: false };
       }
 
       // Handle backend validation errors

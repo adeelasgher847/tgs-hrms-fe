@@ -334,7 +334,7 @@ export default function DesignationModal({
           disabled={!hasChanges}
           text={
             designation
-              ? getText('Update', 'تحديث')
+            ? getText('Update', 'تحديث')
               : getText('Create', 'إنشاء')
           }
         />

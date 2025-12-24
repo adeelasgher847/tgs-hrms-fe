@@ -260,7 +260,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
                 minWidth: 'fit-content',
               }}
             >
-              {isAdmin()
+            {isAdmin()
                 ? searchTerm
                   ? filteredAdminTeamMembers.length
                   : adminTeamMembers.length

@@ -12,7 +12,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-// import { COLORS } from '../../constants/appConstants';
 import AppInputField from './AppInputField';
 import AppDropdown from './AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -40,6 +39,11 @@ interface AppFormModalProps {
   fields: FormField[];
   submitLabel?: string;
   cancelLabel?: string;
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+  };
   isSubmitting?: boolean;
   hasChanges?: boolean;
   isRtl?: boolean;
@@ -54,6 +58,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   fields,
   submitLabel = 'Create',
   cancelLabel = 'Cancel',
+  secondaryAction,
   isSubmitting = false,
   hasChanges = true,
   isRtl = false,
@@ -161,6 +166,15 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
               gap: 2,
               width: '100%',
               direction: isRtl ? 'rtl' : 'ltr',
+              // Ensure dropdown labels and input labels are readable on small screens
+              '& .subheading2': {
+                fontSize: { xs: '13px', sm: 'var(--subheading2-font-size)' },
+                fontWeight: { xs: '400', sm: 'var(--subheading2-font-weight)' },
+              },
+              '& .MuiInputLabel-root': {
+                fontSize: { xs: '13px', sm: 'var(--label-font-size)' },
+                fontWeight: { xs: '400', sm: 'var(--label-font-weight)' },
+              },
             }}
           >
             {fields.map(field => (
@@ -221,7 +235,6 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
       >
         <Button
           onClick={onClose}
-          disabled={isSubmitting}
           sx={{
             borderRadius: '12px',
             textTransform: 'none',
@@ -238,6 +251,26 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
         >
           {cancelLabel}
         </Button>
+        {secondaryAction && (
+          <Button
+            onClick={secondaryAction.onClick}
+            disabled={secondaryAction.disabled}
+            sx={{
+              borderRadius: '12px',
+              textTransform: 'none',
+              px: 4,
+              fontWeight: 400,
+              bgcolor: 'var(--primary-dark-color)',
+              color: '#FFFFFF',
+              fontSize: { xs: '14px', sm: '16px' },
+              '&:disabled': {
+                opacity: 0.7,
+              },
+            }}
+          >
+            {secondaryAction.label}
+          </Button>
+        )}
 
         <Button
           type='submit'
