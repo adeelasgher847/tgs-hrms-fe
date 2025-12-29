@@ -15,8 +15,6 @@ import {
   DialogContentText,
   DialogActions,
   CircularProgress,
-  TextField,
-  MenuItem,
   Tooltip,
   IconButton,
   Pagination,
@@ -27,6 +25,8 @@ import {
 } from '@mui/icons-material';
 import BenefitCard from './BenefitCard';
 import AssignEmployeeBenefit from './AssignEmployeeBenefit';
+import AppDropdown from '../common/AppDropdown';
+import AppButton from '../common/AppButton';
 import employeeBenefitApi from '../../api/employeeBenefitApi';
 import benefitsApi from '../../api/benefitApi';
 import type { EmployeeWithBenefits } from '../../api/employeeBenefitApi';
@@ -250,50 +250,70 @@ const EmployeeBenefits: React.FC = () => {
             gap: 2,
           }}
         >
-          <TextField
-            select
-            size='small'
-            value={selectedStatus}
-            onChange={e =>
-              setSelectedStatus(
-                e.target.value as 'all' | 'active' | 'expired' | 'cancelled'
-              )
-            }
-            sx={{ minWidth: 200 }}
-            SelectProps={{
-              displayEmpty: true,
-              renderValue: value =>
-                value === 'all'
-                  ? 'All Benefits'
-                  : value.charAt(0).toUpperCase() + value.slice(1),
-            }}
-          >
-            <MenuItem value='all'>All Benefits</MenuItem>
-            <MenuItem value='active'>Active</MenuItem>
-            <MenuItem value='expired'>Expired</MenuItem>
-            <MenuItem value='cancelled'>Cancelled</MenuItem>
-          </TextField>
+          <Box sx={{ minWidth: 200 }}>
+            <AppDropdown
+              label={''}
+              options={[
+                { value: 'all', label: 'All Benefits' },
+                { value: 'active', label: 'Active' },
+                { value: 'expired', label: 'Expired' },
+                { value: 'cancelled', label: 'Cancelled' },
+              ]}
+              value={selectedStatus}
+              onChange={e => {
+                const v = e.target.value as string;
+                setSelectedStatus(
+                  (v === '' ? 'all' : v) as
+                    | 'all'
+                    | 'active'
+                    | 'expired'
+                    | 'cancelled'
+                );
+              }}
+              showLabel={false}
+            />
+          </Box>
 
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant='contained'
+            <AppButton
+              variantType='primary'
               startIcon={<AddIcon />}
               onClick={() => setOpenForm(true)}
+              sx={{
+                borderRadius: '12px',
+                textTransform: 'none',
+                fontWeight: 400,
+                fontSize: 'var(--body-font-size)',
+                lineHeight: 'var(--body-line-height)',
+                letterSpacing: 'var(--body-letter-spacing)',
+                bgcolor: 'var(--primary-dark-color)',
+                color: '#FFFFFF',
+                boxShadow: 'none',
+                minWidth: { xs: 'auto', sm: 200 },
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 0.75, sm: 1 },
+                '& .MuiButton-startIcon': {
+                  marginRight: { xs: 0.5, sm: 1 },
+                  '& > *:nth-of-type(1)': {
+                    fontSize: { xs: '18px', sm: '20px' },
+                  },
+                },
+              }}
             >
               Assign Benefit
-            </Button>
+            </AppButton>
 
             <Tooltip title='Download Employee Benefits'>
               <IconButton
-                color='primary'
                 onClick={handleDownload}
                 aria-label='Download employee benefits CSV'
+                disableRipple
                 sx={{
-                  backgroundColor: 'primary.main',
+                  backgroundColor: 'var(--primary-dark-color)',
                   borderRadius: '6px',
                   padding: '6px',
                   color: 'white',
-                  '&:hover': { backgroundColor: 'primary.dark' },
+                  '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
                 }}
               >
                 <FileDownloadIcon aria-hidden='true' />
@@ -313,7 +333,10 @@ const EmployeeBenefits: React.FC = () => {
       >
         {loading ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
-            <CircularProgress size={28} />
+            <CircularProgress
+              size={28}
+              sx={{ color: 'var(--primary-dark-color)' }}
+            />
           </Box>
         ) : (
           <AppTable>
