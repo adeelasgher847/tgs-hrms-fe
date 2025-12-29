@@ -4,7 +4,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   Box,
   Alert,
@@ -24,6 +23,7 @@ import { useProfilePicture } from '../../context/ProfilePictureContext';
 import { validateEmailAddress } from '../../utils/validation';
 import { env } from '../../config/env';
 import { TIMEOUTS, ERROR_MESSAGES } from '../../constants/appConstants';
+import AppButton from '../common/AppButton';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -420,12 +420,28 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={handleClose} disabled={loading}>
+        <AppButton
+          onClick={handleClose}
+          disabled={loading}
+          variant='outlined'
+          variantType='secondary'
+          sx={{
+            textTransform: 'none',
+            borderColor: 'var(--primary-dark-color)',
+            color: 'var(--primary-dark-color)',
+            '&:hover': {
+              borderColor: 'var(--primary-dark-color)',
+              backgroundColor: 'action.hover',
+            },
+          }}
+        >
           Cancel
-        </Button>
-        <Button
+        </AppButton>
+        <AppButton
           onClick={handleSubmit}
           variant='contained'
+          variantType='primary'
+          sx={{ textTransform: 'none' }}
           disabled={
             loading || (!hasChanges && !selectedPictureFile && !removeRequested)
           }
@@ -437,7 +453,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           }
         >
           {loading ? 'Updating...' : 'Update Profile'}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

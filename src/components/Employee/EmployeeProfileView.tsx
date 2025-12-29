@@ -185,12 +185,19 @@ const EmployeeProfileView: React.FC = () => {
           variant='h5'
           fontWeight={600}
           gutterBottom
-          color='primary.main'
+          sx={{ color: 'var(--primary-dark-color)' }}
         >
           Employee Details
         </Typography>
         <Divider sx={{ mb: 3 }} />
-        <Box display='flex' alignItems='center' mb={3}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            mb: 3,
+          }}
+        >
           <UserAvatar
             user={{
               id: profile.id,
@@ -199,7 +206,7 @@ const EmployeeProfileView: React.FC = () => {
               profile_pic: profile.profile_pic,
             }}
             size={80}
-            sx={{ mr: 2 }}
+            sx={{ mr: { xs: 0, sm: 2 }, mb: { xs: 2, sm: 0 } }}
           />
           <Box>
             <Typography variant='h6' fontWeight={600}>
@@ -208,20 +215,43 @@ const EmployeeProfileView: React.FC = () => {
             <Chip
               label={profile.designation || '—'}
               icon={<Work />}
-              sx={{ mr: 1, mb: 1 }}
-              color='secondary'
+              sx={{
+                mr: 1,
+                mb: 1,
+                backgroundColor: 'var(--primary-dark-color)',
+                color: '#fff',
+                '& .MuiChip-icon': { color: '#fff' },
+              }}
             />
             <Chip
               label={profile.department || '—'}
               icon={<Business />}
-              sx={{ mb: 1 }}
-              color='info'
+              sx={{
+                mb: 1,
+                backgroundColor: 'var(--primary-dark-color)',
+                color: '#fff',
+                '& .MuiChip-icon': { color: '#fff' },
+              }}
             />
             <Typography variant='body2' color='text.secondary' mt={1}>
-              <Email sx={{ fontSize: 16, mr: 0.5 }} /> {profile.email}
+              <Email
+                sx={{
+                  fontSize: 16,
+                  mr: 0.5,
+                  color: 'var(--primary-dark-color)',
+                }}
+              />{' '}
+              {profile.email}
             </Typography>
             <Typography variant='body2' color='text.secondary'>
-              <CalendarToday sx={{ fontSize: 16, mr: 0.5 }} /> Joined:{' '}
+              <CalendarToday
+                sx={{
+                  fontSize: 16,
+                  mr: 0.5,
+                  color: 'var(--primary-dark-color)',
+                }}
+              />{' '}
+              Joined:{' '}
               {new Date(profile.joinedAt).toLocaleDateString()}
             </Typography>
           </Box>
@@ -243,7 +273,7 @@ const EmployeeProfileView: React.FC = () => {
           variant='h6'
           fontWeight={600}
           gutterBottom
-          color='primary.main'
+          sx={{ color: 'var(--primary-dark-color)' }}
         >
           Recent Attendance
         </Typography>
@@ -294,7 +324,7 @@ const EmployeeProfileView: React.FC = () => {
           variant='h6'
           fontWeight={600}
           gutterBottom
-          color='primary.main'
+          sx={{ color: 'var(--primary-dark-color)' }}
         >
           Leave History
         </Typography>

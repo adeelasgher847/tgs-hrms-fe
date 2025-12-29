@@ -141,19 +141,20 @@ const BenefitDetails: React.FC = () => {
           </AppButton>
         ) : (
           <Tooltip title='Download My Benefits'>
-            <IconButton
-              color='primary'
+            <AppButton
+              variant='contained'
+              variantType='primary'
               onClick={handleDownload}
               sx={{
-                backgroundColor: 'primary.main',
                 borderRadius: '6px',
+                minWidth: 0,
                 padding: '6px',
-                color: 'white',
-                '&:hover': { backgroundColor: 'primary.dark' },
+                height: 'auto',
               }}
+              aria-label='Download My Benefits'
             >
-              <FileDownloadIcon />
-            </IconButton>
+              <FileDownloadIcon aria-hidden='true' />
+            </AppButton>
           </Tooltip>
         )}
       </Box>

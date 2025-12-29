@@ -21,7 +21,6 @@ import {
   Phone,
   Business,
   CalendarToday,
-  Edit,
 } from '@mui/icons-material';
 // UserProfile type available if needed
 import { useUser } from '../../hooks/useUser';
@@ -42,6 +41,7 @@ import { useIsDarkMode } from '../../theme';
 import { formatDate } from '../../utils/dateUtils';
 import AppButton from '../common/AppButton';
 import AppCard from '../common/AppCard';
+import Icon from '../common/Icon';
 
 const UserProfileComponent = React.memo(() => {
   const { user: profile, loading, updateUser } = useUser();
@@ -116,37 +116,37 @@ const UserProfileComponent = React.memo(() => {
     if (!profile) return [];
     return [
       {
-        icon: <Person sx={{ color: 'primary.main' }} />,
+        icon: <Person sx={{ color: 'var(--primary-dark-color)' }} />,
         label: 'First Name',
         value: profile.first_name,
       },
       {
-        icon: <Person sx={{ color: 'primary.main' }} />,
+        icon: <Person sx={{ color: 'var(--primary-dark-color)' }} />,
         label: 'Last Name',
         value: profile.last_name,
       },
       {
-        icon: <Email sx={{ color: 'primary.main' }} />,
+        icon: <Email sx={{ color: 'var(--primary-dark-color)' }} />,
         label: 'Email Address',
         value: profile.email,
       },
       {
-        icon: <Phone sx={{ color: 'primary.main' }} />,
+        icon: <Phone sx={{ color: 'var(--primary-dark-color)' }} />,
         label: 'Phone',
         value: profile.phone,
       },
       {
-        icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
+        icon: <AdminPanelSettings sx={{ color: 'var(--primary-dark-color)' }} />,
         label: 'Role',
         value: getRoleName(profile.role),
       },
       {
-        icon: <Business sx={{ color: 'primary.main' }} />,
+        icon: <Business sx={{ color: 'var(--primary-dark-color)' }} />,
         label: 'Tenant',
         value: profile.tenant,
       },
       {
-        icon: <CalendarToday sx={{ color: 'primary.main' }} />,
+        icon: <CalendarToday sx={{ color: 'var(--primary-dark-color)' }} />,
         label: 'Joined',
         value: formatDate(profile.created_at),
       },
@@ -196,16 +196,16 @@ const UserProfileComponent = React.memo(() => {
             onClick={handleEditProfile}
             variant='outlined'
             variantType='secondary'
-            startIcon={<Edit />}
+            startIcon={<Icon name='edit' size={18} color='var(--primary-dark-color)' />}
             sx={{
               textTransform: 'none',
               fontWeight: 500,
               px: 2,
               py: 1,
-              borderColor: theme.palette.divider,
-              color: theme.palette.text.primary,
+              borderColor: 'var(--primary-dark-color)',
+              color: 'var(--primary-dark-color)',
               '&:hover': {
-                borderColor: theme.palette.primary.main,
+                borderColor: 'var(--primary-dark-color)',
                 backgroundColor: theme.palette.action.hover,
               },
             }}

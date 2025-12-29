@@ -557,10 +557,17 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                           <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                             <Chip
                               label='Manager Response'
-                              color='primary'
                               clickable
                               onClick={() => onManagerResponse(leave.id)}
-                              sx={{ fontWeight: 500 }}
+                              sx={{
+                                fontWeight: 500,
+                                backgroundColor: 'var(--primary-dark-color)',
+                                color: '#FFFFFF',
+                                '& .MuiChip-label': { fontWeight: 500 },
+                                '&:hover': {
+                                  backgroundColor: 'var(--primary-dark-color)',
+                                },
+                              }}
                             />
                           </Box>
                         )}
@@ -622,10 +629,21 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               count={totalPages}
               page={currentPage}
               onChange={(_, newPage) => handlePageChange(newPage)}
-              color='primary'
+              sx={{
+                mb: 1,
+                '& .MuiPaginationItem-root': {
+                  color: 'var(--primary-dark-color)',
+                },
+                '& .MuiPaginationItem-root.Mui-selected': {
+                  backgroundColor: 'var(--primary-dark-color)',
+                  color: '#FFFFFF',
+                  '&:hover': {
+                    backgroundColor: 'var(--primary-dark-color)',
+                  },
+                },
+              }}
               showFirstButton
               showLastButton
-              sx={{ mb: 1 }}
             />
           ) : null;
         })()}
