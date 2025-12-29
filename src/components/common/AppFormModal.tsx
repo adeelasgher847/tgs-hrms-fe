@@ -40,6 +40,11 @@ interface AppFormModalProps {
   children?: ReactNode;
   submitLabel?: string;
   cancelLabel?: string;
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+  };
   isSubmitting?: boolean;
   hasChanges?: boolean;
   isRtl?: boolean;
@@ -58,6 +63,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   children,
   submitLabel = 'Create',
   cancelLabel = 'Cancel',
+  secondaryAction,
   isSubmitting = false,
   hasChanges = true,
   isRtl = false,
@@ -173,7 +179,10 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
                   direction: isRtl ? 'rtl' : 'ltr',
                   // Ensure dropdown labels and input labels are readable on small screens
                   '& .subheading2': {
-                    fontSize: { xs: '13px', sm: 'var(--subheading2-font-size)' },
+                    fontSize: {
+                      xs: '13px',
+                      sm: 'var(--subheading2-font-size)',
+                    },
                     fontWeight: {
                       xs: '400',
                       sm: 'var(--subheading2-font-weight)',
@@ -208,7 +217,9 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
                           value={field.value as string}
                           onChange={e => field.onChange(e.target.value)}
                           placeholder={field.placeholder}
-                          multiline={field.multiline || field.type === 'textarea'}
+                          multiline={
+                            field.multiline || field.type === 'textarea'
+                          }
                           rows={
                             field.rows ||
                             (field.type === 'textarea' ? 3 : undefined)

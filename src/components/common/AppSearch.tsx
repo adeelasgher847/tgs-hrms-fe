@@ -40,7 +40,7 @@ const AppSearch: React.FC<AppSearchProps> = ({
             minHeight: '48px',
             padding: '0 !important',
             '& fieldset': {
-              borderColor: '#BDBDBD',
+            //   borderColor: '#BDBDBD',
               borderWidth: '1px',
             },
             '&.Mui-focused fieldset': {
