@@ -31,6 +31,7 @@ interface AppDropdownProps
   helperText?: string;
   inputBackgroundColor?: string;
   showLabel?: boolean;
+  align?: 'left' | 'center';
 }
 
 const ArrowIcon = ({ open }: { open: boolean }) => (
@@ -63,12 +64,14 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
       helperText,
       inputBackgroundColor,
       showLabel = true,
+      align = 'center',
       sx,
       ...rest
     },
     ref
   ) => {
     const [open, setOpen] = useState(false);
+    const isLeftAligned = align === 'left';
 
     return (
       <Box
@@ -166,14 +169,26 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
               margin: '0 !important',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
+              justifyContent: isLeftAligned ? 'flex-start' : 'center',
+              textAlign: isLeftAligned ? 'left' : 'center',
+              ...(isLeftAligned
+                ? {
+                    paddingLeft: '16px !important',
+                    paddingRight: '44px !important', // leave room for the dropdown icon
+                  }
+                : {}),
             },
             '& .MuiOutlinedInput-input': {
               padding: '0px !important',
               paddingRight: '0px !important',
               margin: '0 !important',
-              textAlign: 'center',
+              textAlign: isLeftAligned ? 'left' : 'center',
+              ...(isLeftAligned
+                ? {
+                    paddingLeft: '16px !important',
+                    paddingRight: '44px !important',
+                  }
+                : {}),
             },
             '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
               {
@@ -184,8 +199,14 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                 boxSizing: 'border-box',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                textAlign: 'center',
+                justifyContent: isLeftAligned ? 'flex-start' : 'center',
+                textAlign: isLeftAligned ? 'left' : 'center',
+                ...(isLeftAligned
+                  ? {
+                      paddingLeft: '16px !important',
+                      paddingRight: '44px !important',
+                    }
+                  : {}),
               },
             '& [class*="MuiNativeSelect-root"]': {
               padding: '0 !important',

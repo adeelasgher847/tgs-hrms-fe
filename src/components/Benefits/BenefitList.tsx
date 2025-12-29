@@ -23,6 +23,8 @@ import AppButton from '../common/AppButton';
 import AppDropdown from '../common/AppDropdown';
 import AppTable from '../common/AppTable';
 import { DeleteConfirmationDialog } from '../common/DeleteConfirmationDialog';
+import { getUserRole } from '../../utils/auth';
+import { normalizeRole } from '../../utils/permissions';
 
 const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 
@@ -36,6 +38,8 @@ interface Benefit {
 }
 
 const BenefitList: React.FC = () => {
+  const role = normalizeRole(getUserRole());
+  const isManager = role === 'manager';
   const [loading, setLoading] = useState(true);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [page, setPage] = useState(1);
@@ -298,30 +302,47 @@ const BenefitList: React.FC = () => {
             Create
           </AppButton>
 
-          <Tooltip title='Export Benefit List'>
-            <IconButton
-              disableRipple
+          {isManager ? (
+            <AppButton
+              variant='contained'
+              variantType='primary'
               onClick={handleDownload}
-              aria-label='Export benefit list'
               sx={{
-                backgroundColor: 'var(--primary-dark-color)',
                 borderRadius: '6px',
+                minWidth: 0,
                 padding: '6px',
-                color: 'white',
-                transition: 'none',
-                '&:hover': {
-                  backgroundColor: 'var(--primary-dark-color)',
-                  boxShadow: 'none',
-                },
-                '&:active': { backgroundColor: 'var(--primary-dark-color)' },
-                '&.Mui-focusVisible': {
-                  backgroundColor: 'var(--primary-dark-color)',
-                },
+                height: 'auto',
               }}
+              aria-label='Export benefit list'
             >
               <FileDownloadIcon aria-hidden='true' />
-            </IconButton>
-          </Tooltip>
+            </AppButton>
+          ) : (
+            <Tooltip title='Export Benefit List'>
+              <IconButton
+                disableRipple
+                onClick={handleDownload}
+                aria-label='Export benefit list'
+                sx={{
+                  backgroundColor: 'var(--primary-dark-color)',
+                  borderRadius: '6px',
+                  padding: '6px',
+                  color: 'white',
+                  transition: 'none',
+                  '&:hover': {
+                    backgroundColor: 'var(--primary-dark-color)',
+                    boxShadow: 'none',
+                  },
+                  '&:active': { backgroundColor: 'var(--primary-dark-color)' },
+                  '&.Mui-focusVisible': {
+                    backgroundColor: 'var(--primary-dark-color)',
+                  },
+                }}
+              >
+                <FileDownloadIcon aria-hidden='true' />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       </Box>
 

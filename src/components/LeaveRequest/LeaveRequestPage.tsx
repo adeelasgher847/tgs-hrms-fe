@@ -401,6 +401,17 @@ const LeaveRequestPage = () => {
     setDialogOpen(true);
   };
 
+  // Manager approves/rejects a team leave (alias to the existing dialog flow)
+  const handleManagerAction = (id: string, action: 'approved' | 'rejected') => {
+    handleOpenManagerResponse(id, action);
+  };
+
+  // View manager remarks/response for a leave (opens the read-only dialog)
+  const handleViewManagerResponse = (id: string) => {
+    setSelectedId(id);
+    setManagerResponseDialogOpen(true);
+  };
+
   const handleWithdraw = (id: string) => {
     setSelectedId(id);
     setWithdrawDialogOpen(true);
@@ -496,7 +507,11 @@ const LeaveRequestPage = () => {
       {/* Header */}
       <AppBar
         position='static'
-        sx={{ borderRadius: 1, backgroundColor: 'var(--primary-dark-color)', boxShadow: 'none' }}
+        sx={{
+          borderRadius: 1,
+          backgroundColor: 'var(--primary-dark-color)',
+          boxShadow: 'none',
+        }}
       >
         <Toolbar
           sx={{
@@ -538,7 +553,10 @@ const LeaveRequestPage = () => {
                 onClick={() => setActiveTab('apply')}
                 sx={{
                   borderRadius: '20px',
-                  color: activeTab === 'apply' ? 'var(--primary-dark-color)' : '#fff',
+                  color:
+                    activeTab === 'apply'
+                      ? 'var(--primary-dark-color)'
+                      : '#fff',
                   backgroundColor:
                     activeTab === 'apply' ? '#fff' : 'transparent',
                   borderColor: '#fff',
@@ -554,7 +572,10 @@ const LeaveRequestPage = () => {
                 onClick={() => setActiveTab('history')}
                 sx={{
                   borderRadius: '20px',
-                  color: activeTab === 'history' ? 'var(--primary-dark-color)' : '#fff',
+                  color:
+                    activeTab === 'history'
+                      ? 'var(--primary-dark-color)'
+                      : '#fff',
                   backgroundColor:
                     activeTab === 'history' ? '#fff' : 'transparent',
                   borderColor: '#fff',
@@ -583,12 +604,19 @@ const LeaveRequestPage = () => {
                       mr: 1,
                       borderRadius: '20px',
                       backgroundColor:
-                        viewMode === 'you' ? 'var(--primary-dark-color)' : 'transparent',
-                      color: viewMode === 'you' ? '#fff' : 'var(--primary-dark-color)',
+                        viewMode === 'you'
+                          ? 'var(--primary-dark-color)'
+                          : 'transparent',
+                      color:
+                        viewMode === 'you'
+                          ? '#fff'
+                          : 'var(--primary-dark-color)',
                       borderColor: 'var(--primary-dark-color)',
                       '&:hover': {
                         backgroundColor:
-                          viewMode === 'you' ? 'var(--primary-dark-color)' : '#eae7f5',
+                          viewMode === 'you'
+                            ? 'var(--primary-dark-color)'
+                            : '#eae7f5',
                       },
                     }}
                   >
@@ -601,12 +629,19 @@ const LeaveRequestPage = () => {
                     sx={{
                       borderRadius: '20px',
                       backgroundColor:
-                        viewMode === 'team' ? 'var(--primary-dark-color)' : 'transparent',
-                      color: viewMode === 'team' ? '#fff' : 'var(--primary-dark-color)',
+                        viewMode === 'team'
+                          ? 'var(--primary-dark-color)'
+                          : 'transparent',
+                      color:
+                        viewMode === 'team'
+                          ? '#fff'
+                          : 'var(--primary-dark-color)',
                       borderColor: 'var(--primary-dark-color)',
                       '&:hover': {
                         backgroundColor:
-                          viewMode === 'team' ? 'var(--primary-dark-color)' : '#eae7f5',
+                          viewMode === 'team'
+                            ? 'var(--primary-dark-color)'
+                            : '#eae7f5',
                       },
                     }}
                   >
@@ -622,10 +657,14 @@ const LeaveRequestPage = () => {
                 currentUserId={currentUserId || undefined}
                 viewMode={viewMode}
                 onManagerAction={
-                  viewMode === 'team' ? handleOpenManagerResponse : undefined
+                  role === 'manager' && viewMode === 'team'
+                    ? handleManagerAction
+                    : undefined
                 }
-                onManagerAction={
-                  role === 'manager' ? handleManagerAction : undefined
+                onManagerResponse={
+                  role === 'manager' && viewMode === 'team'
+                    ? handleViewManagerResponse
+                    : undefined
                 }
                 onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
                 currentPage={currentPage}

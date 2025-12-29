@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  MenuItem,
 } from '@mui/material';
 
 import {
@@ -24,7 +23,7 @@ import { snackbar } from '../../utils/snackbar';
 import TeamMemberList from './TeamMemberList';
 import AppButton from '../common/AppButton';
 import AppCard from '../common/AppCard';
-import AppSelect from '../common/AppSelect';
+import AppDropdown from '../common/AppDropdown';
 import { COLORS } from '../../constants/appConstants';
 
 interface MyTeamsProps {
@@ -234,6 +233,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   variant='body2'
                   sx={{
                     color: darkMode ? '#ccc' : '#666',
+                    fontSize: 'var(--body-font-size)',
                     mb: 2,
                     lineHeight: 1.5,
                   }}
@@ -338,39 +338,31 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
           {lang.addMemberToTeam}
         </DialogTitle>
         <DialogContent>
-          <AppSelect
+          <AppDropdown
             label={lang.selectEmployee}
-            fullWidth
-            value={selectedEmployeeId}
-            onChange={e => setSelectedEmployeeId(e.target.value as string)}
+            value={selectedEmployeeId || 'all'}
+            onChange={e => setSelectedEmployeeId(String(e.target.value || ''))}
             disabled={loadingEmployees}
-            sx={{ mt: 2 }}
-            SelectProps={{
-              MenuProps: {
-                PaperProps: {
-                  sx: {
-                    maxHeight: 300, // prevent long lists from overflowing
-                    mt: 1, // adds margin below textfield
-                    borderRadius: 2,
-                  },
-                },
-                disableScrollLock: true, // prevents dialog scroll issues
-                container: document.body, // ensures proper z-index
+            showLabel={false}
+            align='left'
+            containerSx={{ mt: 2, width: '100%' }}
+            options={[
+              {
+                value: 'all',
+                label: loadingEmployees
+                  ? 'Loading employees...'
+                  : lang.selectEmployee,
               },
-            }}
-          >
-            <MenuItem value='' disabled>
-              {loadingEmployees ? 'Loading employees...' : lang.selectEmployee}
-            </MenuItem>
-            {availableEmployees.map(employee => (
-              <MenuItem key={employee.id} value={employee.id}>
-                {employee.user
-                  ? `${employee.user.first_name || ''} ${employee.user.last_name || ''}`
-                  : 'Unknown User'}{' '}
-                - {employee.designation?.title || 'N/A'}
-              </MenuItem>
-            ))}
-          </AppSelect>
+              ...availableEmployees.map(employee => ({
+                value: employee.id,
+                label: `${
+                  employee.user
+                    ? `${employee.user.first_name || ''} ${employee.user.last_name || ''}`
+                    : 'Unknown User'
+                } - ${employee.designation?.title || 'N/A'}`,
+              })),
+            ]}
+          />
         </DialogContent>
         <DialogActions>
           <AppButton

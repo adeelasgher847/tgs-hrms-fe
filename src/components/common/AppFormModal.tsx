@@ -47,11 +47,26 @@ interface AppFormModalProps {
   };
   isSubmitting?: boolean;
   hasChanges?: boolean;
+  hideCancel?: boolean;
   isRtl?: boolean;
   showCancelButton?: boolean;
   showSubmitButton?: boolean;
   paperSx?: object;
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  /**
+   * When true, disables closing the modal via the submit button, the
+   * top-right close icon, Escape key, and backdrop clicks.
+   */
+  disableClose?: boolean;
+  /**
+   * When true, disables only the top-right close icon (X). Does not
+   * affect Escape/backdrop or submit behavior.
+   */
+  disableTopCloseIcon?: boolean;
+  /**
+   * When true, disables the primary submit button at the bottom of the modal.
+   */
+  disableSubmitButton?: boolean;
 }
 
 const AppFormModal: React.FC<AppFormModalProps> = ({
@@ -67,19 +82,45 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   isSubmitting = false,
   hasChanges = true,
   isRtl = false,
+  hideCancel = false,
   showCancelButton = true,
   showSubmitButton = true,
-  paperSx,
+  paperSx = {},
   maxWidth = 'sm',
+  disableClose = false,
+  disableTopCloseIcon = false,
+  disableSubmitButton = false,
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (hasChanges && !isSubmitting) {
+    if (hasChanges && !isSubmitting && !disableClose && !disableSubmitButton) {
       onSubmit();
     }
+  };
+
+  // DialogActions (buttons) are rendered outside the <form>, so the
+  // native submit won't fire when the button is clicked. Provide an
+  // explicit click handler that mirrors `handleSubmit` logic.
+  const handleSubmitButtonClick = () => {
+    if (hasChanges && !isSubmitting && !disableClose && !disableSubmitButton) {
+      onSubmit();
+    }
+  };
+
+  const handleDialogClose = (
+    _event: {},
+    reason: 'backdropClick' | 'escapeKeyDown'
+  ) => {
+    if (
+      disableClose &&
+      (reason === 'backdropClick' || reason === 'escapeKeyDown')
+    ) {
+      return;
+    }
+    onClose();
   };
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
@@ -87,7 +128,8 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleDialogClose}
+      disableEscapeKeyDown={disableClose}
       fullWidth={!isLargeScreen}
       maxWidth={maxWidth}
       PaperProps={{
@@ -138,6 +180,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
 
         <IconButton
           onClick={onClose}
+          disabled={disableTopCloseIcon || disableClose}
           size={isSmallScreen ? 'small' : 'medium'}
           sx={{
             position: 'absolute',
@@ -246,10 +289,26 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           justifyContent: 'flex-end',
         }}
       >
-        {showCancelButton && (
+        {!hideCancel && showCancelButton && (
           <Button
             onClick={onClose}
-            disabled={isSubmitting}
+            sx={{
+              borderRadius: '12px',
+              textTransform: 'none',
+              border: '1px solid #2C2C2C',
+              color: '#2C2C2C',
+              px: 4,
+              fontWeight: 400,
+              fontSize: { xs: '14px', sm: '16px' },
+            }}
+          >
+            {cancelLabel}
+          </Button>
+        )}
+        {secondaryAction && (
+          <Button
+            onClick={secondaryAction.onClick}
+            disabled={isSubmitting || secondaryAction.disabled}
             sx={{
               borderRadius: '12px',
               textTransform: 'none',
@@ -264,16 +323,16 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
               },
             }}
           >
-            {cancelLabel}
+            {secondaryAction.label}
           </Button>
         )}
 
         {showSubmitButton && (
           <Button
-            type='submit'
+            type='button'
             variant='contained'
             disabled={isSubmitting || !hasChanges}
-            onClick={handleSubmit}
+            onClick={handleSubmitButtonClick}
             sx={{
               borderRadius: '12px',
               textTransform: 'none',

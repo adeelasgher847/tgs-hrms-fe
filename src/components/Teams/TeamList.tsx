@@ -455,7 +455,7 @@ const TeamList: React.FC<TeamListProps> = ({
                         color: theme => theme.palette.text.secondary,
                         mb: 3,
                         lineHeight: 1.6,
-                        fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                        fontSize: 'var(--body-font-size)',
                         display: '-webkit-box',
                         WebkitLineClamp: 3,
                         WebkitBoxOrient: 'vertical',

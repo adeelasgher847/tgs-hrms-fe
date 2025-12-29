@@ -605,10 +605,10 @@ const Reports: React.FC = () => {
                 color='primary'
                 onClick={handleExport}
                 sx={{
-                  backgroundColor: '#3083DC',
+                  backgroundColor: 'var(--primary-dark-color)',
                   borderRadius: '6px',
                   color: 'white',
-                  '&:hover': { backgroundColor: '#3083DC' },
+                  '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
                 }}
               >
                 <FileDownloadIcon />
@@ -990,7 +990,7 @@ const Reports: React.FC = () => {
                     <Typography
                       variant='h4'
                       fontWeight={600}
-                      color='primary.main'
+                      sx={{ color: 'var(--primary-dark-color)' }}
                     >
                       {item.remaining}
                     </Typography>

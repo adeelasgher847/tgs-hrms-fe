@@ -427,7 +427,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                   <PersonIcon
                     sx={{
                       fontSize: { xs: 32, sm: 40 },
-                      color: theme => theme.palette.primary.main,
+                      color: 'var(--primary-dark-color)',
                     }}
                   />
                 </Box>

@@ -15,11 +15,14 @@ import {
   Pagination,
   CircularProgress,
 } from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import employeeBenefitApi from '../../api/employeeBenefitApi';
 import BenefitCard from '../Benefits/BenefitCard';
 import { formatDate } from '../../utils/dateUtils';
+import { getUserRole } from '../../utils/auth';
+import { normalizeRole } from '../../utils/permissions';
+import AppButton from '../common/AppButton';
+import { IoEyeOutline } from 'react-icons/io5';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -28,6 +31,9 @@ const BenefitDetails: React.FC = () => {
   const [selectedBenefit, setSelectedBenefit] = useState<unknown | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const role = normalizeRole(getUserRole());
+  const isManager = role === 'manager';
+  const BenefitCardUnsafe = BenefitCard as unknown as React.ComponentType<any>;
 
   useEffect(() => {
     const fetchBenefits = async () => {
@@ -45,8 +51,8 @@ const BenefitDetails: React.FC = () => {
           (emp: { employeeId: string }) => emp.employeeId === employeeId
         );
 
-        if (employeeData && Array.isArray(employeeData.benefits)) {
-          setBenefits(employeeData.benefits);
+        if (employeeData && Array.isArray((employeeData as any).benefits)) {
+          setBenefits((employeeData as any).benefits);
         } else {
           setBenefits([]);
         }
@@ -79,22 +85,14 @@ const BenefitDetails: React.FC = () => {
       'End Date',
       'Status',
     ];
-    const rows = benefits.map(
-      (row: {
-        name?: string;
-        type?: string;
-        startDate?: string;
-        endDate?: string;
-        statusOfAssignment?: string;
-        status?: string;
-      }) =>
-        [
-          csvEscape(row.name),
-          csvEscape(row.type),
-          csvEscape(formatDate(row.startDate || '')),
-          csvEscape(formatDate(row.endDate || '')),
-          csvEscape(row.statusOfAssignment || row.status),
-        ].join(',')
+    const rows = benefits.map((row: any) =>
+      [
+        csvEscape(row.name),
+        csvEscape(row.type),
+        csvEscape(formatDate(row.startDate || '')),
+        csvEscape(formatDate(row.endDate || '')),
+        csvEscape(row.statusOfAssignment || row.status),
+      ].join(',')
     );
     const csvContent = [csvHeader.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -110,7 +108,7 @@ const BenefitDetails: React.FC = () => {
 
   const totalRecords = benefits.length;
   const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
-  const paginatedBenefits = benefits.slice(
+  const paginatedBenefits = (benefits as any[]).slice(
     (page - 1) * ITEMS_PER_PAGE,
     page * ITEMS_PER_PAGE
   );
@@ -126,21 +124,38 @@ const BenefitDetails: React.FC = () => {
           My Benefits
         </Typography>
 
-        <Tooltip title='Download My Benefits'>
-          <IconButton
-            color='primary'
+        {isManager ? (
+          <AppButton
+            variant='contained'
+            variantType='primary'
             onClick={handleDownload}
             sx={{
-              backgroundColor: 'primary.main',
               borderRadius: '6px',
+              minWidth: 0,
               padding: '6px',
-              color: 'white',
-              '&:hover': { backgroundColor: 'primary.dark' },
+              height: 'auto',
             }}
+            aria-label='Download My Benefits'
           >
-            <FileDownloadIcon />
-          </IconButton>
-        </Tooltip>
+            <FileDownloadIcon aria-hidden='true' />
+          </AppButton>
+        ) : (
+          <Tooltip title='Download My Benefits'>
+            <IconButton
+              color='primary'
+              onClick={handleDownload}
+              sx={{
+                backgroundColor: 'primary.main',
+                borderRadius: '6px',
+                padding: '6px',
+                color: 'white',
+                '&:hover': { backgroundColor: 'primary.dark' },
+              }}
+            >
+              <FileDownloadIcon />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
 
       {loading ? (
@@ -180,46 +195,37 @@ const BenefitDetails: React.FC = () => {
 
             <TableBody>
               {paginatedBenefits.length > 0 ? (
-                paginatedBenefits.map(
-                  (b: {
-                    benefitAssignmentId?: string;
-                    id?: string;
-                    name?: string;
-                    type?: string;
-                    startDate?: string;
-                    endDate?: string;
-                    statusOfAssignment?: string;
-                    status?: string;
-                  }) => (
-                    <TableRow key={b.benefitAssignmentId || b.id}>
-                      <TableCell>{b.name || '-'}</TableCell>
-                      <TableCell>{b.type || '-'}</TableCell>
-                      <TableCell>{formatDate(b.startDate || '')}</TableCell>
-                      <TableCell>{formatDate(b.endDate || '')}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={b.statusOfAssignment || b.status || '-'}
-                          color={
-                            (b.statusOfAssignment || b.status) === 'active'
-                              ? 'success'
-                              : 'default'
-                          }
+                paginatedBenefits.map((b: any) => (
+                  <TableRow key={b.benefitAssignmentId || b.id}>
+                    <TableCell>{b.name || '-'}</TableCell>
+                    <TableCell>{b.type || '-'}</TableCell>
+                    <TableCell>{formatDate(b.startDate || '')}</TableCell>
+                    <TableCell>{formatDate(b.endDate || '')}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={b.statusOfAssignment || b.status || '-'}
+                        color={
+                          (b.statusOfAssignment || b.status) === 'active'
+                            ? 'success'
+                            : 'default'
+                        }
+                        size='small'
+                      />
+                    </TableCell>
+                    <TableCell align='center'>
+                      <Tooltip title='View Details'>
+                        <IconButton
                           size='small'
-                        />
-                      </TableCell>
-                      <TableCell align='center'>
-                        <Tooltip title='View Details'>
-                          <IconButton
-                            color='primary'
-                            onClick={() => setSelectedBenefit(b)}
-                          >
-                            <InfoIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  )
-                )
+                          onClick={() => setSelectedBenefit(b)}
+                          sx={{ color: theme => theme.palette.primary.main }}
+                          aria-label='View benefit details'
+                        >
+                          <IoEyeOutline size={20} aria-hidden='true' />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={8} align='center'>
@@ -251,10 +257,16 @@ const BenefitDetails: React.FC = () => {
         </Box>
       )}
 
-      <Dialog open={!!selectedBenefit} onClose={() => setSelectedBenefit(null)}>
-        {selectedBenefit && (
+      <Dialog
+        open={!!selectedBenefit}
+        onClose={() => setSelectedBenefit(null)}
+        PaperProps={{
+          sx: {},
+        }}
+      >
+        {!!selectedBenefit && (
           <Box>
-            <BenefitCard
+            <BenefitCardUnsafe
               name={(selectedBenefit as { name?: string }).name || ''}
               type={(selectedBenefit as { type?: string }).type || ''}
               eligibilityCriteria={

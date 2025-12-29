@@ -600,6 +600,26 @@ export default function DesignationManager() {
                 }}
                 disabled={departmentsLoading}
                 containerSx={{ minWidth: { xs: '100%', sm: 250 } }}
+                sx={{
+                  '& .MuiSelect-select': {
+                    justifyContent: 'flex-start',
+                    textAlign: 'left',
+                    paddingLeft: '16px !important',
+                    paddingRight: '44px !important',
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    textAlign: 'left',
+                    paddingLeft: '16px !important',
+                    paddingRight: '44px !important',
+                  },
+                  '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
+                    {
+                      justifyContent: 'flex-start',
+                      textAlign: 'left',
+                      paddingLeft: '16px !important',
+                      paddingRight: '44px !important',
+                    },
+                }}
               />
             </>
           ) : (
@@ -676,6 +696,26 @@ export default function DesignationManager() {
             }}
             disabled={departmentsLoading}
             containerSx={{ mb: 2, width: '100%' }}
+            sx={{
+              '& .MuiSelect-select': {
+                justifyContent: 'flex-start',
+                textAlign: 'left',
+                paddingLeft: '16px !important',
+                paddingRight: '44px !important',
+              },
+              '& .MuiOutlinedInput-input': {
+                textAlign: 'left',
+                paddingLeft: '16px !important',
+                paddingRight: '44px !important',
+              },
+              '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
+                {
+                  justifyContent: 'flex-start',
+                  textAlign: 'left',
+                  paddingLeft: '16px !important',
+                  paddingRight: '44px !important',
+                },
+            }}
           />
 
           <Typography

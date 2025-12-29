@@ -33,6 +33,8 @@ import {
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import AppTable from '../common/AppTable';
+import AppButton from '../common/AppButton';
+import Icon from '../common/Icon';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -50,6 +52,7 @@ import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import { PAGINATION } from '../../constants/appConstants';
+import { isManager as roleIsManager } from '../../utils/auth';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends ApiAssetRequest {
@@ -812,7 +815,11 @@ const AssetRequests: React.FC = () => {
             color='error'
             aria-label={`Cancel request for ${request.category?.name || 'asset'}`}
           >
-            <DeleteIcon aria-hidden='true' />
+            {roleIsManager() ? (
+              <Icon name='delete' size={18} />
+            ) : (
+              <DeleteIcon aria-hidden='true' />
+            )}
           </IconButton>
         )}
         {request.status === 'approved' && request.assignedAssetName && (
@@ -849,13 +856,23 @@ const AssetRequests: React.FC = () => {
           My Asset Requests
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant='contained'
-            startIcon={<AddIcon />}
-            onClick={handleOpenRequestModal}
-          >
-            Request Asset
-          </Button>
+          {roleIsManager() ? (
+            <AppButton
+              variant='contained'
+              variantType='primary'
+              startIcon={<Icon name='add' size={18} />}
+              onClick={handleOpenRequestModal}
+              text='Request Asset'
+            />
+          ) : (
+            <Button
+              variant='contained'
+              startIcon={<AddIcon />}
+              onClick={handleOpenRequestModal}
+            >
+              Request Asset
+            </Button>
+          )}
         </Box>
       </Box>
 

@@ -16,12 +16,14 @@ interface AppButtonProps extends Omit<ButtonProps, 'children'> {
 
 const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
   primary: {
-    backgroundColor: '#3083DC',
-    color: '#FFFFFF',
-    textTransform: 'uppercase',
+    backgroundColor: 'var(--primary-dark-color)',
+    color: 'common.white',
+    textTransform: 'none',
     borderRadius: '12px',
-    fontWeight: 500,
-    fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+    fontWeight: 600,
+    fontSize: '16px',
+    padding: '8px 32px',
+    height: '40px',
     // '&:hover': {
     //   backgroundColor: 'primary.dark',
     // },

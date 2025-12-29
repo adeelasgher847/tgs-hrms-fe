@@ -2,6 +2,7 @@ import { Card, type CardProps, type SxProps, type Theme } from '@mui/material';
 
 interface AppCardProps extends CardProps {
   compact?: boolean;
+  pading?: number;
 }
 
 export function AppCard({
