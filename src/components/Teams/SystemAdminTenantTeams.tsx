@@ -15,14 +15,11 @@ import {
   TableHead,
   TableRow,
   Paper,
-  FormControl,
-  Select,
-  MenuItem,
   CircularProgress,
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select';
 import AppButton from '../common/AppButton';
 import AppTable from '../common/AppTable';
+import AppDropdown from '../common/AppDropdown';
 
 import {
   Group as GroupIcon,
@@ -168,8 +165,8 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
     setShowMemberDialog(true);
   };
 
-  const handleTenantChange = (event: SelectChangeEvent<string>) => {
-    setSelectedTenantId(event.target.value);
+  const handleTenantChange = (value: string | number) => {
+    setSelectedTenantId(value ? String(value) : 'all');
   };
 
   const getStatusColor = (status: string): 'success' | 'error' | 'warning' => {
@@ -224,18 +221,26 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
             gap: 2,
           }}
         >
-          <FormControl
-            size='small'
-            sx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}
-          >
-            <Select
+          <Box sx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}>
+            <AppDropdown
+              label={lang.selectTenant}
+              showLabel={false}
               value={selectedTenantId}
-              onChange={handleTenantChange}
-              displayEmpty
+              onChange={e => handleTenantChange(e.target.value)}
+              placeholder={lang.selectTenant}
+              inputBackgroundColor={bgColor}
+              options={[
+                { value: 'all', label: lang.allTenants },
+                ...allTenants.map((tenant: SystemTenant) => ({
+                  value: tenant.id,
+                  label: tenant.name,
+                })),
+              ]}
               sx={{
-                color: textColor,
-                backgroundColor: bgColor,
-                '.MuiOutlinedInput-notchedOutline': {
+                '& .MuiSelect-select': {
+                  color: textColor,
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: borderColor,
                 },
                 '&:hover .MuiOutlinedInput-notchedOutline': {
@@ -245,27 +250,8 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                   borderColor: borderColor,
                 },
               }}
-            >
-              <MenuItem value='all'>{lang.allTenants}</MenuItem>
-              {allTenants.map((tenant: SystemTenant) => {
-                return (
-                  <MenuItem key={tenant.id} value={tenant.id}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        width: '100%',
-                      }}
-                    >
-                      <Typography sx={{ flexGrow: 1 }}>
-                        {tenant.name}
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
+            />
+          </Box>
         </Box>
 
         {/* Selected Tenant Info */}

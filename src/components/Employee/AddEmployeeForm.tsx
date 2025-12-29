@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
-  MenuItem,
-  TextField,
   useMediaQuery,
   useTheme,
   InputAdornment,
@@ -14,7 +12,6 @@ import {
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import '../UserProfile/PhoneInput.css';
-import type { SxProps, Theme } from '@mui/system';
 import { useOutletContext } from 'react-router-dom';
 import type { EmployeeDto } from '../../api/employeeApi';
 import {
@@ -28,6 +25,9 @@ import {
 import { rolesApiService, type Role } from '../../api/rolesApi';
 import { validateEmailAddress } from '../../utils/validation';
 import AppButton from '../common/AppButton';
+import AppInputField from '../common/AppInputField';
+import AppDropdown from '../common/AppDropdown';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 // Types
 type FormValues = EmployeeDto & {
@@ -298,49 +298,40 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
   const dir = language === 'ar' ? 'rtl' : 'ltr';
   const label = (en: string, ar: string) => (language === 'ar' ? ar : en);
 
-  // Dark‑mode
-  const darkInputStyles: SxProps<Theme> = darkMode
-    ? {
-        '& .MuiOutlinedInput-root': {
-          '& fieldset': { borderColor: '#555' },
-          '&:hover fieldset': { borderColor: '#888' },
-          '&.Mui-focused fieldset': { borderColor: '#90caf9' },
-        },
-        '& .MuiInputLabel-root': { color: '#ccc' },
-        '& input, & .MuiSelect-select': { color: '#eee' },
-      }
-    : {};
-
   //Handlers
+  const setFieldValue = (field: keyof FormValues, rawValue: string) => {
+    const value = (rawValue ?? '').toString();
+
+    // Special handling for role field
+    if (field === 'role') {
+      const normalized = value.trim();
+      setValues(prev => ({
+        ...prev,
+        role: normalized,
+        role_id: normalized, // Use role name as ID since roles don't have separate IDs
+        role_name: normalized,
+      }));
+    } else {
+      setValues(prev => ({ ...prev, [field]: value }));
+    }
+
+    // Clear both field-specific and general errors when user starts typing
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      if (field === 'role') {
+        delete newErrors.role_id;
+        delete newErrors.role_name;
+      }
+      delete newErrors.general;
+      return newErrors;
+    });
+  };
+
   const handleChange =
     (field: keyof FormValues) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const value = (e.target.value ?? '').toString();
-
-      // Special handling for role field
-      if (field === 'role') {
-        const normalized = value.trim();
-        setValues(prev => ({
-          ...prev,
-          role: normalized,
-          role_id: normalized, // Use role name as ID since roles don't have separate IDs
-          role_name: normalized,
-        }));
-      } else {
-        setValues({ ...values, [field]: value });
-      }
-
-      // Clear both field-specific and general errors when user starts typing
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        if (field === 'role') {
-          delete newErrors.role_id;
-          delete newErrors.role_name;
-        }
-        delete newErrors.general;
-        return newErrors;
-      });
+      setFieldValue(field, (e.target.value ?? '').toString());
     };
 
   const handlePhoneChange = (value: string | undefined) => {
@@ -442,10 +433,8 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
   };
 
   // When a designation is selected, set departmentId to its department
-  const handleDesignationChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const selectedDesignationId = e.target.value;
+  const handleDesignationChange = (e: SelectChangeEvent<string | number>) => {
+    const selectedDesignationId = String(e.target.value ?? '');
     const selectedDesignation = designations.find(
       d => d.id === selectedDesignationId
     );
@@ -605,6 +594,32 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     return true;
   };
 
+  // Keep dropdown control sizing aligned with AppInputField (same height/padding/typography)
+  const dropdownControlSx = {
+    '& .MuiOutlinedInput-root': {
+      height: { xs: 40, sm: 44 },
+      minHeight: { xs: 40, sm: 44 },
+    },
+    '& .MuiSelect-select': {
+      padding: { xs: '8px 12px !important', sm: '10px 16px !important' },
+      fontSize: { xs: '16px', sm: '14px' },
+      lineHeight: 1.2,
+      display: 'flex',
+      alignItems: 'center',
+    },
+    '& .MuiInputBase-input': {
+      padding: { xs: '8px 12px !important', sm: '10px 16px !important' },
+      fontSize: { xs: '16px', sm: '14px' },
+      lineHeight: 1.2,
+    },
+  } as const;
+
+  // Match the common form control background used across modals (e.g., Designation modal/AppFormModal)
+  const controlBg =
+    theme.palette.mode === 'dark'
+      ? theme.palette.background.default
+      : '#F8F8F8';
+
   return (
     <Box component='form' onSubmit={handleSubmit} dir={dir}>
       {/* General Error Display */}
@@ -625,47 +640,46 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       <Box display='flex' flexWrap='wrap' gap={2} sx={{ mt: 1 }}>
         {/* First Name */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <TextField
-            fullWidth
+          <AppInputField
             label={label('First Name', 'الاسم الأول')}
             value={values.first_name}
             onChange={handleChange('first_name')}
             error={!!errors.first_name}
             helperText={errors.first_name}
-            sx={darkInputStyles}
+            placeholder={label('Enter first name', 'أدخل الاسم الأول')}
+            inputBackgroundColor={controlBg}
           />
         </Box>
 
         {/* Last Name */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <TextField
-            fullWidth
+          <AppInputField
             label={label('Last Name', 'اسم العائلة')}
             value={values.last_name}
             onChange={handleChange('last_name')}
             error={!!errors.last_name}
             helperText={errors.last_name}
-            sx={darkInputStyles}
+            placeholder={label('Enter last name', 'أدخل اسم العائلة')}
+            inputBackgroundColor={controlBg}
           />
         </Box>
 
         {/* Email */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <TextField
-            fullWidth
+          <AppInputField
             label={label('Email', 'البريد الإلكتروني')}
             value={values.email}
             onChange={handleChange('email')}
             error={!!errors.email}
             helperText={errors.email}
-            sx={darkInputStyles}
+            placeholder={label('Enter email address', 'أدخل البريد الإلكتروني')}
+            inputBackgroundColor={controlBg}
           />
         </Box>
 
         {/* Phone */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <TextField
-            fullWidth
+          <AppInputField
             label={label('Phone', 'رقم الهاتف')}
             value={values.phone}
             onChange={e => handlePhoneChange(e.target.value)}
@@ -719,183 +733,136 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                 </InputAdornment>
               ),
             }}
-            sx={{
-              ...darkInputStyles,
-              '& .MuiOutlinedInput-root': {
-                padding: '0px',
-              },
-              '& .MuiInputBase-input': {
-                display: 'none', // Hide the TextField input completely
-              },
-              '& .MuiInputAdornment-root': {
-                width: '100%',
-                margin: 0,
-              },
-              '& .MuiInputAdornment-positionStart': {
-                marginRight: 0,
-              },
-            }}
+            inputBackgroundColor={controlBg}
           />
         </Box>
 
         {/* CNIC Number */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <TextField
-            fullWidth
+          <AppInputField
             label={label('CNIC Number', 'رقم الهوية الوطنية')}
             value={values.cnicNumber}
             onChange={handleCnicChange}
             error={!!errors.cnicNumber}
             // helperText={errors.cnicNumber || label('Format: 12345-1234567-1', 'التنسيق: 12345-1234567-1')}
-            sx={darkInputStyles}
             placeholder='12345-1234567-1'
+            inputBackgroundColor={controlBg}
           />
         </Box>
 
         {/* Gender - Only show when creating new employee, not when editing */}
         {!initialData && (
           <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-            <TextField
-              select
-              fullWidth
-              label='Gender'
-              value={values.gender ?? ''}
-              onChange={handleChange('gender')}
+            <AppDropdown
+              label={label('Gender', 'الجنس')}
+              value={values.gender || 'all'}
+              onChange={e =>
+                setFieldValue('gender', String(e.target.value ?? ''))
+              }
               error={!!errors.gender}
               helperText={errors.gender}
-              sx={darkInputStyles}
-            >
-              <MenuItem value=''>
-                {/* No gender selected */}
-                <span style={{ display: 'flex', alignItems: 'center' }}>
-                  Select Gender
-                </span>
-              </MenuItem>
-              <MenuItem value='male'>
-                <span style={{ display: 'flex', alignItems: 'center' }}>
-                  <svg
-                    width='20'
-                    height='20'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    style={{ marginRight: 8 }}
-                  >
-                    <path
-                      d='M19 4h-5a1 1 0 1 0 0 2h2.586l-4.243 4.243a6 6 0 1 0 1.414 1.414L18 7.414V10a1 1 0 1 0 2 0V5a1 1 0 0 0-1-1Zm-7 14a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z'
-                      fill='#1976d2'
-                    />
-                  </svg>
-                  Male
-                </span>
-              </MenuItem>
-              <MenuItem value='female'>
-                <span style={{ display: 'flex', alignItems: 'center' }}>
-                  <svg
-                    width='20'
-                    height='20'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    style={{ marginRight: 8 }}
-                  >
-                    <path
-                      d='M12 2a6 6 0 0 0-1 11.917V16H8a1 1 0 1 0 0 2h3v2a1 1 0 1 0 2 0v-2h3a1 1 0 1 0 0-2h-3v-2.083A6 6 0 0 0 12 2Zm0 10a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z'
-                      fill='#d81b60'
-                    />
-                  </svg>
-                  Female
-                </span>
-              </MenuItem>
-            </TextField>
+              inputBackgroundColor={controlBg}
+              placeholder={label('Select gender', 'اختر الجنس')}
+              sx={dropdownControlSx}
+              options={[
+                { value: 'all', label: label('Select Gender', 'اختر الجنس') },
+                { value: 'male', label: label('Male', 'ذكر') },
+                { value: 'female', label: label('Female', 'أنثى') },
+              ]}
+            />
           </Box>
         )}
 
         {/* Role Selection */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <TextField
-            select
-            fullWidth
+          <AppDropdown
             label={label('Role', 'الدور')}
-            value={(values.role || '').trim()}
-            onChange={handleChange('role')}
+            value={(values.role || '').trim() || 'all'}
+            onChange={e => setFieldValue('role', String(e.target.value ?? ''))}
             error={!!errors.role}
             helperText={errors.role}
             disabled={loadingRoles}
-            sx={darkInputStyles}
-          >
-            {loadingRoles ? (
-              <MenuItem value=''>
-                {label('Loading roles...', 'جاري تحميل الأدوار...')}
-              </MenuItem>
-            ) : roleOptions.length === 0 ? (
-              <MenuItem value='' disabled>
-                {label('No roles available', 'لا توجد أدوار متاحة')}
-              </MenuItem>
-            ) : (
-              roleOptions.map((name, index) => (
-                <MenuItem key={`${name}-${index}`} value={name}>
-                  {name.charAt(0).toUpperCase() + name.slice(1)}
-                </MenuItem>
-              ))
-            )}
-          </TextField>
+            inputBackgroundColor={controlBg}
+            placeholder={label('Select role', 'اختر الدور')}
+            sx={dropdownControlSx}
+            options={[
+              {
+                value: 'all',
+                label: loadingRoles
+                  ? label('Loading roles...', 'جاري تحميل الأدوار...')
+                  : label('Select role', 'اختر الدور'),
+              },
+              ...(roleOptions.length === 0
+                ? []
+                : roleOptions.map((name, index) => ({
+                    value: name,
+                    label: name.charAt(0).toUpperCase() + name.slice(1),
+                  }))),
+            ]}
+          />
         </Box>
 
         {/* Department */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <TextField
-            select
-            fullWidth
+          <AppDropdown
             label={label('Department', 'القسم')}
-            value={values.departmentId ?? ''}
-            onChange={handleChange('departmentId')}
+            value={values.departmentId || 'all'}
+            onChange={e =>
+              setFieldValue('departmentId', String(e.target.value ?? ''))
+            }
             error={!!errors.departmentId}
             helperText={errors.departmentId}
             disabled={loadingDepartments}
-            sx={darkInputStyles}
-          >
-            {departments.length === 0 && (
-              <MenuItem value=''>
-                {label('No departments', 'لا توجد أقسام')}
-              </MenuItem>
-            )}
-            {departments.map(dept => (
-              <MenuItem key={dept.id} value={dept.id}>
-                {dept.name}
-              </MenuItem>
-            ))}
-          </TextField>
+            inputBackgroundColor={controlBg}
+            placeholder={label('Select department', 'اختر القسم')}
+            sx={dropdownControlSx}
+            options={[
+              {
+                value: 'all',
+                label:
+                  departments.length === 0
+                    ? label('No departments', 'لا توجد أقسام')
+                    : label('Select department', 'اختر القسم'),
+              },
+              ...departments.map(dept => ({
+                value: dept.id,
+                label: dept.name,
+              })),
+            ]}
+          />
         </Box>
 
         {/* Designation */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <TextField
-            select
-            fullWidth
+          <AppDropdown
             label={label('Designation', 'المسمى الوظيفي')}
-            value={values.designationId ?? ''}
+            value={values.designationId || 'all'}
             onChange={handleDesignationChange}
             error={!!errors.designationId}
             helperText={errors.designationId}
             disabled={loadingDesignations}
-            sx={darkInputStyles}
-          >
-            {designations.length === 0 && (
-              <MenuItem value=''>
-                {label('No designations', 'لا توجد مسميات')}
-              </MenuItem>
-            )}
-            {designations.map(des => (
-              <MenuItem key={des.id} value={des.id}>
-                {des.title}
-              </MenuItem>
-            ))}
-          </TextField>
+            inputBackgroundColor={controlBg}
+            placeholder={label('Select designation', 'اختر المسمى الوظيفي')}
+            sx={dropdownControlSx}
+            options={[
+              {
+                value: 'all',
+                label:
+                  designations.length === 0
+                    ? label('No designations', 'لا توجد مسميات')
+                    : label('Select designation', 'اختر المسمى الوظيفي'),
+              },
+              ...designations.map(des => ({
+                value: des.id,
+                label: des.title,
+              })),
+            ]}
+          />
         </Box>
 
         {/* Profile Picture Upload */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <TextField
-            fullWidth
+          <AppInputField
             label={label('Profile Picture', 'الصورة الشخصية')}
             value={values.profilePicture ? values.profilePicture.name : ''}
             error={!!errors.profilePicture}
@@ -923,15 +890,14 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                 </InputAdornment>
               ),
             }}
-            sx={darkInputStyles}
             placeholder={label('Select profile picture', 'اختر الصورة الشخصية')}
+            inputBackgroundColor={controlBg}
           />
         </Box>
 
         {/* CNIC Front Picture Upload */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <TextField
-            fullWidth
+          <AppInputField
             label={label('CNIC Front Side', 'الوجه الأمامي للهوية')}
             value={values.cnicFrontPicture ? values.cnicFrontPicture.name : ''}
             error={!!errors.cnicFrontPicture}
@@ -959,18 +925,17 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                 </InputAdornment>
               ),
             }}
-            sx={darkInputStyles}
             placeholder={label(
               'Select CNIC front side',
               'اختر الوجه الأمامي للهوية'
             )}
+            inputBackgroundColor={controlBg}
           />
         </Box>
 
         {/* CNIC Back Picture Upload */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <TextField
-            fullWidth
+          <AppInputField
             label={label('CNIC Back Side', 'الوجه الخلفي للهوية')}
             value={values.cnicBackPicture ? values.cnicBackPicture.name : ''}
             error={!!errors.cnicBackPicture}
@@ -998,11 +963,11 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                 </InputAdornment>
               ),
             }}
-            sx={darkInputStyles}
             placeholder={label(
               'Select CNIC back side',
               'اختر الوجه الخلفي للهوية'
             )}
+            inputBackgroundColor={controlBg}
           />
         </Box>
 
@@ -1159,11 +1124,8 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
             <Box
               sx={{
                 p: 2,
-                bgcolor:
-                  theme.palette.mode === 'dark'
-                    ? 'var(--primary-light-color)'
-                    : '#484c7f',
-                color: '#ffffff',
+                bgcolor: theme.palette.primary.main,
+                color: theme.palette.primary.contrastText,
                 borderRadius: 1,
                 textAlign: 'center',
               }}
@@ -1207,6 +1169,21 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                 />
               ) : null
             }
+            sx={{
+              fontSize: 'var(--body-font-size)',
+              lineHeight: 'var(--body-line-height)',
+              letterSpacing: 'var(--body-letter-spacing)',
+              boxShadow: 'none',
+              minWidth: { xs: 'auto', sm: 200 },
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.75, sm: 1 },
+              '& .MuiButton-startIcon': {
+                marginRight: { xs: 0.5, sm: 1 },
+                '& > *:nth-of-type(1)': {
+                  fontSize: { xs: '18px', sm: '20px' },
+                },
+              },
+            }}
             text={
               submitting
                 ? label(

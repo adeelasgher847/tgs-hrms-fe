@@ -5,7 +5,6 @@ import {
   Select,
   FormControl,
   CircularProgress,
-  TextField,
   Tooltip,
   useTheme,
 } from '@mui/material';
@@ -14,7 +13,8 @@ import Chart from 'react-apexcharts';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
-import systemDashboardApiService from '@/api/systemDashboardApi';
+import systemDashboardApiService from '../../api/systemDashboardApi';
+import TimeRangeSelector from '../common/TimeRangeSelector';
 
 interface Tenant {
   id: string;
@@ -108,6 +108,13 @@ const EmployeeGrowthChart: React.FC = () => {
     new Set(tenantGrowthData.map(d => d.month))
   ).sort();
 
+  // TimeRangeSelector options (years)
+  const currentYear = new Date().getFullYear();
+  const availableYears = Array.from({ length: 6 }, (_, i) => currentYear - i);
+  const yearOptions = availableYears.includes(selectedYear)
+    ? availableYears
+    : [selectedYear, ...availableYears].sort((a, b) => b - a);
+
   const series = [{ name: 'Employees', data: employeesData }];
 
   const options: ApexCharts.ApexOptions = {
@@ -137,7 +144,6 @@ const EmployeeGrowthChart: React.FC = () => {
         style: {
           fontSize: '11px',
           colors: theme.palette.text.primary,
-          fontStyle: 'normal',
         },
       },
     },
@@ -339,34 +345,55 @@ const EmployeeGrowthChart: React.FC = () => {
             </Select>
           </FormControl>
 
-          <TextField
-            type='number'
+          <TimeRangeSelector
             value={selectedYear}
-            onChange={e => {
-              const value = parseInt(e.target.value);
-              if (!isNaN(value) && value > 0) {
-                setSelectedYear(value);
+            options={yearOptions}
+            onChange={value => {
+              if (value === 'all-time' || value === null) {
+                setSelectedYear(currentYear);
+                return;
               }
+              setSelectedYear(Number(value));
             }}
-            size='small'
-            sx={{
-              width: { xs: '100%', sm: 120 },
-              '& .MuiOutlinedInput-root': {
-                color: theme.palette.text.primary,
-                '& fieldset': {
-                  borderColor: theme.palette.divider,
-                },
-                // '&:hover fieldset': {
-                //   borderColor: theme.palette.divider,
-                // },
-                '&.Mui-focused fieldset': {
-                  borderColor: theme.palette.divider,
-                },
-              },
+            allTimeLabel={language === 'ar' ? 'كل الوقت' : 'All Time'}
+            language={language}
+            buttonSx={{
+              // Figma (light mode): bg #E0ECFA, radius 8px, height 36px, padding 8px 16px, gap 10px
+              backgroundColor:
+                theme.palette.mode === 'dark'
+                  ? theme.palette.action.hover
+                  : '#E0ECFA',
+              border:
+                theme.palette.mode === 'dark'
+                  ? `1px solid ${theme.palette.divider}`
+                  : 'none',
+              borderRadius: '8px',
+              px: '16px',
+              py: '8px',
+              gap: '10px',
+              height: '36px',
+              minWidth: '108px',
             }}
-            inputProps={{
-              min: 2000,
-              max: 2100,
+            labelSx={{
+              // Figma (light mode): SF Pro Rounded, 14px/20px, 400, letter spacing -1%, color #2462A5
+              fontFamily: 'SF Pro Rounded, sans-serif',
+              fontSize: '14px',
+              lineHeight: '20px',
+              letterSpacing: '-0.01em',
+              fontWeight: 400,
+              color:
+                theme.palette.mode === 'dark'
+                  ? theme.palette.text.primary
+                  : '#2462A5',
+            }}
+            iconSx={{
+              width: 20,
+              height: 20,
+              // Figma (light mode): dark blue #2462A5
+              filter:
+                theme.palette.mode === 'dark'
+                  ? 'brightness(0) saturate(100%) invert(56%)'
+                  : 'brightness(0) saturate(100%) invert(32%) sepia(98%) saturate(1495%) hue-rotate(190deg) brightness(92%) contrast(92%)',
             }}
           />
         </Box>

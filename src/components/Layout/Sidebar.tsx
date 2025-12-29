@@ -856,10 +856,7 @@ export default function Sidebar({
         <ListItemButton
           onClick={handleLogout}
           sx={{
-            color:
-              theme.palette.mode === 'dark'
-                ? 'var(--secondary-color)'
-                : theme.palette.error.main,
+            color: 'var(--secondary-color)',
             pl: 0.25,
             py: 1.5,
             borderRadius: 'var(--border-radius-lg)',
@@ -871,10 +868,7 @@ export default function Sidebar({
         >
           <ListItemIcon
             sx={{
-              color:
-                theme.palette.mode === 'dark'
-                  ? 'var(--secondary-color)'
-                  : theme.palette.error.main,
+              color: 'var(--secondary-color)',
               minWidth: 'auto',
               display: 'flex',
               alignItems: 'center',
@@ -901,10 +895,7 @@ export default function Sidebar({
             primaryTypographyProps={{
               fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
               fontWeight: 500,
-              color:
-                theme.palette.mode === 'dark'
-                  ? 'var(--secondary-color)'
-                  : theme.palette.error.main,
+              color: 'var(--secondary-color)',
             }}
           />
         </ListItemButton>

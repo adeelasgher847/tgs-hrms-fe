@@ -12,11 +12,9 @@ import {
   useTheme,
 } from '@mui/material';
 import AppTable from '../common/AppTable';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
 import ReplayIcon from '@mui/icons-material/Replay';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useOutletContext } from 'react-router-dom';
+import { Icons } from '../../assets/icons';
 
 interface Employee {
   id: string;
@@ -218,15 +216,18 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                             disabled={loading}
                             aria-label={`View details for employee ${emp.name}`}
                             sx={{
-                              color: darkMode ? '#4caf50' : '#2e7d32',
                               '&:hover': {
-                                backgroundColor: darkMode
-                                  ? 'rgba(76,175,80,0.1)'
-                                  : 'rgba(46,125,50,0.1)',
+                                backgroundColor: theme.palette.action.hover,
                               },
                             }}
                           >
-                            <VisibilityIcon aria-hidden='true' />
+                            <Box
+                              component='img'
+                              src={Icons.password}
+                              alt=''
+                              aria-hidden='true'
+                              sx={{ width: 20, height: 20 }}
+                            />
                           </IconButton>
                         </Tooltip>
                       )}
@@ -273,8 +274,19 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                             onClick={() => onEdit(emp)}
                             disabled={loading}
                             aria-label={`Edit employee ${emp.name}`}
+                            sx={{
+                              '&:hover': {
+                                backgroundColor: theme.palette.action.hover,
+                              },
+                            }}
                           >
-                            <EditIcon aria-hidden='true' />
+                            <Box
+                              component='img'
+                              src={Icons.edit}
+                              alt=''
+                              aria-hidden='true'
+                              sx={{ width: 20, height: 20 }}
+                            />
                           </IconButton>
                         </Tooltip>
                       )}
@@ -292,15 +304,18 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                             disabled={loading}
                             aria-label={`Delete employee ${emp.name}`}
                             sx={{
-                              color: darkMode ? '#ff6b6b' : '#d32f2f',
                               '&:hover': {
-                                backgroundColor: darkMode
-                                  ? 'rgba(255,107,107,0.1)'
-                                  : 'rgba(211,47,47,0.1)',
+                                backgroundColor: theme.palette.action.hover,
                               },
                             }}
                           >
-                            <DeleteIcon aria-hidden='true' />
+                            <Box
+                              component='img'
+                              src={Icons.delete}
+                              alt=''
+                              aria-hidden='true'
+                              sx={{ width: 20, height: 20 }}
+                            />
                           </IconButton>
                         </Tooltip>
                       )}

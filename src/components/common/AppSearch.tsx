@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search as SearchIcon } from '@mui/icons-material';
-import { InputAdornment } from '@mui/material';
+import { InputAdornment, useTheme } from '@mui/material';
 import AppTextField from './AppTextField';
 import type { TextFieldProps } from '@mui/material';
 
@@ -17,6 +17,7 @@ const AppSearch: React.FC<AppSearchProps> = ({
   sx,
   ...rest
 }) => {
+  const theme = useTheme();
   return (
     <AppTextField
       value={value}
@@ -26,7 +27,7 @@ const AppSearch: React.FC<AppSearchProps> = ({
       InputProps={{
         startAdornment: (
           <InputAdornment position='start'>
-            <SearchIcon sx={{ color: '#2C2C2C' }} />
+            <SearchIcon sx={{ color: theme.palette.text.secondary }} />
           </InputAdornment>
         ),
       }}
@@ -35,17 +36,26 @@ const AppSearch: React.FC<AppSearchProps> = ({
         {
           width: '100%',
           '& .MuiOutlinedInput-root': {
-            backgroundColor: '#FFFFFF',
+            backgroundColor: theme.palette.background.paper,
             borderRadius: '12px',
             minHeight: '48px',
             padding: '0 !important',
+            marginLeft: '4px !important',
             '& fieldset': {
-            //   borderColor: '#BDBDBD',
+              borderColor: theme.palette.divider,
               borderWidth: '1px',
+              marginLeft: '-8px !important',
             },
             '&.Mui-focused fieldset': {
-              borderColor: '#BDBDBD',
+              borderColor: theme.palette.primary.main,
               borderWidth: '1px',
+            },
+          },
+          '& .MuiOutlinedInput-input': {
+            color: theme.palette.text.primary,
+            '&::placeholder': {
+              color: theme.palette.text.secondary,
+              opacity: 1,
             },
           },
           '& .MuiInputBase-input': {
@@ -55,7 +65,7 @@ const AppSearch: React.FC<AppSearchProps> = ({
             marginRight: 0,
           },
         },
-        sx,
+        ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
       ]}
       {...rest}
     />

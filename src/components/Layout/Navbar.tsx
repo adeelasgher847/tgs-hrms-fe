@@ -2066,30 +2066,72 @@ const Navbar: React.FC<NavbarProps> = ({
         anchorEl={anchorEl}
         open={open}
         onClose={handleMenuClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: isMobile ? 'left' : 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: isMobile ? 'left' : 'right',
+        }}
+        MenuListProps={{
+          dense: isMobile,
+          sx: {
+            py: 0,
+            px: 0,
+          },
+        }}
         PaperProps={{
           elevation: 4,
           sx: {
-            borderRadius: '10px',
-            width: 280,
-            p: 2,
+            borderRadius: { xs: '12px', sm: '10px' },
+            // Smaller mobile menu, aligned to the opening icon's "start" edge
+            width: { xs: 'min(220px, 92vw)', sm: 280 },
+            maxWidth: { xs: 220, sm: 280 },
+            maxHeight: { xs: '70vh', sm: '80vh' },
+            overflowY: 'auto',
+            // keep scrolling but hide scrollbar visuals
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            '&::-webkit-scrollbar': { display: 'none' },
+            p: { xs: 1.25, sm: 2 },
             backgroundColor: theme.palette.background.paper,
           },
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-          {user && <UserAvatar user={user} size={40} clickable={false} />}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: { xs: 1.25, sm: 2 },
+            mb: { xs: 0.75, sm: 1 },
+          }}
+        >
+          {user && (
+            <UserAvatar
+              user={user}
+              size={isMobile ? 34 : 40}
+              clickable={false}
+            />
+          )}
           <Box>
-            <Typography fontWeight={600} color={theme.palette.text.primary}>
+            <Typography
+              fontWeight={600}
+              color={theme.palette.text.primary}
+              sx={{ fontSize: { xs: '13px', sm: '14px' }, lineHeight: 1.2 }}
+            >
               {user ? `${user.first_name} ${user.last_name}` : 'User'}
             </Typography>
-            <Typography variant='body2' color={theme.palette.text.secondary}>
+            <Typography
+              variant='body2'
+              color={theme.palette.text.secondary}
+              sx={{ fontSize: { xs: '11px', sm: '12px' }, lineHeight: 1.2 }}
+            >
               {user?.email || ''}
             </Typography>
           </Box>
         </Box>
-        <Divider sx={{ mb: 1 }} />
+        <Divider sx={{ mb: { xs: 0.5, sm: 1 } }} />
 
         {!isManager(user?.role) && !isEmployee(user?.role) && (
           <MenuItem
@@ -2098,15 +2140,24 @@ const Navbar: React.FC<NavbarProps> = ({
               navigate('/dashboard/EmployeeManager');
             }}
             aria-label='Navigate to employee manager'
+            sx={{
+              px: { xs: 1, sm: 1.25 },
+              py: { xs: 0.75, sm: 1 },
+              borderRadius: 1.5,
+              minHeight: { xs: 40, sm: 44 },
+            }}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={{ minWidth: { xs: 34, sm: 36 } }}>
               <GroupOutlinedIcon
                 fontSize='small'
                 sx={{ color: theme.palette.text.primary }}
                 aria-hidden='true'
               />
             </ListItemIcon>
-            <Typography color={theme.palette.text.primary}>
+            <Typography
+              color={theme.palette.text.primary}
+              sx={{ fontSize: { xs: '12px', sm: '14px' } }}
+            >
               {lang.members}
             </Typography>
           </MenuItem>
@@ -2117,15 +2168,26 @@ const Navbar: React.FC<NavbarProps> = ({
             navigate('/dashboard/UserProfile');
           }}
           aria-label='Navigate to user profile'
+          sx={{
+            px: { xs: 1, sm: 1.25 },
+            py: { xs: 0.75, sm: 1 },
+            borderRadius: 1.5,
+            minHeight: { xs: 40, sm: 44 },
+          }}
         >
-          <ListItemIcon>
+          <ListItemIcon sx={{ minWidth: { xs: 34, sm: 36 } }}>
             <AdminPanelSettings
               fontSize='small'
               sx={{ color: theme.palette.text.primary }}
               aria-hidden='true'
             />
           </ListItemIcon>
-          <Typography color={theme.palette.text.primary}>Profile</Typography>
+          <Typography
+            color={theme.palette.text.primary}
+            sx={{ fontSize: { xs: '12px', sm: '14px' } }}
+          >
+            Profile
+          </Typography>
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -2133,27 +2195,48 @@ const Navbar: React.FC<NavbarProps> = ({
             navigate('/dashboard/settings');
           }}
           aria-label='Navigate to settings'
+          sx={{
+            px: { xs: 1, sm: 1.25 },
+            py: { xs: 0.75, sm: 1 },
+            borderRadius: 1.5,
+            minHeight: { xs: 40, sm: 44 },
+          }}
         >
-          <ListItemIcon>
+          <ListItemIcon sx={{ minWidth: { xs: 34, sm: 36 } }}>
             <SettingsIcon
               fontSize='small'
               sx={{ color: theme.palette.text.primary }}
               aria-hidden='true'
             />
           </ListItemIcon>
-          <Typography color={theme.palette.text.primary}>
+          <Typography
+            color={theme.palette.text.primary}
+            sx={{ fontSize: { xs: '12px', sm: '14px' } }}
+          >
             {lang.settings}
           </Typography>
         </MenuItem>
-        <MenuItem onClick={handleLogout} aria-label='Sign out'>
-          <ListItemIcon>
+        <MenuItem
+          onClick={handleLogout}
+          aria-label='Sign out'
+          sx={{
+            px: { xs: 1, sm: 1.25 },
+            py: { xs: 0.75, sm: 1 },
+            borderRadius: 1.5,
+            minHeight: { xs: 40, sm: 44 },
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: { xs: 34, sm: 36 } }}>
             <LogoutIcon
               fontSize='small'
-              sx={{ color: theme.palette.text.primary }}
+              sx={{ color: 'var(--secondary-color)' }}
               aria-hidden='true'
             />
           </ListItemIcon>
-          <Typography color={theme.palette.text.primary}>
+          <Typography
+            color={'var(--secondary-color)'}
+            sx={{ fontSize: { xs: '12px', sm: '14px' } }}
+          >
             {lang.signout}
           </Typography>
         </MenuItem>

@@ -1,15 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
   Box,
   Alert,
   CircularProgress,
   InputAdornment,
+  useTheme,
 } from '@mui/material';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
@@ -24,6 +19,9 @@ import { useProfilePicture } from '../../context/ProfilePictureContext';
 import { validateEmailAddress } from '../../utils/validation';
 import { env } from '../../config/env';
 import { TIMEOUTS, ERROR_MESSAGES } from '../../constants/appConstants';
+import AppButton from '../common/AppButton';
+import AppFormModal from '../common/AppFormModal';
+import AppInputField from '../common/AppInputField';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -38,6 +36,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   user,
   onProfileUpdated,
 }) => {
+  const theme = useTheme();
   const { updateProfilePicture, clearProfilePicture } = useProfilePicture();
   const [formData, setFormData] = useState({
     first_name: '',
@@ -269,177 +268,165 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
   };
 
+  const darkMode = theme.palette.mode === 'dark';
+  const controlBg =
+    theme.palette.mode === 'dark'
+      ? theme.palette.background.default
+      : '#F8F8F8';
+  const submitDisabled =
+    loading || (!hasChanges && !selectedPictureFile && !removeRequested);
+  const submitTitle =
+    !hasChanges && !selectedPictureFile && !removeRequested
+      ? 'No changes made'
+      : undefined;
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth='sm' fullWidth>
-      <DialogTitle>Edit Profile</DialogTitle>
-      <DialogContent>
-        <Box sx={{ pt: 1 }}>
-          {error && (
-            <Alert severity='error' sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+    <AppFormModal
+      open={open}
+      onClose={handleClose}
+      title='Edit Profile'
+      onSubmit={handleSubmit}
+      submitLabel={loading ? 'Updating...' : 'Update Profile'}
+      cancelLabel='Cancel'
+      isSubmitting={loading}
+      hasChanges={!submitDisabled}
+      submitDisabled={submitDisabled}
+      submitTitle={submitTitle}
+      submitStartIcon={loading ? <CircularProgress size={16} /> : undefined}
+      maxWidth='sm'
+    >
+      <Box sx={{ pt: 1 }}>
+        {error && (
+          <Alert severity='error' sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-            <ProfilePictureUpload
-              user={user}
-              onProfileUpdate={onProfileUpdated}
-              size={100}
-              showUploadButton={true}
-              showRemoveButton={true}
-              clickable={true}
-              deferUpload={true}
-              onFileSelected={file => {
-                setSelectedPictureFile(file);
-                const reader = new FileReader();
-                reader.onload = e =>
-                  setPreviewImageUrl(e.target?.result as string);
-                reader.readAsDataURL(file);
-              }}
-              previewImageOverride={previewImageUrl}
-              deferDelete={true}
-              onRemoveSelected={() => {
-                setSelectedPictureFile(null);
-                setPreviewImageUrl(null);
-                setRemoveRequested(true);
-              }}
-              suppressExistingImage={removeRequested}
-            />
-          </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+          <ProfilePictureUpload
+            user={user}
+            onProfileUpdate={onProfileUpdated}
+            size={100}
+            showUploadButton={true}
+            showRemoveButton={true}
+            clickable={true}
+            deferUpload={true}
+            onFileSelected={file => {
+              setSelectedPictureFile(file);
+              const reader = new FileReader();
+              reader.onload = e =>
+                setPreviewImageUrl(e.target?.result as string);
+              reader.readAsDataURL(file);
+            }}
+            previewImageOverride={previewImageUrl}
+            deferDelete={true}
+            onRemoveSelected={() => {
+              setSelectedPictureFile(null);
+              setPreviewImageUrl(null);
+              setRemoveRequested(true);
+            }}
+            suppressExistingImage={removeRequested}
+          />
+        </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              label='First Name'
-              value={formData.first_name}
-              onChange={handleInputChange('first_name')}
-              error={!!validationErrors.first_name}
-              helperText={validationErrors.first_name}
-              fullWidth
-              disabled={loading}
-              inputProps={{ maxLength: 50 }}
-            />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <AppInputField
+            label='First Name'
+            value={formData.first_name}
+            onChange={handleInputChange('first_name')}
+            error={!!validationErrors.first_name}
+            helperText={validationErrors.first_name}
+            disabled={loading}
+            inputProps={{ maxLength: 50 }}
+            placeholder='Enter first name'
+            inputBackgroundColor={controlBg}
+          />
 
-            <TextField
-              label='Last Name'
-              value={formData.last_name}
-              onChange={handleInputChange('last_name')}
-              error={!!validationErrors.last_name}
-              helperText={validationErrors.last_name}
-              fullWidth
-              disabled={loading}
-              inputProps={{ maxLength: 50 }}
-            />
-            <TextField
-              label='Phone Number'
-              value={formData.phone}
-              onChange={e => handlePhoneChange(e.target.value)}
-              error={!!validationErrors.phone}
-              helperText={validationErrors.phone}
-              fullWidth
-              disabled={loading}
-              placeholder='Enter phone number (optional)'
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment
-                    position='start'
-                    sx={{ margin: 0, padding: '28px 0px' }}
-                  >
-                    <PhoneInput
-                      defaultCountry='pk'
-                      value={formData.phone}
-                      onChange={handlePhoneChange}
-                      disabled={loading}
-                      style={{
+          <AppInputField
+            label='Last Name'
+            value={formData.last_name}
+            onChange={handleInputChange('last_name')}
+            error={!!validationErrors.last_name}
+            helperText={validationErrors.last_name}
+            disabled={loading}
+            inputProps={{ maxLength: 50 }}
+            placeholder='Enter last name'
+            inputBackgroundColor={controlBg}
+          />
+
+          <AppInputField
+            label='Phone Number'
+            value={formData.phone}
+            onChange={e => handlePhoneChange(e.target.value)}
+            error={!!validationErrors.phone}
+            helperText={validationErrors.phone}
+            disabled={loading}
+            placeholder='Enter phone number (optional)'
+            InputProps={{
+              startAdornment: (
+                <InputAdornment
+                  position='start'
+                  sx={{ margin: 0, padding: '28px 0px' }}
+                >
+                  <PhoneInput
+                    defaultCountry='pk'
+                    value={formData.phone}
+                    onChange={handlePhoneChange}
+                    disabled={loading}
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      background: 'transparent',
+                      width: '100%',
+                    }}
+                    inputStyle={{
+                      border: 'none',
+                      outline: 'none',
+                      padding: '0',
+                      margin: '0',
+                      fontSize: '1rem',
+                      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                      backgroundColor: 'transparent',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      flex: 1,
+                      height: '100%',
+                      color: darkMode ? '#eeeeee' : '#2C2C2C',
+                    }}
+                    countrySelectorStyleProps={{
+                      buttonStyle: {
                         border: 'none',
-                        outline: 'none',
                         background: 'transparent',
-                        width: '100%',
-                      }}
-                      inputStyle={{
-                        border: 'none',
-                        outline: 'none',
                         padding: '0',
                         margin: '0',
-                        fontSize: '1rem',
-                        fontFamily:
-                          '"Roboto", "Helvetica", "Arial", sans-serif',
-                        backgroundColor: 'transparent',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        flex: 1,
-                        height: '100%',
-                      }}
-                      countrySelectorStyleProps={{
-                        buttonStyle: {
-                          border: 'none',
-                          background: 'transparent',
-                          padding: '0',
-                          margin: '0',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                        },
-                        dropdownStyleProps: {
-                          zIndex: 9999,
-                          maxHeight: '140px',
-                        },
-                      }}
-                      className='phone-input-textfield-adornment'
-                    />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  padding: '0px',
-                },
-                '& .MuiInputBase-input': {
-                  display: 'none', // Hide the TextField input completely
-                },
-                '& .MuiInputAdornment-root': {
-                  width: '100%',
-                  margin: 0,
-                },
-                '& .MuiInputAdornment-positionStart': {
-                  marginRight: 0,
-                },
-              }}
-            />
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: darkMode ? '#eeeeee' : '#2C2C2C',
+                      },
+                    }}
+                    className='phone-input-textfield-adornment'
+                  />
+                </InputAdornment>
+              ),
+            }}
+            inputBackgroundColor={controlBg}
+          />
 
-            <TextField
-              label='Email Address'
-              type='email'
-              value={formData.email}
-              onChange={handleInputChange('email')}
-              error={!!validationErrors.email}
-              helperText={validationErrors.email}
-              fullWidth
-              disabled={loading}
-            />
-          </Box>
+          <AppInputField
+            label='Email Address'
+            type='email'
+            value={formData.email}
+            onChange={handleInputChange('email')}
+            error={!!validationErrors.email}
+            helperText={validationErrors.email}
+            disabled={loading}
+            placeholder='Enter email address'
+            inputBackgroundColor={controlBg}
+          />
         </Box>
-      </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={handleClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant='contained'
-          disabled={
-            loading || (!hasChanges && !selectedPictureFile && !removeRequested)
-          }
-          startIcon={loading ? <CircularProgress size={16} /> : null}
-          title={
-            !hasChanges && !selectedPictureFile && !removeRequested
-              ? 'No changes made'
-              : ''
-          }
-        >
-          {loading ? 'Updating...' : 'Update Profile'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      </Box>
+    </AppFormModal>
   );
 };
 

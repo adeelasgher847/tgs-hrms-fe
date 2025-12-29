@@ -13,6 +13,7 @@ import {
   CircularProgress,
   useTheme,
   Paper,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Person,
@@ -21,7 +22,6 @@ import {
   Phone,
   Business,
   CalendarToday,
-  Edit,
 } from '@mui/icons-material';
 // UserProfile type available if needed
 import { useUser } from '../../hooks/useUser';
@@ -42,6 +42,13 @@ import { useIsDarkMode } from '../../theme';
 import { formatDate } from '../../utils/dateUtils';
 import AppButton from '../common/AppButton';
 import AppCard from '../common/AppCard';
+import AppPageTitle from '../common/AppPageTitle';
+import { Icons } from '../../assets/icons';
+
+const PROFILE_ITEM_ICON_SX = {
+  color: 'primary.main',
+  fontSize: { xs: 20, sm: 24 },
+} as const;
 
 const UserProfileComponent = React.memo(() => {
   const { user: profile, loading, updateUser } = useUser();
@@ -49,6 +56,7 @@ const UserProfileComponent = React.memo(() => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const theme = useTheme();
   const darkMode = useIsDarkMode();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const tenantFetchedRef = useRef(false);
 
   // Silently fetch tenant if missing (without causing loading state)
@@ -116,37 +124,37 @@ const UserProfileComponent = React.memo(() => {
     if (!profile) return [];
     return [
       {
-        icon: <Person sx={{ color: 'primary.main' }} />,
+        icon: <Person sx={PROFILE_ITEM_ICON_SX} />,
         label: 'First Name',
         value: profile.first_name,
       },
       {
-        icon: <Person sx={{ color: 'primary.main' }} />,
+        icon: <Person sx={PROFILE_ITEM_ICON_SX} />,
         label: 'Last Name',
         value: profile.last_name,
       },
       {
-        icon: <Email sx={{ color: 'primary.main' }} />,
+        icon: <Email sx={PROFILE_ITEM_ICON_SX} />,
         label: 'Email Address',
         value: profile.email,
       },
       {
-        icon: <Phone sx={{ color: 'primary.main' }} />,
+        icon: <Phone sx={PROFILE_ITEM_ICON_SX} />,
         label: 'Phone',
         value: profile.phone,
       },
       {
-        icon: <AdminPanelSettings sx={{ color: 'primary.main' }} />,
+        icon: <AdminPanelSettings sx={PROFILE_ITEM_ICON_SX} />,
         label: 'Role',
         value: getRoleName(profile.role),
       },
       {
-        icon: <Business sx={{ color: 'primary.main' }} />,
+        icon: <Business sx={PROFILE_ITEM_ICON_SX} />,
         label: 'Tenant',
         value: profile.tenant,
       },
       {
-        icon: <CalendarToday sx={{ color: 'primary.main' }} />,
+        icon: <CalendarToday sx={PROFILE_ITEM_ICON_SX} />,
         label: 'Joined',
         value: formatDate(profile.created_at),
       },
@@ -179,61 +187,103 @@ const UserProfileComponent = React.memo(() => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            mb: 4,
+            flexWrap: 'nowrap',
+            gap: 2,
+            mb: 3,
           }}
         >
-          <Typography
-            variant='h4'
-            component='h1'
+          <AppPageTitle
             sx={{
-              fontWeight: 600,
+              mb: 0,
               color: darkMode ? '#8f8f8f' : theme.palette.text.primary,
             }}
           >
             User Profile
-          </Typography>
+          </AppPageTitle>
           <AppButton
             onClick={handleEditProfile}
-            variant='outlined'
-            variantType='secondary'
-            startIcon={<Edit />}
+            variant='contained'
+            variantType='primary'
+            startIcon={
+              <Box
+                component='img'
+                src={Icons.edit}
+                alt=''
+                aria-hidden='true'
+                sx={{
+                  width: { xs: 16, sm: 20 },
+                  height: { xs: 16, sm: 20 },
+                  // Make the SVG icon match the button text color (white)
+                  filter: 'brightness(0) invert(1)',
+                }}
+              />
+            }
             sx={{
-              textTransform: 'none',
-              fontWeight: 500,
-              px: 2,
-              py: 1,
-              borderColor: theme.palette.divider,
-              color: theme.palette.text.primary,
-              '&:hover': {
-                borderColor: theme.palette.primary.main,
-                backgroundColor: theme.palette.action.hover,
+              fontSize: 'var(--body-font-size)',
+              lineHeight: 'var(--body-line-height)',
+              letterSpacing: 'var(--body-letter-spacing)',
+              boxShadow: 'none',
+              minWidth: { xs: 'auto', sm: 200 },
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.75, sm: 1 },
+              '& .MuiButton-startIcon': {
+                marginRight: { xs: 0.5, sm: 1 },
+                display: 'flex',
+                alignItems: 'center',
               },
             }}
           >
-            Edit profile
+            <Box
+              component='span'
+              sx={{ display: { xs: 'none', sm: 'inline' } }}
+            >
+              Edit profile
+            </Box>
+            <Box
+              component='span'
+              sx={{ display: { xs: 'inline', sm: 'none' } }}
+            >
+              Edit
+            </Box>
           </AppButton>
         </Box>
-        <AppCard
-          elevation={1}
-          sx={{ borderRadius: 3, border: 'none', bgcolor: 'transparent', p: 0 }}
-        >
+        <AppCard elevation={1} sx={{ borderRadius: 3, border: 'none' }}>
           {/* Header Section with Profile Picture Upload */}
           <Box
-            sx={{ display: 'flex', alignItems: 'flex-start', mb: 4, gap: 3 }}
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'center', sm: 'flex-start' },
+              mb: { xs: 3, sm: 4 },
+              gap: { xs: 2, sm: 3 },
+            }}
           >
             <ProfilePictureUpload
               user={profile}
               onProfileUpdate={handleProfileUpdate}
-              size={100}
+              size={isMobile ? 88 : 100}
               showUploadButton={true}
               showRemoveButton={true}
               clickable={true}
             />
-            <Box sx={{ flex: 1 }}>
+            <Box
+              sx={{
+                flex: 1,
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: { xs: 'center', sm: 'flex-start' },
+              }}
+            >
               <Typography
                 variant='h5'
                 component='h2'
-                sx={{ fontWeight: 600, mb: 1 }}
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  textAlign: { xs: 'center', sm: 'left' },
+                  fontSize: { xs: '24px', sm: '28px' },
+                }}
               >
                 {profile.first_name} {profile.last_name}
               </Typography>
@@ -241,13 +291,23 @@ const UserProfileComponent = React.memo(() => {
                 label={getRoleName(profile.role)}
                 color={getRoleColor(profile.role)}
                 size='small'
-                sx={{ fontWeight: 500, mb: 1 }}
+                sx={{
+                  fontWeight: 500,
+                  mb: 1,
+                  height: { xs: 26, sm: 28 },
+                  '& .MuiChip-label': {
+                    px: 1,
+                    fontSize: { xs: '12px', sm: '13px' },
+                    fontWeight: 500,
+                  },
+                }}
               />
               <Typography
                 variant='body2'
                 sx={{
                   mb: 0.5,
                   color: darkMode ? '#8f8f8f' : theme.palette.text.secondary,
+                  textAlign: { xs: 'center', sm: 'left' },
                 }}
               >
                 {profile.email}
@@ -257,6 +317,7 @@ const UserProfileComponent = React.memo(() => {
                   variant='body2'
                   sx={{
                     color: darkMode ? '#8f8f8f' : theme.palette.text.secondary,
+                    textAlign: { xs: 'center', sm: 'left' },
                   }}
                 >
                   {profile.phone}
@@ -271,7 +332,7 @@ const UserProfileComponent = React.memo(() => {
             sx={{
               display: 'flex',
               flexWrap: 'wrap',
-              gap: 2,
+              gap: { xs: 1.5, sm: 2 },
             }}
           >
             {profileItems.map((item, index) => (
@@ -279,19 +340,20 @@ const UserProfileComponent = React.memo(() => {
                 key={index}
                 sx={{
                   flex: { xs: '1 1 100%', sm: '1 1 48%' },
-                  p: 2,
+                  p: { xs: 1.5, sm: 2 },
                   borderRadius: 2,
                   display: 'flex',
                   alignItems: 'flex-start',
                 }}
               >
-                <Box sx={{ mr: 2, mt: 0.5 }}>{item.icon}</Box>
+                <Box sx={{ mr: { xs: 1.5, sm: 2 }, mt: 0.25 }}>{item.icon}</Box>
                 <Box sx={{ flex: 1 }}>
                   <Typography
                     variant='body2'
                     sx={{
                       mb: 0.5,
                       fontWeight: 500,
+                      fontSize: { xs: '13px', sm: '14px' },
                       color: darkMode
                         ? '#8f8f8f'
                         : theme.palette.text.secondary,
@@ -301,7 +363,11 @@ const UserProfileComponent = React.memo(() => {
                   </Typography>
                   <Typography
                     variant='body1'
-                    sx={{ fontWeight: 400, wordBreak: 'break-word' }}
+                    sx={{
+                      fontWeight: 400,
+                      wordBreak: 'break-word',
+                      fontSize: { xs: '14px', sm: '16px' },
+                    }}
                   >
                     {item.value}
                   </Typography>

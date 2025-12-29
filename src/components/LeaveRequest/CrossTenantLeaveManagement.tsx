@@ -48,6 +48,8 @@ import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { PAGINATION } from '../../constants/appConstants';
 import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppDropdown from '../common/AppDropdown';
+import AppPageTitle from '../common/AppPageTitle';
 
 type LeaveStatus = '' | 'pending' | 'approved' | 'rejected' | 'withdrawn';
 
@@ -816,14 +818,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ minHeight: '100vh' }} onKeyDown={handleKeyDown}>
         <Paper sx={{ p: 3, mb: 3, boxShadow: 'none' }}>
-          <Typography
-            variant='h6'
-            fontWeight={700}
-            fontSize={{ xs: '32px', lg: '48px' }}
-            mb={2}
-          >
-            Tenant Leave Management
-          </Typography>
+          <AppPageTitle sx={{ mb: 2 }}>Tenant Leave Management</AppPageTitle>
           <Divider sx={{ mb: 2 }} />
           <Stack
             direction={isMobile ? 'column' : 'row'}
@@ -831,20 +826,23 @@ const CrossTenantLeaveManagement: React.FC = () => {
             flexWrap='wrap'
           >
             {isSystemAdminUser && (
-              <FormControl sx={{ minWidth: 160 }} size='small'>
-                <InputLabel>Tenant</InputLabel>
-                <Select
+              <Box
+                sx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}
+              >
+                <AppDropdown
                   label='Tenant'
+                  showLabel={false}
                   value={filters.tenantId}
-                  onChange={e => handleFilterChange('tenantId', e.target.value)}
-                >
-                  {tenants.map(t => (
-                    <MenuItem key={t.id} value={t.id}>
-                      {t.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  onChange={e =>
+                    handleFilterChange('tenantId', String(e.target.value || ''))
+                  }
+                  placeholder='Select Tenant'
+                  options={[
+                    { value: 'all', label: 'All Tenants' },
+                    ...tenants.map(t => ({ value: t.id, label: t.name })),
+                  ]}
+                />
+              </Box>
             )}
           </Stack>
         </Paper>

@@ -4,7 +4,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   Box,
   Typography,
   IconButton,
@@ -15,6 +14,7 @@ import { Close as CloseIcon } from '@mui/icons-material';
 import AppInputField from './AppInputField';
 import AppDropdown from './AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import AppButton from './AppButton';
 
 export interface FormField {
   name: string;
@@ -34,11 +34,18 @@ export interface FormField {
 interface AppFormModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit?: () => void;
   title: string;
-  fields: FormField[];
+  fields?: FormField[];
+  children?: ReactNode;
+  hideActions?: boolean;
+  wrapInForm?: boolean;
+  paperSx?: object;
   submitLabel?: string;
   cancelLabel?: string;
+  submitStartIcon?: ReactNode;
+  submitTitle?: string;
+  submitDisabled?: boolean;
   secondaryAction?: {
     label: string;
     onClick: () => void;
@@ -55,9 +62,16 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   onClose,
   onSubmit,
   title,
-  fields,
+  fields = [],
+  children,
+  hideActions = false,
+  wrapInForm = true,
+  paperSx,
   submitLabel = 'Create',
   cancelLabel = 'Cancel',
+  submitStartIcon,
+  submitTitle,
+  submitDisabled,
   secondaryAction,
   isSubmitting = false,
   hasChanges = true,
@@ -69,7 +83,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (hasChanges && !isSubmitting) {
+    if (hasChanges && !isSubmitting && onSubmit) {
       onSubmit();
     }
   };
@@ -102,6 +116,14 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           },
           backgroundColor: theme.palette.background.paper,
           margin: { xs: '16px', lg: 'auto' },
+          // Keep scrolling but hide scrollbar visuals
+          overflowY: 'auto',
+          scrollbarWidth: 'none', // Firefox
+          msOverflowStyle: 'none', // IE/Edge legacy
+          '&::-webkit-scrollbar': {
+            display: 'none', // Chrome/Safari
+          },
+          ...(paperSx || {}),
         },
       }}
       sx={{
@@ -148,6 +170,13 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           pt: 0,
           pb: 2,
           px: 2,
+          // Keep scrolling but hide scrollbar visuals (if DialogContent becomes scroll container)
+          overflowY: 'auto',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
         }}
       >
         <Box
@@ -158,8 +187,8 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           }}
         >
           <Box
-            component='form'
-            onSubmit={handleSubmit}
+            component={wrapInForm ? 'form' : 'div'}
+            onSubmit={wrapInForm ? handleSubmit : undefined}
             sx={{
               display: 'flex',
               flexDirection: 'column',
@@ -177,126 +206,102 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
               },
             }}
           >
-            {fields.map(field => (
-              <Box key={field.name} width='100%'>
-                {field.component ||
-                  (field.type === 'dropdown' && field.options ? (
-                    <AppDropdown
-                      label={field.label}
-                      options={field.options}
-                      value={field.value}
-                      onChange={(e: SelectChangeEvent<string | number>) =>
-                        field.onChange(e.target.value)
-                      }
-                      placeholder={field.placeholder}
-                      error={!!field.error}
-                      helperText={field.error}
-                      inputBackgroundColor={
-                        theme.palette.mode === 'dark'
-                          ? theme.palette.background.default
-                          : '#F8F8F8'
-                      }
-                    />
-                  ) : (
-                    <AppInputField
-                      label={field.label}
-                      name={field.name}
-                      value={field.value as string}
-                      onChange={e => field.onChange(e.target.value)}
-                      placeholder={field.placeholder}
-                      multiline={field.multiline || field.type === 'textarea'}
-                      rows={
-                        field.rows ||
-                        (field.type === 'textarea' ? 3 : undefined)
-                      }
-                      error={!!field.error}
-                      helperText={field.error}
-                      required={field.required}
-                      inputBackgroundColor={
-                        theme.palette.mode === 'dark'
-                          ? theme.palette.background.default
-                          : '#F8F8F8'
-                      }
-                    />
-                  ))}
-              </Box>
-            ))}
+            {children ||
+              fields.map(field => (
+                <Box key={field.name} width='100%'>
+                  {field.component ||
+                    (field.type === 'dropdown' && field.options ? (
+                      <AppDropdown
+                        label={field.label}
+                        options={field.options}
+                        value={field.value}
+                        onChange={(e: SelectChangeEvent<string | number>) =>
+                          field.onChange(e.target.value)
+                        }
+                        placeholder={field.placeholder}
+                        error={!!field.error}
+                        helperText={field.error}
+                        inputBackgroundColor={
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.background.default
+                            : '#F8F8F8'
+                        }
+                      />
+                    ) : (
+                      <AppInputField
+                        label={field.label}
+                        name={field.name}
+                        value={field.value as string}
+                        onChange={e => field.onChange(e.target.value)}
+                        placeholder={field.placeholder}
+                        multiline={field.multiline || field.type === 'textarea'}
+                        rows={
+                          field.rows ||
+                          (field.type === 'textarea' ? 3 : undefined)
+                        }
+                        error={!!field.error}
+                        helperText={field.error}
+                        required={field.required}
+                        inputBackgroundColor={
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.background.default
+                            : '#F8F8F8'
+                        }
+                      />
+                    ))}
+                </Box>
+              ))}
           </Box>
         </Box>
       </DialogContent>
 
-      <DialogActions
-        sx={{
-          p: 0,
-          pt: 0,
-          gap: 1,
-          justifyContent: 'flex-end',
-        }}
-      >
-        <Button
-          onClick={onClose}
+      {!hideActions && (
+        <DialogActions
           sx={{
-            borderRadius: '12px',
-            textTransform: 'none',
-            border: `1px solid ${theme.palette.divider}`,
-            color: theme.palette.text.primary,
-            px: 4,
-            fontWeight: 400,
-            fontSize: { xs: '14px', sm: '16px' },
-            '&:hover': {
-              border: `1px solid ${theme.palette.divider}`,
-              backgroundColor: theme.palette.action.hover,
-            },
+            p: 0,
+            pt: 0,
+            gap: 1,
+            justifyContent: 'flex-end',
           }}
         >
-          {cancelLabel}
-        </Button>
-        {secondaryAction && (
-          <Button
-            onClick={secondaryAction.onClick}
-            disabled={secondaryAction.disabled}
-            sx={{
-              borderRadius: '12px',
-              textTransform: 'none',
-              px: 4,
-              fontWeight: 400,
-              bgcolor: 'var(--primary-dark-color)',
-              color: '#FFFFFF',
-              fontSize: { xs: '14px', sm: '16px' },
-              '&:disabled': {
-                opacity: 0.7,
-              },
-            }}
+          <AppButton
+            onClick={onClose}
+            variant='outlined'
+            variantType='secondary'
+            sx={{ px: 4 }}
           >
-            {secondaryAction.label}
-          </Button>
-        )}
+            {cancelLabel}
+          </AppButton>
+          {secondaryAction && (
+            <AppButton
+              onClick={secondaryAction.onClick}
+              disabled={secondaryAction.disabled}
+              variant='contained'
+              variantType='primary'
+              sx={{ px: 4 }}
+            >
+              {secondaryAction.label}
+            </AppButton>
+          )}
 
-        <Button
-          type='submit'
-          variant='contained'
-          disabled={isSubmitting || !hasChanges}
-          onClick={handleSubmit}
-          sx={{
-            borderRadius: '12px',
-            textTransform: 'none',
-            color: theme.palette.primary.contrastText,
-            px: 4,
-            fontWeight: 400,
-            fontSize: { xs: '14px', sm: '16px' },
-            backgroundColor: theme.palette.primary.main,
-            '&:hover': {
-              backgroundColor: theme.palette.primary.dark,
-            },
-            '&:disabled': {
-              backgroundColor: theme.palette.mode === 'dark' ? '#555555' : '#ccc',
-              color: theme.palette.mode === 'dark' ? '#888888' : '#999999',
-            },
-          }}
-        >
-          {isSubmitting ? 'Saving...' : submitLabel}
-        </Button>
-      </DialogActions>
+          <AppButton
+            type={wrapInForm ? 'submit' : 'button'}
+            variant='contained'
+            variantType='primary'
+            disabled={
+              submitDisabled !== undefined
+                ? submitDisabled
+                : isSubmitting || !hasChanges
+            }
+            onClick={wrapInForm ? handleSubmit : onSubmit}
+            startIcon={submitStartIcon}
+            title={submitTitle}
+            sx={{ px: 4 }}
+          >
+            {isSubmitting ? 'Saving...' : submitLabel}
+          </AppButton>
+        </DialogActions>
+      )}
     </Dialog>
   );
 };

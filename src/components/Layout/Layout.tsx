@@ -160,17 +160,21 @@ const Layout = () => {
             display: 'flex',
             flexDirection: 'column',
             direction: rtlMode ? 'rtl' : 'ltr',
-            height: { xs: '100vh', lg: 'auto' },
+            // On mobile, make sidebar truly full-height (avoid fixed/partial height)
+            height: { xs: '100dvh', lg: 'auto' },
             width: { xs: '240px', lg: '280px' },
-            position: { xs: 'absolute', lg: 'relative' },
-            top: 0,
+            // Use fixed positioning on mobile so it spans the full viewport height
+            position: { xs: 'fixed', lg: 'relative' },
+            top: { xs: 0, lg: 'auto' },
+            bottom: { xs: 0, lg: 'auto' },
             left: rtlMode ? 'auto' : { xs: 0, lg: 'auto' },
             right: rtlMode ? { xs: 0, lg: 'auto' } : 'auto',
             mt: { xs: 0, lg: 2.5 },
             ml: { xs: 0, lg: 2.5 },
             mb: { xs: 0, lg: 2.5 },
             borderRadius: {
-              xs: rtlMode ? '0 20px 20px 0' : '20px 0 0 20px',
+              // No rounding on mobile so it can fill the full height cleanly
+              xs: 0,
               lg: '20px',
             },
             zIndex: { xs: 1000, lg: 'auto' },
@@ -247,7 +251,8 @@ const Layout = () => {
             xs: '20px',
             lg: '20px 0 0 20px',
           },
-          height: { xs: 'auto', md: '100vh' },
+          // Ensure the overall layout takes full viewport height on mobile too
+          height: { xs: '100dvh', md: '100vh' },
         }}
       >
         {sidebarOpen && !isLargeScreen && (
@@ -279,7 +284,7 @@ const Layout = () => {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'auto',
-            height: { xs: 'auto', md: '100vh' },
+            height: { xs: '100dvh', md: '100vh' },
             transition: 'margin 0.3s ease',
             marginLeft: 0,
             marginRight: 0,

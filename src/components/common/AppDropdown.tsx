@@ -80,14 +80,20 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
     const [open, setOpen] = useState(false);
 
     return (
-      <Box sx={containerSx}>
+      <Box
+        sx={{
+          ...containerSx,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}
+      >
         {showLabel && (
           <Box
             sx={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'flex-start',
-              mb: 0.5,
             }}
           >
             <Typography
@@ -126,58 +132,60 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
           ref={ref}
           fullWidth
           error={error}
-          sx={{
-            width: '100%',
-            '& .MuiOutlinedInput-root': {
-              backgroundColor:
-                inputBackgroundColor || theme.palette.background.paper,
-              borderRadius: '12px',
-              minHeight: '48px',
+          sx={[
+            {
               width: '100%',
-              padding: '0 !important',
-              '& fieldset': {
-                borderColor: error
-                  ? theme.palette.error.main
-                  : theme.palette.divider,
-                borderWidth: '1px',
+              '& .MuiOutlinedInput-root': {
+                backgroundColor:
+                  inputBackgroundColor || theme.palette.background.paper,
+                borderRadius: '12px',
+                minHeight: '48px',
+                width: '100%',
+                padding: '0 !important',
+                '& fieldset': {
+                  borderColor: error
+                    ? theme.palette.error.main
+                    : theme.palette.divider,
+                  borderWidth: '1px',
+                },
+                '&:hover fieldset': {
+                  borderColor: error
+                    ? theme.palette.error.main
+                    : theme.palette.divider,
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: error
+                    ? theme.palette.error.main
+                    : theme.palette.primary.main,
+                  borderWidth: '1px',
+                },
               },
-              '&:hover fieldset': {
-                borderColor: error
-                  ? theme.palette.error.main
-                  : theme.palette.divider,
+              '& .MuiInputBase-input': {
+                padding: '12px 16px !important',
+                backgroundColor: 'transparent !important',
               },
-              '&.Mui-focused fieldset': {
-                borderColor: error
-                  ? theme.palette.error.main
-                  : theme.palette.primary.main,
-                borderWidth: '1px',
+              '& .MuiOutlinedInput-input': {
+                backgroundColor: 'transparent !important',
+              },
+              '& .MuiSelect-select': {
+                color: theme.palette.text.primary,
+                fontSize: 'var(--label-font-size)',
+                lineHeight: 'var(--label-line-height)',
+                letterSpacing: 'var(--label-letter-spacing)',
+                fontWeight: 400,
+                padding: '12px 16px !important',
+                paddingRight: '40px !important',
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: 'transparent !important',
+              },
+              '& .MuiSelect-icon': {
+                color: theme.palette.text.secondary,
+                right: '16px',
               },
             },
-            '& .MuiInputBase-input': {
-              padding: '12px 16px !important',
-              backgroundColor: 'transparent !important',
-            },
-            '& .MuiOutlinedInput-input': {
-              backgroundColor: 'transparent !important',
-            },
-            '& .MuiSelect-select': {
-              color: theme.palette.text.primary,
-              fontSize: 'var(--label-font-size)',
-              lineHeight: 'var(--label-line-height)',
-              letterSpacing: 'var(--label-letter-spacing)',
-              fontWeight: 400,
-              padding: '12px 16px !important',
-              paddingRight: '40px !important',
-              display: 'flex',
-              alignItems: 'center',
-              backgroundColor: 'transparent !important',
-            },
-            '& .MuiSelect-icon': {
-              color: theme.palette.text.secondary,
-              right: '16px',
-            },
-            ...sx,
-          }}
+            ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+          ]}
         >
           <Select
             {...rest}
