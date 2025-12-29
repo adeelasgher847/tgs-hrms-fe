@@ -259,8 +259,24 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             {secondaryAction.label}
           </Button>
         )}
-
-        {/*  */}
+        <Button
+          type='submit'
+          disabled={!hasChanges || isSubmitting}
+          sx={{
+            borderRadius: '12px',
+            textTransform: 'none',
+            px: 4,
+            fontWeight: 500,
+            bgcolor: 'var(--primary-dark-color)',
+            color: '#FFFFFF',
+            fontSize: { xs: '14px', sm: '16px' },
+            '&:disabled': {
+              opacity: 0.7,
+            },
+          }}
+        >
+          {submitLabel}
+        </Button>
       </DialogActions>
     </Dialog>
   );

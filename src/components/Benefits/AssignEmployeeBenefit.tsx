@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Box,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Typography,
-  Button,
   FormControl,
   InputLabel,
   Select,
@@ -24,17 +19,19 @@ import benefitsApi from '../../api/benefitApi';
 import employeeBenefitApi from '../../api/employeeBenefitApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
+import AppFormModal from '../common/AppFormModal';
 
 interface Employee {
   id: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   name?: string;
 }
 
 interface Benefit {
   id: string;
   name: string;
+  status?: string;
 }
 
 interface AssignEmployeeBenefitValues {
@@ -114,7 +111,7 @@ const AssignEmployeeBenefit: React.FC<{
 
         const allBenefits: Benefit[] = Array.isArray(benResp)
           ? benResp
-          : benResp.items || [];
+          : (benResp as { items?: Benefit[] })?.items || [];
 
         const activeBenefits = allBenefits.filter(
           (b: { status?: string }) => b.status?.toLowerCase() === 'active'
@@ -223,20 +220,30 @@ const AssignEmployeeBenefit: React.FC<{
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
-        <DialogTitle>
-          <Typography variant='h6' fontWeight={600}>
-            Assign Benefits to Employee
-          </Typography>
-        </DialogTitle>
-
-        {fetching ? (
-          <Box display='flex' justifyContent='center' alignItems='center' p={5}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <form onSubmit={handleSubmit(handleFormSubmit)}>
-            <DialogContent>
+      <AppFormModal
+        open={open}
+        onClose={onClose}
+        title='Assign Benefits to Employee'
+        onSubmit={() => handleSubmit(handleFormSubmit)()}
+        isSubmitting={loading}
+        hasChanges={!!isFormValid}
+        maxWidth='sm'
+        fields={[
+          {
+            name: 'assign',
+            label: '',
+            value: '',
+            onChange: () => {},
+            component: fetching ? (
+              <Box
+                display='flex'
+                justifyContent='center'
+                alignItems='center'
+                p={5}
+              >
+                <CircularProgress />
+              </Box>
+            ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Controller
                   name='employeeId'
@@ -356,23 +363,10 @@ const AssignEmployeeBenefit: React.FC<{
                   )}
                 />
               </Box>
-            </DialogContent>
-
-            <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button onClick={onClose} variant='outlined'>
-                Cancel
-              </Button>
-              <Button
-                type='submit'
-                variant='contained'
-                disabled={loading || !isFormValid}
-              >
-                {loading ? 'Assigning...' : 'Assign'}
-              </Button>
-            </DialogActions>
-          </form>
-        )}
-      </Dialog>
+            ),
+          },
+        ]}
+      />
 
       <ErrorSnackbar
         open={snackbar.open}
