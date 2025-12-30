@@ -253,7 +253,7 @@ const PayrollReports: React.FC = () => {
             options={tenants.map(t => ({ value: t.id, label: t.name }))}
             value={selectedTenantId}
             onChange={e => setSelectedTenantId(String(e.target.value))}
-            containerSx={{ minWidth: 200 }}
+            containerSx={{ width: { xs: '100%', sm: 200 } }}
             size='small'
             showLabel={true}
             disabled={loadingTenants}

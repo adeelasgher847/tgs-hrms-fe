@@ -429,19 +429,13 @@ export const DepartmentList: React.FC = () => {
               value={selectedTenantId}
               onChange={handleTenantChange}
               options={[
-                {
-                  value: 'all',
-                  label: language === 'ar' ? 'جميع المستأجرين' : 'All Tenants',
-                },
+                { value: 'all', label: language === 'ar' ? 'جميع المستأجرين' : 'All Tenants' },
                 ...allTenants.map(t => ({ value: t.id, label: t.name })),
               ]}
-              containerSx={{
-                minWidth: 200,
-                maxWidth: { xs: '100%', sm: '400px' },
-              }}
+              containerSx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}
               sx={{
                 color: textColor,
-
+                backgroundColor: bgPaper,
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: borderColor,
                 },
@@ -524,7 +518,7 @@ export const DepartmentList: React.FC = () => {
             alignItems='center'
             height={200}
           >
-            <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
+            <CircularProgress />
           </Box>
         </Paper>
       ) : departments.length === 0 ? (
