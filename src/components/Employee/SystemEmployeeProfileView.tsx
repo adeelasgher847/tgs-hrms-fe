@@ -140,7 +140,11 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
       >
         <Typography
           component='span'
-          sx={{ fontSize: '1.25rem', fontWeight: 600, color: 'primary.main' }}
+          sx={{
+            fontSize: '1.25rem',
+            fontWeight: 600,
+            color: 'var(--primary-dark-color)',
+          }}
         >
           Employee Profile
         </Typography>
@@ -211,7 +215,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 variant='h6'
                 fontWeight={600}
                 gutterBottom
-                color='primary.main'
+                color='var(--primary-dark-color)'
               >
                 Leaves
               </Typography>
@@ -285,7 +289,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 variant='h6'
                 fontWeight={600}
                 gutterBottom
-                color='primary.main'
+                color='var(--primary-dark-color)'
               >
                 Assigned Assets
               </Typography>
@@ -338,7 +342,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 variant='h6'
                 fontWeight={600}
                 gutterBottom
-                color='primary.main'
+                color='var(--primary-dark-color)'
               >
                 Assigned Benefits
               </Typography>
@@ -550,7 +554,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 variant='h6'
                 fontWeight={600}
                 gutterBottom
-                color='primary.main'
+                color='var(--primary-dark-color)'
               >
                 KPIs Overview
               </Typography>
@@ -744,7 +748,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 variant='h6'
                 fontWeight={600}
                 gutterBottom
-                color='primary.main'
+                color='var(--primary-dark-color)'
               >
                 Promotions
               </Typography>
@@ -803,7 +807,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 variant='h6'
                 fontWeight={600}
                 gutterBottom
-                color='primary.main'
+                color='var(--primary-dark-color)'
               >
                 Performance Reviews
               </Typography>

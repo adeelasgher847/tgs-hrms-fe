@@ -5,8 +5,6 @@ import {
   CircularProgress,
   Paper,
   Typography,
-  TextField,
-  MenuItem,
   Stack,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -20,6 +18,7 @@ import systemEmployeeApiService, {
 } from '../../api/systemEmployeeApi';
 import { useIsDarkMode } from '../../theme';
 import { snackbar } from '../../utils/snackbar';
+import AppDropdown from '../common/AppDropdown';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -242,25 +241,23 @@ const PayrollReports: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant='h4' sx={{ fontWeight: 600, fontSize: { xs: '32px', lg: '48px' } }}>
+        <Typography
+          variant='h4'
+          sx={{ fontWeight: 600, fontSize: { xs: '32px', lg: '48px' } }}
+        >
           Payroll Reports
         </Typography>
         <Stack direction='row' spacing={2}>
-          <TextField
-            select
+          <AppDropdown
             label='Tenant'
+            options={tenants.map(t => ({ value: t.id, label: t.name }))}
             value={selectedTenantId}
-            onChange={e => setSelectedTenantId(e.target.value)}
+            onChange={e => setSelectedTenantId(String(e.target.value))}
+            containerSx={{ minWidth: 200 }}
             size='small'
-            sx={{ minWidth: 200 }}
+            showLabel={true}
             disabled={loadingTenants}
-          >
-            {tenants.map(t => (
-              <MenuItem key={t.id} value={t.id}>
-                {t.name}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
         </Stack>
       </Box>
 

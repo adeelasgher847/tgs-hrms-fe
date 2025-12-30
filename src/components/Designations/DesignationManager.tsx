@@ -4,10 +4,6 @@ import {
   Typography,
   Button,
   CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   TableHead,
   TableBody,
   TableRow,
@@ -16,7 +12,6 @@ import {
   Pagination,
 } from '@mui/material';
 import AppTable from '../common/AppTable';
-import type { SelectChangeEvent } from '@mui/material/Select';
 import { Add as AddIcon } from '@mui/icons-material';
 import AppDropdown from '../common/AppDropdown';
 import { Icons } from '../../assets/icons';
@@ -58,10 +53,8 @@ export default function DesignationManager() {
   const userRoleValue = user?.role;
   const isSystemAdmin = isSystemAdminFn(userRoleValue);
   const isHRAdmin = isHRAdminFn(userRoleValue);
-
   const [designations, setDesignations] = useState<FrontendDesignation[]>([]);
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
-  // Store tenant info for each designation (for system admin)
   const [designationTenantMap, setDesignationTenantMap] = useState<
     Map<string, { tenantId: string; tenantName: string }>
   >(new Map());
@@ -309,11 +302,6 @@ export default function DesignationManager() {
     fetchSystemAdminDesignations,
   ]);
 
-  const handleTenantChange = (event: SelectChangeEvent<string>) => {
-    setSelectedTenantId(event.target.value);
-    setSelectedDepartmentId('all'); // Reset department filter when tenant changes
-  };
-
   // Form state management
   useEffect(() => {
     if (editingDesignation) {
@@ -514,9 +502,9 @@ export default function DesignationManager() {
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'nowrap',
+          alignItems: { xs: 'flex-start', sm: 'center' },
           mb: 3,
           gap: 2,
         }}
@@ -536,51 +524,55 @@ export default function DesignationManager() {
             display: 'flex',
             gap: 2,
             alignItems: 'center',
-            flexWrap: 'nowrap',
+            justifyContent: { xs: 'flex-start', sm: 'center' },
+            flexDirection: { xs: 'column', sm: 'row' },
+            width: { xs: '100%', sm: 'auto' },
           }}
         >
           {isSystemAdmin ? (
             <>
-              <FormControl
-                size='small'
-                sx={{ minWidth: { xs: '100%', sm: 200 } }}
-              >
-                <InputLabel id='tenant-select'>
-                  {getText('Select Tenant', 'اختر المستأجر')}
-                </InputLabel>
-                <Select
-                  labelId='tenant-select'
-                  value={selectedTenantId}
-                  label={getText('Select Tenant', 'اختر المستأجر')}
-                  onChange={handleTenantChange}
-                  disabled={loadingTenants}
-                  sx={{
-                    '.MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'divider',
-                    },
-                  }}
-                >
-                  <MenuItem value='all'>
-                    {getText('All Tenants', 'جميع المستأجرين')}
-                  </MenuItem>
-                  {loadingTenants ? (
-                    <MenuItem disabled>
-                      {getText(
-                        'Loading tenants...',
-                        'جاري تحميل المستأجرين...'
-                      )}
-                    </MenuItem>
-                  ) : (
-                    allTenants.map((tenant: SystemTenant) => (
-                      <MenuItem key={tenant.id} value={tenant.id}>
-                        {tenant.name}
-                      </MenuItem>
-                    ))
-                  )}
-                </Select>
-              </FormControl>
               <AppDropdown
-                label={getText('Filter by department', 'تصفية حسب القسم')}
+                showLabel={false}
+                options={
+                  loadingTenants
+                    ? [
+                        {
+                          value: '',
+                          label: getText(
+                            'Loading tenants...',
+                            'جاري تحميل المستأجرين...'
+                          ),
+                        },
+                      ]
+                    : [
+                        {
+                          value: 'all',
+                          label: getText('All Tenants', 'جميع المستأجرين'),
+                        },
+                        ...allTenants.map((tenant: SystemTenant) => ({
+                          value: String((tenant as any).id),
+                          label: (tenant as any).name,
+                        })),
+                      ]
+                }
+                value={selectedTenantId}
+                onChange={e => {
+                  const newValue =
+                    e.target.value === '' ? 'all' : String(e.target.value);
+                  setSelectedTenantId(newValue);
+                  setSelectedDepartmentId('all');
+                }}
+                disabled={loadingTenants}
+                containerSx={{
+                  width: { xs: '100%', sm: 250 },
+                  minHeight: 48,
+                  display: 'flex',
+                  alignItems: 'center',
+                  mb: { xs: 1, sm: 0 },
+                }}
+              />
+              <AppDropdown
+                // label={getText('Filter by department', 'تصفية حسب القسم')}
                 options={[
                   {
                     value: 'all',
@@ -599,7 +591,11 @@ export default function DesignationManager() {
                   setCurrentPage(1);
                 }}
                 disabled={departmentsLoading}
-                containerSx={{ minWidth: { xs: '100%', sm: 250 } }}
+                containerSx={{
+                  width: { xs: '100%', sm: 250 },
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
               />
             </>
           ) : (

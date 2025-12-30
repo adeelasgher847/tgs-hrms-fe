@@ -6,13 +6,15 @@ import {
   type TableContainerProps,
   type SxProps,
   type Theme,
+  type TableProps,
 } from '@mui/material';
 
 interface AppTableProps extends TableContainerProps {
   children: React.ReactNode;
+  tableProps?: TableProps;
 }
 
-export function AppTable({ children, sx, ...rest }: AppTableProps) {
+export function AppTable({ children, sx, tableProps, ...rest }: AppTableProps) {
   const baseSx: SxProps<Theme> = {
     border: 'none',
     borderRadius: '12px',
@@ -55,7 +57,7 @@ export function AppTable({ children, sx, ...rest }: AppTableProps) {
       {...rest}
       sx={{ ...baseSx, ...(sx as object) }}
     >
-      <Table>{children}</Table>
+      <Table {...(tableProps || {})}>{children}</Table>
     </TableContainer>
   );
 }

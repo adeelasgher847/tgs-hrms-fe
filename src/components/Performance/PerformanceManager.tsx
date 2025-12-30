@@ -1,13 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  Box,
-  Typography,
-  FormControl,
-  Select,
-  MenuItem,
-  Paper,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Typography, Paper, CircularProgress } from '@mui/material';
+import AppDropdown from '../common/AppDropdown';
 import PerformanceKpiGrid from './KPIPerformanceOverview';
 import PerformanceTrendChart from './PerformanceTrend';
 import PromotionsList from './PromotionsTable';
@@ -68,25 +61,23 @@ const PerformanceDashboard: React.FC = () => {
       </Typography>
 
       <Box display='flex' gap={2} mb={3} flexWrap='wrap'>
-        <FormControl size='small' sx={{ minWidth: 160, maxWidth: 220 }}>
-          <Select
-            value={selectedTenant || ''}
-            onChange={e => setSelectedTenant(e.target.value)}
-            disabled={loadingTenants || tenants.length === 0}
-          >
-            {loadingTenants ? (
-              <MenuItem disabled>Loading...</MenuItem>
-            ) : tenants.length === 0 ? (
-              <MenuItem disabled>No tenants available</MenuItem>
-            ) : (
-              tenants.map(t => (
-                <MenuItem key={t.id} value={t.id}>
-                  {t.name}
-                </MenuItem>
-              ))
-            )}
-          </Select>
-        </FormControl>
+        <AppDropdown
+          label='Tenant'
+          options={
+            loadingTenants
+              ? [{ value: '', label: 'Loading...' }]
+              : tenants.length === 0
+                ? [{ value: '', label: 'No tenants available' }]
+                : [
+                    { value: '', label: 'All' },
+                    ...tenants.map(t => ({ value: t.id, label: t.name })),
+                  ]
+          }
+          value={selectedTenant || ''}
+          onChange={e => setSelectedTenant(String(e.target.value))}
+          containerSx={{ minWidth: { xs: '100%', sm: 160 }, maxWidth: 220 }}
+          size='small'
+        />
       </Box>
 
       {loadingTenants || !selectedTenant ? (

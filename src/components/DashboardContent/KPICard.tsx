@@ -26,6 +26,13 @@ const KpiCard: React.FC<KpiCardProps> = ({
 }) => {
   const theme = useTheme();
 
+  // avatar background should use the project's primary dark CSS variable
+  const defaultAvatarBg = 'var(--primary-dark-color)';
+  const avatarBg = color || defaultAvatarBg;
+  const avatarTextColor = color
+    ? theme.palette.getContrastText(color)
+    : theme.palette.getContrastText(theme.palette.primary.dark);
+
   return (
     <Card
       sx={{
@@ -75,10 +82,8 @@ const KpiCard: React.FC<KpiCardProps> = ({
         {/* Right side: Icon */}
         <Avatar
           sx={{
-            bgcolor: color || theme.palette.primary.main,
-            color: theme.palette.getContrastText(
-              color || theme.palette.primary.main
-            ),
+            bgcolor: avatarBg,
+            color: avatarTextColor,
             width: 60,
             height: 60,
             ml: 2,

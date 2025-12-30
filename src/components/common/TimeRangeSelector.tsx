@@ -8,6 +8,8 @@ interface TimeRangeSelectorProps {
   onChange: (value: string | number | null) => void;
   allTimeLabel?: string;
   language?: 'en' | 'ar';
+  containerSx?: object;
+  minHeight?: number | string;
 }
 
 const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
@@ -16,6 +18,8 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   onChange,
   allTimeLabel = 'All Time',
   language = 'en',
+  containerSx,
+  minHeight = '48px',
 }) => {
   // language parameter is reserved for future use
   void language;
@@ -46,7 +50,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
   return (
     <ClickAwayListener onClickAway={handleClose}>
-      <Box sx={{ position: 'relative' }}>
+      <Box sx={{ position: 'relative', ...containerSx }}>
         {/* Selected Button */}
         <Box
           ref={anchorRef}
@@ -57,11 +61,12 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             justifyContent: 'space-between',
             gap: 1,
             backgroundColor: 'var(--primary-color)',
-            borderRadius: 'var(--border-radius-lg)',
+            borderRadius: '12px',
             px: 2,
-            py: 1,
             cursor: 'pointer',
             minWidth: '120px',
+            minHeight: minHeight,
+            height: minHeight,
             transition: 'background-color 0.2s',
             // '&:hover': {
             //   backgroundColor: 'var(--primary-color)',
@@ -103,7 +108,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               mt: 1,
               minWidth: '120px',
               backgroundColor: 'var(--primary-color)',
-              borderRadius: 'var(--border-radius-lg)',
+              borderRadius: '12px',
               overflow: 'hidden',
               zIndex: 1000,
               boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',

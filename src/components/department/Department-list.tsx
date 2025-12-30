@@ -10,8 +10,6 @@ import {
   CircularProgress,
   useTheme,
   FormControl,
-  Select,
-  MenuItem,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
@@ -30,6 +28,7 @@ import ErrorSnackbar from '../common/ErrorSnackbar';
 import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { COLORS } from '../../constants/appConstants';
+import AppDropdown from '../common/AppDropdown';
 
 const labels = {
   en: {
@@ -425,38 +424,32 @@ export const DepartmentList: React.FC = () => {
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {isSystemAdmin && (
-            <FormControl
-              size='small'
-              sx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}
-            >
-              <Select
-                value={selectedTenantId}
-                onChange={handleTenantChange}
-                displayEmpty
-                sx={{
-                  color: textColor,
-                  backgroundColor: bgPaper,
-                  '.MuiOutlinedInput-notchedOutline': {
-                    borderColor: borderColor,
-                  },
-                  // '&:hover .MuiOutlinedInput-notchedOutline': {
-                  //   borderColor: borderColor,
-                  // },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: borderColor,
-                  },
-                }}
-              >
-                <MenuItem value='all'>
-                  {language === 'ar' ? 'جميع المستأجرين' : 'All Tenants'}
-                </MenuItem>
-                {allTenants.map((tenant: SystemTenant) => (
-                  <MenuItem key={tenant.id} value={tenant.id}>
-                    {tenant.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <AppDropdown
+              showLabel={false}
+              value={selectedTenantId}
+              onChange={handleTenantChange}
+              options={[
+                {
+                  value: 'all',
+                  label: language === 'ar' ? 'جميع المستأجرين' : 'All Tenants',
+                },
+                ...allTenants.map(t => ({ value: t.id, label: t.name })),
+              ]}
+              containerSx={{
+                minWidth: 200,
+                maxWidth: { xs: '100%', sm: '400px' },
+              }}
+              sx={{
+                color: textColor,
+
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: borderColor,
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: borderColor,
+                },
+              }}
+            />
           )}
           {!isSystemAdmin && (
             <Button
@@ -531,7 +524,7 @@ export const DepartmentList: React.FC = () => {
             alignItems='center'
             height={200}
           >
-            <CircularProgress />
+            <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
           </Box>
         </Paper>
       ) : departments.length === 0 ? (

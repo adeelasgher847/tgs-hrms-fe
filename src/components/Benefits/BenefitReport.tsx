@@ -26,7 +26,7 @@ import { departmentApiService } from '../../api/departmentApi';
 import { designationApiService } from '../../api/designationApi';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
-import AppSelect from '../common/AppSelect';
+import AppDropdown from '../common/AppDropdown';
 import AppTable from '../common/AppTable';
 
 import { PAGINATION } from '../../constants/appConstants';
@@ -337,23 +337,20 @@ const BenefitReport: React.FC = () => {
           Benefits Report
         </Typography>
         {isSystemAdmin && (
-          <AppSelect
+          <AppDropdown
             label='Tenant'
-            size='small'
+            options={[
+              { value: '', label: 'All' },
+              ...tenants.map(t => ({ value: t.id, label: t.name })),
+            ]}
             value={selectedTenant}
             onChange={e => {
               setSelectedTenant(e.target.value as string);
               setPage(1);
             }}
-            sx={{ minWidth: 220 }}
-          >
-            <MenuItem value=''>All</MenuItem>
-            {tenants.map(t => (
-              <MenuItem key={t.id} value={t.id}>
-                {t.name}
-              </MenuItem>
-            ))}
-          </AppSelect>
+            containerSx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}
+            size='small'
+          />
         )}
       </Box>
 
@@ -395,62 +392,78 @@ const BenefitReport: React.FC = () => {
 
       {/* Filters & CSV */}
       <Box
-        display='flex'
-        justifyContent='space-between'
-        alignItems='center'
         mb={2}
+        sx={{
+          display: 'flex',
+          gap: 2,
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: 'start',
+          justifyContent: 'space-between',
+        }}
       >
-        <Box display='flex' gap={2} flexWrap='wrap'>
-          <AppSelect
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            flexWrap: 'wrap',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'start', sm: 'start' },
+          }}
+        >
+          <AppDropdown
             label='Department'
-            size='small'
+            options={[
+              { value: '', label: 'All' },
+              ...departments.map(d => ({ value: d.id, label: d.name })),
+            ]}
             value={selectedDepartment}
             onChange={e => {
               setSelectedDepartment(e.target.value as string);
               setPage(1);
             }}
-            sx={{ width: 250 }}
-          >
-            <MenuItem value=''>All</MenuItem>
-            {departments.map(d => (
-              <MenuItem key={d.id} value={d.id}>
-                {d.name}
-              </MenuItem>
-            ))}
-          </AppSelect>
-          <AppSelect
-            label='Designation'
+            containerSx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}
             size='small'
+          />
+
+          <AppDropdown
+            label='Designation'
+            options={[
+              { value: '', label: 'All' },
+              ...designations.map(d => ({ value: d.title, label: d.title })),
+            ]}
             value={selectedDesignation}
             onChange={e => {
               setSelectedDesignation(e.target.value as string);
               setPage(1);
             }}
             disabled={!designations.length}
-            sx={{ width: 250 }}
-          >
-            <MenuItem value=''>All</MenuItem>
-            {designations.map(d => (
-              <MenuItem key={d.id} value={d.title}>
-                {d.title}
-              </MenuItem>
-            ))}
-          </AppSelect>
+            containerSx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}
+            size='small'
+          />
         </Box>
-        <Tooltip title='Download CSV'>
-          <IconButton
-            color='primary'
-            onClick={handleDownload}
-            sx={{
-              backgroundColor: 'primary.main',
-              color: 'white',
-              borderRadius: '6px',
-              '&:hover': { backgroundColor: 'primary.dark' },
-            }}
-          >
-            <FileDownloadIcon />
-          </IconButton>
-        </Tooltip>
+
+        <Box
+          sx={{
+            mt: { xs: 1, sm: 0 },
+            display: 'flex',
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+          }}
+        >
+          <Tooltip title='Download CSV'>
+            <IconButton
+              color='primary'
+              onClick={handleDownload}
+              sx={{
+                backgroundColor: 'var(--primary-dark-color)',
+                color: 'white',
+                borderRadius: '6px',
+                '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+              }}
+            >
+              <FileDownloadIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       {/* Table */}

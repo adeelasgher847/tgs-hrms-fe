@@ -1,19 +1,12 @@
-import {
-  Box,
-  Typography,
-  MenuItem,
-  Select,
-  FormControl,
-  CircularProgress,
-  TextField,
-  Tooltip,
-} from '@mui/material';
+import { Box, Typography, CircularProgress, TextField } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import systemDashboardApiService from '@/api/systemDashboardApi';
+import AppDropdown from '../common/AppDropdown';
+import TimeRangeSelector from '../common/TimeRangeSelector';
 
 interface Tenant {
   id: string;
@@ -135,7 +128,9 @@ const EmployeeGrowthChart: React.FC = () => {
     dataLabels: { enabled: false },
     xaxis: {
       categories: months,
-      labels: { style: { fontSize: '11px', colors: textColor, fontStyle: 'normal' } },
+      labels: {
+        style: { fontSize: '11px', colors: textColor, fontStyle: 'normal' },
+      },
     },
     yaxis: {
       labels: {
@@ -167,7 +162,7 @@ const EmployeeGrowthChart: React.FC = () => {
         alignItems='center'
         height={400}
       >
-        <CircularProgress />
+        <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
       </Box>
     );
   }
@@ -195,117 +190,85 @@ const EmployeeGrowthChart: React.FC = () => {
           gap: 2,
         }}
       >
-        <Typography fontWeight='bold' fontSize={{ xs: '20px', lg: '28px' }} color={textColor}>
+        <Typography
+          fontWeight='bold'
+          fontSize={{ xs: '20px', lg: '28px' }}
+          color={textColor}
+        >
           {labels[language]} ({selectedYear})
         </Typography>
 
         <Box display='flex' gap={2} flexWrap='wrap'>
-          <FormControl
-            size='small'
-            sx={{
+          <AppDropdown
+            showLabel={false}
+            value={selectedTenant}
+            onChange={e => setSelectedTenant(e.target.value as string)}
+            options={tenants.map(t => ({ value: t.id, label: t.name }))}
+            containerSx={{
               minWidth: { xs: '100%', sm: 140 },
               width: { xs: '100%', sm: 'auto' },
             }}
-          >
-            <Select
-              value={selectedTenant}
-              onChange={e => setSelectedTenant(e.target.value)}
-              sx={{
-                color: textColor,
-                '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: borderColor,
-                },
-                '.MuiSelect-select': {
-                  display: 'flex',
-                  alignItems: 'center',
-                  maxWidth: { xs: '100%', sm: 200 },
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                },
-              }}
-            >
-              {tenants.map(tenant => (
-                <MenuItem key={tenant.id} value={tenant.id}>
-                  <Tooltip title={tenant.name}>
-                    <Box
-                      sx={{
-                        maxWidth: 220,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {tenant.name}
-                    </Box>
-                  </Tooltip>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl
-            size='small'
             sx={{
+              '& .MuiSelect-select': {
+                color: textColor,
+                display: 'flex',
+                alignItems: 'center',
+                maxWidth: { xs: '100%', sm: 200 },
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: borderColor,
+              },
+            }}
+          />
+
+          <AppDropdown
+            showLabel={false}
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value as string)}
+            options={[
+              {
+                value: '',
+                label: language === 'ar' ? 'كل الشهور' : 'All Months',
+              },
+              ...availableMonths.map(m => ({
+                value: m,
+                label:
+                  tenantGrowthData.find(d => d.month === m)?.monthName || m,
+              })),
+            ]}
+            containerSx={{
               minWidth: { xs: '100%', sm: 120 },
               width: { xs: '100%', sm: 'auto' },
             }}
-          >
-            <Select
-              value={selectedMonth}
-              onChange={e => setSelectedMonth(e.target.value)}
-              displayEmpty
-              disabled={availableMonths.length === 0}
-              sx={{
-                color: textColor,
-                '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: borderColor,
-                },
-              }}
-            >
-              <MenuItem value=''>
-                {language === 'ar' ? 'كل الشهور' : 'All Months'}
-              </MenuItem>
-              {availableMonths.map(month => {
-                const monthData = tenantGrowthData.find(d => d.month === month);
-                return (
-                  <MenuItem key={month} value={month}>
-                    {monthData?.monthName || month}
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
-
-          <TextField
-            type='number'
-            value={selectedYear}
-            onChange={e => {
-              const value = parseInt(e.target.value);
-              if (!isNaN(value) && value > 0) {
-                setSelectedYear(value);
-              }
-            }}
-            size='small'
             sx={{
-              width: { xs: '100%', sm: 120 },
-              '& .MuiOutlinedInput-root': {
+              '& .MuiSelect-select': {
                 color: textColor,
-                '& fieldset': {
-                  borderColor: borderColor,
-                },
-                // '&:hover fieldset': {
-                //   borderColor: borderColor,
-                // },
-                '&.Mui-focused fieldset': {
-                  borderColor: borderColor,
-                },
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: borderColor,
               },
             }}
-            inputProps={{
-              min: 2000,
-              max: 2100,
+            disabled={availableMonths.length === 0}
+          />
+
+          <TimeRangeSelector
+            value={selectedYear}
+            options={Array.from({ length: 5 }, (_, i) => selectedYear - i)}
+            onChange={val => {
+              if (val === 'all-time' || val === null) return;
+              const num =
+                typeof val === 'number' ? val : parseInt(val as string);
+              if (!isNaN(num)) setSelectedYear(num);
             }}
+            allTimeLabel={language === 'ar' ? 'كل الوقت' : 'All Time'}
+            containerSx={{
+              minWidth: { xs: '100%', sm: 120 },
+              width: { xs: '100%', sm: 'auto' },
+            }}
+            minHeight={'48px'}
           />
         </Box>
       </Box>
