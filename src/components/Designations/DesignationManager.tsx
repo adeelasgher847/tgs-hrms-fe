@@ -550,8 +550,8 @@ export default function DesignationManager() {
                           label: getText('All Tenants', 'جميع المستأجرين'),
                         },
                         ...allTenants.map((tenant: SystemTenant) => ({
-                          value: String((tenant as any).id),
-                          label: (tenant as any).name,
+                          value: tenant.id,
+                          label: tenant.name,
                         })),
                       ]
                 }

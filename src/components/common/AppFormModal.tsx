@@ -103,7 +103,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   };
 
   const handleDialogClose = (
-    _event: {},
+    _event: unknown,
     reason: 'backdropClick' | 'escapeKeyDown'
   ) => {
     if (
