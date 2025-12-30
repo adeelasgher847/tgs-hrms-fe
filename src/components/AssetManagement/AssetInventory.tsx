@@ -7,11 +7,11 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  MenuItem,
-  InputAdornment,
-  Menu,
-  ListItemIcon,
-  ListItemText,
+  // MenuItem,
+  // InputAdornment,
+  // Menu,
+  // ListItemIcon,
+  // ListItemText,
   CircularProgress,
   Stack,
   Pagination,
@@ -19,14 +19,15 @@ import {
 import {
   Add as AddIcon,
   FilterList as FilterIcon,
-  MoreVert as MoreVertIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
+  // MoreVert as MoreVertIcon,
+  // Edit as EditIcon,
+  // Delete as DeleteIcon,
   Person as PersonIcon,
-  Build as BuildIcon,
-  CheckCircle as AvailableIcon,
+  // Build as BuildIcon,
+  // CheckCircle as AvailableIcon,
 } from '@mui/icons-material';
 import { Icons } from '../../assets/icons';
+import Icon from '../common/Icon';
 import type {
   Asset,
   AssetFilters,
@@ -46,6 +47,7 @@ import {
   getSubcategoriesByCategoryId,
 } from '../../Data/assetCategories';
 import { isHRAdmin } from '../../utils/roleUtils';
+import { isManager as roleIsManager } from '../../utils/auth';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import AppCard from '../common/AppCard';
@@ -77,8 +79,7 @@ const resolveCategoryName = (asset: InventoryAsset): string =>
 const resolveCategoryId = (asset: InventoryAsset): string =>
   asset.category?.id ?? asset.category_id ?? '';
 
-const resolvePurchaseDate = (asset: InventoryAsset): string =>
-  asset.purchaseDate || asset.purchase_date || '';
+// resolvePurchaseDate helper removed (unused after menu refactor)
 
 const resolveSubcategoryName = (asset: InventoryAsset): string | undefined =>
   asset.subcategoryName;
@@ -111,8 +112,7 @@ const AssetInventory: React.FC = () => {
   const [assetToDelete, setAssetToDelete] = useState<InventoryAsset | null>(
     null
   );
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
@@ -446,27 +446,14 @@ const AssetInventory: React.FC = () => {
     );
     setFormAssignedTo(asset.assignedTo || '');
     setIsModalOpen(true);
-    setAnchorEl(null);
   };
 
   const handleDeleteAsset = (asset: InventoryAsset) => {
     setAssetToDelete(asset);
     setDeleteDialogOpen(true);
-    setAnchorEl(null);
   };
 
-  const handleMenuClick = (
-    event: React.MouseEvent<HTMLElement>,
-    assetId: string
-  ) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedAssetId(assetId);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedAssetId(null);
-  };
+  // menu handlers removed — menu UI was removed, so these handlers are unused
 
   const handleAssetSubmit = async (data: {
     name: string;
@@ -558,45 +545,7 @@ const AssetInventory: React.FC = () => {
     }
   };
 
-  const handleMarkAsMaintenance = async (asset: InventoryAsset) => {
-    setLoading(true);
-    try {
-      await assetApi.updateAssetStatus(asset.id, 'under_maintenance', {
-        name: asset.name,
-        categoryId: resolveCategoryId(asset) || asset.category?.name || '',
-        purchaseDate: resolvePurchaseDate(asset),
-      });
-
-      showSuccess('Asset marked as under maintenance');
-      setAnchorEl(null);
-      // Refresh the current page to update counts
-      fetchAssets(pagination.page, pagination.limit, false);
-    } catch (error) {
-      showError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleMarkAsAvailable = async (asset: InventoryAsset) => {
-    setLoading(true);
-    try {
-      await assetApi.updateAssetStatus(asset.id, 'available', {
-        name: asset.name,
-        categoryId: resolveCategoryId(asset) || asset.category?.name || '',
-        purchaseDate: resolvePurchaseDate(asset),
-      });
-
-      showSuccess('Asset marked as available');
-      setAnchorEl(null);
-      // Refresh the current page to update counts
-      fetchAssets(pagination.page, pagination.limit, false);
-    } catch (error) {
-      showError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // menu-related actions removed: status change helpers consolidated elsewhere
 
   // Use counts from API response
   const displayCounts = useMemo(() => {
@@ -674,7 +623,7 @@ const AssetInventory: React.FC = () => {
     {
       name: 'name',
       label: 'Asset Name',
-      type: 'text',
+      type: 'text' as const,
       required: true,
       value: formName,
       onChange: (v: string | number) => setFormName(String(v)),
@@ -682,7 +631,7 @@ const AssetInventory: React.FC = () => {
     {
       name: 'category',
       label: 'Category',
-      type: 'dropdown',
+      type: 'dropdown' as const,
       value: formCategoryId,
       options: categoryOptions,
       onChange: (v: string | number) => setFormCategoryId(String(v)),
@@ -690,7 +639,7 @@ const AssetInventory: React.FC = () => {
     {
       name: 'subcategory',
       label: 'Subcategory',
-      type: 'dropdown',
+      type: 'dropdown' as const,
       value: formSubcategory,
       options: subcategoryOptions,
       onChange: (v: string | number) => setFormSubcategory(String(v)),
@@ -704,9 +653,8 @@ const AssetInventory: React.FC = () => {
           <DatePicker
             label='Purchase Date'
             value={formPurchaseDate}
-            onChange={date => setFormPurchaseDate(date)}
+            onChange={date => setFormPurchaseDate(date ? new Date(date.toString()) : null)}
             slotProps={{
-              textField: { fullWidth: true },
               // style the input field icons (calendar icon) to use primary color
               textField: {
                 fullWidth: true,
@@ -719,7 +667,7 @@ const AssetInventory: React.FC = () => {
                   },
                 },
               },
-              paper: {
+              desktopPaper: {
                 sx: {
                   // change calendar popup background to match modal style
                   backgroundColor: '#FFFFFF',
@@ -763,7 +711,7 @@ const AssetInventory: React.FC = () => {
     {
       name: 'assignedTo',
       label: 'Assigned To',
-      type: 'dropdown',
+      type: 'dropdown' as const,
       value: formAssignedTo,
       options: assignedOptions,
       onChange: (v: string | number) => setFormAssignedTo(String(v)),
@@ -1119,15 +1067,25 @@ const AssetInventory: React.FC = () => {
                           aria-label={`Edit asset ${asset.name}`}
                           sx={{ p: { xs: 0.5, sm: 1 } }}
                         >
-                          <Box
-                            component='img'
-                            src={Icons.edit}
-                            alt='Edit'
-                            sx={{
-                              width: { xs: 16, sm: 20 },
-                              height: { xs: 16, sm: 20 },
-                            }}
-                          />
+                          {roleIsManager() ? (
+                            <Icon
+                              name='edit'
+                              sx={{
+                                width: { xs: 16, sm: 20 },
+                                height: { xs: 16, sm: 20 },
+                              }}
+                            />
+                          ) : (
+                            <Box
+                              component='img'
+                              src={Icons.edit}
+                              alt='Edit'
+                              sx={{
+                                width: { xs: 16, sm: 20 },
+                                height: { xs: 16, sm: 20 },
+                              }}
+                            />
+                          )}
                         </IconButton>
 
                         {/** Only show delete when the user is not HR admin (match Designation behaviour) */}
@@ -1139,15 +1097,25 @@ const AssetInventory: React.FC = () => {
                             aria-label={`Delete asset ${asset.name}`}
                             sx={{ p: { xs: 0.5, sm: 1 } }}
                           >
-                            <Box
-                              component='img'
-                              src={Icons.delete}
-                              alt='Delete'
-                              sx={{
-                                width: { xs: 16, sm: 20 },
-                                height: { xs: 16, sm: 20 },
-                              }}
-                            />
+                            {roleIsManager() ? (
+                              <Icon
+                                name='delete'
+                                sx={{
+                                  width: { xs: 16, sm: 20 },
+                                  height: { xs: 16, sm: 20 },
+                                }}
+                              />
+                            ) : (
+                              <Box
+                                component='img'
+                                src={Icons.delete}
+                                alt='Delete'
+                                sx={{
+                                  width: { xs: 16, sm: 20 },
+                                  height: { xs: 16, sm: 20 },
+                                }}
+                              />
+                            )}
                           </IconButton>
                         )}
                       </Box>

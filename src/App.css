@@ -273,3 +273,34 @@ h3 {
 .MuiTooltip-arrow {
   color: #ffffff !important;
 }
+
+/* Pagination — use app primary dark color for items & selected state */
+.MuiPagination-root .MuiPaginationItem-root {
+  color: var(--primary-dark-color);
+}
+
+.MuiPagination-root .MuiPaginationItem-root.Mui-selected {
+  background-color: var(--primary-dark-color);
+  color: #ffffff;
+}
+
+/* Prevent pagination hover from changing colors — keep consistent primary color */
+.MuiPagination-root .MuiPaginationItem-root:hover {
+  background-color: transparent !important;
+  color: var(--primary-dark-color) !important;
+  box-shadow: none !important;
+}
+
+/* Ensure selected item keeps primary background on hover/focus */
+.MuiPagination-root .MuiPaginationItem-root.Mui-selected:hover,
+.MuiPagination-root .MuiPaginationItem-root.Mui-selected:focus {
+  background-color: var(--primary-dark-color) !important;
+  color: #ffffff !important;
+}
+
+/* Also prevent active/focus state from changing pagination item color */
+.MuiPagination-root .MuiPaginationItem-root:active,
+.MuiPagination-root .MuiPaginationItem-root.Mui-focusVisible {
+  background-color: transparent !important;
+  color: var(--primary-dark-color) !important;
+}

@@ -1,21 +1,10 @@
 import React, { useEffect, useMemo } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Box,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-} from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import AppFormModal, { type FormField } from '../common/AppFormModal';
+import AppInputField from '../common/AppInputField';
+import AppDropdown from '../common/AppDropdown';
 
 export interface BenefitFormValues {
   name: string;
@@ -39,8 +28,18 @@ const schema = yup.object({
   name: yup.string().required('Benefit name is required'),
   type: yup.string().required('Benefit type is required'),
   description: yup.string().required('Description is required'),
-  eligibilityCriteria: yup.string().required('Eligibility is required'),
-  status: yup.string().required('Status is required'),
+  eligibilityCriteria: yup
+    .string()
+    .oneOf([
+      'All employees',
+      'Full time employees only',
+      'Part time employees only',
+    ] as const)
+    .required('Eligibility is required'),
+  status: yup
+    .string()
+    .oneOf(['Active', 'Inactive'] as const)
+    .required('Status is required'),
 });
 const eligibilityOptions: BenefitFormValues['eligibilityCriteria'][] = [
   'All employees',
@@ -60,7 +59,8 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
     handleSubmit,
     reset,
     watch,
-    formState: { errors, isValid },
+    setValue,
+    formState: { errors, isSubmitting },
   } = useForm<BenefitFormValues>({
     resolver: yupResolver(schema),
     mode: 'onChange',
@@ -73,7 +73,7 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
     },
   });
 
-  const initialValues = useMemo(() => {
+  const initialValues = useMemo((): BenefitFormValues => {
     return benefit
       ? {
           name: benefit.name || '',
@@ -99,17 +99,12 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
   }, [benefit]);
 
   useEffect(() => {
-    reset(initialValues);
+    return reset(initialValues);
   }, [initialValues, reset]);
 
   const watchedValues = watch();
-  const isFormValid =
-    watchedValues.name?.trim() &&
-    watchedValues.type?.trim() &&
-    watchedValues.description?.trim() &&
-    watchedValues.eligibilityCriteria?.trim() &&
-    watchedValues.status?.trim() &&
-    isValid;
+
+  // form validity is tracked by react-hook-form via `isValid` and change detection
 
   const isChanged = useMemo(() => {
     return (
@@ -125,135 +120,153 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
     onSubmit(data);
   };
 
+  const submitWrapper = () => {
+    // trigger RHF submit
+    void handleSubmit(handleFormSubmit)();
+  };
+
+  const fields: FormField[] = [
+    {
+      name: 'name',
+      label: 'Benefit Name',
+      type: 'text',
+      value: watchedValues.name || '',
+      onChange: v => setValue('name', String(v)),
+      error: errors.name?.message,
+      error: errors.name?.message,
+      component: (
+        <Controller
+          name='name'
+          control={control}
+          render={({ field }) => (
+            <AppInputField
+              {...field}
+              value={field.value}
+              onChange={e => field.onChange(e.target.value)}
+              label='Benefit Name'
+              error={!!errors.name}
+              helperText={errors.name?.message}
+            />
+          )}
+        />
+      ),
+    },
+    {
+      name: 'type',
+      label: 'Benefit Type',
+      type: 'text',
+      value: watchedValues.type || '',
+      onChange: v => setValue('type', String(v)),
+      error: errors.type?.message,
+      error: errors.type?.message,
+      component: (
+        <Controller
+          name='type'
+          control={control}
+          render={({ field }) => (
+            <AppInputField
+              {...field}
+              value={field.value}
+              onChange={e => field.onChange(e.target.value)}
+              label='Benefit Type'
+              placeholder='Health, Allowance, Voucher...'
+              error={!!errors.type}
+              helperText={errors.type?.message}
+            />
+          )}
+        />
+      ),
+    },
+    {
+      name: 'description',
+      label: 'Description',
+      type: 'textarea',
+      value: watchedValues.description || '',
+      onChange: v => setValue('description', String(v)),
+      error: errors.description?.message,
+      error: errors.description?.message,
+      component: (
+        <Controller
+          name='description'
+          control={control}
+          render={({ field }) => (
+            <AppInputField
+              {...field}
+              value={field.value}
+              onChange={e => field.onChange(e.target.value)}
+              label='Description'
+              multiline
+              rows={2}
+              error={!!errors.description}
+              helperText={errors.description?.message}
+            />
+          )}
+        />
+      ),
+    },
+    {
+      name: 'eligibilityCriteria',
+      label: 'Eligibility',
+      type: 'dropdown',
+      value: watchedValues.eligibilityCriteria || 'All employees',
+      onChange: v => setValue('eligibilityCriteria', String(v)),
+      error: errors.eligibilityCriteria?.message,
+      error: errors.eligibilityCriteria?.message,
+      component: (
+        <Controller
+          name='eligibilityCriteria'
+          control={control}
+          render={({ field }) => (
+            <AppDropdown
+              label='Eligibility'
+              options={eligibilityOptions.map(o => ({ value: o, label: o }))}
+              value={field.value}
+              onChange={e => field.onChange(e.target.value)}
+              showLabel
+            />
+          )}
+        />
+      ),
+    },
+    {
+      name: 'status',
+      label: 'Status',
+      type: 'dropdown',
+      value: watchedValues.status || 'Active',
+      onChange: v => setValue('status', String(v)),
+      error: errors.status?.message,
+      error: errors.status?.message,
+      component: (
+        <Controller
+          name='status'
+          control={control}
+          render={({ field }) => (
+            <AppDropdown
+              label='Status'
+              options={statusOptions.map(o => ({ value: o, label: o }))}
+              value={field.value}
+              onChange={e => field.onChange(e.target.value)}
+              showLabel
+            />
+          )}
+        />
+      ),
+    },
+  ];
+
   return (
-    <Dialog
+    <AppFormModal
       open={open}
       onClose={onClose}
+      onSubmit={submitWrapper}
+      title={benefit ? 'Edit Benefit' : 'Create Benefit'}
+      fields={fields}
+      submitLabel={benefit ? 'Update' : 'Create'}
+      cancelLabel='Cancel'
+      isSubmitting={isSubmitting}
+      hasChanges={isChanged}
       maxWidth='sm'
-      fullWidth
-      PaperProps={{ sx: { borderRadius: 2 } }}
-    >
-      <DialogTitle>
-        <Typography variant='h6' fontWeight={600}>
-          {benefit ? 'Edit Benefit' : 'Create Benefit'}
-        </Typography>
-      </DialogTitle>
-
-      <form onSubmit={handleSubmit(handleFormSubmit)}>
-        <DialogContent sx={{ px: 2, maxHeight: '60vh', overflowY: 'visible' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Box sx={{ display: 'flex', gap: 3 }}>
-              <Controller
-                name='name'
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label='Benefit Name'
-                    error={!!errors.name}
-                    helperText={errors.name?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name='type'
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label='Benefit Type'
-                    placeholder='Health, Allowance, Voucher...'
-                    error={!!errors.type}
-                    helperText={errors.type?.message}
-                  />
-                )}
-              />
-            </Box>
-
-            <Controller
-              name='description'
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label='Description'
-                  multiline
-                  rows={2}
-                  error={!!errors.description}
-                  helperText={errors.description?.message}
-                />
-              )}
-            />
-
-            <Controller
-              name='eligibilityCriteria'
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!errors.eligibilityCriteria}>
-                  <InputLabel>Eligibility</InputLabel>
-                  <Select {...field} label='Eligibility'>
-                    {eligibilityOptions.map(option => (
-                      <MenuItem key={option} value={option}>
-                        {option}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <Typography variant='caption' color='error'>
-                    {errors.eligibilityCriteria?.message}
-                  </Typography>
-                </FormControl>
-              )}
-            />
-
-            <Controller
-              name='status'
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!errors.status}>
-                  <InputLabel>Status</InputLabel>
-                  <Select {...field} label='Status'>
-                    {statusOptions.map(option => (
-                      <MenuItem key={option} value={option}>
-                        {option}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <Typography variant='caption' color='error'>
-                    {errors.status?.message}
-                  </Typography>
-                </FormControl>
-              )}
-            />
-          </Box>
-        </DialogContent>
-
-        <DialogActions
-          sx={{
-            position: 'sticky',
-            bottom: 0,
-            backgroundColor: 'background.paper',
-            px: 2,
-            py: 2,
-            gap: 1,
-          }}
-        >
-          <Button onClick={onClose} variant='outlined'>
-            Cancel
-          </Button>
-          <Button
-            type='submit'
-            variant='contained'
-            disabled={!isFormValid || (benefit ? !isChanged : false)}
-          >
-            {benefit ? 'Update' : 'Create'}
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
+    />
   );
 };
 

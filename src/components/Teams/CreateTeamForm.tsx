@@ -6,10 +6,6 @@ import {
   DialogActions,
   TextField,
   Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Alert,
   CircularProgress,
 } from '@mui/material';
@@ -17,6 +13,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import type { CreateTeamDto, Manager } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import AppButton from '../common/AppButton';
+import AppDropdown from '../common/AppDropdown';
 import { COLORS } from '../../constants/appConstants';
 
 interface CreateTeamFormProps {
@@ -230,65 +227,29 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
               }}
             />
 
-            <FormControl fullWidth>
-              <InputLabel
-                sx={{
-                  color: theme => theme.palette.text.secondary,
-                  '&.Mui-focused': {
-                    color: theme => theme.palette.primary.main,
-                  },
-                  '&.MuiInputLabel-shrink': {
-                    color: theme => theme.palette.text.secondary,
-                  },
-                }}
-              >
-                {lang.manager}
-              </InputLabel>
-              <Select
-                value={formData.manager_id || ''}
-                onChange={handleChange('manager_id')}
-                required
-                label={lang.manager}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: theme => theme.palette.divider,
-                    },
-                    '&:hover fieldset': {
-                      borderColor: theme => theme.palette.text.secondary,
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme => theme.palette.primary.main,
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: theme => theme.palette.text.secondary,
-                  },
-                  '& .MuiSelect-select': {
-                    color: theme => theme.palette.text.primary,
-                  },
-                }}
-              >
-                <MenuItem value='' disabled>
-                  {lang.selectManager}
-                </MenuItem>
-                {loadingManagers ? (
-                  <MenuItem disabled>
-                    <CircularProgress size={20} />
-                  </MenuItem>
-                ) : managers.length === 0 ? (
-                  <MenuItem disabled>{lang.noManagersAvailable}</MenuItem>
-                ) : (
-                  managers.map(manager => (
-                    <MenuItem key={manager.id} value={manager.id}>
-                      {manager.first_name} {manager.last_name} ({manager.email})
-                    </MenuItem>
-                  ))
-                )}
-              </Select>
-            </FormControl>
+            <AppDropdown
+              label={lang.manager}
+              value={formData.manager_id || 'all'}
+              onChange={handleChange('manager_id')}
+              showLabel={false}
+              align='left'
+              options={
+                loadingManagers
+                  ? [{ value: 'all', label: lang.loadingManagers }]
+                  : managers.length === 0
+                    ? [{ value: 'all', label: lang.noManagersAvailable }]
+                    : [
+                        { value: 'all', label: lang.selectManager },
+                        ...managers.map(manager => ({
+                          value: manager.id,
+                          label: `${manager.first_name} ${manager.last_name} (${manager.email})`,
+                        })),
+                      ]
+              }
+            />
             <DialogActions sx={{ padding: 0 }}>
               <AppButton
+                variantType='secondary'
                 variant='outlined'
                 text={lang.cancel}
                 onClick={handleClose}
@@ -296,6 +257,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
               />
               <AppButton
                 type='submit'
+                variantType='primary'
                 variant='contained'
                 text={loading ? lang.loading : lang.create}
                 disabled={
@@ -304,7 +266,6 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
                   !formData.name.trim() ||
                   !formData.manager_id
                 }
-                sx={{ backgroundColor: COLORS.PRIMARY }}
                 startIcon={loading ? <CircularProgress size={16} /> : null}
               />
             </DialogActions>

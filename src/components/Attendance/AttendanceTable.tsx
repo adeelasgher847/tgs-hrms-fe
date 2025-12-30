@@ -44,7 +44,9 @@ import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppButton from '../common/AppButton';
 import AppTable from '../common/AppTable';
+import AppDropdown from '../common/AppDropdown';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 type TenantOption = { id: string; name: string };
 
@@ -1511,8 +1513,11 @@ const AttendanceTable = () => {
   return (
     <Box>
       <Typography
-        variant='h4'
+        fontWeight={500}
         fontSize={{ xs: '32px', lg: '48px' }}
+        lineHeight='44px'
+        letterSpacing='-2%'
+        color='#2C2C2C'
         gutterBottom
       >
         Attendance Management
@@ -1567,6 +1572,13 @@ const AttendanceTable = () => {
                     variant={adminView === 'my' ? 'contained' : 'outlined'}
                     variantType={adminView === 'my' ? 'primary' : 'secondary'}
                     onClick={handleMyAttendance}
+                    sx={{
+                      width: '200px',
+                      minWidth: '200px',
+                      maxWidth: '200px',
+                      boxSizing: 'border-box',
+                      flexShrink: 0,
+                    }}
                   >
                     My Attendance
                   </AppButton>
@@ -1574,6 +1586,13 @@ const AttendanceTable = () => {
                     variant={adminView === 'all' ? 'contained' : 'outlined'}
                     variantType={adminView === 'all' ? 'primary' : 'secondary'}
                     onClick={handleAllAttendance}
+                    sx={{
+                      width: '200px',
+                      minWidth: '200px',
+                      maxWidth: '200px',
+                      boxSizing: 'border-box',
+                      flexShrink: 0,
+                    }}
                   >
                     All Attendance
                   </AppButton>
@@ -1586,6 +1605,13 @@ const AttendanceTable = () => {
                     variant={managerView === 'my' ? 'contained' : 'outlined'}
                     variantType={managerView === 'my' ? 'primary' : 'secondary'}
                     onClick={handleManagerMyAttendance}
+                    sx={{
+                      width: '200px',
+                      minWidth: '200px',
+                      maxWidth: '200px',
+                      boxSizing: 'border-box',
+                      flexShrink: 0,
+                    }}
                   >
                     My Attendance
                   </AppButton>
@@ -1595,6 +1621,13 @@ const AttendanceTable = () => {
                       managerView === 'team' ? 'primary' : 'secondary'
                     }
                     onClick={handleManagerTeamAttendance}
+                    sx={{
+                      width: '200px',
+                      minWidth: '200px',
+                      maxWidth: '200px',
+                      boxSizing: 'border-box',
+                      flexShrink: 0,
+                    }}
                   >
                     Team Attendance
                   </AppButton>
@@ -1602,47 +1635,59 @@ const AttendanceTable = () => {
               )}
 
               {adminView === 'all' && isSystemAdminUser && (
-                <FormControl size='small' sx={{ minWidth: 220 }}>
-                  <InputLabel>Tenant</InputLabel>
-                  <Select
-                    value={selectedTenant}
-                    label='Tenant'
-                    disabled={tenantsLoading}
-                    onChange={e => handleTenantChange(e.target.value)}
-                  >
-                    <MenuItem value=''>
-                      <em>All Tenants</em>
-                    </MenuItem>
-
-                    {tenants.map(tenant => (
-                      <MenuItem key={tenant.id} value={tenant.id}>
-                        {tenant.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <AppDropdown
+                  label='Tenant'
+                  value={selectedTenant || ''}
+                  onChange={(e: SelectChangeEvent<string | number>) =>
+                    handleTenantChange(e.target.value as string)
+                  }
+                  options={[
+                    { value: '', label: 'All Tenants' },
+                    ...tenants.map(tenant => ({
+                      value: tenant.id,
+                      label: tenant.name,
+                    })),
+                  ]}
+                  disabled={tenantsLoading}
+                  containerSx={{ minWidth: 220 }}
+                />
               )}
 
               {canViewAllAttendance && adminView === 'all' && (
-                <TextField
-                  select
-                  label='Select Employee'
-                  value={selectedEmployee}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleEmployeeChange(e.target.value)
+                <AppDropdown
+                  label='SELECT EMPLOYEE'
+                  value={selectedEmployee || ''}
+                  onChange={(e: SelectChangeEvent<string | number>) =>
+                    handleEmployeeChange(e.target.value as string)
                   }
-                  sx={{ minWidth: 200 }}
-                  size='small'
-                >
-                  <MenuItem value=''>All Employees</MenuItem>
-                  {employees.map(emp => (
-                    <MenuItem key={emp.id} value={emp.id}>
-                      {emp.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                  options={[
+                    { value: '', label: 'All Employees' },
+                    ...employees.map(emp => ({
+                      value: emp.id,
+                      label: emp.name,
+                    })),
+                  ]}
+                  placeholder='SELECT EMPLOYEE'
+                  showLabel={false}
+                  containerSx={{
+                    width: '200px',
+                    minWidth: '200px',
+                    maxWidth: '200px',
+                    flexShrink: 0,
+                    padding: 0,
+                    margin: 0,
+                    boxSizing: 'border-box',
+                  }}
+                />
               )}
-              <Box>
+              <Box
+                sx={{
+                  width: '200px',
+                  minWidth: '200px',
+                  maxWidth: '200px',
+                  flexShrink: 0,
+                }}
+              >
                 <DatePicker
                   range
                   numberOfMonths={2}
@@ -1684,15 +1729,14 @@ const AttendanceTable = () => {
                     }
                   }}
                   format='MM/DD/YYYY'
-                  placeholder='Start Date - End Date'
+                  placeholder='START DATE - END DATE'
                   style={{
                     width: '100%',
                     height: '40px',
                     padding: '6.5px 14px',
-                    border: '1px solid rgba(0, 0, 0, 0.23)',
-                    borderRadius: '4px',
+                    border: '1px solid #3083DC',
+                    borderRadius: '12px',
                     fontSize: '16px',
-                    fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
                     outline: 'none',
                   }}
                   containerStyle={{
@@ -1715,6 +1759,14 @@ const AttendanceTable = () => {
                 variant='contained'
                 variantType='primary'
                 onClick={handleFilterChange}
+                sx={{
+                  width: '200px',
+                  minWidth: '200px',
+                  maxWidth: '200px',
+                  borderRadius: '12px',
+                  boxSizing: 'border-box',
+                  flexShrink: 0,
+                }}
               >
                 Clear Filters
               </AppButton>
@@ -1772,12 +1824,12 @@ const AttendanceTable = () => {
                     }
                   }}
                   sx={{
-                    backgroundColor: 'primary.main',
+                    backgroundColor: '#3083DC',
                     borderRadius: '6px',
                     padding: '6px',
                     color: 'white',
                     '&:hover': {
-                      backgroundColor: 'primary.dark',
+                      backgroundColor: '#3083DC',
                     },
                   }}
                 >
@@ -1863,7 +1915,13 @@ const AttendanceTable = () => {
 
           {totalItems > 0 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <Typography variant='body2' color='text.secondary'>
+              <Typography
+                fontWeight={400}
+                fontSize='16px'
+                lineHeight='24px'
+                letterSpacing='-1%'
+                color='#2C2C2C'
+              >
                 Showing all {totalItems} records
               </Typography>
             </Box>
@@ -1881,7 +1939,15 @@ const AttendanceTable = () => {
               mb: 2,
             }}
           >
-            <Typography variant='h6'>Team Attendance</Typography>
+            <Typography
+              fontWeight={500}
+              fontSize={{ xs: '20px', lg: '28px' }}
+              lineHeight='36px'
+              letterSpacing='-2%'
+              color='#2C2C2C'
+            >
+              Team Attendance
+            </Typography>
           </Box>
 
           <Box
@@ -1893,7 +1959,7 @@ const AttendanceTable = () => {
               flexWrap: 'wrap',
             }}
           >
-            <Box>
+            <Box sx={{ width: '200px' }}>
               <DatePicker
                 range
                 numberOfMonths={2}
@@ -1950,8 +2016,8 @@ const AttendanceTable = () => {
                   width: '100%',
                   height: '40px',
                   padding: '6.5px 14px',
-                  border: '1px solid rgba(0, 0, 0, 0.23)',
-                  borderRadius: '4px',
+                  border: '1px solid #3083DC',
+                  borderRadius: '12px',
                   fontSize: '16px',
                   fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
                   outline: 'none',
@@ -1973,23 +2039,30 @@ const AttendanceTable = () => {
             </Box>
             {/* Team Employee Filter - for team attendance (regular users) */}
             {teamEmployees.length > 0 && (
-              <TextField
-                select
-                label='Select Employee'
-                value={selectedTeamEmployee}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  handleTeamEmployeeChange(e.target.value)
+              <AppDropdown
+                label='SELECT EMPLOYEE'
+                value={selectedTeamEmployee || ''}
+                onChange={(e: SelectChangeEvent<string | number>) =>
+                  handleTeamEmployeeChange(e.target.value as string)
                 }
-                sx={{ minWidth: 200 }}
-                size='small'
-              >
-                <MenuItem value=''>All Employees</MenuItem>
-                {teamEmployees.map(emp => (
-                  <MenuItem key={emp.id} value={emp.id}>
-                    {emp.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+                options={[
+                  { value: '', label: 'All Employees' },
+                  ...teamEmployees.map(emp => ({
+                    value: emp.id,
+                    label: emp.name,
+                  })),
+                ]}
+                placeholder='SELECT EMPLOYEE'
+                showLabel={false}
+                containerSx={{
+                  width: '200px',
+                  minWidth: '200px',
+                  maxWidth: '200px',
+                  flexShrink: 0,
+                  padding: 0,
+                  margin: 0,
+                }}
+              />
             )}
             <AppButton
               variant='outlined'
@@ -2112,6 +2185,14 @@ const AttendanceTable = () => {
                 (managerView as string) === 'my' ? 'primary' : 'secondary'
               }
               onClick={handleManagerMyAttendance}
+              sx={{
+                width: '200px',
+                minWidth: '200px',
+                maxWidth: '200px',
+                borderRadius: '12px',
+                boxSizing: 'border-box',
+                flexShrink: 0,
+              }}
             >
               My Attendance
             </AppButton>
@@ -2119,11 +2200,26 @@ const AttendanceTable = () => {
               variant={managerView === 'team' ? 'contained' : 'outlined'}
               variantType={managerView === 'team' ? 'primary' : 'secondary'}
               onClick={handleManagerTeamAttendance}
+              sx={{
+                width: '200px',
+                minWidth: '200px',
+                maxWidth: '200px',
+                borderRadius: '12px',
+                boxSizing: 'border-box',
+                flexShrink: 0,
+              }}
             >
               Team Attendance
             </AppButton>
 
-            <Box>
+            <Box
+              sx={{
+                width: '200px',
+                minWidth: '200px',
+                maxWidth: '200px',
+                flexShrink: 0,
+              }}
+            >
               <DatePicker
                 range
                 numberOfMonths={2}
@@ -2179,8 +2275,8 @@ const AttendanceTable = () => {
                   width: '100%',
                   height: '40px',
                   padding: '6.5px 14px',
-                  border: '1px solid rgba(0, 0, 0, 0.23)',
-                  borderRadius: '4px',
+                  border: '1px solid #3083DC',
+                  borderRadius: '12px',
                   fontSize: '16px',
                   fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
                   outline: 'none',
@@ -2202,23 +2298,28 @@ const AttendanceTable = () => {
             </Box>
             {/* Team Employee Filter - for manager team attendance */}
             {teamEmployees.length > 0 && (
-              <TextField
-                select
-                label='Select Employee'
-                value={selectedTeamEmployee}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  handleTeamEmployeeChange(e.target.value)
+              <AppDropdown
+                label='SELECT EMPLOYEE'
+                value={selectedTeamEmployee || ''}
+                onChange={(e: SelectChangeEvent<string | number>) =>
+                  handleTeamEmployeeChange(e.target.value as string)
                 }
-                sx={{ minWidth: 200 }}
-                size='small'
-              >
-                <MenuItem value=''>All Employees</MenuItem>
-                {teamEmployees.map(emp => (
-                  <MenuItem key={emp.id} value={emp.id}>
-                    {emp.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+                options={[
+                  { value: '', label: 'All Employees' },
+                  ...teamEmployees.map(emp => ({
+                    value: emp.id,
+                    label: emp.name,
+                  })),
+                ]}
+                placeholder='SELECT EMPLOYEE'
+                showLabel={false}
+                containerSx={{
+                  width: '200px',
+                  minWidth: '200px',
+                  maxWidth: '200px',
+                  flexShrink: 0,
+                }}
+              />
             )}
             <AppButton
               variant='outlined'
@@ -2229,6 +2330,14 @@ const AttendanceTable = () => {
                 setTeamCurrentNavigationDate('all');
                 setSelectedTeamEmployee('');
                 fetchTeamAttendance(1);
+              }}
+              sx={{
+                width: '200px',
+                minWidth: '200px',
+                maxWidth: '200px',
+                borderRadius: '12px',
+                boxSizing: 'border-box',
+                flexShrink: 0,
               }}
             >
               Clear Filters

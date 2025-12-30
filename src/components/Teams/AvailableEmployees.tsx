@@ -16,10 +16,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   TextField,
   InputAdornment,
 } from '@mui/material';
@@ -32,6 +28,7 @@ import {
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
 import AppButton from '../common/AppButton';
+import AppDropdown from '../common/AppDropdown';
 import AppTable from '../common/AppTable';
 import { COLORS } from '../../constants/appConstants';
 import type { TeamMember, Team } from '../../api/teamApi';
@@ -487,8 +484,8 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                         label={employee.designation?.title || 'N/A'}
                         size='small'
                         sx={{
-                          backgroundColor: '#484c7f',
-                          color: 'white',
+                          backgroundColor: '#3083DC',
+                          color: '#FFFFFF',
                           fontSize: '0.75rem',
                         }}
                       />
@@ -500,7 +497,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                       <IconButton
                         size='small'
                         onClick={() => handleAddToTeam(employee)}
-                        sx={{ color: '#484c7f' }}
+                        sx={{ color: 'primary.main' }}
                         title={lang.addToTeam}
                       >
                         <AddIcon />
@@ -540,49 +537,34 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
           Select Team to Add Employee
         </DialogTitle>
         <DialogContent>
-          <FormControl fullWidth sx={{ mt: 2 }}>
-            <InputLabel sx={{ color: darkMode ? '#ccc' : '#666' }}>
-              Select Team
-            </InputLabel>
-            <Select
-              value={selectedTeamId}
-              onChange={e => setSelectedTeamId(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: darkMode ? '#555' : '#ccc',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: darkMode ? '#888' : '#999',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#484c7f',
-                },
-                '& .MuiSelect-select': { color: darkMode ? '#fff' : '#000' },
-              }}
-            >
-              <MenuItem value='' disabled>
-                Select a team
-              </MenuItem>
-              {teams.map(team => (
-                <MenuItem key={team.id} value={team.id}>
-                  {team.name} - {team.description}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <AppDropdown
+            label='Select Team'
+            value={selectedTeamId || 'all'}
+            onChange={e => setSelectedTeamId(String(e.target.value || ''))}
+            containerSx={{ mt: 2, width: '100%' }}
+            showLabel={false}
+            options={[
+              { value: 'all', label: 'Select a team' },
+              ...teams.map(team => ({
+                value: team.id,
+                label: `${team.name} - ${team.description}`,
+              })),
+            ]}
+          />
         </DialogContent>
         <DialogActions>
           <AppButton
+            variantType='secondary'
             variant='outlined'
             text='Cancel'
             onClick={handleCloseTeamDialog}
           />
           <AppButton
+            variantType='primary'
             variant='contained'
             text='Add to Team'
             onClick={handleConfirmAddToTeam}
             disabled={!selectedTeamId}
-            sx={{ backgroundColor: COLORS.PRIMARY }}
           />
         </DialogActions>
       </Dialog>
@@ -642,7 +624,10 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                 </Typography>
                 <Typography
                   variant='body2'
-                  sx={{ color: darkMode ? '#ccc' : '#666' }}
+                  sx={{
+                    color: darkMode ? '#ccc' : '#666',
+                    fontSize: 'var(--body-font-size)',
+                  }}
                 >
                   <strong>Team:</strong>{' '}
                   {selectedTeam
@@ -655,48 +640,44 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                 </Typography>
               </Box>
               {(isEmployeePool || !teamId) && (
-                <FormControl fullWidth>
-                  <InputLabel>Select Team</InputLabel>
-                  <Select
-                    value={selectedTeamId}
-                    label='Select Team'
-                    onChange={event =>
-                      handleTeamDropdownChange(event.target.value as string)
-                    }
-                    disabled={teams.length === 0 && !selectedTeamId}
-                  >
-                    <MenuItem value='' disabled>
-                      Select Team
-                    </MenuItem>
-                    {teams.length === 0 ? (
-                      <MenuItem value='' disabled>
-                        No teams available
-                      </MenuItem>
-                    ) : (
-                      teams.map(team => (
-                        <MenuItem key={team.id} value={team.id}>
-                          {team.name}
-                        </MenuItem>
-                      ))
-                    )}
-                  </Select>
-                </FormControl>
+                <AppDropdown
+                  label='Select Team'
+                  value={selectedTeamId || 'all'}
+                  onChange={event =>
+                    handleTeamDropdownChange(String(event.target.value || ''))
+                  }
+                  disabled={teams.length === 0 && !selectedTeamId}
+                  containerSx={{ width: '100%' }}
+                  showLabel={false}
+                  options={
+                    teams.length === 0
+                      ? [{ value: 'all', label: 'No teams available' }]
+                      : [
+                          { value: 'all', label: 'Select Team' },
+                          ...teams.map(team => ({
+                            value: team.id,
+                            label: team.name,
+                          })),
+                        ]
+                  }
+                />
               )}
             </Box>
           )}
         </DialogContent>
         <DialogActions>
           <AppButton
+            variantType='secondary'
             variant='outlined'
             text='Cancel'
             onClick={handleCloseConfirmDialog}
           />
           <AppButton
+            variantType='primary'
             variant='contained'
             text='Add to Team'
             onClick={handleConfirmAddToTeamFinal}
             disabled={!selectedTeamId}
-            sx={{ backgroundColor: COLORS.PRIMARY }}
           />
         </DialogActions>
       </Dialog>

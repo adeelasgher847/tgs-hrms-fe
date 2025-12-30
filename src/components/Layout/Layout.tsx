@@ -247,10 +247,10 @@ const Layout = () => {
           display: 'flex',
           fontFamily: 'SF Pro Rounded, sans-serif',
           overflow: 'hidden',
-          borderRadius: {
-            xs: '20px',
-            lg: '20px 0 0 20px',
-          },
+          // borderRadius: {
+          //   xs: '20px',
+          //   lg: '20px 0 0 20px',
+          // },
           // Ensure the overall layout takes full viewport height on mobile too
           height: { xs: '100dvh', md: '100vh' },
         }}

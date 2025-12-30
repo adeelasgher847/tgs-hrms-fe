@@ -5,8 +5,6 @@ import {
   CircularProgress,
   Paper,
   Typography,
-  TextField,
-  MenuItem,
   Stack,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -20,6 +18,8 @@ import systemEmployeeApiService, {
 } from '../../api/systemEmployeeApi';
 import { useIsDarkMode } from '../../theme';
 import { snackbar } from '../../utils/snackbar';
+import AppDropdown from '../common/AppDropdown';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -230,7 +230,23 @@ const PayrollReports: React.FC = () => {
 
   return (
     <Box
-      sx={{ backgroundColor: bgColor, minHeight: '100vh', color: textColor }}
+      sx={{
+        backgroundColor: bgColor,
+        minHeight: '100vh',
+        color: textColor,
+        '& .MuiButton-contained': {
+          backgroundColor: 'var(--primary-dark-color)',
+          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+        },
+        '& .MuiButton-outlined': {
+          borderColor: 'var(--primary-dark-color)',
+          color: 'var(--primary-dark-color)',
+          '&:hover': {
+            borderColor: 'var(--primary-dark-color)',
+            backgroundColor: 'var(--primary-color)',
+          },
+        },
+      }}
     >
       <Box
         sx={{
@@ -246,21 +262,35 @@ const PayrollReports: React.FC = () => {
           Payroll Reports
         </Typography>
         <Stack direction='row' spacing={2}>
-          <TextField
-            select
+          <AppDropdown
             label='Tenant'
             value={selectedTenantId}
-            onChange={e => setSelectedTenantId(e.target.value)}
-            size='small'
-            sx={{ minWidth: 200 }}
+            onChange={(e: SelectChangeEvent<string | number>) =>
+              setSelectedTenantId(String(e.target.value || ''))
+            }
+            options={[
+              { value: '', label: 'All Tenants' },
+              ...tenants.map(t => ({ value: t.id, label: t.name })),
+            ]}
+            placeholder='Tenant'
+            showLabel={false}
             disabled={loadingTenants}
-          >
-            {tenants.map(t => (
-              <MenuItem key={t.id} value={t.id}>
-                {t.name}
-              </MenuItem>
-            ))}
-          </TextField>
+            containerSx={{ minWidth: 200 }}
+            inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+            sx={{
+              '& .MuiSelect-select': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiSelect-icon': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: theme.palette.divider,
+                },
+              },
+            }}
+          />
         </Stack>
       </Box>
 

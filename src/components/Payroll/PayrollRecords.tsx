@@ -3,13 +3,8 @@ import {
   Alert,
   Box,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
   IconButton,
-  MenuItem,
   Paper,
   Pagination,
   Stack,
@@ -23,14 +18,14 @@ import {
   Typography,
   Chip,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import dayjs from 'dayjs';
 import { useTheme } from '@mui/material/styles';
 import { useOutletContext } from 'react-router-dom';
-import EditIcon from '@mui/icons-material/Edit';
-import CloseIcon from '@mui/icons-material/Close';
-import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
 import GenerateIcon from '@mui/icons-material/PlayCircleFilledRounded';
+import { IoEyeOutline } from 'react-icons/io5';
 import { useUser } from '../../hooks/useUser';
+import { Icons } from '../../assets/icons';
 import {
   payrollApi,
   type PayrollRecord,
@@ -43,8 +38,24 @@ import { isSystemAdmin, isHRAdmin, isAdmin } from '../../utils/roleUtils';
 import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../common/AppTable';
 import AppCard from '../common/AppCard';
-import AppSelect from '../common/AppSelect';
 import AppButton from '../common/AppButton';
+import AppDropdown from '../common/AppDropdown';
+import AppFormModal from '../common/AppFormModal';
+
+const PRIMARY_ACTION_BUTTON_SX = {
+  fontSize: 'var(--body-font-size)',
+  lineHeight: 'var(--body-line-height)',
+  letterSpacing: 'var(--body-letter-spacing)',
+  boxShadow: 'none',
+  minWidth: { xs: 'auto', sm: 200 },
+  px: { xs: 1.5, sm: 2 },
+  py: { xs: 0.75, sm: 1 },
+  '& .MuiButton-startIcon': {
+    marginRight: { xs: 0.5, sm: 1 },
+    display: 'flex',
+    alignItems: 'center',
+  },
+} as const;
 
 dayjs.extend(dayjsPluginLocalizedFormat);
 
@@ -607,6 +618,18 @@ const PayrollRecords: React.FC = () => {
         backgroundColor: bgColor,
         minHeight: '100vh',
         color: textColor,
+        '& .MuiButton-contained': {
+          backgroundColor: 'var(--primary-dark-color)',
+          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+        },
+        '& .MuiButton-outlined': {
+          borderColor: 'var(--primary-dark-color)',
+          color: 'var(--primary-dark-color)',
+          '&:hover': {
+            borderColor: 'var(--primary-dark-color)',
+            backgroundColor: 'var(--primary-color)',
+          },
+        },
       }}
     >
       <Box
@@ -648,19 +671,32 @@ const PayrollRecords: React.FC = () => {
           spacing={2}
           alignItems='flex-start'
         >
-          <AppSelect
+          <AppDropdown
             label='Month'
             value={month}
-            size='small'
-            sx={{ minWidth: 160 }}
-            onChange={event => setMonth(Number(event.target.value))}
-          >
-            {monthOptions.map(option => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </AppSelect>
+            onChange={(event: SelectChangeEvent<string | number>) =>
+              setMonth(Number(event.target.value))
+            }
+            options={monthOptions.map(option => ({
+              value: option.value,
+              label: option.label,
+            }))}
+            placeholder='Month'
+            showLabel={false}
+            containerSx={{ minWidth: 160 }}
+            inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+            sx={{
+              '& .MuiSelect-select': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiSelect-icon': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: theme.palette.divider },
+              },
+            }}
+          />
 
           <TextField
             label='Year'
@@ -685,9 +721,20 @@ const PayrollRecords: React.FC = () => {
             startIcon={<GenerateIcon />}
             onClick={openGenerateDialog}
             disabled={generating}
-            sx={{ textTransform: 'none', fontWeight: 600 }}
+            sx={PRIMARY_ACTION_BUTTON_SX}
           >
-            Generate Payroll
+            <Box
+              component='span'
+              sx={{ display: { xs: 'none', sm: 'inline' } }}
+            >
+              Generate Payroll
+            </Box>
+            <Box
+              component='span'
+              sx={{ display: { xs: 'inline', sm: 'none' } }}
+            >
+              Generate
+            </Box>
           </AppButton>
         )}
       </Box>
@@ -779,26 +826,44 @@ const PayrollRecords: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <AppSelect
+          <AppDropdown
             label='Employee'
-            size='small'
-            sx={{ minWidth: 220 }}
             value={employeeFilter}
-            onChange={event => setEmployeeFilter(event.target.value as string)}
-          >
-            <MenuItem value=''>All employees</MenuItem>
-            {recordEmployees.length === 0 ? (
-              <MenuItem value='' disabled>
-                No employees for this period
-              </MenuItem>
-            ) : (
-              recordEmployees.map(emp => (
-                <MenuItem key={emp.id} value={emp.id}>
-                  {emp.name}
-                </MenuItem>
-              ))
-            )}
-          </AppSelect>
+            onChange={(event: SelectChangeEvent<string | number>) =>
+              setEmployeeFilter(String(event.target.value || ''))
+            }
+            options={
+              recordEmployees.length === 0
+                ? [{ value: '', label: 'No employees for this period' }]
+                : [
+                    { value: '', label: 'All employees' },
+                    ...recordEmployees.map(emp => ({
+                      value: emp.id,
+                      label: emp.name,
+                    })),
+                  ]
+            }
+            placeholder={
+              recordEmployees.length === 0
+                ? 'No employees for this period'
+                : 'All employees'
+            }
+            showLabel={false}
+            disabled={recordEmployees.length === 0}
+            containerSx={{ minWidth: 220 }}
+            inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+            sx={{
+              '& .MuiSelect-select': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiSelect-icon': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: theme.palette.divider },
+              },
+            }}
+          />
         </Box>
         {loading ? (
           <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
@@ -886,7 +951,7 @@ const PayrollRecords: React.FC = () => {
                           size='small'
                           onClick={() => openDetails(record)}
                         >
-                          <VisibilityIcon fontSize='small' />
+                          <IoEyeOutline size={18} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title='Update status'>
@@ -896,7 +961,12 @@ const PayrollRecords: React.FC = () => {
                             onClick={() => openStatusDialog(record)}
                             disabled={updatingStatus}
                           >
-                            <EditIcon fontSize='small' />
+                            <Box
+                              component='img'
+                              src={Icons.edit}
+                              alt='Edit'
+                              sx={{ width: 18, height: 18 }}
+                            />
                           </IconButton>
                         </span>
                       </Tooltip>
@@ -929,150 +999,100 @@ const PayrollRecords: React.FC = () => {
         )}
       </Paper>
 
-      <Dialog
+      <AppFormModal
         open={detailsOpen && !!selectedRecord}
         onClose={closeDetails}
+        onSubmit={() => {}}
+        title='Payroll Breakdown'
+        cancelLabel='Close'
+        showSubmitButton={false}
         maxWidth='md'
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff',
-          },
-        }}
+        paperSx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
       >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Typography variant='h6'>Payroll Breakdown</Typography>
-          <AppButton onClick={closeDetails} variantType='ghost' color='inherit'>
-            <CloseIcon />
-          </AppButton>
-        </DialogTitle>
-        <DialogContent
-          sx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
-        >
-          {selectedRecord && (
-            <Stack spacing={3}>
-              <Box>
-                <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
-                  Employee Details
-                </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
-                >
-                  Name:{' '}
-                  <strong>
-                    {selectedRecord.employee?.user
-                      ? `${selectedRecord.employee.user.first_name} ${selectedRecord.employee.user.last_name}`
-                      : selectedRecord.employee_id}
-                  </strong>
-                </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
-                >
-                  Email: {selectedRecord.employee?.user?.email || '—'}
-                </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
-                >
-                  PeriodYear: {selectedRecord.month}/{selectedRecord.year}
-                </Typography>
-              </Box>
-
-              <Divider />
-
-              <Box
-                sx={{
-                  display: 'grid',
-                  gap: 2,
-                  gridTemplateColumns: {
-                    xs: '1fr',
-                    sm: 'repeat(2, minmax(0, 1fr))',
-                    md: 'repeat(4, minmax(0, 1fr))',
-                  },
-                }}
+        {selectedRecord && (
+          <Stack spacing={3}>
+            <Box>
+              <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
+                Employee Details
+              </Typography>
+              <Typography
+                variant='body2'
+                sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
               >
-                {[
-                  {
-                    label: 'Gross Salary',
-                    value: formatCurrency(selectedRecord.grossSalary),
-                  },
-                  {
-                    label: 'Total Deductions',
-                    value: formatCurrency(selectedRecord.totalDeductions),
-                  },
-                  {
-                    label: 'Bonuses',
-                    value: formatCurrency(selectedRecord.bonuses || 0),
-                  },
-                  {
-                    label: 'Net Salary',
-                    value: formatCurrency(selectedRecord.netSalary),
-                  },
-                ].map(card => (
-                  <Paper
-                    key={card.label}
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      backgroundColor: effectiveDarkMode ? '#111' : '#f7f7fa',
-                    }}
-                  >
-                    <Typography variant='caption'>{card.label}</Typography>
-                    <Typography variant='h6'>{card.value}</Typography>
-                  </Paper>
-                ))}
-              </Box>
+                Name:{' '}
+                <strong>
+                  {selectedRecord.employee?.user
+                    ? `${selectedRecord.employee.user.first_name} ${selectedRecord.employee.user.last_name}`
+                    : selectedRecord.employee_id}
+                </strong>
+              </Typography>
+              <Typography
+                variant='body2'
+                sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
+              >
+                Email: {selectedRecord.employee?.user?.email || '—'}
+              </Typography>
+              <Typography
+                variant='body2'
+                sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
+              >
+                PeriodYear: {selectedRecord.month}/{selectedRecord.year}
+              </Typography>
+            </Box>
 
-              {selectedRecord.salaryBreakdown?.allowances &&
-                selectedRecord.salaryBreakdown.allowances.length > 0 && (
-                  <Box>
-                    <Typography
-                      variant='subtitle1'
-                      sx={{ fontWeight: 600, mb: 1 }}
-                    >
-                      Allowances
-                    </Typography>
-                    <Table size='small'>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Type</TableCell>
-                          <TableCell>Description</TableCell>
-                          <TableCell align='right'>Amount</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {selectedRecord.salaryBreakdown.allowances.map(
-                          (item, index) => (
-                            <TableRow key={index}>
-                              <TableCell>{item.type}</TableCell>
-                              <TableCell>{item.description || '—'}</TableCell>
-                              <TableCell align='right'>
-                                {formatCurrency(item.amount)}
-                              </TableCell>
-                            </TableRow>
-                          )
-                        )}
-                      </TableBody>
-                    </Table>
-                  </Box>
-                )}
+            <Divider />
 
-              {selectedRecord.deductionsBreakdown && (
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                  md: 'repeat(4, minmax(0, 1fr))',
+                },
+              }}
+            >
+              {[
+                {
+                  label: 'Gross Salary',
+                  value: formatCurrency(selectedRecord.grossSalary),
+                },
+                {
+                  label: 'Total Deductions',
+                  value: formatCurrency(selectedRecord.totalDeductions),
+                },
+                {
+                  label: 'Bonuses',
+                  value: formatCurrency(selectedRecord.bonuses || 0),
+                },
+                {
+                  label: 'Net Salary',
+                  value: formatCurrency(selectedRecord.netSalary),
+                },
+              ].map(card => (
+                <Paper
+                  key={card.label}
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    backgroundColor: effectiveDarkMode ? '#111' : '#f7f7fa',
+                  }}
+                >
+                  <Typography variant='caption'>{card.label}</Typography>
+                  <Typography variant='h6'>{card.value}</Typography>
+                </Paper>
+              ))}
+            </Box>
+
+            {selectedRecord.salaryBreakdown?.allowances &&
+              selectedRecord.salaryBreakdown.allowances.length > 0 && (
                 <Box>
                   <Typography
                     variant='subtitle1'
                     sx={{ fontWeight: 600, mb: 1 }}
                   >
-                    Deductions
+                    Allowances
                   </Typography>
                   <Table size='small'>
                     <TableHead>
@@ -1080,45 +1100,14 @@ const PayrollRecords: React.FC = () => {
                         <TableCell>Type</TableCell>
                         <TableCell>Description</TableCell>
                         <TableCell align='right'>Amount</TableCell>
-                        <TableCell align='right'>Percentage</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      <TableRow>
-                        <TableCell>Tax</TableCell>
-                        <TableCell>—</TableCell>
-                        <TableCell align='right'>
-                          {formatCurrency(
-                            selectedRecord.deductionsBreakdown.tax || 0
-                          )}
-                        </TableCell>
-                        <TableCell align='right'>—</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>Insurance</TableCell>
-                        <TableCell>—</TableCell>
-                        <TableCell align='right'>
-                          {formatCurrency(
-                            selectedRecord.deductionsBreakdown.insurance || 0
-                          )}
-                        </TableCell>
-                        <TableCell align='right'>—</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>Leave Deductions</TableCell>
-                        <TableCell>—</TableCell>
-                        <TableCell align='right'>
-                          {formatCurrency(
-                            selectedRecord.deductionsBreakdown
-                              .leaveDeductions || 0
-                          )}
-                        </TableCell>
-                        <TableCell align='right'>—</TableCell>
-                      </TableRow>
-                      {selectedRecord.deductionsBreakdown.otherDeductions?.map(
+                      {selectedRecord.salaryBreakdown.allowances.map(
                         (item, index) => (
                           <TableRow key={index}>
                             <TableCell>{item.type}</TableCell>
+                            <TableCell>{item.description || '—'}</TableCell>
                             <TableCell align='right'>
                               {formatCurrency(item.amount)}
                             </TableCell>
@@ -1130,311 +1119,350 @@ const PayrollRecords: React.FC = () => {
                 </Box>
               )}
 
-              {selectedRecord.bonusesBreakdown && (
-                <Box>
-                  <Typography
-                    variant='subtitle1'
-                    sx={{ fontWeight: 600, mb: 1 }}
-                  >
-                    Bonuses
-                  </Typography>
-                  <Table size='small'>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>Performance Bonus</TableCell>
-                        <TableCell align='right'>
-                          {formatCurrency(
-                            selectedRecord.bonusesBreakdown.performanceBonus ||
-                              0
-                          )}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>Overtime Bonus</TableCell>
-                        <TableCell align='right'>
-                          {formatCurrency(
-                            selectedRecord.bonusesBreakdown.overtimeBonus || 0
-                          )}
-                        </TableCell>
-                      </TableRow>
-                      {selectedRecord.bonusesBreakdown.otherBonuses?.map(
-                        (item, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{item.type}</TableCell>
-                            <TableCell align='right'>
-                              {formatCurrency(item.amount)}
-                            </TableCell>
-                          </TableRow>
-                        )
-                      )}
-                    </TableBody>
-                  </Table>
-                </Box>
-              )}
-
-              <Box sx={{ mt: 4 }}>
+            {selectedRecord.deductionsBreakdown && (
+              <Box>
                 <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
-                  Payroll History
+                  Deductions
                 </Typography>
-                {historyLoading ? (
-                  <Box
-                    sx={{ py: 3, display: 'flex', justifyContent: 'center' }}
-                  >
-                    <CircularProgress size={24} />
-                  </Box>
-                ) : historyError ? (
-                  <Alert severity='error'>{historyError}</Alert>
-                ) : historyRecords.length === 0 ? (
-                  <Alert severity='info'>No payroll history available.</Alert>
-                ) : (
-                  <Table size='small'>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Period</TableCell>
-                        <TableCell align='right'>Gross</TableCell>
-                        <TableCell align='right'>Net</TableCell>
-                        <TableCell align='center'>Status</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {historyRecords.map(record => {
-                        const isCurrent = record.id === selectedRecord?.id;
-                        return (
-                          <TableRow key={record.id} selected={isCurrent}>
-                            <TableCell>{`${record.month}/${record.year}`}</TableCell>
-                            <TableCell align='right'>
-                              {formatCurrency(record.grossSalary)}
-                            </TableCell>
-                            <TableCell align='right'>
-                              {formatCurrency(record.netSalary)}
-                            </TableCell>
-                            <TableCell align='center'>
-                              <Chip
-                                label={
-                                  mapStatusFromBackend(record.status)
-                                    .charAt(0)
-                                    .toUpperCase() +
-                                  mapStatusFromBackend(record.status).slice(1)
-                                }
-                                size='small'
-                                color={
-                                  mapStatusFromBackend(record.status) === 'paid'
-                                    ? 'success'
-                                    : 'error'
-                                }
-                              />
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
+                <Table size='small'>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Type</TableCell>
+                      <TableCell>Description</TableCell>
+                      <TableCell align='right'>Amount</TableCell>
+                      <TableCell align='right'>Percentage</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>Tax</TableCell>
+                      <TableCell>—</TableCell>
+                      <TableCell align='right'>
+                        {formatCurrency(
+                          selectedRecord.deductionsBreakdown.tax || 0
+                        )}
+                      </TableCell>
+                      <TableCell align='right'>—</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Insurance</TableCell>
+                      <TableCell>—</TableCell>
+                      <TableCell align='right'>
+                        {formatCurrency(
+                          selectedRecord.deductionsBreakdown.insurance || 0
+                        )}
+                      </TableCell>
+                      <TableCell align='right'>—</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Leave Deductions</TableCell>
+                      <TableCell>—</TableCell>
+                      <TableCell align='right'>
+                        {formatCurrency(
+                          selectedRecord.deductionsBreakdown.leaveDeductions ||
+                            0
+                        )}
+                      </TableCell>
+                      <TableCell align='right'>—</TableCell>
+                    </TableRow>
+                    {selectedRecord.deductionsBreakdown.otherDeductions?.map(
+                      (item, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{item.type}</TableCell>
+                          <TableCell align='right'>
+                            {formatCurrency(item.amount)}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
+                  </TableBody>
+                </Table>
               </Box>
+            )}
 
-              {selectedRecord.remarks && (
-                <Box>
-                  <Typography
-                    variant='subtitle1'
-                    sx={{ fontWeight: 600, mb: 1 }}
-                  >
-                    Remarks
-                  </Typography>
-                  <Typography variant='body2'>
-                    {selectedRecord.remarks}
-                  </Typography>
+            {selectedRecord.bonusesBreakdown && (
+              <Box>
+                <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
+                  Bonuses
+                </Typography>
+                <Table size='small'>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>Performance Bonus</TableCell>
+                      <TableCell align='right'>
+                        {formatCurrency(
+                          selectedRecord.bonusesBreakdown.performanceBonus || 0
+                        )}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Overtime Bonus</TableCell>
+                      <TableCell align='right'>
+                        {formatCurrency(
+                          selectedRecord.bonusesBreakdown.overtimeBonus || 0
+                        )}
+                      </TableCell>
+                    </TableRow>
+                    {selectedRecord.bonusesBreakdown.otherBonuses?.map(
+                      (item, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{item.type}</TableCell>
+                          <TableCell align='right'>
+                            {formatCurrency(item.amount)}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
+                  </TableBody>
+                </Table>
+              </Box>
+            )}
+
+            <Box sx={{ mt: 4 }}>
+              <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
+                Payroll History
+              </Typography>
+              {historyLoading ? (
+                <Box sx={{ py: 3, display: 'flex', justifyContent: 'center' }}>
+                  <CircularProgress size={24} />
                 </Box>
+              ) : historyError ? (
+                <Alert severity='error'>{historyError}</Alert>
+              ) : historyRecords.length === 0 ? (
+                <Alert severity='info'>No payroll history available.</Alert>
+              ) : (
+                <Table size='small'>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Period</TableCell>
+                      <TableCell align='right'>Gross</TableCell>
+                      <TableCell align='right'>Net</TableCell>
+                      <TableCell align='center'>Status</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {historyRecords.map(record => {
+                      const isCurrent = record.id === selectedRecord?.id;
+                      return (
+                        <TableRow key={record.id} selected={isCurrent}>
+                          <TableCell>{`${record.month}/${record.year}`}</TableCell>
+                          <TableCell align='right'>
+                            {formatCurrency(record.grossSalary)}
+                          </TableCell>
+                          <TableCell align='right'>
+                            {formatCurrency(record.netSalary)}
+                          </TableCell>
+                          <TableCell align='center'>
+                            <Chip
+                              label={
+                                mapStatusFromBackend(record.status)
+                                  .charAt(0)
+                                  .toUpperCase() +
+                                mapStatusFromBackend(record.status).slice(1)
+                              }
+                              size='small'
+                              color={
+                                mapStatusFromBackend(record.status) === 'paid'
+                                  ? 'success'
+                                  : 'error'
+                              }
+                            />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               )}
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <AppButton
-            onClick={closeDetails}
-            variantType='secondary'
-            variant='outlined'
-          >
-            Close
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+            </Box>
+
+            {selectedRecord.remarks && (
+              <Box>
+                <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
+                  Remarks
+                </Typography>
+                <Typography variant='body2'>
+                  {selectedRecord.remarks}
+                </Typography>
+              </Box>
+            )}
+          </Stack>
+        )}
+      </AppFormModal>
 
       {/* Status dialog */}
-      <Dialog
+      <AppFormModal
         open={statusDialogOpen && !!statusRecord}
         onClose={closeStatusDialog}
+        onSubmit={handleStatusUpdate}
+        title='Update Payroll Status'
+        submitLabel={updatingStatus ? 'Updating...' : 'Update Status'}
+        cancelLabel='Cancel'
+        isSubmitting={updatingStatus}
+        hasChanges={true}
         maxWidth='sm'
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff',
-          },
-        }}
+        paperSx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
       >
-        <DialogTitle>Update Payroll Status</DialogTitle>
-        <DialogContent>
-          {statusRecord && (
-            <Stack spacing={2}>
-              <Typography
-                variant='body2'
-                sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
-              >
-                {statusRecord.employee?.user
-                  ? `${statusRecord.employee.user.first_name} ${statusRecord.employee.user.last_name}`
-                  : statusRecord.employee_id}{' '}
-                — {statusRecord.month}/{statusRecord.year}
-              </Typography>
-              <AppSelect
-                label='Status'
-                value={statusValue}
-                onChange={event =>
-                  setStatusValue(event.target.value as 'unpaid' | 'paid')
-                }
-              >
-                {statusOptions.map(option => (
-                  <MenuItem key={option} value={option}>
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                  </MenuItem>
-                ))}
-              </AppSelect>
-              <TextField
-                label='Remarks'
-                multiline
-                minRows={3}
-                value={statusRemarks}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                  setStatusRemarks(event.target.value)
-                }
-                placeholder='Optional remarks (e.g. payment method)'
-              />
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <AppButton
-            onClick={closeStatusDialog}
-            variantType='secondary'
-            variant='outlined'
-          >
-            Cancel
-          </AppButton>
-          <AppButton
-            onClick={handleStatusUpdate}
-            variantType='primary'
-            variant='contained'
-            disabled={updatingStatus}
-            startIcon={
-              updatingStatus ? <CircularProgress size={16} /> : undefined
-            }
-            sx={{ textTransform: 'none' }}
-          >
-            {updatingStatus ? 'Updating...' : 'Update Status'}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={generateDialogOpen}
-        onClose={() => setGenerateDialogOpen(false)}
-        maxWidth='sm'
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff',
-          },
-        }}
-      >
-        <DialogTitle>Generate Payroll</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} marginTop={2}>
-            <AppSelect
-              label='Month'
-              value={generateMonth}
-              size='small'
-              sx={{ minWidth: 160 }}
-              onChange={event => setGenerateMonth(Number(event.target.value))}
+        {statusRecord && (
+          <Stack spacing={2}>
+            <Typography
+              variant='body2'
+              sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
             >
-              {monthOptions.map(option => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </AppSelect>
-            <TextField
-              label='Year'
-              type='number'
-              inputProps={{ min: 0 }}
-              size='small'
-              sx={{ minWidth: 140 }}
-              value={generateYear === 0 ? '' : generateYear}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                const value = event.target.value;
-                const numValue =
-                  value === '' ? '' : Math.max(0, Number(value) || 0);
-                setGenerateYear(numValue);
+              {statusRecord.employee?.user
+                ? `${statusRecord.employee.user.first_name} ${statusRecord.employee.user.last_name}`
+                : statusRecord.employee_id}{' '}
+              — {statusRecord.month}/{statusRecord.year}
+            </Typography>
+            <AppDropdown
+              label='Status'
+              value={statusValue}
+              onChange={(event: SelectChangeEvent<string | number>) =>
+                setStatusValue(event.target.value as 'unpaid' | 'paid')
+              }
+              options={statusOptions.map(option => ({
+                value: option,
+                label: option.charAt(0).toUpperCase() + option.slice(1),
+              }))}
+              placeholder='Status'
+              showLabel
+              inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+              sx={{
+                '& .MuiSelect-select': {
+                  color: effectiveDarkMode ? '#fff' : '#000',
+                },
+                '& .MuiSelect-icon': {
+                  color: effectiveDarkMode ? '#fff' : '#000',
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': { borderColor: theme.palette.divider },
+                },
               }}
             />
-            <AppSelect
-              label='Employee'
-              size='small'
-              sx={{ minWidth: 220 }}
-              value={generateEmployeeId}
-              onChange={event =>
-                setGenerateEmployeeId(event.target.value as string)
+            <TextField
+              label='Remarks'
+              multiline
+              minRows={3}
+              value={statusRemarks}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                setStatusRemarks(event.target.value)
               }
-            >
-              <MenuItem value=''>All employees</MenuItem>
-              {employeesForGenerateDialog.length === 0 ? (
-                <MenuItem value='' disabled>
-                  {employees.length === 0
-                    ? 'No employees with salary configuration'
-                    : 'All employees are already processed'}
-                </MenuItem>
-              ) : (
-                employeesForGenerateDialog.map(emp => (
-                  <MenuItem key={emp.id} value={emp.id}>
-                    {emp.name}
-                  </MenuItem>
-                ))
-              )}
-            </AppSelect>
-            {employeesForGenerateDialog.length === 0 &&
-              employees.length > 0 && (
-                <Alert severity='warning' sx={{ m: 0 }}>
-                  All employees already have payroll records for the selected
-                  period ({generateMonth}/{generateYear}). No new payroll can be
-                  generated to avoid duplicates.
-                </Alert>
-              )}
+              placeholder='Optional remarks (e.g. payment method)'
+            />
           </Stack>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <AppButton
-            onClick={() => setGenerateDialogOpen(false)}
-            variantType='secondary'
-            variant='outlined'
-          >
-            Cancel
-          </AppButton>
-          <AppButton
-            onClick={handleGenerate}
-            variantType='primary'
-            variant='contained'
-            disabled={generating || employeesForGenerateDialog.length === 0}
-            startIcon={generating ? <CircularProgress size={16} /> : undefined}
-            sx={{ textTransform: 'none' }}
-            title={
-              employeesForGenerateDialog.length === 0
-                ? 'No employees available for payroll generation'
-                : ''
+        )}
+      </AppFormModal>
+
+      <AppFormModal
+        open={generateDialogOpen}
+        onClose={() => setGenerateDialogOpen(false)}
+        onSubmit={handleGenerate}
+        title='Generate Payroll'
+        submitLabel={generating ? 'Generating...' : 'Generate Payroll'}
+        cancelLabel='Cancel'
+        isSubmitting={generating}
+        hasChanges={employeesForGenerateDialog.length > 0}
+        maxWidth='sm'
+        paperSx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
+      >
+        <Stack spacing={2} marginTop={2}>
+          <AppDropdown
+            label='Month'
+            value={generateMonth}
+            onChange={(event: SelectChangeEvent<string | number>) =>
+              setGenerateMonth(Number(event.target.value))
             }
-          >
-            {generating ? 'Generating...' : 'Generate Payroll'}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+            options={monthOptions.map(option => ({
+              value: option.value,
+              label: option.label,
+            }))}
+            placeholder='Month'
+            showLabel={false}
+            containerSx={{ minWidth: 160 }}
+            inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+            sx={{
+              '& .MuiSelect-select': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiSelect-icon': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: theme.palette.divider },
+              },
+            }}
+          />
+          <TextField
+            label='Year'
+            type='number'
+            inputProps={{ min: 0 }}
+            size='small'
+            sx={{ minWidth: 140 }}
+            value={generateYear === 0 ? '' : generateYear}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              const value = event.target.value;
+              const numValue =
+                value === '' ? '' : Math.max(0, Number(value) || 0);
+              setGenerateYear(numValue);
+            }}
+          />
+          <AppDropdown
+            label='Employee'
+            value={generateEmployeeId}
+            onChange={(event: SelectChangeEvent<string | number>) =>
+              setGenerateEmployeeId(String(event.target.value || ''))
+            }
+            options={
+              employeesForGenerateDialog.length === 0
+                ? [
+                    {
+                      value: '',
+                      label:
+                        employees.length === 0
+                          ? 'No employees with salary configuration'
+                          : 'All employees are already processed',
+                    },
+                  ]
+                : [
+                    { value: '', label: 'All employees' },
+                    ...employeesForGenerateDialog.map(emp => ({
+                      value: emp.id,
+                      label: emp.name,
+                    })),
+                  ]
+            }
+            placeholder={
+              employeesForGenerateDialog.length === 0
+                ? employees.length === 0
+                  ? 'No employees with salary configuration'
+                  : 'All employees are already processed'
+                : 'All employees'
+            }
+            showLabel={false}
+            disabled={employeesForGenerateDialog.length === 0}
+            containerSx={{ minWidth: 220 }}
+            inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+            sx={{
+              '& .MuiSelect-select': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiSelect-icon': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: theme.palette.divider },
+              },
+            }}
+          />
+          {employeesForGenerateDialog.length === 0 && employees.length > 0 && (
+            <Alert severity='warning' sx={{ m: 0 }}>
+              All employees already have payroll records for the selected period
+              ({generateMonth}/{generateYear}). No new payroll can be generated
+              to avoid duplicates.
+            </Alert>
+          )}
+        </Stack>
+      </AppFormModal>
     </Box>
   );
 };

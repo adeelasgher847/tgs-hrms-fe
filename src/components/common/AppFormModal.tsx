@@ -31,7 +31,7 @@ export interface FormField {
   component?: ReactNode;
 }
 
-interface AppFormModalProps {
+export interface AppFormModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit?: () => void;
@@ -53,6 +53,9 @@ interface AppFormModalProps {
   };
   isSubmitting?: boolean;
   hasChanges?: boolean;
+  hideCancel?: boolean;
+  showCancelButton?: boolean;
+  showSubmitButton?: boolean;
   isRtl?: boolean;
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 }
@@ -75,6 +78,9 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   secondaryAction,
   isSubmitting = false,
   hasChanges = true,
+  hideCancel = false,
+  showCancelButton = true,
+  showSubmitButton = true,
   isRtl = false,
   maxWidth = 'sm',
 }) => {
@@ -264,14 +270,16 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             justifyContent: 'flex-end',
           }}
         >
-          <AppButton
-            onClick={onClose}
-            variant='outlined'
-            variantType='secondary'
-            sx={{ px: 4 }}
-          >
-            {cancelLabel}
-          </AppButton>
+          {!hideCancel && showCancelButton && Boolean(cancelLabel?.trim()) && (
+            <AppButton
+              onClick={onClose}
+              variant='outlined'
+              variantType='secondary'
+              sx={{ px: 4 }}
+            >
+              {cancelLabel}
+            </AppButton>
+          )}
           {secondaryAction && (
             <AppButton
               onClick={secondaryAction.onClick}
@@ -284,22 +292,24 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             </AppButton>
           )}
 
-          <AppButton
-            type={wrapInForm ? 'submit' : 'button'}
-            variant='contained'
-            variantType='primary'
-            disabled={
-              submitDisabled !== undefined
-                ? submitDisabled
-                : isSubmitting || !hasChanges
-            }
-            onClick={wrapInForm ? handleSubmit : onSubmit}
-            startIcon={submitStartIcon}
-            title={submitTitle}
-            sx={{ px: 4 }}
-          >
-            {isSubmitting ? 'Saving...' : submitLabel}
-          </AppButton>
+          {showSubmitButton && (
+            <AppButton
+              type={wrapInForm ? 'submit' : 'button'}
+              variant='contained'
+              variantType='primary'
+              disabled={
+                submitDisabled !== undefined
+                  ? submitDisabled
+                  : isSubmitting || !hasChanges
+              }
+              onClick={wrapInForm ? handleSubmit : onSubmit}
+              startIcon={submitStartIcon}
+              title={submitTitle}
+              sx={{ px: 4 }}
+            >
+              {isSubmitting ? 'Saving...' : submitLabel}
+            </AppButton>
+          )}
         </DialogActions>
       )}
     </Dialog>

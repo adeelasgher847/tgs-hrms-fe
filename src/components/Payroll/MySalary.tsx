@@ -13,10 +13,6 @@ import {
   TableBody,
   Button,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
   Tooltip,
   Pagination,
@@ -27,8 +23,9 @@ import { useOutletContext } from 'react-router-dom';
 import { payrollApi, type PayrollRecord } from '../../api/payrollApi';
 import { useIsDarkMode } from '../../theme';
 import { useUser } from '../../hooks/useUser';
-import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
+import { IoEyeOutline } from 'react-icons/io5';
 import { PAGINATION } from '../../constants/appConstants';
+import AppFormModal from '../common/AppFormModal';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -459,7 +456,7 @@ const MySalary: React.FC = () => {
                           detailLoading && record.id !== selectedRecordId
                         }
                       >
-                        <VisibilityIcon fontSize='small' />
+                        <IoEyeOutline size={18} />
                       </IconButton>
                     </span>
                   </Tooltip>
@@ -503,6 +500,18 @@ const MySalary: React.FC = () => {
           : theme.palette.background.default,
         minHeight: '100vh',
         color: effectiveDarkMode ? '#fff' : '#000',
+        '& .MuiButton-contained': {
+          backgroundColor: 'var(--primary-dark-color)',
+          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+        },
+        '& .MuiButton-outlined': {
+          borderColor: 'var(--primary-dark-color)',
+          color: 'var(--primary-dark-color)',
+          '&:hover': {
+            borderColor: 'var(--primary-dark-color)',
+            backgroundColor: 'var(--primary-color)',
+          },
+        },
       }}
     >
       <Stack spacing={3}>
@@ -560,18 +569,18 @@ const MySalary: React.FC = () => {
         </Paper>
       </Stack>
 
-      <Dialog
+      <AppFormModal
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
+        onSubmit={() => {}}
+        title='Payslip Details'
+        cancelLabel='Close'
+        showSubmitButton={false}
         maxWidth='md'
-        fullWidth
+        paperSx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
       >
-        <DialogTitle>Payslip Details</DialogTitle>
-        <DialogContent dividers>{breakdownContent}</DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        {breakdownContent}
+      </AppFormModal>
     </Box>
   );
 };

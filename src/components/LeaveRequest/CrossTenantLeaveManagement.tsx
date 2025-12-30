@@ -12,10 +12,6 @@ import {
   CircularProgress,
   Paper,
   Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Pagination,
   Table,
   TableHead,
@@ -28,6 +24,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -625,42 +622,41 @@ const CrossTenantLeaveManagement: React.FC = () => {
           Leave Management Table
         </Typography>
         <Stack direction={isMobile ? 'column' : 'row'} spacing={2} mb={3}>
-          <FormControl sx={{ minWidth: 180 }} size='small'>
-            <InputLabel>Department</InputLabel>
-            <Select
-              label='Department'
-              value={filters.departmentId}
-              onChange={e =>
-                handleFilterChange(
-                  'departmentId',
-                  e.target.value as FiltersState['departmentId']
-                )
-              }
-            >
-              <MenuItem value=''>All</MenuItem>
-              {departments.map(dep => (
-                <MenuItem key={dep.id} value={dep.id}>
-                  {dep.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl sx={{ minWidth: 160 }} size='small'>
-            <InputLabel>Status</InputLabel>
-            <Select
-              label='Status'
-              value={filters.status}
-              onChange={e =>
-                handleFilterChange('status', e.target.value as LeaveStatus)
-              }
-            >
-              <MenuItem value=''>All</MenuItem>
-              <MenuItem value='pending'>Pending</MenuItem>
-              <MenuItem value='approved'>Approved</MenuItem>
-              <MenuItem value='rejected'>Rejected</MenuItem>
-              <MenuItem value='withdrawn'>Withdrawn</MenuItem>
-            </Select>
-          </FormControl>
+          <AppDropdown
+            label='Department'
+            value={filters.departmentId}
+            onChange={(e: SelectChangeEvent<string | number>) =>
+              handleFilterChange(
+                'departmentId',
+                String(e.target.value || '') as FiltersState['departmentId']
+              )
+            }
+            placeholder='Select Department'
+            showLabel={false}
+            options={[
+              { value: '', label: 'All' },
+              ...departments.map(dep => ({ value: dep.id, label: dep.name })),
+            ]}
+            containerSx={{ minWidth: 180 }}
+          />
+
+          <AppDropdown
+            label='Status'
+            value={filters.status}
+            onChange={(e: SelectChangeEvent<string | number>) =>
+              handleFilterChange('status', String(e.target.value || '') as LeaveStatus)
+            }
+            placeholder='Select Status'
+            showLabel={false}
+            options={[
+              { value: '', label: 'All' },
+              { value: 'pending', label: 'Pending' },
+              { value: 'approved', label: 'Approved' },
+              { value: 'rejected', label: 'Rejected' },
+              { value: 'withdrawn', label: 'Withdrawn' },
+            ]}
+            containerSx={{ minWidth: 160 }}
+          />
           <DatePicker
             label='Start Date'
             value={filters.startDate}

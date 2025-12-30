@@ -152,17 +152,18 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
 
       <DialogActions>
         <AppButton
+          variantType='secondary'
           variant='outlined'
           text={lang.cancel}
           onClick={onClose}
           disabled={loading}
         />
         <AppButton
+          variantType='danger'
           variant='contained'
           text={loading ? lang.loading : lang.delete}
           onClick={handleConfirm}
           disabled={loading}
-          sx={{ backgroundColor: COLORS.ERROR }}
         />
       </DialogActions>
     </Dialog>

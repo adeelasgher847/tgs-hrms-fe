@@ -2,13 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
-  Grid,
-  MenuItem,
   Paper,
   Stack,
   TableBody,
@@ -24,11 +18,30 @@ import dayjs from 'dayjs';
 import { useTheme } from '@mui/material/styles';
 import { useOutletContext } from 'react-router-dom';
 import GenerateIcon from '@mui/icons-material/PlayCircleFilledRounded';
-import CloseIcon from '@mui/icons-material/Close';
 import { payrollApi, type PayrollRecord } from '../../api/payrollApi';
 import { snackbar } from '../../utils/snackbar';
 import { useIsDarkMode } from '../../theme';
 import AppTable from '../common/AppTable';
+import AppDropdown from '../common/AppDropdown';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import AppFormModal from '../common/AppFormModal';
+import AppButton from '../common/AppButton';
+
+const PRIMARY_ACTION_BUTTON_SX = {
+  fontSize: 'var(--body-font-size)',
+  lineHeight: 'var(--body-line-height)',
+  letterSpacing: 'var(--body-letter-spacing)',
+  boxShadow: 'none',
+  minWidth: { xs: 'auto', sm: 200 },
+  px: { xs: 1.5, sm: 2 },
+  py: { xs: 0.75, sm: 1 },
+  alignSelf: { xs: 'stretch', md: 'center' },
+  '& .MuiButton-startIcon': {
+    marginRight: { xs: 0.5, sm: 1 },
+    display: 'flex',
+    alignItems: 'center',
+  },
+} as const;
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -154,6 +167,18 @@ const PayrollGeneration: React.FC = () => {
         minHeight: '100vh',
         p: { xs: 2, md: 3 },
         color: textColor,
+        '& .MuiButton-contained': {
+          backgroundColor: 'primary.main',
+          '&:hover': { backgroundColor: 'primary.dark' },
+        },
+        '& .MuiButton-outlined': {
+          borderColor: 'primary.main',
+          color: 'primary.main',
+          '&:hover': {
+            borderColor: 'primary.dark',
+            backgroundColor: 'action.hover',
+          },
+        },
       }}
     >
       <Box
@@ -195,20 +220,34 @@ const PayrollGeneration: React.FC = () => {
           spacing={2}
           alignItems='flex-start'
         >
-          <TextField
-            select
+          <AppDropdown
             label='Month'
             value={month}
-            size='small'
-            sx={{ minWidth: 160 }}
-            onChange={event => setMonth(Number(event.target.value))}
-          >
-            {monthOptions.map(option => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
+            onChange={(event: SelectChangeEvent<string | number>) =>
+              setMonth(Number(event.target.value))
+            }
+            options={monthOptions.map(option => ({
+              value: option.value,
+              label: option.label,
+            }))}
+            placeholder='Month'
+            showLabel={false}
+            containerSx={{ minWidth: 160 }}
+            inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+            sx={{
+              '& .MuiSelect-select': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiSelect-icon': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: theme.palette.divider,
+                },
+              },
+            }}
+          />
 
           <TextField
             label='Year'
@@ -237,22 +276,33 @@ const PayrollGeneration: React.FC = () => {
 
           <Box sx={{ flexGrow: 1 }} />
 
-          <Button
+          <AppButton
             variant='contained'
+            variantType='primary'
             startIcon={
-              loading ? <CircularProgress size={18} /> : <GenerateIcon />
+              loading ? (
+                <CircularProgress size={18} sx={{ color: 'common.white' }} />
+              ) : (
+                <GenerateIcon />
+              )
             }
             onClick={handleGenerate}
             disabled={loading}
-            sx={{
-              minWidth: 180,
-              textTransform: 'none',
-              fontWeight: 600,
-              alignSelf: { xs: 'stretch', md: 'center' },
-            }}
+            sx={PRIMARY_ACTION_BUTTON_SX}
           >
-            {loading ? 'Generating...' : 'Generate Payroll'}
-          </Button>
+            <Box
+              component='span'
+              sx={{ display: { xs: 'none', sm: 'inline' } }}
+            >
+              {loading ? 'Generating...' : 'Generate Payroll'}
+            </Box>
+            <Box
+              component='span'
+              sx={{ display: { xs: 'inline', sm: 'none' } }}
+            >
+              {loading ? 'Generating...' : 'Generate'}
+            </Box>
+          </AppButton>
         </Stack>
       </Paper>
 
@@ -273,8 +323,18 @@ const PayrollGeneration: React.FC = () => {
           >
             Summary
           </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, minmax(0, 1fr))',
+                md: 'repeat(4, minmax(0, 1fr))',
+              },
+              gap: 2,
+            }}
+          >
+            <Box>
               <Paper
                 elevation={0}
                 sx={{
@@ -300,8 +360,8 @@ const PayrollGeneration: React.FC = () => {
                   {records.length}
                 </Typography>
               </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Box>
+            <Box>
               <Paper
                 elevation={0}
                 sx={{
@@ -327,8 +387,8 @@ const PayrollGeneration: React.FC = () => {
                   {formatCurrency(totals.gross)}
                 </Typography>
               </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Box>
+            <Box>
               <Paper
                 elevation={0}
                 sx={{
@@ -354,8 +414,8 @@ const PayrollGeneration: React.FC = () => {
                   {formatCurrency(totals.deductions)}
                 </Typography>
               </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Box>
+            <Box>
               <Paper
                 elevation={0}
                 sx={{
@@ -381,8 +441,8 @@ const PayrollGeneration: React.FC = () => {
                   {formatCurrency(totals.net)}
                 </Typography>
               </Paper>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </Paper>
       )}
 
@@ -492,35 +552,17 @@ const PayrollGeneration: React.FC = () => {
         )}
       </Paper>
 
-      <Dialog
+      <AppFormModal
         open={detailsOpen && !!selectedRecord}
         onClose={closeDetails}
+        onSubmit={() => {}}
+        title='Payroll Breakdown'
+        cancelLabel='Close'
+        showSubmitButton={false}
         maxWidth='md'
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff',
-          },
-        }}
+        paperSx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
       >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            pr: 1,
-          }}
-        >
-          <Typography variant='h6'>Payroll Breakdown</Typography>
-          <Button onClick={closeDetails} color='inherit'>
-            <CloseIcon />
-          </Button>
-        </DialogTitle>
-        <DialogContent
-          dividers
-          sx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
-        >
+        <Box sx={{ pr: 1 }}>
           {selectedRecord && (
             <Stack spacing={3}>
               <Box>
@@ -566,8 +608,18 @@ const PayrollGeneration: React.FC = () => {
                 <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
                   Salary Components
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6} md={3}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(2, minmax(0, 1fr))',
+                      md: 'repeat(4, minmax(0, 1fr))',
+                    },
+                    gap: 2,
+                  }}
+                >
+                  <Box>
                     <Paper
                       elevation={0}
                       sx={{
@@ -580,8 +632,8 @@ const PayrollGeneration: React.FC = () => {
                         {formatCurrency(selectedRecord.grossSalary)}
                       </Typography>
                     </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </Box>
+                  <Box>
                     <Paper
                       elevation={0}
                       sx={{
@@ -596,8 +648,8 @@ const PayrollGeneration: React.FC = () => {
                         {formatCurrency(selectedRecord.totalDeductions)}
                       </Typography>
                     </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </Box>
+                  <Box>
                     <Paper
                       elevation={0}
                       sx={{
@@ -610,8 +662,8 @@ const PayrollGeneration: React.FC = () => {
                         {formatCurrency(selectedRecord.bonuses || 0)}
                       </Typography>
                     </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </Box>
+                  <Box>
                     <Paper
                       elevation={0}
                       sx={{
@@ -624,8 +676,8 @@ const PayrollGeneration: React.FC = () => {
                         {formatCurrency(selectedRecord.netSalary)}
                       </Typography>
                     </Paper>
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </Box>
 
               {selectedRecord.salaryBreakdown?.allowances &&
@@ -755,11 +807,8 @@ const PayrollGeneration: React.FC = () => {
               )}
             </Stack>
           )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={closeDetails}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </AppFormModal>
     </Box>
   );
 };

@@ -401,7 +401,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                         color: theme => theme.palette.text.secondary,
                         mb: 3,
                         lineHeight: 1.6,
-                        fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                        fontSize: 'var(--body-font-size)',
                         display: '-webkit-box',
                         WebkitLineClamp: 3,
                         WebkitBoxOrient: 'vertical',
@@ -430,10 +430,13 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                         <PersonIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
                       }
                       sx={{
-                        backgroundColor: theme => theme.palette.primary.main,
-                        color: theme => theme.palette.primary.contrastText,
+                        backgroundColor: '#3083DC',
+                        color: '#FFFFFF',
                         fontSize: { xs: '0.7rem', sm: '0.75rem' },
                         height: { xs: 24, sm: 28 },
+                        '& .MuiChip-icon': {
+                          color: '#F8F8F8',
+                        },
                       }}
                     />
                   </Box>
@@ -446,6 +449,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                     }}
                   >
                     <AppButton
+                      variantType='secondary'
                       variant='outlined'
                       size='small'
                       text={lang.viewMembers}
@@ -455,15 +459,15 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                       onClick={() => handleViewMembers(team)}
                       fullWidth
                       sx={{
-                        borderColor: theme => theme.palette.primary.main,
-                        color: theme => theme.palette.primary.main,
+                        borderColor: '#3083DC',
+                        color: '#3083DC',
                         backgroundColor: 'transparent',
                         fontSize: { xs: '0.75rem', sm: '0.875rem' },
                         py: { xs: 0.5, sm: 0.75 },
                         px: { xs: 1, sm: 1.5 },
                         '&:hover': {
-                          borderColor: theme => theme.palette.primary.main,
-                          backgroundColor: 'rgba(72, 76, 127, 0.1)',
+                          borderColor: '#3083DC',
+                          backgroundColor: 'rgba(48, 131, 220, 0.1)',
                         },
                       }}
                     >
@@ -599,6 +603,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
         </DialogContent>
         <DialogActions>
           <AppButton
+            variantType='secondary'
             variant='outlined'
             text={lang.cancel}
             onClick={() => setShowMemberDialog(false)}
