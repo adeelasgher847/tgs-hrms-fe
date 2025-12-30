@@ -7,18 +7,12 @@ import {
   Alert,
   CircularProgress,
   useTheme,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
   Switch,
   Tooltip,
-  MenuItem,
   Chip,
   Pagination,
   Avatar,
@@ -26,11 +20,8 @@ import {
 
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import EditIcon from '@mui/icons-material/Edit';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CloseIcon from '@mui/icons-material/Close';
 import {
   SystemTenantApi,
@@ -42,12 +33,15 @@ import { env } from '../../config/env';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppButton from '../common/AppButton';
-import AppSelect from '../common/AppSelect';
 import AppTable from '../common/AppTable';
 import AppCard from '../common/AppCard';
+import AppFormModal from '../common/AppFormModal';
+import AppDropdown from '../common/AppDropdown';
+import { Icons } from '../../assets/icons';
+import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { PAGINATION } from '../../constants/appConstants';
 
-type StatusFilterOption = 'All' | 'active' | 'suspended' | 'deleted';
+type StatusFilterOption = 'all' | 'active' | 'suspended' | 'deleted';
 
 const createEmptyTenantForm = () => ({
   name: '',
@@ -65,7 +59,7 @@ export const TenantPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
-  const [statusFilter, setStatusFilter] = useState<StatusFilterOption>('All');
+  const [statusFilter, setStatusFilter] = useState<StatusFilterOption>('all');
 
   const [selectedTenant, setSelectedTenant] = useState<SystemTenant | null>(
     null
@@ -471,27 +465,42 @@ export const TenantPage: React.FC = () => {
           Tenant Management
         </Typography>
 
-        <Box display='flex' flexWrap='wrap' gap={2}>
-          <AppSelect
+        <Box display='flex' flexWrap='wrap' gap={2} alignItems='center'>
+          <AppDropdown
             label='Status'
-            size='small'
-            sx={{ minWidth: 140 }}
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'active', label: 'Active' },
+              { value: 'suspended', label: 'Suspended' },
+              { value: 'deleted', label: 'Deleted' },
+            ]}
             value={statusFilter}
-            onChange={(event: SelectChangeEvent<StatusFilterOption>) => {
-              const value = event.target.value as StatusFilterOption;
-              setStatusFilter(value);
+            onChange={(e: SelectChangeEvent<string | number>) => {
+              setStatusFilter(String(e.target.value) as StatusFilterOption);
             }}
-          >
-            <MenuItem value='All'>All</MenuItem>
-            <MenuItem value='active'>Active</MenuItem>
-            <MenuItem value='suspended'>Suspended</MenuItem>
-            <MenuItem value='deleted'>Deleted</MenuItem>
-          </AppSelect>
+            showLabel={false}
+            containerSx={{
+              minWidth: { xs: '100%', sm: 140 },
+              '& .MuiOutlinedInput-root': { minHeight: '40px' },
+            }}
+            sx={{
+              '.MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+            }}
+          />
           <AppButton
             variant='contained'
             variantType='primary'
             onClick={() => setIsFormOpen(true)}
             startIcon={<AddIcon />}
+            sx={{
+              fontSize: '16px',
+              fontWeight: 600,
+              textTransform: 'none',
+              padding: '8px 32px',
+              borderRadius: '12px',
+              width: { xs: '100%', lg: '200px' },
+              height: '40px',
+            }}
           >
             Create Tenant
           </AppButton>
@@ -504,106 +513,131 @@ export const TenantPage: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <AppCard sx={{ padding: 0, borderRadius: 1, overflow: 'hidden' }}>
-          <AppTable>
-            <TableHead>
-              <TableRow>
+        // <AppCard sx={{ padding: 0, borderRadius: 1, overflow: 'hidden' }}>
+        <AppTable>
+          <TableHead>
+            <TableRow>
+              <TableCell>
+                <strong>Name</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Status</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Created</strong>
+              </TableCell>
+              <TableCell align='center'>
+                <strong>Actions</strong>
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {tenants.map(t => (
+              <TableRow key={t.id} hover>
+                <TableCell>{t.name}</TableCell>
                 <TableCell>
-                  <strong>Name</strong>
+                  {!t.isDeleted && (
+                    <Switch
+                      checked={t.status === 'active'}
+                      onChange={() => toggleStatus(t)}
+                      aria-label={`Toggle status for tenant ${t.name}`}
+                      role='switch'
+                      aria-checked={t.status === 'active'}
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: 'var(--primary-dark-color) !important',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
+                          {
+                            backgroundColor:
+                              'var(--primary-dark-color) !important',
+                          },
+                      }}
+                    />
+                  )}
+                  {t.isDeleted
+                    ? 'Deleted'
+                    : t.status.charAt(0).toUpperCase() +
+                      t.status.slice(1).toLowerCase()}
                 </TableCell>
-                <TableCell>
-                  <strong>Status</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Created</strong>
-                </TableCell>
+                <TableCell>{formatDate(t.created_at)}</TableCell>
                 <TableCell align='center'>
-                  <strong>Actions</strong>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {tenants.map(t => (
-                <TableRow key={t.id} hover>
-                  <TableCell>{t.name}</TableCell>
-                  <TableCell>
-                    {!t.isDeleted && (
-                      <Switch
-                        checked={t.status === 'active'}
-                        onChange={() => toggleStatus(t)}
-                        color='primary'
-                        aria-label={`Toggle status for tenant ${t.name}`}
-                        role='switch'
-                        aria-checked={t.status === 'active'}
-                      />
-                    )}
-                    {t.isDeleted
-                      ? 'Deleted'
-                      : t.status.charAt(0).toUpperCase() +
-                        t.status.slice(1).toLowerCase()}
-                  </TableCell>
-                  <TableCell>{formatDate(t.created_at)}</TableCell>
-                  <TableCell align='center'>
-                    {!t.isDeleted ? (
-                      <>
-                        <Tooltip title='View Details'>
-                          <IconButton
-                            onClick={() => handleViewDetails(t)}
-                            aria-label={`View details for tenant ${t.name}`}
-                          >
-                            <VisibilityIcon aria-hidden='true' />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title='Edit Tenant'>
-                          <IconButton
-                            color='primary'
-                            onClick={() => handleOpenEdit(t)}
-                            aria-label={`Edit tenant ${t.name}`}
-                          >
-                            <EditIcon aria-hidden='true' />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title='Delete'>
-                          <IconButton
-                            color='error'
-                            onClick={() => {
-                              setSelectedTenant(t);
-                              setIsDeleteOpen(true);
-                            }}
-                            aria-label={`Delete tenant ${t.name}`}
-                          >
-                            <DeleteIcon aria-hidden='true' />
-                          </IconButton>
-                        </Tooltip>
-                      </>
-                    ) : (
-                      <Tooltip title='Restore Tenant'>
+                  {!t.isDeleted ? (
+                    <>
+                      <Tooltip title='View Details'>
                         <IconButton
-                          color='success'
-                          onClick={() => handleRestore(t.id)}
-                          aria-label={`Restore tenant ${t.name}`}
+                          onClick={() => handleViewDetails(t)}
+                          aria-label={`View details for tenant ${t.name}`}
                         >
-                          <RestoreIcon aria-hidden='true' />
+                          <VisibilityIcon aria-hidden='true' />
                         </IconButton>
                       </Tooltip>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+                      <Tooltip title='Edit Tenant'>
+                        <IconButton
+                          color='primary'
+                          onClick={() => handleOpenEdit(t)}
+                          aria-label={`Edit tenant ${t.name}`}
+                        >
+                          <Box
+                            component='img'
+                            src={Icons.edit}
+                            alt='Edit'
+                            sx={{
+                              width: { xs: 16, sm: 20 },
+                              height: { xs: 16, sm: 20 },
+                            }}
+                          />
+                        </IconButton>
+                      </Tooltip>
 
-              {tenants.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} align='center'>
-                    <Alert severity='info' sx={{ my: 2, borderRadius: 2 }}>
-                      No tenants found.
-                    </Alert>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </AppTable>
-        </AppCard>
+                      <Tooltip title='Delete'>
+                        <IconButton
+                          color='error'
+                          onClick={() => {
+                            setSelectedTenant(t);
+                            setIsDeleteOpen(true);
+                          }}
+                          aria-label={`Delete tenant ${t.name}`}
+                        >
+                          <Box
+                            component='img'
+                            src={Icons.delete}
+                            alt='Delete'
+                            sx={{
+                              width: { xs: 16, sm: 20 },
+                              height: { xs: 16, sm: 20 },
+                            }}
+                          />
+                        </IconButton>
+                      </Tooltip>
+                    </>
+                  ) : (
+                    <Tooltip title='Restore Tenant'>
+                      <IconButton
+                        color='success'
+                        onClick={() => handleRestore(t.id)}
+                        aria-label={`Restore tenant ${t.name}`}
+                      >
+                        <RestoreIcon aria-hidden='true' />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+
+            {tenants.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} align='center'>
+                  <Alert severity='info' sx={{ my: 2, borderRadius: 2 }}>
+                    No tenants found.
+                  </Alert>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </AppTable>
+        // </AppCard>
       )}
       {(() => {
         // Get current page record count
@@ -641,423 +675,398 @@ export const TenantPage: React.FC = () => {
         </Box>
       )}
 
-      {/* Detail Modal (Updated) */}
-      <Dialog
+      {/* Detail Modal (AppFormModal) */}
+      <AppFormModal
         open={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
-        maxWidth='md'
-        fullWidth
-      >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          Tenant Details
-        </DialogTitle>
-        <DialogContent>
-          {tenantDetail ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {/* Tenant + Logo Section */}
-              <AppCard
-                sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 3 }}
-              >
-                {(() => {
-                  // Prefer API-processed logo string; fall back to company logo_url only if it's a string
-                  const rawLogo =
-                    (typeof tenantDetail.logo === 'string'
-                      ? tenantDetail.logo
-                      : undefined) ??
-                    (typeof tenantDetail.company?.logo_url === 'string'
-                      ? tenantDetail.company.logo_url
-                      : undefined);
-
-                  let logoUrl: string | null = rawLogo ?? null;
-
-                  // If logo is a relative path, convert it to full URL
-                  if (logoUrl && logoUrl.startsWith('/')) {
-                    logoUrl = `${env.apiBaseUrl}${logoUrl}`;
-                  }
-
-                  const isValidLogo =
-                    !detailLogoFailed &&
-                    typeof logoUrl === 'string' &&
-                    logoUrl.trim() !== '';
-
-                  const companyName =
-                    tenantDetail.company?.company_name ||
-                    tenantDetail.name ||
-                    '';
-                  const initials =
-                    companyName
-                      .trim()
-                      .split(/\s+/)
-                      .slice(0, 2)
-                      .map(word => word.charAt(0).toUpperCase())
-                      .join('') || 'NA';
-
-                  return isValidLogo && logoUrl ? (
-                    <img
-                      src={logoUrl}
-                      alt='Tenant Logo'
-                      style={{
-                        width: 70,
-                        height: 70,
-                        borderRadius: '10px',
-                        objectFit: 'cover',
-                        border: '1px solid #ddd',
-                      }}
-                      onError={() => {
-                        setDetailLogoFailed(true);
-                      }}
-                    />
-                  ) : (
-                    <Avatar
+        onSubmit={() => setIsDetailOpen(false)}
+        title={'Tenant Details'}
+        submitLabel={'Close'}
+        cancelLabel={'Cancel'}
+        isSubmitting={false}
+        hasChanges={true}
+        fields={[
+          {
+            name: 'details',
+            label: '',
+            component: (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {tenantDetail ? (
+                  <>
+                    <AppCard
                       sx={{
-                        width: 70,
-                        height: 70,
-                        borderRadius: '10px',
-                        bgcolor: '#3f51b5',
-                        color: '#fff',
-                        fontWeight: 600,
-                        fontSize: 20,
+                        p: 3,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
                       }}
-                      variant='rounded'
                     >
-                      {initials}
-                    </Avatar>
-                  );
-                })()}
+                      {(() => {
+                        const rawLogo =
+                          (typeof tenantDetail.logo === 'string'
+                            ? tenantDetail.logo
+                            : undefined) ??
+                          (typeof tenantDetail.company?.logo_url === 'string'
+                            ? tenantDetail.company.logo_url
+                            : undefined);
 
-                <Box>
-                  <Typography variant='h6' fontWeight={600}>
-                    {tenantDetail.name}
-                  </Typography>
-                </Box>
-              </AppCard>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                  gap: 2,
-                }}
-              >
-                {/* Tenant Info */}
-                <AppCard variant='outlined' sx={{ p: 2 }}>
-                  <Typography
-                    variant='subtitle1'
-                    color='primary'
-                    fontWeight={600}
-                  >
-                    Tenant Information
-                  </Typography>
-                  <Box sx={{ mt: 1 }}>
-                    <Typography>
-                      <strong>Domain:</strong> {tenantDetail.domain}
-                    </Typography>
-                    <Typography>
-                      <strong>Status:</strong>{' '}
-                      <Chip
-                        label={
-                          tenantDetail.status.charAt(0).toUpperCase() +
-                          tenantDetail.status.slice(1).toLowerCase()
-                        }
-                        color={
-                          tenantDetail.status === 'active'
-                            ? 'success'
-                            : tenantDetail.status === 'suspended'
-                              ? 'warning'
-                              : 'error'
-                        }
-                        size='small'
-                        sx={{ ml: 1 }}
-                      />
-                    </Typography>
-                    <Typography>
-                      <strong>Created:</strong>{' '}
-                      {formatDate(tenantDetail.created_at)}
-                    </Typography>
-                  </Box>
-                </AppCard>
+                        let logoUrl: string | null = rawLogo ?? null;
 
-                {/* Company Info */}
-                {tenantDetail.company && (
-                  <AppCard variant='outlined' sx={{ p: 2 }}>
-                    <Typography
-                      variant='subtitle1'
-                      color='primary'
-                      fontWeight={600}
+                        if (logoUrl && logoUrl.startsWith('/')) {
+                          logoUrl = `${env.apiBaseUrl}${logoUrl}`;
+                        }
+
+                        const isValidLogo =
+                          !detailLogoFailed &&
+                          typeof logoUrl === 'string' &&
+                          logoUrl.trim() !== '';
+
+                        const companyName =
+                          tenantDetail.company?.company_name ||
+                          tenantDetail.name ||
+                          '';
+                        const initials =
+                          companyName
+                            .trim()
+                            .split(/\s+/)
+                            .slice(0, 2)
+                            .map(word => word.charAt(0).toUpperCase())
+                            .join('') || 'NA';
+
+                        return isValidLogo && logoUrl ? (
+                          <img
+                            src={logoUrl}
+                            alt='Tenant Logo'
+                            style={{
+                              width: 70,
+                              height: 70,
+                              borderRadius: '10px',
+                              objectFit: 'cover',
+                              border: '1px solid #ddd',
+                            }}
+                            onError={() => {
+                              setDetailLogoFailed(true);
+                            }}
+                          />
+                        ) : (
+                          <Avatar
+                            sx={{
+                              width: 70,
+                              height: 70,
+                              borderRadius: '10px',
+                              bgcolor: '#3f51b5',
+                              color: '#fff',
+                              fontWeight: 600,
+                              fontSize: 20,
+                            }}
+                            variant='rounded'
+                          >
+                            {initials}
+                          </Avatar>
+                        );
+                      })()}
+
+                      <Box>
+                        <Typography variant='h6' fontWeight={600}>
+                          {tenantDetail.name}
+                        </Typography>
+                      </Box>
+                    </AppCard>
+
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns:
+                          'repeat(auto-fit, minmax(280px, 1fr))',
+                        gap: 2,
+                      }}
                     >
-                      Company Information
-                    </Typography>
-                    <Box sx={{ mt: 1 }}>
-                      <Typography>
-                        <strong>Name:</strong>{' '}
-                        {tenantDetail.company.company_name}
-                      </Typography>
-                      <Typography>
-                        <strong>Plan:</strong> {tenantDetail.company.plan_id}
-                      </Typography>
-                      <Typography>
-                        <strong>Paid:</strong>{' '}
-                        <Chip
-                          label={tenantDetail.company.is_paid ? 'Paid' : 'Free'}
-                          color={
-                            tenantDetail.company.is_paid ? 'success' : 'warning'
-                          }
-                          size='small'
-                          sx={{ ml: 1 }}
-                        />
-                      </Typography>
+                      <AppCard variant='outlined' sx={{ p: 2 }}>
+                        <Typography
+                          variant='subtitle1'
+                          color='primary'
+                          fontWeight={600}
+                        >
+                          Tenant Information
+                        </Typography>
+                        <Box sx={{ mt: 1 }}>
+                          <Typography>
+                            <strong>Domain:</strong> {tenantDetail.domain}
+                          </Typography>
+                          <Typography>
+                            <strong>Status:</strong>{' '}
+                            <Chip
+                              label={
+                                tenantDetail.status.charAt(0).toUpperCase() +
+                                tenantDetail.status.slice(1).toLowerCase()
+                              }
+                              color={
+                                tenantDetail.status === 'active'
+                                  ? 'success'
+                                  : tenantDetail.status === 'suspended'
+                                    ? 'warning'
+                                    : 'error'
+                              }
+                              size='small'
+                              sx={{ ml: 1 }}
+                            />
+                          </Typography>
+                          <Typography>
+                            <strong>Created:</strong>{' '}
+                            {formatDate(tenantDetail.created_at)}
+                          </Typography>
+                        </Box>
+                      </AppCard>
+
+                      {tenantDetail.company && (
+                        <AppCard variant='outlined' sx={{ p: 2 }}>
+                          <Typography
+                            variant='subtitle1'
+                            color='primary'
+                            fontWeight={600}
+                          >
+                            Company Information
+                          </Typography>
+                          <Box sx={{ mt: 1 }}>
+                            <Typography>
+                              <strong>Name:</strong>{' '}
+                              {tenantDetail.company.company_name}
+                            </Typography>
+                            <Typography>
+                              <strong>Plan:</strong>{' '}
+                              {tenantDetail.company.plan_id}
+                            </Typography>
+                            <Typography>
+                              <strong>Paid:</strong>{' '}
+                              <Chip
+                                label={
+                                  tenantDetail.company.is_paid ? 'Paid' : 'Free'
+                                }
+                                color={
+                                  tenantDetail.company.is_paid
+                                    ? 'success'
+                                    : 'warning'
+                                }
+                                size='small'
+                                sx={{ ml: 1 }}
+                              />
+                            </Typography>
+                          </Box>
+                        </AppCard>
+                      )}
+
+                      <AppCard variant='outlined' sx={{ p: 2 }}>
+                        <Typography
+                          variant='subtitle1'
+                          color='primary'
+                          fontWeight={600}
+                        >
+                          Summary
+                        </Typography>
+                        <Box sx={{ mt: 1 }}>
+                          <Typography>
+                            <strong>Departments:</strong>{' '}
+                            {tenantDetail.departmentCount}
+                          </Typography>
+                          <Typography>
+                            <strong>Employees:</strong>{' '}
+                            {tenantDetail.employeeCount}
+                          </Typography>
+                        </Box>
+                      </AppCard>
                     </Box>
-                  </AppCard>
+
+                    {tenantDetail.departments?.length > 0 && (
+                      <AppCard variant='outlined' sx={{ p: 2 }}>
+                        <Typography
+                          variant='subtitle1'
+                          color='primary'
+                          fontWeight={600}
+                        >
+                          Departments
+                        </Typography>
+                        <Box sx={{ mt: 1 }}>
+                          {tenantDetail.departments.map(dep => (
+                            <Chip
+                              key={dep.id}
+                              label={dep.name}
+                              size='small'
+                              sx={{ mr: 1, mb: 1 }}
+                            />
+                          ))}
+                        </Box>
+                      </AppCard>
+                    )}
+                  </>
+                ) : (
+                  <Box display='flex' justifyContent='center' mt={2}>
+                    <CircularProgress />
+                  </Box>
                 )}
-
-                {/* Summary */}
-                <AppCard variant='outlined' sx={{ p: 2 }}>
-                  <Typography
-                    variant='subtitle1'
-                    color='primary'
-                    fontWeight={600}
-                  >
-                    Summary
-                  </Typography>
-                  <Box sx={{ mt: 1 }}>
-                    <Typography>
-                      <strong>Departments:</strong>{' '}
-                      {tenantDetail.departmentCount}
-                    </Typography>
-                    <Typography>
-                      <strong>Employees:</strong> {tenantDetail.employeeCount}
-                    </Typography>
-                  </Box>
-                </AppCard>
               </Box>
+            ),
+            value: '',
+            onChange: () => {},
+          },
+        ]}
+      />
 
-              {/* Departments */}
-              {tenantDetail.departments?.length > 0 && (
-                <AppCard variant='outlined' sx={{ p: 2 }}>
-                  <Typography
-                    variant='subtitle1'
-                    color='primary'
-                    fontWeight={600}
-                  >
-                    Departments
-                  </Typography>
-                  <Box sx={{ mt: 1 }}>
-                    {tenantDetail.departments.map(dep => (
-                      <Chip
-                        key={dep.id}
-                        label={dep.name}
-                        size='small'
-                        sx={{ mr: 1, mb: 1 }}
-                      />
-                    ))}
-                  </Box>
-                </AppCard>
-              )}
-            </Box>
-          ) : (
-            <Box display='flex' justifyContent='center' mt={2}>
-              <CircularProgress />
-            </Box>
-          )}
-        </DialogContent>
-
-        <DialogActions sx={{ p: 2 }}>
-          <AppButton
-            onClick={() => setIsDetailOpen(false)}
-            variant='contained'
-            variantType='primary'
-            sx={{ minWidth: 80 }}
-          >
-            Close
-          </AppButton>
-        </DialogActions>
-      </Dialog>
-
-      {/* Create Modal */}
-      <Dialog
+      {/* Create Modal (AppFormModal) */}
+      <AppFormModal
         open={isFormOpen}
         onClose={closeCreateModal}
-        fullWidth
-        maxWidth='sm'
-      >
-        <DialogTitle>Create Tenant</DialogTitle>
-        <DialogContent dividers>
-          <TextField
-            label='Tenant Name'
-            value={tenantForm.name}
-            onChange={e => {
-              const value = e.target.value;
-              if (/^[A-Za-z\s]*$/.test(value)) {
-                setTenantForm(prev => ({ ...prev, name: value }));
-              }
-            }}
-            fullWidth
-            sx={{ mt: 2 }}
-            inputProps={{
-              maxLength: 50,
-            }}
-            helperText='Only alphabets and spaces are allowed'
-          />
-          <TextField
-            label='Domain'
-            value={tenantForm.domain}
-            onChange={e =>
-              setTenantForm(prev => ({ ...prev, domain: e.target.value }))
-            }
-            fullWidth
-            sx={{ mt: 2 }}
-            placeholder='example.com'
-          />
-
-          {/* Logo Upload Section */}
-          <Box sx={{ mt: 2 }}>
-            <input
-              accept='image/*'
-              style={{ display: 'none' }}
-              id='logo-upload-button'
-              type='file'
-              onChange={handleLogoFileChange}
-            />
-            <label htmlFor='logo-upload-button'>
-              <AppButton
-                variant='outlined'
-                variantType='secondary'
-                component='span'
-                startIcon={<CloudUploadIcon />}
-                fullWidth
-                sx={{ mb: 2 }}
-              >
-                {selectedLogoFile ? 'Change Logo' : 'Upload Company Logo'}
-              </AppButton>
-            </label>
-            {logoPreview && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  mt: 2,
-                  p: 2,
-                  border: '1px solid #e0e0e0',
-                  borderRadius: 1,
-                }}
-              >
-                <Avatar
-                  src={logoPreview}
-                  alt='Logo preview'
-                  sx={{ width: 80, height: 80 }}
-                  variant='rounded'
+        onSubmit={handleCreate}
+        title={'Create Tenant'}
+        submitLabel={uploadingLogo ? 'Uploading...' : 'Save'}
+        cancelLabel={'Cancel'}
+        isSubmitting={uploadingLogo}
+        hasChanges={true}
+        fields={[
+          {
+            name: 'name',
+            label: 'Tenant Name',
+            type: 'text',
+            required: true,
+            value: tenantForm.name,
+            onChange: (value: string | number) =>
+              setTenantForm(prev => ({ ...prev, name: String(value) })),
+            error: undefined,
+          },
+          {
+            name: 'domain',
+            label: 'Domain',
+            type: 'text',
+            value: tenantForm.domain,
+            onChange: (value: string | number) =>
+              setTenantForm(prev => ({ ...prev, domain: String(value) })),
+            placeholder: 'example.com',
+          },
+          {
+            name: 'logo',
+            label: 'Company Logo',
+            component: (
+              <Box>
+                <input
+                  accept='image/*'
+                  style={{ display: 'none' }}
+                  id='logo-upload-button'
+                  type='file'
+                  onChange={handleLogoFileChange}
                 />
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant='body2' fontWeight='bold'>
-                    {selectedLogoFile?.name}
-                  </Typography>
-                  <Typography variant='caption' color='text.secondary'>
-                    {(selectedLogoFile?.size || 0) / 1024} KB
-                  </Typography>
-                </Box>
-                <IconButton
-                  onClick={handleRemoveLogoFile}
-                  color='error'
-                  size='small'
-                  aria-label='Remove logo file'
-                >
-                  <CloseIcon aria-hidden='true' />
-                </IconButton>
+                <label htmlFor='logo-upload-button'>
+                  <AppButton
+                    variant='outlined'
+                    variantType='secondary'
+                    component='span'
+                    startIcon={
+                      <Box
+                        aria-hidden='true'
+                        sx={{
+                          width: 18,
+                          height: 18,
+                          backgroundColor: 'var(--primary-dark-color)',
+                          WebkitMaskImage: `url(${Icons.upload})`,
+                          maskImage: `url(${Icons.upload})`,
+                          WebkitMaskRepeat: 'no-repeat',
+                          maskRepeat: 'no-repeat',
+                          WebkitMaskSize: 'contain',
+                          maskSize: 'contain',
+                          WebkitMaskPosition: 'center',
+                          maskPosition: 'center',
+                        }}
+                      />
+                    }
+                    fullWidth
+                    sx={{
+                      mb: 2,
+                      color: 'var(--primary-dark-color)',
+                      borderColor: 'var(--primary-dark-color)',
+                      '&:hover': { borderColor: 'var(--primary-dark-color)' },
+                    }}
+                  >
+                    {selectedLogoFile ? 'Change Logo' : 'Upload Company Logo'}
+                  </AppButton>
+                </label>
+                {logoPreview && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      mt: 2,
+                      p: 2,
+                      border: '1px solid #e0e0e0',
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Avatar
+                      src={logoPreview}
+                      alt='Logo preview'
+                      sx={{ width: 80, height: 80 }}
+                      variant='rounded'
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant='body2' fontWeight='bold'>
+                        {selectedLogoFile?.name}
+                      </Typography>
+                      <Typography variant='caption' color='text.secondary'>
+                        {(selectedLogoFile?.size || 0) / 1024} KB
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      onClick={handleRemoveLogoFile}
+                      color='error'
+                      size='small'
+                      aria-label='Remove logo file'
+                    >
+                      <CloseIcon aria-hidden='true' />
+                    </IconButton>
+                  </Box>
+                )}
               </Box>
-            )}
-          </Box>
-          <TextField
-            label='Admin Name'
-            value={tenantForm.adminName}
-            onChange={e => {
-              const value = e.target.value;
-              if (/^[A-Za-z\s]*$/.test(value)) {
-                setTenantForm(prev => ({ ...prev, adminName: value }));
-              }
-            }}
-            fullWidth
-            sx={{ mt: 2 }}
-            inputProps={{
-              maxLength: 50,
-            }}
-            helperText='Only alphabets and spaces are allowed'
-          />
-          <TextField
-            label='Admin Email'
-            value={tenantForm.adminEmail}
-            onChange={e =>
-              setTenantForm(prev => ({ ...prev, adminEmail: e.target.value }))
-            }
-            fullWidth
-            sx={{ mt: 2 }}
-            type='email'
-          />
-        </DialogContent>
-        <DialogActions>
-          <AppButton
-            onClick={closeCreateModal}
-            disabled={uploadingLogo}
-            variantType='secondary'
-            variant='outlined'
-          >
-            Cancel
-          </AppButton>
-          <AppButton
-            variant='contained'
-            variantType='primary'
-            onClick={handleCreate}
-            disabled={uploadingLogo}
-          >
-            {uploadingLogo ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CircularProgress size={16} />
-                Uploading...
-              </Box>
-            ) : (
-              'Save'
-            )}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+            ),
+            value: '',
+            onChange: () => {},
+          },
+          {
+            name: 'adminName',
+            label: 'Admin Name',
+            type: 'text',
+            value: tenantForm.adminName,
+            onChange: (value: string | number) =>
+              setTenantForm(prev => ({ ...prev, adminName: String(value) })),
+          },
+          {
+            name: 'adminEmail',
+            label: 'Admin Email',
+            type: 'text',
+            value: tenantForm.adminEmail,
+            onChange: (value: string | number) =>
+              setTenantForm(prev => ({ ...prev, adminEmail: String(value) })),
+          },
+        ]}
+      />
 
-      {/* Delete Confirmation */}
-      <Dialog
+      <DeleteConfirmationDialog
         open={isDeleteOpen}
-        onClose={() => setIsDeleteOpen(false)}
-        fullWidth
-        maxWidth='xs'
-      >
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent dividers>
-          <Typography>
-            Are you sure you want to delete{' '}
-            <strong>{selectedTenant?.name}</strong>?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <AppButton
-            onClick={() => setIsDeleteOpen(false)}
-            variantType='secondary'
-            variant='outlined'
-          >
-            Cancel
-          </AppButton>
-          <AppButton
-            color='error'
-            variant='contained'
-            variantType='danger'
-            onClick={handleDelete}
-          >
-            Delete
-          </AppButton>
-        </DialogActions>
-      </Dialog>
-      {/* Edit Tenant Modal */}
-      <Dialog
+        onClose={() => {
+          setIsDeleteOpen(false);
+          setSelectedTenant(null);
+        }}
+        onConfirm={handleDelete}
+        message={
+          selectedTenant
+            ? `Are you sure you want to delete "${selectedTenant.name}"? This action cannot be undone.`
+            : ''
+        }
+        itemName={selectedTenant?.name || undefined}
+        isRTL={false}
+      />
+      {/* Edit Tenant Modal (AppFormModal) */}
+      <AppFormModal
         open={isEditOpen}
         onClose={() => {
           setIsEditOpen(false);
-          // Reset edit form
           setEditTenantId(null);
           setEditCompanyName('');
           setEditDomain('');
@@ -1068,137 +1077,124 @@ export const TenantPage: React.FC = () => {
           }
           setEditLogoPreview(null);
         }}
-        fullWidth
-        maxWidth='sm'
-      >
-        <DialogTitle>Edit Tenant</DialogTitle>
-        <DialogContent dividers>
-          <TextField
-            label='Company Name'
-            value={editCompanyName}
-            onChange={e => {
-              const value = e.target.value;
-              if (/^[A-Za-z\s]*$/.test(value)) {
-                setEditCompanyName(value);
-              }
-            }}
-            fullWidth
-            sx={{ mt: 2 }}
-            inputProps={{ maxLength: 50 }}
-            helperText='Only alphabets and spaces are allowed'
-            required
-          />
-          <TextField
-            label='Domain'
-            value={editDomain}
-            onChange={e => setEditDomain(e.target.value)}
-            fullWidth
-            sx={{ mt: 2 }}
-            placeholder='example.com'
-            required
-          />
-
-          {/* Logo Upload Section */}
-          <Box sx={{ mt: 2 }}>
-            <input
-              accept='image/*'
-              style={{ display: 'none' }}
-              id='edit-logo-upload-button'
-              type='file'
-              onChange={handleEditLogoFileChange}
-            />
-            <label htmlFor='edit-logo-upload-button'>
-              <AppButton
-                variant='outlined'
-                variantType='secondary'
-                component='span'
-                startIcon={<CloudUploadIcon />}
-                fullWidth
-                sx={{ mb: 2 }}
-              >
-                {editLogoFile ? 'Change Logo' : 'Upload Company Logo'}
-              </AppButton>
-            </label>
-            {(editLogoPreview || editLogo) && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  mt: 2,
-                  p: 2,
-                  border: '1px solid #e0e0e0',
-                  borderRadius: 1,
-                }}
-              >
-                <Avatar
-                  src={editLogoPreview || editLogo}
-                  alt='Logo preview'
-                  sx={{ width: 80, height: 80 }}
-                  variant='rounded'
+        onSubmit={handleUpdate}
+        title={'Edit Tenant'}
+        submitLabel={uploadingEditLogo ? 'Updating...' : 'Update'}
+        cancelLabel={'Cancel'}
+        isSubmitting={uploadingEditLogo}
+        hasChanges={true}
+        fields={[
+          {
+            name: 'companyName',
+            label: 'Company Name',
+            type: 'text',
+            required: true,
+            value: editCompanyName,
+            onChange: (value: string | number) =>
+              setEditCompanyName(String(value)),
+          },
+          {
+            name: 'domain',
+            label: 'Domain',
+            type: 'text',
+            required: true,
+            value: editDomain,
+            onChange: (value: string | number) => setEditDomain(String(value)),
+            placeholder: 'example.com',
+          },
+          {
+            name: 'logo',
+            label: 'Company Logo',
+            component: (
+              <Box>
+                <input
+                  accept='image/*'
+                  style={{ display: 'none' }}
+                  id='edit-logo-upload-button'
+                  type='file'
+                  onChange={handleEditLogoFileChange}
                 />
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant='body2' fontWeight='bold'>
-                    {editLogoFile?.name || 'Current Logo'}
-                  </Typography>
-                  {editLogoFile && (
-                    <Typography variant='caption' color='text.secondary'>
-                      {(editLogoFile.size || 0) / 1024} KB
-                    </Typography>
-                  )}
-                </Box>
-                {editLogoFile && (
-                  <IconButton
-                    onClick={handleRemoveEditLogoFile}
-                    color='error'
-                    size='small'
-                    aria-label='Remove logo file'
+                <label htmlFor='edit-logo-upload-button'>
+                  <AppButton
+                    variant='outlined'
+                    variantType='secondary'
+                    component='span'
+                    startIcon={
+                      <Box
+                        aria-hidden='true'
+                        sx={{
+                          width: 18,
+                          height: 18,
+                          backgroundColor: 'var(--primary-dark-color)',
+                          WebkitMaskImage: `url(${Icons.upload})`,
+                          maskImage: `url(${Icons.upload})`,
+                          WebkitMaskRepeat: 'no-repeat',
+                          maskRepeat: 'no-repeat',
+                          WebkitMaskSize: 'contain',
+                          maskSize: 'contain',
+                          WebkitMaskPosition: 'center',
+                          maskPosition: 'center',
+                        }}
+                      />
+                    }
+                    fullWidth
+                    sx={{
+                      mb: 2,
+                      color: 'var(--primary-dark-color)',
+                      borderColor: 'var(--primary-dark-color)',
+                      '&:hover': { borderColor: 'var(--primary-dark-color)' },
+                    }}
                   >
-                    <CloseIcon aria-hidden='true' />
-                  </IconButton>
+                    {editLogoFile ? 'Change Logo' : 'Upload Company Logo'}
+                  </AppButton>
+                </label>
+                {(editLogoPreview || editLogo) && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      mt: 2,
+                      p: 2,
+                      border: '1px solid #e0e0e0',
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Avatar
+                      src={editLogoPreview || editLogo}
+                      alt='Logo preview'
+                      sx={{ width: 80, height: 80 }}
+                      variant='rounded'
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant='body2' fontWeight='bold'>
+                        {editLogoFile?.name || 'Current Logo'}
+                      </Typography>
+                      {editLogoFile && (
+                        <Typography variant='caption' color='text.secondary'>
+                          {(editLogoFile.size || 0) / 1024} KB
+                        </Typography>
+                      )}
+                    </Box>
+                    {editLogoFile && (
+                      <IconButton
+                        onClick={handleRemoveEditLogoFile}
+                        color='error'
+                        size='small'
+                        aria-label='Remove logo file'
+                      >
+                        <CloseIcon aria-hidden='true' />
+                      </IconButton>
+                    )}
+                  </Box>
                 )}
               </Box>
-            )}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <AppButton
-            onClick={() => {
-              setIsEditOpen(false);
-              // Reset edit form
-              setEditTenantId(null);
-              setEditCompanyName('');
-              setEditDomain('');
-              setEditLogo('');
-              setEditLogoFile(null);
-              if (editLogoPreview) {
-                URL.revokeObjectURL(editLogoPreview);
-              }
-              setEditLogoPreview(null);
-            }}
-            disabled={uploadingEditLogo}
-            variantType='secondary'
-            variant='outlined'
-          >
-            Cancel
-          </AppButton>
-          <AppButton
-            variant='contained'
-            variantType='primary'
-            onClick={handleUpdate}
-            disabled={uploadingEditLogo}
-          >
-            {uploadingEditLogo ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CircularProgress size={16} />
-                Updating...
-              </Box>
-            ) : (
-              'Update'
-            )}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+            ),
+            value: '',
+            onChange: () => {},
+          },
+        ]}
+      />
 
       {/* Snackbar */}
       <ErrorSnackbar

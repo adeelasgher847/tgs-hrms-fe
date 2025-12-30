@@ -9,27 +9,20 @@ import {
   TableRow,
   Typography,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
   Chip,
   CircularProgress,
   Alert,
   Stack,
   Pagination,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import { useTheme } from '@mui/material/styles';
 import { useIsDarkMode } from '../../theme';
 import AddIcon from '@mui/icons-material/Add';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
+import { IoEyeOutline } from 'react-icons/io5';
+import { Icons } from '../../assets/icons';
 import {
   payrollApi,
   type EmployeeSalary,
@@ -47,6 +40,9 @@ import dayjs, { type Dayjs } from 'dayjs';
 import employeeApi from '../../api/employeeApi';
 import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../common/AppTable';
+import AppDropdown from '../common/AppDropdown';
+import AppFormModal from '../common/AppFormModal';
+import AppPageTitle from '../common/AppPageTitle';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -1124,6 +1120,18 @@ const EmployeeSalaryPage: React.FC = () => {
       sx={{
         backgroundColor: theme.palette.background.default,
         minHeight: '100vh',
+        '& .MuiButton-contained': {
+          backgroundColor: 'var(--primary-dark-color)',
+          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+        },
+        '& .MuiButton-outlined': {
+          borderColor: 'var(--primary-dark-color)',
+          color: 'var(--primary-dark-color)',
+          '&:hover': {
+            borderColor: 'var(--primary-dark-color)',
+            backgroundColor: 'var(--primary-color)',
+          },
+        },
       }}
     >
       <Box
@@ -1134,16 +1142,7 @@ const EmployeeSalaryPage: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <Typography
-          variant='h4'
-          sx={{
-            fontWeight: 600,
-            fontSize: { xs: '32px', lg: '48px' },
-            color: darkMode ? '#fff' : '#000',
-          }}
-        >
-          Employee Salary Structure
-        </Typography>
+        <AppPageTitle>Employee Salary Structure</AppPageTitle>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <Button
             variant='contained'
@@ -1267,14 +1266,19 @@ const EmployeeSalaryPage: React.FC = () => {
                             onClick={() => handleViewSalary(item)}
                             sx={{ color: theme.palette.primary.main }}
                           >
-                            <VisibilityIcon />
+                            <IoEyeOutline size={20} />
                           </IconButton>
                           <IconButton
                             size='small'
                             onClick={() => handleEditSalary(item)}
                             sx={{ color: theme.palette.primary.main }}
                           >
-                            <EditIcon />
+                            <Box
+                              component='img'
+                              src={Icons.edit}
+                              alt='Edit'
+                              sx={{ width: 20, height: 20 }}
+                            />
                           </IconButton>
                         </>
                       ) : (
@@ -1342,44 +1346,21 @@ const EmployeeSalaryPage: React.FC = () => {
         )}
       </Paper>
 
-      <Dialog
+      <AppFormModal
         open={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
+        onSubmit={() => {}}
+        title={
+          selectedEmployee
+            ? `${selectedEmployee.employee.user.first_name} ${selectedEmployee.employee.user.last_name} - Salary Structure`
+            : 'Salary Structure'
+        }
+        cancelLabel='Close'
+        showSubmitButton={false}
         maxWidth='md'
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 1, bgcolor: darkMode ? '#1e1e1e' : '#fff' },
-        }}
+        paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff' }}
       >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            color: darkMode ? '#fff' : '#000',
-            pb: 2,
-          }}
-        >
-          <Typography variant='h6' sx={{ fontWeight: 600 }}>
-            {selectedEmployee
-              ? `${selectedEmployee.employee.user.first_name} ${selectedEmployee.employee.user.last_name} - Salary Structure`
-              : 'Salary Structure'}
-          </Typography>
-          <IconButton
-            onClick={() => setViewModalOpen(false)}
-            size='small'
-            sx={{
-              color: theme.palette.text.secondary,
-              '&:hover': {
-                color: theme.palette.text.primary,
-                backgroundColor: theme.palette.action.hover,
-              },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3, maxHeight: '70vh', overflowY: 'auto' }}>
+        <Box sx={{ pr: 1 }}>
           {selectedSalary ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               <Paper
@@ -1693,69 +1674,40 @@ const EmployeeSalaryPage: React.FC = () => {
           ) : (
             <Alert severity='info'>No salary structure assigned</Alert>
           )}
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 2 }}>
-          <Button onClick={() => setViewModalOpen(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </AppFormModal>
 
-      <Dialog
+      <AppFormModal
         open={editModalOpen}
         onClose={() => {
           setEditModalOpen(false);
           setPayrollConfig(null);
           setConfigLoading(false);
         }}
+        onSubmit={handleSaveSalary}
+        title={
+          selectedSalary ? 'Edit Salary Structure' : 'Create Salary Structure'
+        }
+        submitLabel={selectedSalary ? 'Update' : 'Create'}
+        cancelLabel='Cancel'
+        hasChanges={isFormValid() && (!selectedSalary || hasChanges())}
         maxWidth='md'
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 1, bgcolor: darkMode ? '#1e1e1e' : '#fff' },
-        }}
+        paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff' }}
       >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            color: darkMode ? '#fff' : '#000',
-            pb: 2,
-          }}
-        >
-          <Box>
-            <Typography variant='h6' sx={{ fontWeight: 600 }}>
-              {selectedSalary
-                ? 'Edit Salary Structure'
-                : 'Create Salary Structure'}
+        <Box sx={{ pr: 1 }}>
+          {!selectedSalary && payrollConfig && (
+            <Typography
+              variant='caption'
+              sx={{
+                color: darkMode ? '#8f8f8f' : '#666',
+                display: 'block',
+                fontStyle: 'italic',
+                mb: 1,
+              }}
+            >
+              Pre-filled with current payroll configuration defaults
             </Typography>
-            {!selectedSalary && payrollConfig && (
-              <Typography
-                variant='caption'
-                sx={{
-                  color: darkMode ? '#8f8f8f' : '#666',
-                  mt: 0.5,
-                  display: 'block',
-                  fontStyle: 'italic',
-                }}
-              >
-                Pre-filled with current payroll configuration defaults
-              </Typography>
-            )}
-          </Box>
-          <IconButton
-            onClick={() => setEditModalOpen(false)}
-            size='small'
-            sx={{
-              color: theme.palette.text.secondary,
-              '&:hover': {
-                color: theme.palette.text.primary,
-                backgroundColor: theme.palette.action.hover,
-              },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3, maxHeight: '70vh', overflowY: 'auto' }}>
+          )}
           <Box
             sx={{
               display: 'flex',
@@ -1798,69 +1750,57 @@ const EmployeeSalaryPage: React.FC = () => {
               </Alert>
             )}
             {!selectedSalary && (
-              <FormControl fullWidth>
-                <InputLabel sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>
-                  Select Employee
-                </InputLabel>
-                <Select
-                  value={selectedEmployeeId}
-                  onChange={async e => {
-                    const employeeId = e.target.value;
-                    setSelectedEmployeeId(employeeId);
+              <AppDropdown
+                label='Select Employee'
+                value={selectedEmployeeId || ''}
+                onChange={async (e: SelectChangeEvent<string | number>) => {
+                  const employeeId = String(e.target.value || '');
+                  setSelectedEmployeeId(employeeId);
 
-                    if (employeeId) {
-                      try {
-                        // Load defaults for the selected employee
-                        const response =
-                          await payrollApi.getEmployeeSalary(employeeId);
+                  if (employeeId) {
+                    try {
+                      // Load defaults for the selected employee
+                      const response =
+                        await payrollApi.getEmployeeSalary(employeeId);
 
-                        // Load payroll config to get basePayComponents structure
-                        const config = await payrollApi.getConfig();
-                        setPayrollConfig(config);
+                      // Load payroll config to get basePayComponents structure
+                      const config = await payrollApi.getConfig();
+                      setPayrollConfig(config);
 
-                        if (response.salary) {
-                          // Employee has an active salary - use actual saved data
-                          setSelectedSalary(response.salary);
-                          const baseSalaryValue =
-                            typeof response.salary.baseSalary === 'string'
-                              ? parseFloat(response.salary.baseSalary)
-                              : response.salary.baseSalary;
+                      if (response.salary) {
+                        // Employee has an active salary - use actual saved data
+                        setSelectedSalary(response.salary);
+                        const baseSalaryValue =
+                          typeof response.salary.baseSalary === 'string'
+                            ? parseFloat(response.salary.baseSalary)
+                            : response.salary.baseSalary;
 
-                          // If config exists, use its proportions to split baseSalary
-                          if (config && config.basePayComponents) {
-                            const totalConfigBase =
-                              (config.basePayComponents.basic || 0) +
-                              (config.basePayComponents.houseRent || 0) +
-                              (config.basePayComponents.medical || 0) +
-                              (config.basePayComponents.transport || 0);
+                        // If config exists, use its proportions to split baseSalary
+                        if (config && config.basePayComponents) {
+                          const totalConfigBase =
+                            (config.basePayComponents.basic || 0) +
+                            (config.basePayComponents.houseRent || 0) +
+                            (config.basePayComponents.medical || 0) +
+                            (config.basePayComponents.transport || 0);
 
-                            if (totalConfigBase > 0) {
-                              const ratio = baseSalaryValue / totalConfigBase;
-                              setBasePayComponents({
-                                basic: Math.round(
-                                  (config.basePayComponents.basic || 0) * ratio
-                                ),
-                                houseRent: Math.round(
-                                  (config.basePayComponents.houseRent || 0) *
-                                    ratio
-                                ),
-                                medical: Math.round(
-                                  (config.basePayComponents.medical || 0) *
-                                    ratio
-                                ),
-                                transport: Math.round(
-                                  (config.basePayComponents.transport || 0) *
-                                    ratio
-                                ),
-                              });
-                            } else {
-                              setBasePayComponents({
-                                basic: baseSalaryValue,
-                                houseRent: 0,
-                                medical: 0,
-                                transport: 0,
-                              });
-                            }
+                          if (totalConfigBase > 0) {
+                            const ratio = baseSalaryValue / totalConfigBase;
+                            setBasePayComponents({
+                              basic: Math.round(
+                                (config.basePayComponents.basic || 0) * ratio
+                              ),
+                              houseRent: Math.round(
+                                (config.basePayComponents.houseRent || 0) *
+                                  ratio
+                              ),
+                              medical: Math.round(
+                                (config.basePayComponents.medical || 0) * ratio
+                              ),
+                              transport: Math.round(
+                                (config.basePayComponents.transport || 0) *
+                                  ratio
+                              ),
+                            });
                           } else {
                             setBasePayComponents({
                               basic: baseSalaryValue,
@@ -1869,85 +1809,95 @@ const EmployeeSalaryPage: React.FC = () => {
                               transport: 0,
                             });
                           }
-
-                          // base salary is derived from `basePayComponents`
-                          setAllowances(response.salary.allowances || []);
-                          setDeductions(response.salary.deductions || []);
-                          const effectiveDateObj = dayjs(
-                            response.salary.effectiveDate
-                          );
-                          setEffectiveMonth(effectiveDateObj.month() + 1);
-                          setEffectiveYear(effectiveDateObj.year());
-                          setEndDate(
-                            response.salary.endDate
-                              ? dayjs(response.salary.endDate)
-                              : null
-                          );
-                          setStatus(response.salary.status);
-                          setNotes(response.salary.notes || '');
                         } else {
-                          // No salary assigned - use defaults from payroll config
-                          setSelectedSalary(null);
-
-                          if (config && config.basePayComponents) {
-                            setBasePayComponents({
-                              basic: config.basePayComponents.basic || 0,
-                              houseRent:
-                                config.basePayComponents.houseRent || 0,
-                              medical: config.basePayComponents.medical || 0,
-                              transport:
-                                config.basePayComponents.transport || 0,
-                            });
-                            // total base salary is derived from `basePayComponents`
-                          } else {
-                            setBasePayComponents({
-                              basic: response.defaults.baseSalary || 0,
-                              houseRent: 0,
-                              medical: 0,
-                              transport: 0,
-                            });
-                            // defaults applied to `basePayComponents`
-                          }
-
-                          setAllowances([...response.defaults.allowances]);
-                          setDeductions([...response.defaults.deductions]);
-                          const effectiveDateObj = dayjs(
-                            response.defaults.effectiveDate
-                          );
-                          setEffectiveMonth(effectiveDateObj.month() + 1);
-                          setEffectiveYear(effectiveDateObj.year());
-                          setEndDate(null);
-                          setStatus('active');
-                          setNotes('');
+                          setBasePayComponents({
+                            basic: baseSalaryValue,
+                            houseRent: 0,
+                            medical: 0,
+                            transport: 0,
+                          });
                         }
-                      } catch {
-                        snackbar.error('Failed to load salary information');
+
+                        // base salary is derived from `basePayComponents`
+                        setAllowances(response.salary.allowances || []);
+                        setDeductions(response.salary.deductions || []);
+                        const effectiveDateObj = dayjs(
+                          response.salary.effectiveDate
+                        );
+                        setEffectiveMonth(effectiveDateObj.month() + 1);
+                        setEffectiveYear(effectiveDateObj.year());
+                        setEndDate(
+                          response.salary.endDate
+                            ? dayjs(response.salary.endDate)
+                            : null
+                        );
+                        setStatus(response.salary.status);
+                        setNotes(response.salary.notes || '');
+                      } else {
+                        // No salary assigned - use defaults from payroll config
+                        setSelectedSalary(null);
+
+                        if (config && config.basePayComponents) {
+                          setBasePayComponents({
+                            basic: config.basePayComponents.basic || 0,
+                            houseRent: config.basePayComponents.houseRent || 0,
+                            medical: config.basePayComponents.medical || 0,
+                            transport: config.basePayComponents.transport || 0,
+                          });
+                          // total base salary is derived from `basePayComponents`
+                        } else {
+                          setBasePayComponents({
+                            basic: response.defaults.baseSalary || 0,
+                            houseRent: 0,
+                            medical: 0,
+                            transport: 0,
+                          });
+                          // defaults applied to `basePayComponents`
+                        }
+
+                        setAllowances([...response.defaults.allowances]);
+                        setDeductions([...response.defaults.deductions]);
+                        const effectiveDateObj = dayjs(
+                          response.defaults.effectiveDate
+                        );
+                        setEffectiveMonth(effectiveDateObj.month() + 1);
+                        setEffectiveYear(effectiveDateObj.year());
+                        setEndDate(null);
+                        setStatus('active');
+                        setNotes('');
                       }
+                    } catch {
+                      snackbar.error('Failed to load salary information');
                     }
-                  }}
-                  label='Select Employee'
-                  sx={{
+                  }
+                }}
+                options={employees
+                  .filter(
+                    item =>
+                      item.salary === null && item.employee.status === 'active'
+                  )
+                  .map(item => ({
+                    value: item.employee.id,
+                    label: `${item.employee.user.first_name} ${item.employee.user.last_name} - ${item.employee.user.email}`,
+                  }))}
+                placeholder='Select Employee'
+                showLabel={false}
+                inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
+                containerSx={{ width: '100%' }}
+                sx={{
+                  '& .MuiSelect-select': {
                     color: darkMode ? '#fff' : '#000',
-                    '& .MuiOutlinedInput-notchedOutline': {
+                  },
+                  '& .MuiSelect-icon': {
+                    color: darkMode ? '#fff' : '#000',
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
                       borderColor: theme.palette.divider,
                     },
-                  }}
-                >
-                  {employees
-                    .filter(item => {
-                      return (
-                        item.salary === null &&
-                        item.employee.status === 'active'
-                      );
-                    })
-                    .map(item => (
-                      <MenuItem key={item.employee.id} value={item.employee.id}>
-                        {`${item.employee.user.first_name} ${item.employee.user.last_name}`}{' '}
-                        - {item.employee.user.email}
-                      </MenuItem>
-                    ))}
-                </Select>
-              </FormControl>
+                  },
+                }}
+              />
             )}
 
             <Box>
@@ -2308,28 +2258,34 @@ const EmployeeSalaryPage: React.FC = () => {
             </Box>
 
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>
-                  Effective Month
-                </InputLabel>
-                <Select
-                  value={effectiveMonth}
-                  onChange={e => setEffectiveMonth(Number(e.target.value))}
-                  label='Effective Month'
-                  sx={{
+              <AppDropdown
+                label='Effective Month'
+                value={effectiveMonth}
+                onChange={(e: SelectChangeEvent<string | number>) =>
+                  setEffectiveMonth(Number(e.target.value))
+                }
+                options={monthOptions.map(option => ({
+                  value: option.value,
+                  label: option.label,
+                }))}
+                placeholder='Effective Month'
+                showLabel={false}
+                inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
+                containerSx={{ width: '100%' }}
+                sx={{
+                  '& .MuiSelect-select': {
                     color: darkMode ? '#fff' : '#000',
-                    '& .MuiOutlinedInput-notchedOutline': {
+                  },
+                  '& .MuiSelect-icon': {
+                    color: darkMode ? '#fff' : '#000',
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
                       borderColor: theme.palette.divider,
                     },
-                  }}
-                >
-                  {monthOptions.map(option => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  },
+                }}
+              />
               <TextField
                 label='Effective Year'
                 type='number'
@@ -2385,27 +2341,34 @@ const EmployeeSalaryPage: React.FC = () => {
               </Box>
             </LocalizationProvider>
 
-            <FormControl fullWidth>
-              <InputLabel sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>
-                Status
-              </InputLabel>
-              <Select
-                value={status}
-                onChange={e =>
-                  setStatus(e.target.value as 'active' | 'inactive')
-                }
-                label='Status'
-                sx={{
+            <AppDropdown
+              label='Status'
+              value={status}
+              onChange={(e: SelectChangeEvent<string | number>) =>
+                setStatus(e.target.value as 'active' | 'inactive')
+              }
+              options={[
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+              ]}
+              placeholder='Status'
+              showLabel={false}
+              inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
+              containerSx={{ width: '100%' }}
+              sx={{
+                '& .MuiSelect-select': {
                   color: darkMode ? '#fff' : '#000',
-                  '& .MuiOutlinedInput-notchedOutline': {
+                },
+                '& .MuiSelect-icon': {
+                  color: darkMode ? '#fff' : '#000',
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
                     borderColor: theme.palette.divider,
                   },
-                }}
-              >
-                <MenuItem value='active'>Active</MenuItem>
-                <MenuItem value='inactive'>Inactive</MenuItem>
-              </Select>
-            </FormControl>
+                },
+              }}
+            />
 
             <TextField
               fullWidth
@@ -2424,26 +2387,8 @@ const EmployeeSalaryPage: React.FC = () => {
               }}
             />
           </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 2 }}>
-          <Button
-            onClick={() => {
-              setEditModalOpen(false);
-              setPayrollConfig(null);
-              setConfigLoading(false);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant='contained'
-            onClick={handleSaveSalary}
-            disabled={!isFormValid() || (!!selectedSalary && !hasChanges())}
-          >
-            {selectedSalary ? 'Update' : 'Create'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </AppFormModal>
     </Box>
   );
 };

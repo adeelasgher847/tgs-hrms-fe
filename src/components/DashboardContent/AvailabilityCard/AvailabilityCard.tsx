@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import type { AvailabilityCardProps } from '../../../types/availability';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
@@ -8,12 +8,9 @@ export default function AvailabilityCard({
   value,
   icon,
 }: AvailabilityCardProps) {
+  const theme = useTheme();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
-
-  const bgColor = darkMode ? '#111' : '#fff';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
-  const borderColor = darkMode ? '#252525' : '#f0f0f0';
 
   // Title Translations
   const titleTranslations: Record<string, { en: string; ar: string }> = {
@@ -34,8 +31,7 @@ export default function AvailabilityCard({
   return (
     <Box
       sx={{
-        border: '1px solid',
-        borderColor: borderColor,
+        border: `1px solid ${theme.palette.divider}`,
         borderRadius: '0.375rem',
         padding: 2,
         display: 'flex',
@@ -43,8 +39,7 @@ export default function AvailabilityCard({
         alignItems: 'center',
         justifyContent: 'space-between',
         minHeight: 80,
-        backgroundColor: bgColor,
-        color: textColor,
+        backgroundColor: theme.palette.background.paper,
         direction: language === 'ar' ? 'rtl' : 'ltr',
       }}
     >
@@ -59,7 +54,10 @@ export default function AvailabilityCard({
         {/* Icon container */}
         <Box
           sx={{
-            backgroundColor: darkMode ? 'unset' : 'rgba(255, 255, 255, 0.2)',
+            backgroundColor:
+              theme.palette.mode === 'dark'
+                ? 'transparent'
+                : 'rgba(255, 255, 255, 0.2)',
             borderRadius: '50%',
             width: 48,
             height: 48,
@@ -68,13 +66,20 @@ export default function AvailabilityCard({
             justifyContent: 'center',
           }}
         >
-          <Box component='span' color={textColor} sx={{ fontSize: 24 }}>
+          <Box
+            component='span'
+            sx={{ color: theme.palette.text.primary, fontSize: 24 }}
+          >
             {icon}
           </Box>
         </Box>
 
         {/* Title */}
-        <Typography fontSize={14} fontWeight={600} color={textColor}>
+        <Typography
+          fontSize={14}
+          fontWeight={600}
+          sx={{ color: theme.palette.text.primary }}
+        >
           {translatedTitle}
         </Typography>
       </Box>
@@ -90,8 +95,8 @@ export default function AvailabilityCard({
           variant='h4'
           fontSize={28}
           fontWeight='bold'
-          color={textColor}
           sx={{
+            color: theme.palette.text.primary,
             fontFamily: 'monospace',
             lineHeight: 1,
           }}

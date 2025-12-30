@@ -130,6 +130,54 @@ body.light-mode {
   background-color: #efefef;
   color: #000000;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Mobile typography scale                                                     */
+/* -------------------------------------------------------------------------- */
+
+/* MUI (and many components) use rem-based font sizes. Scaling the root font-size
+   makes the whole UI more comfortable on very small screens (e.g., 320px). */
+html {
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  html {
+    font-size: 14px;
+  }
+
+  :root {
+    /* Headings */
+    --h1-font-size: 32px;
+    --h1-line-height: 38px;
+
+    --h2-font-size: 24px;
+    --h2-line-height: 32px;
+
+    --h3-font-size: 20px;
+    --h3-line-height: 28px;
+
+    /* Subheadings */
+    --subheading1-font-size: 18px;
+    --subheading1-line-height: 26px;
+
+    --subheading2-font-size: 16px;
+    --subheading2-line-height: 24px;
+
+    /* Body/labels */
+    --body-font-size: 14px;
+    --body-line-height: 20px;
+
+    --label-font-size: 12px;
+    --label-line-height: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  html {
+    font-size: 13px;
+  }
+}
 :root {
   font-family:
     'SF Pro Rounded',
@@ -272,4 +320,40 @@ h3 {
 
 .MuiTooltip-arrow {
   color: #ffffff !important;
+}
+
+/* Pagination — use app primary dark color for items & selected state */
+.MuiPagination-root .MuiPaginationItem-root {
+  color: var(--primary-dark-color);
+}
+
+.MuiPagination-root .MuiPaginationItem-root.Mui-selected {
+  background-color: var(--primary-dark-color);
+  color: #ffffff;
+}
+
+/* Prevent pagination hover from changing colors — keep consistent primary color */
+.MuiPagination-root .MuiPaginationItem-root:hover {
+  background-color: transparent !important;
+  color: var(--primary-dark-color) !important;
+  box-shadow: none !important;
+}
+
+/* Ensure selected item keeps primary background on hover/focus */
+.MuiPagination-root .MuiPaginationItem-root.Mui-selected:hover,
+.MuiPagination-root .MuiPaginationItem-root.Mui-selected:focus {
+  background-color: var(--primary-dark-color) !important;
+  color: #ffffff !important;
+}
+
+/* Also prevent active/focus state from changing pagination item color */
+.MuiPagination-root .MuiPaginationItem-root:active,
+.MuiPagination-root .MuiPaginationItem-root.Mui-focusVisible {
+  background-color: transparent !important;
+  color: var(--primary-dark-color) !important;
+}
+
+/* Make all MUI CircularProgress spinners use the app primary dark color by default */
+.MuiCircularProgress-root {
+  color: var(--primary-dark-color) !important;
 }

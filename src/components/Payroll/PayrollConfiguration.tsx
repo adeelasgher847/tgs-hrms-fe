@@ -5,34 +5,26 @@ import {
   Paper,
   TextField,
   Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   IconButton,
   Switch,
   FormControlLabel,
   CircularProgress,
   Alert,
   useTheme,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material';
 import { useIsDarkMode } from '../../theme';
+import { Icons } from '../../assets/icons';
 import {
   payrollApi,
   type PayrollConfig,
   type Allowance,
 } from '../../api/payrollApi';
 import { snackbar } from '../../utils/snackbar';
+import AppDropdown from '../common/AppDropdown';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import AppFormModal from '../common/AppFormModal';
+import AppPageTitle from '../common/AppPageTitle';
 
 const PayrollConfiguration: React.FC = () => {
   const theme = useTheme();
@@ -530,7 +522,22 @@ const PayrollConfiguration: React.FC = () => {
 
   if (!config) {
     return (
-      <Box>
+      <Box
+        sx={{
+          '& .MuiButton-contained': {
+            backgroundColor: 'var(--primary-dark-color)',
+            '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+          },
+          '& .MuiButton-outlined': {
+            borderColor: 'var(--primary-dark-color)',
+            color: 'var(--primary-dark-color)',
+            '&:hover': {
+              borderColor: 'var(--primary-dark-color)',
+              backgroundColor: 'var(--primary-color)',
+            },
+          },
+        }}
+      >
         <Box
           sx={{
             mb: 4,
@@ -539,12 +546,9 @@ const PayrollConfiguration: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <Typography
-            variant='h4'
-            sx={{ fontWeight: 600, fontSize: { xs: '32px', lg: '48px' }, color: darkMode ? '#fff' : '#000', mb: 1 }}
-          >
+          <AppPageTitle sx={{ color: darkMode ? '#fff' : '#000', mb: 1 }}>
             Payroll Configuration
-          </Typography>
+          </AppPageTitle>
           <Button
             onClick={handleOpenCreateModal}
             variant='contained'
@@ -575,43 +579,19 @@ const PayrollConfiguration: React.FC = () => {
           </Typography>
         </Paper>
 
-        <Dialog
+        <AppFormModal
           open={editModalOpen}
           onClose={handleCloseEditModal}
+          onSubmit={handleSave}
+          title='Create Payroll Configuration'
+          submitLabel={saving ? 'Creating...' : 'Create Configuration'}
+          cancelLabel='Cancel'
+          isSubmitting={saving}
+          hasChanges={isFormValid()}
           maxWidth='md'
-          fullWidth
-          PaperProps={{
-            sx: { borderRadius: 1, bgcolor: darkMode ? '#1e1e1e' : '#fff' },
-          }}
+          paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff' }}
         >
-          <DialogTitle
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              color: darkMode ? '#fff' : '#000',
-              borderRadius: 0,
-              pb: 2,
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              Create Payroll Configuration
-            </Box>
-            <IconButton
-              onClick={handleCloseEditModal}
-              size='small'
-              sx={{
-                color: theme.palette.text.secondary,
-                '&:hover': {
-                  color: theme.palette.text.primary,
-                  backgroundColor: theme.palette.action.hover,
-                },
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent sx={{ pt: 3, maxHeight: '70vh', overflowY: 'auto' }}>
+          <Box sx={{ pr: 1 }}>
             {error && (
               <Alert
                 severity='error'
@@ -630,34 +610,35 @@ const PayrollConfiguration: React.FC = () => {
                 marginTop: 2,
               }}
             >
-              <FormControl fullWidth>
-                <InputLabel
-                  sx={{
-                    color: darkMode ? '#ccc' : undefined,
-                  }}
-                >
-                  Salary Cycle
-                </InputLabel>
-                <Select
-                  value={salaryCycle}
-                  onChange={e =>
-                    setSalaryCycle(
-                      e.target.value as 'monthly' | 'weekly' | 'biweekly'
-                    )
-                  }
-                  label='Salary Cycle'
-                  sx={{
-                    backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+              <AppDropdown
+                label='Salary Cycle'
+                value={salaryCycle}
+                onChange={(e: SelectChangeEvent<string | number>) =>
+                  setSalaryCycle(
+                    e.target.value as 'monthly' | 'weekly' | 'biweekly'
+                  )
+                }
+                options={[
+                  { value: 'monthly', label: 'Monthly' },
+                  { value: 'weekly', label: 'Weekly' },
+                ]}
+                placeholder='Salary Cycle'
+                showLabel={false}
+                inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
+                sx={{
+                  '& .MuiSelect-select': {
                     color: darkMode ? '#fff' : '#000',
-                    '& .MuiOutlinedInput-notchedOutline': {
+                  },
+                  '& .MuiSelect-icon': {
+                    color: darkMode ? '#fff' : '#000',
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
                       borderColor: theme.palette.divider,
                     },
-                  }}
-                >
-                  <MenuItem value='monthly'>Monthly</MenuItem>
-                  <MenuItem value='weekly'>Weekly</MenuItem>
-                </Select>
-              </FormControl>
+                  },
+                }}
+              />
 
               <Box>
                 <Typography
@@ -800,7 +781,12 @@ const PayrollConfiguration: React.FC = () => {
                               color: theme.palette.error.main,
                             }}
                           >
-                            <DeleteIcon fontSize='small' />
+                            <Box
+                              component='img'
+                              src={Icons.delete}
+                              alt='Delete'
+                              sx={{ width: 18, height: 18 }}
+                            />
                           </IconButton>
                         </Box>
                         <Box
@@ -1144,26 +1130,8 @@ const PayrollConfiguration: React.FC = () => {
                 </Box>
               </Box>
             </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 3, pt: 1, justifyContent: 'flex-end' }}>
-            <Button
-              onClick={handleCloseEditModal}
-              variant='outlined'
-              sx={{ textTransform: 'none', fontWeight: 500 }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              variant='contained'
-              startIcon={saving ? <CircularProgress size={16} /> : <AddIcon />}
-              disabled={saving || !isFormValid()}
-              sx={{ textTransform: 'none', fontWeight: 500 }}
-            >
-              {saving ? 'Creating...' : 'Create Configuration'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          </Box>
+        </AppFormModal>
       </Box>
     );
   }
@@ -1173,6 +1141,18 @@ const PayrollConfiguration: React.FC = () => {
       sx={{
         backgroundColor: theme.palette.background.default,
         minHeight: '100vh',
+        '& .MuiButton-contained': {
+          backgroundColor: 'var(--primary-dark-color)',
+          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+        },
+        '& .MuiButton-outlined': {
+          borderColor: 'var(--primary-dark-color)',
+          color: 'var(--primary-dark-color)',
+          '&:hover': {
+            borderColor: 'var(--primary-dark-color)',
+            backgroundColor: 'var(--primary-color)',
+          },
+        },
       }}
     >
       <Box
@@ -1183,16 +1163,20 @@ const PayrollConfiguration: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <Typography
-          variant='h4'
-          sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000', mb: 1 }}
-        >
+        <AppPageTitle>
           Payroll Configuration
-        </Typography>
+          </AppPageTitle>
         <Button
           onClick={handleOpenEditModal}
           variant='outlined'
-          startIcon={<EditIcon />}
+          startIcon={
+            <Box
+              component='img'
+              src={Icons.edit}
+              alt='Edit'
+              sx={{ width: 18, height: 18, color: theme.palette.text.primary }}
+            />
+          }
           sx={{
             textTransform: 'none',
             fontWeight: 500,
@@ -1698,43 +1682,19 @@ const PayrollConfiguration: React.FC = () => {
         </Box>
       </Box>
 
-      <Dialog
+      <AppFormModal
         open={editModalOpen}
         onClose={handleCloseEditModal}
+        onSubmit={handleSave}
+        title='Edit Payroll Configuration'
+        submitLabel={saving ? 'Updating...' : 'Update Configuration'}
+        cancelLabel='Cancel'
+        isSubmitting={saving}
+        hasChanges={isFormValid() && hasChanges()}
         maxWidth='md'
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 1, bgcolor: darkMode ? '#1e1e1e' : '#fff' },
-        }}
+        paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff' }}
       >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            color: darkMode ? '#fff' : '#000',
-            borderRadius: 0,
-            pb: 2,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            Edit Payroll Configuration
-          </Box>
-          <IconButton
-            onClick={handleCloseEditModal}
-            size='small'
-            sx={{
-              color: theme.palette.text.secondary,
-              '&:hover': {
-                color: theme.palette.text.primary,
-                backgroundColor: theme.palette.action.hover,
-              },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3, maxHeight: '70vh', overflowY: 'auto' }}>
+        <Box sx={{ pr: 1 }}>
           {error && (
             <Alert
               severity='error'
@@ -1753,34 +1713,35 @@ const PayrollConfiguration: React.FC = () => {
               marginTop: 2,
             }}
           >
-            <FormControl fullWidth>
-              <InputLabel
-                sx={{
-                  color: darkMode ? '#ccc' : undefined,
-                }}
-              >
-                Salary Cycle
-              </InputLabel>
-              <Select
-                value={salaryCycle}
-                onChange={e =>
-                  setSalaryCycle(
-                    e.target.value as 'monthly' | 'weekly' | 'biweekly'
-                  )
-                }
-                label='Salary Cycle'
-                sx={{
-                  backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+            <AppDropdown
+              label='Salary Cycle'
+              value={salaryCycle}
+              onChange={(e: SelectChangeEvent<string | number>) =>
+                setSalaryCycle(
+                  e.target.value as 'monthly' | 'weekly' | 'biweekly'
+                )
+              }
+              options={[
+                { value: 'monthly', label: 'Monthly' },
+                { value: 'weekly', label: 'Weekly' },
+              ]}
+              placeholder='Salary Cycle'
+              showLabel={false}
+              inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
+              sx={{
+                '& .MuiSelect-select': {
                   color: darkMode ? '#fff' : '#000',
-                  '& .MuiOutlinedInput-notchedOutline': {
+                },
+                '& .MuiSelect-icon': {
+                  color: darkMode ? '#fff' : '#000',
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
                     borderColor: theme.palette.divider,
                   },
-                }}
-              >
-                <MenuItem value='monthly'>Monthly</MenuItem>
-                <MenuItem value='weekly'>Weekly</MenuItem>
-              </Select>
-            </FormControl>
+                },
+              }}
+            />
 
             <Box>
               <Typography
@@ -1920,7 +1881,12 @@ const PayrollConfiguration: React.FC = () => {
                             color: theme.palette.error.main,
                           }}
                         >
-                          <DeleteIcon fontSize='small' />
+                          <Box
+                            component='img'
+                            src={Icons.delete}
+                            alt='Delete'
+                            sx={{ width: 18, height: 18 }}
+                          />
                         </IconButton>
                       </Box>
                       <Box
@@ -2253,26 +2219,8 @@ const PayrollConfiguration: React.FC = () => {
               </Box>
             </Box>
           </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 1, justifyContent: 'flex-end' }}>
-          <Button
-            onClick={handleCloseEditModal}
-            variant='outlined'
-            sx={{ textTransform: 'none', fontWeight: 500 }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            variant='contained'
-            startIcon={saving ? <CircularProgress size={16} /> : <EditIcon />}
-            disabled={saving || !isFormValid() || !hasChanges()}
-            sx={{ textTransform: 'none', fontWeight: 500 }}
-          >
-            {saving ? 'Updating...' : 'Update Configuration'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </AppFormModal>
     </Box>
   );
 };

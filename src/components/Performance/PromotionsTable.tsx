@@ -2,10 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   TextField,
   Button,
   Paper,
@@ -26,6 +22,8 @@ import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import { formatDate } from '../../utils/dateUtils';
 import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../common/AppTable';
+import AppDropdown from '../common/AppDropdown';
+import AppTextField from '../common/AppTextField';
 
 interface PromotionsListProps {
   tenantId: string;
@@ -171,44 +169,157 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         Promotions Tracking
       </Typography>
 
-      <Box display='flex' gap={1.5} mb={1} flexWrap='wrap' alignItems='center'>
-        <FormControl size='small' sx={{ minWidth: 200 }}>
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={filters.status}
-            label='Status'
-            onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
+      {/* Labels row to align with controls (hidden on small screens) */}
+      <Box
+        sx={{
+          display: { xs: 'none', sm: 'flex' },
+          gap: 1.5,
+          mb: 0.5,
+          alignItems: 'center',
+        }}
+      >
+        <Box sx={{ minWidth: 200 }}>
+          <Typography className='subheading2' sx={{ fontWeight: 500 }}>
+            Status
+          </Typography>
+        </Box>
+
+        <Box sx={{ minWidth: 200 }}>
+          <Typography className='subheading2' sx={{ fontWeight: 500 }}>
+            Start Date
+          </Typography>
+        </Box>
+
+        <Box sx={{ minWidth: 200 }}>
+          <Typography className='subheading2' sx={{ fontWeight: 500 }}>
+            End Date
+          </Typography>
+        </Box>
+
+        <Box sx={{ minWidth: 200 }} />
+      </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1.5,
+          mb: 1,
+          flexDirection: { xs: 'column', sm: 'row' },
+          overflowX: 'auto',
+          alignItems: { xs: 'stretch', sm: 'center' },
+        }}
+      >
+        <Box sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+          <Typography
+            className='subheading2'
+            sx={{
+              fontWeight: 500,
+              display: { xs: 'block', sm: 'none' },
+              mb: 0.5,
+            }}
           >
-            <MenuItem value=''>
-              <em>All</em>
-            </MenuItem>
-            <MenuItem value='pending'>Pending</MenuItem>
-            <MenuItem value='approved'>Approved</MenuItem>
-            <MenuItem value='rejected'>Rejected</MenuItem>
-          </Select>
-        </FormControl>
+            Status
+          </Typography>
+          <AppDropdown
+            label='Status'
+            options={[
+              { value: '', label: 'All' },
+              { value: 'pending', label: 'Pending' },
+              { value: 'approved', label: 'Approved' },
+              { value: 'rejected', label: 'Rejected' },
+            ]}
+            value={filters.status}
+            onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
+            containerSx={{ width: '100%' }}
+            size='small'
+            showLabel={false}
+            // placeholder='Status'
+          />
+        </Box>
 
-        <TextField
-          size='small'
-          label='Start Date'
-          type='date'
-          InputLabelProps={{ shrink: true }}
-          value={filters.startDate}
-          onChange={e => setFilters(f => ({ ...f, startDate: e.target.value }))}
-        />
+        <Box sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+          <Typography
+            className='subheading2'
+            sx={{
+              fontWeight: 500,
+              display: { xs: 'block', sm: 'none' },
+              mb: 0.5,
+            }}
+          >
+            Start Date
+          </Typography>
+          <AppTextField
+            size='small'
+            type='date'
+            InputLabelProps={{ shrink: true }}
+            value={filters.startDate}
+            onChange={e =>
+              setFilters(f => ({ ...f, startDate: e.target.value }))
+            }
+            fullWidth
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                minHeight: '48px',
+                borderRadius: '12px',
+              },
+              '& input[type="date"]': {
+                padding: '10px 12px',
+                height: '32px',
+                boxSizing: 'border-box',
+              },
+            }}
+          />
+        </Box>
 
-        <TextField
-          size='small'
-          label='End Date'
-          type='date'
-          InputLabelProps={{ shrink: true }}
-          value={filters.endDate}
-          onChange={e => setFilters(f => ({ ...f, endDate: e.target.value }))}
-        />
+        <Box sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+          <Typography
+            className='subheading2'
+            sx={{
+              fontWeight: 500,
+              display: { xs: 'block', sm: 'none' },
+              mb: 0.5,
+            }}
+          >
+            End Date
+          </Typography>
+          <AppTextField
+            size='small'
+            type='date'
+            InputLabelProps={{ shrink: true }}
+            value={filters.endDate}
+            onChange={e => setFilters(f => ({ ...f, endDate: e.target.value }))}
+            fullWidth
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                minHeight: '48px',
+                borderRadius: '12px',
+              },
+              '& input[type="date"]': {
+                padding: '10px 12px',
+                height: '32px',
+                boxSizing: 'border-box',
+              },
+            }}
+          />
+        </Box>
 
-        <Button variant='contained' onClick={() => setCurrentPage(1)}>
-          Apply Filters
-        </Button>
+        <Box sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+          <Button
+            variant='outlined'
+            onClick={() => setCurrentPage(1)}
+            fullWidth
+            sx={{
+              height: '48px',
+              minHeight: '48px',
+              borderRadius: '12px',
+              color: 'var(--primary-dark-color)',
+              borderColor: 'var(--primary-dark-color)',
+              borderWidth: '1px',
+            }}
+          >
+            Apply Filters
+          </Button>
+        </Box>
       </Box>
 
       <Box display='flex' gap={2} mb={2} flexWrap='wrap'>

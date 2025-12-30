@@ -2,13 +2,8 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
   Grid,
-  MenuItem,
   Paper,
   Stack,
   TableBody,
@@ -24,11 +19,14 @@ import dayjs from 'dayjs';
 import { useTheme } from '@mui/material/styles';
 import { useOutletContext } from 'react-router-dom';
 import GenerateIcon from '@mui/icons-material/PlayCircleFilledRounded';
-import CloseIcon from '@mui/icons-material/Close';
 import { payrollApi, type PayrollRecord } from '../../api/payrollApi';
 import { snackbar } from '../../utils/snackbar';
 import { useIsDarkMode } from '../../theme';
 import AppTable from '../common/AppTable';
+import AppDropdown from '../common/AppDropdown';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import AppFormModal from '../common/AppFormModal';
+import AppPageTitle from '../common/AppPageTitle';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -154,6 +152,18 @@ const PayrollGeneration: React.FC = () => {
         minHeight: '100vh',
         p: { xs: 2, md: 3 },
         color: textColor,
+        '& .MuiButton-contained': {
+          backgroundColor: 'var(--primary-dark-color)',
+          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+        },
+        '& .MuiButton-outlined': {
+          borderColor: 'var(--primary-dark-color)',
+          color: 'var(--primary-dark-color)',
+          '&:hover': {
+            borderColor: 'var(--primary-dark-color)',
+            backgroundColor: 'var(--primary-color)',
+          },
+        },
       }}
     >
       <Box
@@ -166,17 +176,10 @@ const PayrollGeneration: React.FC = () => {
           mb: 3,
         }}
       >
-        <Box>
-          <Typography
-            variant='h4'
-            sx={{
-              fontWeight: 600,
-              fontSize: { xs: '32px', lg: '48px' },
-              color: textColor,
-            }}
-          >
+        <Box sx={{ width: '100%' }}>
+          <AppPageTitle sx={{ mb: 0, color: textColor }}>
             Payroll Generation
-          </Typography>
+          </AppPageTitle>
         </Box>
       </Box>
 
@@ -195,20 +198,34 @@ const PayrollGeneration: React.FC = () => {
           spacing={2}
           alignItems='flex-start'
         >
-          <TextField
-            select
+          <AppDropdown
             label='Month'
             value={month}
-            size='small'
-            sx={{ minWidth: 160 }}
-            onChange={event => setMonth(Number(event.target.value))}
-          >
-            {monthOptions.map(option => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
+            onChange={(event: SelectChangeEvent<string | number>) =>
+              setMonth(Number(event.target.value))
+            }
+            options={monthOptions.map(option => ({
+              value: option.value,
+              label: option.label,
+            }))}
+            placeholder='Month'
+            showLabel={false}
+            containerSx={{ minWidth: 160 }}
+            inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+            sx={{
+              '& .MuiSelect-select': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiSelect-icon': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: theme.palette.divider,
+                },
+              },
+            }}
+          />
 
           <TextField
             label='Year'
@@ -274,7 +291,7 @@ const PayrollGeneration: React.FC = () => {
             Summary
           </Typography>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -301,7 +318,7 @@ const PayrollGeneration: React.FC = () => {
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -328,7 +345,7 @@ const PayrollGeneration: React.FC = () => {
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -355,7 +372,7 @@ const PayrollGeneration: React.FC = () => {
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -492,35 +509,17 @@ const PayrollGeneration: React.FC = () => {
         )}
       </Paper>
 
-      <Dialog
+      <AppFormModal
         open={detailsOpen && !!selectedRecord}
         onClose={closeDetails}
+        onSubmit={() => {}}
+        title='Payroll Breakdown'
+        cancelLabel='Close'
+        showSubmitButton={false}
         maxWidth='md'
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff',
-          },
-        }}
+        paperSx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
       >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            pr: 1,
-          }}
-        >
-          <Typography variant='h6'>Payroll Breakdown</Typography>
-          <Button onClick={closeDetails} color='inherit'>
-            <CloseIcon />
-          </Button>
-        </DialogTitle>
-        <DialogContent
-          dividers
-          sx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
-        >
+        <Box sx={{ pr: 1 }}>
           {selectedRecord && (
             <Stack spacing={3}>
               <Box>
@@ -567,7 +566,7 @@ const PayrollGeneration: React.FC = () => {
                   Salary Components
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6} md={3}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Paper
                       elevation={0}
                       sx={{
@@ -581,7 +580,7 @@ const PayrollGeneration: React.FC = () => {
                       </Typography>
                     </Paper>
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Paper
                       elevation={0}
                       sx={{
@@ -597,7 +596,7 @@ const PayrollGeneration: React.FC = () => {
                       </Typography>
                     </Paper>
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Paper
                       elevation={0}
                       sx={{
@@ -611,7 +610,7 @@ const PayrollGeneration: React.FC = () => {
                       </Typography>
                     </Paper>
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Paper
                       elevation={0}
                       sx={{
@@ -755,11 +754,8 @@ const PayrollGeneration: React.FC = () => {
               )}
             </Stack>
           )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={closeDetails}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </AppFormModal>
     </Box>
   );
 };

@@ -20,8 +20,7 @@ import {
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import '../UserProfile/PhoneInput.css';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
 import signupApi, { type PersonalDetailsRequest } from '../../api/signupApi';
 import {
   validateEmailAddress,
@@ -32,6 +31,7 @@ import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppInputField from '../common/AppInputField';
 import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
+import AppPageTitle from '../common/AppPageTitle';
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -452,9 +452,13 @@ const Signup: React.FC = () => {
               mt: { xs: 0, lg: 0 },
               boxSizing: 'border-box',
               minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '64px',
             }}
           >
-            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+            {/* Div 1: Language Selector */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
               <FormControl size='small' sx={{ minWidth: 100 }}>
                 <Select
                   value={lang}
@@ -465,41 +469,30 @@ const Signup: React.FC = () => {
                 </Select>
               </FormControl>
             </Box>
-            <Typography
-              variant='h1'
-              sx={{
-                fontSize: { xs: '32px', lg: '48px' },
-                fontWeight: 700,
-                mb: 1,
-                color: { xs: '#001218', lg: 'inherit' },
-              }}
-            >
-              Create Account
-            </Typography>
-            <Typography
-              sx={{
-                color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
-                mb: 3,
-                fontSize: { xs: '16px', lg: '24px' },
-                fontWeight: 400,
-              }}
-            >
-              For business, brand or celebrity.
-            </Typography>
-            {error && (
-              <Alert
-                severity='error'
+
+            {/* Div 2: Title and Tagline */}
+            <Box>
+              <AppPageTitle
                 sx={{
-                  display: { xs: 'block', sm: 'none' },
-                  mb: 2,
-                  '& .MuiAlert-message': {
-                    fontSize: { xs: '12px', sm: '14px' },
-                  },
+                  mb: '6px',
+                  fontWeight: 700,
+                  color: { xs: '#001218', lg: 'inherit' },
                 }}
               >
-                {error}
-              </Alert>
-            )}
+                Create Account
+              </AppPageTitle>
+              <Typography
+                sx={{
+                  color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
+                  fontSize: { xs: '16px', lg: '24px' },
+                  fontWeight: 400,
+                }}
+              >
+                For business, brand or celebrity.
+              </Typography>
+            </Box>
+
+            {/* Div 3: Form Content */}
             <Box
               component='form'
               onSubmit={handleSubmit}
@@ -508,377 +501,427 @@ const Signup: React.FC = () => {
                 maxWidth: '100%',
                 boxSizing: 'border-box',
                 overflowX: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '64px',
               }}
             >
               <Box
                 sx={{
                   display: 'flex',
-                  gap: { xs: 1, sm: 2 },
-                  mb: { xs: 1.5, sm: 2 },
-                  width: '100%',
-                  boxSizing: 'border-box',
+                  flexDirection: 'column',
+                  gap: '32px',
                 }}
               >
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <AppInputField
-                    name='first_name'
-                    label='First Name'
-                    required
-                    fullWidth
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    disabled={loading}
-                    error={Boolean(fieldErrors.first_name)}
-                    helperText={fieldErrors.first_name}
-                    placeholder='Waleed'
-                    hideErrorsOnSmallScreen={true}
-                  />
-                </Box>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <AppInputField
-                    name='last_name'
-                    label='Last Name'
-                    required
-                    fullWidth
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    disabled={loading}
-                    error={Boolean(fieldErrors.last_name)}
-                    helperText={fieldErrors.last_name}
-                    placeholder='Ahmed'
-                    hideErrorsOnSmallScreen={true}
-                  />
-                </Box>
-              </Box>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  gap: { xs: 1, sm: 2 },
-                  mb: { xs: 1.5, sm: 2 },
-                  width: '100%',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <AppInputField
-                    name='email'
-                    label='Email'
-                    type='email'
-                    required
-                    fullWidth
-                    value={formData.email}
-                    onChange={handleChange}
-                    onBlur={e => {
-                      const value = e.target.value;
-                      const trimmed = value.trim();
-                      const emailError = trimmed
-                        ? validateEmailAddress(trimmed)
-                        : null;
-                      setFieldErrors(prev => ({
-                        ...prev,
-                        email: emailError ?? '',
-                      }));
+                {error && (
+                  <Alert
+                    severity='error'
+                    sx={{
+                      display: { xs: 'block', sm: 'none' },
+                      '& .MuiAlert-message': {
+                        fontSize: { xs: '12px', sm: '14px' },
+                      },
                     }}
-                    disabled={loading}
-                    error={Boolean(fieldErrors.email)}
-                    helperText={fieldErrors.email}
-                    placeholder='Waleed@xyz.com'
-                    hideErrorsOnSmallScreen={true}
-                  />
+                  >
+                    {error}
+                  </Alert>
+                )}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: '32px',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <AppInputField
+                      name='first_name'
+                      label='First Name'
+                      required
+                      fullWidth
+                      value={formData.first_name}
+                      onChange={handleChange}
+                      disabled={loading}
+                      error={Boolean(fieldErrors.first_name)}
+                      helperText={fieldErrors.first_name}
+                      placeholder='Waleed'
+                      hideErrorsOnSmallScreen={true}
+                    />
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <AppInputField
+                      name='last_name'
+                      label='Last Name'
+                      required
+                      fullWidth
+                      value={formData.last_name}
+                      onChange={handleChange}
+                      disabled={loading}
+                      error={Boolean(fieldErrors.last_name)}
+                      helperText={fieldErrors.last_name}
+                      placeholder='Ahmed'
+                      hideErrorsOnSmallScreen={true}
+                    />
+                  </Box>
                 </Box>
                 <Box
-                  sx={{ flex: 1, position: 'relative', minWidth: 0 }}
-                  className='signup-phone-input'
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    gap: '32px',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                  }}
                 >
-                  <AppInputField
-                    name='phone'
-                    label='Phone #'
-                    type='tel'
-                    required
-                    fullWidth
-                    value={formData.phone}
-                    onChange={e => handlePhoneChange(e.target.value)}
-                    disabled={loading}
-                    error={Boolean(fieldErrors.phone)}
-                    helperText={fieldErrors.phone}
-                    hideErrorsOnSmallScreen={true}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment
-                          position='start'
-                          sx={{ margin: 0, padding: '28px 0px' }}
-                        >
-                          <PhoneInput
-                            defaultCountry='pk'
-                            value={formData.phone}
-                            onChange={handlePhoneChange}
-                            style={{
-                              border: 'none',
-                              outline: 'none',
-                              background: 'transparent',
-                              width: '100%',
-                            }}
-                            inputStyle={{
-                              border: 'none',
-                              outline: 'none',
-                              padding: '0',
-                              margin: '0',
-                              fontSize: isMobile ? '14px' : '16px',
-                              fontWeight: 400,
-                              fontFamily:
-                                '"Roboto", "Helvetica", "Arial", sans-serif',
-                              backgroundColor: 'transparent',
-                              width: '100%',
-                              boxSizing: 'border-box',
-                              flex: 1,
-                              height: '100%',
-                            }}
-                            countrySelectorStyleProps={{
-                              buttonStyle: {
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <AppInputField
+                      name='email'
+                      label='Email'
+                      type='email'
+                      required
+                      fullWidth
+                      value={formData.email}
+                      onChange={handleChange}
+                      onBlur={e => {
+                        const value = e.target.value;
+                        const trimmed = value.trim();
+                        const emailError = trimmed
+                          ? validateEmailAddress(trimmed)
+                          : null;
+                        setFieldErrors(prev => ({
+                          ...prev,
+                          email: emailError ?? '',
+                        }));
+                      }}
+                      disabled={loading}
+                      error={Boolean(fieldErrors.email)}
+                      helperText={fieldErrors.email}
+                      placeholder='Waleed@xyz.com'
+                      hideErrorsOnSmallScreen={true}
+                    />
+                  </Box>
+                  <Box
+                    sx={{ flex: 1, position: 'relative', minWidth: 0 }}
+                    className='signup-phone-input'
+                  >
+                    <AppInputField
+                      name='phone'
+                      label='Phone #'
+                      type='tel'
+                      required
+                      fullWidth
+                      value={formData.phone}
+                      onChange={e => handlePhoneChange(e.target.value)}
+                      disabled={loading}
+                      error={Boolean(fieldErrors.phone)}
+                      helperText={fieldErrors.phone}
+                      hideErrorsOnSmallScreen={true}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment
+                            position='start'
+                            sx={{ margin: 0, padding: '28px 0px' }}
+                          >
+                            <PhoneInput
+                              defaultCountry='pk'
+                              value={formData.phone}
+                              onChange={handlePhoneChange}
+                              style={{
                                 border: 'none',
+                                outline: 'none',
                                 background: 'transparent',
+                                width: '100%',
+                              }}
+                              inputStyle={{
+                                border: 'none',
+                                outline: 'none',
                                 padding: '0',
                                 margin: '0',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                              },
-                            }}
-                            className='phone-input-textfield-adornment'
-                          />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
+                                fontSize: isMobile ? '14px' : '16px',
+                                fontWeight: 400,
+                                fontFamily:
+                                  '"Roboto", "Helvetica", "Arial", sans-serif',
+                                backgroundColor: 'transparent',
+                                width: '100%',
+                                boxSizing: 'border-box',
+                                flex: 1,
+                                height: '100%',
+                              }}
+                              countrySelectorStyleProps={{
+                                buttonStyle: {
+                                  border: 'none',
+                                  background: 'transparent',
+                                  padding: '0',
+                                  margin: '0',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                },
+                              }}
+                              className='phone-input-textfield-adornment'
+                            />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Box>
                 </Box>
+
+                <Box
+                  sx={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      gap: '32px',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <AppInputField
+                        name='password'
+                        label='Password'
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        fullWidth
+                        value={formData.password}
+                        onChange={handleChange}
+                        disabled={loading}
+                        error={Boolean(fieldErrors.password)}
+                        helperText={fieldErrors.password}
+                        placeholder='********'
+                        hideErrorsOnSmallScreen={true}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position='end'>
+                              <IconButton
+                                onClick={handleTogglePassword}
+                                edge='end'
+                                sx={{ color: 'var(--dark-grey-color)' }}
+                              >
+                                {showPassword ? (
+                                  <IoEyeOutline />
+                                ) : (
+                                  <IoEyeOffOutline />
+                                )}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <AppInputField
+                        name='confirmPassword'
+                        label='Confirm Password'
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        required
+                        fullWidth
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        disabled={loading}
+                        error={Boolean(fieldErrors.confirmPassword)}
+                        helperText={fieldErrors.confirmPassword}
+                        hideErrorsOnSmallScreen={true}
+                        placeholder='********'
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position='end'>
+                              <IconButton
+                                onClick={handleToggleConfirmPassword}
+                                edge='end'
+                                sx={{ color: 'var(--dark-grey-color)' }}
+                              >
+                                {showConfirmPassword ? (
+                                  <IoEyeOutline />
+                                ) : (
+                                  <IoEyeOffOutline />
+                                )}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      rowGap: '12px',
+                      '& .MuiFormControlLabel-root': {
+                        margin: 0,
+                        gap: '8px',
+                      },
+                      '& .MuiFormControlLabel-label': {
+                        padding: 0,
+                        margin: 0,
+                      },
+                      '& .MuiCheckbox-root': {
+                        padding: 0,
+                        margin: 0,
+                      },
+                    }}
+                  >
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={rememberMe}
+                          onChange={e => setRememberMe(e.target.checked)}
+                          sx={{
+                            color: 'var(--dark-grey-color)',
+
+                            '&.Mui-checked': {
+                              color: 'var(--primary-dark-color)',
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography
+                          className='label'
+                          sx={{
+                            fontSize: { xs: '14px', sm: '16px' },
+                            fontWeight: 400,
+                          }}
+                        >
+                          Remember me
+                        </Typography>
+                      }
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={acceptedTerms}
+                          onChange={e => setAcceptedTerms(e.target.checked)}
+                          sx={{
+                            color: 'var(--dark-grey-color)',
+
+                            '&.Mui-checked': {
+                              color: 'var(--primary-dark-color)',
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography
+                          className='label'
+                          sx={{
+                            fontSize: { xs: '14px', sm: '16px' },
+                            fontWeight: 400,
+                          }}
+                        >
+                          I agree to all the{' '}
+                          <Link
+                            href='#'
+                            sx={{
+                              color: 'var(--primary-dark-color)',
+                              textDecoration: 'none',
+                              fontWeight: 500,
+                              fontSize: 'inherit',
+                              // '&:hover': { textDecoration: 'underline' },
+                            }}
+                          >
+                            Terms{' '}
+                          </Link>
+                          and{' '}
+                          <Link
+                            href='#'
+                            sx={{
+                              color: 'var(--primary-dark-color)',
+                              textDecoration: 'none',
+                              fontWeight: 500,
+                              fontSize: 'inherit',
+                              // '&:hover': { textDecoration: 'underline' },
+                            }}
+                          >
+                            Privacy policy
+                          </Link>
+                        </Typography>
+                      }
+                    />
+                  </Box>
+                </Box>
+
+                {termsError && (
+                  <Typography
+                    sx={{
+                      color: '#d32f2f',
+                      fontSize: { xs: '12px', sm: '14px' },
+                      mb: 1,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {termsError}
+                  </Typography>
+                )}
               </Box>
 
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  gap: { xs: 1, sm: 2 },
-                  mb: { xs: 1.5, sm: 2 },
-                  width: '100%',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <AppInputField
-                    name='password'
-                    label='Password'
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    fullWidth
-                    value={formData.password}
-                    onChange={handleChange}
-                    disabled={loading}
-                    error={Boolean(fieldErrors.password)}
-                    helperText={fieldErrors.password}
-                    placeholder='********'
-                    hideErrorsOnSmallScreen={true}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position='end'>
-                          <IconButton
-                            onClick={handleTogglePassword}
-                            edge='end'
-                            sx={{ color: 'var(--dark-grey-color)' }}
-                          >
-                            {showPassword ? (
-                              <VisibilityOff sx={{ width: 20, height: 20 }} />
-                            ) : (
-                              <Visibility sx={{ width: 20, height: 20 }} />
-                            )}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
+              <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Button
+                    type='submit'
+                    variant='contained'
+                    disabled={isSubmitDisabled}
+                    sx={{
+                      backgroundColor: 'var(--primary-dark-color)',
+                      color: 'var(--white-color)',
+                      fontWeight: 600,
+                      borderRadius: '12px',
+                      fontSize: 'var(--body-font-size)',
+                      textTransform: 'none',
+                      padding: { xs: '8px 32px', lg: '8px 32px' },
+                      height: { xs: '40px', lg: '40px' },
+                      gap: { xs: '4px', lg: 0 },
+                      width: { xs: '100%', lg: '200px' },
+                      // '&:hover': {
+                      //   backgroundColor: 'var(--primary-light-color)',
+                      // },
+                      '&:disabled': { backgroundColor: 'var(--grey-color)' },
                     }}
-                  />
-                </Box>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <AppInputField
-                    name='confirmPassword'
-                    label='Confirm Password'
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    required
-                    fullWidth
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    disabled={loading}
-                    error={Boolean(fieldErrors.confirmPassword)}
-                    helperText={fieldErrors.confirmPassword}
-                    hideErrorsOnSmallScreen={true}
-                    placeholder='********'
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position='end'>
-                          <IconButton
-                            onClick={handleToggleConfirmPassword}
-                            edge='end'
-                            sx={{ color: 'var(--dark-grey-color)' }}
-                          >
-                            {showConfirmPassword ? (
-                              <VisibilityOff sx={{ width: 20, height: 20 }} />
-                            ) : (
-                              <Visibility sx={{ width: 20, height: 20 }} />
-                            )}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Box>
-              </Box>
-              <Box
-                sx={{
-                  mb: { xs: 2, sm: 3 },
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={rememberMe}
-                      onChange={e => setRememberMe(e.target.checked)}
-                      sx={{
-                        color: 'var(--dark-grey-color)',
-                        '&.Mui-checked': { color: 'var(--primary-dark-color)' },
-                      }}
-                    />
-                  }
-                  label={
-                    <Typography
-                      className='label'
-                      sx={{
-                        fontSize: { xs: '14px', sm: '16px' },
-                        fontWeight: 400,
-                      }}
-                    >
-                      Remember me
-                    </Typography>
-                  }
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={acceptedTerms}
-                      onChange={e => setAcceptedTerms(e.target.checked)}
-                      sx={{
-                        color: 'var(--dark-grey-color)',
-                        '&.Mui-checked': { color: 'var(--primary-dark-color)' },
-                      }}
-                    />
-                  }
-                  label={
-                    <Typography
-                      className='label'
-                      sx={{
-                        fontSize: { xs: '14px', sm: '16px' },
-                        fontWeight: 400,
-                      }}
-                    >
-                      I agree to all the{' '}
-                      <Link
-                        href='#'
-                        sx={{
-                          color: 'var(--primary-dark-color)',
-                          textDecoration: 'none',
-                          fontWeight: 500,
-                          fontSize: 'inherit',
-                          // '&:hover': { textDecoration: 'underline' },
-                        }}
+                  >
+                    {loading ? (
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                       >
-                        Terms{' '}
-                      </Link>
-                      and{' '}
-                      <Link
-                        href='#'
-                        sx={{
-                          color: 'var(--primary-dark-color)',
-                          textDecoration: 'none',
-                          fontWeight: 500,
-                          fontSize: 'inherit',
-                          // '&:hover': { textDecoration: 'underline' },
-                        }}
-                      >
-                        Privacy policy
-                      </Link>
-                    </Typography>
-                  }
-                />
-              </Box>
-              {termsError && (
+                        <CircularProgress size={16} color='inherit' />
+                        Processing...
+                      </Box>
+                    ) : (
+                      'Sign Up'
+                    )}
+                  </Button>
+                </Box>
                 <Typography
+                  align='center'
+                  className='label'
                   sx={{
-                    color: '#d32f2f',
-                    fontSize: { xs: '12px', sm: '14px' },
-                    mb: 1,
-                    textAlign: 'center',
+                    color: '#2D3748',
+                    fontSize: { xs: '14px', sm: '16px' },
+                    fontWeight: 400,
+                    mt: 2,
                   }}
                 >
-                  {termsError}
+                  Already have an account?
+                  <Link
+                    component={RouterLink}
+                    to='/'
+                    sx={{
+                      color: 'var(--primary-dark-color)',
+                      textDecoration: 'none',
+                      fontWeight: 500,
+                      fontSize: 'inherit',
+                      // '&:hover': { textDecoration: 'underline' },
+                    }}
+                  >
+                    {' '}
+                    Log In
+                  </Link>
                 </Typography>
-              )}
-              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                <Button
-                  type='submit'
-                  variant='contained'
-                  disabled={isSubmitDisabled}
-                  sx={{
-                    backgroundColor: 'var(--primary-dark-color)',
-                    color: 'var(--white-color)',
-                    fontWeight: 600,
-                    borderRadius: '12px',
-                    fontSize: 'var(--body-font-size)',
-                    textTransform: 'none',
-                    padding: { xs: '8px 32px', lg: '8px 32px' },
-                    height: { xs: '40px', lg: 'auto' },
-                    gap: { xs: '4px', lg: 0 },
-                    width: { xs: '100%', lg: 'auto' },
-                    // '&:hover': {
-                    //   backgroundColor: 'var(--primary-light-color)',
-                    // },
-                    '&:disabled': { backgroundColor: 'var(--grey-color)' },
-                  }}
-                >
-                  {loading ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CircularProgress size={16} color='inherit' />
-                      Processing...
-                    </Box>
-                  ) : (
-                    'Sign Up'
-                  )}
-                </Button>
               </Box>
-              <Typography
-                align='center'
-                className='label'
-                sx={{
-                  color: 'var(--dark-grey-color)',
-                  fontSize: { xs: '14px', sm: '16px' },
-                  fontWeight: 400,
-                }}
-              >
-                Already have an account?
-                <Link
-                  component={RouterLink}
-                  to='/'
-                  sx={{
-                    color: 'var(--primary-dark-color)',
-                    textDecoration: 'none',
-                    fontWeight: 500,
-                    fontSize: 'inherit',
-                    // '&:hover': { textDecoration: 'underline' },
-                  }}
-                >
-                  {' '}
-                  Log In
-                </Link>
-              </Typography>
             </Box>
           </Box>
         </Box>

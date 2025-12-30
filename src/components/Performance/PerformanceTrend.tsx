@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Typography,
   Stack,
-  MenuItem,
   useTheme,
   Grid,
   TableHead,
@@ -24,7 +23,7 @@ import {
 import { formatDate } from '../../utils/dateUtils';
 import AppCard from '../common/AppCard';
 import AppTextField from '../common/AppTextField';
-import AppSelect from '../common/AppSelect';
+import AppDropdown from '../common/AppDropdown';
 import AppTable from '../common/AppTable';
 import { PAGINATION } from '../../constants/appConstants';
 
@@ -278,59 +277,175 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
         <Typography variant='body2' color='text.secondary' gutterBottom>
           Overview gauge by tenant
         </Typography>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={3}>
-          <AppSelect
-            label='Select Employee'
-            fullWidth
-            value={selectedEmployee}
-            onChange={e => setSelectedEmployee(e.target.value as string)}
-            size='small'
-          >
-            <MenuItem value=''>All Employees</MenuItem>
-            {employees.map(emp => (
-              <MenuItem key={emp.id} value={emp.id}>
-                {employeeMap[emp.id]}
-              </MenuItem>
-            ))}
-          </AppSelect>
+        {/* Labels row to align with controls (hidden on small screens) */}
+        <Box
+          sx={{
+            display: { xs: 'none', sm: 'flex' },
+            gap: 2,
+            mb: 0.5,
+            alignItems: 'center',
+          }}
+        >
+          <Box sx={{ minWidth: 220 }}>
+            <Typography className='subheading2' sx={{ fontWeight: 500 }}>
+              Employee
+            </Typography>
+          </Box>
 
-          <AppSelect
-            label='Status'
-            fullWidth
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as string)}
-            size='small'
-          >
-            <MenuItem value=''>All Statuses</MenuItem>
-            <MenuItem value='completed'>Completed</MenuItem>
-            <MenuItem value='under_review'>Under Review</MenuItem>
-            <MenuItem value='pending'>Pending</MenuItem>
-          </AppSelect>
+          <Box sx={{ minWidth: 220 }}>
+            <Typography className='subheading2' sx={{ fontWeight: 500 }}>
+              Status
+            </Typography>
+          </Box>
 
-          <AppTextField
-            type='date'
-            fullWidth
-            label='Start Date'
-            InputLabelProps={{ shrink: true }}
-            value={startDate}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setStartDate(e.target.value)
-            }
-            size='small'
-          />
+          <Box sx={{ minWidth: 220 }}>
+            <Typography className='subheading2' sx={{ fontWeight: 500 }}>
+              Start Date
+            </Typography>
+          </Box>
 
-          <AppTextField
-            type='date'
-            fullWidth
-            label='End Date'
-            InputLabelProps={{ shrink: true }}
-            value={endDate}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setEndDate(e.target.value)
-            }
-            size='small'
-          />
-        </Stack>
+          <Box sx={{ minWidth: 220 }}>
+            <Typography className='subheading2' sx={{ fontWeight: 500 }}>
+              End Date
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            mb: 3,
+            flexDirection: { xs: 'column', sm: 'row' },
+            overflowX: 'auto',
+            alignItems: { xs: 'stretch', sm: 'center' },
+          }}
+        >
+          <Box sx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}>
+            <Typography
+              className='subheading2'
+              sx={{
+                fontWeight: 500,
+                display: { xs: 'block', sm: 'none' },
+                mb: 0.5,
+              }}
+            >
+              Employee
+            </Typography>
+            <AppDropdown
+              label='Select Employee'
+              options={[
+                { value: '', label: 'All Employees' },
+                ...employees.map(emp => ({
+                  value: emp.id,
+                  label: employeeMap[emp.id],
+                })),
+              ]}
+              value={selectedEmployee}
+              onChange={e => setSelectedEmployee(e.target.value as string)}
+              containerSx={{ width: '100%' }}
+              size='small'
+              showLabel={false}
+              // placeholder='Employee'
+            />
+          </Box>
+
+          <Box sx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}>
+            <Typography
+              className='subheading2'
+              sx={{
+                fontWeight: 500,
+                display: { xs: 'block', sm: 'none' },
+                mb: 0.5,
+              }}
+            >
+              Status
+            </Typography>
+            <AppDropdown
+              // label='Status'
+              options={[
+                // { value: '', label: 'All Statuses' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'under_review', label: 'Under Review' },
+                { value: 'pending', label: 'Pending' },
+              ]}
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value as string)}
+              containerSx={{ width: '100%' }}
+              size='small'
+              showLabel={false}
+              // placeholder='Status'
+            />
+          </Box>
+
+          <Box sx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}>
+            <Typography
+              className='subheading2'
+              sx={{
+                fontWeight: 500,
+                display: { xs: 'block', sm: 'none' },
+                mb: 0.5,
+              }}
+            >
+              Start Date
+            </Typography>
+            <AppTextField
+              type='date'
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              value={startDate}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setStartDate(e.target.value)
+              }
+              size='small'
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  minHeight: '48px',
+                  borderRadius: '12px',
+                },
+                '& input[type="date"]': {
+                  padding: '10px 12px',
+                  height: '32px',
+                  boxSizing: 'border-box',
+                },
+              }}
+            />
+          </Box>
+
+          <Box sx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}>
+            <Typography
+              className='subheading2'
+              sx={{
+                fontWeight: 500,
+                display: { xs: 'block', sm: 'none' },
+                mb: 0.5,
+              }}
+            >
+              End Date
+            </Typography>
+            <AppTextField
+              type='date'
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              value={endDate}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setEndDate(e.target.value)
+              }
+              size='small'
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  minHeight: '48px',
+                  borderRadius: '12px',
+                },
+                '& input[type="date"]': {
+                  padding: '10px 12px',
+                  height: '32px',
+                  boxSizing: 'border-box',
+                },
+              }}
+            />
+          </Box>
+        </Box>
 
         <Grid
           container

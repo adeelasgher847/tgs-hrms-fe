@@ -1,4 +1,10 @@
-import { Box, Typography, CircularProgress, Divider } from '@mui/material';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Divider,
+  useTheme,
+} from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useState, useEffect } from 'react';
@@ -11,6 +17,7 @@ import {
 } from '../../../api/employeeApi';
 
 export default function AvailabilityCardsGrid() {
+  const theme = useTheme();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   // darkMode is reserved for future use
   void darkMode;
@@ -131,7 +138,7 @@ export default function AvailabilityCardsGrid() {
           fontSize={{ xs: '20px', lg: '28px' }}
           lineHeight={{ xs: '28px', lg: '36px' }}
           letterSpacing='-2%'
-          color='#2C2C2C'
+          sx={{ color: theme.palette.text.primary }}
         >
           {labels[language]}
           {!error && attendanceData > 0 && (
@@ -227,14 +234,17 @@ export default function AvailabilityCardsGrid() {
                 sx={{
                   width: 24,
                   height: 24,
-                  filter: 'brightness(0) saturate(100%)',
+                  filter:
+                    theme.palette.mode === 'dark'
+                      ? 'brightness(0) saturate(100%) invert(56%)'
+                      : 'brightness(0) saturate(100%)',
                 }}
               />
               <Typography
                 sx={{
                   fontSize: '16px',
                   fontWeight: 400,
-                  color: 'var(--text-color)',
+                  color: theme.palette.text.primary,
                 }}
               >
                 {attendanceLabel[language]}
@@ -244,7 +254,7 @@ export default function AvailabilityCardsGrid() {
               sx={{
                 fontSize: '24px',
                 fontWeight: 700,
-                color: 'var(--text-color)',
+                color: theme.palette.text.primary,
               }}
             >
               {attendanceData}
@@ -254,7 +264,7 @@ export default function AvailabilityCardsGrid() {
           {/* Divider */}
           <Divider
             sx={{
-              borderColor: 'var(--light-grey-color)',
+              borderColor: theme.palette.divider,
               my: 0,
             }}
           />
@@ -282,14 +292,17 @@ export default function AvailabilityCardsGrid() {
                 sx={{
                   width: 24,
                   height: 24,
-                  filter: 'brightness(0) saturate(100%)',
+                  filter:
+                    theme.palette.mode === 'dark'
+                      ? 'brightness(0) saturate(100%) invert(56%)'
+                      : 'brightness(0) saturate(100%)',
                 }}
               />
               <Typography
                 sx={{
                   fontSize: 'var(--body-font-size)',
                   fontWeight: 400,
-                  color: 'var(--text-color)',
+                  color: theme.palette.text.primary,
                 }}
               >
                 {leavesLabel[language]}
@@ -299,7 +312,7 @@ export default function AvailabilityCardsGrid() {
               sx={{
                 fontSize: '24px',
                 fontWeight: 700,
-                color: 'var(--text-color)',
+                color: theme.palette.text.primary,
               }}
             >
               {leavesData}

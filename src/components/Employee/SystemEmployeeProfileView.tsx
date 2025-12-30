@@ -18,6 +18,7 @@ import {
   Stack,
   Divider,
   DialogActions,
+  useTheme,
 } from '@mui/material';
 import { Work, Business, Email, Star, Close } from '@mui/icons-material';
 import systemEmployeeApiService, {
@@ -44,6 +45,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
   onClose,
   employeeId,
 }) => {
+  const theme = useTheme();
   const [profile, setProfile] = useState<SystemEmployeeDetails | null>(null);
   const [leaves, setLeaves] = useState<EmployeeLeave[]>([]);
   const [assets, setAssets] = useState<EmployeeAsset[]>([]);
@@ -140,7 +142,11 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
       >
         <Typography
           component='span'
-          sx={{ fontSize: '1.25rem', fontWeight: 600, color: 'primary.main' }}
+          sx={{
+            fontSize: '1.25rem',
+            fontWeight: 600,
+            color: 'var(--primary-dark-color)',
+          }}
         >
           Employee Profile
         </Typography>
@@ -211,13 +217,13 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 variant='h6'
                 fontWeight={600}
                 gutterBottom
-                color='primary.main'
+                color='var(--primary-dark-color)'
               >
                 Leaves
               </Typography>
               <AppTable>
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: 'rgba(33,150,243,0.08)' }}>
+                  <TableRow>
                     <TableCell>Type</TableCell>
                     <TableCell>From</TableCell>
                     <TableCell>To</TableCell>
@@ -285,13 +291,13 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 variant='h6'
                 fontWeight={600}
                 gutterBottom
-                color='primary.main'
+                color='var(--primary-dark-color)'
               >
                 Assigned Assets
               </Typography>
               <AppTable>
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: 'rgba(255,152,0,0.08)' }}>
+                  <TableRow>
                     <TableCell>Asset Name</TableCell>
                     <TableCell>Category</TableCell>
                     <TableCell>Status</TableCell>
@@ -338,7 +344,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 variant='h6'
                 fontWeight={600}
                 gutterBottom
-                color='primary.main'
+                color='var(--primary-dark-color)'
               >
                 Assigned Benefits
               </Typography>
@@ -442,6 +448,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                           variant='text'
                           size='small'
                           color='primary'
+                          sx={{ color: 'var(--primary-dark-color)' }}
                           onClick={() => {
                             setSelectedBenefit(b);
                             setOpenBenefitDialog(true);
@@ -535,7 +542,10 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                   )}
                 </DialogContent>
                 <DialogActions>
-                  <Button onClick={() => setOpenBenefitDialog(false)}>
+                  <Button
+                    onClick={() => setOpenBenefitDialog(false)}
+                    sx={{ color: 'var(--primary-dark-color)' }}
+                  >
                     Close
                   </Button>
                 </DialogActions>
@@ -550,7 +560,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 variant='h6'
                 fontWeight={600}
                 gutterBottom
-                color='primary.main'
+                color='var(--primary-dark-color)'
               >
                 KPIs Overview
               </Typography>
@@ -686,11 +696,19 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                           >
                             Score:
                             <span
-                              style={{ color: '#FFB400', fontSize: '1.2rem' }}
+                              style={{
+                                color: theme.palette.warning.main,
+                                fontSize: '1.2rem',
+                              }}
                             >
                               {filledStars}
                             </span>
-                            <span style={{ color: '#ccc', fontSize: '1.2rem' }}>
+                            <span
+                              style={{
+                                color: theme.palette.text.disabled,
+                                fontSize: '1.2rem',
+                              }}
+                            >
                               {emptyStars}
                             </span>
                           </Typography>
@@ -705,6 +723,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                               variant='text'
                               size='small'
                               color='primary'
+                              sx={{ color: 'var(--primary-dark-color)' }}
                               onClick={() => {
                                 setSelectedKpi(kpi);
                                 setOpenKpiDialog(true);
@@ -744,7 +763,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 variant='h6'
                 fontWeight={600}
                 gutterBottom
-                color='primary.main'
+                color='var(--primary-dark-color)'
               >
                 Promotions
               </Typography>
@@ -803,13 +822,13 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                 variant='h6'
                 fontWeight={600}
                 gutterBottom
-                color='primary.main'
+                color='var(--primary-dark-color)'
               >
                 Performance Reviews
               </Typography>
               <AppTable>
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: 'rgba(76,175,80,0.08)' }}>
+                  <TableRow>
                     <TableCell>Cycle</TableCell>
                     <TableCell>Overall Score</TableCell>
                     <TableCell>Status</TableCell>

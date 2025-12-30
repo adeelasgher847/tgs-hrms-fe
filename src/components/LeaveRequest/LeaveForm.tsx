@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, MenuItem, Typography } from '@mui/material';
+import { Box, TextField, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { leaveApi, type LeaveType } from '../../api/leaveApi';
 import AppButton from '../common/AppButton';
+import AppDropdown from '../common/AppDropdown';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 interface LeaveFormProps {
   onSubmit?: (data: {
@@ -115,29 +117,30 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
           gap: 2,
         }}
       >
-        <Typography variant='h5' color='primary' mb={2}>
+        <Typography
+          variant='h5'
+          mb={2}
+          sx={{ color: 'var(--primary-dark-color)' }}
+        >
           Apply for Leave
         </Typography>
 
-        <TextField
-          select
+        <AppDropdown
           label='Leave Type'
-          value={leaveTypeId}
-          onChange={e => setLeaveTypeId(e.target.value)}
-          required
-          fullWidth
-          disabled={loadingLeaveTypes}
-        >
-          {leaveTypes.length > 0 ? (
-            leaveTypes.map(type => (
-              <MenuItem key={type.id} value={type.id}>
-                {type.name}
-              </MenuItem>
-            ))
-          ) : (
-            <MenuItem disabled>No leave types available</MenuItem>
-          )}
-        </TextField>
+          value={leaveTypeId || ''}
+          onChange={(e: SelectChangeEvent<string | number>) =>
+            setLeaveTypeId(String(e.target.value || ''))
+          }
+          options={
+            leaveTypes.length > 0
+              ? leaveTypes.map(type => ({ value: type.id, label: type.name }))
+              : [{ value: '', label: 'No leave types available' }]
+          }
+          disabled={loadingLeaveTypes || leaveTypes.length === 0}
+          containerSx={{ width: '100%' }}
+          placeholder='Leave Type'
+          showLabel
+        />
 
         {/* Start Date */}
         <DatePicker
@@ -186,6 +189,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
           variantType='contained'
           text={loading ? 'Submitting...' : 'Apply'}
           disabled={loading}
+          sx={{ color: 'var(--primary-dark-color)' }}
         />
       </Box>
     </LocalizationProvider>

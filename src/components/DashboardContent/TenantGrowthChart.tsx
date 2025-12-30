@@ -5,17 +5,19 @@ import {
   Select,
   FormControl,
   CircularProgress,
-  TextField,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
-import systemDashboardApiService from '@/api/systemDashboardApi';
+import systemDashboardApiService from '../../api/systemDashboardApi';
 import { getCurrentUser } from '../../utils/auth';
 import { isSystemAdmin } from '../../utils/roleUtils';
+import AppDropdown from '../common/AppDropdown';
+import TimeRangeSelector from '../common/TimeRangeSelector';
 
 interface Tenant {
   id: string;
@@ -38,12 +40,9 @@ interface TenantGrowth {
 }
 
 const TenantGrowthChart: React.FC = () => {
+  const theme = useTheme();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
-
-  const bgColor = darkMode ? '#111' : '#fff';
-  const borderColor = darkMode ? '#252525' : '#f0f0f0';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
 
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
@@ -76,11 +75,15 @@ const TenantGrowthChart: React.FC = () => {
         setTenants((data || []) as unknown as Tenant[]);
 
         if (data && data.length > 0) {
-          const ibexTenant = data.find((t: Record<string, unknown>) => t.name === 'Ibex Tech.');
+          const ibexTenant = data.find(
+            (t: Record<string, unknown>) => t.name === 'Ibex Tech.'
+          );
           if (ibexTenant) {
             setSelectedTenant(ibexTenant.id as string);
           } else {
-            setSelectedTenant((data[0] as Record<string, unknown>).id as string);
+            setSelectedTenant(
+              (data[0] as Record<string, unknown>).id as string
+            );
           }
         }
       } catch {
@@ -136,21 +139,23 @@ const TenantGrowthChart: React.FC = () => {
     stroke: { show: true, width: 1, colors: ['#fff'] },
     xaxis: {
       categories: months,
-      labels: { style: { fontSize: '12px', colors: textColor } },
+      labels: {
+        style: { fontSize: '12px', colors: theme.palette.text.primary },
+      },
     },
     yaxis: {
       labels: {
         formatter: val => `${val}`,
-        style: { fontSize: '12px', colors: textColor },
+        style: { fontSize: '12px', colors: theme.palette.text.primary },
       },
     },
     legend: {
       position: 'top',
       horizontalAlign: language === 'ar' ? 'left' : 'right',
-      labels: { colors: textColor },
+      labels: { colors: theme.palette.text.primary },
     },
     grid: {
-      borderColor: borderColor,
+      borderColor: theme.palette.divider,
       padding: { top: 20, left: 10, right: 10, bottom: 10 },
     },
     colors: ['#4E79A7', '#F28E2B', '#E15759'],
@@ -168,7 +173,7 @@ const TenantGrowthChart: React.FC = () => {
         alignItems='center'
         height={400}
       >
-        <CircularProgress />
+        <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
       </Box>
     );
   }
@@ -177,7 +182,7 @@ const TenantGrowthChart: React.FC = () => {
     <Box
       sx={{
         borderRadius: '0.375rem',
-        backgroundColor: bgColor,
+        backgroundColor: theme.palette.background.paper,
         direction: language === 'ar' ? 'rtl' : 'ltr',
         height: 400,
         display: 'flex',
@@ -188,85 +193,56 @@ const TenantGrowthChart: React.FC = () => {
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', sm: 'center' },
           mb: 2,
           flexWrap: 'wrap',
           gap: 2,
         }}
       >
-        <Typography fontWeight='bold' fontSize={20} color={textColor}>
+        <Typography
+          fontWeight='bold'
+          fontSize={{ xs: 18, sm: 20 }}
+          sx={{ color: theme.palette.text.primary }}
+        >
           {labels[language]} ({selectedYear})
         </Typography>
 
         <Box display='flex' gap={2}>
-          <TextField
-            type='number'
+          <TimeRangeSelector
             value={selectedYear}
-            onChange={e => {
-              const value = parseInt(e.target.value);
-              if (!isNaN(value) && value > 0) {
-                setSelectedYear(value);
-              }
+            options={Array.from({ length: 5 }, (_, i) => selectedYear - i)}
+            onChange={val => {
+              if (val === 'all-time' || val === null) return;
+              const num =
+                typeof val === 'number' ? val : parseInt(val as string);
+              if (!isNaN(num)) setSelectedYear(num);
             }}
-            size='small'
+            allTimeLabel={language === 'ar' ? 'كل الوقت' : 'All Time'}
+            containerSx={{ minWidth: 120 }}
+            minHeight={'48px'}
+          />
+          <AppDropdown
+            showLabel={false}
+            value={selectedTenant}
+            onChange={e => setSelectedTenant(e.target.value as string)}
+            options={tenants.map(t => ({ value: t.id, label: t.name }))}
+            containerSx={{ minWidth: 160 }}
             sx={{
-              width: 120,
+              width: { xs: '100%', sm: 120 },
               '& .MuiOutlinedInput-root': {
-                color: textColor,
+                color: theme.palette.text.primary,
                 '& fieldset': {
-                  borderColor: borderColor,
+                  borderColor: theme.palette.divider,
                 },
                 // '&:hover fieldset': {
-                //   borderColor: borderColor,
+                //   borderColor: theme.palette.divider,
                 // },
                 '&.Mui-focused fieldset': {
-                  borderColor: borderColor,
+                  borderColor: theme.palette.divider,
                 },
               },
             }}
-            inputProps={{
-              min: 2000,
-              max: 2100,
-            }}
           />
-
-          <FormControl size='small' sx={{ minWidth: 160 }}>
-            <Select
-              value={selectedTenant}
-              onChange={e => setSelectedTenant(e.target.value)}
-              sx={{
-                color: textColor,
-                '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: borderColor,
-                },
-                '.MuiSelect-select': {
-                  display: 'flex',
-                  alignItems: 'center',
-                  maxWidth: 200,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                },
-              }}
-            >
-              {tenants.map(tenant => (
-                <MenuItem key={tenant.id} value={tenant.id}>
-                  <Tooltip title={tenant.name}>
-                    <Box
-                      sx={{
-                        maxWidth: 220,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {tenant.name}
-                    </Box>
-                  </Tooltip>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
         </Box>
       </Box>
 

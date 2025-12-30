@@ -70,7 +70,7 @@ const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
         alignItems='center'
         minHeight='200px'
       >
-        <CircularProgress />
+        <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
       </Box>
     );
   }
@@ -79,6 +79,7 @@ const KpiPerformanceOverview: React.FC<KpiPerformanceOverviewProps> = ({
     <Box
       sx={{
         display: 'grid',
+
         gridTemplateColumns: {
           xs: '1fr',
           sm: 'repeat(2, minmax(0, 1fr))',

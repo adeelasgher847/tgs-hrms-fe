@@ -8,17 +8,10 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  InputAdornment,
   CircularProgress,
   Stack,
   Chip,
   Avatar,
-  Button,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -26,7 +19,6 @@ import {
   Pagination,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
   Business as BusinessIcon,
   FilterList as FilterIcon,
 } from '@mui/icons-material';
@@ -40,6 +32,10 @@ import StatusChip from './StatusChip';
 import { formatDate } from '../../utils/dateUtils';
 import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../common/AppTable';
+import AppDropdown from '../common/AppDropdown';
+import AppSearch from '../common/AppSearch';
+import AppButton from '../common/AppButton';
+import AppPageTitle from '../common/AppPageTitle';
 
 interface AssetCategory {
   id: string;
@@ -278,13 +274,7 @@ const SystemAdminAssets: React.FC = () => {
           gap: 2,
         }}
       >
-        <Typography
-          variant='h4'
-          fontWeight={600}
-          fontSize={{ xs: '32px', lg: '48px' }}
-        >
-          Assets Overview
-        </Typography>
+        <AppPageTitle>Assets Overview</AppPageTitle>
       </Box>
 
       {summary.length > 0 && (
@@ -461,12 +451,13 @@ const SystemAdminAssets: React.FC = () => {
           </Box>
           {summary.length > 6 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-              <Button
+              <AppButton
                 variant='outlined'
+                variantType='secondary'
                 onClick={() => setViewMoreDialogOpen(true)}
               >
                 View More ({summary.length - 6} more)
-              </Button>
+              </AppButton>
             </Box>
           )}
         </>
@@ -660,7 +651,13 @@ const SystemAdminAssets: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewMoreDialogOpen(false)}>Close</Button>
+          <AppButton
+            variant='outlined'
+            variantType='secondary'
+            onClick={() => setViewMoreDialogOpen(false)}
+          >
+            Close
+          </AppButton>
         </DialogActions>
       </Dialog>
 
@@ -675,79 +672,63 @@ const SystemAdminAssets: React.FC = () => {
             }}
           >
             <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-              <TextField
-                fullWidth
-                size='small'
+              <AppSearch
                 placeholder='Search assets...'
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position='start'>
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
                 sx={{ borderRadius: 2 }}
               />
             </Box>
             <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Category</InputLabel>
-                <Select
-                  value={categoryFilter}
-                  onChange={e => setCategoryFilter(e.target.value)}
-                  label='Category'
-                >
-                  <MenuItem value=''>All Categories</MenuItem>
-                  {categoryNames.map(cat => (
-                    <MenuItem key={cat} value={cat}>
-                      {cat}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <AppDropdown
+                label='Category'
+                showLabel={false}
+                value={categoryFilter}
+                onChange={e => setCategoryFilter(String(e.target.value || ''))}
+                options={[
+                  { value: 'all', label: 'All Categories' },
+                  ...categoryNames.map(cat => ({ value: cat, label: cat })),
+                ]}
+              />
             </Box>
             <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Tenant</InputLabel>
-                <Select
-                  value={tenantFilter}
-                  onChange={e => setTenantFilter(e.target.value)}
-                  label='Tenant'
-                >
-                  <MenuItem value=''>All Tenants</MenuItem>
-                  {tenants.map(tenant => (
-                    <MenuItem key={tenant.id} value={tenant.id}>
-                      {tenant.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <AppDropdown
+                label='Tenant'
+                showLabel={false}
+                value={tenantFilter}
+                onChange={e => setTenantFilter(String(e.target.value || ''))}
+                options={[
+                  { value: 'all', label: 'All Tenants' },
+                  ...tenants.map(tenant => ({
+                    value: tenant.id,
+                    label: tenant.name,
+                  })),
+                ]}
+              />
             </Box>
             <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Assignment</InputLabel>
-                <Select
-                  value={assignedFilter}
-                  onChange={e => setAssignedFilter(e.target.value)}
-                  label='Assignment'
-                >
-                  <MenuItem value=''>All</MenuItem>
-                  <MenuItem value='assigned'>Assigned</MenuItem>
-                  <MenuItem value='unassigned'>Unassigned</MenuItem>
-                </Select>
-              </FormControl>
+              <AppDropdown
+                label='Assignment'
+                showLabel={false}
+                value={assignedFilter}
+                onChange={e => setAssignedFilter(String(e.target.value || ''))}
+                options={[
+                  { value: 'all', label: 'All Assets' },
+                  { value: 'assigned', label: 'Assigned' },
+                  { value: 'unassigned', label: 'Unassigned' },
+                ]}
+              />
             </Box>
             <Box sx={{ flex: '0 0 auto' }}>
-              <Button
+              <AppButton
                 variant='outlined'
+                variantType='secondary'
                 startIcon={<FilterIcon />}
                 onClick={handleClearFilters}
                 sx={{ p: 0.9 }}
               >
                 Clear Filters
-              </Button>
+              </AppButton>
             </Box>
           </Box>
         </CardContent>

@@ -1,10 +1,9 @@
 /* Light mode styles - keep original default */
 .custom-date-picker-input {
-  border: 1px solid rgba(0, 0, 0, 0.23) !important;
-  border-radius: 4px !important;
+  border: 1px solid #3083DC !important;
+  border-radius: 12px !important;
   padding: 6.5px 14px !important;
   font-size: 16px !important;
-  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
   height: 35px !important;
   background-color: transparent !important;
   outline: none !important;
@@ -12,7 +11,7 @@
     border-color 0.15s ease-in-out,
     box-shadow 0.15s ease-in-out !important;
   cursor: pointer !important;
-  color: rgba(0, 0, 0, 0.87) !important;
+  color: #3284dc !important;
 }
 
 .custom-date-picker-input:focus {
@@ -21,11 +20,11 @@
 }
 
 .custom-date-picker-input:hover {
-  border-color: rgba(0, 0, 0, 0.87) !important;
+  border-color: #3284dc !important;
 }
 
 .custom-date-picker-input::placeholder {
-  color: rgba(0, 0, 0, 0.6) !important;
+  color: #3284dc !important;
 }
 
 /* Dark mode styles for date picker input - ONLY when dark mode is active */
@@ -85,37 +84,37 @@
 }
 
 [data-theme='dark'] .rmdp-day:hover {
-  background-color: rgba(96, 91, 212, 0.2) !important;
+  background-color: rgba(48, 131, 220, 0.2) !important;
 }
 
 [data-theme='dark'] .rmdp-day.rmdp-today {
-  background-color: rgba(96, 91, 212, 0.3) !important;
+  background-color: rgba(48, 131, 220, 0.3) !important;
   color: #ffffff !important;
-  border: 1px solid #605bd4 !important;
+  border: 1px solid #3083DC !important;
 }
 
 [data-theme='dark'] .rmdp-day.rmdp-selected {
-  background-color: #605bd4 !important;
+  background-color: #3083DC !important;
   color: white !important;
 }
 
 [data-theme='dark'] .rmdp-day.rmdp-range {
-  background-color: #605bd4 !important;
+  background-color: #3083DC !important;
   color: #fff !important;
 }
 
 [data-theme='dark'] .rmdp-day.rmdp-range-start,
 [data-theme='dark'] .rmdp-day.rmdp-range-end {
-  background-color: #605bd4 !important;
+  background-color: #3083DC !important;
   color: white !important;
 }
 
 [data-theme='dark'] .rmdp-arrow {
-  color: #605bd4 !important;
+  color: #3083DC !important;
 }
 
 [data-theme='dark'] .rmdp-arrow:hover {
-  background-color: rgba(96, 91, 212, 0.2) !important;
+  background-color: rgba(48, 131, 220, 0.2) !important;
 }
 
 [data-theme='dark'] .rmdp-month-name {
@@ -153,24 +152,24 @@
   background-color: rgba(25, 118, 210, 0.08) !important;
 } */
 .rmdp-day.rmdp-selected {
-  background-color: #1976d2 !important;
+  background-color: #3083DC !important;
   color: white !important;
 }
 .rmdp-day.rmdp-range {
-  background-color: #0074d9;
-  box-shadow: 0 0 3px #8798ad;
+  background-color: #3083DC;
+  box-shadow: 0 0 3px rgba(48, 131, 220, 0.3);
   color: #fff;
 }
 .rmdp-day.rmdp-range-start,
 .rmdp-day.rmdp-range-end {
-  background-color: #1976d2 !important;
+  background-color: #3083DC !important;
   color: white !important;
 }
 .rmdp-arrow {
-  color: #1976d2 !important;
+  color: #3083DC !important;
 }
 .rmdp-arrow:hover {
-  background-color: rgba(25, 118, 210, 0.08) !important;
+  background-color: rgba(48, 131, 220, 0.08) !important;
 }
 /* Mobile responsive styles for DateNavigation */
 .MuiBox-root.css-1c1kq07 {

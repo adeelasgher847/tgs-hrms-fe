@@ -12,7 +12,6 @@ import {
   Toolbar,
   Typography,
   CircularProgress,
-  Button,
   Stack,
   Dialog,
   DialogTitle,
@@ -20,6 +19,7 @@ import {
   DialogContentText,
   DialogActions,
 } from '@mui/material';
+import AppButton from '../common/AppButton';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import HistoryIcon from '@mui/icons-material/History';
 import ErrorSnackbar from '../common/ErrorSnackbar';
@@ -48,10 +48,15 @@ const LeaveRequestPage = () => {
     null
   );
   const [isManagerAction, setIsManagerAction] = useState(false);
-  // const [managerResponseDialogOpen, setManagerResponseDialogOpen] =
-  //   useState(false);
+  const [managerResponseDialogOpen, setManagerResponseDialogOpen] =
+    useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Currently selected leave (used for dialogs like manager response)
+  const selectedLeave = selectedId
+    ? leaves.find(l => l.id === selectedId)
+    : undefined;
 
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
   const previousViewModeRef = useRef<'team' | 'you'>(viewMode);
@@ -176,12 +181,12 @@ const LeaveRequestPage = () => {
           // const remarksString =
           //   typeof leave.remarks === 'string' ? leave.remarks : undefined;
 
-          // remarks field: could be rejection remarks (if status is rejected) or manager remarks
+          // remarks field: could be rejection remarks (if status is rejected)
           // const remarks =
           //   normalizedStatus === 'rejected' ? remarksString : undefined;
 
-          // managerRemarks: from approve-manager endpoint, backend returns in remarks field
-          // But we need to differentiate - if status is not rejected and remarks exists, it's manager response
+          // managerRemarks: from approve-manager endpoint, backend may return in managerRemarks or manager_remarks
+          // If status is not rejected and remarksString exists, treat it as manager response
           // const managerRemarks =
           //   (typeof leave.managerRemarks === 'string' &&
           //     leave.managerRemarks) ||
@@ -396,6 +401,17 @@ const LeaveRequestPage = () => {
     setDialogOpen(true);
   };
 
+  // Manager approves/rejects a team leave (alias to the existing dialog flow)
+  const handleManagerAction = (id: string, action: 'approved' | 'rejected') => {
+    handleOpenManagerResponse(id, action);
+  };
+
+  // View manager remarks/response for a leave (opens the read-only dialog)
+  const handleViewManagerResponse = (id: string) => {
+    setSelectedId(id);
+    setManagerResponseDialogOpen(true);
+  };
+
   const handleWithdraw = (id: string) => {
     setSelectedId(id);
     setWithdrawDialogOpen(true);
@@ -491,7 +507,11 @@ const LeaveRequestPage = () => {
       {/* Header */}
       <AppBar
         position='static'
-        sx={{ borderRadius: 1, backgroundColor: '#3c3572', boxShadow: 'none' }}
+        sx={{
+          borderRadius: 1,
+          backgroundColor: 'var(--primary-dark-color)',
+          boxShadow: 'none',
+        }}
       >
         <Toolbar
           sx={{
@@ -516,7 +536,7 @@ const LeaveRequestPage = () => {
 
           {['employee', 'manager'].includes(role) && (
             <Stack
-              direction='row'
+              direction={{ xs: 'column', sm: 'row' }}
               spacing={2}
               sx={{
                 my: { xs: 1, sm: 0 },
@@ -526,35 +546,45 @@ const LeaveRequestPage = () => {
                 flexWrap: 'wrap',
               }}
             >
-              <Button
-                startIcon={<AssignmentIcon />}
+              <AppButton
+                startIcon={<AssignmentIcon sx={{ color: 'inherit' }} />}
                 variant={activeTab === 'apply' ? 'contained' : 'outlined'}
+                variantType={activeTab === 'apply' ? 'primary' : 'secondary'}
                 onClick={() => setActiveTab('apply')}
                 sx={{
                   borderRadius: '20px',
-                  color: activeTab === 'apply' ? '#3c3572' : '#fff',
+                  width: { xs: '100%', sm: 'auto' },
+                  color:
+                    activeTab === 'apply'
+                      ? 'var(--primary-dark-color)'
+                      : '#fff',
                   backgroundColor:
                     activeTab === 'apply' ? '#fff' : 'transparent',
                   borderColor: '#fff',
                 }}
               >
                 Apply Leave
-              </Button>
+              </AppButton>
 
-              <Button
-                startIcon={<HistoryIcon />}
+              <AppButton
+                startIcon={<HistoryIcon sx={{ color: 'inherit' }} />}
                 variant={activeTab === 'history' ? 'contained' : 'outlined'}
+                variantType={activeTab === 'history' ? 'primary' : 'secondary'}
                 onClick={() => setActiveTab('history')}
                 sx={{
                   borderRadius: '20px',
-                  color: activeTab === 'history' ? '#3c3572' : '#fff',
+                  width: { xs: '100%', sm: 'auto' },
+                  color:
+                    activeTab === 'history'
+                      ? 'var(--primary-dark-color)'
+                      : '#fff',
                   backgroundColor:
                     activeTab === 'history' ? '#fff' : 'transparent',
                   borderColor: '#fff',
                 }}
               >
                 Leave History
-              </Button>
+              </AppButton>
             </Stack>
           )}
         </Toolbar>
@@ -567,42 +597,68 @@ const LeaveRequestPage = () => {
           ) : (
             <>
               {role === 'manager' && (
-                <Box sx={{ mb: 2, textAlign: 'right' }}>
-                  <Button
+                <Box
+                  sx={{
+                    mb: 2,
+                    textAlign: { xs: 'left', sm: 'right' },
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 1,
+                    justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                  }}
+                >
+                  <AppButton
                     variant={viewMode === 'you' ? 'contained' : 'outlined'}
+                    variantType={viewMode === 'you' ? 'primary' : 'secondary'}
                     onClick={() => setViewMode('you')}
                     sx={{
-                      mr: 1,
                       borderRadius: '20px',
+                      width: { xs: '100%', sm: 'auto' },
                       backgroundColor:
-                        viewMode === 'you' ? '#3c3572' : 'transparent',
-                      color: viewMode === 'you' ? '#fff' : '#3c3572',
-                      borderColor: '#3c3572',
+                        viewMode === 'you'
+                          ? 'var(--primary-dark-color)'
+                          : 'transparent',
+                      color:
+                        viewMode === 'you'
+                          ? '#fff'
+                          : 'var(--primary-dark-color)',
+                      borderColor: 'var(--primary-dark-color)',
                       '&:hover': {
                         backgroundColor:
-                          viewMode === 'you' ? '#2f285b' : '#eae7f5',
+                          viewMode === 'you'
+                            ? 'var(--primary-dark-color)'
+                            : '#eae7f5',
                       },
                     }}
                   >
                     Your Leaves
-                  </Button>
-                  <Button
+                  </AppButton>
+                  <AppButton
                     variant={viewMode === 'team' ? 'contained' : 'outlined'}
+                    variantType={viewMode === 'team' ? 'primary' : 'secondary'}
                     onClick={() => setViewMode('team')}
                     sx={{
                       borderRadius: '20px',
+                      width: { xs: '100%', sm: 'auto' },
                       backgroundColor:
-                        viewMode === 'team' ? '#3c3572' : 'transparent',
-                      color: viewMode === 'team' ? '#fff' : '#3c3572',
-                      borderColor: '#3c3572',
+                        viewMode === 'team'
+                          ? 'var(--primary-dark-color)'
+                          : 'transparent',
+                      color:
+                        viewMode === 'team'
+                          ? '#fff'
+                          : 'var(--primary-dark-color)',
+                      borderColor: 'var(--primary-dark-color)',
                       '&:hover': {
                         backgroundColor:
-                          viewMode === 'team' ? '#2f285b' : '#eae7f5',
+                          viewMode === 'team'
+                            ? 'var(--primary-dark-color)'
+                            : '#eae7f5',
                       },
                     }}
                   >
                     Team Leaves
-                  </Button>
+                  </AppButton>
                 </Box>
               )}
 
@@ -613,7 +669,14 @@ const LeaveRequestPage = () => {
                 currentUserId={currentUserId || undefined}
                 viewMode={viewMode}
                 onManagerAction={
-                  viewMode === 'team' ? handleOpenManagerResponse : undefined
+                  role === 'manager' && viewMode === 'team'
+                    ? handleManagerAction
+                    : undefined
+                }
+                onManagerResponse={
+                  role === 'manager' && viewMode === 'team'
+                    ? handleViewManagerResponse
+                    : undefined
                 }
                 onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
                 currentPage={currentPage}
@@ -662,6 +725,37 @@ const LeaveRequestPage = () => {
         showRemarksField={isManagerAction}
       />
 
+      {/* Manager response dialog - shows manager remarks or response */}
+      <Dialog
+        open={managerResponseDialogOpen}
+        onClose={() => {
+          setManagerResponseDialogOpen(false);
+          setSelectedId(null);
+        }}
+        aria-labelledby='manager-response-dialog-title'
+        aria-describedby='manager-response-dialog-description'
+      >
+        <DialogTitle id='manager-response-dialog-title'>
+          Manager Response
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id='manager-response-dialog-description'>
+            {selectedLeave?.managerRemarks || 'No remarks provided by manager.'}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <AppButton
+            onClick={() => {
+              setManagerResponseDialogOpen(false);
+              setSelectedId(null);
+            }}
+            variantType='primary'
+          >
+            Close
+          </AppButton>
+        </DialogActions>
+      </Dialog>
+
       <Dialog
         open={withdrawDialogOpen}
         onClose={() => setWithdrawDialogOpen(false)}
@@ -678,16 +772,19 @@ const LeaveRequestPage = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setWithdrawDialogOpen(false)} color='primary'>
+          <AppButton
+            onClick={() => setWithdrawDialogOpen(false)}
+            variantType='secondary'
+          >
             Cancel
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             onClick={handleConfirmWithdraw}
-            color='warning'
+            variantType='danger'
             variant='contained'
           >
             Withdraw
-          </Button>
+          </AppButton>
         </DialogActions>
       </Dialog>
 

@@ -484,7 +484,15 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
           onClick={onClose}
           variant='outlined'
           variantType='secondary'
-          sx={{ color: textColor, borderColor }}
+          sx={{
+            color: 'var(--primary-dark-color)',
+            borderColor: 'var(--primary-dark-color)',
+            textTransform: 'none',
+            '&:hover': {
+              borderColor: 'var(--primary-dark-color)',
+              backgroundColor: 'action.hover',
+            },
+          }}
         >
           {getLabel('Close', 'إغلاق')}
         </AppButton>

@@ -1,5 +1,4 @@
 import axiosInstance from './axiosInstance';
-import { handleApiError } from '../utils/errorHandler';
 
 export interface EmployeeJoiningReport {
   month: number;
@@ -365,74 +364,69 @@ class EmployeeApiService {
   }
 
   async createEmployee(employeeData: EmployeeDto): Promise<BackendEmployee> {
-    try {
-      // Create FormData for multipart/form-data submission
-      const formData = new FormData();
+    // NOTE: We intentionally do NOT wrap/transform errors here.
+    // The caller (UI) needs access to `error.response.data` for special flows
+    // like `requiresPayment` + `checkoutUrl` returned by the backend.
 
-      // Add text fields
-      formData.append('first_name', employeeData.first_name);
-      formData.append('last_name', employeeData.last_name);
-      formData.append('email', employeeData.email);
-      formData.append('phone', employeeData.phone);
-      if (employeeData.password) {
-        formData.append('password', employeeData.password);
-      }
-      formData.append('designation_id', employeeData.designationId);
-      formData.append('gender', employeeData.gender);
-      if (employeeData.role_name) {
-        formData.append('role_name', employeeData.role_name);
-      }
-      if (employeeData.role_id) {
-        formData.append('role_id', employeeData.role_id);
-      }
-      if (employeeData.team_id) {
-        formData.append('team_id', employeeData.team_id);
-      }
-      if (employeeData.cnicNumber) {
-        formData.append('cnic_number', employeeData.cnicNumber);
-      }
+    // Create FormData for multipart/form-data submission
+    const formData = new FormData();
 
-      // Add image files if they exist
-      if (employeeData.profilePicture) {
-        formData.append(
-          'profile_picture',
-          employeeData.profilePicture,
-          employeeData.profilePicture.name
-        );
-      }
-      if (employeeData.cnicFrontPicture) {
-        formData.append(
-          'cnic_picture',
-          employeeData.cnicFrontPicture,
-          employeeData.cnicFrontPicture.name
-        );
-      }
-      if (employeeData.cnicBackPicture) {
-        formData.append(
-          'cnic_back_picture',
-          employeeData.cnicBackPicture,
-          employeeData.cnicBackPicture.name
-        );
-      }
-
-      const response = await axiosInstance.post<RawEmployee>(
-        this.baseUrl,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-      return normalizeEmployee(response.data);
-    } catch (error) {
-      const err = handleApiError(error, {
-        operation: 'create',
-        resource: 'employee',
-        isGlobal: false,
-      });
-      throw new Error(err.message);
+    // Add text fields
+    formData.append('first_name', employeeData.first_name);
+    formData.append('last_name', employeeData.last_name);
+    formData.append('email', employeeData.email);
+    formData.append('phone', employeeData.phone);
+    if (employeeData.password) {
+      formData.append('password', employeeData.password);
     }
+    formData.append('designation_id', employeeData.designationId);
+    formData.append('gender', employeeData.gender);
+    if (employeeData.role_name) {
+      formData.append('role_name', employeeData.role_name);
+    }
+    if (employeeData.role_id) {
+      formData.append('role_id', employeeData.role_id);
+    }
+    if (employeeData.team_id) {
+      formData.append('team_id', employeeData.team_id);
+    }
+    if (employeeData.cnicNumber) {
+      formData.append('cnic_number', employeeData.cnicNumber);
+    }
+
+    // Add image files if they exist
+    if (employeeData.profilePicture) {
+      formData.append(
+        'profile_picture',
+        employeeData.profilePicture,
+        employeeData.profilePicture.name
+      );
+    }
+    if (employeeData.cnicFrontPicture) {
+      formData.append(
+        'cnic_picture',
+        employeeData.cnicFrontPicture,
+        employeeData.cnicFrontPicture.name
+      );
+    }
+    if (employeeData.cnicBackPicture) {
+      formData.append(
+        'cnic_back_picture',
+        employeeData.cnicBackPicture,
+        employeeData.cnicBackPicture.name
+      );
+    }
+
+    const response = await axiosInstance.post<RawEmployee>(
+      this.baseUrl,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return normalizeEmployee(response.data);
   }
 
   async createManager(employeeData: EmployeeDto): Promise<BackendEmployee> {

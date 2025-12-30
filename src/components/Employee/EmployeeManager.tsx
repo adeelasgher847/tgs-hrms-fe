@@ -12,7 +12,6 @@ import {
   DialogContent,
   useTheme,
   IconButton,
-  MenuItem,
   Stack,
   useMediaQuery,
   Pagination,
@@ -21,7 +20,7 @@ import {
   DialogActions,
   Tooltip,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import { Add as AddIcon } from '@mui/icons-material';
 import WarningIcon from '@mui/icons-material/Warning';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useOutletContext, useLocation, useNavigate } from 'react-router-dom';
@@ -44,7 +43,9 @@ import { env } from '../../config/env';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppButton from '../common/AppButton';
-import AppTextField from '../common/AppTextField';
+import AppDropdown from '../common/AppDropdown';
+import AppFormModal from '../common/AppFormModal';
+import AppPageTitle from '../common/AppPageTitle';
 import { PAGINATION } from '../../constants/appConstants';
 interface Employee {
   id: string;
@@ -102,9 +103,31 @@ const EmployeeManager: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
+  // If Stripe redirects back to this page with a session_id, forward to the unified
+  // confirmation screen (which will finalize the employee after payment).
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(location.search);
+      const sessionId = sp.get('session_id');
+      if (!sessionId) return;
+
+      const pending = sessionStorage.getItem('pendingEmployeePayment');
+      if (!pending) return;
+
+      navigate(
+        `/signup/confirm-payment?session_id=${encodeURIComponent(sessionId)}`,
+        {
+          replace: true,
+        }
+      );
+    } catch {
+      // ignore
+    }
+  }, [location.search, navigate]);
+
   // Pagination state - now for client-side pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [paginationLimit, setPaginationLimit] = useState(
+  const [paginationLimit, setPaginationLimit] = useState<number>(
     PAGINATION.DEFAULT_PAGE_SIZE
   ); // Backend limit
 
@@ -167,20 +190,8 @@ const EmployeeManager: React.FC = () => {
   const bgColor = darkMode ? '#111' : '#fff';
   const textColor = darkMode ? '#8f8f8f' : '#000';
   const borderColor = darkMode ? '#333' : '#ddd';
-
-  // Dark mode input styles
-  const darkInputStyles = darkMode
-    ? {
-        '& .MuiOutlinedInput-root': {
-          '& fieldset': { borderColor: '#555' },
-          '&:hover fieldset': { borderColor: '#888' },
-          '&.Mui-focused fieldset': { borderColor: '#90caf9' },
-        },
-        '& .MuiInputLabel-root': { color: '#8f8f8f' },
-        '& input, & .MuiSelect-select': { color: '#eee' },
-        backgroundColor: '#2e2e2e',
-      }
-    : {};
+  // Match Designation page dropdown background (AppDropdown default)
+  const controlBg = theme.palette.background.paper;
 
   const loadDepartmentsAndDesignations = useCallback(async () => {
     try {
@@ -438,9 +449,57 @@ const EmployeeManager: React.FC = () => {
 
       return { success: true };
     } catch (err: unknown) {
-      // Debug: Log the actual error structure
-      if (err && typeof err === 'object' && 'response' in err) {
-        // Error has response property
+      // Handle payment-required flow (backend returns checkoutUrl + checkoutSessionId)
+      const paymentCandidate = err as {
+        response?: {
+          data?: Record<string, unknown>;
+          status?: number;
+        };
+      };
+
+      const data = paymentCandidate?.response?.data ?? null;
+      const requiresPayment =
+        Boolean(
+          data &&
+            (data.requiresPayment === true || data.requires_payment === true)
+        ) || false;
+      const checkoutUrl =
+        typeof (data as Record<string, unknown> | null)?.checkoutUrl ===
+        'string'
+          ? ((data as Record<string, unknown>).checkoutUrl as string)
+          : typeof (data as Record<string, unknown> | null)?.checkout_url ===
+              'string'
+            ? ((data as Record<string, unknown>).checkout_url as string)
+            : null;
+      const checkoutSessionId =
+        typeof (data as Record<string, unknown> | null)?.checkoutSessionId ===
+        'string'
+          ? ((data as Record<string, unknown>).checkoutSessionId as string)
+          : typeof (data as Record<string, unknown> | null)
+                ?.checkout_session_id === 'string'
+            ? ((data as Record<string, unknown>).checkout_session_id as string)
+            : typeof (data as Record<string, unknown> | null)?.session_id ===
+                'string'
+              ? ((data as Record<string, unknown>).session_id as string)
+              : null;
+
+      if (requiresPayment && checkoutUrl && checkoutSessionId) {
+        try {
+          sessionStorage.setItem(
+            'pendingEmployeePayment',
+            JSON.stringify({
+              checkoutSessionId,
+              returnTo: `${location.pathname}${location.search}`,
+              createdAt: new Date().toISOString(),
+            })
+          );
+        } catch {
+          // ignore storage errors
+        }
+
+        showSuccess('Redirecting to secure payment...');
+        window.location.href = checkoutUrl;
+        return { success: false };
       }
 
       // Handle backend validation errors
@@ -874,13 +933,7 @@ const EmployeeManager: React.FC = () => {
 
   return (
     <Box>
-      <Typography
-        variant='h4'
-        fontSize={{ xs: '32px', lg: '48px' }}
-        gutterBottom
-      >
-        Employee List
-      </Typography>
+      <AppPageTitle>Employee List</AppPageTitle>
       {/* Add Employee Button */}
       <Box
         display='flex'
@@ -900,85 +953,87 @@ const EmployeeManager: React.FC = () => {
           }}
         >
           {/* Department Filter */}
-          <AppTextField
-            select
-            fullWidth
+          <AppDropdown
+            showLabel={false}
             label={getLabel('Department', 'القسم')}
-            value={departmentFilter}
+            placeholder={getLabel('All Departments', 'كل الأقسام')}
+            inputBackgroundColor={controlBg}
+            value={departmentFilter === '' ? 'all' : departmentFilter}
             onChange={e => {
-              setDepartmentFilter(e.target.value);
+              setDepartmentFilter(String(e.target.value));
               setDesignationFilter(''); // Reset designation on department change
             }}
-            size='small'
-            sx={{
+            options={[
+              {
+                value: 'all',
+                label: getLabel('All Departments', 'كل الأقسام'),
+              },
+              ...departmentList.map(dept => ({
+                value: dept.id,
+                label: dept.name,
+              })),
+            ]}
+            containerSx={{
               width: isMobile ? '100%' : 190,
               my: 0.5,
-              '&.MuiFormControl-root': {
-                backgroundColor: 'transparent !important',
-              },
-              '& .MuiInputBase-root': {
-                padding: '0px 8px',
-                minHeight: '10px',
-              },
-              '& .MuiInputLabel-root': {
-                fontSize: '0.85rem',
-                left: direction === 'rtl' ? 'unset' : undefined, // for RTL support
-                right: direction === 'rtl' ? '1.75rem' : undefined,
-              },
-              ...darkInputStyles,
             }}
-          >
-            <MenuItem value=''>
-              {getLabel('All Departments', 'كل الأقسام')}
-            </MenuItem>
-            {departmentList.map(dept => (
-              <MenuItem key={dept.id} value={dept.id}>
-                {dept.name}
-              </MenuItem>
-            ))}
-          </AppTextField>
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                direction: direction === 'rtl' ? 'rtl' : 'ltr',
+              },
+              '& .MuiSelect-select, & .MuiInputBase-input': {
+                fontSize: 'var(--body-font-size)',
+                lineHeight: 'var(--body-line-height)',
+                letterSpacing: 'var(--body-letter-spacing)',
+                fontWeight: 400,
+              },
+            }}
+          />
 
           {/* Designation Filter */}
-          <AppTextField
-            select
-            fullWidth
+          <AppDropdown
+            showLabel={false}
             label={getLabel('Designation', 'المسمى الوظيفي')}
-            value={designationFilter}
-            onChange={e => setDesignationFilter(e.target.value)}
-            size='small'
-            sx={{
+            placeholder={getLabel('All Designations', 'كل المسميات')}
+            inputBackgroundColor={controlBg}
+            value={designationFilter === '' ? 'all' : designationFilter}
+            onChange={e => setDesignationFilter(String(e.target.value))}
+            options={[
+              {
+                value: 'all',
+                label: getLabel('All Designations', 'كل المسميات'),
+              },
+              ...designationList.map(des => ({
+                value: des.id,
+                label: des.title,
+              })),
+            ]}
+            containerSx={{
               width: isMobile ? '100%' : 190,
               my: 0.5,
-              '&.MuiFormControl-root': {
-                backgroundColor: 'transparent !important',
-              },
-              '& .MuiInputBase-root': {
-                padding: '0px 8px',
-                minHeight: '10px',
-              },
-              '& .MuiInputLabel-root': {
-                fontSize: '0.85rem',
-                left: direction === 'rtl' ? 'unset' : undefined, // for RTL support
-                right: direction === 'rtl' ? '1.75rem' : undefined,
-              },
-              ...darkInputStyles,
             }}
-          >
-            <MenuItem value=''>
-              {getLabel('All Designations', 'كل المسميات')}
-            </MenuItem>
-            {designationList.map(des => (
-              <MenuItem key={des.id} value={des.id}>
-                {des.title}
-              </MenuItem>
-            ))}
-          </AppTextField>
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                direction: direction === 'rtl' ? 'rtl' : 'ltr',
+              },
+              '& .MuiSelect-select, & .MuiInputBase-input': {
+                fontSize: 'var(--body-font-size)',
+                lineHeight: 'var(--body-line-height)',
+                letterSpacing: 'var(--body-letter-spacing)',
+                fontWeight: 400,
+              },
+            }}
+          />
 
           <AppButton
             variant='outlined'
             variantType='secondary'
             onClick={handleClearFilters}
             sx={{
+              fontSize: 'var(--body-font-size)',
+              lineHeight: 'var(--body-line-height)',
+              letterSpacing: 'var(--body-letter-spacing)',
+              fontWeight: 400,
               width: isMobile ? '100%' : 'auto',
             }}
           >
@@ -989,15 +1044,39 @@ const EmployeeManager: React.FC = () => {
           <AppButton
             variant='contained'
             variantType='primary'
+            startIcon={<AddIcon />}
             onClick={() => {
               setEditing(null);
               setOpen(true);
             }}
             sx={{
-              width: isMobile ? '100%' : 'auto',
+              fontSize: 'var(--body-font-size)',
+              lineHeight: 'var(--body-line-height)',
+              letterSpacing: 'var(--body-letter-spacing)',
+              boxShadow: 'none',
+              minWidth: { xs: 'auto', sm: 200 },
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.75, sm: 1 },
+              '& .MuiButton-startIcon': {
+                marginRight: { xs: 0.5, sm: 1 },
+                '& > *:nth-of-type(1)': {
+                  fontSize: { xs: '1.125rem', sm: '1.25rem' },
+                },
+              },
             }}
           >
-            {getLabel('Add Employee', 'إضافة موظف')}
+            <Box
+              component='span'
+              sx={{ display: { xs: 'none', sm: 'inline' } }}
+            >
+              {getLabel('Add Employee', 'إضافة موظف')}
+            </Box>
+            <Box
+              component='span'
+              sx={{ display: { xs: 'inline', sm: 'none' } }}
+            >
+              {getLabel('Add', 'إضافة')}
+            </Box>
           </AppButton>
         </Stack>
         <Box display='flex' justifyContent='flex-end'>
@@ -1127,7 +1206,9 @@ const EmployeeManager: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ textAlign: 'center' }}>
-            <WarningIcon sx={{ fontSize: 64, color: 'warning.main', mb: 2 }} />
+            <WarningIcon
+              sx={{ fontSize: { xs: 48, sm: 64 }, color: 'warning.main', mb: 2 }}
+            />
             <Typography
               variant='body1'
               sx={{ mb: 2, lineHeight: 1.6, color: textColor }}
@@ -1155,71 +1236,52 @@ const EmployeeManager: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Modal with AddEmployeeForm */}
-      <Dialog
+      {/* Modal with AddEmployeeForm (AppFormModal wrapper for consistent styling) */}
+      <AppFormModal
         open={open}
         onClose={() => {
           setOpen(false);
           setEditing(null);
         }}
-        fullWidth
+        title={
+          editing
+            ? getLabel('Edit Employee', 'تعديل الموظف')
+            : getLabel('Add New Employee', 'إضافة موظف جديد')
+        }
         maxWidth='md'
-        PaperProps={{
-          sx: {
-            backgroundColor: bgColor,
-            color: textColor,
-          },
+        isRtl={direction === 'rtl'}
+        hideActions
+        wrapInForm={false}
+        paperSx={{
+          width: { xs: '100%', sm: '90%', md: '900px', lg: '900px' },
+          maxWidth: { xs: '100%', sm: '90%', md: '900px', lg: '900px' },
         }}
       >
-        <DialogTitle
-          sx={{
-            textAlign: direction === 'rtl' ? 'right' : 'left',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            color: textColor,
-          }}
-        >
-          {editing
-            ? getLabel('Edit Employee', 'تعديل الموظف')
-            : getLabel('Add New Employee', 'إضافة موظف جديد')}
-
-          <IconButton
-            onClick={() => setOpen(false)}
-            sx={{ color: darkMode ? '#ccc' : theme.palette.grey[500] }}
-            aria-label='close'
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent>
-          <AddEmployeeForm
-            key={editing ? `edit-${editing.id}` : 'create'}
-            onSubmit={editing ? handleUpdateEmployee : handleAddEmployee}
-            initialData={
-              editing
-                ? {
-                    id: editing.id,
-                    firstName: editing.firstName || '',
-                    lastName: editing.lastName || '',
-                    email: editing.email,
-                    phone: editing.phone,
-                    cnicNumber: editing.cnic_number || ' ',
-                    profilePicture: toAbsoluteUrl(editing.profile_picture),
-                    cnicFrontPicture: toAbsoluteUrl(editing.cnic_picture),
-                    cnicBackPicture: toAbsoluteUrl(editing.cnic_back_picture),
-                    role: editing.role_name || '',
-                    role_name: editing.role_name || '',
-                    designationId: editing.designationId,
-                    departmentId: editing.departmentId,
-                  }
-                : null
-            }
-            submitting={submitting}
-          />
-        </DialogContent>
-      </Dialog>
+        <AddEmployeeForm
+          key={editing ? `edit-${editing.id}` : 'create'}
+          onSubmit={editing ? handleUpdateEmployee : handleAddEmployee}
+          initialData={
+            editing
+              ? {
+                  id: editing.id,
+                  firstName: editing.firstName || '',
+                  lastName: editing.lastName || '',
+                  email: editing.email,
+                  phone: editing.phone,
+                  cnicNumber: editing.cnic_number || ' ',
+                  profilePicture: toAbsoluteUrl(editing.profile_picture),
+                  cnicFrontPicture: toAbsoluteUrl(editing.cnic_picture),
+                  cnicBackPicture: toAbsoluteUrl(editing.cnic_back_picture),
+                  role: editing.role_name || '',
+                  role_name: editing.role_name || '',
+                  designationId: editing.designationId,
+                  departmentId: editing.departmentId,
+                }
+              : null
+          }
+          submitting={submitting}
+        />
+      </AppFormModal>
 
       {/* Employee View Modal */}
       <EmployeeViewModal

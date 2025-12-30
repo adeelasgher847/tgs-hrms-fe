@@ -17,8 +17,6 @@ import {
   InputAdornment,
   CircularProgress,
 } from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useUser } from '../../hooks/useUser';
 import { getDefaultDashboardRoute } from '../../utils/permissions';
 import { useGoogleScript } from '../../hooks/useGoogleScript';
@@ -31,6 +29,8 @@ import type { UserProfile } from '../../api/profileApi';
 import AppInputField from '../common/AppInputField';
 import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
+import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
+import AppPageTitle from '../common/AppPageTitle';
 
 // Extend Window interface for Google Sign-In
 declare global {
@@ -476,17 +476,16 @@ const Login: React.FC = () => {
                 </Select>
               </FormControl>
             </Box>
-            <Typography
-              variant='h1'
+            <AppPageTitle
+              isRtl={lang === 'ar'}
               sx={{
-                fontSize: { xs: '32px', lg: '48px' },
+                mb: 0,
                 fontWeight: 700,
-                // mb: 0.5,
                 color: { xs: '#001218', lg: 'inherit' },
               }}
             >
               {lang === 'ar' ? 'تسجيل الدخول' : 'Login'}
-            </Typography>
+            </AppPageTitle>
             <Typography
               sx={{
                 color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
@@ -563,9 +562,9 @@ const Login: React.FC = () => {
                           sx={{ color: 'var(--dark-grey-color)' }}
                         >
                           {showPassword ? (
-                            <VisibilityOff sx={{ width: 20, height: 20 }} />
+                            <IoEyeOutline />
                           ) : (
-                            <Visibility sx={{ width: 20, height: 20 }} />
+                            <IoEyeOffOutline />
                           )}
                         </IconButton>
                       </InputAdornment>
@@ -679,7 +678,7 @@ const Login: React.FC = () => {
                     align='center'
                     className='label'
                     sx={{
-                      color: 'var(--dark-grey-color)',
+                      color: '#2D3748',
                       fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
                     }}
                   >

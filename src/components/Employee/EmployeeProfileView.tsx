@@ -11,6 +11,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  useTheme,
 } from '@mui/material';
 import { Work, Business, Email, CalendarToday } from '@mui/icons-material';
 import employeeApi from '../../api/employeeApi';
@@ -25,6 +26,7 @@ import { formatDate } from '../../utils/dateUtils';
 import AppTable from '../common/AppTable';
 
 const EmployeeProfileView: React.FC = () => {
+  const theme = useTheme();
   const [profile, setProfile] = useState<EmployeeFullProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -185,12 +187,19 @@ const EmployeeProfileView: React.FC = () => {
           variant='h5'
           fontWeight={600}
           gutterBottom
-          color='primary.main'
+          sx={{ color: 'var(--primary-dark-color)' }}
         >
           Employee Details
         </Typography>
         <Divider sx={{ mb: 3 }} />
-        <Box display='flex' alignItems='center' mb={3}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            mb: 3,
+          }}
+        >
           <UserAvatar
             user={{
               id: profile.id,
@@ -199,7 +208,7 @@ const EmployeeProfileView: React.FC = () => {
               profile_pic: profile.profile_pic,
             }}
             size={80}
-            sx={{ mr: 2 }}
+            sx={{ mr: { xs: 0, sm: 2 }, mb: { xs: 2, sm: 0 } }}
           />
           <Box>
             <Typography variant='h6' fontWeight={600}>
@@ -208,20 +217,43 @@ const EmployeeProfileView: React.FC = () => {
             <Chip
               label={profile.designation || '—'}
               icon={<Work />}
-              sx={{ mr: 1, mb: 1 }}
-              color='secondary'
+              sx={{
+                mr: 1,
+                mb: 1,
+                backgroundColor: 'var(--primary-dark-color)',
+                color: '#fff',
+                '& .MuiChip-icon': { color: '#fff' },
+              }}
             />
             <Chip
               label={profile.department || '—'}
               icon={<Business />}
-              sx={{ mb: 1 }}
-              color='info'
+              sx={{
+                mb: 1,
+                backgroundColor: 'var(--primary-dark-color)',
+                color: '#fff',
+                '& .MuiChip-icon': { color: '#fff' },
+              }}
             />
             <Typography variant='body2' color='text.secondary' mt={1}>
-              <Email sx={{ fontSize: 16, mr: 0.5 }} /> {profile.email}
+              <Email
+                sx={{
+                  fontSize: 16,
+                  mr: 0.5,
+                  color: 'var(--primary-dark-color)',
+                }}
+              />{' '}
+              {profile.email}
             </Typography>
             <Typography variant='body2' color='text.secondary'>
-              <CalendarToday sx={{ fontSize: 16, mr: 0.5 }} /> Joined:{' '}
+              <CalendarToday
+                sx={{
+                  fontSize: 16,
+                  mr: 0.5,
+                  color: 'var(--primary-dark-color)',
+                }}
+              />{' '}
+              Joined:{' '}
               {new Date(profile.joinedAt).toLocaleDateString()}
             </Typography>
           </Box>
@@ -243,14 +275,14 @@ const EmployeeProfileView: React.FC = () => {
           variant='h6'
           fontWeight={600}
           gutterBottom
-          color='primary.main'
+          sx={{ color: 'var(--primary-dark-color)' }}
         >
           Recent Attendance
         </Typography>
         <Divider sx={{ mb: 2 }} />
         <AppTable sx={{ minWidth: 350 }}>
           <TableHead>
-            <TableRow sx={{ backgroundColor: 'rgba(76, 175, 80, 0.08)' }}>
+            <TableRow>
               <TableCell>Date</TableCell>
               <TableCell>Check In</TableCell>
               <TableCell>Check Out</TableCell>
@@ -265,8 +297,7 @@ const EmployeeProfileView: React.FC = () => {
                   <TableRow
                     key={index}
                     sx={{
-                      backgroundColor:
-                        index % 2 === 0 ? 'background.default' : 'grey.50',
+                      backgroundColor: theme.palette.background.default,
                     }}
                   >
                     <TableCell>{formatDate(log.date)}</TableCell>
@@ -294,14 +325,14 @@ const EmployeeProfileView: React.FC = () => {
           variant='h6'
           fontWeight={600}
           gutterBottom
-          color='primary.main'
+          sx={{ color: 'var(--primary-dark-color)' }}
         >
           Leave History
         </Typography>
         <Divider sx={{ mb: 2 }} />
         <AppTable sx={{ minWidth: 350 }}>
           <TableHead>
-            <TableRow sx={{ backgroundColor: 'rgba(33, 150, 243, 0.08)' }}>
+            <TableRow>
               <TableCell>Type</TableCell>
               <TableCell>From</TableCell>
               <TableCell>To</TableCell>
@@ -325,8 +356,7 @@ const EmployeeProfileView: React.FC = () => {
                   <TableRow
                     key={idx}
                     sx={{
-                      backgroundColor:
-                        idx % 2 === 0 ? 'background.default' : 'grey.50',
+                      backgroundColor: theme.palette.background.default,
                     }}
                   >
                     <TableCell>

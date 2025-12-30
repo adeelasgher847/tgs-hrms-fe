@@ -14,6 +14,7 @@ import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppInputField from '../common/AppInputField';
 import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
+import AppPageTitle from '../common/AppPageTitle';
 
 const CompanyDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -289,9 +290,13 @@ const CompanyDetails: React.FC = () => {
               mt: { xs: 0, lg: 0 },
               boxSizing: 'border-box',
               minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '64px',
             }}
           >
-            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+            {/* Div 1: Language Selector */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
               <FormControl size='small' sx={{ minWidth: 100 }}>
                 <Select
                   value={lang}
@@ -306,30 +311,30 @@ const CompanyDetails: React.FC = () => {
               </FormControl>
             </Box>
 
-            <Typography
-              variant='h1'
-              sx={{
-                fontSize: { xs: '32px', lg: '48px' },
-                fontWeight: 700,
-                mb: 1,
-                color: { xs: '#001218', lg: 'inherit' },
-              }}
-            >
-              Company Details
-            </Typography>
+            {/* Div 2: Title and Tagline */}
+            <Box>
+              <AppPageTitle
+                sx={{
+                  mb: '6px',
+                  fontWeight: 700,
+                  color: { xs: '#001218', lg: 'inherit' },
+                }}
+              >
+                Company Details
+              </AppPageTitle>
+              <Typography
+                className='body'
+                sx={{
+                  color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
+                  fontSize: { xs: '16px', lg: '24px' },
+                  fontWeight: 400,
+                }}
+              >
+                Tell us more about your company.
+              </Typography>
+            </Box>
 
-            <Typography
-              className='body'
-              sx={{
-                color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
-                mb: 3,
-                fontSize: { xs: '16px', lg: '24px' },
-                fontWeight: 400,
-              }}
-            >
-              Tell us more about your company.
-            </Typography>
-
+            {/* Div 3: Form Content */}
             <Box
               component='form'
               onSubmit={handleSubmit}
@@ -339,9 +344,18 @@ const CompanyDetails: React.FC = () => {
                 maxWidth: '100%',
                 boxSizing: 'border-box',
                 overflowX: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '64px',
               }}
             >
-              <Box sx={{ mb: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '32px',
+                }}
+              >
                 <AppInputField
                   name='companyName'
                   label='Company Name'
@@ -354,9 +368,7 @@ const CompanyDetails: React.FC = () => {
                   helperText={fieldErrors.companyName}
                   placeholder='Name'
                 />
-              </Box>
 
-              <Box sx={{ mb: 2 }}>
                 <AppInputField
                   name='domain'
                   label='Domain'
@@ -369,144 +381,147 @@ const CompanyDetails: React.FC = () => {
                   helperText={fieldErrors.domain}
                   placeholder='Domain (e.g. Development)'
                 />
-              </Box>
 
-              <Box sx={{ mb: 3 }}>
-                <Typography
-                  component='label'
-                  className='label'
-                  sx={{
-                    fontSize: { xs: '14px', lg: '20px' },
-                    fontWeight: { xs: 400, lg: 500 },
-                    lineHeight: { xs: '20px', lg: 'auto' },
-                    letterSpacing: { xs: '-1%', lg: 'normal' },
-                    display: 'block',
-                    mb: 0.5,
-                    color: { xs: '#001218', lg: 'var(--dark-black-color)' },
-                  }}
-                >
-                  Company Logo
-                </Typography>
-                {!imagePreview ? (
-                  <Box
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onClick={() =>
-                      document.getElementById('logo-upload')?.click()
-                    }
+                <Box>
+                  <Typography
+                    component='label'
+                    className='label'
                     sx={{
-                      border: '2px dashed var(--light-grey-color)',
-                      borderRadius: 'var(--border-radius-lg)',
-                      p: 4,
-                      my: 2,
-                      textAlign: 'center',
-                      backgroundColor: 'var(--white-color)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      // '&:hover': {
-                      //   backgroundColor: 'var(--light-grey-100-color)',
-                      //   borderColor: 'var(--primary-dark-color)',
-                      // },
+                      fontSize: { xs: '14px', lg: '20px' },
+                      fontWeight: { xs: 400, lg: 500 },
+                      lineHeight: { xs: '20px', lg: 'auto' },
+                      letterSpacing: { xs: '-1%', lg: 'normal' },
+                      display: 'block',
+                      mb: 0.5,
+                      color: { xs: '#001218', lg: 'var(--dark-black-color)' },
                     }}
                   >
-                    <input
-                      id='logo-upload'
-                      type='file'
-                      accept='image/jpeg,image/png,image/gif'
-                      onChange={handleImageChange}
-                      style={{ display: 'none' }}
-                    />
+                    Company Logo
+                  </Typography>
+                  {!imagePreview ? (
                     <Box
-                      component='img'
-                      src={Icons.upload}
-                      alt='Upload'
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      onClick={() =>
+                        document.getElementById('logo-upload')?.click()
+                      }
                       sx={{
-                        width: '48px',
-                        height: '48px',
-                        mb: 2,
-                        filter:
-                          'brightness(0) saturate(100%) invert(45%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(95%)',
-                      }}
-                    />
-                    <Typography
-                      className='label'
-                      sx={{
-                        fontSize: { xs: '16px', lg: 'inherit' },
-                        fontWeight: { xs: 400, lg: 'inherit' },
-                        lineHeight: { xs: '20px', lg: 'inherit' },
-                        letterSpacing: { xs: '-1%', lg: 'inherit' },
-                        color: { xs: '#001218', lg: 'var(--text-color)' },
-                        mb: 1,
-                      }}
-                    >
-                      Choose a file or drag & drop it here
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: '14px',
-                        fontWeight: { xs: 400, lg: 'inherit' },
-                        lineHeight: { xs: '16px', lg: 'inherit' },
-                        color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
-                      }}
-                    >
-                      JPEG, PNG and GIF formats, up to 10 MB
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      display: 'inline-block',
-                      border: '2px solid var(--light-grey-200-color)',
-                      borderRadius: 'var(--border-radius-lg)',
-                      p: 1,
-                    }}
-                  >
-                    <Box
-                      component='img'
-                      src={imagePreview}
-                      alt='Company Logo Preview'
-                      loading='lazy'
-                      sx={{
-                        width: '120px',
-                        height: '120px',
-                        objectFit: 'cover',
+                        border: '2px dashed var(--light-grey-color)',
                         borderRadius: 'var(--border-radius-lg)',
-                      }}
-                    />
-                    <Button
-                      size='small'
-                      onClick={handleRemoveImage}
-                      sx={{
-                        position: 'absolute',
-                        top: -8,
-                        right: -8,
-                        minWidth: 'auto',
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '50%',
-                        backgroundColor: 'var(--secondary-color)',
-                        color: 'var(--white-color)',
-                        padding: 0,
+                        p: 4,
+                        my: 2,
+                        textAlign: 'center',
+                        backgroundColor: 'var(--white-color)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
                         // '&:hover': {
-                        //   backgroundColor: 'var(--secondary-color)',
-                        //   opacity: 0.8,
+                        //   backgroundColor: 'var(--light-grey-100-color)',
+                        //   borderColor: 'var(--primary-dark-color)',
                         // },
                       }}
                     >
-                      ×
-                    </Button>
-                  </Box>
-                )}
+                      <input
+                        id='logo-upload'
+                        type='file'
+                        accept='image/jpeg,image/png,image/gif'
+                        onChange={handleImageChange}
+                        style={{ display: 'none' }}
+                      />
+                      <Box
+                        component='img'
+                        src={Icons.upload}
+                        alt='Upload'
+                        sx={{
+                          width: '48px',
+                          height: '48px',
+                          mb: 2,
+                          filter:
+                            'brightness(0) saturate(100%) invert(45%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(95%)',
+                        }}
+                      />
+                      <Typography
+                        className='label'
+                        sx={{
+                          fontSize: { xs: '16px', lg: 'inherit' },
+                          fontWeight: { xs: 400, lg: 'inherit' },
+                          lineHeight: { xs: '20px', lg: 'inherit' },
+                          letterSpacing: { xs: '-1%', lg: 'inherit' },
+                          color: { xs: '#001218', lg: 'var(--text-color)' },
+                          mb: 1,
+                        }}
+                      >
+                        Choose a file or drag & drop it here
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: '14px',
+                          fontWeight: { xs: 400, lg: 'inherit' },
+                          lineHeight: { xs: '16px', lg: 'inherit' },
+                          color: {
+                            xs: '#888888',
+                            lg: 'var(--dark-grey-color)',
+                          },
+                        }}
+                      >
+                        JPEG, PNG and GIF formats, up to 10 MB
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        display: 'inline-block',
+                        border: '2px solid var(--light-grey-200-color)',
+                        borderRadius: 'var(--border-radius-lg)',
+                        p: 1,
+                      }}
+                    >
+                      <Box
+                        component='img'
+                        src={imagePreview}
+                        alt='Company Logo Preview'
+                        loading='lazy'
+                        sx={{
+                          width: '120px',
+                          height: '120px',
+                          objectFit: 'cover',
+                          borderRadius: 'var(--border-radius-lg)',
+                        }}
+                      />
+                      <Button
+                        size='small'
+                        onClick={handleRemoveImage}
+                        sx={{
+                          position: 'absolute',
+                          top: -8,
+                          right: -8,
+                          minWidth: 'auto',
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--secondary-color)',
+                          color: 'var(--white-color)',
+                          padding: 0,
+                          // '&:hover': {
+                          //   backgroundColor: 'var(--secondary-color)',
+                          //   opacity: 0.8,
+                          // },
+                        }}
+                      >
+                        ×
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
               </Box>
 
+              {/* Div 4: Buttons */}
               <Box
                 sx={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   gap: 2,
-                  mt: 4,
                 }}
               >
                 <Button
