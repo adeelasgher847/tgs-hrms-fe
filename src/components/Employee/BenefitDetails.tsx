@@ -22,6 +22,7 @@ import { formatDate } from '../../utils/dateUtils';
 import { getUserRole } from '../../utils/auth';
 import { normalizeRole } from '../../utils/permissions';
 import AppButton from '../common/AppButton';
+import AppTable from '../common/AppTable';
 import { IoEyeOutline } from 'react-icons/io5';
 
 const ITEMS_PER_PAGE = 10;
@@ -32,7 +33,8 @@ const BenefitDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const role = normalizeRole(getUserRole());
-  const isManager = role === 'manager';
+  const isManager = role === 'manager' || (role as string) === 'payroll manager';
+  const shouldUseAppTable = isManager || role === 'employee';
   const BenefitCardUnsafe = BenefitCard as unknown as React.ComponentType<any>;
 
   useEffect(() => {
@@ -117,6 +119,75 @@ const BenefitDetails: React.FC = () => {
     setPage(value);
   };
 
+  const tableContent = (
+    <>
+      <TableHead>
+        <TableRow>
+          <TableCell>
+            <b>Benefit Name</b>
+          </TableCell>
+          <TableCell>
+            <b>Type</b>
+          </TableCell>
+          <TableCell>
+            <b>Start Date</b>
+          </TableCell>
+          <TableCell>
+            <b>End Date</b>
+          </TableCell>
+          <TableCell>
+            <b>Status</b>
+          </TableCell>
+          <TableCell align='center'>
+            <b>Details</b>
+          </TableCell>
+        </TableRow>
+      </TableHead>
+
+      <TableBody>
+        {paginatedBenefits.length > 0 ? (
+          paginatedBenefits.map((b: any) => (
+            <TableRow key={b.benefitAssignmentId || b.id}>
+              <TableCell>{b.name || '-'}</TableCell>
+              <TableCell>{b.type || '-'}</TableCell>
+              <TableCell>{formatDate(b.startDate || '')}</TableCell>
+              <TableCell>{formatDate(b.endDate || '')}</TableCell>
+              <TableCell>
+                <Chip
+                  label={b.statusOfAssignment || b.status || '-'}
+                  color={
+                    (b.statusOfAssignment || b.status) === 'active'
+                      ? 'success'
+                      : 'default'
+                  }
+                  size='small'
+                />
+              </TableCell>
+              <TableCell align='center'>
+                <Tooltip title='View Details'>
+                  <IconButton
+                    size='small'
+                    onClick={() => setSelectedBenefit(b)}
+                    sx={{ color: theme => theme.palette.primary.main }}
+                    aria-label='View benefit details'
+                  >
+                    <IoEyeOutline size={20} aria-hidden='true' />
+                  </IconButton>
+                </Tooltip>
+              </TableCell>
+            </TableRow>
+          ))
+        ) : (
+          <TableRow>
+            <TableCell colSpan={8} align='center'>
+              No assigned benefits found.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </>
+  );
+
   return (
     <Box>
       <Box display='flex' justifyContent='space-between' alignItems='center'>
@@ -168,74 +239,11 @@ const BenefitDetails: React.FC = () => {
         >
           <CircularProgress />
         </Box>
+      ) : shouldUseAppTable ? (
+        <AppTable>{tableContent}</AppTable>
       ) : (
         <Paper sx={{ mt: 2, overflowX: 'auto', boxShadow: 'none' }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <b>Benefit Name</b>
-                </TableCell>
-                <TableCell>
-                  <b>Type</b>
-                </TableCell>
-                <TableCell>
-                  <b>Start Date</b>
-                </TableCell>
-                <TableCell>
-                  <b>End Date</b>
-                </TableCell>
-                <TableCell>
-                  <b>Status</b>
-                </TableCell>
-                <TableCell align='center'>
-                  <b>Details</b>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {paginatedBenefits.length > 0 ? (
-                paginatedBenefits.map((b: any) => (
-                  <TableRow key={b.benefitAssignmentId || b.id}>
-                    <TableCell>{b.name || '-'}</TableCell>
-                    <TableCell>{b.type || '-'}</TableCell>
-                    <TableCell>{formatDate(b.startDate || '')}</TableCell>
-                    <TableCell>{formatDate(b.endDate || '')}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={b.statusOfAssignment || b.status || '-'}
-                        color={
-                          (b.statusOfAssignment || b.status) === 'active'
-                            ? 'success'
-                            : 'default'
-                        }
-                        size='small'
-                      />
-                    </TableCell>
-                    <TableCell align='center'>
-                      <Tooltip title='View Details'>
-                        <IconButton
-                          size='small'
-                          onClick={() => setSelectedBenefit(b)}
-                          sx={{ color: theme => theme.palette.primary.main }}
-                          aria-label='View benefit details'
-                        >
-                          <IoEyeOutline size={20} aria-hidden='true' />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} align='center'>
-                    No assigned benefits found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <Table>{tableContent}</Table>
         </Paper>
       )}
 
