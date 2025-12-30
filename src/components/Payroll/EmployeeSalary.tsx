@@ -1138,7 +1138,10 @@ const EmployeeSalaryPage: React.FC = () => {
           mb: 3,
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2,
+          width: '100%',
         }}
       >
         <Typography
@@ -1151,7 +1154,16 @@ const EmployeeSalaryPage: React.FC = () => {
         >
           Employee Salary Structure
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            alignItems: 'center',
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+            flexWrap: 'wrap',
+          }}
+        >
           <Button
             variant='contained'
             startIcon={<AddIcon />}
@@ -1161,6 +1173,7 @@ const EmployeeSalaryPage: React.FC = () => {
               '&:hover': {
                 backgroundColor: darkMode ? '#464b8a' : '#5b56a0',
               },
+              width: { xs: '100%', sm: 'auto' },
             }}
           >
             Add Salary Structure
@@ -1172,6 +1185,7 @@ const EmployeeSalaryPage: React.FC = () => {
         sx={{
           backgroundColor: darkMode ? '#1a1a1a' : '#fff',
           boxShadow: 'none',
+          overflowX: 'auto',
         }}
       >
         {loading ? (
@@ -1179,7 +1193,7 @@ const EmployeeSalaryPage: React.FC = () => {
             <CircularProgress />
           </Box>
         ) : (
-          <AppTable>
+          <AppTable sx={{ minWidth: 1000 }}>
             <TableHead>
               <TableRow>
                 <TableCell

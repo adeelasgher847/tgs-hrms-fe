@@ -542,7 +542,10 @@ const PayrollConfiguration: React.FC = () => {
             mb: 4,
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            gap: 2,
+            width: '100%',
           }}
         >
           <Typography
@@ -560,6 +563,7 @@ const PayrollConfiguration: React.FC = () => {
               fontWeight: 600,
               px: 2,
               py: 1,
+              width: { xs: '100%', sm: 'auto' },
             }}
           >
             Create Configuration
@@ -1162,7 +1166,10 @@ const PayrollConfiguration: React.FC = () => {
           mb: 3,
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: 2,
+          width: '100%',
         }}
       >
         <Typography
@@ -1188,6 +1195,7 @@ const PayrollConfiguration: React.FC = () => {
             px: 2,
             py: 1,
             color: theme.palette.text.primary,
+            width: { xs: '100%', sm: 'auto' },
             '&:hover': {
               borderColor: theme.palette.primary.main,
               backgroundColor: theme.palette.action.hover,

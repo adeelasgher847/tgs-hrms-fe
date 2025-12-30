@@ -655,6 +655,7 @@ const PayrollRecords: React.FC = () => {
           direction={{ xs: 'column', md: 'row' }}
           spacing={2}
           alignItems='flex-start'
+          sx={{ width: { xs: '100%', md: 'auto' } }}
         >
           <AppDropdown
             label='Month'
@@ -668,7 +669,7 @@ const PayrollRecords: React.FC = () => {
             }))}
             placeholder='Month'
             showLabel={false}
-            containerSx={{ minWidth: 160 }}
+            containerSx={{ minWidth: { xs: '100%', md: 160 } }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{
               '& .MuiSelect-select': { color: effectiveDarkMode ? '#fff' : '#000' },
@@ -684,7 +685,7 @@ const PayrollRecords: React.FC = () => {
             type='number'
             inputProps={{ min: 0 }}
             size='small'
-            sx={{ minWidth: 140 }}
+            sx={{ minWidth: { xs: '100%', md: 140 } }}
             value={year === 0 ? '' : year}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               const value = event.target.value;
@@ -702,7 +703,11 @@ const PayrollRecords: React.FC = () => {
             startIcon={<GenerateIcon />}
             onClick={openGenerateDialog}
             disabled={generating}
-            sx={{ textTransform: 'none', fontWeight: 600 }}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              width: { xs: '100%', md: 'auto' },
+            }}
           >
             Generate Payroll
           </AppButton>
@@ -785,6 +790,7 @@ const PayrollRecords: React.FC = () => {
           p: 0,
           backgroundColor: cardBg,
           borderRadius: 1,
+          overflowX: 'auto',
         }}
       >
         <Box
@@ -794,6 +800,8 @@ const PayrollRecords: React.FC = () => {
             display: 'flex',
             justifyContent: 'flex-end',
             alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1,
           }}
         >
           <AppDropdown
@@ -820,7 +828,7 @@ const PayrollRecords: React.FC = () => {
             }
             showLabel={false}
             disabled={recordEmployees.length === 0}
-            containerSx={{ minWidth: 220 }}
+            containerSx={{ minWidth: { xs: '100%', md: 220 } }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{
               '& .MuiSelect-select': { color: effectiveDarkMode ? '#fff' : '#000' },
@@ -842,7 +850,7 @@ const PayrollRecords: React.FC = () => {
             </Alert>
           </Box>
         ) : (
-          <AppTable>
+          <AppTable sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Employee</TableCell>
@@ -1352,7 +1360,7 @@ const PayrollRecords: React.FC = () => {
               }))}
               placeholder='Month'
               showLabel={false}
-              containerSx={{ minWidth: 160 }}
+              containerSx={{ minWidth: { xs: '100%', md: 160 } }}
               inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
               sx={{
                 '& .MuiSelect-select': { color: effectiveDarkMode ? '#fff' : '#000' },
@@ -1367,7 +1375,7 @@ const PayrollRecords: React.FC = () => {
               type='number'
               inputProps={{ min: 0 }}
               size='small'
-              sx={{ minWidth: 140 }}
+              sx={{ minWidth: { xs: '100%', md: 140 } }}
               value={generateYear === 0 ? '' : generateYear}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                 const value = event.target.value;
@@ -1410,7 +1418,7 @@ const PayrollRecords: React.FC = () => {
               }
               showLabel={false}
               disabled={employeesForGenerateDialog.length === 0}
-              containerSx={{ minWidth: 220 }}
+              containerSx={{ minWidth: { xs: '100%', md: 220 } }}
               inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
               sx={{
                 '& .MuiSelect-select': { color: effectiveDarkMode ? '#fff' : '#000' },

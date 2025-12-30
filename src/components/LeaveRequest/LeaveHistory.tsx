@@ -258,11 +258,13 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
       <Box
         sx={{
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'flex-start', sm: 'center' },
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 2,
           mb: 2,
+          width: '100%',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -278,7 +280,16 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'space-between', sm: 'flex-end' },
+            flexWrap: 'wrap',
+          }}
+        >
           {!hideDropdown && (isAdmin || isManager) && (
             <AppDropdown
               label='All Employees'
@@ -292,7 +303,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               ]}
               placeholder='All Employees'
               showLabel={false}
-              containerSx={{ minWidth: 200 }}
+              containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
             />
           )}
 
@@ -345,8 +356,8 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
       ) : (
-        <Paper elevation={1} sx={{ boxShadow: 'none' }}>
-          <AppTable>
+        <Paper elevation={1} sx={{ boxShadow: 'none', overflowX: 'auto' }}>
+          <AppTable sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
                 {!hideNameColumn && (isAdmin || isManager || showNames) && (

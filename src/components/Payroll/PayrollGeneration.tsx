@@ -203,6 +203,7 @@ const PayrollGeneration: React.FC = () => {
           direction={{ xs: 'column', md: 'row' }}
           spacing={2}
           alignItems='flex-start'
+          sx={{ width: { xs: '100%', md: 'auto' } }}
         >
           <AppDropdown
             label='Month'
@@ -216,7 +217,7 @@ const PayrollGeneration: React.FC = () => {
             }))}
             placeholder='Month'
             showLabel={false}
-            containerSx={{ minWidth: 160 }}
+            containerSx={{ minWidth: { xs: '100%', md: 160 } }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{
               '& .MuiSelect-select': {
@@ -238,7 +239,7 @@ const PayrollGeneration: React.FC = () => {
             type='number'
             inputProps={{ min: 0 }}
             size='small'
-            sx={{ minWidth: 120 }}
+            sx={{ minWidth: { xs: '100%', md: 120 } }}
             value={year === 0 ? '' : year}
             onChange={event => {
               const value = event.target.value;
@@ -252,7 +253,7 @@ const PayrollGeneration: React.FC = () => {
             label='Employee ID (optional)'
             placeholder='Enter employee id'
             size='small'
-            sx={{ minWidth: 220 }}
+            sx={{ minWidth: { xs: '100%', md: 220 } }}
             value={employeeId}
             onChange={event => setEmployeeId(event.target.value)}
             helperText='Leave blank to generate for all eligible employees'
@@ -268,7 +269,7 @@ const PayrollGeneration: React.FC = () => {
             onClick={handleGenerate}
             disabled={loading}
             sx={{
-              minWidth: 180,
+              minWidth: { xs: '100%', md: 180 },
               textTransform: 'none',
               fontWeight: 600,
               alignSelf: { xs: 'stretch', md: 'center' },
@@ -416,6 +417,7 @@ const PayrollGeneration: React.FC = () => {
           backgroundColor: cardBg,
           borderRadius: 2,
           border: `1px solid ${theme.palette.divider}`,
+          overflowX: 'auto',
         }}
       >
         {loading ? (
@@ -429,7 +431,7 @@ const PayrollGeneration: React.FC = () => {
             </Alert>
           </Box>
         ) : (
-          <AppTable>
+          <AppTable sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Employee</TableCell>

@@ -169,6 +169,7 @@ const UserProfileComponent = React.memo(() => {
       <Paper
         elevation={0}
         sx={{
+          display: 'flex',
           bgcolor: 'transparent',
           alignItems: 'flex-start',
           flexDirection: 'column',
@@ -177,9 +178,12 @@ const UserProfileComponent = React.memo(() => {
         <Box
           sx={{
             display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: { xs: 'flex-start', sm: 'center' },
             mb: 4,
+            gap: 2,
+            width: '100%',
           }}
         >
           <Typography
@@ -204,6 +208,8 @@ const UserProfileComponent = React.memo(() => {
               py: 1,
               borderColor: 'var(--primary-dark-color)',
               color: 'var(--primary-dark-color)',
+              width: { xs: '100%', sm: 'auto' },
+              justifyContent: { xs: 'center', sm: 'flex-start' },
               '&:hover': {
                 borderColor: 'var(--primary-dark-color)',
                 backgroundColor: theme.palette.action.hover,
@@ -219,7 +225,14 @@ const UserProfileComponent = React.memo(() => {
         >
           {/* Header Section with Profile Picture Upload */}
           <Box
-            sx={{ display: 'flex', alignItems: 'flex-start', mb: 4, gap: 3 }}
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'center', sm: 'flex-start' },
+              textAlign: { xs: 'center', sm: 'left' },
+              mb: 4,
+              gap: 3,
+            }}
           >
             <ProfilePictureUpload
               user={profile}
@@ -229,7 +242,15 @@ const UserProfileComponent = React.memo(() => {
               showRemoveButton={true}
               clickable={true}
             />
-            <Box sx={{ flex: 1 }}>
+            <Box
+              sx={{
+                flex: 1,
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: { xs: 'center', sm: 'flex-start' },
+              }}
+            >
               <Typography
                 variant='h5'
                 component='h2'
@@ -248,6 +269,7 @@ const UserProfileComponent = React.memo(() => {
                 sx={{
                   mb: 0.5,
                   color: darkMode ? '#8f8f8f' : theme.palette.text.secondary,
+                  wordBreak: 'break-word',
                 }}
               >
                 {profile.email}
@@ -257,6 +279,7 @@ const UserProfileComponent = React.memo(() => {
                   variant='body2'
                   sx={{
                     color: darkMode ? '#8f8f8f' : theme.palette.text.secondary,
+                    wordBreak: 'break-word',
                   }}
                 >
                   {profile.phone}

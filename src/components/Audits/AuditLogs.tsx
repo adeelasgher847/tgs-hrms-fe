@@ -161,10 +161,15 @@ const AuditLogs: React.FC = () => {
   return (
     <Box sx={{ minHeight: '100vh' }}>
       <Box
-        display='flex'
-        justifyContent='space-between'
-        alignItems='center'
-        mb={2}
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          mb: 2,
+          gap: 2,
+          width: '100%',
+        }}
       >
         <Typography
           variant='h4'
@@ -182,10 +187,11 @@ const AuditLogs: React.FC = () => {
             color='primary'
             onClick={handleExportLogs}
             sx={{
-              backgroundColor: 'primary.main',
+              backgroundColor: 'var(--primary-dark-color)',
               color: 'white',
               borderRadius: '6px',
-              '&:hover': { backgroundColor: 'primary.dark' },
+              width: { xs: '100%', sm: 'auto' },
+              '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
             }}
           >
             <DownloadIcon />
@@ -262,7 +268,7 @@ const AuditLogs: React.FC = () => {
           backgroundColor: theme.palette.background.paper,
         }}
       >
-        <Table stickyHeader>
+        <Table stickyHeader sx={{ minWidth: 700 }}>
           <TableHead>
             <TableRow>
               <TableCell>Action</TableCell>

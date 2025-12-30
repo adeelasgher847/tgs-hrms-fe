@@ -571,12 +571,16 @@ const Reports: React.FC = () => {
   return (
     <Box>
       <Box
-        display='flex'
-        justifyContent='space-between'
-        alignItems='center'
-        flexWrap='wrap'
-        gap={1}
-        mb={2}
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          flexWrap: 'wrap',
+          gap: 1,
+          mb: 2,
+          width: '100%',
+        }}
       >
         <Typography
           variant='h4'
@@ -585,7 +589,16 @@ const Reports: React.FC = () => {
         >
           Leave Reports
         </Typography>
-        <Box display='flex' alignItems='center' gap={1} flexWrap='wrap'>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flexWrap: 'wrap',
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'space-between', sm: 'flex-end' },
+          }}
+        >
           {/* Month picker should be visible only to admin roles (hide for managers and employees) */}
           {isAdminView && (
             <TextField
@@ -595,7 +608,7 @@ const Reports: React.FC = () => {
               value={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}`}
               onChange={handleMonthChange}
               InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: 180 }}
+              sx={{ minWidth: { xs: '100%', sm: 180 } }}
             />
           )}
 
@@ -625,9 +638,10 @@ const Reports: React.FC = () => {
             sx={{
               padding: 0,
               backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+              overflowX: 'auto',
             }}
           >
-            <AppTable>
+            <AppTable sx={{ minWidth: 1100 }}>
               <TableHead
                 sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5' }}
               >
@@ -1008,9 +1022,10 @@ const Reports: React.FC = () => {
                 sx={{
                   boxShadow: 'none',
                   backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+                  overflowX: 'auto',
                 }}
               >
-                <AppTable>
+                <AppTable sx={{ minWidth: 650 }}>
                   <TableHead>
                     <TableRow
                       sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#ffffff' }}
