@@ -13,7 +13,8 @@ import Chart from 'react-apexcharts';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
-import systemDashboardApiService from '../../api/systemDashboardApi';
+import systemDashboardApiService from '@/api/systemDashboardApi';
+import AppDropdown from '../common/AppDropdown';
 import TimeRangeSelector from '../common/TimeRangeSelector';
 
 interface Tenant {
@@ -177,7 +178,7 @@ const EmployeeGrowthChart: React.FC = () => {
         alignItems='center'
         height={400}
       >
-        <CircularProgress />
+        <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
       </Box>
     );
   }
@@ -214,196 +215,77 @@ const EmployeeGrowthChart: React.FC = () => {
           {labels[language]} ({selectedYear})
         </Typography>
 
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 2,
-            flexWrap: 'wrap',
-            width: { xs: '100%', sm: 'auto' },
-          }}
-        >
-          <FormControl
-            size='small'
-            sx={{
+        <Box display='flex' gap={2} flexWrap='wrap'>
+          <AppDropdown
+            showLabel={false}
+            value={selectedTenant}
+            onChange={e => setSelectedTenant(e.target.value as string)}
+            options={tenants.map(t => ({ value: t.id, label: t.name }))}
+            containerSx={{
               minWidth: { xs: '100%', sm: 140 },
               width: { xs: '100%', sm: 'auto' },
             }}
-          >
-            <Select
-              value={selectedTenant}
-              onChange={e => setSelectedTenant(e.target.value)}
-              sx={{
-                color: theme.palette.text.primary,
-                backgroundColor: theme.palette.background.paper,
-                '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: theme.palette.divider,
-                },
-                '.MuiSelect-select': {
-                  display: 'flex',
-                  alignItems: 'center',
-                  maxWidth: { xs: '100%', sm: 200 },
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                },
-              }}
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    backgroundColor: theme.palette.background.paper,
-                    '& .MuiMenuItem-root': {
-                      color: theme.palette.text.primary,
-                      '&:hover': {
-                        backgroundColor: theme.palette.action.hover,
-                      },
-                      '&.Mui-selected': {
-                        backgroundColor:
-                          theme.palette.mode === 'dark'
-                            ? 'var(--primary-light-color)'
-                            : 'var(--primary-dark-color)',
-                        color: '#ffffff',
-                        '&:hover': {
-                          backgroundColor:
-                            theme.palette.mode === 'dark'
-                              ? 'var(--primary-light-color)'
-                              : 'var(--primary-dark-color)',
-                        },
-                      },
-                    },
-                  },
-                },
-              }}
-            >
-              {tenants.map(tenant => (
-                <MenuItem key={tenant.id} value={tenant.id}>
-                  <Tooltip title={tenant.name}>
-                    <Box
-                      sx={{
-                        maxWidth: 220,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {tenant.name}
-                    </Box>
-                  </Tooltip>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl
-            size='small'
             sx={{
+              '& .MuiSelect-select': {
+                color: theme.palette.text.primary,
+                display: 'flex',
+                alignItems: 'center',
+                maxWidth: { xs: '100%', sm: 200 },
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: theme.palette.divider,
+              },
+            }}
+          />
+
+          <AppDropdown
+            showLabel={false}
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value as string)}
+            options={[
+              {
+                value: '',
+                label: language === 'ar' ? 'كل الشهور' : 'All Months',
+              },
+              ...availableMonths.map(m => ({
+                value: m,
+                label:
+                  tenantGrowthData.find(d => d.month === m)?.monthName || m,
+              })),
+            ]}
+            containerSx={{
               minWidth: { xs: '100%', sm: 120 },
               width: { xs: '100%', sm: 'auto' },
             }}
-          >
-            <Select
-              value={selectedMonth}
-              onChange={e => setSelectedMonth(e.target.value)}
-              displayEmpty
-              disabled={availableMonths.length === 0}
-              sx={{
+            sx={{
+              '& .MuiSelect-select': {
                 color: theme.palette.text.primary,
-                backgroundColor: theme.palette.background.paper,
-                '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: theme.palette.divider,
-                },
-              }}
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    backgroundColor: theme.palette.background.paper,
-                    '& .MuiMenuItem-root': {
-                      color: theme.palette.text.primary,
-                      '&:hover': {
-                        backgroundColor: theme.palette.action.hover,
-                      },
-                      '&.Mui-selected': {
-                        backgroundColor:
-                          theme.palette.mode === 'dark'
-                            ? 'var(--primary-light-color)'
-                            : 'var(--primary-dark-color)',
-                        color: '#ffffff',
-                        '&:hover': {
-                          backgroundColor:
-                            theme.palette.mode === 'dark'
-                              ? 'var(--primary-light-color)'
-                              : 'var(--primary-dark-color)',
-                        },
-                      },
-                    },
-                  },
-                },
-              }}
-            >
-              <MenuItem value=''>
-                {language === 'ar' ? 'كل الشهور' : 'All Months'}
-              </MenuItem>
-              {availableMonths.map(month => {
-                const monthData = tenantGrowthData.find(d => d.month === month);
-                return (
-                  <MenuItem key={month} value={month}>
-                    {monthData?.monthName || month}
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: theme.palette.divider,
+              },
+            }}
+            disabled={availableMonths.length === 0}
+          />
 
           <TimeRangeSelector
             value={selectedYear}
-            options={yearOptions}
-            onChange={value => {
-              if (value === 'all-time' || value === null) {
-                setSelectedYear(currentYear);
-                return;
-              }
-              setSelectedYear(Number(value));
+            options={Array.from({ length: 5 }, (_, i) => selectedYear - i)}
+            onChange={val => {
+              if (val === 'all-time' || val === null) return;
+              const num =
+                typeof val === 'number' ? val : parseInt(val as string);
+              if (!isNaN(num)) setSelectedYear(num);
             }}
             allTimeLabel={language === 'ar' ? 'كل الوقت' : 'All Time'}
-            language={language}
-            buttonSx={{
-              // Figma (light mode): bg #E0ECFA, radius 8px, height 36px, padding 8px 16px, gap 10px
-              backgroundColor:
-                theme.palette.mode === 'dark'
-                  ? theme.palette.action.hover
-                  : '#E0ECFA',
-              border:
-                theme.palette.mode === 'dark'
-                  ? `1px solid ${theme.palette.divider}`
-                  : 'none',
-              borderRadius: '8px',
-              px: '16px',
-              py: '8px',
-              gap: '10px',
-              height: '36px',
-              minWidth: { xs: '100%', sm: '108px' },
+            containerSx={{
+              minWidth: { xs: '100%', sm: 120 },
               width: { xs: '100%', sm: 'auto' },
             }}
-            labelSx={{
-              // Figma (light mode): SF Pro Rounded, 14px/20px, 400, letter spacing -1%, color #2462A5
-              fontFamily: 'SF Pro Rounded, sans-serif',
-              fontSize: '14px',
-              lineHeight: '20px',
-              letterSpacing: '-0.01em',
-              fontWeight: 400,
-              color:
-                theme.palette.mode === 'dark'
-                  ? theme.palette.text.primary
-                  : '#2462A5',
-            }}
-            iconSx={{
-              width: 20,
-              height: 20,
-              // Figma (light mode): dark blue #2462A5
-              filter:
-                theme.palette.mode === 'dark'
-                  ? 'brightness(0) saturate(100%) invert(56%)'
-                  : 'brightness(0) saturate(100%) invert(32%) sepia(98%) saturate(1495%) hue-rotate(190deg) brightness(92%) contrast(92%)',
-            }}
+            minHeight={'48px'}
           />
         </Box>
       </Box>

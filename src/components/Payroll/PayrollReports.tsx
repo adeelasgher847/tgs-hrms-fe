@@ -259,7 +259,7 @@ const PayrollReports: React.FC = () => {
           mb: 3,
         }}
       >
-        <AppPageTitle sx={{ mb: 0, color: textColor }}>Payroll Reports</AppPageTitle>
+        <AppPageTitle>Payroll Reports</AppPageTitle>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
@@ -267,6 +267,7 @@ const PayrollReports: React.FC = () => {
         >
           <AppDropdown
             label='Tenant'
+            options={tenants.map(t => ({ value: t.id, label: t.name }))}
             value={selectedTenantId}
             onChange={(e: SelectChangeEvent<string | number>) =>
               setSelectedTenantId(String(e.target.value || ''))

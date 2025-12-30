@@ -7,16 +7,15 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  TextField,
-  MenuItem,
   IconButton,
   CircularProgress,
-  Button,
   Stack,
   Tooltip,
   useMediaQuery,
   Pagination,
 } from '@mui/material';
+import AppDropdown from '../common/AppDropdown';
+import AppButton from '../common/AppButton';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useTheme } from '@mui/material/styles';
@@ -305,15 +304,6 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
   const filterBtn = darkMode ? '#888' : '#999';
   const textColor = darkMode ? '#fff' : '#000';
-  const darkInputStyles = darkMode
-    ? {
-        '& .MuiOutlinedInput-root': {
-          backgroundColor: '#1e1e1e',
-          color: '#fff',
-        },
-        '& .MuiInputLabel-root': { color: '#ccc' },
-      }
-    : {};
 
   const hasMorePages = employees.length === itemsPerPage;
   const estimatedTotalRecords =
@@ -349,77 +339,73 @@ const TenantBasedEmployeeManager: React.FC = () => {
           spacing={2}
           sx={{ flex: 1, width: isMobile ? '100%' : 'auto' }}
         >
-          <TextField
-            select
-            fullWidth
+          <AppDropdown
             label='Tenant'
+            options={[
+              { value: '', label: 'All Tenants' },
+              ...tenants.map(t => ({ value: t.id, label: t.name })),
+            ]}
             value={filters.tenantId}
-            onChange={e => handleFilterChange('tenantId', e.target.value)}
-            size='small'
-            sx={{ width: isMobile ? '100%' : 190, ...darkInputStyles }}
-          >
-            <MenuItem value=''>All Tenants</MenuItem>
-            {tenants.map(tenant => (
-              <MenuItem key={tenant.id} value={tenant.id}>
-                {tenant.name}
-              </MenuItem>
-            ))}
-          </TextField>
+            onChange={e =>
+              handleFilterChange('tenantId', String(e.target.value))
+            }
+            containerSx={{ width: isMobile ? '100%' : 190 }}
+          />
 
-          <TextField
-            select
-            fullWidth
+          <AppDropdown
             label='Department'
+            options={[
+              { value: '', label: 'All Departments' },
+              ...departments.map(d => ({ value: d.id, label: d.name })),
+            ]}
             value={filters.departmentId}
-            onChange={e => handleFilterChange('departmentId', e.target.value)}
-            size='small'
-            sx={{ width: isMobile ? '100%' : 190, ...darkInputStyles }}
-          >
-            <MenuItem value=''>All Departments</MenuItem>
-            {departments.map(dept => (
-              <MenuItem key={dept.id} value={dept.id}>
-                {dept.name}
-              </MenuItem>
-            ))}
-          </TextField>
+            onChange={e =>
+              handleFilterChange('departmentId', String(e.target.value))
+            }
+            containerSx={{ width: isMobile ? '100%' : 190 }}
+          />
 
-          <TextField
-            select
-            fullWidth
+          <AppDropdown
             label='Designation'
+            options={[
+              { value: '', label: 'All Designations' },
+              ...designations.map(des => ({ value: des.id, label: des.title })),
+            ]}
             value={filters.designationId}
-            onChange={e => handleFilterChange('designationId', e.target.value)}
-            size='small'
+            onChange={e =>
+              handleFilterChange('designationId', String(e.target.value))
+            }
             disabled={!filters.departmentId}
-            sx={{ width: isMobile ? '100%' : 190, ...darkInputStyles }}
-          >
-            <MenuItem value=''>All Designations</MenuItem>
-            {designations.map(des => (
-              <MenuItem key={des.id} value={des.id}>
-                {des.title}
-              </MenuItem>
-            ))}
-          </TextField>
+            containerSx={{ width: isMobile ? '100%' : 190 }}
+          />
 
-          <Button
+          <AppButton
             variant='outlined'
+            variantType='secondary'
             onClick={handleClearFilters}
-            sx={{ borderColor: filterBtn, color: textColor }}
+            sx={{
+              width: isMobile ? '100%' : 190,
+              height: '47px',
+              padding: isMobile ? undefined : '6px 15px',
+              alignSelf: isMobile ? 'stretch' : 'flex-end',
+              borderColor: 'var(--primary-dark-color)',
+              color: 'var(--primary-dark-color)',
+            }}
           >
             Clear Filters
-          </Button>
+          </AppButton>
         </Stack>
 
         <Tooltip title='Export Employee List'>
           <IconButton
-            color='primary'
+            // color='pr'
             onClick={handleDownload}
             sx={{
-              backgroundColor: 'primary.main',
+              backgroundColor: 'var(--primary-dark-color)',
               borderRadius: '6px',
               padding: '6px',
               color: 'white',
-              '&:hover': { backgroundColor: 'primary.dark' },
+              '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
             }}
           >
             <FileDownloadIcon />
@@ -444,7 +430,9 @@ const TenantBasedEmployeeManager: React.FC = () => {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={7} align='center'>
-                  <CircularProgress />
+                  <CircularProgress
+                    sx={{ color: 'var(--primary-dark-color)' }}
+                  />
                 </TableCell>
               </TableRow>
             ) : employees.length ? (
@@ -483,7 +471,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
             setOpenProfile(false);
             setSelectedEmployee(null);
           }}
-          employeeId={selectedEmployee.id}
+          employeeId={selectedEmployee!.id}
         />
       )}
 

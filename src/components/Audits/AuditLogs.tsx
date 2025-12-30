@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   useTheme,
-  Table,
   TableHead,
   TableRow,
   TableCell,
@@ -12,11 +11,9 @@ import {
   IconButton,
   Tooltip,
   Pagination,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from '@mui/material';
+import AppDropdown from '../common/AppDropdown';
+import AppTable from '../common/AppTable';
 import DownloadIcon from '@mui/icons-material/Download';
 import systemDashboardApiService, {
   type RecentLog,
@@ -177,7 +174,6 @@ const AuditLogs: React.FC = () => {
         </AppPageTitle>
         <Tooltip title='Export Audit Logs (CSV)'>
           <IconButton
-            color='primary'
             onClick={handleExportLogs}
             sx={{
               backgroundColor: 'var(--primary-dark-color)',
@@ -193,113 +189,90 @@ const AuditLogs: React.FC = () => {
       </Box>
 
       {/* Filters */}
-      <Box
-        display='flex'
-        gap={2}
-        mb={3}
-        flexWrap='wrap'
-        sx={{
-          '& .MuiFormControl-root': {
-            minWidth: { xs: '100%', sm: '200px' },
-          },
-        }}
-      >
-        <FormControl size='small'>
-          <InputLabel>User Role</InputLabel>
-          <Select
-            value={selectedUserRole}
-            onChange={e => setSelectedUserRole(e.target.value)}
-            label='User Role'
-            disabled={rolesLoading}
-          >
-            <MenuItem value=''>All</MenuItem>
-            {roles.map(role => (
-              <MenuItem key={role.id || role.name} value={role.name}>
-                {role.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+      <Box display='flex' gap={2} mb={3} flexWrap='wrap'>
+        <AppDropdown
+          label='User Role'
+          options={[
+            { value: '', label: 'All' },
+            ...roles.map(r => ({ value: r.name, label: r.name })),
+          ]}
+          value={selectedUserRole}
+          onChange={e => setSelectedUserRole(String(e.target.value))}
+          containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
+          size='small'
+          showLabel={true}
+          disabled={rolesLoading}
+        />
 
-        <FormControl size='small'>
-          <InputLabel>Tenant</InputLabel>
-          <Select
-            value={selectedTenantId}
-            onChange={e => setSelectedTenantId(e.target.value)}
-            label='Tenant'
-            disabled={tenantsLoading}
-          >
-            <MenuItem value=''>All</MenuItem>
-            {tenants.map(tenant => (
-              <MenuItem key={tenant.id} value={tenant.id}>
-                {tenant.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <AppDropdown
+          label='Tenant'
+          options={[
+            { value: '', label: 'All' },
+            ...tenants.map(t => ({ value: t.id, label: t.name })),
+          ]}
+          value={selectedTenantId}
+          onChange={e => setSelectedTenantId(String(e.target.value))}
+          containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
+          size='small'
+          showLabel={true}
+          disabled={tenantsLoading}
+        />
 
-        <FormControl size='small'>
-          <InputLabel>HTTP Method</InputLabel>
-          <Select
-            value={selectedMethod}
-            onChange={e => setSelectedMethod(e.target.value)}
-            label='HTTP Method'
-          >
-            <MenuItem value=''>All</MenuItem>
-            {httpMethods.map(method => (
-              <MenuItem key={method} value={method}>
-                {method}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <AppDropdown
+          label='HTTP Method'
+          options={[
+            { value: '', label: 'All' },
+            ...httpMethods.map(m => ({ value: m, label: m })),
+          ]}
+          value={selectedMethod}
+          onChange={e => setSelectedMethod(String(e.target.value))}
+          containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
+          size='small'
+          showLabel={true}
+        />
       </Box>
 
-      <Box
-        sx={{
-          overflowX: 'auto',
-          backgroundColor: theme.palette.background.paper,
-        }}
+      <AppTable
+        sx={{ backgroundColor: theme.palette.background.paper }}
+        tableProps={{ stickyHeader: true }}
       >
-        <Table stickyHeader sx={{ minWidth: 700 }}>
-          <TableHead>
+        <TableHead>
+          <TableRow>
+            <TableCell>Action</TableCell>
+            <TableCell>Entity</TableCell>
+            <TableCell>User Role</TableCell>
+            <TableCell>Tenant Id</TableCell>
+            <TableCell>Timestamp</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {logsLoading ? (
             <TableRow>
-              <TableCell>Action</TableCell>
-              <TableCell>Entity</TableCell>
-              <TableCell>User Role</TableCell>
-              <TableCell>Tenant Id</TableCell>
-              <TableCell>Timestamp</TableCell>
+              <TableCell colSpan={5} align='center'>
+                <CircularProgress />
+              </TableCell>
             </TableRow>
-          </TableHead>
-          <TableBody>
-            {logsLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} align='center'>
-                  <CircularProgress />
+          ) : logs.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} align='center'>
+                No logs found
+              </TableCell>
+            </TableRow>
+          ) : (
+            logs.map(log => (
+              <TableRow key={log.id} hover>
+                <TableCell>{log.action}</TableCell>
+                <TableCell>{log.entityType}</TableCell>
+                <TableCell>{log.userRole || '-'}</TableCell>
+                <TableCell>{log.tenantId}</TableCell>
+                <TableCell>
+                  {new Date(log.createdAt).toLocaleString()}
                 </TableCell>
               </TableRow>
-            ) : logs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} align='center'>
-                  No logs found
-                </TableCell>
-              </TableRow>
-            ) : (
-              logs.map(log => (
-                <TableRow key={log.id} hover>
-                  <TableCell>{log.action}</TableCell>
-                  <TableCell>{log.entityType}</TableCell>
-                  <TableCell>{log.userRole || '-'}</TableCell>
-                  <TableCell>{log.tenantId}</TableCell>
-                  <TableCell>
-                    {new Date(log.createdAt).toLocaleString()}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Box>
+            ))
+          )}
+        </TableBody>
+      </AppTable>
 
       {showPagination && (
         <Box display='flex' justifyContent='center' mt={2}>

@@ -5,7 +5,6 @@ import {
   Select,
   FormControl,
   CircularProgress,
-  TextField,
   Tooltip,
   useTheme,
 } from '@mui/material';
@@ -17,6 +16,8 @@ import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import systemDashboardApiService from '../../api/systemDashboardApi';
 import { getCurrentUser } from '../../utils/auth';
 import { isSystemAdmin } from '../../utils/roleUtils';
+import AppDropdown from '../common/AppDropdown';
+import TimeRangeSelector from '../common/TimeRangeSelector';
 
 interface Tenant {
   id: string;
@@ -172,7 +173,7 @@ const TenantGrowthChart: React.FC = () => {
         alignItems='center'
         height={400}
       >
-        <CircularProgress />
+        <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
       </Box>
     );
   }
@@ -206,25 +207,26 @@ const TenantGrowthChart: React.FC = () => {
           {labels[language]} ({selectedYear})
         </Typography>
 
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 2,
-            flexWrap: 'wrap',
-            width: { xs: '100%', sm: 'auto' },
-            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-          }}
-        >
-          <TextField
-            type='number'
+        <Box display='flex' gap={2}>
+          <TimeRangeSelector
             value={selectedYear}
-            onChange={e => {
-              const value = parseInt(e.target.value);
-              if (!isNaN(value) && value > 0) {
-                setSelectedYear(value);
-              }
+            options={Array.from({ length: 5 }, (_, i) => selectedYear - i)}
+            onChange={val => {
+              if (val === 'all-time' || val === null) return;
+              const num =
+                typeof val === 'number' ? val : parseInt(val as string);
+              if (!isNaN(num)) setSelectedYear(num);
             }}
-            size='small'
+            allTimeLabel={language === 'ar' ? 'كل الوقت' : 'All Time'}
+            containerSx={{ minWidth: 120 }}
+            minHeight={'48px'}
+          />
+          <AppDropdown
+            showLabel={false}
+            value={selectedTenant}
+            onChange={e => setSelectedTenant(e.target.value as string)}
+            options={tenants.map(t => ({ value: t.id, label: t.name }))}
+            containerSx={{ minWidth: 160 }}
             sx={{
               width: { xs: '100%', sm: 120 },
               '& .MuiOutlinedInput-root': {
@@ -240,55 +242,7 @@ const TenantGrowthChart: React.FC = () => {
                 },
               },
             }}
-            inputProps={{
-              min: 2000,
-              max: 2100,
-            }}
           />
-
-          <FormControl
-            size='small'
-            sx={{
-              minWidth: { xs: '100%', sm: 160 },
-              width: { xs: '100%', sm: 'auto' },
-            }}
-          >
-            <Select
-              value={selectedTenant}
-              onChange={e => setSelectedTenant(e.target.value)}
-              sx={{
-                color: theme.palette.text.primary,
-                '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: theme.palette.divider,
-                },
-                '.MuiSelect-select': {
-                  display: 'flex',
-                  alignItems: 'center',
-                  maxWidth: { xs: '100%', sm: 200 },
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                },
-              }}
-            >
-              {tenants.map(tenant => (
-                <MenuItem key={tenant.id} value={tenant.id}>
-                  <Tooltip title={tenant.name}>
-                    <Box
-                      sx={{
-                        maxWidth: 220,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {tenant.name}
-                    </Box>
-                  </Tooltip>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
         </Box>
       </Box>
 

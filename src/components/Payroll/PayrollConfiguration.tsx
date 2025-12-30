@@ -1163,12 +1163,9 @@ const PayrollConfiguration: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <Typography
-          variant='h4'
-          sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000', mb: 1 }}
-        >
+        <AppPageTitle>
           Payroll Configuration
-        </Typography>
+          </AppPageTitle>
         <Button
           onClick={handleOpenEditModal}
           variant='outlined'
@@ -1177,7 +1174,7 @@ const PayrollConfiguration: React.FC = () => {
               component='img'
               src={Icons.edit}
               alt='Edit'
-              sx={{ width: 18, height: 18 }}
+              sx={{ width: 18, height: 18, color: theme.palette.text.primary }}
             />
           }
           sx={{

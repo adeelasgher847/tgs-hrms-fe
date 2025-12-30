@@ -120,7 +120,12 @@ const BenefitDetails: React.FC = () => {
   return (
     <Box>
       <Box display='flex' justifyContent='space-between' alignItems='center'>
-        <Typography variant='h4' gutterBottom>
+        <Typography
+          fontWeight={500}
+          fontSize={{ xs: '32px', lg: '48px' }}
+          lineHeight='44px'
+          letterSpacing='-2%'
+        >
           My Benefits
         </Typography>
 

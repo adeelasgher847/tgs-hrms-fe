@@ -23,6 +23,7 @@ import employeeApi from '../../api/employeeApi';
 import { useIsDarkMode } from '../../theme';
 import AppCard from '../common/AppCard';
 import AppTable from '../common/AppTable';
+import AppPageTitle from '../common/AppPageTitle';
 
 const getCardStyle = (darkMode: boolean) => ({
   flex: '1 1 calc(33.33% - 16px)',
@@ -582,13 +583,10 @@ const Reports: React.FC = () => {
           width: '100%',
         }}
       >
-        <Typography
-          variant='h4'
-          fontWeight={600}
-          sx={{ color: darkMode ? '#fff' : '#000' }}
+        <AppPageTitle
         >
           Leave Reports
-        </Typography>
+        </AppPageTitle>
         <Box
           sx={{
             display: 'flex',

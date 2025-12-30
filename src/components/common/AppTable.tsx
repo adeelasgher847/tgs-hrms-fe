@@ -7,13 +7,20 @@ import {
   type TableContainerProps,
   type SxProps,
   type Theme,
+  type TableProps,
 } from '@mui/material';
 
 interface AppTableProps extends TableContainerProps {
   children: React.ReactNode;
+  tableProps?: TableProps;
 }
 
-export function AppTable({ children, sx, ...rest }: AppTableProps) {
+export function AppTable({
+  children,
+  sx,
+  tableProps,
+  ...rest
+}: AppTableProps) {
   const theme = useTheme();
 
   const baseSx: SxProps<Theme> = {
@@ -26,6 +33,7 @@ export function AppTable({ children, sx, ...rest }: AppTableProps) {
     overflowX: 'auto',
     overflowY: 'hidden',
     backgroundColor: theme.palette.background.paper,
+
     '& .MuiTableHead-root .MuiTableRow-root': {
       backgroundColor:
         theme.palette.mode === 'dark'
@@ -38,10 +46,7 @@ export function AppTable({ children, sx, ...rest }: AppTableProps) {
         fontSize: { xs: '12px', sm: '18px' },
         lineHeight: { xs: '16px', sm: 'var(--subheading2-line-height)' },
         letterSpacing: 'var(--subheading2-letter-spacing)',
-        color:
-          theme.palette.mode === 'dark'
-            ? '#ffffff'
-            : '#2C2C2C',
+        color: theme.palette.mode === 'dark' ? '#ffffff' : '#2C2C2C',
         backgroundColor:
           theme.palette.mode === 'dark'
             ? 'var(--primary-light-color)'
@@ -49,14 +54,9 @@ export function AppTable({ children, sx, ...rest }: AppTableProps) {
         whiteSpace: { xs: 'nowrap', sm: 'normal' },
       },
     },
+
     '& .MuiTableBody-root .MuiTableRow-root': {
       backgroundColor: theme.palette.background.paper,
-      // '&:hover': {
-      //   backgroundColor:
-      //     theme.palette.mode === 'dark'
-      //       ? theme.palette.action.hover
-      //       : 'rgba(224, 236, 250, 0.3)',
-      // },
       '& .MuiTableCell-root': {
         borderBottom: `0.5px solid ${theme.palette.divider}`,
         padding: { xs: '8px 12px', sm: '16px' },
@@ -75,7 +75,7 @@ export function AppTable({ children, sx, ...rest }: AppTableProps) {
       {...rest}
       sx={{ ...baseSx, ...(sx as object) }}
     >
-      <Table>{children}</Table>
+      <Table {...(tableProps ?? {})}>{children}</Table>
     </TableContainer>
   );
 }

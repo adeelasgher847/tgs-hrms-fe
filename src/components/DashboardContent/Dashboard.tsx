@@ -4,7 +4,6 @@ import {
   Typography,
   useTheme,
   Grid,
-  Table,
   TableHead,
   TableRow,
   TableCell,
@@ -15,6 +14,7 @@ import {
   Tooltip,
   IconButton,
 } from '@mui/material';
+import AppTable from '../common/AppTable';
 import DownloadIcon from '@mui/icons-material/Download';
 import { useLanguage } from '../../hooks/useLanguage';
 import systemDashboardApiService, {
@@ -114,7 +114,7 @@ const Dashboard: React.FC = () => {
           minHeight: '80vh',
         }}
       >
-        <CircularProgress />
+        <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
       </Box>
     );
   }
@@ -254,7 +254,9 @@ const Dashboard: React.FC = () => {
                       maxHeight: '200px', // Fixed height to show scrollbar after ~4 records
                     }}
                   >
-                    <Table size='small' stickyHeader>
+                    <AppTable
+                      tableProps={{ size: 'small', stickyHeader: true }}
+                    >
                       <TableHead>
                         <TableRow>
                           <TableCell
@@ -322,7 +324,7 @@ const Dashboard: React.FC = () => {
                           )
                         )}
                       </TableBody>
-                    </Table>
+                    </AppTable>
                   </Box>
                 </Box>
 
@@ -379,13 +381,12 @@ const Dashboard: React.FC = () => {
               </Typography>
               <Tooltip title='Export Recent 1000 system logs'>
                 <IconButton
-                  color='primary'
                   onClick={handleExportLogs}
                   sx={{
                     backgroundColor: theme.palette.primary.main,
                     color: theme.palette.primary.contrastText,
                     borderRadius: '6px',
-                    '&:hover': { backgroundColor: theme.palette.primary.dark },
+                    // '&:hover': { backgroundColor: theme.palette.primary.dark },
                   }}
                 >
                   <DownloadIcon />
@@ -394,7 +395,7 @@ const Dashboard: React.FC = () => {
             </Box>
 
             <Box sx={{ overflowX: 'auto' }}>
-              <Table stickyHeader>
+              <AppTable tableProps={{ stickyHeader: true }}>
                 <TableHead>
                   <TableRow>
                     <TableCell
@@ -468,7 +469,9 @@ const Dashboard: React.FC = () => {
                   {logsLoading ? (
                     <TableRow>
                       <TableCell colSpan={7} align='center'>
-                        <CircularProgress />
+                        <CircularProgress
+                          sx={{ color: 'var(--primary-dark-color)' }}
+                        />
                       </TableCell>
                     </TableRow>
                   ) : logs.length === 0 ? (
@@ -536,7 +539,7 @@ const Dashboard: React.FC = () => {
                     ))
                   )}
                 </TableBody>
-              </Table>
+              </AppTable>
             </Box>
 
             {(() => {

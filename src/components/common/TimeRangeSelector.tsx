@@ -16,7 +16,7 @@ interface TimeRangeSelectorProps {
   onChange: (value: string | number | null) => void;
   allTimeLabel?: string;
   language?: 'en' | 'ar';
-  /** Optional style overrides to match legacy/original designs in specific charts */
+  /** Optional style overrides */
   buttonSx?: SxProps<Theme>;
   labelSx?: SxProps<Theme>;
   iconSx?: SxProps<Theme>;
@@ -32,11 +32,18 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   labelSx,
   iconSx,
 }) => {
-  // language parameter is reserved for future use
+  // Reserved for future use
   void language;
+
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
+
+  /* ✅ FIX: containerSx is now properly defined */
+  const containerSx: SxProps<Theme> = {
+    position: 'relative',
+    width: { xs: '100%', sm: 'auto' },
+  };
 
   const handleToggle = () => {
     setOpen(prev => !prev);
@@ -60,8 +67,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   const displayValue =
     value === 'all-time' || value === null ? allTimeLabel : value.toString();
 
-  // CSS filter for #2462A5 (var(--primary-light-color)) to tint image icons in light mode.
-  // We keep filter approach because `Icons.arrowUp` is an image, not an SVG we can recolor directly.
+  // Filter for primary-light color icon (image-based icon)
   const iconFilterPrimaryLight =
     'brightness(0) saturate(100%) invert(32%) sepia(98%) saturate(1495%) hue-rotate(190deg) brightness(92%) contrast(92%)';
 
@@ -70,7 +76,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
   return (
     <ClickAwayListener onClickAway={handleClose}>
-      <Box sx={{ position: 'relative' }}>
+      <Box sx={containerSx}>
         {/* Selected Button */}
         <Box
           ref={anchorRef}
@@ -81,7 +87,6 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: 1,
-              // Figma (light): bg #E0ECFA (var(--primary-color)), text/icon #2462A5 (var(--primary-light-color))
               backgroundColor:
                 theme.palette.mode === 'dark'
                   ? theme.palette.action.hover
@@ -94,7 +99,6 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               px: { xs: 1.5, sm: 2 },
               py: 1,
               cursor: 'pointer',
-              // On small screens, this control should be able to stretch to full width.
               width: { xs: '100%', sm: 'auto' },
               minWidth: { xs: '100%', sm: '120px' },
               height: '36px',
@@ -125,6 +129,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
           >
             {displayValue}
           </Typography>
+
           <Box
             component='img'
             src={Icons.arrowUp}
@@ -133,7 +138,6 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               {
                 width: 16,
                 height: 16,
-                // Show "down" chevron when closed (matches original UI); rotate up when open
                 transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
                 transition: 'transform 0.2s',
                 filter:
@@ -155,7 +159,6 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               top: '100%',
               left: 0,
               mt: 1,
-              // Match button width (important on small screens)
               width: '100%',
               minWidth: { xs: '100%', sm: '120px' },
               backgroundColor: theme.palette.background.paper,
@@ -168,7 +171,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                   : '0 4px 6px rgba(0, 0, 0, 0.1)',
             }}
           >
-            {/* All Time Option */}
+            {/* All Time */}
             <Box
               onClick={() => handleSelect('all-time')}
               sx={{
@@ -181,12 +184,6 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                       ? 'var(--primary-light-color)'
                       : 'var(--primary-dark-color)'
                     : 'transparent',
-                // '&:hover': {
-                //   backgroundColor:
-                //     value === 'all-time' || value === null
-                //       ? 'var(--primary-dark-color)'
-                //       : 'rgba(48, 131, 220, 0.1)',
-                // },
               }}
             >
               <Typography
@@ -196,24 +193,21 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                   color:
                     value === 'all-time' || value === null
                       ? 'var(--white-color)'
-                      : theme.palette.mode === 'dark'
-                        ? 'var(--primary-light-color)'
-                        : 'var(--primary-light-color)',
+                      : 'var(--primary-light-color)',
                 }}
               >
                 {allTimeLabel}
               </Typography>
             </Box>
 
-            {/* Year Options */}
+            {/* Options */}
             {options.map((option, index) => {
-              const optionValue = typeof option === 'number' ? option : option;
-              const isSelected = value === optionValue;
+              const isSelected = value === option;
 
               return (
                 <Box
-                  key={optionValue}
-                  onClick={() => handleSelect(optionValue)}
+                  key={option}
+                  onClick={() => handleSelect(option)}
                   sx={{
                     px: 2,
                     py: 1.5,
@@ -227,11 +221,6 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                       index === 0
                         ? 'none'
                         : `1px solid ${theme.palette.divider}`,
-                    // '&:hover': {
-                    //   backgroundColor: isSelected
-                    //     ? 'var(--primary-dark-color)'
-                    //     : 'rgba(48, 131, 220, 0.1)',
-                    // },
                   }}
                 >
                   <Typography
@@ -240,12 +229,10 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                       fontWeight: 500,
                       color: isSelected
                         ? 'var(--white-color)'
-                        : theme.palette.mode === 'dark'
-                          ? 'var(--primary-light-color)'
-                          : 'var(--primary-light-color)',
+                        : 'var(--primary-light-color)',
                     }}
                   >
-                    {optionValue.toString()}
+                    {option.toString()}
                   </Typography>
                 </Box>
               );

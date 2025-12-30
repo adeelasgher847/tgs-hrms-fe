@@ -186,12 +186,12 @@ const UserProfileComponent = React.memo(() => {
         <Box
           sx={{
             display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
+            flexDirection: 'row',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'nowrap',
+            alignItems: { xs: 'flex-start', sm: 'center' },
             gap: 2,
             mb: 3,
+            width: '100%',
           }}
         >
           <AppPageTitle
@@ -215,7 +215,6 @@ const UserProfileComponent = React.memo(() => {
                 sx={{
                   width: { xs: 16, sm: 20 },
                   height: { xs: 16, sm: 20 },
-                  // Make the SVG icon match the button text color (white)
                   filter: 'brightness(0) invert(1)',
                 }}
               />

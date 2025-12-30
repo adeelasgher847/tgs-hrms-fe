@@ -1142,9 +1142,7 @@ const EmployeeSalaryPage: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <AppPageTitle sx={{ mb: 0, color: darkMode ? '#fff' : '#000' }}>
-          Employee Salary Structure
-        </AppPageTitle>
+        <AppPageTitle>Employee Salary Structure</AppPageTitle>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <Button
             variant='contained'

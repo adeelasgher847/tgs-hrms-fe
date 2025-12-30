@@ -47,6 +47,7 @@ import AppTable from '../common/AppTable';
 import AppDropdown from '../common/AppDropdown';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import AppPageTitle from '../common/AppPageTitle';
 
 type TenantOption = { id: string; name: string };
 
@@ -1512,16 +1513,7 @@ const AttendanceTable = () => {
 
   return (
     <Box>
-      <Typography
-        fontWeight={500}
-        fontSize={{ xs: '32px', lg: '48px' }}
-        lineHeight='44px'
-        letterSpacing='-2%'
-        color='#2C2C2C'
-        gutterBottom
-      >
-        Attendance Management
-      </Typography>
+      <AppPageTitle>Attendance Management</AppPageTitle>
       {!isManager && !isAdminLike && (
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex' }}>

@@ -629,9 +629,7 @@ const PayrollRecords: React.FC = () => {
         }}
       >
         <Box sx={{ width: '100%' }}>
-          <AppPageTitle sx={{ mb: 0, color: textColor }}>
-            Payroll Records
-          </AppPageTitle>
+          <AppPageTitle>Payroll Records</AppPageTitle>
         </Box>
       </Box>
 

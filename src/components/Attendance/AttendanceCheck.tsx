@@ -11,6 +11,7 @@ import {
   isNetworkAdmin,
   isHRAdmin,
 } from '../../utils/roleUtils';
+import AppPageTitle from '../common/AppPageTitle';
 
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
 
@@ -138,15 +139,7 @@ const AttendanceCheck = () => {
         }}
       >
         <Box>
-          <Typography
-            fontWeight={500}
-            fontSize={{ xs: '32px', lg: '48px' }}
-            lineHeight='44px'
-            letterSpacing='-2%'
-            color='#2C2C2C'
-          >
-            Attendance Management
-          </Typography>
+          <AppPageTitle>Attendance Management</AppPageTitle>
           <Typography
             fontWeight={400}
             fontSize={{ xs: '16px', lg: '16px' }}
@@ -207,7 +200,8 @@ const AttendanceCheck = () => {
             sx={{
               minWidth: { xs: 100, sm: 120, md: 140 },
               height: { xs: 36, sm: 40 },
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              fontSize: '1.1rem',
+              fontWeight: 600,
               px: { xs: 1, sm: 2 },
               textTransform: 'none',
             }}

@@ -2060,28 +2060,20 @@ const RequestManagement: React.FC = () => {
           !(selectedAction === 'approve' && availableAssets.length === 0)
         }
         maxWidth='sm'
-        secondaryAction={{
-          label: 'Reject',
-          onClick: () => {
-            // set form action to reject then submit
-            setValue('action', 'reject');
-            void handleSubmit(handleProcessSubmit)();
-          },
-          disabled: loading,
-        }}
       />
 
       {/* View Details Modal (shared) */}
       <AppFormModal
         open={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
-        onSubmit={() => setIsViewModalOpen(false)}
+        // onSubmit={() => setIsViewModalOpen(false)}
         title='Request Details'
         fields={viewModalFields}
-        cancelLabel='Close'
-        submitLabel='Close'
-        isSubmitting={false}
-        hasChanges={false}
+        // cancelLabel='Close'
+        // submitLabel='Close'
+        // isSubmitting={false}
+        // hasChanges={false}
+        hideActions={true} 
         maxWidth='md'
       />
 

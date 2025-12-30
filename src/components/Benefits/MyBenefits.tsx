@@ -16,6 +16,7 @@ import AppTable from '../common/AppTable';
 import { listBenefits, listEmployeeBenefits } from '../../api/benefits';
 import type { Benefit, EmployeeBenefitAssignment } from '../../types/benefits';
 import jsPDF from 'jspdf';
+import AppPageTitle from '../common/AppPageTitle';
 
 interface MyBenefitsProps {
   employeeId: string;
@@ -158,7 +159,7 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
   return (
     <Stack spacing={2}>
       <Stack direction='row' justifyContent='space-between' alignItems='center'>
-        <Typography variant='h6'>My Benefits</Typography>
+        <AppPageTitle>My Benefits</AppPageTitle>
         <AppButton
           variant='outlined'
           variantType='secondary'

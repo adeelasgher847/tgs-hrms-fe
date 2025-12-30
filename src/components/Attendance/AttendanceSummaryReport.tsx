@@ -23,6 +23,7 @@ import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../common/AppTable';
 import AppDropdown from '../common/AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import AppPageTitle from '../common/AppPageTitle';
 
 interface AttendanceSummaryItem {
   employeeName?: string;
@@ -250,16 +251,9 @@ const AttendanceSummaryReport: React.FC = () => {
 
   return (
     <Box>
-      <Typography
-        fontWeight={500}
-        fontSize={{ xs: '32px', lg: '48px' }}
-        lineHeight='44px'
-        letterSpacing='-2%'
-        color='#2C2C2C'
-        gutterBottom
-      >
+      <AppPageTitle>
         Attendance Summary Report
-      </Typography>
+      </AppPageTitle>
 
       <Box
         display='flex'

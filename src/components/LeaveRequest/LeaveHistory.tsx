@@ -267,19 +267,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           width: '100%',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <AccessTimeIcon
-            sx={{
-              fontSize: 32,
-              mr: 1,
-              color: 'var(--primary-dark-color)',
-            }}
-          />
-          <Typography variant='h5' fontWeight={600}>
-            {title}
-          </Typography>
-        </Box>
-
         <Box
           sx={{
             display: 'flex',

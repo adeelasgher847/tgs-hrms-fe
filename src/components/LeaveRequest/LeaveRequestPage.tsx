@@ -505,7 +505,7 @@ const LeaveRequestPage = () => {
   return (
     <Box sx={{ minHeight: '100vh' }}>
       {/* Header */}
-      <AppBar
+      {/* <AppBar
         position='static'
         sx={{
           borderRadius: 1,
@@ -524,7 +524,7 @@ const LeaveRequestPage = () => {
           }}
         >
           <Box>
-            <Typography variant='h6' fontWeight={700}>
+            <Typography variant='h6' fontWeight={700} fontSize={'48px'}>
               Leave Management System
             </Typography>
             {currentUser && (
@@ -588,8 +588,12 @@ const LeaveRequestPage = () => {
             </Stack>
           )}
         </Toolbar>
-      </AppBar>
-
+      </AppBar> */}
+<Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography variant='h5' fontWeight={600} fontSize={'48px'}>
+            Leave History
+          </Typography>
+        </Box>
       <Box sx={{ py: 3 }}>
         {['employee', 'manager'].includes(role) ? (
           activeTab === 'apply' ? (
