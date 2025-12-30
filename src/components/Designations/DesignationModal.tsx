@@ -20,7 +20,7 @@ import {
   departmentApiService,
   type FrontendDepartment,
 } from '../../api/departmentApi';
-import { COLORS } from '../../constants/appConstants';
+import AppButton from '../common/AppButton';
 
 interface Designation {
   id: string;
@@ -117,6 +117,12 @@ export default function DesignationModal({
       departmentId !== originalDepartmentId
     : title.trim() !== '' || titleAr.trim() !== '' || departmentId !== '';
 
+  // Disable Create/Update until required fields are present (and basic validation passes)
+  const isFormValid =
+    title.trim().length > 0 &&
+    departmentId.trim().length > 0 &&
+    (!titleAr.trim() || titleAr.trim().length >= 2);
+
   const validateForm = () => {
     const newErrors: {
       title?: string;
@@ -200,7 +206,7 @@ export default function DesignationModal({
             sm: '24px 20px',
             lg: '32px 20px', // 32px top/bottom, 20px left/right on large screens
           },
-          backgroundColor: '#FFFFFF',
+          backgroundColor: theme.palette.background.paper,
           margin: { xs: '16px', lg: 'auto' },
         },
       }}
@@ -209,7 +215,10 @@ export default function DesignationModal({
           margin: { xs: '16px', lg: 'auto' },
         },
         '& .MuiBackdrop-root': {
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          backgroundColor:
+            theme.palette.mode === 'dark'
+              ? 'rgba(0, 0, 0, 0.7)'
+              : 'rgba(0, 0, 0, 0.5)',
         },
       }}
       dir={isRTL ? 'rtl' : 'ltr'}
@@ -227,7 +236,7 @@ export default function DesignationModal({
             justifyContent: 'space-between',
           }}
         >
-          <Typography variant='h6'>
+          <Typography variant='h6' sx={{ color: theme.palette.text.primary }}>
             {designation
               ? getText('Edit Designation', 'تعديل المسمى الوظيفي')
               : getText('Create New Designation', 'إنشاء مسمى وظيفي جديد')}
@@ -236,6 +245,7 @@ export default function DesignationModal({
             onClick={handleClose}
             size='small'
             aria-label='Close designation modal'
+            sx={{ color: theme.palette.text.secondary }}
           >
             <CloseIcon aria-hidden='true' />
           </IconButton>
@@ -257,27 +267,23 @@ export default function DesignationModal({
             pt: { xs: 1, lg: 0 },
           }}
         >
-          <TextField
-            select
+          <AppDropdown
             label={getText('Department', 'القسم')}
+            options={departments.map(dept => ({
+              value: dept.id,
+              label: getText(dept.name, dept.nameAr),
+            }))}
             value={departmentId}
-            onChange={e => setDepartmentId(e.target.value)}
+            onChange={(e: SelectChangeEvent<string | number>) => {
+              setDepartmentId(String(e.target.value));
+              if (errors.departmentId) {
+                setErrors(prev => ({ ...prev, departmentId: undefined }));
+              }
+            }}
             error={!!errors.departmentId}
             helperText={errors.departmentId}
-            fullWidth
             required
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: '#F8F8F8',
-              },
-            }}
-          >
-            {departments.map(dept => (
-              <MenuItem key={dept.id} value={dept.id}>
-                {dept.name}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
           <TextField
             label={getText(
               'Designation Title',
@@ -296,7 +302,10 @@ export default function DesignationModal({
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                backgroundColor: '#F8F8F8',
+                backgroundColor:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.background.default
+                    : '#F8F8F8',
               },
             }}
           />
@@ -326,20 +335,21 @@ export default function DesignationModal({
           pb: 2,
         }}
       >
-        <Button onClick={handleClose} color='inherit' size='large'>
-          {getText('Cancel', 'إلغاء')}
-        </Button>
-        <Button
+        <AppButton
+          variantType='secondary'
+          onClick={handleClose}
+          text={getText('Cancel', 'إلغاء')}
+        />
+        <AppButton
+          variantType='primary'
           onClick={handleSubmit}
-          variant='contained'
-          disabled={!hasChanges}
-          size='large'
-          sx={{ backgroundColor: COLORS.PRIMARY }}
-        >
-          {designation
-            ? getText('Update', 'تحديث')
-            : getText('Create', 'إنشاء')}
-        </Button>
+          disabled={!hasChanges || !isFormValid}
+          text={
+            designation
+              ? getText('Update', 'تحديث')
+              : getText('Create', 'إنشاء')
+          }
+        />
       </DialogActions>
     </Dialog>
   );

@@ -6,6 +6,7 @@ import {
   ListItemIcon,
   ListItemText,
   Collapse,
+  useTheme as useMuiTheme,
 } from '@mui/material';
 import React, { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -59,9 +60,20 @@ const MenuIcon: React.FC<{
   size = 24,
   useOriginalColor = false,
 }) => {
+  const theme = useMuiTheme();
   // Normalize size to handle both number and responsive object
-  const iconSize = typeof size === 'number' ? size : size.xs || 20;
-  const iconSizeLg = typeof size === 'number' ? size : size.lg || 24;
+  const iconSize =
+    typeof size === 'number'
+      ? size
+      : typeof size === 'object'
+        ? size.xs || 20
+        : 20;
+  const iconSizeLg =
+    typeof size === 'number'
+      ? size
+      : typeof size === 'object'
+        ? size.lg || 24
+        : 24;
 
   // If icon is a React component, render it directly
   if (React.isValidElement(icon)) {
@@ -79,7 +91,11 @@ const MenuIcon: React.FC<{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: isActive ? 'var(--primary-dark-color)' : 'var(--text-color)',
+          color: isActive
+            ? theme.palette.mode === 'dark'
+              ? 'var(--primary-light-color)'
+              : theme.palette.primary.main
+            : theme.palette.text.primary,
           transition: 'color 0.2s ease',
         }}
       >
@@ -97,12 +113,23 @@ const MenuIcon: React.FC<{
   }
 
   // If icon is a string (image path), render as image
-  // CSS filter to convert fill icon to primary color (#3083dc)
-  const primaryColorFilter =
+  // CSS filter to convert fill icon to primary color
+  // Light mode: #3083dc (primary-dark-color)
+  // Dark mode: #2462a5 (primary-light-color)
+  const primaryColorFilterLight =
     'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)';
 
-  // CSS filter for inactive icons (black)
-  const inactiveFilter = 'brightness(0) saturate(100%)';
+  // CSS filter for #2462a5 (primary-light-color) - darker blue for dark mode
+  const primaryColorFilterDark =
+    'brightness(0) saturate(100%) invert(32%) sepia(98%) saturate(1495%) hue-rotate(190deg) brightness(92%) contrast(92%)';
+
+  // CSS filter for inactive icons - theme-aware
+  // Light mode: black (#000000)
+  // Dark mode: light gray (#8f8f8f) - using brightness to convert to appropriate gray
+  const inactiveFilter =
+    theme.palette.mode === 'dark'
+      ? 'brightness(0) saturate(100%) invert(56%)'
+      : 'brightness(0) saturate(100%)';
 
   const iconSrc =
     isActive && iconFill && typeof iconFill === 'string'
@@ -112,7 +139,9 @@ const MenuIcon: React.FC<{
   const iconFilter = useOriginalColor
     ? 'none'
     : isActive && iconFill && typeof iconFill === 'string'
-      ? primaryColorFilter
+      ? theme.palette.mode === 'dark'
+        ? primaryColorFilterDark
+        : primaryColorFilterLight
       : inactiveFilter;
 
   return (
@@ -303,6 +332,7 @@ export default function Sidebar({
   void _rtlMode;
   void _setRtlMode;
   const { toggleTheme } = useTheme();
+  const theme = useMuiTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useUser();
@@ -374,8 +404,8 @@ export default function Sidebar({
   return (
     <Box
       sx={{
-        backgroundColor: 'var(--white-color)',
-        color: 'var(--text-color)',
+        backgroundColor: theme.palette.background.paper,
+        color: theme.palette.text.primary,
         borderRadius: {
           xs: 0,
           lg: '20px',
@@ -386,7 +416,10 @@ export default function Sidebar({
         fontFamily: 'SF Pro Rounded, sans-serif',
         height: '100%',
         overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        boxShadow:
+          theme.palette.mode === 'dark'
+            ? '0 1px 3px rgba(0,0,0,0.3)'
+            : '0 1px 3px rgba(0,0,0,0.1)',
       }}
     >
       <Box
@@ -417,6 +450,11 @@ export default function Sidebar({
               height: 'auto',
               width: { xs: '120px', lg: 'auto' },
               maxWidth: { xs: '120px', lg: 'none' },
+              filter:
+                theme.palette.mode === 'dark'
+                  ? 'brightness(0) saturate(100%) invert(56%)'
+                  : 'none',
+              transition: 'filter 0.2s ease',
             }}
           />
         </Box>
@@ -425,11 +463,7 @@ export default function Sidebar({
       <Box
         sx={{
           flex: 1,
-          maxHeight: {
-            xs: 'none',
-            md: '330px',
-            xl: 'none',
-          },
+          minHeight: 0,
           overflowY: 'auto',
           '&::-webkit-scrollbar': { display: 'none' },
           px: 1,
@@ -466,14 +500,18 @@ export default function Sidebar({
                     }}
                     sx={{
                       color: isActive
-                        ? 'var(--primary-dark-color)'
-                        : 'var(--text-color)',
+                        ? theme.palette.mode === 'dark'
+                          ? 'var(--primary-light-color)'
+                          : theme.palette.primary.main
+                        : theme.palette.text.primary,
                       pl: 2,
                       py: 1.5,
                       mx: 1.5,
                       mb: 0.5,
                       backgroundColor: isActive
-                        ? 'var(--light-grey-200-color)'
+                        ? theme.palette.mode === 'dark'
+                          ? theme.palette.action.selected
+                          : '#efefef'
                         : 'transparent',
                       borderRadius: isActive ? 'var(--border-radius-lg)' : 0,
                       // '&:hover': {
@@ -507,6 +545,11 @@ export default function Sidebar({
                       primaryTypographyProps={{
                         fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
                         fontWeight: isActive ? 600 : 400,
+                        color: isActive
+                          ? theme.palette.mode === 'dark'
+                            ? 'var(--primary-light-color)'
+                            : theme.palette.primary.main
+                          : theme.palette.text.primary,
                       }}
                     />
                   </ListItemButton>
@@ -528,15 +571,19 @@ export default function Sidebar({
                     sx={{
                       color:
                         item.path && location.pathname.includes(item.path)
-                          ? 'var(--primary-dark-color)'
-                          : 'var(--text-color)',
+                          ? theme.palette.mode === 'dark'
+                            ? 'var(--primary-light-color)'
+                            : theme.palette.primary.main
+                          : theme.palette.text.primary,
                       pl: 2,
                       py: 1.5,
                       mx: 1.5,
                       mb: 0.5,
                       backgroundColor:
                         item.path && location.pathname.includes(item.path)
-                          ? 'var(--light-grey-200-color)'
+                          ? theme.palette.mode === 'dark'
+                            ? theme.palette.action.selected
+                            : '#efefef'
                           : 'transparent',
                       borderRadius:
                         item.path && location.pathname.includes(item.path)
@@ -576,6 +623,12 @@ export default function Sidebar({
                           item.path && location.pathname.includes(item.path)
                             ? 600
                             : 400,
+                        color:
+                          item.path && location.pathname.includes(item.path)
+                            ? theme.palette.mode === 'dark'
+                              ? 'var(--primary-light-color)'
+                              : theme.palette.primary.main
+                            : theme.palette.text.primary,
                       }}
                     />
                   </ListItemButton>
@@ -587,14 +640,18 @@ export default function Sidebar({
                       }
                       sx={{
                         color: isParentActive
-                          ? 'var(--primary-dark-color)'
-                          : 'var(--text-color)',
+                          ? theme.palette.mode === 'dark'
+                            ? 'var(--primary-light-color)'
+                            : theme.palette.primary.main
+                          : theme.palette.text.primary,
                         pl: 2,
                         py: 1.5,
                         mx: 1.5,
                         mb: 0.5,
                         backgroundColor: isParentActive
-                          ? 'var(--light-grey-200-color)'
+                          ? theme.palette.mode === 'dark'
+                            ? theme.palette.action.selected
+                            : '#efefef'
                           : 'transparent',
                         borderRadius: isParentActive
                           ? 'var(--border-radius-lg)'
@@ -631,6 +688,11 @@ export default function Sidebar({
                         primaryTypographyProps={{
                           fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
                           fontWeight: isParentActive ? 600 : 400,
+                          color: isParentActive
+                            ? theme.palette.mode === 'dark'
+                              ? 'var(--primary-light-color)'
+                              : theme.palette.primary.main
+                            : theme.palette.text.primary,
                         }}
                       />
                       {item.subItems && item.subItems.length > 1 && (
@@ -645,7 +707,10 @@ export default function Sidebar({
                               ? 'rotate(180deg)'
                               : 'rotate(0deg)',
                             transition: 'transform 0.2s',
-                            filter: 'brightness(0) saturate(100%)',
+                            filter:
+                              theme.palette.mode === 'dark'
+                                ? 'brightness(0) saturate(100%) invert(56%)'
+                                : 'brightness(0) saturate(100%)',
                           }}
                         />
                       )}
@@ -675,8 +740,10 @@ export default function Sidebar({
                               },
                               color:
                                 activeSubItem === sub.label
-                                  ? 'var(--primary-dark-color)'
-                                  : 'var(--text-color)',
+                                  ? theme.palette.mode === 'dark'
+                                    ? 'var(--primary-light-color)'
+                                    : theme.palette.primary.main
+                                  : theme.palette.text.primary,
                               // '&:hover': {
                               //   backgroundColor: 'var(--white-100-color)',
                               //   borderRadius: 'var(--border-radius-lg)',
@@ -694,6 +761,12 @@ export default function Sidebar({
                                 },
                                 fontWeight:
                                   activeSubItem === sub.label ? 600 : 400,
+                                color:
+                                  activeSubItem === sub.label
+                                    ? theme.palette.mode === 'dark'
+                                      ? 'var(--primary-light-color)'
+                                      : theme.palette.primary.main
+                                    : theme.palette.text.primary,
                               }}
                             />
                           </ListItemButton>
@@ -708,7 +781,7 @@ export default function Sidebar({
         </List>
       </Box>
 
-      <Box sx={{ px: 3, pb: 3, pt: 2, bottom: 0, zIndex: 10 }}>
+      <Box sx={{ px: 3, pb: 3, pt: 2, mt: 'auto', flexShrink: 0 }}>
         <Box
           display='flex'
           alignItems='center'
@@ -720,7 +793,7 @@ export default function Sidebar({
             component='label'
             htmlFor='dark-mode-switch'
             sx={{
-              color: 'var(--text-color)',
+              color: theme.palette.text.primary,
               fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
               fontWeight: 400,
               cursor: 'pointer',
@@ -745,7 +818,7 @@ export default function Sidebar({
               cursor: 'pointer',
               outline: 'none',
               '&:focus-visible': {
-                outline: '2px solid var(--primary-dark-color)',
+                outline: `2px solid ${theme.palette.primary.main}`,
                 outlineOffset: '2px',
                 borderRadius: '12px',
               },
@@ -761,7 +834,7 @@ export default function Sidebar({
                 borderRadius: '12px',
                 backgroundColor: darkMode
                   ? 'var(--primary-dark-color)'
-                  : 'var(--light-grey-color)',
+                  : '#bdbdbd',
                 transition: 'background-color 300ms ease',
               }}
             />
@@ -773,7 +846,7 @@ export default function Sidebar({
                 width: 25,
                 height: 16,
                 borderRadius: '40%',
-                backgroundColor: 'var(--white-color)',
+                backgroundColor: theme.palette.background.paper,
                 // boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
                 transition: 'left 300ms ease',
               }}
@@ -788,7 +861,7 @@ export default function Sidebar({
             py: 1.5,
             borderRadius: 'var(--border-radius-lg)',
             // '&:hover': {
-            //   backgroundColor: 'rgba(198, 25, 82, 0.1)',
+            //   backgroundColor: theme.palette.error.main + '1A',
             //   borderRadius: 'var(--border-radius-lg)',
             // },
           }}
@@ -811,7 +884,9 @@ export default function Sidebar({
                 width: { xs: 20, lg: 24 },
                 height: { xs: 20, lg: 24 },
                 filter:
-                  'brightness(0) saturate(100%) invert(20%) sepia(95%) saturate(5000%) hue-rotate(320deg) brightness(90%) contrast(90%)',
+                  theme.palette.mode === 'dark'
+                    ? 'brightness(0) saturate(100%) invert(20%) sepia(95%) saturate(5000%) hue-rotate(320deg) brightness(90%) contrast(90%)'
+                    : 'brightness(0) saturate(100%) invert(20%) sepia(95%) saturate(5000%) hue-rotate(320deg) brightness(90%) contrast(90%)',
               }}
             />
           </ListItemIcon>

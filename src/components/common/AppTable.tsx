@@ -3,24 +3,42 @@ import {
   TableContainer,
   Table,
   Paper,
+  useTheme,
   type TableContainerProps,
   type SxProps,
   type Theme,
+  type TableProps,
 } from '@mui/material';
 
 interface AppTableProps extends TableContainerProps {
   children: React.ReactNode;
+  tableProps?: TableProps;
 }
 
-export function AppTable({ children, sx, ...rest }: AppTableProps) {
+export function AppTable({
+  children,
+  sx,
+  tableProps,
+  ...rest
+}: AppTableProps) {
+  const theme = useTheme();
+
   const baseSx: SxProps<Theme> = {
     border: 'none',
     borderRadius: '12px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    boxShadow:
+      theme.palette.mode === 'dark'
+        ? '0 1px 3px rgba(0,0,0,0.3)'
+        : '0 1px 3px rgba(0,0,0,0.1)',
     overflowX: 'auto',
     overflowY: 'hidden',
+    backgroundColor: theme.palette.background.paper,
+
     '& .MuiTableHead-root .MuiTableRow-root': {
-      backgroundColor: 'var(--primary-color) !important',
+      backgroundColor:
+        theme.palette.mode === 'dark'
+          ? 'var(--primary-light-color)'
+          : 'var(--primary-color)',
       '& .MuiTableCell-root': {
         borderBottom: 'none',
         padding: { xs: '8px 12px', sm: '16px' },
@@ -28,23 +46,25 @@ export function AppTable({ children, sx, ...rest }: AppTableProps) {
         fontSize: { xs: '12px', sm: '18px' },
         lineHeight: { xs: '16px', sm: 'var(--subheading2-line-height)' },
         letterSpacing: 'var(--subheading2-letter-spacing)',
-        color: '#2C2C2C',
-        backgroundColor: 'var(--primary-color) !important',
+        color: theme.palette.mode === 'dark' ? '#ffffff' : '#2C2C2C',
+        backgroundColor:
+          theme.palette.mode === 'dark'
+            ? 'var(--primary-light-color)'
+            : 'var(--primary-color)',
         whiteSpace: { xs: 'nowrap', sm: 'normal' },
       },
     },
+
     '& .MuiTableBody-root .MuiTableRow-root': {
-      backgroundColor: '#FFFFFF',
-      // '&:hover': {
-      //   backgroundColor: 'rgba(224, 236, 250, 0.3)',
-      // },
+      backgroundColor: theme.palette.background.paper,
       '& .MuiTableCell-root': {
-        borderBottom: '0.5px solid #E0E0E0',
+        borderBottom: `0.5px solid ${theme.palette.divider}`,
         padding: { xs: '8px 12px', sm: '16px' },
         fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
         lineHeight: { xs: '16px', sm: 'var(--body-line-height)' },
-        color: 'var(--text-color)',
+        color: theme.palette.text.primary,
         whiteSpace: { xs: 'nowrap', sm: 'normal' },
+        backgroundColor: theme.palette.background.paper,
       },
     },
   };
@@ -55,7 +75,7 @@ export function AppTable({ children, sx, ...rest }: AppTableProps) {
       {...rest}
       sx={{ ...baseSx, ...(sx as object) }}
     >
-      <Table>{children}</Table>
+      <Table {...(tableProps ?? {})}>{children}</Table>
     </TableContainer>
   );
 }

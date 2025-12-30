@@ -1,5 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { Box, Typography, Paper, ClickAwayListener } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Paper,
+  ClickAwayListener,
+  useTheme,
+  type SxProps,
+  type Theme,
+} from '@mui/material';
 import { Icons } from '../../assets/icons';
 
 interface TimeRangeSelectorProps {
@@ -8,6 +16,10 @@ interface TimeRangeSelectorProps {
   onChange: (value: string | number | null) => void;
   allTimeLabel?: string;
   language?: 'en' | 'ar';
+  /** Optional style overrides */
+  buttonSx?: SxProps<Theme>;
+  labelSx?: SxProps<Theme>;
+  iconSx?: SxProps<Theme>;
 }
 
 const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
@@ -16,11 +28,22 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   onChange,
   allTimeLabel = 'All Time',
   language = 'en',
+  buttonSx,
+  labelSx,
+  iconSx,
 }) => {
-  // language parameter is reserved for future use
+  // Reserved for future use
   void language;
+
+  const theme = useTheme();
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
+
+  /* ✅ FIX: containerSx is now properly defined */
+  const containerSx: SxProps<Theme> = {
+    position: 'relative',
+    width: { xs: '100%', sm: 'auto' },
+  };
 
   const handleToggle = () => {
     setOpen(prev => !prev);
@@ -44,51 +67,86 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   const displayValue =
     value === 'all-time' || value === null ? allTimeLabel : value.toString();
 
+  // Filter for primary-light color icon (image-based icon)
+  const iconFilterPrimaryLight =
+    'brightness(0) saturate(100%) invert(32%) sepia(98%) saturate(1495%) hue-rotate(190deg) brightness(92%) contrast(92%)';
+
+  const sxArray = (sx?: SxProps<Theme>) =>
+    Array.isArray(sx) ? sx : sx ? [sx] : [];
+
   return (
     <ClickAwayListener onClickAway={handleClose}>
-      <Box sx={{ position: 'relative' }}>
+      <Box sx={containerSx}>
         {/* Selected Button */}
         <Box
           ref={anchorRef}
           onClick={handleToggle}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 1,
-            backgroundColor: 'var(--primary-color)',
-            borderRadius: 'var(--border-radius-lg)',
-            px: 2,
-            py: 1,
-            cursor: 'pointer',
-            minWidth: '120px',
-            transition: 'background-color 0.2s',
-            // '&:hover': {
-            //   backgroundColor: 'var(--primary-color)',
-            // },
-          }}
+          sx={[
+            {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
+              backgroundColor:
+                theme.palette.mode === 'dark'
+                  ? theme.palette.action.hover
+                  : 'var(--primary-color)',
+              border:
+                theme.palette.mode === 'dark'
+                  ? `1px solid ${theme.palette.divider}`
+                  : 'none',
+              borderRadius: '8px',
+              px: { xs: 1.5, sm: 2 },
+              py: 1,
+              cursor: 'pointer',
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: '100%', sm: '120px' },
+              height: '36px',
+              transition: 'background-color 0.2s',
+              '&:hover': {
+                backgroundColor:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.action.hover
+                    : 'var(--primary-color)',
+                opacity: theme.palette.mode === 'dark' ? 1 : 0.95,
+              },
+            },
+            ...sxArray(buttonSx),
+          ]}
         >
           <Typography
-            sx={{
-              fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
-              fontWeight: 500,
-              color: 'var(--primary-dark-color)',
-            }}
+            sx={[
+              {
+                fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
+                fontWeight: 500,
+                color:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.text.primary
+                    : 'var(--primary-light-color)',
+              },
+              ...sxArray(labelSx),
+            ]}
           >
             {displayValue}
           </Typography>
+
           <Box
             component='img'
             src={Icons.arrowUp}
             alt=''
-            sx={{
-              width: 16,
-              height: 16,
-              transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s',
-              filter:
-                'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)',
-            }}
+            sx={[
+              {
+                width: 16,
+                height: 16,
+                transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s',
+                filter:
+                  theme.palette.mode === 'dark'
+                    ? 'brightness(0) saturate(100%) invert(56%)'
+                    : iconFilterPrimaryLight,
+              },
+              ...sxArray(iconSx),
+            ]}
           />
         </Box>
 
@@ -101,15 +159,19 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               top: '100%',
               left: 0,
               mt: 1,
-              minWidth: '120px',
-              backgroundColor: 'var(--primary-color)',
+              width: '100%',
+              minWidth: { xs: '100%', sm: '120px' },
+              backgroundColor: theme.palette.background.paper,
               borderRadius: 'var(--border-radius-lg)',
               overflow: 'hidden',
               zIndex: 1000,
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              boxShadow:
+                theme.palette.mode === 'dark'
+                  ? '0 4px 6px rgba(0, 0, 0, 0.3)'
+                  : '0 4px 6px rgba(0, 0, 0, 0.1)',
             }}
           >
-            {/* All Time Option */}
+            {/* All Time */}
             <Box
               onClick={() => handleSelect('all-time')}
               sx={{
@@ -118,14 +180,10 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 cursor: 'pointer',
                 backgroundColor:
                   value === 'all-time' || value === null
-                    ? 'var(--primary-dark-color)'
+                    ? theme.palette.mode === 'dark'
+                      ? 'var(--primary-light-color)'
+                      : 'var(--primary-dark-color)'
                     : 'transparent',
-                // '&:hover': {
-                //   backgroundColor:
-                //     value === 'all-time' || value === null
-                //       ? 'var(--primary-dark-color)'
-                //       : 'rgba(48, 131, 220, 0.1)',
-                // },
               }}
             >
               <Typography
@@ -135,50 +193,46 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                   color:
                     value === 'all-time' || value === null
                       ? 'var(--white-color)'
-                      : 'var(--primary-dark-color)',
+                      : 'var(--primary-light-color)',
                 }}
               >
                 {allTimeLabel}
               </Typography>
             </Box>
 
-            {/* Year Options */}
+            {/* Options */}
             {options.map((option, index) => {
-              const optionValue = typeof option === 'number' ? option : option;
-              const isSelected = value === optionValue;
+              const isSelected = value === option;
 
               return (
                 <Box
-                  key={optionValue}
-                  onClick={() => handleSelect(optionValue)}
+                  key={option}
+                  onClick={() => handleSelect(option)}
                   sx={{
                     px: 2,
                     py: 1.5,
                     cursor: 'pointer',
                     backgroundColor: isSelected
-                      ? 'var(--primary-dark-color)'
+                      ? theme.palette.mode === 'dark'
+                        ? 'var(--primary-light-color)'
+                        : 'var(--primary-dark-color)'
                       : 'transparent',
                     borderTop:
                       index === 0
                         ? 'none'
-                        : '1px solid rgba(48, 131, 220, 0.2)',
-                    // '&:hover': {
-                    //   backgroundColor: isSelected
-                    //     ? 'var(--primary-dark-color)'
-                    //     : 'rgba(48, 131, 220, 0.1)',
-                    // },
+                        : `1px solid ${theme.palette.divider}`,
                   }}
                 >
                   <Typography
                     sx={{
-                      fontSize: 'var(--body-font-size)',
+                      fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
                       fontWeight: 500,
                       color: isSelected
                         ? 'var(--white-color)'
-                        : 'var(--primary-dark-color)',
+                        : 'var(--primary-light-color)',
                     }}
                   >
-                    {optionValue.toString()}
+                    {option.toString()}
                   </Typography>
                 </Box>
               );

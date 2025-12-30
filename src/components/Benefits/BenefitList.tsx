@@ -7,29 +7,24 @@ import {
   TableCell,
   TableBody,
   CircularProgress,
-  FormControl,
-  Select,
-  MenuItem,
   Tooltip,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   Pagination,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import { Delete as DeleteIcon } from '@mui/icons-material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import BenefitFormModal from './BenefitFormModal';
 import type { BenefitFormValues } from './BenefitFormModal';
+import { Icons } from '../../assets/icons';
 import benefitsApi from '../../api/benefitApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppButton from '../common/AppButton';
+import AppDropdown from '../common/AppDropdown';
 import AppTable from '../common/AppTable';
+import { DeleteConfirmationDialog } from '../common/DeleteConfirmationDialog';
+import { getUserRole } from '../../utils/auth';
+import { normalizeRole } from '../../utils/permissions';
 
 const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 
@@ -43,6 +38,8 @@ interface Benefit {
 }
 
 const BenefitList: React.FC = () => {
+  const role = normalizeRole(getUserRole());
+  const isManager = role === 'manager';
   const [loading, setLoading] = useState(true);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [page, setPage] = useState(1);
@@ -57,6 +54,7 @@ const BenefitList: React.FC = () => {
   const [statuses, setStatuses] = useState<string[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBenefit, setSelectedBenefit] = useState<Benefit | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchBenefits = useCallback(async () => {
     setLoading(true);
@@ -71,7 +69,7 @@ const BenefitList: React.FC = () => {
           : null;
 
       setBenefits(items);
-      setTypes(Array.from(new Set(items.map(b => b.type))));
+      setTypes(Array.from(new Set(items.map((b: { type: any; }) => b.type))));
       setStatuses(Array.from(new Set(items.map(b => b.status))));
 
       // Backend returns 25 records per page (fixed page size)
@@ -138,6 +136,7 @@ const BenefitList: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     if (!selectedBenefit) return;
+    setDeleting(true);
     try {
       const res = await benefitsApi.deleteBenefit(selectedBenefit.id);
       if (res.deleted) {
@@ -153,6 +152,8 @@ const BenefitList: React.FC = () => {
         (error as { response?: { data?: { message?: string } } }).response?.data
           ?.message || 'Failed to delete benefit.'
       );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -231,39 +232,40 @@ const BenefitList: React.FC = () => {
         gap={2}
       >
         <Box display='flex' flexWrap='wrap' gap={2}>
-          <FormControl size='small' sx={{ minWidth: 160, maxWidth: 220 }}>
-            <Select
+          <Box sx={{ minWidth: 160, maxWidth: 220 }}>
+            <AppDropdown
+              label='Type'
+              options={[
+                { value: 'all', label: 'All Types' },
+                ...types.map(t => ({ value: t, label: t })),
+              ]}
               value={filterType}
               onChange={e => {
-                setFilterType(e.target.value);
+                setFilterType(String(e.target.value || 'all'));
                 setPage(1);
               }}
-            >
-              <MenuItem value='all'>All Types</MenuItem>
-              {types.map(type => (
-                <MenuItem key={type} value={type}>
-                  {type}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              showLabel
+            />
+          </Box>
 
-          <FormControl size='small' sx={{ minWidth: 160, maxWidth: 220 }}>
-            <Select
+          <Box sx={{ minWidth: 160, maxWidth: 220 }}>
+            <AppDropdown
+              label='Status'
+              options={[
+                { value: 'all', label: 'All Status' },
+                ...statuses.map(s => ({
+                  value: s,
+                  label: s.charAt(0).toUpperCase() + s.slice(1),
+                })),
+              ]}
               value={filterStatus}
               onChange={e => {
-                setFilterStatus(e.target.value);
+                setFilterStatus(String(e.target.value || 'all'));
                 setPage(1);
               }}
-            >
-              <MenuItem value='all'>All Status</MenuItem>
-              {statuses.map(status => (
-                <MenuItem key={status} value={status}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              showLabel
+            />
+          </Box>
         </Box>
 
         <Box display='flex' gap={1} flexWrap='wrap'>
@@ -275,26 +277,72 @@ const BenefitList: React.FC = () => {
               setEditingBenefit(null);
               setModalOpen(true);
             }}
+            sx={{
+              borderRadius: '12px',
+              textTransform: 'none',
+              fontWeight: 400,
+              fontSize: 'var(--body-font-size)',
+              lineHeight: 'var(--body-line-height)',
+              letterSpacing: 'var(--body-letter-spacing)',
+              bgcolor: 'var(--primary-dark-color)',
+              color: '#FFFFFF',
+              boxShadow: 'none',
+              minWidth: { xs: 'auto', sm: 200 },
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.75, sm: 1 },
+              '& .MuiButton-startIcon': {
+                marginRight: { xs: 0.5, sm: 1 },
+                '& > *:nth-of-type(1)': {
+                  fontSize: { xs: '18px', sm: '20px' },
+                },
+              },
+              // '&:hover': { backgroundColor: 'primary.dark' },
+            }}
           >
             Create
           </AppButton>
 
-          <Tooltip title='Export Benefit List'>
-            <IconButton
-              color='primary'
+          {isManager ? (
+            <AppButton
+              variant='contained'
+              variantType='primary'
               onClick={handleDownload}
-              aria-label='Export benefit list'
               sx={{
-                backgroundColor: 'primary.main',
                 borderRadius: '6px',
+                minWidth: 0,
                 padding: '6px',
-                color: 'white',
-                '&:hover': { backgroundColor: 'primary.dark' },
+                height: 'auto',
               }}
+              aria-label='Export benefit list'
             >
               <FileDownloadIcon aria-hidden='true' />
-            </IconButton>
-          </Tooltip>
+            </AppButton>
+          ) : (
+            <Tooltip title='Export Benefit List'>
+              <IconButton
+                disableRipple
+                onClick={handleDownload}
+                aria-label='Export benefit list'
+                sx={{
+                  backgroundColor: 'var(--primary-dark-color)',
+                  borderRadius: '6px',
+                  padding: '6px',
+                  color: 'white',
+                  transition: 'none',
+                  '&:hover': {
+                    backgroundColor: 'var(--primary-dark-color)',
+                    boxShadow: 'none',
+                  },
+                  '&:active': { backgroundColor: 'var(--primary-dark-color)' },
+                  '&.Mui-focusVisible': {
+                    backgroundColor: 'var(--primary-dark-color)',
+                  },
+                }}
+              >
+                <FileDownloadIcon aria-hidden='true' />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       </Box>
 
@@ -305,7 +353,7 @@ const BenefitList: React.FC = () => {
           alignItems='center'
           minHeight='200px'
         >
-          <CircularProgress />
+          <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
         </Box>
       ) : (
         <Box sx={{ mt: 2 }}>
@@ -377,7 +425,15 @@ const BenefitList: React.FC = () => {
                             }}
                             aria-label={`Edit benefit ${b.name}`}
                           >
-                            <EditIcon aria-hidden='true' />
+                            <Box
+                              component='img'
+                              src={Icons.edit}
+                              alt='Edit'
+                              sx={{
+                                width: { xs: 16, sm: 20 },
+                                height: { xs: 16, sm: 20 },
+                              }}
+                            />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title='Delete'>
@@ -387,7 +443,15 @@ const BenefitList: React.FC = () => {
                             onClick={() => handleOpenDeleteDialog(b)}
                             aria-label={`Delete benefit ${b.name}`}
                           >
-                            <DeleteIcon aria-hidden='true' />
+                            <Box
+                              component='img'
+                              src={Icons.delete}
+                              alt='Delete'
+                              sx={{
+                                width: { xs: 16, sm: 20 },
+                                height: { xs: 16, sm: 20 },
+                              }}
+                            />
                           </IconButton>
                         </Tooltip>
                       </Box>
@@ -421,35 +485,19 @@ const BenefitList: React.FC = () => {
         </Box>
       )}
 
-      <Dialog
+      <DeleteConfirmationDialog
         open={deleteDialogOpen}
+        title='Delete Benefit'
+        message={`Are you sure you want to delete the benefit "${
+          selectedBenefit?.name || ''
+        }"? This action cannot be undone.`}
+        confirmText='Delete'
+        cancelText='Cancel'
+        onConfirm={handleConfirmDelete}
         onClose={() => setDeleteDialogOpen(false)}
-      >
-        <DialogTitle>Delete Benefit</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {`Are you sure you want to delete the benefit "${
-              selectedBenefit?.name || ''
-            }"? This action cannot be undone.`}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <AppButton
-            onClick={() => setDeleteDialogOpen(false)}
-            variantType='secondary'
-            variant='outlined'
-          >
-            Cancel
-          </AppButton>
-          <AppButton
-            onClick={handleConfirmDelete}
-            variantType='danger'
-            variant='contained'
-          >
-            Delete
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+        itemName={selectedBenefit?.name}
+        loading={deleting}
+      />
 
       <BenefitFormModal
         open={modalOpen}

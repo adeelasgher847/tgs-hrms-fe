@@ -6,6 +6,7 @@ import {
   IconButton,
   Box,
   Divider,
+  useTheme,
 } from '@mui/material';
 import type { Department } from '../../types';
 import { Icons } from '../../assets/icons';
@@ -23,10 +24,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
   onDelete,
   isRtl = false,
 }) => {
-  // const { darkMode } = useOutletContext<{ darkMode: boolean }>();
-  // const bgColor = darkMode ? '#111' : '#fff';
-  // const textColor = darkMode ? '#8f8f8f' : '#000';
-  // const borderColor = darkMode ? '#333' : '#f0f0f0';
+  const theme = useTheme();
 
   return (
     <Card
@@ -35,9 +33,11 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
         display: 'flex',
         flexDirection: 'column',
         direction: isRtl ? 'rtl' : 'ltr',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.palette.background.paper,
         borderRadius: '20px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        boxShadow: theme.palette.mode === 'dark' 
+          ? '0 1px 3px rgba(0,0,0,0.3)' 
+          : '0 1px 3px rgba(0,0,0,0.1)',
         p: '20px',
         gap: '32px',
       }}
@@ -49,23 +49,23 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
           fontSize={{ xs: '20px', lg: '28px' }}
           lineHeight='36px'
           letterSpacing='-2%'
-          color='#2C2C2C'
           sx={{
+            color: theme.palette.text.primary,
             textAlign: isRtl ? 'right' : 'left',
             mb: '10px',
           }}
         >
           {isRtl ? department.nameAr : department.name}
         </Typography>
-        <Divider />
+        <Divider sx={{ borderColor: theme.palette.divider }} />
         {(isRtl ? department.descriptionAr : department.description) && (
           <Typography
             fontWeight={400}
             fontSize={{ xs: '16px', lg: 'var(--body-font-size)' }}
             lineHeight='var(--body-line-height)'
             letterSpacing='var(--body-letter-spacing)'
-            color='#2C2C2C'
             sx={{
+              color: theme.palette.text.primary,
               textAlign: isRtl ? 'right' : 'left',
               mt: '10px',
             }}
@@ -85,9 +85,10 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               size='small'
               sx={{
                 p: { xs: 0.5, sm: 1 },
-                // '&:hover': {
-                //   backgroundColor: 'transparent',
-                // },
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                },
               }}
             >
               <Box
@@ -97,6 +98,9 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                 sx={{
                   width: { xs: 16, sm: 20 },
                   height: { xs: 16, sm: 20 },
+                  filter: theme.palette.mode === 'dark'
+                    ? 'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)'
+                    : 'none',
                 }}
               />
             </IconButton>
@@ -108,9 +112,10 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               size='small'
               sx={{
                 p: { xs: 0.5, sm: 1 },
-                // '&:hover': {
-                //   backgroundColor: 'transparent',
-                // },
+                color: theme.palette.error.main,
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                },
               }}
             >
               <Box
@@ -120,6 +125,9 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                 sx={{
                   width: { xs: 16, sm: 20 },
                   height: { xs: 16, sm: 20 },
+                  filter: theme.palette.mode === 'dark'
+                    ? 'brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(7151%) hue-rotate(348deg) brightness(95%) contrast(89%)'
+                    : 'none',
                 }}
               />
             </IconButton>

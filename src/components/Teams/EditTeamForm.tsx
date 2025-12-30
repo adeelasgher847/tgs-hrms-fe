@@ -6,10 +6,6 @@ import {
   DialogActions,
   TextField,
   Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Alert,
   CircularProgress,
 } from '@mui/material';
@@ -17,6 +13,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import type { UpdateTeamDto, Manager, Team } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import AppButton from '../common/AppButton';
+import AppDropdown from '../common/AppDropdown';
 import { COLORS } from '../../constants/appConstants';
 
 interface EditTeamFormProps {
@@ -313,63 +310,34 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
               }}
             />
 
-            <FormControl fullWidth>
-              <InputLabel
-                sx={{
-                  color: theme => theme.palette.text.secondary,
-                  '&.Mui-focused': {
-                    color: theme => theme.palette.primary.main,
-                  },
-                  '&.MuiInputLabel-shrink': {
-                    color: theme => theme.palette.text.secondary,
-                  },
-                }}
-              >
-                {lang.manager}
-              </InputLabel>
-              <Select
-                value={formData.manager_id || ''}
-                onChange={handleChange('manager_id')}
-                label={lang.manager}
-                sx={{
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: theme => theme.palette.divider,
-                  },
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: theme => theme.palette.text.secondary,
-                  },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: theme => theme.palette.primary.main,
-                  },
-                  '& .MuiSelect-select': {
-                    color: theme => theme.palette.text.primary,
-                  },
-                }}
-              >
-                <MenuItem value='' disabled>
-                  {lang.selectManager}
-                </MenuItem>
-                {loadingManagers ? (
-                  <MenuItem disabled>
-                    <CircularProgress size={20} />
-                  </MenuItem>
-                ) : managers.length === 0 ? (
-                  <MenuItem disabled>{lang.noManagersAvailable}</MenuItem>
-                ) : (
-                  managers.map(manager => (
-                    <MenuItem key={manager.id} value={manager.id}>
-                      {manager.first_name} {manager.last_name} ({manager.email})
-                      {manager.id === team.manager_id && ' (Current)'}
-                    </MenuItem>
-                  ))
-                )}
-              </Select>
-            </FormControl>
+            <AppDropdown
+              label={lang.manager}
+              value={formData.manager_id || 'all'}
+              onChange={handleChange('manager_id')}
+              showLabel={false}
+              align='left'
+              options={
+                loadingManagers
+                  ? [{ value: 'all', label: lang.loadingManagers }]
+                  : managers.length === 0
+                    ? [{ value: 'all', label: lang.noManagersAvailable }]
+                    : [
+                        { value: 'all', label: lang.selectManager },
+                        ...managers.map(manager => ({
+                          value: manager.id,
+                          label: `${manager.first_name} ${manager.last_name} (${manager.email})${
+                            manager.id === team?.manager_id ? ' (Current)' : ''
+                          }`,
+                        })),
+                      ]
+              }
+            />
           </Box>
         </DialogContent>
 
         <DialogActions>
           <AppButton
+            variantType='secondary'
             variant='outlined'
             text={lang.cancel}
             onClick={handleClose}
@@ -377,6 +345,7 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
           />
           <AppButton
             type='submit'
+            variantType='primary'
             variant='contained'
             text={loading ? lang.loading : lang.update}
             disabled={
@@ -384,7 +353,6 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
               // Note: manager_id is optional in UpdateTeamDto, so we don't require it
               // Button enables when name or description changes, even if manager is not selected
             }
-            sx={{ backgroundColor: COLORS.PRIMARY }}
             startIcon={loading ? <CircularProgress size={16} /> : null}
           />
         </DialogActions>

@@ -21,6 +21,7 @@ import signupApi, {
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import { Icons } from '../../assets/icons';
+import AppPageTitle from '../common/AppPageTitle';
 
 // Default plans as fallback
 const defaultPlans = [
@@ -135,9 +136,16 @@ const SelectPlan: React.FC = () => {
               priceInfoByPriceId = (prices || []).reduce(
                 (acc, pr: StripePriceInfo) => {
                   const amount =
-                    typeof pr.unit_amount === 'number' ? pr.unit_amount : 0;
-                  const currency = (pr.currency || 'USD').toUpperCase();
-                  const interval = pr.interval || 'month';
+                    typeof pr.unit_amount === 'number'
+                      ? (pr.unit_amount as number)
+                      : 0;
+                  const currency = (
+                    typeof pr.currency === 'string' ? pr.currency : 'USD'
+                  ).toUpperCase();
+                  const interval =
+                    typeof pr.interval === 'string'
+                      ? (pr.interval as string)
+                      : 'month';
                   const formattedAmount = new Intl.NumberFormat(undefined, {
                     style: 'currency',
                     currency,
@@ -146,6 +154,7 @@ const SelectPlan: React.FC = () => {
                   }).format(amount / 100);
                   const intervalLabel =
                     interval.charAt(0).toUpperCase() + interval.slice(1);
+                  // priceId might be returned as `priceId` or `id` depending on API
                   acc[pr.priceId] = {
                     formatted: formattedAmount,
                     intervalLabel,
@@ -502,18 +511,11 @@ const SelectPlan: React.FC = () => {
       }}
     >
       {/* Heading */}
-      <Typography
-        variant='h1'
-        sx={{
-          color: 'var(--text-color)',
-          fontWeight: 700,
-          fontSize: { xs: '32px', lg: '48px' },
-          mb: 1,
-          textAlign: 'center',
-        }}
+      <AppPageTitle
+        sx={{ color: 'var(--text-color)', fontWeight: 700, mb: 1, textAlign: 'center' }}
       >
         Choose Your Plan
-      </Typography>
+      </AppPageTitle>
       <Typography
         sx={{
           color: 'var(--dark-grey-color)',

@@ -4,26 +4,24 @@ import {
   Typography,
   Button,
   CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   TableHead,
   TableBody,
   TableRow,
   TableCell,
   IconButton,
   Pagination,
+  useTheme,
 } from '@mui/material';
 import AppTable from '../common/AppTable';
-import type { SelectChangeEvent } from '@mui/material/Select';
 import { Add as AddIcon } from '@mui/icons-material';
 import AppDropdown from '../common/AppDropdown';
 import { Icons } from '../../assets/icons';
 
 import AppFormModal, { type FormField } from '../common/AppFormModal';
+import AppButton from '../common/AppButton';
 import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
+import AppPageTitle from '../common/AppPageTitle';
 import {
   designationApiService,
   type FrontendDesignation,
@@ -44,6 +42,7 @@ import { PAGINATION } from '../../constants/appConstants';
 // import { extractErrorMessage } from '../../utils/errorHandler';
 
 export default function DesignationManager() {
+  const theme = useTheme();
   const { language } = useLanguage();
   const isRTL = language === 'ar';
 
@@ -58,10 +57,8 @@ export default function DesignationManager() {
   const userRoleValue = user?.role;
   const isSystemAdmin = isSystemAdminFn(userRoleValue);
   const isHRAdmin = isHRAdminFn(userRoleValue);
-
   const [designations, setDesignations] = useState<FrontendDesignation[]>([]);
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
-  // Store tenant info for each designation (for system admin)
   const [designationTenantMap, setDesignationTenantMap] = useState<
     Map<string, { tenantId: string; tenantName: string }>
   >(new Map());
@@ -309,8 +306,8 @@ export default function DesignationManager() {
     fetchSystemAdminDesignations,
   ]);
 
-  const handleTenantChange = (event: SelectChangeEvent<string>) => {
-    setSelectedTenantId(event.target.value);
+  const handleTenantChange = (event: SelectChangeEvent<string | number>) => {
+    setSelectedTenantId(String(event.target.value));
     setSelectedDepartmentId('all'); // Reset department filter when tenant changes
   };
 
@@ -339,6 +336,12 @@ export default function DesignationManager() {
       titleAr !== originalTitleAr ||
       departmentId !== originalDepartmentId
     : title.trim() !== '' || titleAr.trim() !== '' || departmentId !== '';
+
+  // Disable Create/Update until required fields are present (and basic validation passes)
+  const isFormValid =
+    title.trim().length > 0 &&
+    departmentId.trim().length > 0 &&
+    (!titleAr.trim() || titleAr.trim().length >= 2);
 
   const validateForm = () => {
     const newErrors: {
@@ -514,73 +517,91 @@ export default function DesignationManager() {
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'nowrap',
+          alignItems: { xs: 'flex-start', sm: 'center' },
           mb: 3,
           gap: 2,
         }}
       >
-        <Typography
-          fontWeight={500}
-          fontSize={{ xs: '32px', lg: '48px' }}
-          lineHeight='44px'
-          letterSpacing='-2%'
-          color='#2C2C2C'
-        >
+        <AppPageTitle isRtl={isRTL} sx={{ mb: 0 }}>
           {getText('Designation', 'المسمى الوظيفي')}
-        </Typography>
+        </AppPageTitle>
 
         <Box
           sx={{
             display: 'flex',
             gap: 2,
             alignItems: 'center',
-            flexWrap: 'nowrap',
+            justifyContent: { xs: 'flex-start', sm: 'center' },
+            flexDirection: { xs: 'column', sm: 'row' },
+            width: { xs: '100%', sm: 'auto' },
           }}
         >
           {isSystemAdmin ? (
             <>
-              <FormControl
-                size='small'
-                sx={{ minWidth: { xs: '100%', sm: 200 } }}
-              >
-                <InputLabel id='tenant-select'>
-                  {getText('Select Tenant', 'اختر المستأجر')}
-                </InputLabel>
-                <Select
-                  labelId='tenant-select'
-                  value={selectedTenantId}
-                  label={getText('Select Tenant', 'اختر المستأجر')}
-                  onChange={handleTenantChange}
-                  disabled={loadingTenants}
-                  sx={{
-                    '.MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'divider',
-                    },
-                  }}
-                >
-                  <MenuItem value='all'>
-                    {getText('All Tenants', 'جميع المستأجرين')}
-                  </MenuItem>
-                  {loadingTenants ? (
-                    <MenuItem disabled>
-                      {getText(
-                        'Loading tenants...',
-                        'جاري تحميل المستأجرين...'
-                      )}
-                    </MenuItem>
-                  ) : (
-                    allTenants.map((tenant: SystemTenant) => (
-                      <MenuItem key={tenant.id} value={tenant.id}>
-                        {tenant.name}
-                      </MenuItem>
-                    ))
-                  )}
-                </Select>
-              </FormControl>
               <AppDropdown
-                label={getText('Filter by department', 'تصفية حسب القسم')}
+                showLabel={false}
+                options={
+                  loadingTenants
+                    ? [
+                        {
+                          value: '',
+                          label: getText(
+                            'Loading tenants...',
+                            'جاري تحميل المستأجرين...'
+                          ),
+                        },
+                      ]
+                    : [
+                        {
+                          value: 'all',
+                          label: getText('All Tenants', 'جميع المستأجرين'),
+                        },
+                        ...allTenants.map((tenant: SystemTenant) => ({
+                          value: String((tenant as any).id),
+                          label: (tenant as any).name,
+                        })),
+                      ]
+                }
+                value={selectedTenantId}
+                onChange={e => {
+                  const newValue =
+                    e.target.value === '' ? 'all' : String(e.target.value);
+                  setSelectedTenantId(newValue);
+                  setSelectedDepartmentId('all');
+                }}
+                disabled={loadingTenants}
+                containerSx={{
+                  width: { xs: '100%', sm: 250 },
+                  minHeight: 48,
+                  display: 'flex',
+                  alignItems: 'center',
+                  mb: { xs: 1, sm: 0 },
+                }}
+                sx={{
+                  '& .MuiSelect-select': {
+                    justifyContent: 'flex-start',
+                    textAlign: 'left',
+                    paddingLeft: '16px !important',
+                    paddingRight: '44px !important',
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    textAlign: 'left',
+                    paddingLeft: '16px !important',
+                    paddingRight: '44px !important',
+                  },
+                  '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
+                    {
+                      justifyContent: 'flex-start',
+                      textAlign: 'left',
+                      paddingLeft: '16px !important',
+                      paddingRight: '44px !important',
+                    },
+                }}
+              />
+              <AppDropdown
+                // label={getText('Filter by department', 'تصفية حسب القسم')}
                 options={[
                   {
                     value: 'all',
@@ -600,26 +621,41 @@ export default function DesignationManager() {
                 }}
                 disabled={departmentsLoading}
                 containerSx={{ minWidth: { xs: '100%', sm: 250 } }}
+                sx={{
+                  '& .MuiSelect-select': {
+                    justifyContent: 'flex-start',
+                    textAlign: 'left',
+                    paddingLeft: '16px !important',
+                    paddingRight: '44px !important',
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    textAlign: 'left',
+                    paddingLeft: '16px !important',
+                    paddingRight: '44px !important',
+                  },
+                  '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
+                    {
+                      justifyContent: 'flex-start',
+                      textAlign: 'left',
+                      paddingLeft: '16px !important',
+                      paddingRight: '44px !important',
+                    },
+                }}
               />
             </>
           ) : (
             <>
-              <Button
-                variant='contained'
+              <AppButton
+                variantType='primary'
                 startIcon={<AddIcon />}
                 onClick={() => {
                   setEditingDesignation(null);
                   setModalOpen(true);
                 }}
                 sx={{
-                  borderRadius: '12px',
-                  textTransform: 'none',
-                  fontWeight: 400,
                   fontSize: 'var(--body-font-size)',
                   lineHeight: 'var(--body-line-height)',
                   letterSpacing: 'var(--body-letter-spacing)',
-                  bgcolor: 'var(--primary-dark-color)',
-                  color: '#FFFFFF',
                   boxShadow: 'none',
                   minWidth: { xs: 'auto', sm: 200 },
                   px: { xs: 1.5, sm: 2 },
@@ -630,10 +666,6 @@ export default function DesignationManager() {
                       fontSize: { xs: '18px', sm: '20px' },
                     },
                   },
-                  // '&:hover': {
-                  //   bgcolor: 'var(--primary-dark-color)',
-                  //   boxShadow: 'none',
-                  // },
                 }}
               >
                 <Box
@@ -648,7 +680,7 @@ export default function DesignationManager() {
                 >
                   {getText('Create', 'إنشاء')}
                 </Box>
-              </Button>
+              </AppButton>
             </>
           )}
         </Box>
@@ -676,6 +708,26 @@ export default function DesignationManager() {
             }}
             disabled={departmentsLoading}
             containerSx={{ mb: 2, width: '100%' }}
+            sx={{
+              '& .MuiSelect-select': {
+                justifyContent: 'flex-start',
+                textAlign: 'left',
+                paddingLeft: '16px !important',
+                paddingRight: '44px !important',
+              },
+              '& .MuiOutlinedInput-input': {
+                textAlign: 'left',
+                paddingLeft: '16px !important',
+                paddingRight: '44px !important',
+              },
+              '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
+                {
+                  justifyContent: 'flex-start',
+                  textAlign: 'left',
+                  paddingLeft: '16px !important',
+                  paddingRight: '44px !important',
+                },
+            }}
           />
 
           <Typography
@@ -683,7 +735,7 @@ export default function DesignationManager() {
             sx={{
               fontSize: { xs: '14px', lg: '16px' },
               lineHeight: 'var(--body-line-height)',
-              color: 'var(--dark-grey-color)',
+              color: theme.palette.text.secondary,
             }}
           >
             {filteredDesignations.length}{' '}
@@ -700,7 +752,7 @@ export default function DesignationManager() {
               mb: 2,
               fontSize: { xs: '14px', lg: '16px' },
               lineHeight: 'var(--body-line-height)',
-              color: 'var(--dark-grey-color)',
+              color: theme.palette.text.secondary,
             }}
           >
             {filteredDesignations.length}{' '}
@@ -848,9 +900,10 @@ export default function DesignationManager() {
                           aria-label={`Edit designation ${getText(designation.title, designation.titleAr)}`}
                           sx={{
                             p: { xs: 0.5, sm: 1 },
-                            // '&:hover': {
-                            //   backgroundColor: 'transparent',
-                            // },
+                            color: theme.palette.primary.main,
+                            '&:hover': {
+                              backgroundColor: theme.palette.action.hover,
+                            },
                           }}
                         >
                           <Box
@@ -860,6 +913,10 @@ export default function DesignationManager() {
                             sx={{
                               width: { xs: 16, sm: 20 },
                               height: { xs: 16, sm: 20 },
+                              filter:
+                                theme.palette.mode === 'dark'
+                                  ? 'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)'
+                                  : 'none',
                             }}
                           />
                         </IconButton>
@@ -874,9 +931,10 @@ export default function DesignationManager() {
                             aria-label={`Delete designation ${getText(designation.title, designation.titleAr)}`}
                             sx={{
                               p: { xs: 0.5, sm: 1 },
-                              // '&:hover': {
-                              //   backgroundColor: 'transparent',
-                              // },
+                              color: theme.palette.error.main,
+                              '&:hover': {
+                                backgroundColor: theme.palette.action.hover,
+                              },
                             }}
                           >
                             <Box
@@ -886,6 +944,10 @@ export default function DesignationManager() {
                               sx={{
                                 width: { xs: 16, sm: 20 },
                                 height: { xs: 16, sm: 20 },
+                                filter:
+                                  theme.palette.mode === 'dark'
+                                    ? 'brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(7151%) hue-rotate(348deg) brightness(95%) contrast(89%)'
+                                    : 'none',
                               }}
                             />
                           </IconButton>
@@ -941,6 +1003,7 @@ export default function DesignationManager() {
         }
         cancelLabel={getText('Cancel', 'إلغاء')}
         hasChanges={hasChanges}
+        submitDisabled={!hasChanges || !isFormValid}
         isRtl={isRTL}
       />
 

@@ -530,7 +530,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
     }
 
     const displayMembers = validMembers.slice(0, 2);
-    const remainingCount = validMembers.length - 2;
+    const remainingCount = Math.max(0, validMembers.length - 2);
     const totalCount = validMembers.length;
 
     return (
@@ -578,17 +578,18 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                 sx={{
                   width: 38,
                   height: 38,
-                  backgroundColor: '#484c7f',
+                  backgroundColor: 'var(--primary-light-color)',
+                  color: darkMode ? '#ffffff' : '#ffffff',
                   fontSize: '0.8rem',
                   fontWeight: 700,
                   border: '2px solid white',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease-in-out',
                   '&:hover': {
-                    backgroundColor: '#3a3f5f',
+                    backgroundColor: 'var(--primary-dark-color)',
                     transform: 'scale(1.05)',
                     border: '2px solid #000',
-                    boxShadow: '0 4px 12px rgba(72, 76, 127, 0.3)',
+                    boxShadow: '0 4px 12px rgba(36, 98, 165, 0.3)',
                   },
                 }}
               >
@@ -909,7 +910,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
     }
 
     const displayMembers = validMembers.slice(0, 2);
-    const remainingCount = validMembers.length - 2;
+    const remainingCount = Math.max(0, validMembers.length - 2);
     const totalCount = validMembers.length;
 
     return (
@@ -958,17 +959,18 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                 sx={{
                   width: 38,
                   height: 38,
-                  backgroundColor: '#484c7f',
+                  backgroundColor: 'var(--primary-light-color)',
+                  color: darkMode ? '#ffffff' : '#ffffff',
                   fontSize: '0.8rem',
                   fontWeight: 700,
                   border: '2px solid white',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease-in-out',
                   '&:hover': {
-                    backgroundColor: '#3a3f5f',
+                    backgroundColor: 'var(--primary-dark-color)',
                     transform: 'scale(1.05)',
                     border: '2px solid #000',
-                    boxShadow: '0 4px 12px rgba(72, 76, 127, 0.3)',
+                    boxShadow: '0 4px 12px rgba(36, 98, 165, 0.3)',
                   },
                 }}
               >

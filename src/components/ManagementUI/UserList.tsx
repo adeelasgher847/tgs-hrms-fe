@@ -77,12 +77,16 @@ const UserList: React.FC = () => {
       </Typography>
 
       <Box
-        display='flex'
-        flexWrap={'wrap'}
-        gap={2}
-        mb={2}
-        alignItems='center'
-        color={theme.palette.text.primary}
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          flexWrap: 'wrap',
+          gap: 2,
+          mb: 2,
+          alignItems: { xs: 'stretch', sm: 'center' },
+          color: theme.palette.text.primary,
+          width: '100%',
+        }}
       >
         <TextField
           select
@@ -96,7 +100,7 @@ const UserList: React.FC = () => {
               designation: '',
             })
           }
-          sx={{ width: 180 }}
+          sx={{ width: { xs: '100%', sm: 180 } }}
         >
           <MenuItem value=''>All</MenuItem>
           {departments.map(dept => (
@@ -114,7 +118,7 @@ const UserList: React.FC = () => {
           onChange={e =>
             setFilters({ ...filters, designation: e.target.value })
           }
-          sx={{ width: 180 }}
+          sx={{ width: { xs: '100%', sm: 180 } }}
           disabled={!filters.department}
         >
           <MenuItem value=''>All</MenuItem>
@@ -144,8 +148,14 @@ const UserList: React.FC = () => {
           Create User
         </AppButton>
       </Box>
-      <Box sx={{ overflowX: 'auto', bgcolor: theme.palette.background.paper }}>
-        <Table>
+      <Box
+        sx={{
+          overflowX: 'auto',
+          bgcolor: theme.palette.background.paper,
+          width: '100%',
+        }}
+      >
+        <Table sx={{ minWidth: 800 }}>
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>

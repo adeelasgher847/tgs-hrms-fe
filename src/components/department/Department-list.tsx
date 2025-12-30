@@ -3,24 +3,23 @@ import type { DepartmentFormData, DepartmentFormErrors } from '../../types';
 import {
   Box,
   Typography,
-  Button,
   Paper,
   // Snackbar,
   // Alert,
   CircularProgress,
   useTheme,
   FormControl,
-  Select,
-  MenuItem,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
 import { DepartmentCard } from './DepartmentCard';
 import AppFormModal, { type FormField } from '../common/AppFormModal';
+import AppButton from '../common/AppButton';
 import { VALIDATION_LIMITS } from '../../constants/appConstants';
 import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
+import AppPageTitle from '../common/AppPageTitle';
 import {
   departmentApiService,
   type FrontendDepartment,
@@ -30,6 +29,7 @@ import ErrorSnackbar from '../common/ErrorSnackbar';
 import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { COLORS } from '../../constants/appConstants';
+import AppDropdown from '../common/AppDropdown';
 
 const labels = {
   en: {
@@ -57,12 +57,6 @@ export const DepartmentList: React.FC = () => {
 
   const isRtl = language === 'ar';
   const lang = labels[language];
-
-  const bgPaper = darkMode ? '#1b1b1b' : '#fff';
-  const textPrimary = darkMode ? '#e0e0e0' : theme.palette.text.primary;
-  const textSecond = darkMode ? '#9a9a9a' : theme.palette.text.secondary;
-  const textColor = darkMode ? '#8f8f8f' : '#000';
-  const borderColor = darkMode ? '#252525' : '#f0f0f0';
 
   // Get user role
   const user = useMemo(() => {
@@ -289,6 +283,11 @@ export const DepartmentList: React.FC = () => {
       (formData.description || '') !== (originalData.description || '')
     : formData.name.trim() !== '' || (formData.description || '').trim() !== '';
 
+  // Used to disable Create/Update until all required fields are valid
+  const isFormValid =
+    formData.name.trim().length >= VALIDATION_LIMITS.MIN_DEPARTMENT_NAME_LENGTH &&
+    (formData.description || '').length <= VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH;
+
   const validateForm = (): boolean => {
     const newErrors: DepartmentFormErrors = {};
 
@@ -397,7 +396,7 @@ export const DepartmentList: React.FC = () => {
         flexGrow: 1,
         direction: isRtl ? 'rtl' : 'ltr',
         minHeight: '100vh',
-        color: textPrimary,
+        color: theme.palette.text.primary,
         boxSizing: 'border-box',
       }}
     >
@@ -412,69 +411,45 @@ export const DepartmentList: React.FC = () => {
           gap: 2,
         }}
       >
-        <Typography
-          fontWeight={500}
-          fontSize={{ xs: '32px', lg: '48px' }}
-          lineHeight='44px'
-          letterSpacing='-2%'
-          color='#2C2C2C'
-          sx={{ textAlign: isRtl ? 'right' : 'left' }}
-        >
+        <AppPageTitle isRtl={isRtl} sx={{ mb: 0, textAlign: isRtl ? 'right' : 'left' }}>
           {lang.title}
-        </Typography>
+        </AppPageTitle>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {isSystemAdmin && (
-            <FormControl
-              size='small'
-              sx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}
-            >
-              <Select
-                value={selectedTenantId}
-                onChange={handleTenantChange}
-                displayEmpty
-                sx={{
-                  color: textColor,
-                  backgroundColor: bgPaper,
-                  '.MuiOutlinedInput-notchedOutline': {
-                    borderColor: borderColor,
-                  },
-                  // '&:hover .MuiOutlinedInput-notchedOutline': {
-                  //   borderColor: borderColor,
-                  // },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: borderColor,
-                  },
-                }}
-              >
-                <MenuItem value='all'>
-                  {language === 'ar' ? 'جميع المستأجرين' : 'All Tenants'}
-                </MenuItem>
-                {allTenants.map((tenant: SystemTenant) => (
-                  <MenuItem key={tenant.id} value={tenant.id}>
-                    {tenant.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <AppDropdown
+              showLabel={false}
+              value={selectedTenantId}
+              onChange={handleTenantChange}
+              options={[
+                { value: 'all', label: language === 'ar' ? 'جميع المستأجرين' : 'All Tenants' },
+                ...allTenants.map(t => ({ value: t.id, label: t.name })),
+              ]}
+              containerSx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}
+              sx={{
+                color: theme.palette.text.primary,
+
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: theme.palette.divider,
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: theme.palette.divider,
+                },
+              }}
+            />
           )}
           {!isSystemAdmin && (
-            <Button
-              variant='contained'
+            <AppButton
+              variantType='primary'
               startIcon={<AddIcon />}
               onClick={() => {
                 setSelectedDepartment(null);
                 setIsFormModalOpen(true);
               }}
               sx={{
-                borderRadius: '12px',
-                textTransform: 'none',
-                fontWeight: 400,
                 fontSize: 'var(--body-font-size)',
                 lineHeight: 'var(--body-line-height)',
                 letterSpacing: 'var(--body-letter-spacing)',
-                bgcolor: 'var(--primary-dark-color)',
-                color: '#FFFFFF',
                 boxShadow: 'none',
                 minWidth: { xs: 'auto', sm: 'auto' },
                 px: { xs: 1.5, sm: 2 },
@@ -485,10 +460,6 @@ export const DepartmentList: React.FC = () => {
                     fontSize: { xs: '18px', sm: '20px' },
                   },
                 },
-                // '&:hover': {
-                //   bgcolor: COLORS.PRIMARY,
-                //   boxShadow: 'none',
-                // },
               }}
             >
               <Box
@@ -509,7 +480,7 @@ export const DepartmentList: React.FC = () => {
               >
                 {lang.createShort}
               </Box>
-            </Button>
+            </AppButton>
           )}
         </Box>
       </Box>
@@ -520,9 +491,11 @@ export const DepartmentList: React.FC = () => {
           sx={{
             p: 4,
             textAlign: 'center',
-            bgcolor: bgPaper,
-            color: textPrimary,
-            boxShadow: 'none',
+            bgcolor: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+            boxShadow: theme.palette.mode === 'dark' 
+              ? '0 1px 3px rgba(0,0,0,0.3)' 
+              : '0 1px 3px rgba(0,0,0,0.1)',
           }}
         >
           <Box
@@ -540,34 +513,34 @@ export const DepartmentList: React.FC = () => {
             mt: 2,
             p: 4,
             textAlign: 'center',
-            bgcolor: bgPaper,
-            color: textPrimary,
-            boxShadow: 'none',
+            bgcolor: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+            boxShadow: theme.palette.mode === 'dark' 
+              ? '0 1px 3px rgba(0,0,0,0.3)' 
+              : '0 1px 3px rgba(0,0,0,0.1)',
           }}
         >
-          <BusinessIcon sx={{ fontSize: 64, color: textSecond, mb: 2 }} />
-          <Typography variant='h6' color={textSecond} gutterBottom>
+          <BusinessIcon sx={{ fontSize: 64, color: theme.palette.text.secondary, mb: 2 }} />
+          <Typography variant='h6' sx={{ color: theme.palette.text.secondary }} gutterBottom>
             {lang.noDepartments}
           </Typography>
-          <Typography variant='body2' color={textSecond} sx={{ mb: 3 }}>
+          <Typography variant='body2' sx={{ color: theme.palette.text.secondary, mb: 3 }}>
             {lang.description}
           </Typography>
           {!isSystemAdmin && (
-            <Button
-              variant='contained'
+            <AppButton
+              variantType='primary'
               startIcon={<AddIcon />}
               onClick={() => {
                 setSelectedDepartment(null);
                 setIsFormModalOpen(true);
               }}
               sx={{
-                backgroundColor: COLORS.PRIMARY,
                 boxShadow: 'none',
-                // '&:hover': { boxShadow: 'none' },
               }}
             >
               {lang.createFirst}
-            </Button>
+            </AppButton>
           )}
         </Paper>
       ) : (
@@ -632,6 +605,7 @@ export const DepartmentList: React.FC = () => {
         cancelLabel={isRtl ? 'إلغاء' : 'Cancel'}
         isSubmitting={isSubmitting}
         hasChanges={hasChanges}
+        submitDisabled={isSubmitting || !hasChanges || !isFormValid}
         isRtl={isRtl}
       />
 
