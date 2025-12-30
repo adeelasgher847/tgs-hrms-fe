@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  useTheme,
 } from '@mui/material';
 import AppButton from '../common/AppButton';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -26,10 +27,12 @@ import ErrorSnackbar from '../common/ErrorSnackbar';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 import { PAGINATION } from '../../constants/appConstants';
+import AppPageTitle from '../common/AppPageTitle';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
 const LeaveRequestPage = () => {
+  const { mode } = useTheme();
   const [leaves, setLeaves] = useState<Leave[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(false);
@@ -505,7 +508,7 @@ const LeaveRequestPage = () => {
   return (
     <Box sx={{ minHeight: '100vh' }}>
       {/* Header */}
-      {/* <AppBar
+      <AppBar
         position='static'
         sx={{
           borderRadius: 1,
@@ -524,9 +527,10 @@ const LeaveRequestPage = () => {
           }}
         >
           <Box>
-            <Typography variant='h6' fontWeight={700} fontSize={'48px'}>
+            <AppPageTitle
+            >
               Leave Management System
-            </Typography>
+            </AppPageTitle>
             {currentUser && (
               <Typography variant='caption'>
                 Logged in as: {userName} ({role})
@@ -588,12 +592,8 @@ const LeaveRequestPage = () => {
             </Stack>
           )}
         </Toolbar>
-      </AppBar> */}
-<Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Typography variant='h5' fontWeight={600} fontSize={'48px'}>
-            Leave History
-          </Typography>
-        </Box>
+      </AppBar>
+
       <Box sx={{ py: 3 }}>
         {['employee', 'manager'].includes(role) ? (
           activeTab === 'apply' ? (

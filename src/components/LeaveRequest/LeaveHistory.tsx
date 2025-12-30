@@ -267,6 +267,12 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           width: '100%',
         }}
       >
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography variant='h5' fontWeight={600} fontSize={'48px'}>
+            {title}
+          </Typography>
+        </Box>
+
         <Box
           sx={{
             display: 'flex',

@@ -27,6 +27,9 @@ import { IoEyeOutline } from 'react-icons/io5';
 import { PAGINATION } from '../../constants/appConstants';
 import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
+import AppTable from '../common/AppTable';
+import { getUserRole } from '../../utils/auth';
+import { normalizeRole } from '../../utils/permissions';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -70,6 +73,9 @@ const MySalary: React.FC = () => {
   const effectiveDarkMode =
     typeof outletDarkMode === 'boolean' ? outletDarkMode : darkMode;
   const { user } = useUser();
+  const role = normalizeRole(getUserRole());
+  const isManager = role === 'manager' || (role as string) === 'payroll manager';
+  const shouldUseAppTable = isManager || role === 'employee';
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -198,14 +204,14 @@ const MySalary: React.FC = () => {
 
   const handleSelectRecord = useCallback(
     async (record: PayrollRecord) => {
-      if (!record?.id || record.id === selectedRecordId) {
+      if (!record?.id) {
         return;
       }
       setSelectedRecordId(record.id);
       setDialogOpen(true);
       await fetchPayslip(record.id);
     },
-    [selectedRecordId, fetchPayslip]
+    [fetchPayslip]
   );
 
   const summaryCards = useMemo(() => {
@@ -411,8 +417,8 @@ const MySalary: React.FC = () => {
       return <Alert severity='info'>No payroll history available yet.</Alert>;
     }
 
-    return (
-      <Table size='small'>
+    const tableContent = (
+      <>
         <TableHead>
           <TableRow>
             <TableCell>Period</TableCell>
@@ -466,9 +472,15 @@ const MySalary: React.FC = () => {
             );
           })}
         </TableBody>
-      </Table>
+      </>
     );
-  }, [history, selectedRecordId, detailLoading, handleSelectRecord]);
+
+    return shouldUseAppTable ? (
+      <AppTable>{tableContent}</AppTable>
+    ) : (
+      <Table size='small'>{tableContent}</Table>
+    );
+  }, [history, selectedRecordId, detailLoading, handleSelectRecord, shouldUseAppTable]);
 
   if (loading) {
     return (
