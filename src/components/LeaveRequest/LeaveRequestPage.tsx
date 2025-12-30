@@ -18,7 +18,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  useTheme,
 } from '@mui/material';
 import AppButton from '../common/AppButton';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -27,12 +26,10 @@ import ErrorSnackbar from '../common/ErrorSnackbar';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 import { PAGINATION } from '../../constants/appConstants';
-import AppPageTitle from '../common/AppPageTitle';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
 const LeaveRequestPage = () => {
-  const { mode } = useTheme();
   const [leaves, setLeaves] = useState<Leave[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(false);
@@ -527,10 +524,9 @@ const LeaveRequestPage = () => {
           }}
         >
           <Box>
-            <AppPageTitle
-            >
+            <Typography variant='h6' fontWeight={700}>
               Leave Management System
-            </AppPageTitle>
+            </Typography>
             {currentUser && (
               <Typography variant='caption'>
                 Logged in as: {userName} ({role})

@@ -480,7 +480,7 @@ export const TenantPage: React.FC = () => {
             }}
             showLabel={false}
             containerSx={{
-              minWidth: 140,
+              minWidth: { xs: '100%', sm: 140 },
               '& .MuiOutlinedInput-root': { minHeight: '40px' },
             }}
             sx={{
