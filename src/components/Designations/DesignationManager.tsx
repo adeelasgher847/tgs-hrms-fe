@@ -26,6 +26,7 @@ import AppFormModal, { type FormField } from '../common/AppFormModal';
 import AppButton from '../common/AppButton';
 import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
+import AppPageTitle from '../common/AppPageTitle';
 import {
   designationApiService,
   type FrontendDesignation,
@@ -343,6 +344,12 @@ export default function DesignationManager() {
       departmentId !== originalDepartmentId
     : title.trim() !== '' || titleAr.trim() !== '' || departmentId !== '';
 
+  // Disable Create/Update until required fields are present (and basic validation passes)
+  const isFormValid =
+    title.trim().length > 0 &&
+    departmentId.trim().length > 0 &&
+    (!titleAr.trim() || titleAr.trim().length >= 2);
+
   const validateForm = () => {
     const newErrors: {
       title?: string;
@@ -524,15 +531,9 @@ export default function DesignationManager() {
           gap: 2,
         }}
       >
-        <Typography
-          fontWeight={500}
-          fontSize={{ xs: '32px', lg: '48px' }}
-          lineHeight='44px'
-          letterSpacing='-2%'
-          sx={{ color: theme.palette.text.primary }}
-        >
+        <AppPageTitle isRtl={isRTL} sx={{ mb: 0 }}>
           {getText('Designation', 'المسمى الوظيفي')}
-        </Typography>
+        </AppPageTitle>
 
         <Box
           sx={{
@@ -971,6 +972,7 @@ export default function DesignationManager() {
         }
         cancelLabel={getText('Cancel', 'إلغاء')}
         hasChanges={hasChanges}
+        submitDisabled={!hasChanges || !isFormValid}
         isRtl={isRTL}
       />
 

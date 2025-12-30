@@ -15,10 +15,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Tabs,
   Tab,
   InputAdornment,
@@ -35,6 +31,7 @@ import {
 import AppTable from '../common/AppTable';
 import AppButton from '../common/AppButton';
 import Icon from '../common/Icon';
+import AppDropdown from '../common/AppDropdown';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -856,23 +853,15 @@ const AssetRequests: React.FC = () => {
           My Asset Requests
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          {roleIsManager() ? (
-            <AppButton
-              variant='contained'
-              variantType='primary'
-              startIcon={<Icon name='add' size={18} />}
-              onClick={handleOpenRequestModal}
-              text='Request Asset'
-            />
-          ) : (
-            <Button
-              variant='contained'
-              startIcon={<AddIcon />}
-              onClick={handleOpenRequestModal}
-            >
-              Request Asset
-            </Button>
-          )}
+          <AppButton
+            variant='contained'
+            variantType='primary'
+            startIcon={
+              roleIsManager() ? <Icon name='add' size={18} /> : <AddIcon />
+            }
+            onClick={handleOpenRequestModal}
+            text='Request Asset'
+          />
         </Box>
       </Box>
 
@@ -1123,7 +1112,11 @@ const AssetRequests: React.FC = () => {
         }}
       >
         <DialogTitle>
-          <Typography variant='h6' fontWeight={600}>
+          <Typography
+            variant='h6'
+            fontWeight={600}
+            sx={{ color: 'var(--primary-dark-color)' }}
+          >
             Request New Asset
           </Typography>
         </DialogTitle>
@@ -1144,32 +1137,25 @@ const AssetRequests: React.FC = () => {
                     name='category'
                     control={control}
                     render={({ field }) => (
-                      <FormControl fullWidth error={!!errors.category}>
-                        <InputLabel>Asset Category</InputLabel>
-                        <Select
+                      <Box>
+                        <AppDropdown
                           {...field}
                           label='Asset Category'
-                          disabled={loading || loadingData}
+                          showLabel={false}
+                          align='left'
+                          placeholder='Asset Category'
+                          value={field.value || ''}
                           onChange={e => {
                             field.onChange(e);
                             setValue('subcategory', ''); // Reset subcategory when category changes
                           }}
-                          MenuProps={{
-                            PaperProps: {
-                              style: {
-                                maxHeight: 300,
-                              },
-                            },
-                          }}
-                        >
-                          {categories.map(category => (
-                            <MenuItem key={category.id} value={category.id}>
-                              <Typography variant='body1' fontWeight={500}>
-                                {category.name}
-                              </Typography>
-                            </MenuItem>
-                          ))}
-                        </Select>
+                          options={categories.map(category => ({
+                            value: category.id,
+                            label: category.name,
+                          }))}
+                          disabled={loading || loadingData}
+                          error={!!errors.category}
+                        />
                         {errors.category && (
                           <Typography
                             variant='caption'
@@ -1188,7 +1174,7 @@ const AssetRequests: React.FC = () => {
                             Select the asset category you need
                           </Typography>
                         )}
-                      </FormControl>
+                      </Box>
                     )}
                   />
                 </Box>
@@ -1200,44 +1186,20 @@ const AssetRequests: React.FC = () => {
                       name='subcategory'
                       control={control}
                       render={({ field }) => (
-                        <FormControl fullWidth>
-                          <InputLabel>Subcategory</InputLabel>
-                          <Select
-                            {...field}
-                            label='Subcategory'
-                            disabled={
-                              loading || loadingData || !selectedCategoryId
-                            }
-                            MenuProps={{
-                              PaperProps: {
-                                style: {
-                                  maxHeight: 300,
-                                },
-                              },
-                            }}
-                          >
-                            {subcategories.map(subcategory => (
-                              <MenuItem
-                                key={subcategory.id}
-                                value={subcategory.id}
-                              >
-                                <Box>
-                                  <Typography variant='body2'>
-                                    {subcategory.name}
-                                  </Typography>
-                                  {subcategory.description && (
-                                    <Typography
-                                      variant='caption'
-                                      color='text.secondary'
-                                    >
-                                      {subcategory.description}
-                                    </Typography>
-                                  )}
-                                </Box>
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
+                        <AppDropdown
+                          {...field}
+                          label='Subcategory'
+                          showLabel={false}
+                          align='left'
+                          placeholder='Subcategory'
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          options={subcategories.map(subcategory => ({
+                            value: subcategory.id,
+                            label: subcategory.name,
+                          }))}
+                          disabled={loading || loadingData || !selectedCategoryId}
+                        />
                       )}
                     />
                   </Box>
@@ -1265,22 +1227,33 @@ const AssetRequests: React.FC = () => {
           </DialogContent>
 
           <DialogActions sx={{ padding: '16px 24px', gap: 1 }}>
-            <Button
+            <AppButton
               onClick={() => setIsRequestModalOpen(false)}
               variant='outlined'
+              variantType='secondary'
               disabled={loading}
-              sx={{ minWidth: 80 }}
+              sx={{
+                minWidth: 80,
+                textTransform: 'none',
+                borderColor: 'var(--primary-dark-color)',
+                color: 'var(--primary-dark-color)',
+                '&:hover': {
+                  borderColor: 'var(--primary-dark-color)',
+                  backgroundColor: 'action.hover',
+                },
+              }}
             >
               Cancel
-            </Button>
-            <Button
+            </AppButton>
+            <AppButton
               type='submit'
               variant='contained'
+              variantType='primary'
               disabled={loading}
-              sx={{ minWidth: 80 }}
+              sx={{ minWidth: 80, textTransform: 'none' }}
             >
               {loading ? 'Submitting...' : 'Submit Request'}
-            </Button>
+            </AppButton>
           </DialogActions>
         </form>
       </Dialog>

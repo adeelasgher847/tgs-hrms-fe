@@ -95,6 +95,11 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
       (formData.description || '') !== (originalData.description || '')
     : formData.name.trim() !== '' || (formData.description || '').trim() !== '';
 
+  // Used to disable Create/Update until all required fields are valid
+  const isFormValid =
+    formData.name.trim().length >= VALIDATION_LIMITS.MIN_DEPARTMENT_NAME_LENGTH &&
+    (formData.description || '').length <= VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH;
+
   /* ---------- validation helpers ---------- */
   const validateForm = (): boolean => {
     const newErrors: DepartmentFormErrors = {};
@@ -251,7 +256,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
       <AppButton
         variantType='primary'
         type='submit'
-        disabled={isSubmitting || !hasChanges}
+        disabled={isSubmitting || !hasChanges || !isFormValid}
         onClick={handleSubmit}
         text={
           isSubmitting

@@ -60,6 +60,11 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   const displayValue =
     value === 'all-time' || value === null ? allTimeLabel : value.toString();
 
+  // CSS filter for #2462A5 (var(--primary-light-color)) to tint image icons in light mode.
+  // We keep filter approach because `Icons.arrowUp` is an image, not an SVG we can recolor directly.
+  const iconFilterPrimaryLight =
+    'brightness(0) saturate(100%) invert(32%) sepia(98%) saturate(1495%) hue-rotate(190deg) brightness(92%) contrast(92%)';
+
   const sxArray = (sx?: SxProps<Theme>) =>
     Array.isArray(sx) ? sx : sx ? [sx] : [];
 
@@ -76,16 +81,30 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: 1,
-              backgroundColor: theme.palette.background.paper,
-              border: `1px solid ${theme.palette.divider}`,
-              borderRadius: 'var(--border-radius-lg)',
-              px: 2,
+              // Figma (light): bg #E0ECFA (var(--primary-color)), text/icon #2462A5 (var(--primary-light-color))
+              backgroundColor:
+                theme.palette.mode === 'dark'
+                  ? theme.palette.action.hover
+                  : 'var(--primary-color)',
+              border:
+                theme.palette.mode === 'dark'
+                  ? `1px solid ${theme.palette.divider}`
+                  : 'none',
+              borderRadius: '8px',
+              px: { xs: 1.5, sm: 2 },
               py: 1,
               cursor: 'pointer',
-              minWidth: '120px',
+              // On small screens, this control should be able to stretch to full width.
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: '100%', sm: '120px' },
+              height: '36px',
               transition: 'background-color 0.2s',
               '&:hover': {
-                backgroundColor: theme.palette.action.hover,
+                backgroundColor:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.action.hover
+                    : 'var(--primary-color)',
+                opacity: theme.palette.mode === 'dark' ? 1 : 0.95,
               },
             },
             ...sxArray(buttonSx),
@@ -96,7 +115,10 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               {
                 fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
                 fontWeight: 500,
-                color: theme.palette.text.primary,
+                color:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.text.primary
+                    : 'var(--primary-light-color)',
               },
               ...sxArray(labelSx),
             ]}
@@ -112,12 +134,12 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 width: 16,
                 height: 16,
                 // Show "down" chevron when closed (matches original UI); rotate up when open
-                transform: open ? 'rotate(0deg)' : 'rotate(180deg)',
+                transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
                 transition: 'transform 0.2s',
                 filter:
                   theme.palette.mode === 'dark'
                     ? 'brightness(0) saturate(100%) invert(56%)'
-                    : 'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)',
+                    : iconFilterPrimaryLight,
               },
               ...sxArray(iconSx),
             ]}
@@ -133,7 +155,9 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               top: '100%',
               left: 0,
               mt: 1,
-              minWidth: '120px',
+              // Match button width (important on small screens)
+              width: '100%',
+              minWidth: { xs: '100%', sm: '120px' },
               backgroundColor: theme.palette.background.paper,
               borderRadius: 'var(--border-radius-lg)',
               overflow: 'hidden',
@@ -174,7 +198,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                       ? 'var(--white-color)'
                       : theme.palette.mode === 'dark'
                         ? 'var(--primary-light-color)'
-                        : 'var(--primary-dark-color)',
+                        : 'var(--primary-light-color)',
                 }}
               >
                 {allTimeLabel}
@@ -212,13 +236,13 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 >
                   <Typography
                     sx={{
-                      fontSize: 'var(--body-font-size)',
+                      fontSize: { xs: '12px', lg: 'var(--body-font-size)' },
                       fontWeight: 500,
                       color: isSelected
                         ? 'var(--white-color)'
                         : theme.palette.mode === 'dark'
                           ? 'var(--primary-light-color)'
-                          : 'var(--primary-dark-color)',
+                          : 'var(--primary-light-color)',
                     }}
                   >
                     {optionValue.toString()}

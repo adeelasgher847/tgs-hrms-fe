@@ -42,22 +42,7 @@ import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../common/AppTable';
 import AppDropdown from '../common/AppDropdown';
 import AppFormModal from '../common/AppFormModal';
-import AppButton from '../common/AppButton';
-
-const PRIMARY_ACTION_BUTTON_SX = {
-  fontSize: 'var(--body-font-size)',
-  lineHeight: 'var(--body-line-height)',
-  letterSpacing: 'var(--body-letter-spacing)',
-  boxShadow: 'none',
-  minWidth: { xs: 'auto', sm: 200 },
-  px: { xs: 1.5, sm: 2 },
-  py: { xs: 0.75, sm: 1 },
-  '& .MuiButton-startIcon': {
-    marginRight: { xs: 0.5, sm: 1 },
-    display: 'flex',
-    alignItems: 'center',
-  },
-} as const;
+import AppPageTitle from '../common/AppPageTitle';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -1136,15 +1121,15 @@ const EmployeeSalaryPage: React.FC = () => {
         backgroundColor: theme.palette.background.default,
         minHeight: '100vh',
         '& .MuiButton-contained': {
-          backgroundColor: 'primary.main',
-          '&:hover': { backgroundColor: 'primary.dark' },
+          backgroundColor: 'var(--primary-dark-color)',
+          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
         },
         '& .MuiButton-outlined': {
-          borderColor: 'primary.main',
-          color: 'primary.main',
+          borderColor: 'var(--primary-dark-color)',
+          color: 'var(--primary-dark-color)',
           '&:hover': {
-            borderColor: 'primary.dark',
-            backgroundColor: 'action.hover',
+            borderColor: 'var(--primary-dark-color)',
+            backgroundColor: 'var(--primary-color)',
           },
         },
       }}
@@ -1157,49 +1142,23 @@ const EmployeeSalaryPage: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <Typography
-          variant='h4'
-          sx={{
-            fontWeight: 600,
-            fontSize: { xs: '32px', lg: '48px' },
-            color: darkMode ? '#fff' : '#000',
-          }}
-        >
+        <AppPageTitle sx={{ mb: 0, color: darkMode ? '#fff' : '#000' }}>
           Employee Salary Structure
-        </Typography>
+        </AppPageTitle>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <AppButton
+          <Button
             variant='contained'
-            variantType='primary'
-            startIcon={
-              <Box
-                component='img'
-                src={Icons.add}
-                alt=''
-                aria-hidden='true'
-                sx={{
-                  width: { xs: 16, sm: 20 },
-                  height: { xs: 16, sm: 20 },
-                  filter: 'brightness(0) invert(1)',
-                }}
-              />
-            }
+            startIcon={<AddIcon />}
             onClick={handleAddSalary}
-            sx={PRIMARY_ACTION_BUTTON_SX}
+            sx={{
+              backgroundColor: darkMode ? '#464b8a' : '#484c7f',
+              '&:hover': {
+                backgroundColor: darkMode ? '#464b8a' : '#5b56a0',
+              },
+            }}
           >
-            <Box
-              component='span'
-              sx={{ display: { xs: 'none', sm: 'inline' } }}
-            >
-              Add Salary Structure
-            </Box>
-            <Box
-              component='span'
-              sx={{ display: { xs: 'inline', sm: 'none' } }}
-            >
-              Add Salary
-            </Box>
-          </AppButton>
+            Add Salary Structure
+          </Button>
         </Box>
       </Box>
 

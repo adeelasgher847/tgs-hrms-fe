@@ -41,21 +41,7 @@ import AppCard from '../common/AppCard';
 import AppButton from '../common/AppButton';
 import AppDropdown from '../common/AppDropdown';
 import AppFormModal from '../common/AppFormModal';
-
-const PRIMARY_ACTION_BUTTON_SX = {
-  fontSize: 'var(--body-font-size)',
-  lineHeight: 'var(--body-line-height)',
-  letterSpacing: 'var(--body-letter-spacing)',
-  boxShadow: 'none',
-  minWidth: { xs: 'auto', sm: 200 },
-  px: { xs: 1.5, sm: 2 },
-  py: { xs: 0.75, sm: 1 },
-  '& .MuiButton-startIcon': {
-    marginRight: { xs: 0.5, sm: 1 },
-    display: 'flex',
-    alignItems: 'center',
-  },
-} as const;
+import AppPageTitle from '../common/AppPageTitle';
 
 dayjs.extend(dayjsPluginLocalizedFormat);
 
@@ -642,17 +628,10 @@ const PayrollRecords: React.FC = () => {
           mb: 3,
         }}
       >
-        <Box>
-          <Typography
-            variant='h4'
-            sx={{
-              fontWeight: 600,
-              fontSize: { xs: '32px', lg: '48px' },
-              color: textColor,
-            }}
-          >
+        <Box sx={{ width: '100%' }}>
+          <AppPageTitle sx={{ mb: 0, color: textColor }}>
             Payroll Records
-          </Typography>
+          </AppPageTitle>
         </Box>
       </Box>
 
@@ -721,20 +700,9 @@ const PayrollRecords: React.FC = () => {
             startIcon={<GenerateIcon />}
             onClick={openGenerateDialog}
             disabled={generating}
-            sx={PRIMARY_ACTION_BUTTON_SX}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
           >
-            <Box
-              component='span'
-              sx={{ display: { xs: 'none', sm: 'inline' } }}
-            >
-              Generate Payroll
-            </Box>
-            <Box
-              component='span'
-              sx={{ display: { xs: 'inline', sm: 'none' } }}
-            >
-              Generate
-            </Box>
+            Generate Payroll
           </AppButton>
         )}
       </Box>

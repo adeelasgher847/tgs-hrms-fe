@@ -42,12 +42,12 @@ const ArrowIcon = ({ open }: { open: boolean }) => {
       src={Icons.arrowUp}
       alt=''
       sx={{
-        width: '16px',
-        height: '16px',
+        width: { xs: 14, sm: 16 },
+        height: { xs: 14, sm: 16 },
         pointerEvents: 'none',
         transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
         transition: 'transform 0.2s ease-in-out',
-        marginRight: '16px',
+        marginRight: { xs: '12px', sm: '16px' },
         filter:
           theme.palette.mode === 'dark'
             ? 'brightness(0) saturate(100%) invert(56%)'
@@ -107,7 +107,10 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                 fontSize: 'var(--subheading2-font-size)',
                 lineHeight: 'var(--subheading2-line-height)',
                 letterSpacing: 'var(--subheading2-letter-spacing)',
-                color: '#2C2C2C',
+                color:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.text.primary
+                    : 'var(--black-color)',
               }}
             >
               {label}
@@ -115,7 +118,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
             {error && helperText && (
               <Typography
                 sx={{
-                  fontSize: { xs: '12px', sm: '14px' },
+                  fontSize: 'var(--label-font-size)',
                   lineHeight: 'var(--label-line-height)',
                   color: '#d32f2f',
                   fontWeight: 400,
@@ -139,7 +142,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                 backgroundColor:
                   inputBackgroundColor || theme.palette.background.paper,
                 borderRadius: '12px',
-                minHeight: '48px',
+                minHeight: { xs: '40px', sm: '44px' },
                 width: '100%',
                 padding: '0 !important',
                 '& fieldset': {
@@ -161,7 +164,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                 },
               },
               '& .MuiInputBase-input': {
-                padding: '12px 16px !important',
+                padding: { xs: '8px 12px', sm: '10px 16px' },
                 backgroundColor: 'transparent !important',
               },
               '& .MuiOutlinedInput-input': {
@@ -173,15 +176,15 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                 lineHeight: 'var(--label-line-height)',
                 letterSpacing: 'var(--label-letter-spacing)',
                 fontWeight: 400,
-                padding: '12px 16px !important',
-                paddingRight: '40px !important',
+                padding: { xs: '8px 12px', sm: '10px 16px' },
+                paddingRight: { xs: '36px', sm: '40px' },
                 display: 'flex',
                 alignItems: 'center',
                 backgroundColor: 'transparent !important',
               },
               '& .MuiSelect-icon': {
                 color: theme.palette.text.secondary,
-                right: '16px',
+                right: { xs: '12px', sm: '16px' },
               },
             },
             ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
@@ -233,6 +236,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                     lineHeight: 'var(--label-line-height)',
                     letterSpacing: 'var(--label-letter-spacing)',
                     color: theme.palette.text.primary,
+                    minHeight: { xs: 40, sm: 44 },
                     backgroundColor: 'transparent !important',
                     '&:hover': {
                       backgroundColor: `${theme.palette.action.hover} !important`,

@@ -24,23 +24,7 @@ import { snackbar } from '../../utils/snackbar';
 import AppDropdown from '../common/AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AppFormModal from '../common/AppFormModal';
-import AppButton from '../common/AppButton';
 import AppPageTitle from '../common/AppPageTitle';
-
-const PRIMARY_ACTION_BUTTON_SX = {
-  fontSize: 'var(--body-font-size)',
-  lineHeight: 'var(--body-line-height)',
-  letterSpacing: 'var(--body-letter-spacing)',
-  boxShadow: 'none',
-  minWidth: { xs: 'auto', sm: 200 },
-  px: { xs: 1.5, sm: 2 },
-  py: { xs: 0.75, sm: 1 },
-  '& .MuiButton-startIcon': {
-    marginRight: { xs: 0.5, sm: 1 },
-    display: 'flex',
-    alignItems: 'center',
-  },
-} as const;
 
 const PayrollConfiguration: React.FC = () => {
   const theme = useTheme();
@@ -541,15 +525,15 @@ const PayrollConfiguration: React.FC = () => {
       <Box
         sx={{
           '& .MuiButton-contained': {
-            backgroundColor: 'primary.main',
-            '&:hover': { backgroundColor: 'primary.dark' },
+            backgroundColor: 'var(--primary-dark-color)',
+            '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
           },
           '& .MuiButton-outlined': {
-            borderColor: 'primary.main',
-            color: 'primary.main',
+            borderColor: 'var(--primary-dark-color)',
+            color: 'var(--primary-dark-color)',
             '&:hover': {
-              borderColor: 'primary.dark',
-              backgroundColor: 'action.hover',
+              borderColor: 'var(--primary-dark-color)',
+              backgroundColor: 'var(--primary-color)',
             },
           },
         }}
@@ -562,41 +546,22 @@ const PayrollConfiguration: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <AppPageTitle sx={{ mb: 1, color: darkMode ? '#fff' : '#000' }}>
+          <AppPageTitle sx={{ color: darkMode ? '#fff' : '#000', mb: 1 }}>
             Payroll Configuration
           </AppPageTitle>
-          <AppButton
+          <Button
             onClick={handleOpenCreateModal}
             variant='contained'
-            variantType='primary'
-            startIcon={
-              <Box
-                component='img'
-                src={Icons.add}
-                alt=''
-                aria-hidden='true'
-                sx={{
-                  width: { xs: 16, sm: 20 },
-                  height: { xs: 16, sm: 20 },
-                  filter: 'brightness(0) invert(1)',
-                }}
-              />
-            }
-            sx={PRIMARY_ACTION_BUTTON_SX}
+            startIcon={<AddIcon />}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 2,
+              py: 1,
+            }}
           >
-            <Box
-              component='span'
-              sx={{ display: { xs: 'none', sm: 'inline' } }}
-            >
-              Create Configuration
-            </Box>
-            <Box
-              component='span'
-              sx={{ display: { xs: 'inline', sm: 'none' } }}
-            >
-              Create
-            </Box>
-          </AppButton>
+            Create Configuration
+          </Button>
         </Box>
         <Paper
           sx={{
@@ -1177,15 +1142,15 @@ const PayrollConfiguration: React.FC = () => {
         backgroundColor: theme.palette.background.default,
         minHeight: '100vh',
         '& .MuiButton-contained': {
-          backgroundColor: 'primary.main',
-          '&:hover': { backgroundColor: 'primary.dark' },
+          backgroundColor: 'var(--primary-dark-color)',
+          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
         },
         '& .MuiButton-outlined': {
-          borderColor: 'primary.main',
-          color: 'primary.main',
+          borderColor: 'var(--primary-dark-color)',
+          color: 'var(--primary-dark-color)',
           '&:hover': {
-            borderColor: 'primary.dark',
-            backgroundColor: 'action.hover',
+            borderColor: 'var(--primary-dark-color)',
+            backgroundColor: 'var(--primary-color)',
           },
         },
       }}
@@ -1198,35 +1163,37 @@ const PayrollConfiguration: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <AppPageTitle sx={{ mb: 1, color: darkMode ? '#fff' : '#000' }}>
+        <Typography
+          variant='h4'
+          sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000', mb: 1 }}
+        >
           Payroll Configuration
-        </AppPageTitle>
-        <AppButton
+        </Typography>
+        <Button
           onClick={handleOpenEditModal}
-          variant='contained'
-          variantType='primary'
+          variant='outlined'
           startIcon={
             <Box
               component='img'
               src={Icons.edit}
-              alt=''
-              aria-hidden='true'
-              sx={{
-                width: { xs: 16, sm: 20 },
-                height: { xs: 16, sm: 20 },
-                filter: 'brightness(0) invert(1)',
-              }}
+              alt='Edit'
+              sx={{ width: 18, height: 18 }}
             />
           }
-          sx={PRIMARY_ACTION_BUTTON_SX}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 500,
+            px: 2,
+            py: 1,
+            color: theme.palette.text.primary,
+            '&:hover': {
+              borderColor: theme.palette.primary.main,
+              backgroundColor: theme.palette.action.hover,
+            },
+          }}
         >
-          <Box component='span' sx={{ display: { xs: 'none', sm: 'inline' } }}>
-            Update Configuration
-          </Box>
-          <Box component='span' sx={{ display: { xs: 'inline', sm: 'none' } }}>
-            Update
-          </Box>
-        </AppButton>
+          Update Configuration
+        </Button>
       </Box>
 
       <Box

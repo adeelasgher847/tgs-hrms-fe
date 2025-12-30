@@ -41,6 +41,7 @@ import RecentActivityLogs from './RecentActivityLogs';
 import { getCurrentUser } from '../../utils/auth';
 import { isSystemAdmin } from '../../utils/roleUtils';
 import { PAGINATION } from '../../constants/appConstants';
+import AppPageTitle from '../common/AppPageTitle';
 
 const labels = {
   en: { title: 'Dashboard' },
@@ -131,23 +132,9 @@ const Dashboard: React.FC = () => {
         color: theme.palette.text.primary,
         display: 'flex',
         flexDirection: 'column',
-        gap: 3,
       }}
     >
-      <Typography
-        sx={{
-          direction: language === 'ar' ? 'rtl' : 'ltr',
-          color: theme.palette.text.primary,
-          textAlign: { xs: 'left' },
-          fontWeight: 500,
-          fontSize: { xs: '32px', lg: '48px' },
-          lineHeight: '44px',
-          letterSpacing: '-2%',
-          mb: 3,
-        }}
-      >
-        {lang.title}
-      </Typography>
+      <AppPageTitle isRtl={language === 'ar'}>{lang.title}</AppPageTitle>
 
       {isSysAdmin ? (
         <Box
@@ -168,7 +155,7 @@ const Dashboard: React.FC = () => {
             }}
           >
             <Grid container spacing={3} sx={{ width: '100%' }}>
-              <Grid item xs={6} sm={6} md={6} lg={6} flexGrow={1}>
+              <Grid size={{ xs: 12, sm: 6, md: 6, lg: 6 }} flexGrow={1}>
                 <KPICard
                   title='Total Tenants'
                   value={dashboardData?.totalTenants ?? 0}
@@ -176,7 +163,7 @@ const Dashboard: React.FC = () => {
                   color={theme.palette.primary.main}
                 />
               </Grid>
-              <Grid item xs={6} sm={6} md={6} lg={6} flexGrow={1}>
+              <Grid size={{ xs: 12, sm: 6, md: 6, lg: 6 }} flexGrow={1}>
                 <KPICard
                   title='Active Tenants'
                   value={dashboardData?.activeTenants ?? 0}
@@ -194,9 +181,10 @@ const Dashboard: React.FC = () => {
               width: '100%',
               borderRadius: '20px',
               backgroundColor: theme.palette.background.paper,
-              boxShadow: theme.palette.mode === 'dark' 
-                ? '0 1px 3px rgba(0,0,0,0.3)' 
-                : '0 1px 3px rgba(0,0,0,0.1)',
+              boxShadow:
+                theme.palette.mode === 'dark'
+                  ? '0 1px 3px rgba(0,0,0,0.3)'
+                  : '0 1px 3px rgba(0,0,0,0.1)',
             }}
           >
             <TenantGrowthChart />
@@ -211,9 +199,7 @@ const Dashboard: React.FC = () => {
             }}
           >
             <Grid
-              item
-              xs={12}
-              md={6}
+              size={{ xs: 12, md: 6 }}
               sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}
             >
               <Paper
@@ -347,9 +333,7 @@ const Dashboard: React.FC = () => {
             </Grid>
 
             <Grid
-              item
-              xs={12}
-              md={6}
+              size={{ xs: 12, md: 6 }}
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -370,9 +354,10 @@ const Dashboard: React.FC = () => {
               p: { xs: 2, sm: 3 },
               borderRadius: '20px',
               backgroundColor: theme.palette.background.paper,
-              boxShadow: theme.palette.mode === 'dark' 
-                ? '0 1px 3px rgba(0,0,0,0.3)' 
-                : '0 1px 3px rgba(0,0,0,0.1)',
+              boxShadow:
+                theme.palette.mode === 'dark'
+                  ? '0 1px 3px rgba(0,0,0,0.3)'
+                  : '0 1px 3px rgba(0,0,0,0.1)',
             }}
           >
             <Box
@@ -385,8 +370,8 @@ const Dashboard: React.FC = () => {
                 gap: 1,
               }}
             >
-              <Typography 
-                variant='h6' 
+              <Typography
+                variant='h6'
                 fontWeight='bold'
                 sx={{ color: theme.palette.text.primary }}
               >
@@ -419,9 +404,7 @@ const Dashboard: React.FC = () => {
                             ? 'var(--primary-light-color)'
                             : 'var(--primary-color)',
                         color:
-                          theme.palette.mode === 'dark'
-                            ? '#ffffff'
-                            : '#2C2C2C',
+                          theme.palette.mode === 'dark' ? '#ffffff' : '#2C2C2C',
                         fontWeight: 700,
                       }}
                     >
@@ -434,9 +417,7 @@ const Dashboard: React.FC = () => {
                             ? 'var(--primary-light-color)'
                             : 'var(--primary-color)',
                         color:
-                          theme.palette.mode === 'dark'
-                            ? '#ffffff'
-                            : '#2C2C2C',
+                          theme.palette.mode === 'dark' ? '#ffffff' : '#2C2C2C',
                         fontWeight: 700,
                       }}
                     >
@@ -449,9 +430,7 @@ const Dashboard: React.FC = () => {
                             ? 'var(--primary-light-color)'
                             : 'var(--primary-color)',
                         color:
-                          theme.palette.mode === 'dark'
-                            ? '#ffffff'
-                            : '#2C2C2C',
+                          theme.palette.mode === 'dark' ? '#ffffff' : '#2C2C2C',
                         fontWeight: 700,
                       }}
                     >
@@ -464,9 +443,7 @@ const Dashboard: React.FC = () => {
                             ? 'var(--primary-light-color)'
                             : 'var(--primary-color)',
                         color:
-                          theme.palette.mode === 'dark'
-                            ? '#ffffff'
-                            : '#2C2C2C',
+                          theme.palette.mode === 'dark' ? '#ffffff' : '#2C2C2C',
                         fontWeight: 700,
                       }}
                     >
@@ -479,9 +456,7 @@ const Dashboard: React.FC = () => {
                             ? 'var(--primary-light-color)'
                             : 'var(--primary-color)',
                         color:
-                          theme.palette.mode === 'dark'
-                            ? '#ffffff'
-                            : '#2C2C2C',
+                          theme.palette.mode === 'dark' ? '#ffffff' : '#2C2C2C',
                         fontWeight: 700,
                       }}
                     >
@@ -588,8 +563,8 @@ const Dashboard: React.FC = () => {
 
             {estimatedTotalRecords > 0 && (
               <Box display='flex' justifyContent='center' mt={1}>
-                <Typography 
-                  variant='body2' 
+                <Typography
+                  variant='body2'
                   sx={{ color: theme.palette.text.secondary }}
                 >
                   Showing page {currentPage} of {estimatedTotalPages} (
@@ -614,9 +589,10 @@ const Dashboard: React.FC = () => {
               p: 3,
               borderRadius: '20px',
               backgroundColor: theme.palette.background.paper,
-              boxShadow: theme.palette.mode === 'dark' 
-                ? '0 1px 3px rgba(0,0,0,0.3)' 
-                : '0 1px 3px rgba(0,0,0,0.1)',
+              boxShadow:
+                theme.palette.mode === 'dark'
+                  ? '0 1px 3px rgba(0,0,0,0.3)'
+                  : '0 1px 3px rgba(0,0,0,0.1)',
             }}
           >
             <EmployeesInfoChart />
@@ -638,9 +614,10 @@ const Dashboard: React.FC = () => {
                 p: 3,
                 borderRadius: '20px',
                 backgroundColor: theme.palette.background.paper,
-                boxShadow: theme.palette.mode === 'dark' 
-                  ? '0 1px 3px rgba(0,0,0,0.3)' 
-                  : '0 1px 3px rgba(0,0,0,0.1)',
+                boxShadow:
+                  theme.palette.mode === 'dark'
+                    ? '0 1px 3px rgba(0,0,0,0.3)'
+                    : '0 1px 3px rgba(0,0,0,0.1)',
               }}
             >
               <AvailabilityCardsGrid />
@@ -654,9 +631,10 @@ const Dashboard: React.FC = () => {
                 p: 3,
                 borderRadius: '20px',
                 backgroundColor: theme.palette.background.paper,
-                boxShadow: theme.palette.mode === 'dark' 
-                  ? '0 1px 3px rgba(0,0,0,0.3)' 
-                  : '0 1px 3px rgba(0,0,0,0.1)',
+                boxShadow:
+                  theme.palette.mode === 'dark'
+                    ? '0 1px 3px rgba(0,0,0,0.3)'
+                    : '0 1px 3px rgba(0,0,0,0.1)',
               }}
             >
               <GenderPercentageChart />

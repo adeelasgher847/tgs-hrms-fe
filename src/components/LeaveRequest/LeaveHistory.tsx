@@ -258,11 +258,13 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
       <Box
         sx={{
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'flex-start', sm: 'center' },
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 2,
           mb: 2,
+          width: '100%',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -278,7 +280,16 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'space-between', sm: 'flex-end' },
+            flexWrap: 'wrap',
+          }}
+        >
           {!hideDropdown && (isAdmin || isManager) && (
             <AppDropdown
               label='All Employees'
@@ -292,7 +303,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               ]}
               placeholder='All Employees'
               showLabel={false}
-              containerSx={{ minWidth: 200 }}
+              containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
             />
           )}
 
@@ -345,8 +356,8 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
       ) : (
-        <Paper elevation={1} sx={{ boxShadow: 'none' }}>
-          <AppTable>
+        <Paper elevation={1} sx={{ boxShadow: 'none', overflowX: 'auto' }}>
+          <AppTable sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
                 {!hideNameColumn && (isAdmin || isManager || showNames) && (
@@ -557,10 +568,17 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                           <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                             <Chip
                               label='Manager Response'
-                              color='primary'
                               clickable
                               onClick={() => onManagerResponse(leave.id)}
-                              sx={{ fontWeight: 500 }}
+                              sx={{
+                                fontWeight: 500,
+                                backgroundColor: 'var(--primary-dark-color)',
+                                color: '#FFFFFF',
+                                '& .MuiChip-label': { fontWeight: 500 },
+                                '&:hover': {
+                                  backgroundColor: 'var(--primary-dark-color)',
+                                },
+                              }}
                             />
                           </Box>
                         )}
@@ -622,10 +640,21 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               count={totalPages}
               page={currentPage}
               onChange={(_, newPage) => handlePageChange(newPage)}
-              color='primary'
+              sx={{
+                mb: 1,
+                '& .MuiPaginationItem-root': {
+                  color: 'var(--primary-dark-color)',
+                },
+                '& .MuiPaginationItem-root.Mui-selected': {
+                  backgroundColor: 'var(--primary-dark-color)',
+                  color: '#FFFFFF',
+                  '&:hover': {
+                    backgroundColor: 'var(--primary-dark-color)',
+                  },
+                },
+              }}
               showFirstButton
               showLastButton
-              sx={{ mb: 1 }}
             />
           ) : null;
         })()}

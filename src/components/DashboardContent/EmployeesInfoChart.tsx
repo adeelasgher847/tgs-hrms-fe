@@ -64,7 +64,6 @@ export default function EmployeesInfoChart() {
     fetchJoiningData();
   }, []);
 
-
   // Get unique years from API data
   const availableYears = [...new Set(joiningData.map(item => item.year))].sort(
     (a, b) => b - a
@@ -169,9 +168,15 @@ export default function EmployeesInfoChart() {
     >
       <Box
         className='Ramish selected'
-        display='flex'
-        justifyContent='space-between'
-        mb={2}
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          flexDirection: { xs: 'column', sm: 'row' },
+          flexWrap: 'wrap',
+          gap: { xs: 1.25, sm: 2 },
+          mb: 2,
+        }}
       >
         <Typography
           fontWeight={500}
@@ -183,13 +188,18 @@ export default function EmployeesInfoChart() {
           {chartTitle[language]}
         </Typography>
 
-        <TimeRangeSelector
-          value={selectedTimeRange}
-          options={availableYears}
-          onChange={setSelectedTimeRange}
-          allTimeLabel={language === 'ar' ? 'كل الوقت' : 'All Time'}
-          language={language}
-        />
+        <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <TimeRangeSelector
+            value={selectedTimeRange}
+            options={availableYears}
+            onChange={setSelectedTimeRange}
+            allTimeLabel={language === 'ar' ? 'كل الوقت' : 'All Time'}
+            language={language}
+            buttonSx={{
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          />
+        </Box>
       </Box>
 
       {loading ? (

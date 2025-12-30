@@ -117,7 +117,11 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
           gap: 2,
         }}
       >
-        <Typography variant='h5' color='primary' mb={2}>
+        <Typography
+          variant='h5'
+          mb={2}
+          sx={{ color: 'var(--primary-dark-color)' }}
+        >
           Apply for Leave
         </Typography>
 
@@ -185,6 +189,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
           variantType='contained'
           text={loading ? 'Submitting...' : 'Apply'}
           disabled={loading}
+          sx={{ color: 'var(--primary-dark-color)' }}
         />
       </Box>
     </LocalizationProvider>

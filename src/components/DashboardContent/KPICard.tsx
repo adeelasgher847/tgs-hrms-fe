@@ -44,7 +44,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          p: 3,
+          p: { xs: 2, sm: 3 },
           width: '100%',
         }}
       >
@@ -56,6 +56,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
               color: theme.palette.text.secondary,
               mb: 0.5,
               fontWeight: 500,
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
             }}
           >
             {title}
@@ -65,7 +66,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
             sx={{
               color: theme.palette.text.primary,
               fontWeight: 700,
-              fontSize: contentFontSize, // Dynamically applied
+              fontSize: { xs: '1.5rem', sm: contentFontSize }, // Dynamically applied
             }}
           >
             {value}
@@ -79,10 +80,13 @@ const KpiCard: React.FC<KpiCardProps> = ({
             color: theme.palette.getContrastText(
               color || theme.palette.primary.main
             ),
-            width: 60,
-            height: 60,
-            ml: 2,
+            width: { xs: 44, sm: 60 },
+            height: { xs: 44, sm: 60 },
+            ml: { xs: 1.25, sm: 2 },
             flexShrink: 0,
+            '& svg': {
+              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+            },
           }}
         >
           {icon}

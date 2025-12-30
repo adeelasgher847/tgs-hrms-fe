@@ -20,6 +20,7 @@ import { useIsDarkMode } from '../../theme';
 import { snackbar } from '../../utils/snackbar';
 import AppDropdown from '../common/AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import AppPageTitle from '../common/AppPageTitle';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -258,10 +259,12 @@ const PayrollReports: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant='h4' sx={{ fontWeight: 600, fontSize: { xs: '32px', lg: '48px' } }}>
-          Payroll Reports
-        </Typography>
-        <Stack direction='row' spacing={2}>
+        <AppPageTitle sx={{ mb: 0, color: textColor }}>Payroll Reports</AppPageTitle>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          sx={{ width: { xs: '100%', md: 'auto' } }}
+        >
           <AppDropdown
             label='Tenant'
             value={selectedTenantId}
@@ -275,7 +278,7 @@ const PayrollReports: React.FC = () => {
             placeholder='Tenant'
             showLabel={false}
             disabled={loadingTenants}
-            containerSx={{ minWidth: 200 }}
+            containerSx={{ minWidth: { xs: '100%', md: 200 } }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{
               '& .MuiSelect-select': {
@@ -312,12 +315,16 @@ const PayrollReports: React.FC = () => {
                   No monthly trend data
                 </Alert>
               ) : (
-                <Chart
-                  options={trendOptions}
-                  series={trendSeries}
-                  type='line'
-                  height={320}
-                />
+                <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                  <Box sx={{ minWidth: { xs: 520, sm: 0 } }}>
+                    <Chart
+                      options={trendOptions}
+                      series={trendSeries}
+                      type='line'
+                      height={320}
+                    />
+                  </Box>
+                </Box>
               )}
             </Paper>
 
@@ -330,12 +337,16 @@ const PayrollReports: React.FC = () => {
                   No department data
                 </Alert>
               ) : (
-                <Chart
-                  options={departmentOptions}
-                  series={departmentSeries}
-                  type='bar'
-                  height={320}
-                />
+                <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                  <Box sx={{ minWidth: { xs: 520, sm: 0 } }}>
+                    <Chart
+                      options={departmentOptions}
+                      series={departmentSeries}
+                      type='bar'
+                      height={320}
+                    />
+                  </Box>
+                </Box>
               )}
             </Paper>
           </Box>

@@ -199,8 +199,9 @@ const EmployeeGrowthChart: React.FC = () => {
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', sm: 'center' },
           mb: 2,
+          flexDirection: { xs: 'column', sm: 'row' },
           flexWrap: 'wrap',
           gap: 2,
         }}
@@ -213,7 +214,14 @@ const EmployeeGrowthChart: React.FC = () => {
           {labels[language]} ({selectedYear})
         </Typography>
 
-        <Box display='flex' gap={2} flexWrap='wrap'>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            flexWrap: 'wrap',
+            width: { xs: '100%', sm: 'auto' },
+          }}
+        >
           <FormControl
             size='small'
             sx={{
@@ -372,7 +380,8 @@ const EmployeeGrowthChart: React.FC = () => {
               py: '8px',
               gap: '10px',
               height: '36px',
-              minWidth: '108px',
+              minWidth: { xs: '100%', sm: '108px' },
+              width: { xs: '100%', sm: 'auto' },
             }}
             labelSx={{
               // Figma (light mode): SF Pro Rounded, 14px/20px, 400, letter spacing -1%, color #2462A5

@@ -536,7 +536,7 @@ const LeaveRequestPage = () => {
 
           {['employee', 'manager'].includes(role) && (
             <Stack
-              direction='row'
+              direction={{ xs: 'column', sm: 'row' }}
               spacing={2}
               sx={{
                 my: { xs: 1, sm: 0 },
@@ -553,6 +553,7 @@ const LeaveRequestPage = () => {
                 onClick={() => setActiveTab('apply')}
                 sx={{
                   borderRadius: '20px',
+                  width: { xs: '100%', sm: 'auto' },
                   color:
                     activeTab === 'apply'
                       ? 'var(--primary-dark-color)'
@@ -572,6 +573,7 @@ const LeaveRequestPage = () => {
                 onClick={() => setActiveTab('history')}
                 sx={{
                   borderRadius: '20px',
+                  width: { xs: '100%', sm: 'auto' },
                   color:
                     activeTab === 'history'
                       ? 'var(--primary-dark-color)'
@@ -595,14 +597,23 @@ const LeaveRequestPage = () => {
           ) : (
             <>
               {role === 'manager' && (
-                <Box sx={{ mb: 2, textAlign: 'right' }}>
+                <Box
+                  sx={{
+                    mb: 2,
+                    textAlign: { xs: 'left', sm: 'right' },
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 1,
+                    justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                  }}
+                >
                   <AppButton
                     variant={viewMode === 'you' ? 'contained' : 'outlined'}
                     variantType={viewMode === 'you' ? 'primary' : 'secondary'}
                     onClick={() => setViewMode('you')}
                     sx={{
-                      mr: 1,
                       borderRadius: '20px',
+                      width: { xs: '100%', sm: 'auto' },
                       backgroundColor:
                         viewMode === 'you'
                           ? 'var(--primary-dark-color)'
@@ -628,6 +639,7 @@ const LeaveRequestPage = () => {
                     onClick={() => setViewMode('team')}
                     sx={{
                       borderRadius: '20px',
+                      width: { xs: '100%', sm: 'auto' },
                       backgroundColor:
                         viewMode === 'team'
                           ? 'var(--primary-dark-color)'

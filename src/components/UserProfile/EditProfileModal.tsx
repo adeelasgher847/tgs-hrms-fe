@@ -19,7 +19,6 @@ import { useProfilePicture } from '../../context/ProfilePictureContext';
 import { validateEmailAddress } from '../../utils/validation';
 import { env } from '../../config/env';
 import { TIMEOUTS, ERROR_MESSAGES } from '../../constants/appConstants';
-import AppButton from '../common/AppButton';
 import AppFormModal from '../common/AppFormModal';
 import AppInputField from '../common/AppInputField';
 

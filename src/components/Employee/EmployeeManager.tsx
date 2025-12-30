@@ -1060,7 +1060,7 @@ const EmployeeManager: React.FC = () => {
               '& .MuiButton-startIcon': {
                 marginRight: { xs: 0.5, sm: 1 },
                 '& > *:nth-of-type(1)': {
-                  fontSize: { xs: '18px', sm: '20px' },
+                  fontSize: { xs: '1.125rem', sm: '1.25rem' },
                 },
               },
             }}
@@ -1206,7 +1206,9 @@ const EmployeeManager: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ textAlign: 'center' }}>
-            <WarningIcon sx={{ fontSize: 64, color: 'warning.main', mb: 2 }} />
+            <WarningIcon
+              sx={{ fontSize: { xs: 48, sm: 64 }, color: 'warning.main', mb: 2 }}
+            />
             <Typography
               variant='body1'
               sx={{ mb: 2, lineHeight: 1.6, color: textColor }}

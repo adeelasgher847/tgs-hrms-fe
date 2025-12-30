@@ -19,8 +19,9 @@ export default function AppPageTitle({
     color: 'text.primary',
     textAlign: { xs: 'left' },
     fontWeight: 500,
-    fontSize: { xs: '32px', lg: '48px' },
-    lineHeight: '44px',
+    // Use rem so titles automatically scale down when we reduce `html` font-size on small screens.
+    fontSize: { xs: '2rem', sm: '2.25rem', lg: '3rem' },
+    lineHeight: { xs: '2.25rem', sm: '2.5rem', lg: '2.75rem' },
     letterSpacing: '-2%',
     mb: 3,
   };

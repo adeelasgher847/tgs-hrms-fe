@@ -444,6 +444,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                           variant='text'
                           size='small'
                           color='primary'
+                          sx={{ color: 'var(--primary-dark-color)' }}
                           onClick={() => {
                             setSelectedBenefit(b);
                             setOpenBenefitDialog(true);
@@ -537,7 +538,10 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                   )}
                 </DialogContent>
                 <DialogActions>
-                  <Button onClick={() => setOpenBenefitDialog(false)}>
+                  <Button
+                    onClick={() => setOpenBenefitDialog(false)}
+                    sx={{ color: 'var(--primary-dark-color)' }}
+                  >
                     Close
                   </Button>
                 </DialogActions>
@@ -715,6 +719,7 @@ const SystemEmployeeProfileView: React.FC<Props> = ({
                               variant='text'
                               size='small'
                               color='primary'
+                              sx={{ color: 'var(--primary-dark-color)' }}
                               onClick={() => {
                                 setSelectedKpi(kpi);
                                 setOpenKpiDialog(true);

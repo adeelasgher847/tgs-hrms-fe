@@ -14,7 +14,7 @@ import Chart from 'react-apexcharts';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
-import systemDashboardApiService from '@/api/systemDashboardApi';
+import systemDashboardApiService from '../../api/systemDashboardApi';
 import { getCurrentUser } from '../../utils/auth';
 import { isSystemAdmin } from '../../utils/roleUtils';
 
@@ -74,11 +74,15 @@ const TenantGrowthChart: React.FC = () => {
         setTenants((data || []) as unknown as Tenant[]);
 
         if (data && data.length > 0) {
-          const ibexTenant = data.find((t: Record<string, unknown>) => t.name === 'Ibex Tech.');
+          const ibexTenant = data.find(
+            (t: Record<string, unknown>) => t.name === 'Ibex Tech.'
+          );
           if (ibexTenant) {
             setSelectedTenant(ibexTenant.id as string);
           } else {
-            setSelectedTenant((data[0] as Record<string, unknown>).id as string);
+            setSelectedTenant(
+              (data[0] as Record<string, unknown>).id as string
+            );
           }
         }
       } catch {
@@ -188,7 +192,7 @@ const TenantGrowthChart: React.FC = () => {
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', sm: 'center' },
           mb: 2,
           flexWrap: 'wrap',
           gap: 2,
@@ -196,13 +200,21 @@ const TenantGrowthChart: React.FC = () => {
       >
         <Typography
           fontWeight='bold'
-          fontSize={20}
+          fontSize={{ xs: 18, sm: 20 }}
           sx={{ color: theme.palette.text.primary }}
         >
           {labels[language]} ({selectedYear})
         </Typography>
 
-        <Box display='flex' gap={2}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            flexWrap: 'wrap',
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+          }}
+        >
           <TextField
             type='number'
             value={selectedYear}
@@ -214,7 +226,7 @@ const TenantGrowthChart: React.FC = () => {
             }}
             size='small'
             sx={{
-              width: 120,
+              width: { xs: '100%', sm: 120 },
               '& .MuiOutlinedInput-root': {
                 color: theme.palette.text.primary,
                 '& fieldset': {
@@ -234,7 +246,13 @@ const TenantGrowthChart: React.FC = () => {
             }}
           />
 
-          <FormControl size='small' sx={{ minWidth: 160 }}>
+          <FormControl
+            size='small'
+            sx={{
+              minWidth: { xs: '100%', sm: 160 },
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          >
             <Select
               value={selectedTenant}
               onChange={e => setSelectedTenant(e.target.value)}
@@ -246,7 +264,7 @@ const TenantGrowthChart: React.FC = () => {
                 '.MuiSelect-select': {
                   display: 'flex',
                   alignItems: 'center',
-                  maxWidth: 200,
+                  maxWidth: { xs: '100%', sm: 200 },
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',

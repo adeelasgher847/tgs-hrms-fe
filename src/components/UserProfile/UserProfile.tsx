@@ -177,6 +177,7 @@ const UserProfileComponent = React.memo(() => {
       <Paper
         elevation={0}
         sx={{
+          display: 'flex',
           bgcolor: 'transparent',
           alignItems: 'flex-start',
           flexDirection: 'column',
@@ -185,6 +186,7 @@ const UserProfileComponent = React.memo(() => {
         <Box
           sx={{
             display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'nowrap',

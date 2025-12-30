@@ -780,7 +780,18 @@ const CrossTenantLeaveManagement: React.FC = () => {
               count={totalPages}
               page={currentPage}
               onChange={handlePageChange}
-              color='primary'
+              sx={{
+                '& .MuiPaginationItem-root': {
+                  color: 'var(--primary-dark-color)',
+                },
+                '& .MuiPaginationItem-root.Mui-selected': {
+                  backgroundColor: 'var(--primary-dark-color)',
+                  color: '#FFFFFF',
+                  '&:hover': {
+                    backgroundColor: 'var(--primary-dark-color)',
+                  },
+                },
+              }}
               showFirstButton
               showLastButton
             />

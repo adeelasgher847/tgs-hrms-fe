@@ -24,6 +24,7 @@ import systemDashboardApiService, {
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import rolesApiService, { type Role } from '../../api/rolesApi';
 import { PAGINATION } from '../../constants/appConstants';
+import AppPageTitle from '../common/AppPageTitle';
 
 interface Tenant {
   id: string;
@@ -161,31 +162,29 @@ const AuditLogs: React.FC = () => {
   return (
     <Box sx={{ minHeight: '100vh' }}>
       <Box
-        display='flex'
-        justifyContent='space-between'
-        alignItems='center'
-        mb={2}
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          mb: 2,
+          gap: 2,
+          width: '100%',
+        }}
       >
-        <Typography
-          variant='h4'
-          sx={{
-            color: theme.palette.text.primary,
-            textAlign: { xs: 'center', md: 'left' },
-            fontWeight: 600,
-            fontSize: { xs: '32px', lg: '48px' },
-          }}
-        >
+        <AppPageTitle sx={{ mb: 0, textAlign: { xs: 'center', md: 'left' } }}>
           Audit Logs
-        </Typography>
+        </AppPageTitle>
         <Tooltip title='Export Audit Logs (CSV)'>
           <IconButton
             color='primary'
             onClick={handleExportLogs}
             sx={{
-              backgroundColor: 'primary.main',
+              backgroundColor: 'var(--primary-dark-color)',
               color: 'white',
               borderRadius: '6px',
-              '&:hover': { backgroundColor: 'primary.dark' },
+              width: { xs: '100%', sm: 'auto' },
+              '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
             }}
           >
             <DownloadIcon />
@@ -262,7 +261,7 @@ const AuditLogs: React.FC = () => {
           backgroundColor: theme.palette.background.paper,
         }}
       >
-        <Table stickyHeader>
+        <Table stickyHeader sx={{ minWidth: 700 }}>
           <TableHead>
             <TableRow>
               <TableCell>Action</TableCell>

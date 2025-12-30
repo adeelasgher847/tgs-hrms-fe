@@ -21,6 +21,7 @@ import AppButton from '../common/AppButton';
 import { VALIDATION_LIMITS } from '../../constants/appConstants';
 import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { useLanguage } from '../../hooks/useLanguage';
+import AppPageTitle from '../common/AppPageTitle';
 import {
   departmentApiService,
   type FrontendDepartment,
@@ -282,6 +283,11 @@ export const DepartmentList: React.FC = () => {
       (formData.description || '') !== (originalData.description || '')
     : formData.name.trim() !== '' || (formData.description || '').trim() !== '';
 
+  // Used to disable Create/Update until all required fields are valid
+  const isFormValid =
+    formData.name.trim().length >= VALIDATION_LIMITS.MIN_DEPARTMENT_NAME_LENGTH &&
+    (formData.description || '').length <= VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH;
+
   const validateForm = (): boolean => {
     const newErrors: DepartmentFormErrors = {};
 
@@ -405,15 +411,9 @@ export const DepartmentList: React.FC = () => {
           gap: 2,
         }}
       >
-        <Typography
-          fontWeight={500}
-          fontSize={{ xs: '32px', lg: '48px' }}
-          lineHeight='44px'
-          letterSpacing='-2%'
-          sx={{ color: theme.palette.text.primary, textAlign: isRtl ? 'right' : 'left' }}
-        >
+        <AppPageTitle isRtl={isRtl} sx={{ mb: 0, textAlign: isRtl ? 'right' : 'left' }}>
           {lang.title}
-        </Typography>
+        </AppPageTitle>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {isSystemAdmin && (
@@ -643,6 +643,7 @@ export const DepartmentList: React.FC = () => {
         cancelLabel={isRtl ? 'إلغاء' : 'Cancel'}
         isSubmitting={isSubmitting}
         hasChanges={hasChanges}
+        submitDisabled={isSubmitting || !hasChanges || !isFormValid}
         isRtl={isRtl}
       />
 

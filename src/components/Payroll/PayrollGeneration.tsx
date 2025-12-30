@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Divider,
+  Grid,
   Paper,
   Stack,
   TableBody,
@@ -25,23 +26,7 @@ import AppTable from '../common/AppTable';
 import AppDropdown from '../common/AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AppFormModal from '../common/AppFormModal';
-import AppButton from '../common/AppButton';
-
-const PRIMARY_ACTION_BUTTON_SX = {
-  fontSize: 'var(--body-font-size)',
-  lineHeight: 'var(--body-line-height)',
-  letterSpacing: 'var(--body-letter-spacing)',
-  boxShadow: 'none',
-  minWidth: { xs: 'auto', sm: 200 },
-  px: { xs: 1.5, sm: 2 },
-  py: { xs: 0.75, sm: 1 },
-  alignSelf: { xs: 'stretch', md: 'center' },
-  '& .MuiButton-startIcon': {
-    marginRight: { xs: 0.5, sm: 1 },
-    display: 'flex',
-    alignItems: 'center',
-  },
-} as const;
+import AppPageTitle from '../common/AppPageTitle';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -168,15 +153,15 @@ const PayrollGeneration: React.FC = () => {
         p: { xs: 2, md: 3 },
         color: textColor,
         '& .MuiButton-contained': {
-          backgroundColor: 'primary.main',
-          '&:hover': { backgroundColor: 'primary.dark' },
+          backgroundColor: 'var(--primary-dark-color)',
+          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
         },
         '& .MuiButton-outlined': {
-          borderColor: 'primary.main',
-          color: 'primary.main',
+          borderColor: 'var(--primary-dark-color)',
+          color: 'var(--primary-dark-color)',
           '&:hover': {
-            borderColor: 'primary.dark',
-            backgroundColor: 'action.hover',
+            borderColor: 'var(--primary-dark-color)',
+            backgroundColor: 'var(--primary-color)',
           },
         },
       }}
@@ -191,17 +176,10 @@ const PayrollGeneration: React.FC = () => {
           mb: 3,
         }}
       >
-        <Box>
-          <Typography
-            variant='h4'
-            sx={{
-              fontWeight: 600,
-              fontSize: { xs: '32px', lg: '48px' },
-              color: textColor,
-            }}
-          >
+        <Box sx={{ width: '100%' }}>
+          <AppPageTitle sx={{ mb: 0, color: textColor }}>
             Payroll Generation
-          </Typography>
+          </AppPageTitle>
         </Box>
       </Box>
 
@@ -276,33 +254,22 @@ const PayrollGeneration: React.FC = () => {
 
           <Box sx={{ flexGrow: 1 }} />
 
-          <AppButton
+          <Button
             variant='contained'
-            variantType='primary'
             startIcon={
-              loading ? (
-                <CircularProgress size={18} sx={{ color: 'common.white' }} />
-              ) : (
-                <GenerateIcon />
-              )
+              loading ? <CircularProgress size={18} /> : <GenerateIcon />
             }
             onClick={handleGenerate}
             disabled={loading}
-            sx={PRIMARY_ACTION_BUTTON_SX}
+            sx={{
+              minWidth: 180,
+              textTransform: 'none',
+              fontWeight: 600,
+              alignSelf: { xs: 'stretch', md: 'center' },
+            }}
           >
-            <Box
-              component='span'
-              sx={{ display: { xs: 'none', sm: 'inline' } }}
-            >
-              {loading ? 'Generating...' : 'Generate Payroll'}
-            </Box>
-            <Box
-              component='span'
-              sx={{ display: { xs: 'inline', sm: 'none' } }}
-            >
-              {loading ? 'Generating...' : 'Generate'}
-            </Box>
-          </AppButton>
+            {loading ? 'Generating...' : 'Generate Payroll'}
+          </Button>
         </Stack>
       </Paper>
 
@@ -323,18 +290,8 @@ const PayrollGeneration: React.FC = () => {
           >
             Summary
           </Typography>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                sm: 'repeat(2, minmax(0, 1fr))',
-                md: 'repeat(4, minmax(0, 1fr))',
-              },
-              gap: 2,
-            }}
-          >
-            <Box>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -360,8 +317,8 @@ const PayrollGeneration: React.FC = () => {
                   {records.length}
                 </Typography>
               </Paper>
-            </Box>
-            <Box>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -387,8 +344,8 @@ const PayrollGeneration: React.FC = () => {
                   {formatCurrency(totals.gross)}
                 </Typography>
               </Paper>
-            </Box>
-            <Box>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -414,8 +371,8 @@ const PayrollGeneration: React.FC = () => {
                   {formatCurrency(totals.deductions)}
                 </Typography>
               </Paper>
-            </Box>
-            <Box>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -441,8 +398,8 @@ const PayrollGeneration: React.FC = () => {
                   {formatCurrency(totals.net)}
                 </Typography>
               </Paper>
-            </Box>
-          </Box>
+            </Grid>
+          </Grid>
         </Paper>
       )}
 
@@ -608,18 +565,8 @@ const PayrollGeneration: React.FC = () => {
                 <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
                   Salary Components
                 </Typography>
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: 'repeat(2, minmax(0, 1fr))',
-                      md: 'repeat(4, minmax(0, 1fr))',
-                    },
-                    gap: 2,
-                  }}
-                >
-                  <Box>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Paper
                       elevation={0}
                       sx={{
@@ -632,8 +579,8 @@ const PayrollGeneration: React.FC = () => {
                         {formatCurrency(selectedRecord.grossSalary)}
                       </Typography>
                     </Paper>
-                  </Box>
-                  <Box>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Paper
                       elevation={0}
                       sx={{
@@ -648,8 +595,8 @@ const PayrollGeneration: React.FC = () => {
                         {formatCurrency(selectedRecord.totalDeductions)}
                       </Typography>
                     </Paper>
-                  </Box>
-                  <Box>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Paper
                       elevation={0}
                       sx={{
@@ -662,8 +609,8 @@ const PayrollGeneration: React.FC = () => {
                         {formatCurrency(selectedRecord.bonuses || 0)}
                       </Typography>
                     </Paper>
-                  </Box>
-                  <Box>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Paper
                       elevation={0}
                       sx={{
@@ -676,8 +623,8 @@ const PayrollGeneration: React.FC = () => {
                         {formatCurrency(selectedRecord.netSalary)}
                       </Typography>
                     </Paper>
-                  </Box>
-                </Box>
+                  </Grid>
+                </Grid>
               </Box>
 
               {selectedRecord.salaryBreakdown?.allowances &&

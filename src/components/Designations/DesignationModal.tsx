@@ -117,6 +117,12 @@ export default function DesignationModal({
       departmentId !== originalDepartmentId
     : title.trim() !== '' || titleAr.trim() !== '' || departmentId !== '';
 
+  // Disable Create/Update until required fields are present (and basic validation passes)
+  const isFormValid =
+    title.trim().length > 0 &&
+    departmentId.trim().length > 0 &&
+    (!titleAr.trim() || titleAr.trim().length >= 2);
+
   const validateForm = () => {
     const newErrors: {
       title?: string;
@@ -209,7 +215,10 @@ export default function DesignationModal({
           margin: { xs: '16px', lg: 'auto' },
         },
         '& .MuiBackdrop-root': {
-          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(0, 0, 0, 0.5)',
+          backgroundColor:
+            theme.palette.mode === 'dark'
+              ? 'rgba(0, 0, 0, 0.7)'
+              : 'rgba(0, 0, 0, 0.5)',
         },
       }}
       dir={isRTL ? 'rtl' : 'ltr'}
@@ -293,7 +302,10 @@ export default function DesignationModal({
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.default : '#F8F8F8',
+                backgroundColor:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.background.default
+                    : '#F8F8F8',
               },
             }}
           />
@@ -331,10 +343,10 @@ export default function DesignationModal({
         <AppButton
           variantType='primary'
           onClick={handleSubmit}
-          disabled={!hasChanges}
+          disabled={!hasChanges || !isFormValid}
           text={
             designation
-            ? getText('Update', 'تحديث')
+              ? getText('Update', 'تحديث')
               : getText('Create', 'إنشاء')
           }
         />

@@ -27,13 +27,31 @@ export function AppButton({
   const getVariantStyles = (): SxProps<Theme> => {
     const isDark = theme.palette.mode === 'dark';
 
+    const common: SxProps<Theme> = {
+      // Typography: use CSS variables so our mobile typography scale applies everywhere.
+      fontSize: 'var(--body-font-size)',
+      lineHeight: 'var(--body-line-height)',
+      letterSpacing: 'var(--body-letter-spacing)',
+      textTransform: 'none',
+      borderRadius: '12px',
+      fontWeight: 400,
+      // Sizing/padding: comfortable defaults on small screens.
+      minHeight: { xs: 40, sm: 44 },
+      px: { xs: 2, sm: 3 },
+      py: { xs: 0.75, sm: 1 },
+      // Keep icon sizing aligned with text scale
+      '& .MuiButton-startIcon, & .MuiButton-endIcon': {
+        '& > *:nth-of-type(1)': {
+          fontSize: '1.25em',
+        },
+      },
+    };
+
     const baseStyles: Record<AppButtonVariant, SxProps<Theme>> = {
       primary: {
+        ...common,
         backgroundColor: 'primary.main',
         color: 'common.white',
-        textTransform: 'none',
-        borderRadius: '12px',
-        fontWeight: 400,
         '&:hover': {
           backgroundColor: 'primary.dark',
         },
@@ -43,15 +61,14 @@ export function AppButton({
         },
       },
       secondary: {
-        borderColor: 'primary.main',
+        ...common,
+        // Cancel button style (light theme): use App.css variable for #2C2C2C
+        borderColor: isDark ? theme.palette.divider : 'var(--black-color)',
         borderWidth: 1,
         borderStyle: 'solid',
-        color: 'primary.main',
-        textTransform: 'none',
-        borderRadius: '12px',
-        fontWeight: 400,
+        color: isDark ? theme.palette.text.primary : 'var(--black-color)',
         '&:hover': {
-          borderColor: 'primary.dark',
+          borderColor: isDark ? theme.palette.divider : 'var(--black-color)',
           backgroundColor: 'action.hover',
         },
         '&:disabled': {
@@ -60,11 +77,9 @@ export function AppButton({
         },
       },
       danger: {
+        ...common,
         backgroundColor: 'error.main',
         color: 'common.white',
-        textTransform: 'none',
-        borderRadius: '12px',
-        fontWeight: 400,
         '&:hover': {
           backgroundColor: 'error.dark',
         },
@@ -74,10 +89,9 @@ export function AppButton({
         },
       },
       ghost: {
+        ...common,
         borderColor: 'transparent',
         color: 'text.primary',
-        textTransform: 'none',
-        borderRadius: '12px',
         '&:disabled': {
           color: isDark ? '#555555' : '#ccc',
         },

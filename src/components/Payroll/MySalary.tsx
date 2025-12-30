@@ -26,6 +26,7 @@ import { useUser } from '../../hooks/useUser';
 import { IoEyeOutline } from 'react-icons/io5';
 import { PAGINATION } from '../../constants/appConstants';
 import AppFormModal from '../common/AppFormModal';
+import AppPageTitle from '../common/AppPageTitle';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -516,12 +517,7 @@ const MySalary: React.FC = () => {
     >
       <Stack spacing={3}>
         <Box>
-          <Typography
-            variant='h4'
-            sx={{ fontWeight: 600, fontSize: { xs: '32px', lg: '48px' } }}
-          >
-            My Salary
-          </Typography>
+          <AppPageTitle sx={{ mb: 0 }}>My Salary</AppPageTitle>
         </Box>
 
         <Paper
