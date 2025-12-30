@@ -405,9 +405,9 @@ export const DepartmentList: React.FC = () => {
         sx={{
           mb: 3,
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
           justifyContent: 'space-between',
-          flexWrap: 'nowrap',
           gap: 2,
         }}
       >
@@ -422,18 +422,33 @@ export const DepartmentList: React.FC = () => {
           {lang.title}
         </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+          }}
+        >
           {isSystemAdmin && (
             <AppDropdown
               showLabel={false}
               value={selectedTenantId}
               onChange={handleTenantChange}
               options={[
-                { value: 'all', label: language === 'ar' ? 'جميع المستأجرين' : 'All Tenants' },
+                {
+                  value: 'all',
+                  label: language === 'ar' ? 'جميع المستأجرين' : 'All Tenants',
+                },
                 ...allTenants.map(t => ({ value: t.id, label: t.name })),
               ]}
-              containerSx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}
+              containerSx={{
+                width: { xs: '100%', sm: 200 },
+                maxWidth: { xs: '100%', sm: '400px' },
+              }}
               sx={{
+                width: '100%',
                 color: textColor,
                 backgroundColor: bgPaper,
                 '& .MuiOutlinedInput-notchedOutline': {

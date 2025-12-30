@@ -397,7 +397,7 @@ const BenefitReport: React.FC = () => {
           display: 'flex',
           gap: 2,
           flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: 'start',
+          alignItems: { xs: 'stretch', sm: 'start' },
           justifyContent: 'space-between',
         }}
       >
@@ -407,7 +407,7 @@ const BenefitReport: React.FC = () => {
             gap: 2,
             flexWrap: 'wrap',
             flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'start', sm: 'start' },
+            alignItems: { xs: 'stretch', sm: 'start' },
           }}
         >
           <AppDropdown
@@ -421,7 +421,8 @@ const BenefitReport: React.FC = () => {
               setSelectedDepartment(e.target.value as string);
               setPage(1);
             }}
-            containerSx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}
+            containerSx={{ width: { xs: '100%', sm: 220 }, maxWidth: 420 }}
+            sx={{ width: '100%' }}
             size='small'
           />
 
@@ -437,7 +438,8 @@ const BenefitReport: React.FC = () => {
               setPage(1);
             }}
             disabled={!designations.length}
-            containerSx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}
+            containerSx={{ width: { xs: '100%', sm: 220 }, maxWidth: 420 }}
+            sx={{ width: '100%' }}
             size='small'
           />
         </Box>

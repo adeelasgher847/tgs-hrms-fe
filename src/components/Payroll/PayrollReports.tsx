@@ -247,13 +247,18 @@ const PayrollReports: React.FC = () => {
         >
           Payroll Reports
         </Typography>
-        <Stack direction='row' spacing={2}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          sx={{ width: { xs: '100%', md: 'auto' } }}
+        >
           <AppDropdown
             label='Tenant'
             options={tenants.map(t => ({ value: t.id, label: t.name }))}
             value={selectedTenantId}
             onChange={e => setSelectedTenantId(String(e.target.value))}
             containerSx={{ width: { xs: '100%', sm: 200 } }}
+            sx={{ width: '100%' }}
             size='small'
             showLabel={true}
             disabled={loadingTenants}
