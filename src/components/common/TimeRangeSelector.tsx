@@ -52,7 +52,11 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
   const resolvedContainerSx: SxProps<Theme> = [
     defaultContainerSx,
-    ...(Array.isArray(containerSx) ? containerSx : containerSx ? [containerSx] : []),
+    ...(Array.isArray(containerSx)
+      ? containerSx
+      : containerSx
+        ? [containerSx]
+        : []),
   ];
 
   const handleToggle = () => {

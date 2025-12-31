@@ -313,7 +313,6 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
               label={lang.manager}
               value={formData.manager_id || 'all'}
               onChange={handleChange('manager_id')}
-              
               align='left'
               options={
                 loadingManagers

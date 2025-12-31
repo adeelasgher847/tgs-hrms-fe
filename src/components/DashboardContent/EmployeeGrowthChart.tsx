@@ -1,9 +1,4 @@
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  useTheme,
-} from '@mui/material';
+import { Box, Typography, CircularProgress, useTheme } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
 import { useOutletContext } from 'react-router-dom';
@@ -277,14 +272,20 @@ const EmployeeGrowthChart: React.FC = () => {
               if (!isNaN(num)) setSelectedYear(num);
             }}
             options={[
-              { value: 'all', label: language === 'ar' ? 'كل الوقت' : 'All Time' },
+              {
+                value: 'all',
+                label: language === 'ar' ? 'كل الوقت' : 'All Time',
+              },
               ...yearOptions.map(y => ({ value: y, label: String(y) })),
             ]}
             containerSx={{
               minWidth: { xs: '100%', sm: 120 },
               width: { xs: '100%', sm: 'auto' },
             }}
-            sx={{ '& .MuiOutlinedInput-root': { minHeight: '48px' }, width: { xs: '100%', sm: 120 } }}
+            sx={{
+              '& .MuiOutlinedInput-root': { minHeight: '48px' },
+              width: { xs: '100%', sm: 120 },
+            }}
           />
         </Box>
       </Box>

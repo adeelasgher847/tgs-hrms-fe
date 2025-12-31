@@ -342,7 +342,6 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
             value={selectedEmployeeId || 'all'}
             onChange={e => setSelectedEmployeeId(String(e.target.value || ''))}
             disabled={loadingEmployees}
-            
             align='left'
             containerSx={{ mt: 2, width: '100%' }}
             options={[

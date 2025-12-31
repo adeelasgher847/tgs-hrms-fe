@@ -653,7 +653,9 @@ const AssetInventory: React.FC = () => {
           <DatePicker
             label='Purchase Date'
             value={formPurchaseDate}
-            onChange={date => setFormPurchaseDate(date ? new Date(date.toString()) : null)}
+            onChange={date =>
+              setFormPurchaseDate(date ? new Date(date.toString()) : null)
+            }
             slotProps={{
               // style the input field icons (calendar icon) to use primary color
               textField: {

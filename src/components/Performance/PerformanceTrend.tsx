@@ -334,7 +334,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
               onChange={e => setSelectedEmployee(e.target.value as string)}
               containerSx={{ width: '100%' }}
               size='small'
-              
+
               // placeholder='Employee'
             />
           </Box>

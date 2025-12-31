@@ -283,8 +283,10 @@ export const DepartmentList: React.FC = () => {
 
   // Used to disable Create/Update until all required fields are valid
   const isFormValid =
-    formData.name.trim().length >= VALIDATION_LIMITS.MIN_DEPARTMENT_NAME_LENGTH &&
-    (formData.description || '').length <= VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH;
+    formData.name.trim().length >=
+      VALIDATION_LIMITS.MIN_DEPARTMENT_NAME_LENGTH &&
+    (formData.description || '').length <=
+      VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH;
 
   const validateForm = (): boolean => {
     const newErrors: DepartmentFormErrors = {};
@@ -409,7 +411,10 @@ export const DepartmentList: React.FC = () => {
           gap: 2,
         }}
       >
-        <AppPageTitle isRtl={isRtl} sx={{ mb: 0, textAlign: isRtl ? 'right' : 'left' }}>
+        <AppPageTitle
+          isRtl={isRtl}
+          sx={{ mb: 0, textAlign: isRtl ? 'right' : 'left' }}
+        >
           {lang.title}
         </AppPageTitle>
 
@@ -505,9 +510,10 @@ export const DepartmentList: React.FC = () => {
             textAlign: 'center',
             bgcolor: theme.palette.background.paper,
             color: theme.palette.text.primary,
-            boxShadow: theme.palette.mode === 'dark' 
-              ? '0 1px 3px rgba(0,0,0,0.3)' 
-              : '0 1px 3px rgba(0,0,0,0.1)',
+            boxShadow:
+              theme.palette.mode === 'dark'
+                ? '0 1px 3px rgba(0,0,0,0.3)'
+                : '0 1px 3px rgba(0,0,0,0.1)',
           }}
         >
           <Box
@@ -527,16 +533,26 @@ export const DepartmentList: React.FC = () => {
             textAlign: 'center',
             bgcolor: theme.palette.background.paper,
             color: theme.palette.text.primary,
-            boxShadow: theme.palette.mode === 'dark' 
-              ? '0 1px 3px rgba(0,0,0,0.3)' 
-              : '0 1px 3px rgba(0,0,0,0.1)',
+            boxShadow:
+              theme.palette.mode === 'dark'
+                ? '0 1px 3px rgba(0,0,0,0.3)'
+                : '0 1px 3px rgba(0,0,0,0.1)',
           }}
         >
-          <BusinessIcon sx={{ fontSize: 64, color: theme.palette.text.secondary, mb: 2 }} />
-          <Typography variant='h6' sx={{ color: theme.palette.text.secondary }} gutterBottom>
+          <BusinessIcon
+            sx={{ fontSize: 64, color: theme.palette.text.secondary, mb: 2 }}
+          />
+          <Typography
+            variant='h6'
+            sx={{ color: theme.palette.text.secondary }}
+            gutterBottom
+          >
             {lang.noDepartments}
           </Typography>
-          <Typography variant='body2' sx={{ color: theme.palette.text.secondary, mb: 3 }}>
+          <Typography
+            variant='body2'
+            sx={{ color: theme.palette.text.secondary, mb: 3 }}
+          >
             {lang.description}
           </Typography>
           {!isSystemAdmin && (

@@ -1058,7 +1058,6 @@ const Navbar: React.FC<NavbarProps> = ({
         abortControllerRef.current.abort();
       }
     };
-     
   }, [
     searchQuery,
     searchRoutes,

@@ -274,7 +274,6 @@ const EmployeeBenefits: React.FC = () => {
                     | 'cancelled'
                 );
               }}
-              
             />
           </Box>
 

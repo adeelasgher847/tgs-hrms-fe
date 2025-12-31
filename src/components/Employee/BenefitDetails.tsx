@@ -42,11 +42,14 @@ interface BenefitRow {
 
 const BenefitDetails: React.FC = () => {
   const [benefits, setBenefits] = useState<BenefitRow[]>([]);
-  const [selectedBenefit, setSelectedBenefit] = useState<BenefitRow | null>(null);
+  const [selectedBenefit, setSelectedBenefit] = useState<BenefitRow | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const role = normalizeRole(getUserRole());
-  const isManager = role === 'manager' || (role as string) === 'payroll manager';
+  const isManager =
+    role === 'manager' || (role as string) === 'payroll manager';
   const shouldUseAppTable = isManager || role === 'employee';
 
   interface BenefitCardPropsWithDates {
@@ -59,7 +62,8 @@ const BenefitDetails: React.FC = () => {
     endDate?: string;
   }
 
-  const BenefitCardUnsafe = BenefitCard as unknown as React.ComponentType<BenefitCardPropsWithDates>;
+  const BenefitCardUnsafe =
+    BenefitCard as unknown as React.ComponentType<BenefitCardPropsWithDates>;
 
   useEffect(() => {
     const fetchBenefits = async () => {
@@ -78,7 +82,7 @@ const BenefitDetails: React.FC = () => {
         );
 
         if (employeeData && Array.isArray(employeeData['benefits'])) {
-          setBenefits((employeeData['benefits'] as unknown) as BenefitRow[]);
+          setBenefits(employeeData['benefits'] as unknown as BenefitRow[]);
         } else {
           setBenefits([]);
         }
@@ -312,7 +316,9 @@ const BenefitDetails: React.FC = () => {
               startDate={formatDate(selectedBenefit.startDate || '')}
               endDate={formatDate((selectedBenefit.endDate as string) || '')}
               status={
-                selectedBenefit.statusOfAssignment || selectedBenefit.status || ''
+                selectedBenefit.statusOfAssignment ||
+                selectedBenefit.status ||
+                ''
               }
             />
           </Box>

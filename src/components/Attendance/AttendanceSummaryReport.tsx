@@ -248,9 +248,7 @@ const AttendanceSummaryReport: React.FC = () => {
 
   return (
     <Box>
-      <AppPageTitle>
-        Attendance Summary Report
-      </AppPageTitle>
+      <AppPageTitle>Attendance Summary Report</AppPageTitle>
 
       <Box
         display='flex'

@@ -1162,9 +1162,7 @@ const PayrollConfiguration: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <AppPageTitle>
-          Payroll Configuration
-          </AppPageTitle>
+        <AppPageTitle>Payroll Configuration</AppPageTitle>
         <Button
           onClick={handleOpenEditModal}
           variant='outlined'

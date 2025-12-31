@@ -1205,7 +1205,11 @@ const EmployeeManager: React.FC = () => {
         <DialogContent>
           <Box sx={{ textAlign: 'center' }}>
             <WarningIcon
-              sx={{ fontSize: { xs: 48, sm: 64 }, color: 'warning.main', mb: 2 }}
+              sx={{
+                fontSize: { xs: 48, sm: 64 },
+                color: 'warning.main',
+                mb: 2,
+              }}
             />
             <Typography
               variant='body1'

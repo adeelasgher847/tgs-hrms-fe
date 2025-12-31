@@ -5,7 +5,6 @@ import {
   useTheme,
   Avatar,
   CircularProgress,
-  
   useMediaQuery,
 } from '@mui/material';
 import { useIsDarkMode } from '../../theme';

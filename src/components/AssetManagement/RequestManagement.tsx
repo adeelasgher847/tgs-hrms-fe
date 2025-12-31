@@ -2071,7 +2071,7 @@ const RequestManagement: React.FC = () => {
         // submitLabel='Close'
         // isSubmitting={false}
         // hasChanges={false}
-        hideActions={true} 
+        hideActions={true}
         maxWidth='md'
       />
 

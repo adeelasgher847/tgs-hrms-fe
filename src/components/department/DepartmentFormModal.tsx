@@ -22,10 +22,7 @@ import type {
   DepartmentFormData,
   DepartmentFormErrors,
 } from '../../types';
-import {
-  TIMEOUTS,
-  VALIDATION_LIMITS,
-} from '../../constants/appConstants';
+import { TIMEOUTS, VALIDATION_LIMITS } from '../../constants/appConstants';
 
 interface DepartmentFormModalProps {
   open: boolean;
@@ -97,8 +94,10 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
 
   // Used to disable Create/Update until all required fields are valid
   const isFormValid =
-    formData.name.trim().length >= VALIDATION_LIMITS.MIN_DEPARTMENT_NAME_LENGTH &&
-    (formData.description || '').length <= VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH;
+    formData.name.trim().length >=
+      VALIDATION_LIMITS.MIN_DEPARTMENT_NAME_LENGTH &&
+    (formData.description || '').length <=
+      VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH;
 
   /* ---------- validation helpers ---------- */
   const validateForm = (): boolean => {
@@ -324,10 +323,10 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
 
   /* ---------- DESKTOP dialog ---------- */
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth={isLargeScreen ? 'md' : 'sm'} 
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth={isLargeScreen ? 'md' : 'sm'}
       fullWidth
     >
       <DialogTitle sx={{ ...paperSx, position: 'relative' }}>

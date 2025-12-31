@@ -79,8 +79,7 @@ const RecentActivityLogs: React.FC<RecentActivityLogsProps> = ({ logs }) => {
               width: '8px',
             },
             '&::-webkit-scrollbar-thumb': {
-              backgroundColor:
-                theme.palette.mode === 'dark' ? '#444' : '#ccc',
+              backgroundColor: theme.palette.mode === 'dark' ? '#444' : '#ccc',
               borderRadius: '4px',
             },
             '&::-webkit-scrollbar-track': {

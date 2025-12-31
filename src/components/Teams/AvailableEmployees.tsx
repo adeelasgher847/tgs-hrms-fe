@@ -536,11 +536,11 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
           Select Team to Add Employee
         </DialogTitle>
         <DialogContent>
-            <AppDropdown
-              label='Select Team'
-              value={selectedTeamId || 'all'}
-              onChange={e => setSelectedTeamId(String(e.target.value || ''))}
-              containerSx={{ mt: 2, width: '100%' }}
+          <AppDropdown
+            label='Select Team'
+            value={selectedTeamId || 'all'}
+            onChange={e => setSelectedTeamId(String(e.target.value || ''))}
+            containerSx={{ mt: 2, width: '100%' }}
             options={[
               { value: 'all', label: 'Select a team' },
               ...teams.map(team => ({

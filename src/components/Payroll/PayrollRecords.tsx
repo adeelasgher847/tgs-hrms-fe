@@ -814,7 +814,6 @@ const PayrollRecords: React.FC = () => {
                 ? 'No employees for this period'
                 : 'All employees'
             }
-            
             disabled={recordEmployees.length === 0}
             containerSx={{ minWidth: 220 }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
@@ -1404,7 +1403,6 @@ const PayrollRecords: React.FC = () => {
                   : 'All employees are already processed'
                 : 'All employees'
             }
-            
             disabled={employeesForGenerateDialog.length === 0}
             containerSx={{ minWidth: 220 }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
