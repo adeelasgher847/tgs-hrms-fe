@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
-import { useOutletContext } from 'react-router-dom';
+// useOutletContext removed (darkMode not used)
 import { DepartmentCard } from './DepartmentCard';
 import AppFormModal, { type FormField } from '../common/AppFormModal';
 import AppButton from '../common/AppButton';
@@ -27,7 +27,7 @@ import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
 import type { SystemTenant } from '../../api/systemTenantApi';
-import { COLORS } from '../../constants/appConstants';
+// COLORS not required here
 import AppDropdown from '../common/AppDropdown';
 
 const labels = {
@@ -51,7 +51,6 @@ const labels = {
 
 export const DepartmentList: React.FC = () => {
   const theme = useTheme();
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
 
   const isRtl = language === 'ar';
@@ -425,7 +424,7 @@ export const DepartmentList: React.FC = () => {
         >
           {isSystemAdmin && (
             <AppDropdown
-              showLabel={false}
+              label='Tenant'
               value={selectedTenantId}
               onChange={handleTenantChange}
               options={[

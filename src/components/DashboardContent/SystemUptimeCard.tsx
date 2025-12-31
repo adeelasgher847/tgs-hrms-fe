@@ -3,7 +3,7 @@ import { Box, Typography, Paper, useTheme } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import Chart from 'react-apexcharts';
 import ApexCharts from 'apexcharts';
-import { useOutletContext } from 'react-router-dom';
+// useOutletContext not needed; darkMode unused
 
 interface SystemUptimeCardProps {
   uptimeSeconds?: number;
@@ -13,7 +13,7 @@ const SystemUptimeCard: React.FC<SystemUptimeCardProps> = ({
   uptimeSeconds = 0,
 }) => {
   const theme = useTheme();
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  // darkMode not used
 
   const [liveUptime, setLiveUptime] = useState(uptimeSeconds);
   const chartRef = useRef<HTMLDivElement | null>(null);

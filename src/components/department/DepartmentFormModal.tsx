@@ -14,7 +14,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { useOutletContext } from 'react-router-dom';
+// useOutletContext removed (darkMode not used)
 import type { SxProps, Theme } from '@mui/material/styles';
 import AppButton from '../common/AppButton';
 import type {
@@ -45,7 +45,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  // darkMode not used
 
   const [formData, setFormData] = useState<DepartmentFormData>({
     name: '',

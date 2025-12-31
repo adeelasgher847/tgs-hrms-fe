@@ -6,13 +6,11 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Button,
   Box,
   Typography,
   IconButton,
   useMediaQuery,
   useTheme,
-  MenuItem,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';

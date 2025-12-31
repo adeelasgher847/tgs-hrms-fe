@@ -5,7 +5,7 @@ import {
   useTheme,
   Avatar,
   CircularProgress,
-  IconButton,
+  
   useMediaQuery,
 } from '@mui/material';
 import { useIsDarkMode } from '../../theme';
@@ -39,7 +39,7 @@ const SettingsPage: React.FC = () => {
   const contextLoading = false;
 
   const [companyModalOpen, setCompanyModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(true);
+  const [, setIsEditing] = useState(true);
   const [editFormData, setEditFormData] = useState({
     company_name: '',
     domain: '',

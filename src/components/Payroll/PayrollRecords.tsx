@@ -659,7 +659,6 @@ const PayrollRecords: React.FC = () => {
               label: option.label,
             }))}
             placeholder='Month'
-            showLabel={false}
             containerSx={{ minWidth: 160 }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{
@@ -809,12 +808,13 @@ const PayrollRecords: React.FC = () => {
                     })),
                   ]
             }
+            label='Employee'
             placeholder={
               recordEmployees.length === 0
                 ? 'No employees for this period'
                 : 'All employees'
             }
-            showLabel={false}
+            
             disabled={recordEmployees.length === 0}
             containerSx={{ minWidth: 220 }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
@@ -1342,8 +1342,8 @@ const PayrollRecords: React.FC = () => {
               value: option.value,
               label: option.label,
             }))}
+            label='Month'
             placeholder='Month'
-            showLabel={false}
             containerSx={{ minWidth: 160 }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{
@@ -1404,7 +1404,7 @@ const PayrollRecords: React.FC = () => {
                   : 'All employees are already processed'
                 : 'All employees'
             }
-            showLabel={false}
+            
             disabled={employeesForGenerateDialog.length === 0}
             containerSx={{ minWidth: 220 }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}

@@ -954,7 +954,6 @@ const EmployeeManager: React.FC = () => {
         >
           {/* Department Filter */}
           <AppDropdown
-            showLabel={false}
             label={getLabel('Department', 'القسم')}
             placeholder={getLabel('All Departments', 'كل الأقسام')}
             inputBackgroundColor={controlBg}
@@ -992,7 +991,6 @@ const EmployeeManager: React.FC = () => {
 
           {/* Designation Filter */}
           <AppDropdown
-            showLabel={false}
             label={getLabel('Designation', 'المسمى الوظيفي')}
             placeholder={getLabel('All Designations', 'كل المسميات')}
             inputBackgroundColor={controlBg}

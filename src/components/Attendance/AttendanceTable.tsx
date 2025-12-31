@@ -8,13 +8,8 @@ import {
   TableCell,
   TableBody,
   CircularProgress,
-  MenuItem,
   IconButton,
   Tooltip,
-  FormControl,
-  InputLabel,
-  Select,
-  TextField,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import DatePicker from 'react-multi-date-picker';
@@ -1647,7 +1642,7 @@ const AttendanceTable = () => {
 
               {canViewAllAttendance && adminView === 'all' && (
                 <AppDropdown
-                  label='SELECT EMPLOYEE'
+                  label='Employee'
                   value={selectedEmployee || ''}
                   onChange={(e: SelectChangeEvent<string | number>) =>
                     handleEmployeeChange(e.target.value as string)
@@ -1660,7 +1655,6 @@ const AttendanceTable = () => {
                     })),
                   ]}
                   placeholder='SELECT EMPLOYEE'
-                  showLabel={false}
                   containerSx={{
                     width: '200px',
                     minWidth: '200px',
@@ -2031,8 +2025,8 @@ const AttendanceTable = () => {
             </Box>
             {/* Team Employee Filter - for team attendance (regular users) */}
             {teamEmployees.length > 0 && (
-              <AppDropdown
-                label='SELECT EMPLOYEE'
+                <AppDropdown
+                label='Employee'
                 value={selectedTeamEmployee || ''}
                 onChange={(e: SelectChangeEvent<string | number>) =>
                   handleTeamEmployeeChange(e.target.value as string)
@@ -2045,7 +2039,6 @@ const AttendanceTable = () => {
                   })),
                 ]}
                 placeholder='SELECT EMPLOYEE'
-                showLabel={false}
                 containerSx={{
                   width: '200px',
                   minWidth: '200px',
@@ -2291,7 +2284,7 @@ const AttendanceTable = () => {
             {/* Team Employee Filter - for manager team attendance */}
             {teamEmployees.length > 0 && (
               <AppDropdown
-                label='SELECT EMPLOYEE'
+                label='Employee'
                 value={selectedTeamEmployee || ''}
                 onChange={(e: SelectChangeEvent<string | number>) =>
                   handleTeamEmployeeChange(e.target.value as string)
@@ -2304,7 +2297,6 @@ const AttendanceTable = () => {
                   })),
                 ]}
                 placeholder='SELECT EMPLOYEE'
-                showLabel={false}
                 containerSx={{
                   width: '200px',
                   minWidth: '200px',

@@ -65,7 +65,6 @@ interface ApiAssetRequestExtended extends Omit<ApiAssetRequest, 'category_id'> {
     | {
         id?: string;
         name?: string;
-        description?: string | null;
       }
     | string
     | null;
@@ -207,7 +206,6 @@ const RequestManagement: React.FC = () => {
     handleSubmit,
     reset,
     watch,
-    setValue,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),

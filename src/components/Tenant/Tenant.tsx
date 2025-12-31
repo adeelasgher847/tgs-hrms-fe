@@ -478,7 +478,7 @@ export const TenantPage: React.FC = () => {
             onChange={(e: SelectChangeEvent<string | number>) => {
               setStatusFilter(String(e.target.value) as StatusFilterOption);
             }}
-            showLabel={false}
+            
             containerSx={{
               minWidth: { xs: '100%', sm: 140 },
               '& .MuiOutlinedInput-root': { minHeight: '40px' },

@@ -20,6 +20,10 @@ interface TimeRangeSelectorProps {
   buttonSx?: SxProps<Theme>;
   labelSx?: SxProps<Theme>;
   iconSx?: SxProps<Theme>;
+  /** Optional container style overrides (matches AppDropdown `containerSx`) */
+  containerSx?: SxProps<Theme>;
+  /** Control minimum height to match AppDropdown sizing (e.g. '48px' or responsive object) */
+  minHeight?: string | number | { [key: string]: string | number };
 }
 
 const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
@@ -31,6 +35,8 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   buttonSx,
   labelSx,
   iconSx,
+  containerSx,
+  minHeight,
 }) => {
   // Reserved for future use
   void language;
@@ -39,11 +45,15 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
 
-  /* ✅ FIX: containerSx is now properly defined */
-  const containerSx: SxProps<Theme> = {
+  const defaultContainerSx: SxProps<Theme> = {
     position: 'relative',
     width: { xs: '100%', sm: 'auto' },
   };
+
+  const resolvedContainerSx: SxProps<Theme> = [
+    defaultContainerSx,
+    ...(Array.isArray(containerSx) ? containerSx : containerSx ? [containerSx] : []),
+  ];
 
   const handleToggle = () => {
     setOpen(prev => !prev);
@@ -76,7 +86,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
   return (
     <ClickAwayListener onClickAway={handleClose}>
-      <Box sx={containerSx}>
+      <Box sx={resolvedContainerSx}>
         {/* Selected Button */}
         <Box
           ref={anchorRef}
@@ -101,7 +111,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               cursor: 'pointer',
               width: { xs: '100%', sm: 'auto' },
               minWidth: { xs: '100%', sm: '120px' },
-              height: '36px',
+              height: minHeight || { xs: '40px', sm: '44px' },
               transition: 'background-color 0.2s',
               '&:hover': {
                 backgroundColor:

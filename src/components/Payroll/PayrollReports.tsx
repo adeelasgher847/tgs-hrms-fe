@@ -19,7 +19,7 @@ import systemEmployeeApiService, {
 import { useIsDarkMode } from '../../theme';
 import { snackbar } from '../../utils/snackbar';
 import AppDropdown from '../common/AppDropdown';
-import type { SelectChangeEvent } from '@mui/material/Select';
+// SelectChangeEvent import removed (unused)
 import AppPageTitle from '../common/AppPageTitle';
 
 const formatCurrency = (value: number | string | undefined) => {

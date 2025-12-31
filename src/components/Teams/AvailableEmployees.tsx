@@ -30,7 +30,6 @@ import { teamApiService } from '../../api/teamApi';
 import AppButton from '../common/AppButton';
 import AppDropdown from '../common/AppDropdown';
 import AppTable from '../common/AppTable';
-import { COLORS } from '../../constants/appConstants';
 import type { TeamMember, Team } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
 
@@ -537,12 +536,11 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
           Select Team to Add Employee
         </DialogTitle>
         <DialogContent>
-          <AppDropdown
-            label='Select Team'
-            value={selectedTeamId || 'all'}
-            onChange={e => setSelectedTeamId(String(e.target.value || ''))}
-            containerSx={{ mt: 2, width: '100%' }}
-            showLabel={false}
+            <AppDropdown
+              label='Select Team'
+              value={selectedTeamId || 'all'}
+              onChange={e => setSelectedTeamId(String(e.target.value || ''))}
+              containerSx={{ mt: 2, width: '100%' }}
             options={[
               { value: 'all', label: 'Select a team' },
               ...teams.map(team => ({
@@ -648,7 +646,6 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                   }
                   disabled={teams.length === 0 && !selectedTeamId}
                   containerSx={{ width: '100%' }}
-                  showLabel={false}
                   options={
                     teams.length === 0
                       ? [{ value: 'all', label: 'No teams available' }]

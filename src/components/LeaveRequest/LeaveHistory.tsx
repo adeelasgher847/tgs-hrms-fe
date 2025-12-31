@@ -295,7 +295,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                 ...employeeNames.map(name => ({ value: name, label: name })),
               ]}
               placeholder='All Employees'
-              showLabel={false}
+              label='Employee'
               containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
             />
           )}

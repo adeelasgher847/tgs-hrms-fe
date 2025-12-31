@@ -12,7 +12,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import { useOutletContext } from 'react-router-dom';
+// useOutletContext removed (darkMode not used)
 import type { RecentLog } from '../../api/systemDashboardApi';
 
 const timeAgo = (dateString: string) => {
@@ -45,7 +45,6 @@ interface RecentActivityLogsProps {
 
 const RecentActivityLogs: React.FC<RecentActivityLogsProps> = ({ logs }) => {
   const theme = useTheme();
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
 
   return (
     <Paper

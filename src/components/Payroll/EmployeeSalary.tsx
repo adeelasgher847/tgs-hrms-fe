@@ -1880,8 +1880,8 @@ const EmployeeSalaryPage: React.FC = () => {
                     value: item.employee.id,
                     label: `${item.employee.user.first_name} ${item.employee.user.last_name} - ${item.employee.user.email}`,
                   }))}
+                label='Employee'
                 placeholder='Select Employee'
-                showLabel={false}
                 inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
                 containerSx={{ width: '100%' }}
                 sx={{
@@ -2269,7 +2269,6 @@ const EmployeeSalaryPage: React.FC = () => {
                   label: option.label,
                 }))}
                 placeholder='Effective Month'
-                showLabel={false}
                 inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
                 containerSx={{ width: '100%' }}
                 sx={{
@@ -2352,7 +2351,6 @@ const EmployeeSalaryPage: React.FC = () => {
                 { value: 'inactive', label: 'Inactive' },
               ]}
               placeholder='Status'
-              showLabel={false}
               inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
               containerSx={{ width: '100%' }}
               sx={{

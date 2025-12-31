@@ -885,7 +885,6 @@ const AssetInventory: React.FC = () => {
               label='Status'
               size='small'
               fullWidth
-              showLabel={false}
               value={filters.status || ''}
               onChange={e => {
                 const value = e.target.value as string;
@@ -915,7 +914,6 @@ const AssetInventory: React.FC = () => {
               label='Category'
               size='small'
               fullWidth
-              showLabel={false}
               value={filters.category || ''}
               onChange={e => {
                 const value = e.target.value as string;

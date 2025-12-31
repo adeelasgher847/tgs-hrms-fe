@@ -623,7 +623,6 @@ const PayrollConfiguration: React.FC = () => {
                   { value: 'weekly', label: 'Weekly' },
                 ]}
                 placeholder='Salary Cycle'
-                showLabel={false}
                 inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
                 sx={{
                   '& .MuiSelect-select': {
@@ -1726,7 +1725,6 @@ const PayrollConfiguration: React.FC = () => {
                 { value: 'weekly', label: 'Weekly' },
               ]}
               placeholder='Salary Cycle'
-              showLabel={false}
               inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
               sx={{
                 '& .MuiSelect-select': {

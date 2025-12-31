@@ -321,18 +321,8 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           }}
         >
           <Box sx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}>
-            <Typography
-              className='subheading2'
-              sx={{
-                fontWeight: 500,
-                display: { xs: 'block', sm: 'none' },
-                mb: 0.5,
-              }}
-            >
-              Employee
-            </Typography>
             <AppDropdown
-              label='Select Employee'
+              // label='Employee'
               options={[
                 { value: '', label: 'All Employees' },
                 ...employees.map(emp => ({
@@ -344,26 +334,15 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
               onChange={e => setSelectedEmployee(e.target.value as string)}
               containerSx={{ width: '100%' }}
               size='small'
-              showLabel={false}
+              
               // placeholder='Employee'
             />
           </Box>
 
           <Box sx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}>
-            <Typography
-              className='subheading2'
-              sx={{
-                fontWeight: 500,
-                display: { xs: 'block', sm: 'none' },
-                mb: 0.5,
-              }}
-            >
-              Status
-            </Typography>
             <AppDropdown
               // label='Status'
               options={[
-                // { value: '', label: 'All Statuses' },
                 { value: 'completed', label: 'Completed' },
                 { value: 'under_review', label: 'Under Review' },
                 { value: 'pending', label: 'Pending' },
@@ -372,8 +351,6 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
               onChange={e => setStatusFilter(e.target.value as string)}
               containerSx={{ width: '100%' }}
               size='small'
-              showLabel={false}
-              // placeholder='Status'
             />
           </Box>
 

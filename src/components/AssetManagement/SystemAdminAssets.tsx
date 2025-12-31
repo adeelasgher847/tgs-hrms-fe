@@ -682,7 +682,6 @@ const SystemAdminAssets: React.FC = () => {
             <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
               <AppDropdown
                 label='Category'
-                showLabel={false}
                 value={categoryFilter}
                 onChange={e => setCategoryFilter(String(e.target.value || ''))}
                 options={[
@@ -694,7 +693,6 @@ const SystemAdminAssets: React.FC = () => {
             <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
               <AppDropdown
                 label='Tenant'
-                showLabel={false}
                 value={tenantFilter}
                 onChange={e => setTenantFilter(String(e.target.value || ''))}
                 options={[
@@ -709,7 +707,6 @@ const SystemAdminAssets: React.FC = () => {
             <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
               <AppDropdown
                 label='Assignment'
-                showLabel={false}
                 value={assignedFilter}
                 onChange={e => setAssignedFilter(String(e.target.value || ''))}
                 options={[

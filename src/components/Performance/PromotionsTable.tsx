@@ -208,19 +208,9 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
           alignItems: { xs: 'stretch', sm: 'center' },
         }}
       >
-        <Box sx={{ minWidth: { xs: '100%', sm: 200 } }}>
-          <Typography
-            className='subheading2'
-            sx={{
-              fontWeight: 500,
-              display: { xs: 'block', sm: 'none' },
-              mb: 0.5,
-            }}
-          >
-            Status
-          </Typography>
+          <Box sx={{ minWidth: { xs: '100%', sm: 200 } }}>
           <AppDropdown
-            label='Status'
+          //  label='Status' 
             options={[
               { value: '', label: 'All' },
               { value: 'pending', label: 'Pending' },
@@ -231,7 +221,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
             onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
             containerSx={{ width: '100%' }}
             size='small'
-            showLabel={false}
+            
             // placeholder='Status'
           />
         </Box>
