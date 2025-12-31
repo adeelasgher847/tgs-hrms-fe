@@ -23,6 +23,7 @@ import { getUserRole } from '../../utils/auth';
 import { normalizeRole } from '../../utils/permissions';
 import AppButton from '../common/AppButton';
 import AppTable from '../common/AppTable';
+import AppPageTitle from '../common/AppPageTitle';
 import { IoEyeOutline } from 'react-icons/io5';
 
 const ITEMS_PER_PAGE = 10;
@@ -190,52 +191,57 @@ const BenefitDetails: React.FC = () => {
 
   return (
     <Box>
-      <Box display='flex' justifyContent='space-between' alignItems='center'>
-        <Typography
-          fontWeight={500}
-          fontSize={{ xs: '32px', lg: '48px' }}
-          lineHeight='44px'
-          letterSpacing='-2%'
-        >
-          My Benefits
-        </Typography>
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        mb={3}
+      >
+        <Box>
+          <AppPageTitle>My Benefits</AppPageTitle>
+        </Box>
 
         {isManager ? (
-          <AppButton
-            variant='contained'
-            variantType='primary'
-            onClick={handleDownload}
-            sx={{
-              borderRadius: '6px',
-              minWidth: 0,
-              padding: '6px',
-              height: 'auto',
-            }}
-            aria-label='Download My Benefits'
-          >
-            <FileDownloadIcon aria-hidden='true' />
-          </AppButton>
-        ) : (
           <Tooltip title='Download My Benefits'>
-            <AppButton
-              variant='contained'
-              variantType='primary'
+            <IconButton
               onClick={handleDownload}
               sx={{
+                backgroundColor: '#3083DC',
                 borderRadius: '6px',
-                minWidth: 0,
                 padding: '6px',
-                height: 'auto',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: '#3083DC',
+                },
               }}
               aria-label='Download My Benefits'
             >
               <FileDownloadIcon aria-hidden='true' />
-            </AppButton>
+            </IconButton>
+          </Tooltip>
+        ) : (
+          <Tooltip title='Download My Benefits'>
+            <IconButton
+              onClick={handleDownload}
+              sx={{
+                backgroundColor: '#3083DC',
+                borderRadius: '6px',
+                padding: '6px',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: '#3083DC',
+                },
+              }}
+              aria-label='Download My Benefits'
+            >
+              <FileDownloadIcon aria-hidden='true' />
+            </IconButton>
           </Tooltip>
         )}
       </Box>
 
-      {loading ? (
+      <Paper sx={{ p: 2, borderRadius: 2 }}>
+        {loading ? (
         <Box
           display='flex'
           justifyContent='center'
@@ -270,6 +276,7 @@ const BenefitDetails: React.FC = () => {
           </Typography>
         </Box>
       )}
+      </Paper>
 
       <Dialog
         open={!!selectedBenefit}

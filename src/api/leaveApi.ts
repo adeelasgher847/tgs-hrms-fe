@@ -90,29 +90,32 @@ class LeaveApiService {
     return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
   }
 
-  async getAllLeaves(page = 1): Promise<{
+  async getAllLeaves(
+    page = 1,
+    filters?: { month?: number; year?: number; status?: string }
+  ): Promise<{
     items: LeaveWithUser[];
     total: number;
     page: number;
     limit: number;
     totalPages: number;
   }> {
-    const response = await axiosInstance.get(`${this.baseUrl}/all`, {
-      params: { page, limit: 25 },
-    });
-    const data = response.data;
+    type AllLeaveParams = {
+      page: number;
+      limit: number;
+      month?: number;
+      year?: number;
+      status?: string;
+    };
+    const params: AllLeaveParams = { page, limit: 25 };
+    if (filters?.month) params.month = filters.month;
+    if (filters?.year) params.year = filters.year;
+    if (filters?.status) params.status = filters.status;
 
-    if (data && data.items) return data;
-    if (Array.isArray(data)) {
-      return {
-        items: data,
-        total: data.length,
-        page: 1,
-        limit: 25,
-        totalPages: 1,
-      };
-    }
-    return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
+    const response = await axiosInstance.get(`${this.baseUrl}/all`, {
+      params,
+    });
+    return response.data;
   }
 
   async getTeamLeaves(page = 1): Promise<{
@@ -281,6 +284,4 @@ class LeaveApiService {
 }
 
 export const leaveApiService = new LeaveApiService();
-
-// Maintain backward compatibility - export as leaveApi as well
 export const leaveApi = leaveApiService;

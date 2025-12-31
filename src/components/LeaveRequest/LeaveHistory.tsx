@@ -72,6 +72,8 @@ interface LeaveHistoryProps {
   isLoading?: boolean;
   onExportAll?: () => Promise<Leave[]>;
   userRole?: string;
+  dateFilter?: string;
+  onDateFilterChange?: (filter: string) => void;
 }
 
 const LeaveHistory: React.FC<LeaveHistoryProps> = ({
@@ -93,6 +95,8 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   isLoading = false,
   onExportAll,
   userRole,
+  dateFilter,
+  onDateFilterChange,
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [page, setPage] = useState(1);
@@ -268,7 +272,14 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Typography variant='h5' fontWeight={600} fontSize={'48px'}>
+          <AccessTimeIcon
+            sx={{
+              fontSize: 32,
+              mr: 1,
+              color: 'var(--primary-dark-color)',
+            }}
+          />
+          <Typography variant='h5' fontWeight={600}>
             {title}
           </Typography>
         </Box>
@@ -283,6 +294,35 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
             flexWrap: 'wrap',
           }}
         >
+          {isAdmin && onDateFilterChange && (
+            <AppDropdown
+              label='Date Filter'
+              showLabel={false}
+              align='left'
+              value={dateFilter || ''}
+              onChange={(e: SelectChangeEvent<string | number>) => {
+                onDateFilterChange(String(e.target.value));
+              }}
+              options={[
+                { value: 'month-1', label: 'January' },
+                { value: 'month-2', label: 'February' },
+                { value: 'month-3', label: 'March' },
+                { value: 'month-4', label: 'April' },
+                { value: 'month-5', label: 'May' },
+                { value: 'month-6', label: 'June' },
+                { value: 'month-7', label: 'July' },
+                { value: 'month-8', label: 'August' },
+                { value: 'month-9', label: 'September' },
+                { value: 'month-10', label: 'October' },
+                { value: 'month-11', label: 'November' },
+                { value: 'month-12', label: 'December' },
+                { value: 'all', label: 'All Time' },
+              ]}
+              renderValue={() => 'Date Filter'}
+              containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
+            />
+          )}
+
           {!hideDropdown && (isAdmin || isManager) && (
             <AppDropdown
               label='All Employees'

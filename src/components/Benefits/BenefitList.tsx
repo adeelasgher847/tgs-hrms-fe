@@ -69,7 +69,7 @@ const BenefitList: React.FC = () => {
           : null;
 
       setBenefits(items);
-      setTypes(Array.from(new Set(items.map((b: { type: any; }) => b.type))));
+      setTypes(Array.from(new Set(items.map((b: Benefit) => b.type))));
       setStatuses(Array.from(new Set(items.map(b => b.status))));
 
       // Backend returns 25 records per page (fixed page size)
