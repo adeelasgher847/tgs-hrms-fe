@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Box,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
+import { TextField, Box, Alert, CircularProgress } from '@mui/material';
+import AppFormModal, { type FormField } from '../common/AppFormModal';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { CreateTeamDto, Manager } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
@@ -114,9 +106,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
       setError(null);
     };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
+  const handleSubmit = async () => {
     // Validation
     if (!formData.name.trim()) {
       setError(lang.nameRequired);
@@ -151,126 +141,68 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
     onClose();
   };
 
+  const fields: FormField[] = [
+    {
+      name: 'name',
+      label: lang.name,
+      type: 'text',
+      required: true,
+      value: formData.name,
+      onChange: value =>
+        setFormData(prev => ({ ...prev, name: String(value) })),
+      placeholder: lang.name,
+    },
+    {
+      name: 'description',
+      label: lang.description,
+      type: 'textarea',
+      value: formData.description || '',
+      onChange: value =>
+        setFormData(prev => ({ ...prev, description: String(value) })),
+      placeholder: lang.description,
+    },
+    {
+      name: 'manager_id',
+      label: lang.manager,
+      type: 'dropdown',
+      value: formData.manager_id || 'all',
+      onChange: value =>
+        setFormData(prev => ({ ...prev, manager_id: String(value) })),
+      placeholder: lang.selectManager,
+      options: loadingManagers
+        ? [{ value: 'all', label: lang.loadingManagers }]
+        : managers.length === 0
+          ? [{ value: 'all', label: lang.noManagersAvailable }]
+          : [
+              { value: 'all', label: lang.selectManager },
+              ...managers.map(manager => ({
+                value: manager.id,
+                label: `${manager.first_name} ${manager.last_name} (${manager.email})`,
+              })),
+            ],
+    },
+  ];
+
   return (
-    <Dialog
+    <AppFormModal
       open={open}
       onClose={handleClose}
+      onSubmit={handleSubmit}
+      title={lang.title}
+      fields={fields}
+      submitLabel={lang.create}
+      cancelLabel={lang.cancel}
+      isSubmitting={loading}
+      hasChanges={hasChanges}
+      submitStartIcon={loading ? <CircularProgress size={16} /> : undefined}
       maxWidth='sm'
-      fullWidth
-      PaperProps={{
-        sx: {
-          backgroundColor: theme => theme.palette.background.paper,
-          '&::-webkit-scrollbar': {
-            display: 'none',
-          },
-        },
-      }}
     >
-      <DialogTitle sx={{ color: theme => theme.palette.text.primary }}>
-        {lang.title}
-      </DialogTitle>
-
-      <form onSubmit={handleSubmit}>
-        <DialogContent>
-          {error && (
-            <Alert severity='error' sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              fullWidth
-              label={lang.name}
-              value={formData.name}
-              onChange={handleChange('name')}
-              required
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: theme => theme.palette.divider },
-                  '&:hover fieldset': {
-                    borderColor: theme => theme.palette.text.secondary,
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: theme => theme.palette.primary.main,
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: theme => theme.palette.text.secondary,
-                },
-                '& input': { color: theme => theme.palette.text.primary },
-              }}
-            />
-
-            <TextField
-              fullWidth
-              label={lang.description}
-              value={formData.description}
-              onChange={handleChange('description')}
-              multiline
-              rows={3}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: theme => theme.palette.divider },
-                  '&:hover fieldset': {
-                    borderColor: theme => theme.palette.text.secondary,
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: theme => theme.palette.primary.main,
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: theme => theme.palette.text.secondary,
-                },
-                '& textarea': { color: theme => theme.palette.text.primary },
-              }}
-            />
-
-            <AppDropdown
-              label={lang.manager}
-              value={formData.manager_id || 'all'}
-              onChange={handleChange('manager_id')}
-              align='left'
-              options={
-                loadingManagers
-                  ? [{ value: 'all', label: lang.loadingManagers }]
-                  : managers.length === 0
-                    ? [{ value: 'all', label: lang.noManagersAvailable }]
-                    : [
-                        { value: 'all', label: lang.selectManager },
-                        ...managers.map(manager => ({
-                          value: manager.id,
-                          label: `${manager.first_name} ${manager.last_name} (${manager.email})`,
-                        })),
-                      ]
-              }
-            />
-            <DialogActions sx={{ padding: 0 }}>
-              <AppButton
-                variantType='secondary'
-                variant='outlined'
-                text={lang.cancel}
-                onClick={handleClose}
-                disabled={loading}
-              />
-              <AppButton
-                type='submit'
-                variantType='primary'
-                variant='contained'
-                text={loading ? lang.loading : lang.create}
-                disabled={
-                  loading ||
-                  !hasChanges ||
-                  !formData.name.trim() ||
-                  !formData.manager_id
-                }
-                startIcon={loading ? <CircularProgress size={16} /> : null}
-              />
-            </DialogActions>
-          </Box>
-        </DialogContent>
-      </form>
-    </Dialog>
+      {error ? (
+        <Alert severity='error' sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      ) : null}
+    </AppFormModal>
   );
 };
 

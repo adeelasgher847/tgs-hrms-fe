@@ -305,8 +305,6 @@ export default function DesignationManager() {
     fetchSystemAdminDesignations,
   ]);
 
-  
-
   // Form state management
   useEffect(() => {
     if (editingDesignation) {
@@ -532,7 +530,6 @@ export default function DesignationManager() {
             justifyContent: { xs: 'flex-start', sm: 'center' },
             flexDirection: { xs: 'column', sm: 'row' },
             width: { xs: '100%', sm: 'auto' },
-            
           }}
         >
           {isSystemAdmin ? (

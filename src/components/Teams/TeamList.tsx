@@ -33,6 +33,7 @@ import AvailableEmployees from './AvailableEmployees';
 import { exportCSV } from '../../api/exportApi';
 import { isAdmin, isHRAdmin } from '../../utils/auth';
 import { Icons } from '../../assets/icons';
+import { COLORS } from '../../constants/appConstants';
 
 interface TeamListProps {
   teams: Team[];

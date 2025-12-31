@@ -884,7 +884,7 @@ const AssetInventory: React.FC = () => {
             }}
           >
             <AppDropdown
-              label='Status'
+             showLabel={false}
               size='small'
               fullWidth
               value={filters.status || ''}
@@ -913,7 +913,7 @@ const AssetInventory: React.FC = () => {
             }}
           >
             <AppDropdown
-              label='Category'
+              showLabel={false}
               size='small'
               fullWidth
               value={filters.category || ''}

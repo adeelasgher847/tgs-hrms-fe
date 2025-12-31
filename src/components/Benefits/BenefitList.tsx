@@ -235,7 +235,7 @@ const BenefitList: React.FC = () => {
         <Box display='flex' flexWrap='wrap' gap={2}>
           <Box sx={{ minWidth: 160, maxWidth: 220 }}>
             <AppDropdown
-              label='Type'
+              showLabel={false}
               options={[
                 { value: 'all', label: 'All Types' },
                 ...types.map(t => ({ value: t, label: t })),
@@ -251,7 +251,7 @@ const BenefitList: React.FC = () => {
 
           <Box sx={{ minWidth: 160, maxWidth: 220 }}>
             <AppDropdown
-              label='Status'
+             showLabel={false}
               options={[
                 { value: 'all', label: 'All Status' },
                 ...statuses.map(s => ({
