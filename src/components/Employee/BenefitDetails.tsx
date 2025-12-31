@@ -267,7 +267,15 @@ const BenefitDetails: React.FC = () => {
         )}
       </Box>
 
-      <Paper sx={{ p: 2, borderRadius: 2 }}>
+      <Paper
+        sx={{
+          p: role === 'employee' ? 0 : 2,
+          borderRadius: role === 'employee' ? 0 : 2,
+          boxShadow: role === 'employee' ? 'none' : undefined,
+          background: role === 'employee' ? 'unset' : undefined,
+          mt: role === 'employee' ? 0 : undefined,
+        }}
+      >
         {loading ? (
         <Box
           display='flex'

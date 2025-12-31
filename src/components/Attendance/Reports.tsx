@@ -1018,8 +1018,10 @@ const Reports: React.FC = () => {
 
               <AppCard
                 sx={{
+                  p: 0,
                   boxShadow: 'none',
-                  backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+                  borderRadius: 0,
+                  backgroundColor: 'unset',
                   overflowX: 'auto',
                 }}
               >
