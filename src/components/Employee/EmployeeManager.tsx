@@ -955,7 +955,6 @@ const EmployeeManager: React.FC = () => {
           {/* Department Filter */}
           <AppDropdown
             showLabel={false}
-            label={getLabel('Department', 'القسم')}
             placeholder={getLabel('All Departments', 'كل الأقسام')}
             inputBackgroundColor={controlBg}
             value={departmentFilter === '' ? 'all' : departmentFilter}
@@ -993,7 +992,6 @@ const EmployeeManager: React.FC = () => {
           {/* Designation Filter */}
           <AppDropdown
             showLabel={false}
-            label={getLabel('Designation', 'المسمى الوظيفي')}
             placeholder={getLabel('All Designations', 'كل المسميات')}
             inputBackgroundColor={controlBg}
             value={designationFilter === '' ? 'all' : designationFilter}
@@ -1035,6 +1033,15 @@ const EmployeeManager: React.FC = () => {
               letterSpacing: 'var(--body-letter-spacing)',
               fontWeight: 400,
               width: isMobile ? '100%' : 'auto',
+
+              // ✅ text & border color
+              color: 'var(--primary-dark-color)',
+              borderColor: 'var(--primary-dark-color)',
+
+              '&:hover': {
+                borderColor: 'var(--primary-dark-color)',
+                backgroundColor: 'transparent',
+              },
             }}
           >
             {getLabel('Clear Filters', 'مسح الفلاتر')}
@@ -1207,7 +1214,11 @@ const EmployeeManager: React.FC = () => {
         <DialogContent>
           <Box sx={{ textAlign: 'center' }}>
             <WarningIcon
-              sx={{ fontSize: { xs: 48, sm: 64 }, color: 'warning.main', mb: 2 }}
+              sx={{
+                fontSize: { xs: 48, sm: 64 },
+                color: 'warning.main',
+                mb: 2,
+              }}
             />
             <Typography
               variant='body1'

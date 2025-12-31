@@ -256,7 +256,7 @@ const EmployeeBenefits: React.FC = () => {
         >
           <Box sx={{ minWidth: 200 }}>
             <AppDropdown
-              label={''}
+              label={'Status'}
               options={[
                 { value: 'all', label: 'All Benefits' },
                 { value: 'active', label: 'Active' },
@@ -274,7 +274,6 @@ const EmployeeBenefits: React.FC = () => {
                     | 'cancelled'
                 );
               }}
-              showLabel={false}
             />
           </Box>
 

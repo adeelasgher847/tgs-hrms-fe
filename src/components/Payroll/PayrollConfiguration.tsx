@@ -623,7 +623,6 @@ const PayrollConfiguration: React.FC = () => {
                   { value: 'weekly', label: 'Weekly' },
                 ]}
                 placeholder='Salary Cycle'
-                showLabel={false}
                 inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
                 sx={{
                   '& .MuiSelect-select': {
@@ -1163,9 +1162,7 @@ const PayrollConfiguration: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <AppPageTitle>
-          Payroll Configuration
-          </AppPageTitle>
+        <AppPageTitle>Payroll Configuration</AppPageTitle>
         <Button
           onClick={handleOpenEditModal}
           variant='outlined'
@@ -1726,7 +1723,6 @@ const PayrollConfiguration: React.FC = () => {
                 { value: 'weekly', label: 'Weekly' },
               ]}
               placeholder='Salary Cycle'
-              showLabel={false}
               inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
               sx={{
                 '& .MuiSelect-select': {

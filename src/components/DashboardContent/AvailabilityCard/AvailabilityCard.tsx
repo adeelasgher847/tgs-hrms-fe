@@ -1,6 +1,6 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import type { AvailabilityCardProps } from '../../../types/availability';
-import { useOutletContext } from 'react-router-dom';
+// useOutletContext removed (darkMode not used)
 import { useLanguage } from '../../../hooks/useLanguage';
 
 export default function AvailabilityCard({
@@ -9,7 +9,6 @@ export default function AvailabilityCard({
   icon,
 }: AvailabilityCardProps) {
   const theme = useTheme();
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
 
   // Title Translations

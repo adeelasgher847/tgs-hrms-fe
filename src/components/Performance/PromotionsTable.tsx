@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
-  TextField,
   Button,
   Paper,
   Chip,
@@ -210,18 +209,8 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         }}
       >
         <Box sx={{ minWidth: { xs: '100%', sm: 200 } }}>
-          <Typography
-            className='subheading2'
-            sx={{
-              fontWeight: 500,
-              display: { xs: 'block', sm: 'none' },
-              mb: 0.5,
-            }}
-          >
-            Status
-          </Typography>
           <AppDropdown
-            label='Status'
+            //  label='Status'
             options={[
               { value: '', label: 'All' },
               { value: 'pending', label: 'Pending' },
@@ -232,7 +221,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
             onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
             containerSx={{ width: '100%' }}
             size='small'
-            showLabel={false}
+
             // placeholder='Status'
           />
         </Box>

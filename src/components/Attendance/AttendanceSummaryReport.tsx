@@ -8,9 +8,6 @@ import {
   TableCell,
   TableBody,
   CircularProgress,
-  FormControl,
-  Select,
-  MenuItem,
   Tooltip,
   IconButton,
   Pagination,
@@ -251,9 +248,7 @@ const AttendanceSummaryReport: React.FC = () => {
 
   return (
     <Box>
-      <AppPageTitle>
-        Attendance Summary Report
-      </AppPageTitle>
+      <AppPageTitle>Attendance Summary Report</AppPageTitle>
 
       <Box
         display='flex'

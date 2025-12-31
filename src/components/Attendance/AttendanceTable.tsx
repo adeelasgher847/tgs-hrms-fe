@@ -8,13 +8,8 @@ import {
   TableCell,
   TableBody,
   CircularProgress,
-  MenuItem,
   IconButton,
   Tooltip,
-  FormControl,
-  InputLabel,
-  Select,
-  TextField,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import DatePicker from 'react-multi-date-picker';
@@ -50,56 +45,27 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import AppPageTitle from '../common/AppPageTitle';
 
 type TenantOption = { id: string; name: string };
-
 interface AttendanceRecord {
   id: string;
-  userId: string;
+  userId: string | null;
   date: string;
-  checkInISO: string | null;
-  checkOutISO: string | null;
-  checkIn: string | null;
-  checkOut: string | null;
-  workedHours: number | null;
-  user?: { first_name: string; last_name?: string };
-}
-
-type UserShort = {
-  id?: string;
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-};
-type TeamAttendanceEntry = {
-  date?: string;
+  checkInISO?: string | null;
+  checkOutISO?: string | null;
   checkIn?: string | null;
   checkOut?: string | null;
-  workedHours?: number;
-};
-type TeamMember = {
-  user_id?: string;
-  first_name?: string;
-  last_name?: string;
-  totalDaysWorked?: number;
-  totalHoursWorked?: number;
-  attendance?: TeamAttendanceEntry[];
-  user?: UserShort;
-};
+  workedHours?: number | null;
+  user?: { first_name?: string; last_name?: string } | null;
+}
 
-const hasDateField = (obj: unknown): obj is { date?: string } => {
-  return (
-    !!obj &&
-    typeof obj === 'object' &&
-    'date' in (obj as Record<string, unknown>)
-  );
-};
+const hasDateField = (obj: unknown): obj is { date: unknown } =>
+  !!obj &&
+  typeof obj === 'object' &&
+  'date' in (obj as Record<string, unknown>);
 
-const hasCheckInField = (obj: unknown): obj is { checkIn?: unknown } => {
-  return (
-    !!obj &&
-    typeof obj === 'object' &&
-    'checkIn' in (obj as Record<string, unknown>)
-  );
-};
+const hasCheckInField = (obj: unknown): obj is { checkIn: unknown } =>
+  !!obj &&
+  typeof obj === 'object' &&
+  'checkIn' in (obj as Record<string, unknown>);
 
 const formatLocalYMD = (d: Date) => {
   const y = d.getFullYear();
@@ -1565,11 +1531,20 @@ const AttendanceTable = () => {
                     variantType={adminView === 'my' ? 'primary' : 'secondary'}
                     onClick={handleMyAttendance}
                     sx={{
-                      width: '200px',
-                      minWidth: '200px',
-                      maxWidth: '200px',
+                      width: { xs: '100%', sm: '200px' },
+                      minWidth: { xs: '100%', sm: '200px' },
+                      maxWidth: { sm: '200px' },
                       boxSizing: 'border-box',
                       flexShrink: 0,
+                      backgroundColor:
+                        adminView === 'my' ? 'primary.dark' : undefined,
+                      color: adminView === 'my' ? '#fff' : 'primary.dark',
+                      borderColor: 'primary.dark',
+                      '&:hover': {
+                        backgroundColor:
+                          adminView === 'my' ? 'primary.dark' : undefined,
+                        borderColor: 'primary.dark',
+                      },
                     }}
                   >
                     My Attendance
@@ -1579,11 +1554,18 @@ const AttendanceTable = () => {
                     variantType={adminView === 'all' ? 'primary' : 'secondary'}
                     onClick={handleAllAttendance}
                     sx={{
-                      width: '200px',
-                      minWidth: '200px',
-                      maxWidth: '200px',
+                      width: { xs: '100%', sm: '200px' },
+                      minWidth: { xs: '100%', sm: '200px' },
+                      maxWidth: { sm: '200px' },
                       boxSizing: 'border-box',
                       flexShrink: 0,
+                      backgroundColor: 'primary.dark',
+                      color: '#fff',
+                      borderColor: 'primary.dark',
+                      '&:hover': {
+                        backgroundColor: 'primary.dark',
+                        borderColor: 'primary.dark',
+                      },
                     }}
                   >
                     All Attendance
@@ -1603,6 +1585,15 @@ const AttendanceTable = () => {
                       maxWidth: '200px',
                       boxSizing: 'border-box',
                       flexShrink: 0,
+                      backgroundColor:
+                        managerView === 'my' ? 'primary.dark' : undefined,
+                      color: managerView === 'my' ? '#fff' : 'primary.dark',
+                      borderColor: 'primary.dark',
+                      '&:hover': {
+                        backgroundColor:
+                          managerView === 'my' ? 'primary.dark' : undefined,
+                        borderColor: 'primary.dark',
+                      },
                     }}
                   >
                     My Attendance
@@ -1627,56 +1618,54 @@ const AttendanceTable = () => {
               )}
 
               {adminView === 'all' && isSystemAdminUser && (
-                <AppDropdown
-                  label='Tenant'
-                  value={selectedTenant || ''}
-                  onChange={(e: SelectChangeEvent<string | number>) =>
-                    handleTenantChange(e.target.value as string)
-                  }
-                  options={[
-                    { value: '', label: 'All Tenants' },
-                    ...tenants.map(tenant => ({
-                      value: tenant.id,
-                      label: tenant.name,
-                    })),
-                  ]}
-                  disabled={tenantsLoading}
-                  containerSx={{ minWidth: 220 }}
-                />
-              )}
-
-              {canViewAllAttendance && adminView === 'all' && (
-                <AppDropdown
-                  label='SELECT EMPLOYEE'
-                  value={selectedEmployee || ''}
-                  onChange={(e: SelectChangeEvent<string | number>) =>
-                    handleEmployeeChange(e.target.value as string)
-                  }
-                  options={[
-                    { value: '', label: 'All Employees' },
-                    ...employees.map(emp => ({
-                      value: emp.id,
-                      label: emp.name,
-                    })),
-                  ]}
-                  placeholder='SELECT EMPLOYEE'
-                  showLabel={false}
-                  containerSx={{
-                    width: '200px',
-                    minWidth: '200px',
-                    maxWidth: '200px',
-                    flexShrink: 0,
-                    padding: 0,
-                    margin: 0,
-                    boxSizing: 'border-box',
-                  }}
-                />
+                <>
+                  <AppDropdown
+                    label='Tenant'
+                    value={selectedTenant || ''}
+                    onChange={(e: SelectChangeEvent<string | number>) =>
+                      handleTenantChange(e.target.value as string)
+                    }
+                    options={[
+                      { value: '', label: 'All Tenants' },
+                      ...tenants.map(tenant => ({
+                        value: tenant.id,
+                        label: tenant.name,
+                      })),
+                    ]}
+                    disabled={tenantsLoading}
+                    containerSx={{ minWidth: 220 }}
+                  />
+                  <AppDropdown
+                    label='Employee'
+                    value={selectedEmployee || ''}
+                    onChange={(e: SelectChangeEvent<string | number>) =>
+                      handleEmployeeChange(e.target.value as string)
+                    }
+                    options={[
+                      { value: '', label: 'All Employees' },
+                      ...employees.map(emp => ({
+                        value: emp.id,
+                        label: emp.name,
+                      })),
+                    ]}
+                    placeholder='SELECT EMPLOYEE'
+                    containerSx={{
+                      width: '200px',
+                      minWidth: '200px',
+                      maxWidth: '200px',
+                      flexShrink: 0,
+                      padding: 0,
+                      margin: 0,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </>
               )}
               <Box
                 sx={{
-                  width: '200px',
-                  minWidth: '200px',
-                  maxWidth: '200px',
+                  width: { xs: '100%', sm: '200px' },
+                  minWidth: { xs: '100%', sm: '200px' },
+                  maxWidth: { sm: '200px' },
                   flexShrink: 0,
                 }}
               >
@@ -1748,16 +1737,19 @@ const AttendanceTable = () => {
               </Box>
 
               <AppButton
-                variant='contained'
-                variantType='primary'
+                variant='outlined'
+                variantType='secondary'
                 onClick={handleFilterChange}
                 sx={{
-                  width: '200px',
-                  minWidth: '200px',
-                  maxWidth: '200px',
+                  width: { xs: '100%', sm: '200px' },
+                  minWidth: { xs: '100%', sm: '200px' },
+                  maxWidth: { sm: '200px' },
                   borderRadius: '12px',
                   boxSizing: 'border-box',
                   flexShrink: 0,
+                  color: 'primary.dark',
+                  borderColor: 'primary.dark',
+                  '&:hover': { borderColor: 'primary.dark' },
                 }}
               >
                 Clear Filters
@@ -2032,7 +2024,7 @@ const AttendanceTable = () => {
             {/* Team Employee Filter - for team attendance (regular users) */}
             {teamEmployees.length > 0 && (
               <AppDropdown
-                label='SELECT EMPLOYEE'
+                label='Employee'
                 value={selectedTeamEmployee || ''}
                 onChange={(e: SelectChangeEvent<string | number>) =>
                   handleTeamEmployeeChange(e.target.value as string)
@@ -2045,7 +2037,6 @@ const AttendanceTable = () => {
                   })),
                 ]}
                 placeholder='SELECT EMPLOYEE'
-                showLabel={false}
                 containerSx={{
                   width: '200px',
                   minWidth: '200px',
@@ -2065,6 +2056,11 @@ const AttendanceTable = () => {
                 setTeamCurrentNavigationDate('all');
                 setSelectedTeamEmployee('');
                 fetchTeamAttendance(1);
+              }}
+              sx={{
+                color: 'primary.dark',
+                borderColor: 'primary.dark',
+                '&:hover': { borderColor: 'primary.dark' },
               }}
             >
               Clear Filters
@@ -2184,6 +2180,9 @@ const AttendanceTable = () => {
                 borderRadius: '12px',
                 boxSizing: 'border-box',
                 flexShrink: 0,
+                color: 'primary.dark',
+                borderColor: 'primary.dark',
+                '&:hover': { borderColor: 'primary.dark' },
               }}
             >
               My Attendance
@@ -2291,7 +2290,7 @@ const AttendanceTable = () => {
             {/* Team Employee Filter - for manager team attendance */}
             {teamEmployees.length > 0 && (
               <AppDropdown
-                label='SELECT EMPLOYEE'
+                label='Employee'
                 value={selectedTeamEmployee || ''}
                 onChange={(e: SelectChangeEvent<string | number>) =>
                   handleTeamEmployeeChange(e.target.value as string)
@@ -2304,7 +2303,6 @@ const AttendanceTable = () => {
                   })),
                 ]}
                 placeholder='SELECT EMPLOYEE'
-                showLabel={false}
                 containerSx={{
                   width: '200px',
                   minWidth: '200px',
@@ -2330,6 +2328,9 @@ const AttendanceTable = () => {
                 borderRadius: '12px',
                 boxSizing: 'border-box',
                 flexShrink: 0,
+                color: 'primary.dark',
+                borderColor: 'primary.dark',
+                '&:hover': { borderColor: 'primary.dark' },
               }}
             >
               Clear Filters

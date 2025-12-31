@@ -100,7 +100,6 @@ const LeaveRequestPage = () => {
         // Calculate date params
         const now = new Date();
         const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth() + 1;
         let queryParams: { month?: number; year?: number } = {};
 
         if (filter === 'all') {

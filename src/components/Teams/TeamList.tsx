@@ -17,8 +17,6 @@ import {
 
 import {
   Group as GroupIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Person as PersonIcon,
   Add as AddIcon,
   FileDownload as FileDownloadIcon,
@@ -28,7 +26,6 @@ import type { Team, UpdateTeamDto } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
 import AppButton from '../common/AppButton';
-import { COLORS } from '../../constants/appConstants';
 import TeamMemberList from './TeamMemberList';
 import EditTeamForm from './EditTeamForm';
 import DeleteTeamDialog from './DeleteTeamDialog';

@@ -1,13 +1,4 @@
-import {
-  Box,
-  Typography,
-  MenuItem,
-  Select,
-  FormControl,
-  CircularProgress,
-  Tooltip,
-  useTheme,
-} from '@mui/material';
+import { Box, Typography, CircularProgress, useTheme } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
 import { useOutletContext } from 'react-router-dom';
@@ -15,7 +6,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import systemDashboardApiService from '@/api/systemDashboardApi';
 import AppDropdown from '../common/AppDropdown';
-import TimeRangeSelector from '../common/TimeRangeSelector';
+// using shared AppDropdown for time selector
 
 interface Tenant {
   id: string;
@@ -217,7 +208,7 @@ const EmployeeGrowthChart: React.FC = () => {
 
         <Box display='flex' gap={2} flexWrap='wrap'>
           <AppDropdown
-            showLabel={false}
+            label='Tenant'
             value={selectedTenant}
             onChange={e => setSelectedTenant(e.target.value as string)}
             options={tenants.map(t => ({ value: t.id, label: t.name }))}
@@ -242,7 +233,7 @@ const EmployeeGrowthChart: React.FC = () => {
           />
 
           <AppDropdown
-            showLabel={false}
+            label='Month'
             value={selectedMonth}
             onChange={e => setSelectedMonth(e.target.value as string)}
             options={[
@@ -271,21 +262,30 @@ const EmployeeGrowthChart: React.FC = () => {
             disabled={availableMonths.length === 0}
           />
 
-          <TimeRangeSelector
+          <AppDropdown
+            label='Year'
             value={selectedYear}
-            options={Array.from({ length: 5 }, (_, i) => selectedYear - i)}
-            onChange={val => {
-              if (val === 'all-time' || val === null) return;
-              const num =
-                typeof val === 'number' ? val : parseInt(val as string);
+            onChange={e => {
+              const v = e.target.value as string | number;
+              if (v === '' || v === 'all') return;
+              const num = typeof v === 'number' ? v : parseInt(v as string);
               if (!isNaN(num)) setSelectedYear(num);
             }}
-            allTimeLabel={language === 'ar' ? 'كل الوقت' : 'All Time'}
+            options={[
+              {
+                value: 'all',
+                label: language === 'ar' ? 'كل الوقت' : 'All Time',
+              },
+              ...yearOptions.map(y => ({ value: y, label: String(y) })),
+            ]}
             containerSx={{
               minWidth: { xs: '100%', sm: 120 },
               width: { xs: '100%', sm: 'auto' },
             }}
-            minHeight={'48px'}
+            sx={{
+              '& .MuiOutlinedInput-root': { minHeight: '48px' },
+              width: { xs: '100%', sm: 120 },
+            }}
           />
         </Box>
       </Box>

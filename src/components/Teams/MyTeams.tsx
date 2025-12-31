@@ -24,7 +24,6 @@ import TeamMemberList from './TeamMemberList';
 import AppButton from '../common/AppButton';
 import AppCard from '../common/AppCard';
 import AppDropdown from '../common/AppDropdown';
-import { COLORS } from '../../constants/appConstants';
 
 interface MyTeamsProps {
   teams: Team[];
@@ -343,7 +342,6 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
             value={selectedEmployeeId || 'all'}
             onChange={e => setSelectedEmployeeId(String(e.target.value || ''))}
             disabled={loadingEmployees}
-            showLabel={false}
             align='left'
             containerSx={{ mt: 2, width: '100%' }}
             options={[

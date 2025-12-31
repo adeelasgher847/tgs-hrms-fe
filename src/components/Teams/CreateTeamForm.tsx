@@ -14,7 +14,6 @@ import type { CreateTeamDto, Manager } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import AppButton from '../common/AppButton';
 import AppDropdown from '../common/AppDropdown';
-import { COLORS } from '../../constants/appConstants';
 
 interface CreateTeamFormProps {
   open: boolean;
@@ -231,7 +230,6 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
               label={lang.manager}
               value={formData.manager_id || 'all'}
               onChange={handleChange('manager_id')}
-              showLabel={false}
               align='left'
               options={
                 loadingManagers

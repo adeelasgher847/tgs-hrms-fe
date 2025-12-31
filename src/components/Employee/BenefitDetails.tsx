@@ -21,22 +21,49 @@ import BenefitCard from '../Benefits/BenefitCard';
 import { formatDate } from '../../utils/dateUtils';
 import { getUserRole } from '../../utils/auth';
 import { normalizeRole } from '../../utils/permissions';
-import AppButton from '../common/AppButton';
 import AppTable from '../common/AppTable';
 import AppPageTitle from '../common/AppPageTitle';
 import { IoEyeOutline } from 'react-icons/io5';
 
 const ITEMS_PER_PAGE = 10;
 
+interface BenefitRow {
+  benefitAssignmentId?: string;
+  id?: string;
+  name?: string;
+  type?: string;
+  startDate?: string;
+  endDate?: string | null;
+  statusOfAssignment?: string;
+  status?: string;
+  eligibilityCriteria?: string;
+  description?: string;
+}
+
 const BenefitDetails: React.FC = () => {
-  const [benefits, setBenefits] = useState<unknown[]>([]);
-  const [selectedBenefit, setSelectedBenefit] = useState<unknown | null>(null);
+  const [benefits, setBenefits] = useState<BenefitRow[]>([]);
+  const [selectedBenefit, setSelectedBenefit] = useState<BenefitRow | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const role = normalizeRole(getUserRole());
-  const isManager = role === 'manager' || (role as string) === 'payroll manager';
+  const isManager =
+    role === 'manager' || (role as string) === 'payroll manager';
   const shouldUseAppTable = isManager || role === 'employee';
-  const BenefitCardUnsafe = BenefitCard as unknown as React.ComponentType<any>;
+
+  interface BenefitCardPropsWithDates {
+    name: string;
+    type: string;
+    eligibilityCriteria: string;
+    description?: string;
+    status: string;
+    startDate?: string;
+    endDate?: string;
+  }
+
+  const BenefitCardUnsafe =
+    BenefitCard as unknown as React.ComponentType<BenefitCardPropsWithDates>;
 
   useEffect(() => {
     const fetchBenefits = async () => {
@@ -50,12 +77,12 @@ const BenefitDetails: React.FC = () => {
 
         const response = await employeeBenefitApi.getEmployeeBenefits(page);
 
-        const employeeData = response.find(
-          (emp: { employeeId: string }) => emp.employeeId === employeeId
+        const employeeData = (response as Array<Record<string, unknown>>).find(
+          emp => (emp as Record<string, unknown>)['employeeId'] === employeeId
         );
 
-        if (employeeData && Array.isArray((employeeData as any).benefits)) {
-          setBenefits((employeeData as any).benefits);
+        if (employeeData && Array.isArray(employeeData['benefits'])) {
+          setBenefits(employeeData['benefits'] as unknown as BenefitRow[]);
         } else {
           setBenefits([]);
         }
@@ -88,12 +115,12 @@ const BenefitDetails: React.FC = () => {
       'End Date',
       'Status',
     ];
-    const rows = benefits.map((row: any) =>
+    const rows = benefits.map((row: BenefitRow) =>
       [
         csvEscape(row.name),
         csvEscape(row.type),
         csvEscape(formatDate(row.startDate || '')),
-        csvEscape(formatDate(row.endDate || '')),
+        csvEscape(formatDate((row.endDate as string) || '')),
         csvEscape(row.statusOfAssignment || row.status),
       ].join(',')
     );
@@ -111,7 +138,7 @@ const BenefitDetails: React.FC = () => {
 
   const totalRecords = benefits.length;
   const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
-  const paginatedBenefits = (benefits as any[]).slice(
+  const paginatedBenefits = benefits.slice(
     (page - 1) * ITEMS_PER_PAGE,
     page * ITEMS_PER_PAGE
   );
@@ -147,12 +174,12 @@ const BenefitDetails: React.FC = () => {
 
       <TableBody>
         {paginatedBenefits.length > 0 ? (
-          paginatedBenefits.map((b: any) => (
+          paginatedBenefits.map((b: BenefitRow) => (
             <TableRow key={b.benefitAssignmentId || b.id}>
               <TableCell>{b.name || '-'}</TableCell>
               <TableCell>{b.type || '-'}</TableCell>
               <TableCell>{formatDate(b.startDate || '')}</TableCell>
-              <TableCell>{formatDate(b.endDate || '')}</TableCell>
+              <TableCell>{formatDate((b.endDate as string) || '')}</TableCell>
               <TableCell>
                 <Chip
                   label={b.statusOfAssignment || b.status || '-'}
@@ -288,29 +315,15 @@ const BenefitDetails: React.FC = () => {
         {!!selectedBenefit && (
           <Box>
             <BenefitCardUnsafe
-              name={(selectedBenefit as { name?: string }).name || ''}
-              type={(selectedBenefit as { type?: string }).type || ''}
-              eligibilityCriteria={
-                (selectedBenefit as { eligibilityCriteria?: string })
-                  .eligibilityCriteria || ''
-              }
-              description={
-                (selectedBenefit as { description?: string }).description
-              }
-              startDate={formatDate(
-                (selectedBenefit as { startDate?: string }).startDate || ''
-              )}
-              endDate={formatDate(
-                (selectedBenefit as { endDate?: string }).endDate || ''
-              )}
+              name={selectedBenefit.name || ''}
+              type={selectedBenefit.type || ''}
+              eligibilityCriteria={selectedBenefit.eligibilityCriteria || ''}
+              description={selectedBenefit.description}
+              startDate={formatDate(selectedBenefit.startDate || '')}
+              endDate={formatDate((selectedBenefit.endDate as string) || '')}
               status={
-                (
-                  selectedBenefit as {
-                    statusOfAssignment?: string;
-                    status?: string;
-                  }
-                ).statusOfAssignment ||
-                (selectedBenefit as { status?: string }).status ||
+                selectedBenefit.statusOfAssignment ||
+                selectedBenefit.status ||
                 ''
               }
             />

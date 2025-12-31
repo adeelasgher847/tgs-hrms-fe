@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
-  Button,
   CircularProgress,
   TableHead,
   TableBody,
@@ -306,10 +305,7 @@ export default function DesignationManager() {
     fetchSystemAdminDesignations,
   ]);
 
-  const handleTenantChange = (event: SelectChangeEvent<string | number>) => {
-    setSelectedTenantId(String(event.target.value));
-    setSelectedDepartmentId('all'); // Reset department filter when tenant changes
-  };
+  
 
   // Form state management
   useEffect(() => {
@@ -536,6 +532,7 @@ export default function DesignationManager() {
             justifyContent: { xs: 'flex-start', sm: 'center' },
             flexDirection: { xs: 'column', sm: 'row' },
             width: { xs: '100%', sm: 'auto' },
+            
           }}
         >
           {isSystemAdmin ? (
@@ -559,8 +556,8 @@ export default function DesignationManager() {
                           label: getText('All Tenants', 'جميع المستأجرين'),
                         },
                         ...allTenants.map((tenant: SystemTenant) => ({
-                          value: String((tenant as any).id),
-                          label: (tenant as any).name,
+                          value: tenant.id,
+                          label: tenant.name,
                         })),
                       ]
                 }
@@ -572,13 +569,7 @@ export default function DesignationManager() {
                   setSelectedDepartmentId('all');
                 }}
                 disabled={loadingTenants}
-                containerSx={{
-                  width: { xs: '100%', sm: 250 },
-                  minHeight: 48,
-                  display: 'flex',
-                  alignItems: 'center',
-                  mb: { xs: 1, sm: 0 },
-                }}
+                containerSx={{ minWidth: { xs: '100%', sm: 250 } }}
                 sx={{
                   '& .MuiSelect-select': {
                     justifyContent: 'flex-start',
@@ -602,6 +593,7 @@ export default function DesignationManager() {
               />
               <AppDropdown
                 // label={getText('Filter by department', 'تصفية حسب القسم')}
+                showLabel={false}
                 options={[
                   {
                     value: 'all',

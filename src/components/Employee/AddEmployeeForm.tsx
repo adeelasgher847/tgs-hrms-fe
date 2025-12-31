@@ -794,7 +794,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
               },
               ...(roleOptions.length === 0
                 ? []
-                : roleOptions.map((name, index) => ({
+                : roleOptions.map(name => ({
                     value: name,
                     label: name.charAt(0).toUpperCase() + name.slice(1),
                   }))),
