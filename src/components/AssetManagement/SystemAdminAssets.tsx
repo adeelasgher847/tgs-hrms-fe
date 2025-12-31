@@ -455,6 +455,14 @@ const SystemAdminAssets: React.FC = () => {
                 variant='outlined'
                 variantType='secondary'
                 onClick={() => setViewMoreDialogOpen(true)}
+                sx={{
+                  color: 'var(--primary-dark-color)',
+                  borderColor: 'var(--primary-dark-color)',
+                  '&:hover': {
+                    borderColor: 'var(--primary-dark-color)', 
+                    backgroundColor: 'transparent', 
+                  },
+                }}
               >
                 View More ({summary.length - 6} more)
               </AppButton>
@@ -671,7 +679,14 @@ const SystemAdminAssets: React.FC = () => {
               alignItems: 'center',
             }}
           >
-            <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
+            <Box
+              sx={{
+                flex: { xs: '0 0 100%', sm: '1 1 150px' },
+                minWidth: { xs: '100%', sm: '150px' },
+                order: { xs: 1, sm: 'initial' },
+                mb: { xs: 1, sm: 0 },
+              }}
+            >
               <AppSearch
                 placeholder='Search assets...'
                 value={searchTerm}
@@ -679,9 +694,16 @@ const SystemAdminAssets: React.FC = () => {
                 sx={{ borderRadius: 2 }}
               />
             </Box>
-            <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
+            <Box
+              sx={{
+                flex: { xs: '0 0 100%', sm: '1 1 150px' },
+                minWidth: { xs: '100%', sm: '150px' },
+                order: { xs: 2, sm: 'initial' },
+                mb: { xs: 1, sm: 0 },
+              }}
+            >
               <AppDropdown
-                label='Category'
+                showLabel={false}
                 value={categoryFilter}
                 onChange={e => setCategoryFilter(String(e.target.value || ''))}
                 options={[
@@ -690,9 +712,16 @@ const SystemAdminAssets: React.FC = () => {
                 ]}
               />
             </Box>
-            <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
+            <Box
+              sx={{
+                flex: { xs: '0 0 100%', sm: '1 1 150px' },
+                minWidth: { xs: '100%', sm: '150px' },
+                order: { xs: 3, sm: 'initial' },
+                mb: { xs: 1, sm: 0 },
+              }}
+            >
               <AppDropdown
-                label='Tenant'
+                showLabel={false}
                 value={tenantFilter}
                 onChange={e => setTenantFilter(String(e.target.value || ''))}
                 options={[
@@ -704,9 +733,16 @@ const SystemAdminAssets: React.FC = () => {
                 ]}
               />
             </Box>
-            <Box sx={{ flex: '1 1 150px', minWidth: '150px' }}>
+            <Box
+              sx={{
+                flex: { xs: '0 0 100%', sm: '1 1 150px' },
+                minWidth: { xs: '100%', sm: '150px' },
+                order: { xs: 4, sm: 'initial' },
+                mb: { xs: 1, sm: 0 },
+              }}
+            >
               <AppDropdown
-                label='Assignment'
+                showLabel={false}
                 value={assignedFilter}
                 onChange={e => setAssignedFilter(String(e.target.value || ''))}
                 options={[
@@ -716,17 +752,23 @@ const SystemAdminAssets: React.FC = () => {
                 ]}
               />
             </Box>
-            <Box sx={{ flex: '0 0 auto' }}>
-              <AppButton
-                variant='outlined'
-                variantType='secondary'
-                startIcon={<FilterIcon />}
-                onClick={handleClearFilters}
-                sx={{ p: 0.9 }}
-              >
-                Clear Filters
-              </AppButton>
-            </Box>
+            <AppButton
+              variant='outlined'
+              variantType='secondary'
+              startIcon={<FilterIcon />}
+              onClick={handleClearFilters}
+              sx={{
+                p: 0.9,
+                color: 'var(--primary-dark-color)',
+                borderColor: 'var(--primary-dark-color)',
+                '&:hover': {
+                  borderColor: 'var(--primary-dark-color)',
+                  backgroundColor: 'transparent',
+                },
+              }}
+            >
+              Clear Filters
+            </AppButton>
           </Box>
         </CardContent>
       </Card>

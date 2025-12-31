@@ -954,7 +954,7 @@ const EmployeeManager: React.FC = () => {
         >
           {/* Department Filter */}
           <AppDropdown
-            label={getLabel('Department', 'القسم')}
+            showLabel={false}
             placeholder={getLabel('All Departments', 'كل الأقسام')}
             inputBackgroundColor={controlBg}
             value={departmentFilter === '' ? 'all' : departmentFilter}
@@ -991,7 +991,7 @@ const EmployeeManager: React.FC = () => {
 
           {/* Designation Filter */}
           <AppDropdown
-            label={getLabel('Designation', 'المسمى الوظيفي')}
+            showLabel={false}
             placeholder={getLabel('All Designations', 'كل المسميات')}
             inputBackgroundColor={controlBg}
             value={designationFilter === '' ? 'all' : designationFilter}
@@ -1033,6 +1033,15 @@ const EmployeeManager: React.FC = () => {
               letterSpacing: 'var(--body-letter-spacing)',
               fontWeight: 400,
               width: isMobile ? '100%' : 'auto',
+
+              // ✅ text & border color
+              color: 'var(--primary-dark-color)',
+              borderColor: 'var(--primary-dark-color)',
+
+              '&:hover': {
+                borderColor: 'var(--primary-dark-color)',
+                backgroundColor: 'transparent',
+              },
             }}
           >
             {getLabel('Clear Filters', 'مسح الفلاتر')}

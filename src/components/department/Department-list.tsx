@@ -428,8 +428,7 @@ export const DepartmentList: React.FC = () => {
           }}
         >
           {isSystemAdmin && (
-            <AppDropdown
-              label='Tenant'
+            <AppDropdown 
               value={selectedTenantId}
               onChange={handleTenantChange}
               options={[
