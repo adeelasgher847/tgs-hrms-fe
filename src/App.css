@@ -130,6 +130,54 @@ body.light-mode {
   background-color: #efefef;
   color: #000000;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Mobile typography scale                                                     */
+/* -------------------------------------------------------------------------- */
+
+/* MUI (and many components) use rem-based font sizes. Scaling the root font-size
+   makes the whole UI more comfortable on very small screens (e.g., 320px). */
+html {
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  html {
+    font-size: 14px;
+  }
+
+  :root {
+    /* Headings */
+    --h1-font-size: 32px;
+    --h1-line-height: 38px;
+
+    --h2-font-size: 24px;
+    --h2-line-height: 32px;
+
+    --h3-font-size: 20px;
+    --h3-line-height: 28px;
+
+    /* Subheadings */
+    --subheading1-font-size: 18px;
+    --subheading1-line-height: 26px;
+
+    --subheading2-font-size: 16px;
+    --subheading2-line-height: 24px;
+
+    /* Body/labels */
+    --body-font-size: 14px;
+    --body-line-height: 20px;
+
+    --label-font-size: 12px;
+    --label-line-height: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  html {
+    font-size: 13px;
+  }
+}
 :root {
   font-family:
     'SF Pro Rounded',

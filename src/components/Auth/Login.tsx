@@ -30,6 +30,7 @@ import AppInputField from '../common/AppInputField';
 import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
+import AppPageTitle from '../common/AppPageTitle';
 
 // Extend Window interface for Google Sign-In
 declare global {
@@ -475,17 +476,16 @@ const Login: React.FC = () => {
                 </Select>
               </FormControl>
             </Box>
-            <Typography
-              variant='h1'
+            <AppPageTitle
+              isRtl={lang === 'ar'}
               sx={{
-                fontSize: { xs: '32px', lg: '48px' },
+                mb: 0,
                 fontWeight: 700,
-                // mb: 0.5,
                 color: { xs: '#001218', lg: 'inherit' },
               }}
             >
               {lang === 'ar' ? 'تسجيل الدخول' : 'Login'}
-            </Typography>
+            </AppPageTitle>
             <Typography
               sx={{
                 color: { xs: '#888888', lg: 'var(--dark-grey-color)' },

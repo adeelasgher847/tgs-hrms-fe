@@ -682,8 +682,7 @@ export const TenantPage: React.FC = () => {
         onSubmit={() => setIsDetailOpen(false)}
         title={'Tenant Details'}
         submitLabel={'Close'}
-        cancelLabel={''}
-        hideCancel={true}
+        cancelLabel={'Cancel'}
         isSubmitting={false}
         hasChanges={true}
         fields={[
@@ -929,7 +928,7 @@ export const TenantPage: React.FC = () => {
             type: 'text',
             required: true,
             value: tenantForm.name,
-            onChange: value =>
+            onChange: (value: string | number) =>
               setTenantForm(prev => ({ ...prev, name: String(value) })),
             error: undefined,
           },
@@ -938,7 +937,7 @@ export const TenantPage: React.FC = () => {
             label: 'Domain',
             type: 'text',
             value: tenantForm.domain,
-            onChange: value =>
+            onChange: (value: string | number) =>
               setTenantForm(prev => ({ ...prev, domain: String(value) })),
             placeholder: 'example.com',
           },
@@ -1034,7 +1033,7 @@ export const TenantPage: React.FC = () => {
             label: 'Admin Name',
             type: 'text',
             value: tenantForm.adminName,
-            onChange: value =>
+            onChange: (value: string | number) =>
               setTenantForm(prev => ({ ...prev, adminName: String(value) })),
           },
           {
@@ -1042,7 +1041,7 @@ export const TenantPage: React.FC = () => {
             label: 'Admin Email',
             type: 'text',
             value: tenantForm.adminEmail,
-            onChange: value =>
+            onChange: (value: string | number) =>
               setTenantForm(prev => ({ ...prev, adminEmail: String(value) })),
           },
         ]}
@@ -1091,7 +1090,8 @@ export const TenantPage: React.FC = () => {
             type: 'text',
             required: true,
             value: editCompanyName,
-            onChange: value => setEditCompanyName(String(value)),
+            onChange: (value: string | number) =>
+              setEditCompanyName(String(value)),
           },
           {
             name: 'domain',
@@ -1099,7 +1099,7 @@ export const TenantPage: React.FC = () => {
             type: 'text',
             required: true,
             value: editDomain,
-            onChange: value => setEditDomain(String(value)),
+            onChange: (value: string | number) => setEditDomain(String(value)),
             placeholder: 'example.com',
           },
           {

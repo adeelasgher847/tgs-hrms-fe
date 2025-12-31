@@ -30,7 +30,11 @@ const schema = yup.object({
   description: yup.string().required('Description is required'),
   eligibilityCriteria: yup
     .string()
-    .oneOf(['All employees', 'Full time employees only', 'Part time employees only'] as const)
+    .oneOf([
+      'All employees',
+      'Full time employees only',
+      'Part time employees only',
+    ] as const)
     .required('Eligibility is required'),
   status: yup
     .string()

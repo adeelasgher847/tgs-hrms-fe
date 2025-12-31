@@ -64,8 +64,12 @@ const ManagerResponseDialog = ({
         <Button
           onClick={handleConfirm}
           variant='contained'
-          color='primary'
           disabled={!comment.trim()}
+          sx={{
+            backgroundColor: 'var(--primary-dark-color)',
+            '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+            textTransform: 'none',
+          }}
         >
           Save Response
         </Button>

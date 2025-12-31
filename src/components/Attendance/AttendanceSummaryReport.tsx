@@ -21,6 +21,9 @@ import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../common/AppTable';
+import AppDropdown from '../common/AppDropdown';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import AppPageTitle from '../common/AppPageTitle';
 
 interface AttendanceSummaryItem {
   employeeName?: string;
@@ -248,13 +251,9 @@ const AttendanceSummaryReport: React.FC = () => {
 
   return (
     <Box>
-      <Typography
-        variant='h4'
-        fontSize={{ xs: '32px', lg: '48px' }}
-        gutterBottom
-      >
+      <AppPageTitle>
         Attendance Summary Report
-      </Typography>
+      </AppPageTitle>
 
       <Box
         display='flex'
@@ -262,37 +261,39 @@ const AttendanceSummaryReport: React.FC = () => {
         alignItems='center'
         gap={2}
       >
-        <FormControl size='small' sx={{ minWidth: 160 }}>
-          <Select
-            value={filter}
-            onChange={e => {
-              setFilter(
-                e.target.value as
-                  | 'thisMonth'
-                  | 'prevMonth'
-                  | '60days'
-                  | '90days'
-              );
-            }}
-          >
-            <MenuItem value='thisMonth'>This Month</MenuItem>
-            <MenuItem value='prevMonth'>Previous Month</MenuItem>
-            <MenuItem value='60days'>Last 60 Days</MenuItem>
-            <MenuItem value='90days'>Last 90 Days</MenuItem>
-          </Select>
-        </FormControl>
+        <AppDropdown
+          label='Filter'
+          value={filter}
+          onChange={(e: SelectChangeEvent<string | number>) => {
+            setFilter(
+              e.target.value as 'thisMonth' | 'prevMonth' | '60days' | '90days'
+            );
+          }}
+          options={[
+            { value: 'thisMonth', label: 'This Month' },
+            { value: 'prevMonth', label: 'Previous Month' },
+            { value: '60days', label: 'Last 60 Days' },
+            { value: '90days', label: 'Last 90 Days' },
+          ]}
+          containerSx={{
+            width: '200px',
+            minWidth: '200px',
+            maxWidth: '200px',
+            flexShrink: 0,
+          }}
+        />
 
         <Tooltip title='Export All Attendance'>
           <IconButton
             color='primary'
             onClick={handleDownload}
             sx={{
-              backgroundColor: 'primary.main',
+              backgroundColor: '#3083DC',
               borderRadius: '6px',
               padding: '6px',
               color: 'white',
               '&:hover': {
-                backgroundColor: 'primary.dark',
+                backgroundColor: '#3083DC',
               },
             }}
           >
@@ -384,7 +385,13 @@ const AttendanceSummaryReport: React.FC = () => {
       {/* Pagination Info */}
       {safeData.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1} mb={2}>
-          <Typography variant='body2' color='textSecondary'>
+          <Typography
+            fontWeight={400}
+            fontSize='16px'
+            lineHeight='24px'
+            letterSpacing='-1%'
+            color='#2C2C2C'
+          >
             Showing page {currentPage} of {totalPages} ({totalRecords} total
             records)
           </Typography>

@@ -288,7 +288,12 @@ const TeamManager: React.FC<TeamManagerProps> = ({
         <Alert severity='error' sx={{ mb: 2 }}>
           {error}
         </Alert>
-        <AppButton variant='contained' text='Retry' onClick={handleRefresh} />
+        <AppButton
+          variantType='primary'
+          variant='contained'
+          text='Retry'
+          onClick={handleRefresh}
+        />
       </Box>
     );
   }
@@ -318,12 +323,12 @@ const TeamManager: React.FC<TeamManagerProps> = ({
         </Typography>
         {isAdmin() && !isHRAdmin() && !isSystemAdmin() && (
           <AppButton
+            variantType='primary'
             variant='contained'
             text={lang.createTeam}
             startIcon={<AddIcon />}
             onClick={() => setShowCreateForm(true)}
             sx={{
-              backgroundColor: COLORS.PRIMARY,
               minWidth: { xs: '100%', sm: 'auto' },
               py: { xs: 1.5, sm: 1 },
             }}
@@ -379,7 +384,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                 <BusinessIcon
                   sx={{
                     fontSize: { xs: 32, sm: 40 },
-                    color: theme => theme.palette.primary.main,
+                    color: '#3083DC',
                   }}
                 />
               </Box>
@@ -422,7 +427,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                   <PersonIcon
                     sx={{
                       fontSize: { xs: 32, sm: 40 },
-                      color: theme => theme.palette.primary.main,
+                      color: 'var(--primary-dark-color)',
                     }}
                   />
                 </Box>
@@ -456,7 +461,13 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                   minHeight: { xs: 48, sm: 56 },
                   minWidth: 'auto',
                   '&.Mui-selected': {
-                    color: theme => theme.palette.primary.main,
+                    color: '#3083DC',
+                    '& .MuiSvgIcon-root': {
+                      color: '#3083DC',
+                    },
+                  },
+                  '& .MuiSvgIcon-root': {
+                    color: theme => theme.palette.text.secondary,
                   },
                 },
               }}

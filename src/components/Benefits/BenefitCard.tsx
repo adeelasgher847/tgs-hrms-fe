@@ -56,8 +56,17 @@ const BenefitCard: React.FC<BenefitCardProps> = ({
         </Typography>
         <Chip
           label={type}
-          color={type === 'Monetary' ? 'success' : 'primary'}
+          color={type === 'Monetary' ? 'success' : undefined}
           size='small'
+          sx={
+            type === 'Monetary'
+              ? undefined
+              : {
+                  backgroundColor: 'var(--primary-dark-color)',
+                  color: '#FFFFFF',
+                  '& .MuiChip-label': { fontWeight: 500 },
+                }
+          }
         />
       </Box>
 

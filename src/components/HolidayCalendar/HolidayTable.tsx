@@ -17,8 +17,8 @@ interface HolidayTableProps {
 const HolidayTable: React.FC<HolidayTableProps> = ({ holidays }) => {
   const theme = useTheme();
   return (
-    <Box sx={{ bgcolor: theme.palette.background.paper }}>
-      <Table>
+    <Box sx={{ bgcolor: theme.palette.background.paper, overflowX: 'auto' }}>
+      <Table sx={{ minWidth: 600 }}>
         <TableHead>
           <TableRow>
             <TableCell>Date</TableCell>

@@ -19,6 +19,8 @@ import systemEmployeeApiService, {
 import { useIsDarkMode } from '../../theme';
 import { snackbar } from '../../utils/snackbar';
 import AppDropdown from '../common/AppDropdown';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import AppPageTitle from '../common/AppPageTitle';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -229,7 +231,23 @@ const PayrollReports: React.FC = () => {
 
   return (
     <Box
-      sx={{ backgroundColor: bgColor, minHeight: '100vh', color: textColor }}
+      sx={{
+        backgroundColor: bgColor,
+        minHeight: '100vh',
+        color: textColor,
+        '& .MuiButton-contained': {
+          backgroundColor: 'var(--primary-dark-color)',
+          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+        },
+        '& .MuiButton-outlined': {
+          borderColor: 'var(--primary-dark-color)',
+          color: 'var(--primary-dark-color)',
+          '&:hover': {
+            borderColor: 'var(--primary-dark-color)',
+            backgroundColor: 'var(--primary-color)',
+          },
+        },
+      }}
     >
       <Box
         sx={{
@@ -241,12 +259,7 @@ const PayrollReports: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography
-          variant='h4'
-          sx={{ fontWeight: 600, fontSize: { xs: '32px', lg: '48px' } }}
-        >
-          Payroll Reports
-        </Typography>
+        <AppPageTitle>Payroll Reports</AppPageTitle>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
@@ -262,6 +275,21 @@ const PayrollReports: React.FC = () => {
             size='small'
             showLabel={true}
             disabled={loadingTenants}
+            containerSx={{ minWidth: { xs: '100%', md: 200 } }}
+            inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+            sx={{
+              '& .MuiSelect-select': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiSelect-icon': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: theme.palette.divider,
+                },
+              },
+            }}
           />
         </Stack>
       </Box>
@@ -284,12 +312,16 @@ const PayrollReports: React.FC = () => {
                   No monthly trend data
                 </Alert>
               ) : (
-                <Chart
-                  options={trendOptions}
-                  series={trendSeries}
-                  type='line'
-                  height={320}
-                />
+                <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                  <Box sx={{ minWidth: { xs: 520, sm: 0 } }}>
+                    <Chart
+                      options={trendOptions}
+                      series={trendSeries}
+                      type='line'
+                      height={320}
+                    />
+                  </Box>
+                </Box>
               )}
             </Paper>
 
@@ -302,12 +334,16 @@ const PayrollReports: React.FC = () => {
                   No department data
                 </Alert>
               ) : (
-                <Chart
-                  options={departmentOptions}
-                  series={departmentSeries}
-                  type='bar'
-                  height={320}
-                />
+                <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                  <Box sx={{ minWidth: { xs: 520, sm: 0 } }}>
+                    <Chart
+                      options={departmentOptions}
+                      series={departmentSeries}
+                      type='bar'
+                      height={320}
+                    />
+                  </Box>
+                </Box>
               )}
             </Paper>
           </Box>

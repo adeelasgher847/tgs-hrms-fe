@@ -2,16 +2,9 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Box,
   Typography,
-  Paper,
   useTheme,
   Avatar,
   CircularProgress,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   IconButton,
   useMediaQuery,
 } from '@mui/material';
@@ -22,13 +15,13 @@ import { isManager, isEmployee } from '../../utils/roleUtils';
 import companyApi from '../../api/companyApi';
 import BusinessIcon from '@mui/icons-material/Business';
 import LanguageIcon from '@mui/icons-material/Language';
-import {
-  Edit,
-  Save,
-  Close,
-  CameraAlt,
-  BusinessCenter,
-} from '@mui/icons-material';
+import { CameraAlt, BusinessCenter } from '@mui/icons-material';
+import AppButton from '../common/AppButton';
+import AppCard from '../common/AppCard';
+import AppFormModal from '../common/AppFormModal';
+import AppInputField from '../common/AppInputField';
+import AppPageTitle from '../common/AppPageTitle';
+import { Icons } from '../../assets/icons';
 
 const SettingsPage: React.FC = () => {
   const theme = useTheme();
@@ -40,8 +33,10 @@ const SettingsPage: React.FC = () => {
     companyName,
     companyLogo,
     refreshCompanyDetails,
-    loading: contextLoading,
   } = useCompany();
+
+  // CompanyContext doesn't expose a loading flag; this page renders with available data.
+  const contextLoading = false;
 
   const [companyModalOpen, setCompanyModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(true);
@@ -176,55 +171,92 @@ const SettingsPage: React.FC = () => {
   }, [companyLogo, companyModalOpen, logoUploading]);
 
   const domainText = contextCompanyDetails?.domain || 'Not specified';
+  const controlBg =
+    theme.palette.mode === 'dark'
+      ? theme.palette.background.default
+      : '#F8F8F8';
+
+  const hasCompanyChanges = Boolean(
+    contextCompanyDetails &&
+      (editFormData.company_name !== contextCompanyDetails.company_name ||
+        editFormData.domain !== contextCompanyDetails.domain ||
+        Boolean(selectedLogoFile))
+  );
 
   return (
-    <Box>
+    <Box sx={{ py: 2 }}>
       {/* Header */}
       <Box
         sx={{
-          mb: 4,
+          mb: 3,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          flexWrap: 'nowrap',
+          gap: 2,
         }}
       >
-        <Typography
-          variant='h4'
-          sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000', mb: 1 }}
+        <AppPageTitle
+          sx={{
+            mb: 0,
+            color: darkMode ? '#8f8f8f' : theme.palette.text.primary,
+          }}
         >
           Company Information
-        </Typography>
+        </AppPageTitle>
         {!isManager(user?.role) && !isEmployee(user?.role) && (
-          <Button
+          <AppButton
             onClick={handleEditCompanyDetails}
-            variant='outlined'
-            startIcon={<Edit />}
+            variant='contained'
+            variantType='primary'
+            startIcon={
+              <Box
+                component='img'
+                src={Icons.edit}
+                alt=''
+                aria-hidden='true'
+                sx={{
+                  width: { xs: 16, sm: 20 },
+                  height: { xs: 16, sm: 20 },
+                  filter: 'brightness(0) invert(1)',
+                }}
+              />
+            }
             sx={{
-              textTransform: 'none',
-              fontWeight: 500,
-              px: 2,
-              py: 1,
-              borderColor: theme.palette.divider,
-              color: theme.palette.text.primary,
-              '&:hover': {
-                borderColor: theme.palette.primary.main,
-                backgroundColor: theme.palette.action.hover,
+              fontSize: 'var(--body-font-size)',
+              lineHeight: 'var(--body-line-height)',
+              letterSpacing: 'var(--body-letter-spacing)',
+              boxShadow: 'none',
+              minWidth: { xs: 'auto', sm: 200 },
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.75, sm: 1 },
+              '& .MuiButton-startIcon': {
+                marginRight: { xs: 0.5, sm: 1 },
+                display: 'flex',
+                alignItems: 'center',
               },
             }}
           >
-            Edit Company Details
-          </Button>
+            <Box
+              component='span'
+              sx={{ display: { xs: 'none', sm: 'inline' } }}
+            >
+              Edit Company Details
+            </Box>
+            <Box
+              component='span'
+              sx={{ display: { xs: 'inline', sm: 'none' } }}
+            >
+              Edit
+            </Box>
+          </AppButton>
         )}
       </Box>
 
       {/* Company Info Card */}
-      <Paper
-        sx={{
-          p: 4,
-          backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-          color: darkMode ? '#fff' : '#000',
-          boxShadow: 'none',
-        }}
+      <AppCard
+        elevation={1}
+        sx={{ borderRadius: 3, border: 'none', p: { xs: 2, sm: 3, lg: 4 } }}
       >
         {contextLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -238,15 +270,15 @@ const SettingsPage: React.FC = () => {
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                mb: 4,
-                pb: 4,
+                mb: { xs: 3, sm: 4 },
+                pb: { xs: 3, sm: 4 },
                 borderBottom: `1px solid ${darkMode ? '#333' : '#eee'}`,
               }}
             >
               <Box
                 sx={{
-                  width: 150,
-                  height: 150,
+                  width: { xs: 110, sm: 150 },
+                  height: { xs: 110, sm: 150 },
                   borderRadius: '50%',
                   backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
                   border: `3px solid ${darkMode ? '#333' : '#e0e0e0'}`,
@@ -270,7 +302,10 @@ const SettingsPage: React.FC = () => {
                   />
                 ) : (
                   <BusinessIcon
-                    sx={{ fontSize: 70, color: darkMode ? '#666' : '#999' }}
+                    sx={{
+                      fontSize: { xs: 52, sm: 70 },
+                      color: darkMode ? '#666' : '#999',
+                    }}
                   />
                 )}
               </Box>
@@ -281,25 +316,28 @@ const SettingsPage: React.FC = () => {
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                mb: 3,
-                pb: 3,
+                mb: { xs: 2, sm: 3 },
+                pb: { xs: 2, sm: 3 },
                 borderBottom: `1px solid ${darkMode ? '#333' : '#eee'}`,
               }}
             >
               <Box
                 sx={{
-                  width: 50,
-                  height: 50,
+                  width: { xs: 42, sm: 50 },
+                  height: { xs: 42, sm: 50 },
                   borderRadius: '50%',
                   backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  mr: 3,
+                  mr: { xs: 2, sm: 3 },
                 }}
               >
                 <BusinessIcon
-                  sx={{ fontSize: 28, color: darkMode ? '#666' : '#999' }}
+                  sx={{
+                    fontSize: { xs: 22, sm: 28 },
+                    color: darkMode ? '#666' : '#999',
+                  }}
                 />
               </Box>
               <Box sx={{ flex: 1 }}>
@@ -308,7 +346,7 @@ const SettingsPage: React.FC = () => {
                   sx={{
                     color: darkMode ? '#8f8f8f' : '#666',
                     mb: 0.5,
-                    fontSize: '12px',
+                    fontSize: { xs: '11px', sm: '12px' },
                     textTransform: 'uppercase',
                     fontWeight: 500,
                   }}
@@ -319,7 +357,7 @@ const SettingsPage: React.FC = () => {
                   variant='h6'
                   sx={{
                     color: darkMode ? '#fff' : '#000',
-                    fontSize: '18px',
+                    fontSize: { xs: '16px', sm: '18px' },
                     fontWeight: 600,
                   }}
                   title={companyName || ''}
@@ -335,18 +373,21 @@ const SettingsPage: React.FC = () => {
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Box
                 sx={{
-                  width: 50,
-                  height: 50,
+                  width: { xs: 42, sm: 50 },
+                  height: { xs: 42, sm: 50 },
                   borderRadius: '50%',
                   backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  mr: 3,
+                  mr: { xs: 2, sm: 3 },
                 }}
               >
                 <LanguageIcon
-                  sx={{ fontSize: 28, color: darkMode ? '#666' : '#999' }}
+                  sx={{
+                    fontSize: { xs: 22, sm: 28 },
+                    color: darkMode ? '#666' : '#999',
+                  }}
                 />
               </Box>
               <Box sx={{ flex: 1 }}>
@@ -355,7 +396,7 @@ const SettingsPage: React.FC = () => {
                   sx={{
                     color: darkMode ? '#8f8f8f' : '#666',
                     mb: 0.5,
-                    fontSize: '12px',
+                    fontSize: { xs: '11px', sm: '12px' },
                     textTransform: 'uppercase',
                     fontWeight: 500,
                   }}
@@ -366,7 +407,7 @@ const SettingsPage: React.FC = () => {
                   variant='body1'
                   sx={{
                     color: darkMode ? '#fff' : '#000',
-                    fontSize: '16px',
+                    fontSize: { xs: '14px', sm: '16px' },
                     fontWeight: 500,
                   }}
                   title={domainText}
@@ -379,283 +420,167 @@ const SettingsPage: React.FC = () => {
             </Box>
           </Box>
         )}
-      </Paper>
+      </AppCard>
 
-      {/* Company Details Modal */}
-      <Dialog
+      {/* Company Details Modal (AppFormModal wrapper to match UserProfile) */}
+      <AppFormModal
         open={companyModalOpen}
         onClose={handleCloseCompanyModal}
+        title='Company Details'
+        onSubmit={handleSaveCompany}
+        cancelLabel='Cancel'
+        submitLabel={editLoading ? 'Updating...' : 'Update'}
+        submitStartIcon={
+          editLoading ? <CircularProgress size={16} /> : undefined
+        }
+        submitDisabled={
+          editLoading || !contextCompanyDetails || !hasCompanyChanges
+        }
+        submitTitle={!hasCompanyChanges ? 'No changes made' : undefined}
+        hasChanges={hasCompanyChanges}
+        wrapInForm={false}
         maxWidth='sm'
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 1, bgcolor: darkMode ? '#1e1e1e' : '#fff' },
-        }}
       >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            color: darkMode ? '#fff' : '#000',
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            borderRadius: 0,
-            pb: 2,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BusinessCenter /> Company Details
+        {modalLogoLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress />
           </Box>
-          {!isEditing && (
-            <IconButton
-              onClick={handleCloseCompanyModal}
-              size='small'
+        ) : contextCompanyDetails ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: { xs: 2, sm: 3 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <BusinessCenter />
+              <Typography
+                sx={{ color: theme.palette.text.primary, fontWeight: 500 }}
+              >
+                Company Details
+              </Typography>
+            </Box>
+
+            <Box
               sx={{
-                color: theme.palette.text.secondary,
-                '&:hover': {
-                  color: theme.palette.text.primary,
-                  backgroundColor: theme.palette.action.hover,
-                },
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                mb: 2,
+                mt: 1,
               }}
             >
-              <Close />
-            </IconButton>
-          )}
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          {modalLogoLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : contextCompanyDetails ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {/* Logo upload/edit */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  mb: 2,
-                  mt: 2,
-                }}
-              >
-                {logoUploading ? (
-                  <CircularProgress size={60} />
-                ) : (
-                  <Box
+              {logoUploading ? (
+                <CircularProgress size={60} />
+              ) : (
+                <Box
+                  sx={{
+                    position: 'relative',
+                    cursor: 'pointer',
+                    '&:hover .camera-overlay': { opacity: 1 },
+                    '&:hover .avatar': { filter: 'brightness(0.7)' },
+                  }}
+                >
+                  <Avatar
+                    className='avatar'
                     sx={{
-                      position: 'relative',
-                      cursor: isEditing ? 'pointer' : 'default',
-                      '&:hover .camera-overlay': { opacity: isEditing ? 1 : 0 },
-                      '&:hover .delete-icon': {
-                        opacity: isEditing && modalCompanyLogo ? 1 : 0,
-                      },
-                      '&:hover .avatar': {
-                        filter: isEditing ? 'brightness(0.7)' : 'none',
-                      },
+                      width: { xs: 120, sm: 150 },
+                      height: { xs: 120, sm: 150 },
+                      border: `2px solid ${theme.palette.divider}`,
+                      fontSize: '48px',
+                      fontWeight: 'bold',
+                      backgroundColor: theme.palette.primary.main,
+                      color: 'white',
+                      transition: 'filter 0.3s ease',
                     }}
                   >
-                    <Avatar
-                      sx={{
-                        width: 150,
-                        height: 150,
-                        border: `2px solid ${theme.palette.divider}`,
-                        fontSize: '48px',
-                        fontWeight: 'bold',
-                        backgroundColor: theme.palette.primary.main,
-                        color: 'white',
-                        transition: 'filter 0.3s ease',
-                      }}
-                    >
-                      {modalCompanyLogo ? (
-                        <img
-                          src={modalCompanyLogo}
-                          alt='Company Logo'
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                          }}
-                        />
-                      ) : (
-                        contextCompanyDetails.company_name
-                          .charAt(0)
-                          .toUpperCase()
-                      )}
-                    </Avatar>
-                    <Box
-                      className='camera-overlay'
-                      sx={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: 'rgba(0,0,0,0.5)',
-                        borderRadius: '50%',
-                        opacity: 0,
-                        transition: 'opacity 0.3s ease',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <CameraAlt sx={{ color: 'white', fontSize: 40 }} />
-                    </Box>
-
-                    {/* {isEditing && modalCompanyLogo && (
-                      <IconButton
-                        onClick={handleDeleteLogo}
-                        className='delete-icon'
-                        sx={{
-                          position: 'absolute',
-                          top: 6,
-                          right: 6,
-                          backgroundColor: 'rgba(0,0,0,0.6)',
-                          color: '#ff6b6b',
-                          opacity: 0,
-                          transition: 'opacity 0.3s ease',
-                          '&:hover': {
-                            backgroundColor: 'rgba(255,255,255,0.2)',
-                            color: '#ff1744',
-                          },
-                        }}
-                        size='small'
-                      >
-                        <DeleteIcon fontSize='small' />
-                      </IconButton>
-                    )} */}
-
-                    <input
-                      accept='image/*'
-                      style={{ display: 'none' }}
-                      id='logo-upload'
-                      type='file'
-                      onChange={handleLogoUpload}
-                      disabled={logoUploading || !isEditing}
-                    />
-                    {isEditing && (
-                      <label
-                        htmlFor='logo-upload'
+                    {modalCompanyLogo ? (
+                      <img
+                        src={modalCompanyLogo}
+                        alt='Company Logo'
                         style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          cursor: 'pointer',
-                          borderRadius: '50%',
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
                         }}
                       />
+                    ) : (
+                      contextCompanyDetails.company_name.charAt(0).toUpperCase()
                     )}
+                  </Avatar>
+                  <Box
+                    className='camera-overlay'
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'rgba(0,0,0,0.5)',
+                      borderRadius: '50%',
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease',
+                    }}
+                  >
+                    <CameraAlt
+                      sx={{ color: 'white', fontSize: { xs: 32, sm: 40 } }}
+                    />
                   </Box>
-                )}
-                {logoUploading && (
-                  <Typography
-                    variant='caption'
-                    sx={{ mt: 1, color: theme.palette.text.secondary }}
-                  >
-                    Uploading logo...
-                  </Typography>
-                )}
-              </Box>
 
-              {/* Company Name */}
-              <Box>
-                <Typography
-                  variant='subtitle2'
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    mb: 0.5,
-                    fontWeight: 500,
-                  }}
-                >
-                  Company Name
-                </Typography>
-                {isEditing ? (
-                  <TextField
-                    value={editFormData.company_name}
-                    onChange={e =>
-                      handleFormChange('company_name', e.target.value)
-                    }
-                    inputProps={{ maxLength: 50 }}
-                    fullWidth
-                    size='small'
-                    variant='outlined'
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                      },
+                  <input
+                    accept='image/*'
+                    style={{ display: 'none' }}
+                    id='logo-upload'
+                    type='file'
+                    onChange={handleLogoUpload}
+                    disabled={logoUploading || editLoading}
+                  />
+                  <label
+                    htmlFor='logo-upload'
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      cursor: 'pointer',
+                      borderRadius: '50%',
                     }}
                   />
-                ) : (
-                  <Typography
-                    variant='body1'
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 500 }}
-                  >
-                    {contextCompanyDetails.company_name}
-                  </Typography>
-                )}
-              </Box>
-
-              {/* Domain */}
-              <Box>
-                <Typography
-                  variant='subtitle2'
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    mb: 0.5,
-                    fontWeight: 500,
-                  }}
-                >
-                  Domain
-                </Typography>
-                {isEditing ? (
-                  <TextField
-                    value={editFormData.domain}
-                    onChange={e => handleFormChange('domain', e.target.value)}
-                    inputProps={{ maxLength: 50 }}
-                    fullWidth
-                    size='small'
-                    variant='outlined'
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                      },
-                    }}
-                  />
-                ) : (
-                  <Typography
-                    variant='body1'
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 500 }}
-                  >
-                    {contextCompanyDetails.domain}
-                  </Typography>
-                )}
-              </Box>
+                </Box>
+              )}
             </Box>
-          ) : (
-            <Typography sx={{ textAlign: 'center', py: 2 }}>
-              No company details available
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 1, justifyContent: 'flex-end' }}>
-          <Box>
-            <Button
-              onClick={handleSaveCompany}
-              variant='contained'
-              startIcon={
-                editLoading ? <CircularProgress size={16} /> : <Save />
-              }
+
+            <AppInputField
+              label='Company Name'
+              value={editFormData.company_name}
+              onChange={e => handleFormChange('company_name', e.target.value)}
+              inputProps={{ maxLength: 50 }}
               disabled={editLoading}
-              sx={{ textTransform: 'none', fontWeight: 500 }}
-            >
-              {editLoading ? 'Updating...' : 'Update'}
-            </Button>
+              placeholder='Enter company name'
+              inputBackgroundColor={controlBg}
+            />
+
+            <AppInputField
+              label='Domain'
+              value={editFormData.domain}
+              onChange={e => handleFormChange('domain', e.target.value)}
+              inputProps={{ maxLength: 50 }}
+              disabled={editLoading}
+              placeholder='Enter domain'
+              inputBackgroundColor={controlBg}
+            />
           </Box>
-        </DialogActions>
-      </Dialog>
+        ) : (
+          <Typography sx={{ textAlign: 'center', py: 2 }}>
+            No company details available
+          </Typography>
+        )}
+      </AppFormModal>
     </Box>
   );
 };

@@ -27,6 +27,7 @@ import {
   // CheckCircle as AvailableIcon,
 } from '@mui/icons-material';
 import { Icons } from '../../assets/icons';
+import Icon from '../common/Icon';
 import type {
   Asset,
   AssetFilters,
@@ -46,6 +47,7 @@ import {
   getSubcategoriesByCategoryId,
 } from '../../Data/assetCategories';
 import { isHRAdmin } from '../../utils/roleUtils';
+import { isManager as roleIsManager } from '../../utils/auth';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import AppCard from '../common/AppCard';
@@ -1065,15 +1067,25 @@ const AssetInventory: React.FC = () => {
                           aria-label={`Edit asset ${asset.name}`}
                           sx={{ p: { xs: 0.5, sm: 1 } }}
                         >
-                          <Box
-                            component='img'
-                            src={Icons.edit}
-                            alt='Edit'
-                            sx={{
-                              width: { xs: 16, sm: 20 },
-                              height: { xs: 16, sm: 20 },
-                            }}
-                          />
+                          {roleIsManager() ? (
+                            <Icon
+                              name='edit'
+                              sx={{
+                                width: { xs: 16, sm: 20 },
+                                height: { xs: 16, sm: 20 },
+                              }}
+                            />
+                          ) : (
+                            <Box
+                              component='img'
+                              src={Icons.edit}
+                              alt='Edit'
+                              sx={{
+                                width: { xs: 16, sm: 20 },
+                                height: { xs: 16, sm: 20 },
+                              }}
+                            />
+                          )}
                         </IconButton>
 
                         {/** Only show delete when the user is not HR admin (match Designation behaviour) */}
@@ -1085,15 +1097,25 @@ const AssetInventory: React.FC = () => {
                             aria-label={`Delete asset ${asset.name}`}
                             sx={{ p: { xs: 0.5, sm: 1 } }}
                           >
-                            <Box
-                              component='img'
-                              src={Icons.delete}
-                              alt='Delete'
-                              sx={{
-                                width: { xs: 16, sm: 20 },
-                                height: { xs: 16, sm: 20 },
-                              }}
-                            />
+                            {roleIsManager() ? (
+                              <Icon
+                                name='delete'
+                                sx={{
+                                  width: { xs: 16, sm: 20 },
+                                  height: { xs: 16, sm: 20 },
+                                }}
+                              />
+                            ) : (
+                              <Box
+                                component='img'
+                                src={Icons.delete}
+                                alt='Delete'
+                                sx={{
+                                  width: { xs: 16, sm: 20 },
+                                  height: { xs: 16, sm: 20 },
+                                }}
+                              />
+                            )}
                           </IconButton>
                         )}
                       </Box>

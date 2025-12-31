@@ -33,10 +33,14 @@ import type { EmployeeWithBenefits } from '../../api/employeeBenefitApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppTable from '../common/AppTable';
+import { getUserRole } from '../../utils/auth';
+import { normalizeRole } from '../../utils/permissions';
 
 const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 
 const EmployeeBenefits: React.FC = () => {
+  const role = normalizeRole(getUserRole());
+  const isManager = role === 'manager';
   const [openForm, setOpenForm] = useState(false);
   const [employees, setEmployees] = useState<EmployeeWithBenefits[]>([]);
   const [selectedBenefit, setSelectedBenefit] = useState<unknown | null>(null);
@@ -303,22 +307,39 @@ const EmployeeBenefits: React.FC = () => {
               Assign Benefit
             </AppButton>
 
-            <Tooltip title='Download Employee Benefits'>
-              <IconButton
+            {isManager ? (
+              <AppButton
+                variant='contained'
+                variantType='primary'
                 onClick={handleDownload}
-                aria-label='Download employee benefits CSV'
-                disableRipple
                 sx={{
-                  backgroundColor: 'var(--primary-dark-color)',
                   borderRadius: '6px',
+                  minWidth: 0,
                   padding: '6px',
-                  color: 'white',
-                  '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+                  height: 'auto',
                 }}
+                aria-label='Download employee benefits CSV'
               >
                 <FileDownloadIcon aria-hidden='true' />
-              </IconButton>
-            </Tooltip>
+              </AppButton>
+            ) : (
+              <Tooltip title='Download Employee Benefits'>
+                <IconButton
+                  onClick={handleDownload}
+                  aria-label='Download employee benefits CSV'
+                  disableRipple
+                  sx={{
+                    backgroundColor: 'var(--primary-dark-color)',
+                    borderRadius: '6px',
+                    padding: '6px',
+                    color: 'white',
+                    '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+                  }}
+                >
+                  <FileDownloadIcon aria-hidden='true' />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
         </Box>
       </Box>

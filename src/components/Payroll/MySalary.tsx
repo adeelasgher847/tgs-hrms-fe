@@ -13,10 +13,6 @@ import {
   TableBody,
   Button,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
   Tooltip,
   Pagination,
@@ -27,8 +23,13 @@ import { useOutletContext } from 'react-router-dom';
 import { payrollApi, type PayrollRecord } from '../../api/payrollApi';
 import { useIsDarkMode } from '../../theme';
 import { useUser } from '../../hooks/useUser';
-import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
+import { IoEyeOutline } from 'react-icons/io5';
 import { PAGINATION } from '../../constants/appConstants';
+import AppFormModal from '../common/AppFormModal';
+import AppPageTitle from '../common/AppPageTitle';
+import AppTable from '../common/AppTable';
+import { getUserRole } from '../../utils/auth';
+import { normalizeRole } from '../../utils/permissions';
 
 const formatCurrency = (value: number | string | undefined) => {
   if (value === undefined || value === null) return '-';
@@ -72,6 +73,9 @@ const MySalary: React.FC = () => {
   const effectiveDarkMode =
     typeof outletDarkMode === 'boolean' ? outletDarkMode : darkMode;
   const { user } = useUser();
+  const role = normalizeRole(getUserRole());
+  const isManager = role === 'manager' || (role as string) === 'payroll manager';
+  const shouldUseAppTable = isManager || role === 'employee';
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -200,14 +204,14 @@ const MySalary: React.FC = () => {
 
   const handleSelectRecord = useCallback(
     async (record: PayrollRecord) => {
-      if (!record?.id || record.id === selectedRecordId) {
+      if (!record?.id) {
         return;
       }
       setSelectedRecordId(record.id);
       setDialogOpen(true);
       await fetchPayslip(record.id);
     },
-    [selectedRecordId, fetchPayslip]
+    [fetchPayslip]
   );
 
   const summaryCards = useMemo(() => {
@@ -413,8 +417,8 @@ const MySalary: React.FC = () => {
       return <Alert severity='info'>No payroll history available yet.</Alert>;
     }
 
-    return (
-      <Table size='small'>
+    const tableContent = (
+      <>
         <TableHead>
           <TableRow>
             <TableCell>Period</TableCell>
@@ -459,7 +463,7 @@ const MySalary: React.FC = () => {
                           detailLoading && record.id !== selectedRecordId
                         }
                       >
-                        <VisibilityIcon fontSize='small' />
+                        <IoEyeOutline size={18} />
                       </IconButton>
                     </span>
                   </Tooltip>
@@ -468,9 +472,15 @@ const MySalary: React.FC = () => {
             );
           })}
         </TableBody>
-      </Table>
+      </>
     );
-  }, [history, selectedRecordId, detailLoading, handleSelectRecord]);
+
+    return shouldUseAppTable ? (
+      <AppTable>{tableContent}</AppTable>
+    ) : (
+      <Table size='small'>{tableContent}</Table>
+    );
+  }, [history, selectedRecordId, detailLoading, handleSelectRecord, shouldUseAppTable]);
 
   if (loading) {
     return (
@@ -503,16 +513,23 @@ const MySalary: React.FC = () => {
           : theme.palette.background.default,
         minHeight: '100vh',
         color: effectiveDarkMode ? '#fff' : '#000',
+        '& .MuiButton-contained': {
+          backgroundColor: 'var(--primary-dark-color)',
+          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+        },
+        '& .MuiButton-outlined': {
+          borderColor: 'var(--primary-dark-color)',
+          color: 'var(--primary-dark-color)',
+          '&:hover': {
+            borderColor: 'var(--primary-dark-color)',
+            backgroundColor: 'var(--primary-color)',
+          },
+        },
       }}
     >
       <Stack spacing={3}>
         <Box>
-          <Typography
-            variant='h4'
-            sx={{ fontWeight: 600, fontSize: { xs: '32px', lg: '48px' } }}
-          >
-            My Salary
-          </Typography>
+          <AppPageTitle sx={{ mb: 0 }}>My Salary</AppPageTitle>
         </Box>
 
         <Paper
@@ -560,18 +577,18 @@ const MySalary: React.FC = () => {
         </Paper>
       </Stack>
 
-      <Dialog
+      <AppFormModal
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
+        onSubmit={() => {}}
+        title='Payslip Details'
+        cancelLabel='Close'
+        showSubmitButton={false}
         maxWidth='md'
-        fullWidth
+        paperSx={{ backgroundColor: effectiveDarkMode ? '#1e1e1e' : '#fff' }}
       >
-        <DialogTitle>Payslip Details</DialogTitle>
-        <DialogContent dividers>{breakdownContent}</DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        {breakdownContent}
+      </AppFormModal>
     </Box>
   );
 };

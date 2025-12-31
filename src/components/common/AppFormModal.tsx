@@ -4,7 +4,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   Box,
   Typography,
   IconButton,
@@ -15,6 +14,7 @@ import { Close as CloseIcon } from '@mui/icons-material';
 import AppInputField from './AppInputField';
 import AppDropdown from './AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import AppButton from './AppButton';
 
 export interface FormField {
   name: string;
@@ -31,14 +31,21 @@ export interface FormField {
   component?: ReactNode;
 }
 
-interface AppFormModalProps {
+export interface AppFormModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit?: () => void;
   title: string;
-  fields: FormField[];
+  fields?: FormField[];
+  children?: ReactNode;
+  hideActions?: boolean;
+  wrapInForm?: boolean;
+  paperSx?: object;
   submitLabel?: string;
   cancelLabel?: string;
+  submitStartIcon?: ReactNode;
+  submitTitle?: string;
+  submitDisabled?: boolean;
   secondaryAction?: {
     label: string;
     onClick: () => void;
@@ -47,22 +54,10 @@ interface AppFormModalProps {
   isSubmitting?: boolean;
   hasChanges?: boolean;
   hideCancel?: boolean;
+  showCancelButton?: boolean;
+  showSubmitButton?: boolean;
   isRtl?: boolean;
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  /**
-   * When true, disables closing the modal via the submit button, the
-   * top-right close icon, Escape key, and backdrop clicks.
-   */
-  disableClose?: boolean;
-  /**
-   * When true, disables only the top-right close icon (X). Does not
-   * affect Escape/backdrop or submit behavior.
-   */
-  disableTopCloseIcon?: boolean;
-  /**
-   * When true, disables the primary submit button at the bottom of the modal.
-   */
-  disableSubmitButton?: boolean;
 }
 
 const AppFormModal: React.FC<AppFormModalProps> = ({
@@ -70,49 +65,33 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   onClose,
   onSubmit,
   title,
-  fields,
+  fields = [],
+  children,
+  hideActions = false,
+  wrapInForm = true,
+  paperSx,
   submitLabel = 'Create',
   cancelLabel = 'Cancel',
+  submitStartIcon,
+  submitTitle,
+  submitDisabled,
   secondaryAction,
   isSubmitting = false,
   hasChanges = true,
-  isRtl = false,
   hideCancel = false,
+  showCancelButton = true,
+  showSubmitButton = true,
+  isRtl = false,
   maxWidth = 'sm',
-  disableClose = false,
-  disableTopCloseIcon = false,
-  disableSubmitButton = false,
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (hasChanges && !isSubmitting && !disableClose && !disableSubmitButton) {
+    if (hasChanges && !isSubmitting && onSubmit) {
       onSubmit();
     }
-  };
-
-  // DialogActions (buttons) are rendered outside the <form>, so the
-  // native submit won't fire when the button is clicked. Provide an
-  // explicit click handler that mirrors `handleSubmit` logic.
-  const handleSubmitButtonClick = () => {
-    if (hasChanges && !isSubmitting && !disableClose && !disableSubmitButton) {
-      onSubmit();
-    }
-  };
-
-  const handleDialogClose = (
-    _event: unknown,
-    reason: 'backdropClick' | 'escapeKeyDown'
-  ) => {
-    if (
-      disableClose &&
-      (reason === 'backdropClick' || reason === 'escapeKeyDown')
-    ) {
-      return;
-    }
-    onClose();
   };
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
@@ -120,8 +99,7 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
   return (
     <Dialog
       open={open}
-      onClose={handleDialogClose}
-      disableEscapeKeyDown={disableClose}
+      onClose={onClose}
       fullWidth={!isLargeScreen}
       maxWidth={maxWidth}
       PaperProps={{
@@ -142,8 +120,16 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
             sm: '90%',
             lg: '527px',
           },
-          backgroundColor: '#FFFFFF',
+          backgroundColor: theme.palette.background.paper,
           margin: { xs: '16px', lg: 'auto' },
+          // Keep scrolling but hide scrollbar visuals
+          overflowY: 'auto',
+          scrollbarWidth: 'none', // Firefox
+          msOverflowStyle: 'none', // IE/Edge legacy
+          '&::-webkit-scrollbar': {
+            display: 'none', // Chrome/Safari
+          },
+          ...(paperSx || {}),
         },
       }}
       sx={{
@@ -164,21 +150,20 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           fontWeight={500}
           fontSize={{ xs: '16px', sm: '24px', lg: '28px' }}
           lineHeight={{ xs: '28px', sm: '32px', lg: '36px' }}
-          color='#2C2C2C'
+          sx={{ color: theme.palette.text.primary }}
         >
           {title}
         </Typography>
 
         <IconButton
           onClick={onClose}
-          disabled={disableTopCloseIcon || disableClose}
           size={isSmallScreen ? 'small' : 'medium'}
           sx={{
             position: 'absolute',
             top: 0,
             right: isRtl ? 'auto' : 0,
             left: isRtl ? 0 : 'auto',
-            color: '#2C2C2C',
+            color: theme.palette.text.secondary,
           }}
         >
           <CloseIcon fontSize={isSmallScreen ? 'small' : 'medium'} />
@@ -191,6 +176,13 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           pt: 0,
           pb: 2,
           px: 2,
+          // Keep scrolling but hide scrollbar visuals (if DialogContent becomes scroll container)
+          overflowY: 'auto',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
         }}
       >
         <Box
@@ -201,8 +193,8 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
           }}
         >
           <Box
-            component='form'
-            onSubmit={handleSubmit}
+            component={wrapInForm ? 'form' : 'div'}
+            onSubmit={wrapInForm ? handleSubmit : undefined}
             sx={{
               display: 'flex',
               flexDirection: 'column',
@@ -220,112 +212,106 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
               },
             }}
           >
-            {fields.map(field => (
-              <Box key={field.name} width='100%'>
-                {field.component ||
-                  (field.type === 'dropdown' && field.options ? (
-                    <AppDropdown
-                      label={field.label}
-                      options={field.options}
-                      value={field.value}
-                      onChange={(e: SelectChangeEvent<string | number>) =>
-                        field.onChange(e.target.value)
-                      }
-                      placeholder={field.placeholder}
-                      error={!!field.error}
-                      helperText={field.error}
-                      inputBackgroundColor='#F8F8F8'
-                    />
-                  ) : (
-                    <AppInputField
-                      label={field.label}
-                      name={field.name}
-                      value={field.value as string}
-                      onChange={e => field.onChange(e.target.value)}
-                      placeholder={field.placeholder}
-                      multiline={field.multiline || field.type === 'textarea'}
-                      rows={
-                        field.rows ||
-                        (field.type === 'textarea' ? 3 : undefined)
-                      }
-                      error={!!field.error}
-                      helperText={field.error}
-                      required={field.required}
-                      inputBackgroundColor='#F8F8F8'
-                    />
-                  ))}
-              </Box>
-            ))}
+            {children ||
+              fields.map(field => (
+                <Box key={field.name} width='100%'>
+                  {field.component ||
+                    (field.type === 'dropdown' && field.options ? (
+                      <AppDropdown
+                        label={field.label}
+                        options={field.options}
+                        value={field.value}
+                        onChange={(e: SelectChangeEvent<string | number>) =>
+                          field.onChange(e.target.value)
+                        }
+                        placeholder={field.placeholder}
+                        error={!!field.error}
+                        helperText={field.error}
+                        inputBackgroundColor={
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.background.default
+                            : '#F8F8F8'
+                        }
+                      />
+                    ) : (
+                      <AppInputField
+                        label={field.label}
+                        name={field.name}
+                        value={field.value as string}
+                        onChange={e => field.onChange(e.target.value)}
+                        placeholder={field.placeholder}
+                        multiline={field.multiline || field.type === 'textarea'}
+                        rows={
+                          field.rows ||
+                          (field.type === 'textarea' ? 3 : undefined)
+                        }
+                        error={!!field.error}
+                        helperText={field.error}
+                        required={field.required}
+                        inputBackgroundColor={
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.background.default
+                            : '#F8F8F8'
+                        }
+                      />
+                    ))}
+                </Box>
+              ))}
           </Box>
         </Box>
       </DialogContent>
 
-      <DialogActions
-        sx={{
-          p: 0,
-          pt: 0,
-          gap: 1,
-          justifyContent: 'flex-end',
-        }}
-      >
-        {!hideCancel && (
-          <Button
-            onClick={onClose}
-            sx={{
-              borderRadius: '12px',
-              textTransform: 'none',
-              border: '1px solid #2C2C2C',
-              color: '#2C2C2C',
-              px: 4,
-              fontWeight: 400,
-              fontSize: { xs: '14px', sm: '16px' },
-            }}
-          >
-            {cancelLabel}
-          </Button>
-        )}
-        {secondaryAction && (
-          <Button
-            onClick={secondaryAction.onClick}
-            disabled={secondaryAction.disabled}
-            sx={{
-              borderRadius: '12px',
-              textTransform: 'none',
-              px: 4,
-              fontWeight: 400,
-              bgcolor: 'var(--primary-dark-color)',
-              color: '#FFFFFF',
-              fontSize: { xs: '14px', sm: '16px' },
-              '&:disabled': {
-                opacity: 0.7,
-              },
-            }}
-          >
-            {secondaryAction.label}
-          </Button>
-        )}
-        <Button
-          type='button'
-          onClick={handleSubmitButtonClick}
-          disabled={
-            !hasChanges || isSubmitting || disableClose || disableSubmitButton
-          }
+      {!hideActions && (
+        <DialogActions
           sx={{
-            borderRadius: '12px',
-            textTransform: 'none',
-            px: 4,
-            fontWeight: 500,
-            bgcolor: 'var(--primary-dark-color)',
-            color: '#FFFFFF',
-            fontSize: { xs: '14px', sm: '16px' },
-            '&:disabled': {
-              opacity: 0.7,
-            },
+            p: 0,
+            pt: 0,
+            gap: 1,
+            justifyContent: 'flex-end',
           }}
         >
-          {submitLabel}
-        </Button>
-      </DialogActions>
+          {!hideCancel && showCancelButton && Boolean(cancelLabel?.trim()) && (
+            <AppButton
+              onClick={onClose}
+              variant='outlined'
+              variantType='secondary'
+              sx={{ px: 4 }}
+            >
+              {cancelLabel}
+            </AppButton>
+          )}
+          {secondaryAction && (
+            <AppButton
+              onClick={secondaryAction.onClick}
+              disabled={secondaryAction.disabled}
+              variant='contained'
+              variantType='primary'
+              sx={{ px: 4 }}
+            >
+              {secondaryAction.label}
+            </AppButton>
+          )}
+
+          {showSubmitButton && (
+            <AppButton
+              type={wrapInForm ? 'submit' : 'button'}
+              variant='contained'
+              variantType='primary'
+              disabled={
+                submitDisabled !== undefined
+                  ? submitDisabled
+                  : isSubmitting || !hasChanges
+              }
+              onClick={wrapInForm ? handleSubmit : onSubmit}
+              startIcon={submitStartIcon}
+              title={submitTitle}
+              sx={{ px: 4 }}
+            >
+              {isSubmitting ? 'Saving...' : submitLabel}
+            </AppButton>
+          )}
+        </DialogActions>
+      )}
     </Dialog>
   );
 };

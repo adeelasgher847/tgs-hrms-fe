@@ -1,10 +1,19 @@
-import { Box, Typography, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Typography,
+  MenuItem,
+  Select,
+  FormControl,
+  CircularProgress,
+  Tooltip,
+  useTheme,
+} from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
-import systemDashboardApiService from '@/api/systemDashboardApi';
+import systemDashboardApiService from '../../api/systemDashboardApi';
 import { getCurrentUser } from '../../utils/auth';
 import { isSystemAdmin } from '../../utils/roleUtils';
 import AppDropdown from '../common/AppDropdown';
@@ -31,12 +40,9 @@ interface TenantGrowth {
 }
 
 const TenantGrowthChart: React.FC = () => {
+  const theme = useTheme();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
-
-  const bgColor = darkMode ? '#111' : '#fff';
-  const borderColor = darkMode ? '#252525' : '#f0f0f0';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
 
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
@@ -133,21 +139,23 @@ const TenantGrowthChart: React.FC = () => {
     stroke: { show: true, width: 1, colors: ['#fff'] },
     xaxis: {
       categories: months,
-      labels: { style: { fontSize: '12px', colors: textColor } },
+      labels: {
+        style: { fontSize: '12px', colors: theme.palette.text.primary },
+      },
     },
     yaxis: {
       labels: {
         formatter: val => `${val}`,
-        style: { fontSize: '12px', colors: textColor },
+        style: { fontSize: '12px', colors: theme.palette.text.primary },
       },
     },
     legend: {
       position: 'top',
       horizontalAlign: language === 'ar' ? 'left' : 'right',
-      labels: { colors: textColor },
+      labels: { colors: theme.palette.text.primary },
     },
     grid: {
-      borderColor: borderColor,
+      borderColor: theme.palette.divider,
       padding: { top: 20, left: 10, right: 10, bottom: 10 },
     },
     colors: ['#4E79A7', '#F28E2B', '#E15759'],
@@ -174,7 +182,7 @@ const TenantGrowthChart: React.FC = () => {
     <Box
       sx={{
         borderRadius: '0.375rem',
-        backgroundColor: bgColor,
+        backgroundColor: theme.palette.background.paper,
         direction: language === 'ar' ? 'rtl' : 'ltr',
         height: 400,
         display: 'flex',
@@ -185,13 +193,17 @@ const TenantGrowthChart: React.FC = () => {
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', sm: 'center' },
           mb: 2,
           flexWrap: 'wrap',
           gap: 2,
         }}
       >
-        <Typography fontWeight='bold' fontSize={20} color={textColor}>
+        <Typography
+          fontWeight='bold'
+          fontSize={{ xs: 18, sm: 20 }}
+          sx={{ color: theme.palette.text.primary }}
+        >
           {labels[language]} ({selectedYear})
         </Typography>
 
@@ -216,17 +228,18 @@ const TenantGrowthChart: React.FC = () => {
             options={tenants.map(t => ({ value: t.id, label: t.name }))}
             containerSx={{ minWidth: 160 }}
             sx={{
-              '& .MuiSelect-select': {
-                color: textColor,
-                display: 'flex',
-                alignItems: 'center',
-                maxWidth: 200,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              },
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: borderColor,
+              width: { xs: '100%', sm: 120 },
+              '& .MuiOutlinedInput-root': {
+                color: theme.palette.text.primary,
+                '& fieldset': {
+                  borderColor: theme.palette.divider,
+                },
+                // '&:hover fieldset': {
+                //   borderColor: theme.palette.divider,
+                // },
+                '&.Mui-focused fieldset': {
+                  borderColor: theme.palette.divider,
+                },
               },
             }}
           />

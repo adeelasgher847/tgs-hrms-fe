@@ -402,6 +402,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
                           {...field}
                           fullWidth
                           label='Asset Name'
+                          placeholder='Asset name'
                           error={!!errors.name}
                           helperText={errors.name?.message}
                           disabled={loading}

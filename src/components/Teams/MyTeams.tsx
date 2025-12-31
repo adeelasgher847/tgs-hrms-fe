@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  MenuItem,
 } from '@mui/material';
 
 import {
@@ -24,7 +23,7 @@ import { snackbar } from '../../utils/snackbar';
 import TeamMemberList from './TeamMemberList';
 import AppButton from '../common/AppButton';
 import AppCard from '../common/AppCard';
-import AppSelect from '../common/AppSelect';
+import AppDropdown from '../common/AppDropdown';
 import { COLORS } from '../../constants/appConstants';
 
 interface MyTeamsProps {
@@ -234,6 +233,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   variant='body2'
                   sx={{
                     color: darkMode ? '#ccc' : '#666',
+                    fontSize: 'var(--body-font-size)',
                     mb: 2,
                     lineHeight: 1.5,
                   }}
@@ -248,9 +248,12 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   size='small'
                   icon={<PersonIcon />}
                   sx={{
-                    backgroundColor: COLORS.PRIMARY,
-                    color: 'white',
+                    backgroundColor: '#3083DC',
+                    color: '#FFFFFF',
                     fontSize: '0.75rem',
+                    '& .MuiChip-icon': {
+                      color: '#F8F8F8',
+                    },
                   }}
                 />
               </Box>
@@ -263,12 +266,12 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   startIcon={<GroupIcon />}
                   onClick={() => handleViewMembers(team)}
                   sx={{
-                    borderColor: COLORS.PRIMARY,
-                    color: COLORS.PRIMARY,
+                    borderColor: '#3083DC',
+                    color: '#3083DC',
                     backgroundColor: 'transparent',
                     '&:hover': {
-                      borderColor: COLORS.PRIMARY,
-                      backgroundColor: 'rgba(72, 76, 127, 0.1)',
+                      borderColor: '#3083DC',
+                      backgroundColor: 'rgba(48, 131, 220, 0.1)',
                     },
                   }}
                 >
@@ -281,12 +284,12 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   startIcon={<AddIcon />}
                   onClick={() => handleAddMember(team)}
                   sx={{
-                    borderColor: COLORS.PRIMARY,
-                    color: COLORS.PRIMARY,
+                    borderColor: '#3083DC',
+                    color: '#3083DC',
                     backgroundColor: 'transparent',
                     '&:hover': {
-                      borderColor: COLORS.PRIMARY,
-                      backgroundColor: 'rgba(72, 76, 127, 0.1)',
+                      borderColor: '#3083DC',
+                      backgroundColor: 'rgba(48, 131, 220, 0.1)',
                     },
                   }}
                 >
@@ -335,39 +338,31 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
           {lang.addMemberToTeam}
         </DialogTitle>
         <DialogContent>
-          <AppSelect
+          <AppDropdown
             label={lang.selectEmployee}
-            fullWidth
-            value={selectedEmployeeId}
-            onChange={e => setSelectedEmployeeId(e.target.value as string)}
+            value={selectedEmployeeId || 'all'}
+            onChange={e => setSelectedEmployeeId(String(e.target.value || ''))}
             disabled={loadingEmployees}
-            sx={{ mt: 2 }}
-            SelectProps={{
-              MenuProps: {
-                PaperProps: {
-                  sx: {
-                    maxHeight: 300, // prevent long lists from overflowing
-                    mt: 1, // adds margin below textfield
-                    borderRadius: 2,
-                  },
-                },
-                disableScrollLock: true, // prevents dialog scroll issues
-                container: document.body, // ensures proper z-index
+            showLabel={false}
+            align='left'
+            containerSx={{ mt: 2, width: '100%' }}
+            options={[
+              {
+                value: 'all',
+                label: loadingEmployees
+                  ? 'Loading employees...'
+                  : lang.selectEmployee,
               },
-            }}
-          >
-            <MenuItem value='' disabled>
-              {loadingEmployees ? 'Loading employees...' : lang.selectEmployee}
-            </MenuItem>
-            {availableEmployees.map(employee => (
-              <MenuItem key={employee.id} value={employee.id}>
-                {employee.user
-                  ? `${employee.user.first_name || ''} ${employee.user.last_name || ''}`
-                  : 'Unknown User'}{' '}
-                - {employee.designation?.title || 'N/A'}
-              </MenuItem>
-            ))}
-          </AppSelect>
+              ...availableEmployees.map(employee => ({
+                value: employee.id,
+                label: `${
+                  employee.user
+                    ? `${employee.user.first_name || ''} ${employee.user.last_name || ''}`
+                    : 'Unknown User'
+                } - ${employee.designation?.title || 'N/A'}`,
+              })),
+            ]}
+          />
         </DialogContent>
         <DialogActions>
           <AppButton
@@ -382,7 +377,6 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
             variant='contained'
             variantType='primary'
             disabled={!selectedEmployeeId}
-            sx={{ backgroundColor: '#484c7f' }}
           >
             {lang.add}
           </AppButton>

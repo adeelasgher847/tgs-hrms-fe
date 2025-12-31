@@ -154,27 +154,34 @@ const Layout = () => {
         <Box
           ref={sidebarRef}
           sx={{
-            backgroundColor: 'var(--white-color)',
-            color: 'var(--text-color)',
+            backgroundColor: muiTheme.palette.background.paper,
+            color: muiTheme.palette.text.primary,
             padding: 0,
             display: 'flex',
             flexDirection: 'column',
             direction: rtlMode ? 'rtl' : 'ltr',
-            height: { xs: '100vh', lg: 'auto' },
+            // On mobile, make sidebar truly full-height (avoid fixed/partial height)
+            height: { xs: '100dvh', lg: 'auto' },
             width: { xs: '240px', lg: '280px' },
-            position: { xs: 'absolute', lg: 'relative' },
-            top: 0,
+            // Use fixed positioning on mobile so it spans the full viewport height
+            position: { xs: 'fixed', lg: 'relative' },
+            top: { xs: 0, lg: 'auto' },
+            bottom: { xs: 0, lg: 'auto' },
             left: rtlMode ? 'auto' : { xs: 0, lg: 'auto' },
             right: rtlMode ? { xs: 0, lg: 'auto' } : 'auto',
             mt: { xs: 0, lg: 2.5 },
             ml: { xs: 0, lg: 2.5 },
             mb: { xs: 0, lg: 2.5 },
             borderRadius: {
-              xs: rtlMode ? '0 20px 20px 0' : '20px 0 0 20px',
+              // No rounding on mobile so it can fill the full height cleanly
+              xs: 0,
               lg: '20px',
             },
             zIndex: { xs: 1000, lg: 'auto' },
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            boxShadow:
+              muiTheme.palette.mode === 'dark'
+                ? '0 1px 3px rgba(0,0,0,0.3)'
+                : '0 1px 3px rgba(0,0,0,0.1)',
           }}
         >
           <Sidebar
@@ -186,7 +193,7 @@ const Layout = () => {
           />
         </Box>
       ),
-    [sidebarOpen, rtlMode, darkMode, closeSidebar, handleSetDarkMode]
+    [sidebarOpen, rtlMode, darkMode, closeSidebar, handleSetDarkMode, muiTheme]
   );
 
   const MemoizedNavbar = useMemo(
@@ -229,7 +236,7 @@ const Layout = () => {
         width: '100%',
         // display: 'flex',
         justifyContent: 'center',
-        backgroundColor: 'var(--white-100-color)',
+        backgroundColor: muiTheme.palette.background.default,
         py: { xs: 2, md: 0 },
       }}
     >
@@ -240,11 +247,12 @@ const Layout = () => {
           display: 'flex',
           fontFamily: 'SF Pro Rounded, sans-serif',
           overflow: 'hidden',
-          borderRadius: {
-            xs: '20px',
-            lg: '20px 0 0 20px', 
-          },
-          height: { xs: 'auto', md: '100vh' },
+          // borderRadius: {
+          //   xs: '20px',
+          //   lg: '20px 0 0 20px',
+          // },
+          // Ensure the overall layout takes full viewport height on mobile too
+          height: { xs: '100dvh', md: '100vh' },
         }}
       >
         {sidebarOpen && !isLargeScreen && (
@@ -255,7 +263,10 @@ const Layout = () => {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              backgroundColor:
+                muiTheme.palette.mode === 'dark'
+                  ? 'rgba(0, 0, 0, 0.7)'
+                  : 'rgba(0, 0, 0, 0.5)',
               zIndex: 999,
             }}
             onClick={closeSidebar}
@@ -273,13 +284,13 @@ const Layout = () => {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'auto',
-            height: { xs: 'auto', md: '100vh' },
+            height: { xs: '100dvh', md: '100vh' },
             transition: 'margin 0.3s ease',
             marginLeft: 0,
             marginRight: 0,
             width: '100%',
             direction: rtlMode ? 'rtl' : 'ltr',
-            backgroundColor: 'var(--white-100-color)',
+            backgroundColor: muiTheme.palette.background.default,
           }}
         >
           {/* Navbar (static) */}
@@ -292,7 +303,7 @@ const Layout = () => {
               flex: 1,
               px: { xs: 2, md: 3 },
               py: { xs: 2, md: 3 },
-              backgroundColor: 'var(--white-100-color)',
+              backgroundColor: muiTheme.palette.background.default,
             }}
           >
             {isDashboardRoute && (loading || !user || !isAllowed) ? (

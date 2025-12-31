@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Typography, Paper } from '@mui/material';
+import { Box, Typography, Paper, useTheme } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import Chart from 'react-apexcharts';
 import ApexCharts from 'apexcharts';
@@ -12,10 +12,8 @@ interface SystemUptimeCardProps {
 const SystemUptimeCard: React.FC<SystemUptimeCardProps> = ({
   uptimeSeconds = 0,
 }) => {
+  const theme = useTheme();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
-
-  const bgColor = darkMode ? '#111' : '#fff';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
 
   const [liveUptime, setLiveUptime] = useState(uptimeSeconds);
   const chartRef = useRef<HTMLDivElement | null>(null);
@@ -69,7 +67,7 @@ const SystemUptimeCard: React.FC<SystemUptimeCardProps> = ({
           name: { show: false },
           value: {
             formatter: val => `${val}%`,
-            color: textColor,
+            color: theme.palette.text.primary,
             fontSize: '16px',
             fontWeight: 600,
             offsetY: 55,
@@ -87,14 +85,18 @@ const SystemUptimeCard: React.FC<SystemUptimeCardProps> = ({
       sx={{
         p: 3,
         borderRadius: '20px',
-        backgroundColor: bgColor,
+        backgroundColor: theme.palette.background.paper,
         textAlign: 'center',
         boxShadow: 'none',
         width: '100%',
       }}
       elevation={3}
     >
-      <Typography variant='h6' fontWeight='bold' color={textColor} mb={2}>
+      <Typography
+        variant='h6'
+        fontWeight='bold'
+        sx={{ color: theme.palette.text.primary, mb: 2 }}
+      >
         System Uptime
       </Typography>
 
@@ -121,10 +123,10 @@ const SystemUptimeCard: React.FC<SystemUptimeCardProps> = ({
         />
       </Box>
 
-      <Typography color={textColor} mt={1}>
+      <Typography sx={{ color: theme.palette.text.primary }} mt={1}>
         {uptimePercentage.toFixed(2)}% uptime in the last 24 hours
       </Typography>
-      <Typography variant='body2' color='text.secondary'>
+      <Typography variant='body2' sx={{ color: theme.palette.text.secondary }}>
         ({liveUptime.toLocaleString()} seconds active)
       </Typography>
     </Paper>

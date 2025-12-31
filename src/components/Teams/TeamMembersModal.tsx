@@ -16,6 +16,7 @@ import {
   Divider,
   TextField,
   InputAdornment,
+  useTheme,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -58,6 +59,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const { language } = useLanguage();
+  const theme = useTheme();
 
   // Check if user is a manager
   const checkIsManager = (): boolean => {
@@ -201,8 +203,8 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-          color: darkMode ? '#fff' : '#000',
+          backgroundColor: theme.palette.background.paper,
+          // color: theme.palette.text.primary,
           borderRadius: 2,
         },
       }}
@@ -212,21 +214,66 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}`,
+          borderBottom: `1px solid ${theme.palette.divider}`,
           pb: 2,
+          '& .MuiTypography-root': {
+            color:
+              theme.palette.mode === 'dark' || darkMode
+                ? '#ffffff'
+                : theme.palette.text.primary,
+          },
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <GroupIcon sx={{ color: darkMode ? '#ccc' : '#666' }} />
-          <Typography variant='h6' sx={{ fontWeight: 600 }}>
+          <GroupIcon sx={{ color: theme.palette.text.secondary }} />
+
+          <Typography
+            variant='h6'
+            component='div'
+            sx={{
+              fontWeight: 600,
+              color:
+                theme.palette.mode === 'dark' || darkMode
+                  ? '#ffffff'
+                  : theme.palette.text.primary,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <Box component='span'>
+              {isAdmin() ? lang.allTeamMembers : lang.title}
+            </Box>
+
+            <Box
+              component='span'
+              sx={{
+                px: 1.5,
+                py: 0.5,
+                borderRadius: '12px',
+                backgroundColor: 'var(--primary-dark-color)',
+                color: '#ffffff',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                minWidth: 'fit-content',
+              }}
+            >
             {isAdmin()
-              ? `${lang.allTeamMembers} (${searchTerm ? filteredAdminTeamMembers.length : adminTeamMembers.length})`
-              : `${lang.title} (${searchTerm ? filteredTeamMembers.length : teamMembers.length})`}
+                ? searchTerm
+                  ? filteredAdminTeamMembers.length
+                  : adminTeamMembers.length
+                : searchTerm
+                  ? filteredTeamMembers.length
+                  : teamMembers.length}
+            </Box>
           </Typography>
         </Box>
+
         <IconButton
           onClick={onClose}
-          sx={{ color: darkMode ? '#ccc' : '#666' }}
+          sx={{ color: theme.palette.text.secondary }}
         >
           <CloseIcon />
         </IconButton>
@@ -234,9 +281,10 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
 
       <DialogContent
         sx={{
-          px: 0,
-          pt: 0,
-          pb: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          paddingBottom: 500,
         }}
       >
         {loading ? (
@@ -244,7 +292,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
             <CircularProgress />
             <Typography
               variant='body2'
-              sx={{ mt: 1, color: darkMode ? '#ccc' : '#666' }}
+              sx={{ mt: 1, color: theme.palette.text.secondary }}
             >
               {lang.loading}
             </Typography>
@@ -257,19 +305,28 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
             isAdmin() ? adminTeamMembers.length === 0 : teamMembers.length === 0
           ) ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
-            <GroupIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
+            <GroupIcon
+              sx={{
+                fontSize: 48,
+                mb: 2,
+                opacity: 0.5,
+                color: theme.palette.text.secondary,
+              }}
+            />
             <Typography
               variant='body2'
-              sx={{ color: darkMode ? '#ccc' : '#666', mb: 2 }}
+              sx={{ color: theme.palette.text.secondary, mb: 2 }}
             >
               {lang.noMembers}
             </Typography>
             <IconButton
               onClick={handleAddMember}
               sx={{
-                color: 'white',
+                backgroundColor: 'var(--primary-dark-color)',
+                color: '#ffffff',
                 '&:hover': {
-                  opacity: 0.8,
+                  backgroundColor: 'var(--primary-dark-color)',
+                  opacity: 0.9,
                 },
               }}
             >
@@ -281,7 +338,8 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
             <Box
               sx={{
                 p: 2,
-                borderBottom: `1px solid ${darkMode ? '#444' : '#e0e0e0'}`,
+                borderBottom: `1px solid ${theme.palette.divider}`,
+                flexShrink: 0,
               }}
             >
               <TextField
@@ -293,33 +351,46 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position='start'>
-                      <SearchIcon sx={{ color: darkMode ? '#ccc' : '#666' }} />
+                      <SearchIcon
+                        sx={{ color: theme.palette.text.secondary }}
+                      />
                     </InputAdornment>
                   ),
                 }}
                 sx={{
-                  backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+                  backgroundColor: theme.palette.background.paper,
                   borderRadius: 2,
                   '& .MuiOutlinedInput-root': {
-                    color: darkMode ? '#fff' : '#000',
+                    color: theme.palette.text.primary,
                     '& fieldset': {
-                      borderColor: darkMode ? '#555' : '#ccc',
+                      borderColor: theme.palette.divider,
                     },
                     '&:hover fieldset': {
-                      borderColor: darkMode ? '#888' : '#999',
+                      borderColor:
+                        theme.palette.mode === 'dark'
+                          ? theme.palette.text.secondary
+                          : theme.palette.text.secondary,
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#484c7f',
+                      borderColor: 'var(--primary-dark-color)',
                     },
                   },
                   '& .MuiInputBase-input::placeholder': {
-                    color: darkMode ? '#999' : '#999',
+                    color: theme.palette.text.secondary,
                     opacity: 1,
                   },
                 }}
               />
             </Box>
-            <Box>
+            <Box
+              sx={{
+                flex: 1,
+                overflowY: 'auto',
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
               {(searchTerm &&
                 isAdmin() &&
                 filteredAdminTeamMembers.length === 0) ||
@@ -327,204 +398,207 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
                 <Box sx={{ p: 3, textAlign: 'center' }}>
                   <Typography
                     variant='body2'
-                    sx={{ color: darkMode ? '#ccc' : '#666' }}
+                    sx={{ color: theme.palette.text.secondary }}
                   >
                     {lang.noMembers}
                   </Typography>
                 </Box>
               ) : (
-                <>
-                  <Box sx={{ pb: 3 }}>
-                    <List sx={{ p: 0 }}>
-                      {isAdmin()
-                        ? filteredAdminTeamMembers
-                            .filter(
-                              member =>
-                                member?.user?.first_name &&
-                                member?.user?.last_name
-                            )
-                            .map(member => (
-                              <React.Fragment key={member.id}>
-                                <ListItem
-                                  sx={{
-                                    borderBottom: `1px solid ${darkMode ? '#444' : '#f0f0f0'}`,
-                                    '&:last-child': { borderBottom: 'none' },
-                                  }}
-                                >
-                                  <ListItemAvatar>
-                                    <UserAvatar
-                                      user={{
-                                        id: member.user?.id,
-                                        first_name:
-                                          member.user?.first_name || '',
-                                        last_name: member.user?.last_name || '',
-                                        profile_pic: member.user?.profile_pic,
+                <Box
+                  sx={{
+                    px: 2.5,
+                    pt: 0,
+                    pb: 2.5,
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
+                  <List sx={{ p: 0, m: 0, width: '100%', flex: 1 }}>
+                    {isAdmin()
+                      ? filteredAdminTeamMembers
+                          .filter(
+                            member =>
+                              member?.user?.first_name &&
+                              member?.user?.last_name
+                          )
+                          .map(member => (
+                            <React.Fragment key={member.id}>
+                              <ListItem
+                                sx={{
+                                  borderBottom: `1px solid ${theme.palette.divider}`,
+                                  '&:last-child': { borderBottom: 'none' },
+                                }}
+                              >
+                                <ListItemAvatar>
+                                  <UserAvatar
+                                    user={{
+                                      id: member.user?.id,
+                                      first_name: member.user?.first_name || '',
+                                      last_name: member.user?.last_name || '',
+                                      profile_pic: member.user?.profile_pic,
+                                    }}
+                                    size={40}
+                                    clickable={false}
+                                  />
+                                </ListItemAvatar>
+                                <ListItemText
+                                  primary={
+                                    <Typography
+                                      variant='subtitle1'
+                                      sx={{
+                                        fontWeight: 600,
+                                        color: theme.palette.text.primary,
                                       }}
-                                      size={40}
-                                      clickable={false}
-                                    />
-                                  </ListItemAvatar>
-                                  <ListItemText
-                                    primary={
+                                    >
+                                      {member.user?.first_name}{' '}
+                                      {member.user?.last_name}
+                                    </Typography>
+                                  }
+                                  secondary={
+                                    <Box sx={{ mt: 0.5 }}>
                                       <Typography
-                                        variant='subtitle1'
+                                        variant='body2'
                                         sx={{
-                                          fontWeight: 600,
-                                          color: darkMode ? '#fff' : '#000',
+                                          color: theme.palette.text.secondary,
+                                          mb: 0.5,
                                         }}
                                       >
-                                        {member.user?.first_name}{' '}
-                                        {member.user?.last_name}
+                                        {member.user?.email}
                                       </Typography>
-                                    }
-                                    secondary={
-                                      <Box sx={{ mt: 0.5 }}>
-                                        <Typography
-                                          variant='body2'
-                                          sx={{
-                                            color: darkMode ? '#ccc' : '#666',
-                                            mb: 0.5,
-                                          }}
-                                        >
-                                          {member.user?.email}
-                                        </Typography>
-                                        <Box
-                                          sx={{
-                                            display: 'flex',
-                                            gap: 1,
-                                            flexWrap: 'wrap',
-                                          }}
-                                        >
-                                          <Chip
-                                            label={
-                                              member.designation?.title || 'N/A'
-                                            }
-                                            size='small'
-                                            sx={{
-                                              backgroundColor: '#484c7f',
-                                              color: 'white',
-                                              fontSize: '0.7rem',
-                                              height: 20,
-                                            }}
-                                          />
-                                          <Chip
-                                            label={
-                                              member.department?.name || 'N/A'
-                                            }
-                                            size='small'
-                                            variant='outlined'
-                                            sx={{
-                                              borderColor: darkMode
-                                                ? '#666'
-                                                : '#ccc',
-                                              color: darkMode ? '#ccc' : '#666',
-                                              fontSize: '0.7rem',
-                                              height: 20,
-                                            }}
-                                          />
-                                        </Box>
-                                      </Box>
-                                    }
-                                  />
-                                </ListItem>
-                              </React.Fragment>
-                            ))
-                        : filteredTeamMembers
-                            .filter(
-                              member =>
-                                member?.user?.first_name &&
-                                member?.user?.last_name
-                            )
-                            .map(member => (
-                              <React.Fragment key={member.id}>
-                                <ListItem
-                                  sx={{
-                                    borderBottom: `1px solid ${darkMode ? '#444' : '#f0f0f0'}`,
-                                    '&:last-child': { borderBottom: 'none' },
-                                  }}
-                                >
-                                  <ListItemAvatar>
-                                    <UserAvatar
-                                      user={{
-                                        id: member.user?.id,
-                                        first_name:
-                                          member.user?.first_name || '',
-                                        last_name: member.user?.last_name || '',
-                                        profile_pic: member.user?.profile_pic,
-                                      }}
-                                      size={40}
-                                      clickable={false}
-                                    />
-                                  </ListItemAvatar>
-                                  <ListItemText
-                                    primary={
-                                      <Typography
-                                        variant='subtitle1'
+                                      <Box
                                         sx={{
-                                          fontWeight: 600,
-                                          color: darkMode ? '#fff' : '#000',
+                                          display: 'flex',
+                                          gap: 1,
+                                          flexWrap: 'wrap',
                                         }}
                                       >
-                                        {member.user?.first_name}{' '}
-                                        {member.user?.last_name}
-                                      </Typography>
-                                    }
-                                    secondary={
-                                      <Box sx={{ mt: 0.5 }}>
-                                        <Typography
-                                          variant='body2'
+                                        <Chip
+                                          label={
+                                            member.designation?.title || 'N/A'
+                                          }
+                                          size='small'
                                           sx={{
-                                            color: darkMode ? '#ccc' : '#666',
-                                            mb: 0.5,
+                                            backgroundColor:
+                                              'var(--primary-dark-color)',
+                                            color: 'white',
+                                            fontSize: '0.7rem',
+                                            height: 20,
                                           }}
-                                        >
-                                          {member.user?.email}
-                                        </Typography>
-                                        <Box
+                                        />
+                                        <Chip
+                                          label={
+                                            member.department?.name || 'N/A'
+                                          }
+                                          size='small'
+                                          variant='outlined'
                                           sx={{
-                                            display: 'flex',
-                                            gap: 1,
-                                            flexWrap: 'wrap',
+                                            borderColor: theme.palette.divider,
+                                            color: theme.palette.text.secondary,
+                                            fontSize: '0.7rem',
+                                            height: 20,
                                           }}
-                                        >
-                                          <Chip
-                                            label={
-                                              member.designation?.title || 'N/A'
-                                            }
-                                            size='small'
-                                            sx={{
-                                              backgroundColor: '#484c7f',
-                                              color: 'white',
-                                              fontSize: '0.7rem',
-                                              height: 20,
-                                            }}
-                                          />
-                                          <Chip
-                                            label={
-                                              member.department?.name || 'N/A'
-                                            }
-                                            size='small'
-                                            variant='outlined'
-                                            sx={{
-                                              borderColor: darkMode
-                                                ? '#666'
-                                                : '#ccc',
-                                              color: darkMode ? '#ccc' : '#666',
-                                              fontSize: '0.7rem',
-                                              height: 20,
-                                            }}
-                                          />
-                                        </Box>
+                                        />
                                       </Box>
-                                    }
+                                    </Box>
+                                  }
+                                />
+                              </ListItem>
+                            </React.Fragment>
+                          ))
+                      : filteredTeamMembers
+                          .filter(
+                            member =>
+                              member?.user?.first_name &&
+                              member?.user?.last_name
+                          )
+                          .map(member => (
+                            <React.Fragment key={member.id}>
+                              <ListItem
+                                sx={{
+                                  borderBottom: `1px solid ${theme.palette.divider}`,
+                                  '&:last-child': { borderBottom: 'none' },
+                                }}
+                              >
+                                <ListItemAvatar>
+                                  <UserAvatar
+                                    user={{
+                                      id: member.user?.id,
+                                      first_name: member.user?.first_name || '',
+                                      last_name: member.user?.last_name || '',
+                                      profile_pic: member.user?.profile_pic,
+                                    }}
+                                    size={40}
+                                    clickable={false}
                                   />
-                                </ListItem>
-                              </React.Fragment>
-                            ))}
-                    </List>
-                    <Divider sx={{ my: 1 }} />
-                  </Box>
-                </>
+                                </ListItemAvatar>
+                                <ListItemText
+                                  primary={
+                                    <Typography
+                                      variant='subtitle1'
+                                      sx={{
+                                        fontWeight: 600,
+                                        color: theme.palette.text.primary,
+                                      }}
+                                    >
+                                      {member.user?.first_name}{' '}
+                                      {member.user?.last_name}
+                                    </Typography>
+                                  }
+                                  secondary={
+                                    <Box sx={{ mt: 0.5 }}>
+                                      <Typography
+                                        variant='body2'
+                                        sx={{
+                                          color: theme.palette.text.secondary,
+                                          mb: 0.5,
+                                        }}
+                                      >
+                                        {member.user?.email}
+                                      </Typography>
+                                      <Box
+                                        sx={{
+                                          display: 'flex',
+                                          gap: 1,
+                                          flexWrap: 'wrap',
+                                        }}
+                                      >
+                                        <Chip
+                                          label={
+                                            member.designation?.title || 'N/A'
+                                          }
+                                          size='small'
+                                          sx={{
+                                            backgroundColor:
+                                              'var(--primary-dark-color)',
+                                            color: 'white',
+                                            fontSize: '0.7rem',
+                                            height: 20,
+                                          }}
+                                        />
+                                        <Chip
+                                          label={
+                                            member.department?.name || 'N/A'
+                                          }
+                                          size='small'
+                                          variant='outlined'
+                                          sx={{
+                                            borderColor: theme.palette.divider,
+                                            color: theme.palette.text.secondary,
+                                            fontSize: '0.7rem',
+                                            height: 20,
+                                          }}
+                                        />
+                                      </Box>
+                                    </Box>
+                                  }
+                                />
+                              </ListItem>
+                            </React.Fragment>
+                          ))}
+                  </List>
+                  <Divider sx={{ my: 1, borderColor: theme.palette.divider }} />
+                </Box>
               )}
             </Box>
           </>

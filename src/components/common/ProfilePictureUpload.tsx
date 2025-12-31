@@ -2,7 +2,6 @@ import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
   Box,
   Avatar,
-  Button,
   Typography,
   CircularProgress,
   Alert,
@@ -19,6 +18,7 @@ import { profileApiService, type UserProfile } from '../../api/profileApi';
 import { useUser } from '../../hooks/useUser';
 import { useProfilePicture } from '../../context/ProfilePictureContext';
 import { snackbar } from '../../utils/snackbar';
+import AppButton from './AppButton';
 
 interface ProfilePictureUploadProps {
   user: UserProfile;
@@ -532,7 +532,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
             </Typography>
             <IconButton
               onClick={() => setShowUploadDialog(false)}
-              sx={{ color: 'text.secondary' }}
+              sx={{ color: 'var(--primary-dark-color)' }}
             >
               <Close />
             </IconButton>
@@ -593,15 +593,26 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
             </Box>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button
+            <AppButton
               onClick={() => setShowUploadDialog(false)}
               variant='outlined'
+              variantType='secondary'
+              sx={{
+                textTransform: 'none',
+                borderColor: 'var(--primary-dark-color)',
+                color: 'var(--primary-dark-color)',
+                '&:hover': {
+                  borderColor: 'var(--primary-dark-color)',
+                  backgroundColor: 'action.hover',
+                },
+              }}
             >
               Cancel
-            </Button>
-            <Button
+            </AppButton>
+            <AppButton
               onClick={handleUpload}
               variant='contained'
+              variantType='primary'
               disabled={Boolean(
                 uploading ||
                   (selectedFile && selectedFile.size > 5 * 1024 * 1024)
@@ -609,7 +620,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
               startIcon={uploading ? <CircularProgress size={16} /> : null}
             >
               {uploading ? 'Uploading...' : 'Upload'}
-            </Button>
+            </AppButton>
           </DialogActions>
         </Dialog>
       </Box>

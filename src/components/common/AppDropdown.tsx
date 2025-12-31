@@ -5,6 +5,7 @@ import {
   MenuItem,
   Typography,
   Box,
+  useTheme,
   type SelectProps,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -33,21 +34,28 @@ interface AppDropdownProps
   showLabel?: boolean;
 }
 
-const ArrowIcon = ({ open }: { open: boolean }) => (
-  <Box
-    component='img'
-    src={Icons.arrowUp}
-    alt=''
-    sx={{
-      width: '16px',
-      height: '16px',
-      pointerEvents: 'none',
-      transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-      transition: 'transform 0.2s ease-in-out',
-      marginRight: '16px',
-    }}
-  />
-);
+const ArrowIcon = ({ open }: { open: boolean }) => {
+  const theme = useTheme();
+  return (
+    <Box
+      component='img'
+      src={Icons.arrowUp}
+      alt=''
+      sx={{
+        width: { xs: 14, sm: 16 },
+        height: { xs: 14, sm: 16 },
+        pointerEvents: 'none',
+        transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+        transition: 'transform 0.2s ease-in-out',
+        marginRight: { xs: '12px', sm: '16px' },
+        filter:
+          theme.palette.mode === 'dark'
+            ? 'brightness(0) saturate(100%) invert(56%)'
+            : 'none',
+      }}
+    />
+  );
+};
 
 const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
   (
@@ -68,17 +76,24 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
     },
     ref
   ) => {
+    const theme = useTheme();
     const [open, setOpen] = useState(false);
 
     return (
-      <Box sx={containerSx}>
+      <Box
+        sx={{
+          ...containerSx,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}
+      >
         {showLabel && (
           <Box
             sx={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'flex-start',
-              mb: 0.5,
             }}
           >
             <Typography
@@ -92,7 +107,10 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                 fontSize: 'var(--subheading2-font-size)',
                 lineHeight: 'var(--subheading2-line-height)',
                 letterSpacing: 'var(--subheading2-letter-spacing)',
-                color: '#2C2C2C',
+                color:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.text.primary
+                    : 'var(--black-color)',
               }}
             >
               {label}
@@ -100,7 +118,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
             {error && helperText && (
               <Typography
                 sx={{
-                  fontSize: { xs: '12px', sm: '14px' },
+                  fontSize: 'var(--label-font-size)',
                   lineHeight: 'var(--label-line-height)',
                   color: '#d32f2f',
                   fontWeight: 400,
@@ -117,46 +135,60 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
           ref={ref}
           fullWidth
           error={error}
-          sx={{
-            width: '100%',
-            '& .MuiOutlinedInput-root': {
-              backgroundColor: inputBackgroundColor || '#FFFFFF',
-              borderRadius: '12px',
-              minHeight: '48px',
+          sx={[
+            {
               width: '100%',
-              padding: '0 !important',
-              '& fieldset': {
-                borderColor: error ? '#d32f2f' : '#BDBDBD',
-                borderWidth: '1px',
+              '& .MuiOutlinedInput-root': {
+                backgroundColor:
+                  inputBackgroundColor || theme.palette.background.paper,
+                borderRadius: '12px',
+                minHeight: { xs: '40px', sm: '44px' },
+                width: '100%',
+                padding: '0 !important',
+                '& fieldset': {
+                  borderColor: error
+                    ? theme.palette.error.main
+                    : theme.palette.divider,
+                  borderWidth: '1px',
+                },
+                '&:hover fieldset': {
+                  borderColor: error
+                    ? theme.palette.error.main
+                    : theme.palette.divider,
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: error
+                    ? theme.palette.error.main
+                    : theme.palette.primary.main,
+                  borderWidth: '1px',
+                },
               },
-              // '&:hover fieldset': {
-              //   borderColor: error ? '#d32f2f' : '#BDBDBD',
-              // },
-              '&.Mui-focused fieldset': {
-                borderColor: error ? '#d32f2f' : '#BDBDBD',
-                borderWidth: '1px',
+              '& .MuiInputBase-input': {
+                padding: { xs: '8px 12px', sm: '10px 16px' },
+                backgroundColor: 'transparent !important',
+              },
+              '& .MuiOutlinedInput-input': {
+                backgroundColor: 'transparent !important',
+              },
+              '& .MuiSelect-select': {
+                color: theme.palette.text.primary,
+                fontSize: 'var(--label-font-size)',
+                lineHeight: 'var(--label-line-height)',
+                letterSpacing: 'var(--label-letter-spacing)',
+                fontWeight: 400,
+                padding: { xs: '8px 12px', sm: '10px 16px' },
+                paddingRight: { xs: '36px', sm: '40px' },
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: 'transparent !important',
+              },
+              '& .MuiSelect-icon': {
+                color: theme.palette.text.secondary,
+                right: { xs: '12px', sm: '16px' },
               },
             },
-            '& .MuiInputBase-input': {
-              padding: '12px 16px !important',
-            },
-            '& .MuiSelect-select': {
-              color: '#2C2C2C',
-              fontSize: 'var(--label-font-size)',
-              lineHeight: 'var(--label-line-height)',
-              letterSpacing: 'var(--label-letter-spacing)',
-              fontWeight: 400,
-              padding: '12px 16px !important',
-              paddingRight: '40px !important',
-              display: 'flex',
-              alignItems: 'center',
-            },
-            '& .MuiSelect-icon': {
-              color: '#2C2C2C',
-              right: '16px',
-            },
-            ...sx,
-          }}
+            ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+          ]}
         >
           <Select
             {...rest}
@@ -181,7 +213,12 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
             }}
             sx={{
               '& .MuiOutlinedInput-notchedOutline': {
-                border: error ? '1px solid #d32f2f' : '1px solid #BDBDBD',
+                border: error
+                  ? `1px solid ${theme.palette.error.main}`
+                  : `1px solid ${theme.palette.divider}`,
+              },
+              '& .MuiSelect-select': {
+                backgroundColor: 'transparent !important',
               },
             }}
             MenuProps={{
@@ -189,21 +226,33 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                 sx: {
                   borderRadius: '12px',
                   mt: 1,
-                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                  backgroundColor: theme.palette.background.paper,
+                  boxShadow:
+                    theme.palette.mode === 'dark'
+                      ? '0 4px 6px rgba(0, 0, 0, 0.3)'
+                      : '0 4px 6px rgba(0, 0, 0, 0.1)',
                   '& .MuiMenuItem-root': {
                     fontSize: 'var(--label-font-size)',
                     lineHeight: 'var(--label-line-height)',
                     letterSpacing: 'var(--label-letter-spacing)',
-                    color: '#2C2C2C',
-                    // '&:hover': {
-                    //   backgroundColor: 'var(--primary-color)',
-                    // },
+                    color: theme.palette.text.primary,
+                    minHeight: { xs: 40, sm: 44 },
+                    backgroundColor: 'transparent !important',
+                    '&:hover': {
+                      backgroundColor: `${theme.palette.action.hover} !important`,
+                    },
                     '&.Mui-selected': {
-                      backgroundColor: 'var(--primary-dark-color)',
-                      color: '#FFFFFF',
-                      // '&:hover': {
-                      //   backgroundColor: 'var(--primary-dark-color)',
-                      // },
+                      backgroundColor: 'transparent !important',
+                      color: theme.palette.text.primary,
+                      '&:hover': {
+                        backgroundColor: `${theme.palette.action.hover} !important`,
+                      },
+                    },
+                    '&.Mui-selected.Mui-focusVisible': {
+                      backgroundColor: 'transparent !important',
+                    },
+                    '&.Mui-focusVisible': {
+                      backgroundColor: 'transparent !important',
                     },
                   },
                 },
@@ -214,6 +263,22 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
               <MenuItem
                 key={option.value}
                 value={option.value === 'all' ? '' : option.value}
+                sx={{
+                  backgroundColor: 'transparent !important',
+                  '&.Mui-selected': {
+                    backgroundColor: 'transparent !important',
+                    color: theme.palette.text.primary,
+                    '&:hover': {
+                      backgroundColor: `${theme.palette.action.hover} !important`,
+                    },
+                  },
+                  '&.Mui-focusVisible': {
+                    backgroundColor: 'transparent !important',
+                  },
+                  '&:hover': {
+                    backgroundColor: `${theme.palette.action.hover} !important`,
+                  },
+                }}
               >
                 {option.label}
               </MenuItem>

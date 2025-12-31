@@ -79,12 +79,6 @@ export default function GenderPercentageChart() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Debug: Log initial state
-
-  const bgColor = darkMode ? '#111' : '#fff';
-  const borderColor = darkMode ? '#252525' : '#f0f0f0';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
-
   // Responsive donut chart dimensions
   const chartHeight = isSmallScreen ? 200 : 300;
   const innerRadius = isSmallScreen ? 50 : 80;
@@ -132,9 +126,9 @@ export default function GenderPercentageChart() {
       <Box
         sx={{
           p: 2,
-          border: `1px solid ${borderColor}`,
+          border: `1px solid ${theme.palette.divider}`,
           borderRadius: '0.375rem',
-          backgroundColor: bgColor,
+          backgroundColor: theme.palette.background.paper,
           direction: language === 'ar' ? 'rtl' : 'ltr',
           display: 'flex',
           alignItems: 'center',
@@ -152,9 +146,9 @@ export default function GenderPercentageChart() {
       <Box
         sx={{
           p: 2,
-          border: `1px solid ${borderColor}`,
+          border: `1px solid ${theme.palette.divider}`,
           borderRadius: '0.375rem',
-          backgroundColor: bgColor,
+          backgroundColor: theme.palette.background.paper,
           direction: language === 'ar' ? 'rtl' : 'ltr',
         }}
       >
@@ -162,7 +156,7 @@ export default function GenderPercentageChart() {
           fontWeight='bold'
           fontSize={{ xs: '20px', lg: '28px' }}
           mb={0.5}
-          color={textColor}
+          sx={{ color: theme.palette.text.primary }}
         >
           {labels.activity[language]}
         </Typography>
@@ -208,7 +202,7 @@ export default function GenderPercentageChart() {
             fontSize: { xs: '20px', lg: '28px' },
             lineHeight: { xs: '24px', lg: '28px' },
             letterSpacing: '-2%',
-            color: '#2C2C2C',
+            color: theme.palette.text.primary,
           }}
         >
           {labels.activity[language]}
@@ -231,7 +225,7 @@ export default function GenderPercentageChart() {
                   lineHeight={{ xs: '24px', lg: '28px' }}
                   letterSpacing='-1%'
                   fontWeight={500}
-                  color='#2C2C2C'
+                  sx={{ color: theme.palette.text.primary }}
                 >
                   {item.name === 'Male'
                     ? labels.male[language]
@@ -315,7 +309,7 @@ export default function GenderPercentageChart() {
               lineHeight: { xs: '14px', lg: '20px' },
               letterSpacing: '-1%',
               fontWeight: 400,
-              color: '#888888',
+              color: theme.palette.text.secondary,
               mb: 0.5,
             }}
           >
@@ -327,7 +321,7 @@ export default function GenderPercentageChart() {
               fontSize: { xs: '18px', lg: '28px' },
               lineHeight: { xs: '24px', lg: '36px' },
               letterSpacing: '-2%',
-              color: '#2C2C2C',
+              color: theme.palette.text.primary,
             }}
           >
             {totalEmployees}

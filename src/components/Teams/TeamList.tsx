@@ -35,6 +35,7 @@ import DeleteTeamDialog from './DeleteTeamDialog';
 import AvailableEmployees from './AvailableEmployees';
 import { exportCSV } from '../../api/exportApi';
 import { isAdmin, isHRAdmin } from '../../utils/auth';
+import { Icons } from '../../assets/icons';
 
 interface TeamListProps {
   teams: Team[];
@@ -253,12 +254,12 @@ const TeamList: React.FC<TeamListProps> = ({
           }
           aria-label='Export teams to CSV'
           sx={{
-            backgroundColor: 'primary.main',
+            backgroundColor: '#3083DC',
             borderRadius: '6px',
             padding: '6px',
-            color: 'white',
+            color: '#FFFFFF',
             '&:hover': {
-              backgroundColor: 'primary.dark',
+              backgroundColor: '#3083DC',
             },
           }}
         >
@@ -412,21 +413,35 @@ const TeamList: React.FC<TeamListProps> = ({
                             size='small'
                             onClick={() => handleEditTeam(team)}
                             sx={{
-                              color: theme => theme.palette.primary.main,
                               padding: { xs: 0.5, sm: 1 },
                             }}
                           >
-                            <EditIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                            <Box
+                              component='img'
+                              src={Icons.edit}
+                              alt='Edit'
+                              sx={{
+                                width: { xs: 18, sm: 20 },
+                                height: { xs: 18, sm: 20 },
+                              }}
+                            />
                           </IconButton>
                           <IconButton
                             size='small'
                             onClick={() => handleDeleteTeam(team)}
                             sx={{
-                              color: theme => theme.palette.error.main,
                               padding: { xs: 0.5, sm: 1 },
                             }}
                           >
-                            <DeleteIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                            <Box
+                              component='img'
+                              src={Icons.delete}
+                              alt='Delete'
+                              sx={{
+                                width: { xs: 18, sm: 20 },
+                                height: { xs: 18, sm: 20 },
+                              }}
+                            />
                           </IconButton>
                         </Box>
                       )}
@@ -440,7 +455,7 @@ const TeamList: React.FC<TeamListProps> = ({
                         color: theme => theme.palette.text.secondary,
                         mb: 3,
                         lineHeight: 1.6,
-                        fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                        fontSize: 'var(--body-font-size)',
                         display: '-webkit-box',
                         WebkitLineClamp: 3,
                         WebkitBoxOrient: 'vertical',
@@ -469,10 +484,13 @@ const TeamList: React.FC<TeamListProps> = ({
                         <PersonIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
                       }
                       sx={{
-                        backgroundColor: theme => theme.palette.primary.main,
-                        color: theme => theme.palette.primary.contrastText,
+                        backgroundColor: '#3083DC',
+                        color: '#FFFFFF',
                         fontSize: { xs: '0.7rem', sm: '0.75rem' },
                         height: { xs: 24, sm: 28 },
+                        '& .MuiChip-icon': {
+                          color: '#F8F8F8',
+                        },
                       }}
                     />
                     {!team.teamMembers && (
@@ -500,6 +518,7 @@ const TeamList: React.FC<TeamListProps> = ({
                   >
                     {isEmployeePoolTeam ? (
                       <AppButton
+                        variantType='secondary'
                         variant='outlined'
                         size='small'
                         text={lang.viewMembers}
@@ -508,21 +527,22 @@ const TeamList: React.FC<TeamListProps> = ({
                         }
                         onClick={() => handleOpenEmployeePool(team)}
                         sx={{
-                          borderColor: COLORS.PRIMARY,
-                          color: COLORS.PRIMARY,
+                          borderColor: '#3083DC',
+                          color: '#3083DC',
                           backgroundColor: 'transparent',
                           fontSize: { xs: '0.75rem', sm: '0.875rem' },
                           py: { xs: 0.5, sm: 0.75 },
                           px: { xs: 1, sm: 1.5 },
                           '&:hover': {
-                            borderColor: COLORS.PRIMARY,
-                            backgroundColor: 'rgba(72, 76, 127, 0.1)',
+                            borderColor: '#3083DC',
+                            backgroundColor: 'rgba(48, 131, 220, 0.1)',
                           },
                         }}
                       />
                     ) : (
                       <>
                         <AppButton
+                          variantType='secondary'
                           variant='outlined'
                           size='small'
                           text={lang.viewMembers}
@@ -531,20 +551,21 @@ const TeamList: React.FC<TeamListProps> = ({
                           }
                           onClick={() => handleViewMembers(team)}
                           sx={{
-                            borderColor: COLORS.PRIMARY,
-                            color: COLORS.PRIMARY,
+                            borderColor: '#3083DC',
+                            color: '#3083DC',
                             backgroundColor: 'transparent',
                             fontSize: { xs: '0.75rem', sm: '0.875rem' },
                             py: { xs: 0.5, sm: 0.75 },
                             px: { xs: 1, sm: 1.5 },
                             '&:hover': {
-                              borderColor: COLORS.PRIMARY,
-                              backgroundColor: 'rgba(72, 76, 127, 0.1)',
+                              borderColor: '#3083DC',
+                              backgroundColor: 'rgba(48, 131, 220, 0.1)',
                             },
                           }}
                         />
                         {!isHRAdmin() && (
                           <AppButton
+                            variantType='secondary'
                             variant='outlined'
                             size='small'
                             text={lang.addMember}
@@ -553,15 +574,15 @@ const TeamList: React.FC<TeamListProps> = ({
                             }
                             onClick={() => handleAddMember(team)}
                             sx={{
-                              borderColor: COLORS.PRIMARY,
-                              color: COLORS.PRIMARY,
+                              borderColor: '#3083DC',
+                              color: '#3083DC',
                               backgroundColor: 'transparent',
                               fontSize: { xs: '0.75rem', sm: '0.875rem' },
                               py: { xs: 0.5, sm: 0.75 },
                               px: { xs: 1, sm: 1.5 },
                               '&:hover': {
-                                borderColor: COLORS.PRIMARY,
-                                backgroundColor: 'rgba(72, 76, 127, 0.1)',
+                                borderColor: '#3083DC',
+                                backgroundColor: 'rgba(48, 131, 220, 0.1)',
                               },
                             }}
                           />
@@ -592,6 +613,7 @@ const TeamList: React.FC<TeamListProps> = ({
           </DialogContent>
           <DialogActions>
             <AppButton
+              variantType='secondary'
               variant='outlined'
               text={lang.cancel}
               onClick={() => setShowMemberDialog(false)}
@@ -624,6 +646,7 @@ const TeamList: React.FC<TeamListProps> = ({
             </DialogContent>
             <DialogActions>
               <AppButton
+                variantType='secondary'
                 variant='outlined'
                 text={lang.cancel}
                 onClick={handleCloseEmployeePool}
@@ -655,6 +678,7 @@ const TeamList: React.FC<TeamListProps> = ({
             </DialogContent>
             <DialogActions>
               <AppButton
+                variantType='secondary'
                 variant='outlined'
                 text={lang.cancel}
                 onClick={() => setShowAddMemberDialog(false)}

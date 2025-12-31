@@ -15,14 +15,11 @@ import {
   TableHead,
   TableRow,
   Paper,
-  FormControl,
-  Select,
-  MenuItem,
   CircularProgress,
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select';
 import AppButton from '../common/AppButton';
 import AppTable from '../common/AppTable';
+import AppDropdown from '../common/AppDropdown';
 
 import {
   Group as GroupIcon,
@@ -168,8 +165,8 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
     setShowMemberDialog(true);
   };
 
-  const handleTenantChange = (event: SelectChangeEvent<string>) => {
-    setSelectedTenantId(event.target.value);
+  const handleTenantChange = (value: string | number) => {
+    setSelectedTenantId(value ? String(value) : 'all');
   };
 
   const getStatusColor = (status: string): 'success' | 'error' | 'warning' => {
@@ -224,18 +221,26 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
             gap: 2,
           }}
         >
-          <FormControl
-            size='small'
-            sx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}
-          >
-            <Select
+          <Box sx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}>
+            <AppDropdown
+              label={lang.selectTenant}
+              showLabel={false}
               value={selectedTenantId}
-              onChange={handleTenantChange}
-              displayEmpty
+              onChange={e => handleTenantChange(e.target.value)}
+              placeholder={lang.selectTenant}
+              inputBackgroundColor={bgColor}
+              options={[
+                { value: 'all', label: lang.allTenants },
+                ...allTenants.map((tenant: SystemTenant) => ({
+                  value: tenant.id,
+                  label: tenant.name,
+                })),
+              ]}
               sx={{
-                color: textColor,
-                backgroundColor: bgColor,
-                '.MuiOutlinedInput-notchedOutline': {
+                '& .MuiSelect-select': {
+                  color: textColor,
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: borderColor,
                 },
                 '&:hover .MuiOutlinedInput-notchedOutline': {
@@ -245,27 +250,8 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                   borderColor: borderColor,
                 },
               }}
-            >
-              <MenuItem value='all'>{lang.allTenants}</MenuItem>
-              {allTenants.map((tenant: SystemTenant) => {
-                return (
-                  <MenuItem key={tenant.id} value={tenant.id}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        width: '100%',
-                      }}
-                    >
-                      <Typography sx={{ flexGrow: 1 }}>
-                        {tenant.name}
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
+            />
+          </Box>
         </Box>
 
         {/* Selected Tenant Info */}
@@ -415,7 +401,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                         color: theme => theme.palette.text.secondary,
                         mb: 3,
                         lineHeight: 1.6,
-                        fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                        fontSize: 'var(--body-font-size)',
                         display: '-webkit-box',
                         WebkitLineClamp: 3,
                         WebkitBoxOrient: 'vertical',
@@ -444,10 +430,13 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                         <PersonIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
                       }
                       sx={{
-                        backgroundColor: theme => theme.palette.primary.main,
-                        color: theme => theme.palette.primary.contrastText,
+                        backgroundColor: '#3083DC',
+                        color: '#FFFFFF',
                         fontSize: { xs: '0.7rem', sm: '0.75rem' },
                         height: { xs: 24, sm: 28 },
+                        '& .MuiChip-icon': {
+                          color: '#F8F8F8',
+                        },
                       }}
                     />
                   </Box>
@@ -460,6 +449,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                     }}
                   >
                     <AppButton
+                      variantType='secondary'
                       variant='outlined'
                       size='small'
                       text={lang.viewMembers}
@@ -469,15 +459,15 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                       onClick={() => handleViewMembers(team)}
                       fullWidth
                       sx={{
-                        borderColor: theme => theme.palette.primary.main,
-                        color: theme => theme.palette.primary.main,
+                        borderColor: '#3083DC',
+                        color: '#3083DC',
                         backgroundColor: 'transparent',
                         fontSize: { xs: '0.75rem', sm: '0.875rem' },
                         py: { xs: 0.5, sm: 0.75 },
                         px: { xs: 1, sm: 1.5 },
                         '&:hover': {
-                          borderColor: theme => theme.palette.primary.main,
-                          backgroundColor: 'rgba(72, 76, 127, 0.1)',
+                          borderColor: '#3083DC',
+                          backgroundColor: 'rgba(48, 131, 220, 0.1)',
                         },
                       }}
                     >
@@ -613,6 +603,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
         </DialogContent>
         <DialogActions>
           <AppButton
+            variantType='secondary'
             variant='outlined'
             text={lang.cancel}
             onClick={() => setShowMemberDialog(false)}

@@ -1,11 +1,16 @@
 import React from 'react';
-import { TextField, type TextFieldProps, type SxProps, type Theme } from '@mui/material';
+import {
+  TextField,
+  type TextFieldProps,
+  type SxProps,
+  type Theme,
+} from '@mui/material';
 
 type AppTextFieldVariant = 'auth' | 'default';
 
-interface AppTextFieldProps extends TextFieldProps {
+type AppTextFieldProps = TextFieldProps & {
   variantType?: AppTextFieldVariant;
-}
+};
 
 const variantStyles: Record<AppTextFieldVariant, SxProps<Theme>> = {
   auth: {
@@ -32,21 +37,14 @@ const variantStyles: Record<AppTextFieldVariant, SxProps<Theme>> = {
 export const AppTextField = React.forwardRef<HTMLDivElement, AppTextFieldProps>(
   ({ variantType = 'default', sx, ...rest }, ref) => {
     const baseSx = variantStyles[variantType] || {};
+    const mergedSx = Array.isArray(sx)
+      ? ([baseSx, ...sx] as SxProps<Theme>)
+      : ([baseSx, sx] as SxProps<Theme>);
 
-    return (
-      <TextField
-        ref={ref}
-        {...rest}
-        sx={[
-          baseSx as SxProps<Theme>,
-          sx as SxProps<Theme>,
-        ]}
-      />
-    );
+    return <TextField ref={ref} {...rest} sx={mergedSx} />;
   }
 );
 
 AppTextField.displayName = 'AppTextField';
 
 export default AppTextField;
-

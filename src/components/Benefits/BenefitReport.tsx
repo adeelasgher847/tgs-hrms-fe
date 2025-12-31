@@ -30,6 +30,9 @@ import AppDropdown from '../common/AppDropdown';
 import AppTable from '../common/AppTable';
 
 import { PAGINATION } from '../../constants/appConstants';
+import { getUserRole } from '../../utils/auth';
+import { normalizeRole } from '../../utils/permissions';
+import AppButton from '../common/AppButton';
 
 const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
@@ -57,6 +60,8 @@ interface BenefitRow {
 }
 
 const BenefitReport: React.FC = () => {
+  const role = normalizeRole(getUserRole());
+  const isManager = role === 'manager';
   const user = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem('user') || '{}');
@@ -443,29 +448,37 @@ const BenefitReport: React.FC = () => {
             size='small'
           />
         </Box>
-
-        <Box
-          sx={{
-            mt: { xs: 1, sm: 0 },
-            display: 'flex',
-            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-          }}
-        >
+        {isManager ? (
+          <AppButton
+            variant='contained'
+            variantType='primary'
+            onClick={handleDownload}
+            sx={{
+              borderRadius: '6px',
+              minWidth: 0,
+              padding: '6px',
+              height: 'auto',
+            }}
+            aria-label='Download CSV'
+          >
+            <FileDownloadIcon aria-hidden='true' />
+          </AppButton>
+        ) : (
           <Tooltip title='Download CSV'>
             <IconButton
               color='primary'
               onClick={handleDownload}
               sx={{
-                backgroundColor: 'var(--primary-dark-color)',
+                backgroundColor: 'primary.main',
                 color: 'white',
                 borderRadius: '6px',
-                '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+                '&:hover': { backgroundColor: 'primary.dark' },
               }}
             >
               <FileDownloadIcon />
             </IconButton>
           </Tooltip>
-        </Box>
+        )}
       </Box>
 
       {/* Table */}

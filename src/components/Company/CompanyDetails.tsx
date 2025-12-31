@@ -14,6 +14,7 @@ import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppInputField from '../common/AppInputField';
 import AuthSidebar from '../common/AuthSidebar';
 import { Icons } from '../../assets/icons';
+import AppPageTitle from '../common/AppPageTitle';
 
 const CompanyDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -312,17 +313,15 @@ const CompanyDetails: React.FC = () => {
 
             {/* Div 2: Title and Tagline */}
             <Box>
-              <Typography
-                variant='h1'
+              <AppPageTitle
                 sx={{
-                  fontSize: { xs: '32px', lg: '48px' },
-                  fontWeight: 700,
                   mb: '6px',
+                  fontWeight: 700,
                   color: { xs: '#001218', lg: 'inherit' },
                 }}
               >
                 Company Details
-              </Typography>
+              </AppPageTitle>
               <Typography
                 className='body'
                 sx={{

@@ -21,6 +21,7 @@ import signupApi, {
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import { Icons } from '../../assets/icons';
+import AppPageTitle from '../common/AppPageTitle';
 
 // Default plans as fallback
 const defaultPlans = [
@@ -510,18 +511,11 @@ const SelectPlan: React.FC = () => {
       }}
     >
       {/* Heading */}
-      <Typography
-        variant='h1'
-        sx={{
-          color: 'var(--text-color)',
-          fontWeight: 700,
-          fontSize: { xs: '32px', lg: '48px' },
-          mb: 1,
-          textAlign: 'center',
-        }}
+      <AppPageTitle
+        sx={{ color: 'var(--text-color)', fontWeight: 700, mb: 1, textAlign: 'center' }}
       >
         Choose Your Plan
-      </Typography>
+      </AppPageTitle>
       <Typography
         sx={{
           color: 'var(--dark-grey-color)',

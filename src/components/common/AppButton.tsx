@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Button,
+  useTheme,
   type ButtonProps,
   type SxProps,
   type Theme,
@@ -14,63 +15,6 @@ interface AppButtonProps extends Omit<ButtonProps, 'children'> {
   children?: React.ReactNode;
 }
 
-const variantStyles: Record<AppButtonVariant, SxProps<Theme>> = {
-  primary: {
-    backgroundColor: 'var(--primary-dark-color)',
-    color: 'common.white',
-    textTransform: 'none',
-    borderRadius: '12px',
-    fontWeight: 600,
-    fontSize: '16px',
-    padding: '8px 32px',
-    height: '40px',
-    // '&:hover': {
-    //   backgroundColor: 'primary.dark',
-    // },
-    '&:disabled': {
-      backgroundColor: '#ccc',
-    },
-  },
-  secondary: {
-    borderColor: 'primary.main',
-    color: 'primary.main',
-    textTransform: 'uppercase',
-    borderRadius: '12px',
-    fontWeight: 500,
-    // '&:hover': {
-    //   borderColor: 'primary.dark',
-    //   backgroundColor: 'rgba(72,76,127,0.08)',
-    // },
-    '&:disabled': {
-      borderColor: '#ccc',
-      color: '#ccc',
-    },
-  },
-  danger: {
-    backgroundColor: 'error.main',
-    color: 'common.white',
-    textTransform: 'uppercase',
-    borderRadius: '12px',
-    fontWeight: 500,
-    // '&:hover': {
-    //   backgroundColor: 'error.dark',
-    // },
-    '&:disabled': {
-      backgroundColor: '#f2b8b5',
-    },
-  },
-  ghost: {
-    borderColor: 'transparent',
-    color: 'text.primary',
-    textTransform: 'none',
-    borderRadius: '12px',
-    // '&:hover': {
-    //   backgroundColor: 'action.hover',
-    //   borderColor: 'transparent',
-    // },
-  },
-};
-
 export function AppButton({
   variantType = 'primary',
   sx,
@@ -78,7 +22,90 @@ export function AppButton({
   children,
   ...rest
 }: AppButtonProps) {
-  const baseSx = variantStyles[variantType] || {};
+  const theme = useTheme();
+
+  const getVariantStyles = (): SxProps<Theme> => {
+    const isDark = theme.palette.mode === 'dark';
+
+    const common: SxProps<Theme> = {
+      // Typography: use CSS variables so our mobile typography scale applies everywhere.
+      fontSize: 'var(--body-font-size)',
+      lineHeight: 'var(--body-line-height)',
+      letterSpacing: 'var(--body-letter-spacing)',
+      textTransform: 'none',
+      borderRadius: '12px',
+      fontWeight: 400,
+      // Sizing/padding: comfortable defaults on small screens.
+      minHeight: { xs: 40, sm: 44 },
+      px: { xs: 2, sm: 3 },
+      py: { xs: 0.75, sm: 1 },
+      // Keep icon sizing aligned with text scale
+      '& .MuiButton-startIcon, & .MuiButton-endIcon': {
+        '& > *:nth-of-type(1)': {
+          fontSize: '1.25em',
+        },
+      },
+    };
+
+    const baseStyles: Record<AppButtonVariant, SxProps<Theme>> = {
+      primary: {
+        ...common,
+        backgroundColor: 'primary.main',
+        color: 'common.white',
+        '&:hover': {
+          backgroundColor: 'primary.dark',
+        },
+        '&:disabled': {
+          backgroundColor: isDark ? '#555555' : '#ccc',
+          color: isDark ? '#888888' : '#999999',
+        },
+      },
+      secondary: {
+        ...common,
+        // Cancel button style (light theme): use App.css variable for #2C2C2C
+        borderColor: isDark ? theme.palette.divider : 'var(--black-color)',
+        borderWidth: 1,
+        borderStyle: 'solid',
+        color: isDark ? theme.palette.text.primary : 'var(--black-color)',
+        '&:hover': {
+          borderColor: isDark ? theme.palette.divider : 'var(--black-color)',
+          backgroundColor: 'action.hover',
+        },
+        '&:disabled': {
+          borderColor: isDark ? '#555555' : '#ccc',
+          color: isDark ? '#555555' : '#ccc',
+        },
+      },
+      danger: {
+        ...common,
+        backgroundColor: 'error.main',
+        color: 'common.white',
+        '&:hover': {
+          backgroundColor: 'error.dark',
+        },
+        '&:disabled': {
+          backgroundColor: isDark ? '#5a3a3a' : '#f2b8b5',
+          color: isDark ? '#888888' : '#999999',
+        },
+      },
+      ghost: {
+        ...common,
+        borderColor: 'transparent',
+        color: 'text.primary',
+        '&:disabled': {
+          color: isDark ? '#555555' : '#ccc',
+        },
+        '&:hover': {
+          backgroundColor: 'action.hover',
+          borderColor: 'transparent',
+        },
+      },
+    };
+
+    return baseStyles[variantType] || {};
+  };
+
+  const baseSx = getVariantStyles();
 
   return (
     <Button {...rest} sx={[baseSx as SxProps<Theme>, sx as SxProps<Theme>]}>
