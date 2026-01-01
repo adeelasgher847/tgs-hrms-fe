@@ -288,7 +288,6 @@ const AttendanceSummaryReport: React.FC = () => {
               borderRadius: '6px',
               padding: '6px',
               color: 'white',
-              width: { xs: '100%', sm: 'auto' },
               '&:hover': {
                 backgroundColor: '#3083DC',
               },
