@@ -53,23 +53,23 @@ interface ApiAssetRequestExtended extends ApiAssetRequest {
   subcategory_id?: string | null;
   subcategory_name?: string;
   category?:
-    | string
-    | {
-        id?: string;
-        name?: string;
-        description?: string | null;
-        icon?: string | null;
-      };
+  | string
+  | {
+    id?: string;
+    name?: string;
+    description?: string | null;
+    icon?: string | null;
+  };
   subcategory?:
-    | string
-    | {
-        name?: string;
-        title?: string;
-        subcategory_name?: string;
-        subcategoryName?: string;
-        display_name?: string;
-        label?: string;
-      };
+  | string
+  | {
+    name?: string;
+    title?: string;
+    subcategory_name?: string;
+    subcategoryName?: string;
+    display_name?: string;
+    label?: string;
+  };
   subcategoryId?: string;
   subcategoryName?: string;
   rejection_reason?: string | null;
@@ -834,11 +834,11 @@ const AssetRequests: React.FC = () => {
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', sm: 'center' },
           mb: 3,
-          flexWrap: 'wrap',
-          gap: 1,
+          gap: 2,
         }}
       >
         <Typography
@@ -848,7 +848,7 @@ const AssetRequests: React.FC = () => {
         >
           My Asset Requests
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}>
           <AppButton
             variant='contained'
             variantType='primary'
@@ -857,6 +857,9 @@ const AssetRequests: React.FC = () => {
             }
             onClick={handleOpenRequestModal}
             text='Request Asset'
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+            }}
           />
         </Box>
       </Box>
