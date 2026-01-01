@@ -11,7 +11,6 @@ import {
 import { Warning as WarningIcon } from '@mui/icons-material';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { Team } from '../../api/teamApi';
-import { COLORS } from '../../constants/appConstants';
 import AppButton from '../common/AppButton';
 
 interface DeleteTeamDialogProps {

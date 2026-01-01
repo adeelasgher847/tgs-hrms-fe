@@ -4,16 +4,11 @@ import {
   Card,
   CardContent,
   Typography,
-  Button,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   Tabs,
   Tab,
@@ -32,6 +27,7 @@ import AppTable from '../common/AppTable';
 import AppButton from '../common/AppButton';
 import Icon from '../common/Icon';
 import AppDropdown from '../common/AppDropdown';
+import AppFormModal from '../common/AppFormModal';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -57,23 +53,23 @@ interface ApiAssetRequestExtended extends ApiAssetRequest {
   subcategory_id?: string | null;
   subcategory_name?: string;
   category?:
-    | string
-    | {
-        id?: string;
-        name?: string;
-        description?: string | null;
-        icon?: string | null;
-      };
+  | string
+  | {
+    id?: string;
+    name?: string;
+    description?: string | null;
+    icon?: string | null;
+  };
   subcategory?:
-    | string
-    | {
-        name?: string;
-        title?: string;
-        subcategory_name?: string;
-        subcategoryName?: string;
-        display_name?: string;
-        label?: string;
-      };
+  | string
+  | {
+    name?: string;
+    title?: string;
+    subcategory_name?: string;
+    subcategoryName?: string;
+    display_name?: string;
+    label?: string;
+  };
   subcategoryId?: string;
   subcategoryName?: string;
   rejection_reason?: string | null;
@@ -838,11 +834,11 @@ const AssetRequests: React.FC = () => {
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', sm: 'center' },
           mb: 3,
-          flexWrap: 'wrap',
-          gap: 1,
+          gap: 2,
         }}
       >
         <Typography
@@ -852,7 +848,7 @@ const AssetRequests: React.FC = () => {
         >
           My Asset Requests
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}>
           <AppButton
             variant='contained'
             variantType='primary'
@@ -861,6 +857,9 @@ const AssetRequests: React.FC = () => {
             }
             onClick={handleOpenRequestModal}
             text='Request Asset'
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+            }}
           />
         </Box>
       </Box>
@@ -1099,164 +1098,116 @@ const AssetRequests: React.FC = () => {
         </Box>
       )}
 
-      {/* Request Asset Modal */}
-      <Dialog
+      {/* Request Asset Modal (using shared AppFormModal) */}
+      <AppFormModal
         open={isRequestModalOpen}
         onClose={() => setIsRequestModalOpen(false)}
+        title='Request New Asset'
+        wrapInForm
+        onSubmit={() => void handleSubmit(handleSubmitRequest)()}
+        submitLabel={loading ? 'Submitting...' : 'Submit Request'}
+        cancelLabel='Cancel'
+        isSubmitting={loading}
         maxWidth='sm'
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 1,
-          },
-        }}
       >
-        <DialogTitle>
-          <Typography
-            variant='h6'
-            fontWeight={600}
-            sx={{ color: 'var(--primary-dark-color)' }}
+        <Box sx={{ pt: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              flexWrap: 'wrap',
+              flexDirection: 'column',
+            }}
           >
-            Request New Asset
-          </Typography>
-        </DialogTitle>
-
-        <form onSubmit={handleSubmit(handleSubmitRequest)}>
-          <DialogContent>
-            <Box sx={{ pt: 1 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 2,
-                  flexWrap: 'wrap',
-                  flexDirection: 'column',
-                }}
-              >
-                <Box>
-                  <Controller
-                    name='category'
-                    control={control}
-                    render={({ field }) => (
-                      <Box>
-                        <AppDropdown
-                          {...field}
-                          label='Asset Category'
-                          showLabel={false}
-                          align='left'
-                          placeholder='Asset Category'
-                          value={field.value || ''}
-                          onChange={e => {
-                            field.onChange(e);
-                            setValue('subcategory', ''); // Reset subcategory when category changes
-                          }}
-                          options={categories.map(category => ({
-                            value: category.id,
-                            label: category.name,
-                          }))}
-                          disabled={loading || loadingData}
-                          error={!!errors.category}
-                        />
-                        {errors.category && (
-                          <Typography
-                            variant='caption'
-                            color='error'
-                            sx={{ mt: 0.5, ml: 1.75 }}
-                          >
-                            {errors.category.message}
-                          </Typography>
-                        )}
-                        {!errors.category && (
-                          <Typography
-                            variant='caption'
-                            color='text.secondary'
-                            sx={{ mt: 0.5, ml: 1.75 }}
-                          >
-                            Select the asset category you need
-                          </Typography>
-                        )}
-                      </Box>
-                    )}
-                  />
-                </Box>
-
-                {/* Subcategory selection - only show if a category with subcategories is selected */}
-                {selectedCategoryId && subcategories.length > 0 && (
+            <Box>
+              <Controller
+                name='category'
+                control={control}
+                render={({ field }) => (
                   <Box>
-                    <Controller
-                      name='subcategory'
-                      control={control}
-                      render={({ field }) => (
-                        <AppDropdown
-                          {...field}
-                          label='Subcategory'
-                          showLabel={false}
-                          align='left'
-                          placeholder='Subcategory'
-                          value={field.value || ''}
-                          onChange={field.onChange}
-                          options={subcategories.map(subcategory => ({
-                            value: subcategory.id,
-                            label: subcategory.name,
-                          }))}
-                          disabled={loading || loadingData || !selectedCategoryId}
-                        />
-                      )}
+                    <AppDropdown
+                      {...field}
+                      label='Asset Category'
+                      align='left'
+                      placeholder='Asset Category'
+                      value={field.value || ''}
+                      onChange={e => {
+                        field.onChange(e);
+                        setValue('subcategory', ''); // Reset subcategory when category changes
+                      }}
+                      options={categories.map(category => ({
+                        value: category.id,
+                        label: category.name,
+                      }))}
+                      disabled={loading || loadingData}
+                      error={!!errors.category}
                     />
+                    {errors.category ? (
+                      <Typography
+                        variant='caption'
+                        color='error'
+                        sx={{ mt: 0.5, ml: 1.75 }}
+                      >
+                        {errors.category.message}
+                      </Typography>
+                    ) : (
+                      <Typography
+                        variant='caption'
+                        color='text.secondary'
+                        sx={{ mt: 0.5, ml: 1.75 }}
+                      >
+                        Select the asset category you need
+                      </Typography>
+                    )}
                   </Box>
                 )}
-
-                <Box>
-                  <Controller
-                    name='remarks'
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        label='Remarks (Optional)'
-                        multiline
-                        rows={3}
-                        placeholder='Please provide details about why you need this asset...'
-                        disabled={loading}
-                      />
-                    )}
-                  />
-                </Box>
-              </Box>
+              />
             </Box>
-          </DialogContent>
 
-          <DialogActions sx={{ padding: '16px 24px', gap: 1 }}>
-            <AppButton
-              onClick={() => setIsRequestModalOpen(false)}
-              variant='outlined'
-              variantType='secondary'
-              disabled={loading}
-              sx={{
-                minWidth: 80,
-                textTransform: 'none',
-                borderColor: 'var(--primary-dark-color)',
-                color: 'var(--primary-dark-color)',
-                '&:hover': {
-                  borderColor: 'var(--primary-dark-color)',
-                  backgroundColor: 'action.hover',
-                },
-              }}
-            >
-              Cancel
-            </AppButton>
-            <AppButton
-              type='submit'
-              variant='contained'
-              variantType='primary'
-              disabled={loading}
-              sx={{ minWidth: 80, textTransform: 'none' }}
-            >
-              {loading ? 'Submitting...' : 'Submit Request'}
-            </AppButton>
-          </DialogActions>
-        </form>
-      </Dialog>
+            {selectedCategoryId && subcategories.length > 0 && (
+              <Box>
+                <Controller
+                  name='subcategory'
+                  control={control}
+                  render={({ field }) => (
+                    <AppDropdown
+                      {...field}
+                      label='Subcategory'
+                      align='left'
+                      placeholder='Subcategory'
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      options={subcategories.map(subcategory => ({
+                        value: subcategory.id,
+                        label: subcategory.name,
+                      }))}
+                      disabled={loading || loadingData || !selectedCategoryId}
+                    />
+                  )}
+                />
+              </Box>
+            )}
+
+            <Box>
+              <Controller
+                name='remarks'
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label='Remarks (Optional)'
+                    multiline
+                    rows={3}
+                    placeholder='Please provide details about why you need this asset...'
+                    disabled={loading}
+                  />
+                )}
+              />
+            </Box>
+          </Box>
+        </Box>
+      </AppFormModal>
 
       {/* Delete Request Confirmation Dialog */}
       <DeleteConfirmationDialog

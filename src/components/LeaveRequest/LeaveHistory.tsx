@@ -405,7 +405,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
       ) : (
-        <Paper elevation={1} sx={{ boxShadow: 'none', overflowX: 'auto' }}>
+        <Paper elevation={1} sx={{ boxShadow: 'none', overflowX: 'auto', backgroundColor: 'transparent' }}>
           <AppTable sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
@@ -485,7 +485,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                       label={
                         leave.status
                           ? leave.status.charAt(0).toUpperCase() +
-                            leave.status.slice(1)
+                          leave.status.slice(1)
                           : 'Unknown'
                       }
                       color={statusConfig[leave.status]?.color}

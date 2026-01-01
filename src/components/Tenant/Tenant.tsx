@@ -467,9 +467,8 @@ export const TenantPage: React.FC = () => {
 
         <Box display='flex' flexWrap='wrap' gap={2} alignItems='center'>
           <AppDropdown
-            label='Status'
             options={[
-              { value: 'all', label: 'All' },
+              { value: 'all', label: 'All Status' },
               { value: 'active', label: 'Active' },
               { value: 'suspended', label: 'Suspended' },
               { value: 'deleted', label: 'Deleted' },
@@ -682,7 +681,8 @@ export const TenantPage: React.FC = () => {
         onSubmit={() => setIsDetailOpen(false)}
         title={'Tenant Details'}
         submitLabel={'Close'}
-        cancelLabel={'Cancel'}
+        cancelLabel={''}
+        hideCancel={true}
         isSubmitting={false}
         hasChanges={true}
         fields={[
@@ -928,7 +928,7 @@ export const TenantPage: React.FC = () => {
             type: 'text',
             required: true,
             value: tenantForm.name,
-            onChange: (value: string | number) =>
+            onChange: value =>
               setTenantForm(prev => ({ ...prev, name: String(value) })),
             error: undefined,
           },
@@ -937,7 +937,7 @@ export const TenantPage: React.FC = () => {
             label: 'Domain',
             type: 'text',
             value: tenantForm.domain,
-            onChange: (value: string | number) =>
+            onChange: value =>
               setTenantForm(prev => ({ ...prev, domain: String(value) })),
             placeholder: 'example.com',
           },
@@ -1033,7 +1033,7 @@ export const TenantPage: React.FC = () => {
             label: 'Admin Name',
             type: 'text',
             value: tenantForm.adminName,
-            onChange: (value: string | number) =>
+            onChange: value =>
               setTenantForm(prev => ({ ...prev, adminName: String(value) })),
           },
           {
@@ -1041,7 +1041,7 @@ export const TenantPage: React.FC = () => {
             label: 'Admin Email',
             type: 'text',
             value: tenantForm.adminEmail,
-            onChange: (value: string | number) =>
+            onChange: value =>
               setTenantForm(prev => ({ ...prev, adminEmail: String(value) })),
           },
         ]}
@@ -1090,8 +1090,7 @@ export const TenantPage: React.FC = () => {
             type: 'text',
             required: true,
             value: editCompanyName,
-            onChange: (value: string | number) =>
-              setEditCompanyName(String(value)),
+            onChange: value => setEditCompanyName(String(value)),
           },
           {
             name: 'domain',
@@ -1099,7 +1098,7 @@ export const TenantPage: React.FC = () => {
             type: 'text',
             required: true,
             value: editDomain,
-            onChange: (value: string | number) => setEditDomain(String(value)),
+            onChange: value => setEditDomain(String(value)),
             placeholder: 'example.com',
           },
           {

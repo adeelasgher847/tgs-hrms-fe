@@ -21,7 +21,6 @@ import { useLanguage } from '../../hooks/useLanguage';
 import { isAdmin, isManager, isHRAdmin, isSystemAdmin } from '../../utils/auth';
 import { teamApiService } from '../../api/teamApi';
 import AppButton from '../common/AppButton';
-import { COLORS } from '../../constants/appConstants';
 import type {
   Team,
   TeamMember,

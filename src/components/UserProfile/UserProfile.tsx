@@ -181,6 +181,8 @@ const UserProfileComponent = React.memo(() => {
           bgcolor: 'transparent',
           alignItems: 'flex-start',
           flexDirection: 'column',
+          width: '100%',
+          maxWidth: '100%',
         }}
       >
         <Box
@@ -248,7 +250,17 @@ const UserProfileComponent = React.memo(() => {
             </Box>
           </AppButton>
         </Box>
-        <AppCard elevation={1} sx={{ borderRadius: 3, border: 'none' }}>
+        <AppCard
+          elevation={1}
+          sx={{
+            borderRadius: 3,
+            border: 'none',
+            width: '100%',
+            maxWidth: '100%',
+            px: { xs: 1.5, md: 3 },
+            py: { xs: 2, md: 3 },
+          }}
+        >
           {/* Header Section with Profile Picture Upload */}
           <Box
             sx={{
@@ -379,8 +391,10 @@ const UserProfileComponent = React.memo(() => {
         </AppCard>
         {/* Show EmployeeProfileView if user is an employee */}
         {userIsEmployee && (
-          <Box mt={4}>
-            <EmployeeProfileView />
+          <Box mt={4} sx={{ width: '100%', maxWidth: '100%' }}>
+            <Box sx={{ width: '100%', maxWidth: '100%' }}>
+              <EmployeeProfileView />
+            </Box>
           </Box>
         )}
       </Paper>

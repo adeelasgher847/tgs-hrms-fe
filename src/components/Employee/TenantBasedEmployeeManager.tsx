@@ -70,7 +70,6 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const darkMode = theme.palette.mode === 'dark';
 
   // Fetch departments + tenants once on mount
   const fetchFiltersData = async () => {
@@ -302,8 +301,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
     setOpenProfile(true);
   };
 
-  const filterBtn = darkMode ? '#888' : '#999';
-  const textColor = darkMode ? '#fff' : '#000';
+  // styling vars removed (unused)
 
   const hasMorePages = employees.length === itemsPerPage;
   const estimatedTotalRecords =

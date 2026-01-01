@@ -19,7 +19,7 @@ import systemEmployeeApiService, {
 import { useIsDarkMode } from '../../theme';
 import { snackbar } from '../../utils/snackbar';
 import AppDropdown from '../common/AppDropdown';
-import type { SelectChangeEvent } from '@mui/material/Select';
+// SelectChangeEvent import removed (unused)
 import AppPageTitle from '../common/AppPageTitle';
 
 const formatCurrency = (value: number | string | undefined) => {
@@ -269,15 +269,11 @@ const PayrollReports: React.FC = () => {
             label='Tenant'
             options={tenants.map(t => ({ value: t.id, label: t.name }))}
             value={selectedTenantId}
-            onChange={(e: SelectChangeEvent<string | number>) =>
-              setSelectedTenantId(String(e.target.value || ''))
-            }
-            options={[
-              { value: '', label: 'All Tenants' },
-              ...tenants.map(t => ({ value: t.id, label: t.name })),
-            ]}
-            placeholder='Tenant'
-            showLabel={false}
+            onChange={e => setSelectedTenantId(String(e.target.value))}
+            containerSx={{ width: { xs: '100%', sm: 200 } }}
+            sx={{ width: '100%' }}
+            size='small'
+            showLabel={true}
             disabled={loadingTenants}
             containerSx={{ minWidth: { xs: '100%', md: 200 } }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}

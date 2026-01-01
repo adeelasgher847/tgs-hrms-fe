@@ -11,7 +11,6 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  Button,
   Chip,
   IconButton,
   Tooltip,
@@ -74,7 +73,8 @@ const MySalary: React.FC = () => {
     typeof outletDarkMode === 'boolean' ? outletDarkMode : darkMode;
   const { user } = useUser();
   const role = normalizeRole(getUserRole());
-  const isManager = role === 'manager' || (role as string) === 'payroll manager';
+  const isManager =
+    role === 'manager' || (role as string) === 'payroll manager';
   const shouldUseAppTable = isManager || role === 'employee';
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -480,7 +480,13 @@ const MySalary: React.FC = () => {
     ) : (
       <Table size='small'>{tableContent}</Table>
     );
-  }, [history, selectedRecordId, detailLoading, handleSelectRecord, shouldUseAppTable]);
+  }, [
+    history,
+    selectedRecordId,
+    detailLoading,
+    handleSelectRecord,
+    shouldUseAppTable,
+  ]);
 
   if (loading) {
     return (

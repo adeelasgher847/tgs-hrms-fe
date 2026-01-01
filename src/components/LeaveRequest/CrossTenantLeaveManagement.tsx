@@ -632,7 +632,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
               )
             }
             placeholder='Select Department'
-            showLabel={false}
             options={[
               { value: '', label: 'All' },
               ...departments.map(dep => ({ value: dep.id, label: dep.name })),
@@ -644,10 +643,12 @@ const CrossTenantLeaveManagement: React.FC = () => {
             label='Status'
             value={filters.status}
             onChange={(e: SelectChangeEvent<string | number>) =>
-              handleFilterChange('status', String(e.target.value || '') as LeaveStatus)
+              handleFilterChange(
+                'status',
+                String(e.target.value || '') as LeaveStatus
+              )
             }
             placeholder='Select Status'
-            showLabel={false}
             options={[
               { value: '', label: 'All' },
               { value: 'pending', label: 'Pending' },
@@ -838,7 +839,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
               >
                 <AppDropdown
                   label='Tenant'
-                  showLabel={false}
                   value={filters.tenantId}
                   onChange={e =>
                     handleFilterChange('tenantId', String(e.target.value || ''))

@@ -196,18 +196,18 @@ const AssetInventory: React.FC = () => {
           typeof apiAsset.category === 'object'
             ? apiAsset.category
             : {
-                id: apiAsset.category_id || '',
-                name: apiAsset.categoryName || apiAsset.category || '',
-              };
+              id: apiAsset.category_id || '',
+              name: apiAsset.categoryName || apiAsset.category || '',
+            };
 
         // Handle subcategory - can be object or string
         const subcategoryObj = apiAsset.subcategory
           ? typeof apiAsset.subcategory === 'object'
             ? apiAsset.subcategory
             : {
-                id: apiAsset.subcategory_id || '',
-                name: apiAsset.subcategoryName || apiAsset.subcategory || '',
-              }
+              id: apiAsset.subcategory_id || '',
+              name: apiAsset.subcategoryName || apiAsset.subcategory || '',
+            }
           : undefined;
 
         return {
@@ -430,9 +430,9 @@ const AssetInventory: React.FC = () => {
   }));
   const subcategoryOptions = formCategoryId
     ? getSubcategoriesByCategoryId(formCategoryId).map(s => ({
-        value: s,
-        label: s,
-      }))
+      value: s,
+      label: s,
+    }))
     : [];
 
   const handleEditAsset = (asset: InventoryAsset) => {
@@ -587,11 +587,11 @@ const AssetInventory: React.FC = () => {
   // Modal form helpers for AppFormModal
   const hasFormChanges = editingAsset
     ? // compare simple fields for edit
-      formName !== (editingAsset.name || '') ||
-      formCategoryId !== resolveCategoryId(editingAsset) ||
-      formSubcategory !== (editingAsset.subcategoryId || '')
+    formName !== (editingAsset.name || '') ||
+    formCategoryId !== resolveCategoryId(editingAsset) ||
+    formSubcategory !== (editingAsset.subcategoryId || '')
     : // for create, require name and category selected
-      formName.trim() !== '' && formCategoryId !== '';
+    formName.trim() !== '' && formCategoryId !== '';
 
   const assignedOptions = mockUsers.map(u => ({ value: u.id, label: u.name }));
 
@@ -653,7 +653,9 @@ const AssetInventory: React.FC = () => {
           <DatePicker
             label='Purchase Date'
             value={formPurchaseDate}
-            onChange={date => setFormPurchaseDate(date ? new Date(date.toString()) : null)}
+            onChange={date =>
+              setFormPurchaseDate(date ? new Date(date.toString()) : null)
+            }
             slotProps={{
               // style the input field icons (calendar icon) to use primary color
               textField: {
@@ -686,16 +688,16 @@ const AssetInventory: React.FC = () => {
                 sx: {
                   // Selected day (clicked)
                   '&.MuiPickersDay-root.Mui-selected, &.MuiPickersDay-root.Mui-selected:hover':
-                    {
-                      backgroundColor: 'var(--primary-dark-color) !important',
-                      color: '#FFFFFF !important',
-                    },
+                  {
+                    backgroundColor: 'var(--primary-dark-color) !important',
+                    color: '#FFFFFF !important',
+                  },
                   // Today (current date) when not selected
                   '&.MuiPickersDay-root.MuiPickersDay-today:not(.Mui-selected)':
-                    {
-                      backgroundColor: 'var(--primary-dark-color) !important',
-                      color: '#FFFFFF !important',
-                    },
+                  {
+                    backgroundColor: 'var(--primary-dark-color) !important',
+                    color: '#FFFFFF !important',
+                  },
                   // Today outline (in case additional styling needed)
                   '&.MuiPickersDay-root.MuiPickersDay-today': {
                     borderColor: 'var(--primary-dark-color) !important',
@@ -706,7 +708,7 @@ const AssetInventory: React.FC = () => {
           />
         </LocalizationProvider>
       ),
-      onChange: () => {},
+      onChange: () => { },
     },
     {
       name: 'assignedTo',
@@ -740,11 +742,11 @@ const AssetInventory: React.FC = () => {
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', sm: 'center' },
           mb: 3,
-          flexWrap: 'wrap',
-          gap: 1,
+          gap: 2,
         }}
       >
         <Typography
@@ -754,7 +756,7 @@ const AssetInventory: React.FC = () => {
         >
           Asset Inventory
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}>
           <AppButton
             variant='contained'
             variantType='primary'
@@ -770,7 +772,8 @@ const AssetInventory: React.FC = () => {
               bgcolor: 'var(--primary-dark-color)',
               color: '#FFFFFF',
               boxShadow: 'none',
-              minWidth: { xs: 'auto', sm: 200 },
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { sm: 200 },
               px: { xs: 1.5, sm: 2 },
               py: { xs: 0.75, sm: 1 },
               '& .MuiButton-startIcon': {
@@ -882,10 +885,9 @@ const AssetInventory: React.FC = () => {
             }}
           >
             <AppDropdown
-              label='Status'
+              showLabel={false}
               size='small'
               fullWidth
-              showLabel={false}
               value={filters.status || ''}
               onChange={e => {
                 const value = e.target.value as string;
@@ -912,10 +914,9 @@ const AssetInventory: React.FC = () => {
             }}
           >
             <AppDropdown
-              label='Category'
+              showLabel={false}
               size='small'
               fullWidth
-              showLabel={false}
               value={filters.category || ''}
               onChange={e => {
                 const value = e.target.value as string;
