@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Box, Alert, CircularProgress } from '@mui/material';
+import { Alert, CircularProgress } from '@mui/material';
 import AppFormModal, { type FormField } from '../common/AppFormModal';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { CreateTeamDto, Manager } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
-import AppButton from '../common/AppButton';
-import AppDropdown from '../common/AppDropdown';
+
 
 interface CreateTeamFormProps {
   open: boolean;
@@ -92,19 +91,7 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
     loadManagers();
   }, [open]);
 
-  const handleChange =
-    (field: keyof CreateTeamDto) =>
-    (
-      event:
-        | React.ChangeEvent<HTMLInputElement>
-        | { target: { value: unknown } }
-    ) => {
-      setFormData(prev => ({
-        ...prev,
-        [field]: event.target.value as string,
-      }));
-      setError(null);
-    };
+
 
   const handleSubmit = async () => {
     // Validation
@@ -174,12 +161,12 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
         : managers.length === 0
           ? [{ value: 'all', label: lang.noManagersAvailable }]
           : [
-              { value: 'all', label: lang.selectManager },
-              ...managers.map(manager => ({
-                value: manager.id,
-                label: `${manager.first_name} ${manager.last_name} (${manager.email})`,
-              })),
-            ],
+            { value: 'all', label: lang.selectManager },
+            ...managers.map(manager => ({
+              value: manager.id,
+              label: `${manager.first_name} ${manager.last_name} (${manager.email})`,
+            })),
+          ],
     },
   ];
 
