@@ -31,8 +31,24 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import { getIcon } from '../../assets/icons';
 import { IoCloseCircleOutline } from 'react-icons/io5';
 import LeaveForm from './LeaveForm';
+import { env } from '../../config/env';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
+
+// Helper function to construct full URL for documents
+const getDocumentUrl = (docUrl: string): string => {
+  if (!docUrl) return '';
+  // If it's already an absolute URL (starts with http:// or https://), return as is
+  if (docUrl.startsWith('http://') || docUrl.startsWith('https://')) {
+    return docUrl;
+  }
+  // If it starts with /, it's a relative path from the API base URL
+  if (docUrl.startsWith('/')) {
+    return `${env.apiBaseUrl}${docUrl}`;
+  }
+  // Otherwise, assume it's a relative path and prepend the API base URL
+  return `${env.apiBaseUrl}/${docUrl}`;
+};
 
 const statusConfig: Record<
   string,
@@ -108,6 +124,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   const [currentDocs, setCurrentDocs] = useState<string[]>([]);
   const [openLeaveForm, setOpenLeaveForm] = useState(false);
   const [editingLeave, setEditingLeave] = useState<Leave | null>(null);
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
 
   // Reset page to 1 when employee filter changes
   useEffect(() => {
@@ -266,6 +283,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
   const handleViewDocs = (docs: string[]) => {
     setCurrentDocs(docs);
+    setFailedImages(new Set()); // Reset failed images when opening dialog
     setOpenDocs(true);
   };
 
@@ -273,7 +291,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     if (isEmployeeFiltered && onExportAll) {
       try {
         const allLeaves = await onExportAll();
-        setAllLeavesForFilter(allLeaves); 
+        setAllLeavesForFilter(allLeaves);
       } catch (err) {
         console.error('Failed to refresh leaves:', err);
       }
@@ -324,6 +342,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           {!hideDropdown && (isAdmin || isManager) && (
             <AppDropdown
               label='All Employees'
+              showLabel={false}
               value={selectedEmployee || ''}
               onChange={(e: SelectChangeEvent<string | number>) =>
                 setSelectedEmployee(String(e.target.value || ''))
@@ -333,7 +352,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                 ...employeeNames.map(name => ({ value: name, label: name })),
               ]}
               placeholder='All Employees'
-              showLabel={false}
               containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
             />
           )}
@@ -569,7 +587,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                         )}
 
                       {isAdmin && leave.status === 'pending' && onAction && (
-                        <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                           <Chip
                             label='Approve'
                             color='success'
@@ -582,6 +600,23 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                             clickable
                             onClick={() => onAction(leave.id, 'rejected')}
                           />
+                          {/* Show Edit/Withdraw for all pending leaves (admin/hr-admin can manage all employee leaves) */}
+                          {onWithdraw && (
+                            <>
+                              <Chip
+                                label='Edit'
+                                color='primary'
+                                clickable
+                                onClick={() => handleEditLeave(leave)}
+                              />
+                              <Chip
+                                label='Withdraw'
+                                color='warning'
+                                clickable
+                                onClick={() => onWithdraw(leave.id)}
+                              />
+                            </>
+                          )}
                         </Box>
                       )}
 
@@ -763,6 +798,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               }}
             >
               {currentDocs.map((doc, idx) => {
+                const fullDocUrl = getDocumentUrl(doc);
                 const extension = doc.split('.').pop()?.toLowerCase() || '';
                 const isImage = [
                   'jpeg',
@@ -772,6 +808,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                   'webp',
                   'bmp',
                 ].includes(extension);
+                const imageFailed = failedImages.has(idx);
 
                 if (isImage) {
                   return (
@@ -787,21 +824,42 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        '&:hover img': { transform: 'scale(1.05)' },
+                        flexDirection: 'column',
+                        '&:hover': { boxShadow: 2 },
                         transition: 'all 0.2s',
                       }}
-                      onClick={() => window.open(doc, '_blank')}
+                      onClick={() => window.open(fullDocUrl, '_blank')}
                     >
-                      <img
-                        src={doc}
-                        alt={`Document ${idx + 1}`}
-                        style={{
-                          maxWidth: '100%',
-                          maxHeight: '100%',
-                          objectFit: 'contain',
-                          transition: 'transform 0.2s',
-                        }}
-                      />
+                      {imageFailed ? (
+                        <>
+                          <Typography
+                            variant='body2'
+                            sx={{ mb: 1, textAlign: 'center', fontSize: 12 }}
+                          >
+                            Image failed to load
+                          </Typography>
+                          <Typography
+                            variant='caption'
+                            sx={{ color: '#1976d2', fontWeight: 'bold' }}
+                          >
+                            Click to view
+                          </Typography>
+                        </>
+                      ) : (
+                        <img
+                          src={fullDocUrl}
+                          alt={`Document ${idx + 1}`}
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            objectFit: 'contain',
+                            transition: 'transform 0.2s',
+                          }}
+                          onError={() => {
+                            setFailedImages(prev => new Set(prev).add(idx));
+                          }}
+                        />
+                      )}
                     </Box>
                   );
                 }
@@ -823,7 +881,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                       justifyContent: 'center',
                       '&:hover': { boxShadow: 3 },
                     }}
-                    onClick={() => window.open(doc, '_blank')}
+                    onClick={() => window.open(fullDocUrl, '_blank')}
                   >
                     <Typography
                       variant='body2'
@@ -856,7 +914,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
             leaveId={editingLeave.id}
             initialData={editingLeave}
             onSuccess={() => {
-              refreshLeaves(); 
+              refreshLeaves();
               handleCloseLeaveForm();
             }}
             onError={msg => alert(msg)}
