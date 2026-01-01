@@ -1510,18 +1510,19 @@ const AttendanceTable = () => {
                 mb: 3,
                 mt: 3,
                 display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
                 gap: 2,
-                alignItems: 'center',
-                flexWrap: 'wrap',
+                alignItems: { xs: 'stretch', sm: 'center' },
                 justifyContent: 'space-between',
               }}
             >
               <Box
                 sx={{
                   display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
                   gap: 2,
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
+                  alignItems: { xs: 'stretch', sm: 'center' },
+                  flex: 1,
                 }}
               >
                 {canViewAllAttendance && (
@@ -1633,7 +1634,10 @@ const AttendanceTable = () => {
                         })),
                       ]}
                       disabled={tenantsLoading}
-                      containerSx={{ minWidth: 220 }}
+                      containerSx={{
+                        minWidth: { xs: '100%', sm: 220 },
+                        width: { xs: '100%', sm: 'auto' },
+                      }}
                     />
                     <AppDropdown
                       label='Employee'
@@ -1650,9 +1654,9 @@ const AttendanceTable = () => {
                       ]}
                       placeholder='SELECT EMPLOYEE'
                       containerSx={{
-                        width: '200px',
-                        minWidth: '200px',
-                        maxWidth: '200px',
+                        width: { xs: '100%', sm: '200px' },
+                        minWidth: { xs: '100%', sm: '200px' },
+                        maxWidth: { sm: '200px' },
                         flexShrink: 0,
                         padding: 0,
                         margin: 0,
@@ -1680,9 +1684,9 @@ const AttendanceTable = () => {
                           : []
                     }
                     onChange={dates => {
-                      if (dates && dates.length === 2) {
-                        const start = dates[0]?.format('YYYY-MM-DD') || '';
-                        const end = dates[1]?.format('YYYY-MM-DD') || '';
+                      if (Array.isArray(dates) && dates.length === 2) {
+                        const start = formatLocalYMD(dates[0].toDate());
+                        const end = formatLocalYMD(dates[1].toDate());
                         setStartDate(start);
                         setEndDate(end);
                         setCurrentPage(1);
@@ -1690,8 +1694,8 @@ const AttendanceTable = () => {
                         const selectedId =
                           view === 'all' ? selectedEmployee : undefined;
                         fetchAttendance(view, selectedId, start, end);
-                      } else if (dates && dates.length === 1) {
-                        const start = dates[0]?.format('YYYY-MM-DD') || '';
+                      } else if (Array.isArray(dates) && dates.length === 1) {
+                        const start = formatLocalYMD(dates[0].toDate());
                         setStartDate(start);
                         setEndDate('');
                         setCurrentPage(1);
@@ -1756,7 +1760,7 @@ const AttendanceTable = () => {
                 </AppButton>
               </Box>
 
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', width: { xs: '100%', sm: 'auto' }, justifyContent: 'flex-start' }}>
                 {/* Single CSV export button - behavior changes based on view and role */}
                 <Tooltip
                   title={
