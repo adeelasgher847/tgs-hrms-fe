@@ -254,7 +254,7 @@ const EmployeeBenefits: React.FC = () => {
             gap: 2,
           }}
         >
-          <Box sx={{ minWidth: 200 }}>
+          <Box sx={{ minWidth: { xs: '100%', sm: 200 }, width: { xs: '100%', sm: 'auto' } }}>
             <AppDropdown
               showLabel={false}
               options={[
@@ -263,21 +263,33 @@ const EmployeeBenefits: React.FC = () => {
                 { value: 'expired', label: 'Expired' },
                 { value: 'cancelled', label: 'Cancelled' },
               ]}
+              label='Benefit Status'
               value={selectedStatus}
               onChange={e => {
                 const v = e.target.value as string;
                 setSelectedStatus(
                   (v === '' ? 'all' : v) as
-                    | 'all'
-                    | 'active'
-                    | 'expired'
-                    | 'cancelled'
+                  | 'all'
+                  | 'active'
+                  | 'expired'
+                  | 'cancelled'
                 );
+              }}
+              containerSx={{
+                minWidth: { xs: '100%', sm: 200 },
+                width: { xs: '100%', sm: 'auto' },
               }}
             />
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 1,
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          >
             <AppButton
               variantType='primary'
               startIcon={<AddIcon />}
@@ -293,6 +305,7 @@ const EmployeeBenefits: React.FC = () => {
                 color: '#FFFFFF',
                 boxShadow: 'none',
                 minWidth: { xs: 'auto', sm: 200 },
+                width: { xs: '100%', sm: 'auto' },
                 px: { xs: 1.5, sm: 2 },
                 py: { xs: 0.75, sm: 1 },
                 '& .MuiButton-startIcon': {
@@ -313,9 +326,10 @@ const EmployeeBenefits: React.FC = () => {
                 onClick={handleDownload}
                 sx={{
                   borderRadius: '6px',
-                  minWidth: 0,
                   padding: '6px',
                   height: 'auto',
+                  width: 'auto',
+                  alignSelf: 'flex-start',
                 }}
                 aria-label='Download employee benefits CSV'
               >
@@ -329,9 +343,11 @@ const EmployeeBenefits: React.FC = () => {
                   disableRipple
                   sx={{
                     backgroundColor: 'var(--primary-dark-color)',
-                    borderRadius: '6px',
                     padding: '6px',
                     color: 'white',
+                    width: 'auto',
+                    alignSelf: 'flex-start',
+                    borderRadius: { xs: '8px', sm: '6px' },
                     '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
                   }}
                 >
@@ -349,6 +365,7 @@ const EmployeeBenefits: React.FC = () => {
           overflow: 'hidden',
           borderRadius: 0,
           borderColor: 'divider',
+          backgroundColor: 'transparent',
         }}
       >
         {loading ? (

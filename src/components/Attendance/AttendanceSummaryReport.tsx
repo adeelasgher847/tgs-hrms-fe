@@ -252,8 +252,9 @@ const AttendanceSummaryReport: React.FC = () => {
 
       <Box
         display='flex'
+        flexDirection={{ xs: 'column', sm: 'row' }}
         justifyContent='space-between'
-        alignItems='center'
+        alignItems={{ xs: 'stretch', sm: 'center' }}
         gap={2}
       >
         <AppDropdown
@@ -271,9 +272,9 @@ const AttendanceSummaryReport: React.FC = () => {
             { value: '90days', label: 'Last 90 Days' },
           ]}
           containerSx={{
-            width: '200px',
-            minWidth: '200px',
-            maxWidth: '200px',
+            width: { xs: '100%', sm: '200px' },
+            minWidth: { xs: '100%', sm: '200px' },
+            maxWidth: { xs: '100%', sm: '200px' },
             flexShrink: 0,
           }}
         />
@@ -287,6 +288,7 @@ const AttendanceSummaryReport: React.FC = () => {
               borderRadius: '6px',
               padding: '6px',
               color: 'white',
+              width: { xs: '100%', sm: 'auto' },
               '&:hover': {
                 backgroundColor: '#3083DC',
               },
@@ -307,7 +309,7 @@ const AttendanceSummaryReport: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Paper sx={{ mt: 2, boxShadow: 'none' }}>
+        <Paper sx={{ mt: 2, boxShadow: 'none', backgroundColor: 'transparent' }}>
           <AppTable>
             <TableHead>
               <TableRow>

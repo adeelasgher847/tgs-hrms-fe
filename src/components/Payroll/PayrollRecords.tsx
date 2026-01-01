@@ -60,6 +60,11 @@ const monthOptions = [
   { label: 'December', value: 12 },
 ];
 
+const yearOptions = Array.from({ length: 11 }, (_, i) => {
+  const year = dayjs().year() - 5 + i;
+  return { label: year.toString(), value: year };
+}).reverse();
+
 type UIStatus = 'unpaid' | 'paid';
 const statusOptions: UIStatus[] = ['unpaid', 'paid'];
 
@@ -647,9 +652,11 @@ const PayrollRecords: React.FC = () => {
           direction={{ xs: 'column', md: 'row' }}
           spacing={2}
           alignItems='flex-start'
+          sx={{ width: { xs: '100%', md: 'auto' } }}
         >
           <AppDropdown
             label='Month'
+            showLabel={false}
             value={month}
             onChange={(event: SelectChangeEvent<string | number>) =>
               setMonth(Number(event.target.value))
@@ -659,7 +666,7 @@ const PayrollRecords: React.FC = () => {
               label: option.label,
             }))}
             placeholder='Month'
-            containerSx={{ minWidth: 160 }}
+            containerSx={{ width: { xs: '100%', md: 160 } }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{
               '& .MuiSelect-select': {
@@ -674,18 +681,27 @@ const PayrollRecords: React.FC = () => {
             }}
           />
 
-          <TextField
+          <AppDropdown
             label='Year'
-            type='number'
-            inputProps={{ min: 0 }}
-            size='small'
-            sx={{ minWidth: 140 }}
-            value={year === 0 ? '' : year}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              const value = event.target.value;
-              const numValue =
-                value === '' ? '' : Math.max(0, Number(value) || 0);
-              setYear(numValue);
+            showLabel={false}
+            value={year}
+            onChange={(event: SelectChangeEvent<string | number>) =>
+              setYear(Number(event.target.value))
+            }
+            options={yearOptions}
+            placeholder='Year'
+            containerSx={{ width: { xs: '100%', md: 140 } }}
+            inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+            sx={{
+              '& .MuiSelect-select': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiSelect-icon': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: theme.palette.divider },
+              },
             }}
           />
         </Stack>
@@ -697,7 +713,11 @@ const PayrollRecords: React.FC = () => {
             startIcon={<GenerateIcon />}
             onClick={openGenerateDialog}
             disabled={generating}
-            sx={{ textTransform: 'none', fontWeight: 600 }}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              width: { xs: '100%', md: 'auto' },
+            }}
           >
             Generate Payroll
           </AppButton>
@@ -778,8 +798,8 @@ const PayrollRecords: React.FC = () => {
         elevation={0}
         sx={{
           p: 0,
-          backgroundColor: cardBg,
-          borderRadius: 1,
+          backgroundColor: 'transparent',
+          boxShadow: 'none',
         }}
       >
         <Box
@@ -787,12 +807,11 @@ const PayrollRecords: React.FC = () => {
             p: 2,
             borderBottom: `1px solid ${theme.palette.divider}`,
             display: 'flex',
-            justifyContent: 'flex-end',
+            justifyContent: 'flex-start',
             alignItems: 'center',
           }}
         >
           <AppDropdown
-            label='Employee'
             value={employeeFilter}
             onChange={(event: SelectChangeEvent<string | number>) =>
               setEmployeeFilter(String(event.target.value || ''))
@@ -801,21 +820,22 @@ const PayrollRecords: React.FC = () => {
               recordEmployees.length === 0
                 ? [{ value: '', label: 'No employees for this period' }]
                 : [
-                    { value: '', label: 'All employees' },
-                    ...recordEmployees.map(emp => ({
-                      value: emp.id,
-                      label: emp.name,
-                    })),
-                  ]
+                  { value: '', label: 'All employees' },
+                  ...recordEmployees.map(emp => ({
+                    value: emp.id,
+                    label: emp.name,
+                  })),
+                ]
             }
             label='Employee'
+            showLabel={false}
             placeholder={
               recordEmployees.length === 0
                 ? 'No employees for this period'
                 : 'All employees'
             }
             disabled={recordEmployees.length === 0}
-            containerSx={{ minWidth: 220 }}
+            containerSx={{ minWidth: 220, width: { xs: '100%', md: 'auto' } }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{
               '& .MuiSelect-select': {
@@ -967,7 +987,7 @@ const PayrollRecords: React.FC = () => {
       <AppFormModal
         open={detailsOpen && !!selectedRecord}
         onClose={closeDetails}
-        onSubmit={() => {}}
+        onSubmit={() => { }}
         title='Payroll Breakdown'
         cancelLabel='Close'
         showSubmitButton={false}
@@ -1125,7 +1145,7 @@ const PayrollRecords: React.FC = () => {
                       <TableCell align='right'>
                         {formatCurrency(
                           selectedRecord.deductionsBreakdown.leaveDeductions ||
-                            0
+                          0
                         )}
                       </TableCell>
                       <TableCell align='right'>—</TableCell>
@@ -1341,7 +1361,6 @@ const PayrollRecords: React.FC = () => {
               value: option.value,
               label: option.label,
             }))}
-            label='Month'
             placeholder='Month'
             containerSx={{ minWidth: 160 }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
@@ -1380,21 +1399,21 @@ const PayrollRecords: React.FC = () => {
             options={
               employeesForGenerateDialog.length === 0
                 ? [
-                    {
-                      value: '',
-                      label:
-                        employees.length === 0
-                          ? 'No employees with salary configuration'
-                          : 'All employees are already processed',
-                    },
-                  ]
+                  {
+                    value: '',
+                    label:
+                      employees.length === 0
+                        ? 'No employees with salary configuration'
+                        : 'All employees are already processed',
+                  },
+                ]
                 : [
-                    { value: '', label: 'All employees' },
-                    ...employeesForGenerateDialog.map(emp => ({
-                      value: emp.id,
-                      label: emp.name,
-                    })),
-                  ]
+                  { value: '', label: 'All employees' },
+                  ...employeesForGenerateDialog.map(emp => ({
+                    value: emp.id,
+                    label: emp.name,
+                  })),
+                ]
             }
             placeholder={
               employeesForGenerateDialog.length === 0

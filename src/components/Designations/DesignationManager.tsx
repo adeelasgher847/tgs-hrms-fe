@@ -327,8 +327,8 @@ export default function DesignationManager() {
 
   const hasChanges = editingDesignation
     ? title !== originalTitle ||
-      titleAr !== originalTitleAr ||
-      departmentId !== originalDepartmentId
+    titleAr !== originalTitleAr ||
+    departmentId !== originalDepartmentId
     : title.trim() !== '' || titleAr.trim() !== '' || departmentId !== '';
 
   // Disable Create/Update until required fields are present (and basic validation passes)
@@ -535,28 +535,29 @@ export default function DesignationManager() {
           {isSystemAdmin ? (
             <>
               <AppDropdown
+                label={getText('Tenant', 'المستأجر')}
                 showLabel={false}
                 options={
                   loadingTenants
                     ? [
-                        {
-                          value: '',
-                          label: getText(
-                            'Loading tenants...',
-                            'جاري تحميل المستأجرين...'
-                          ),
-                        },
-                      ]
+                      {
+                        value: '',
+                        label: getText(
+                          'Loading tenants...',
+                          'جاري تحميل المستأجرين...'
+                        ),
+                      },
+                    ]
                     : [
-                        {
-                          value: 'all',
-                          label: getText('All Tenants', 'جميع المستأجرين'),
-                        },
-                        ...allTenants.map((tenant: SystemTenant) => ({
-                          value: tenant.id,
-                          label: tenant.name,
-                        })),
-                      ]
+                      {
+                        value: 'all',
+                        label: getText('All Tenants', 'جميع المستأجرين'),
+                      },
+                      ...allTenants.map((tenant: SystemTenant) => ({
+                        value: tenant.id,
+                        label: tenant.name,
+                      })),
+                    ]
                 }
                 value={selectedTenantId}
                 onChange={e => {
@@ -580,16 +581,16 @@ export default function DesignationManager() {
                     paddingRight: '44px !important',
                   },
                   '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
-                    {
-                      justifyContent: 'flex-start',
-                      textAlign: 'left',
-                      paddingLeft: '16px !important',
-                      paddingRight: '44px !important',
-                    },
+                  {
+                    justifyContent: 'flex-start',
+                    textAlign: 'left',
+                    paddingLeft: '16px !important',
+                    paddingRight: '44px !important',
+                  },
                 }}
               />
               <AppDropdown
-                // label={getText('Filter by department', 'تصفية حسب القسم')}
+                label={getText('Filter by department', 'تصفية حسب القسم')}
                 showLabel={false}
                 options={[
                   {
@@ -623,12 +624,12 @@ export default function DesignationManager() {
                     paddingRight: '44px !important',
                   },
                   '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
-                    {
-                      justifyContent: 'flex-start',
-                      textAlign: 'left',
-                      paddingLeft: '16px !important',
-                      paddingRight: '44px !important',
-                    },
+                  {
+                    justifyContent: 'flex-start',
+                    textAlign: 'left',
+                    paddingLeft: '16px !important',
+                    paddingRight: '44px !important',
+                  },
                 }}
               />
             </>
@@ -647,6 +648,7 @@ export default function DesignationManager() {
                   letterSpacing: 'var(--body-letter-spacing)',
                   boxShadow: 'none',
                   minWidth: { xs: 'auto', sm: 200 },
+                  width: { xs: '100%', sm: 'auto' },
                   px: { xs: 1.5, sm: 2 },
                   py: { xs: 0.75, sm: 1 },
                   '& .MuiButton-startIcon': {
@@ -679,14 +681,15 @@ export default function DesignationManager() {
         <Box sx={{ mb: 3 }}>
           <AppDropdown
             label={getText('Filter by department', 'تصفية حسب القسم')}
+            showLabel={false}
             options={[
               { value: 'all', label: getText('All Departments', 'كل الأقسام') },
               ...(departmentsLoading
                 ? []
                 : departments.map(d => ({
-                    value: d.id,
-                    label: getText(d.name, d.nameAr),
-                  }))),
+                  value: d.id,
+                  label: getText(d.name, d.nameAr),
+                }))),
             ]}
             value={selectedDepartmentId}
             onChange={e => {
@@ -710,12 +713,12 @@ export default function DesignationManager() {
                 paddingRight: '44px !important',
               },
               '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
-                {
-                  justifyContent: 'flex-start',
-                  textAlign: 'left',
-                  paddingLeft: '16px !important',
-                  paddingRight: '44px !important',
-                },
+              {
+                justifyContent: 'flex-start',
+                textAlign: 'left',
+                paddingLeft: '16px !important',
+                paddingRight: '44px !important',
+              },
             }}
           />
 
@@ -822,9 +825,9 @@ export default function DesignationManager() {
                 {selectedDepartmentId === 'all'
                   ? getText('No designations found', 'لا توجد مسميات وظيفية')
                   : getText(
-                      'No designations found for this department',
-                      'لا توجد مسميات وظيفية لهذا القسم'
-                    )}
+                    'No designations found for this department',
+                    'لا توجد مسميات وظيفية لهذا القسم'
+                  )}
               </TableCell>
             </TableRow>
           ) : (
@@ -1006,9 +1009,9 @@ export default function DesignationManager() {
         message={
           designationToDelete
             ? getText(
-                `Are you sure you want to delete "${getText(designationToDelete.title, designationToDelete.titleAr)}"? This action cannot be undone.`,
-                `هل أنت متأكد أنك تريد حذف "${getText(designationToDelete.title, designationToDelete.titleAr)}"؟ لا يمكن التراجع عن هذا الإجراء.`
-              )
+              `Are you sure you want to delete "${getText(designationToDelete.title, designationToDelete.titleAr)}"? This action cannot be undone.`,
+              `هل أنت متأكد أنك تريد حذف "${getText(designationToDelete.title, designationToDelete.titleAr)}"؟ لا يمكن التراجع عن هذا الإجراء.`
+            )
             : ''
         }
         itemName={

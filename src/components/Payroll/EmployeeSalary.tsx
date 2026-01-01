@@ -43,6 +43,7 @@ import AppTable from '../common/AppTable';
 import AppDropdown from '../common/AppDropdown';
 import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
+import AppButton from '../common/AppButton';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -504,19 +505,19 @@ const EmployeeSalaryPage: React.FC = () => {
       // Calculate baseSalary from basePayComponents
       const calculatedBaseSalary =
         (typeof basePayComponents.basic === 'string' &&
-        basePayComponents.basic === ''
+          basePayComponents.basic === ''
           ? 0
           : basePayComponents.basic || 0) +
         (typeof basePayComponents.houseRent === 'string' &&
-        basePayComponents.houseRent === ''
+          basePayComponents.houseRent === ''
           ? 0
           : basePayComponents.houseRent || 0) +
         (typeof basePayComponents.medical === 'string' &&
-        basePayComponents.medical === ''
+          basePayComponents.medical === ''
           ? 0
           : basePayComponents.medical || 0) +
         (typeof basePayComponents.transport === 'string' &&
-        basePayComponents.transport === ''
+          basePayComponents.transport === ''
           ? 0
           : basePayComponents.transport || 0);
 
@@ -617,7 +618,7 @@ const EmployeeSalaryPage: React.FC = () => {
     // Check if at least basic component has a value
     const basicValue =
       typeof basePayComponents.basic === 'string' &&
-      basePayComponents.basic === ''
+        basePayComponents.basic === ''
         ? 0
         : basePayComponents.basic || 0;
     if (basicValue <= 0) {
@@ -626,19 +627,19 @@ const EmployeeSalaryPage: React.FC = () => {
     // Calculate total base salary
     const totalBaseSalary =
       (typeof basePayComponents.basic === 'string' &&
-      basePayComponents.basic === ''
+        basePayComponents.basic === ''
         ? 0
         : basePayComponents.basic || 0) +
       (typeof basePayComponents.houseRent === 'string' &&
-      basePayComponents.houseRent === ''
+        basePayComponents.houseRent === ''
         ? 0
         : basePayComponents.houseRent || 0) +
       (typeof basePayComponents.medical === 'string' &&
-      basePayComponents.medical === ''
+        basePayComponents.medical === ''
         ? 0
         : basePayComponents.medical || 0) +
       (typeof basePayComponents.transport === 'string' &&
-      basePayComponents.transport === ''
+        basePayComponents.transport === ''
         ? 0
         : basePayComponents.transport || 0);
     if (totalBaseSalary <= 0) {
@@ -712,19 +713,19 @@ const EmployeeSalaryPage: React.FC = () => {
     // Calculate total from basePayComponents
     const totalBaseSalary =
       (typeof basePayComponents.basic === 'string' &&
-      basePayComponents.basic === ''
+        basePayComponents.basic === ''
         ? 0
         : basePayComponents.basic || 0) +
       (typeof basePayComponents.houseRent === 'string' &&
-      basePayComponents.houseRent === ''
+        basePayComponents.houseRent === ''
         ? 0
         : basePayComponents.houseRent || 0) +
       (typeof basePayComponents.medical === 'string' &&
-      basePayComponents.medical === ''
+        basePayComponents.medical === ''
         ? 0
         : basePayComponents.medical || 0) +
       (typeof basePayComponents.transport === 'string' &&
-      basePayComponents.transport === ''
+        basePayComponents.transport === ''
         ? 0
         : basePayComponents.transport || 0);
     if (currentBaseSalary !== totalBaseSalary) return true;
@@ -1138,31 +1139,36 @@ const EmployeeSalaryPage: React.FC = () => {
         sx={{
           mb: 3,
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: { xs: 2, sm: 0 },
         }}
       >
         <AppPageTitle>Employee Salary Structure</AppPageTitle>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <Button
-            variant='contained'
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
+          <AppButton
+            variantType='primary'
             startIcon={<AddIcon />}
             onClick={handleAddSalary}
             sx={{
-              backgroundColor: darkMode ? '#464b8a' : '#484c7f',
+              width: { xs: '100%', sm: 'auto' },
+              backgroundColor: 'var(--primary-dark-color)',
+              color: '#fff',
               '&:hover': {
-                backgroundColor: darkMode ? '#464b8a' : '#5b56a0',
+                backgroundColor: 'var(--primary-dark-color)',
+                opacity: 0.9,
               },
             }}
           >
             Add Salary Structure
-          </Button>
+          </AppButton>
         </Box>
       </Box>
 
       <Paper
         sx={{
-          backgroundColor: darkMode ? '#1a1a1a' : '#fff',
+          backgroundColor: 'transparent',
           boxShadow: 'none',
         }}
       >
@@ -1282,9 +1288,9 @@ const EmployeeSalaryPage: React.FC = () => {
                           </IconButton>
                         </>
                       ) : (
-                        <Button
+                        <AppButton
                           size='small'
-                          variant='outlined'
+                          variantType='secondary'
                           onClick={async () => {
                             setSelectedEmployee(item);
                             setSelectedEmployeeId(item.employee.id);
@@ -1315,7 +1321,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           }}
                         >
                           Assign
-                        </Button>
+                        </AppButton>
                       )}
                     </Stack>
                   </TableCell>
@@ -1349,7 +1355,7 @@ const EmployeeSalaryPage: React.FC = () => {
       <AppFormModal
         open={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
-        onSubmit={() => {}}
+        onSubmit={() => { }}
         title={
           selectedEmployee
             ? `${selectedEmployee.employee.user.first_name} ${selectedEmployee.employee.user.last_name} - Salary Structure`
@@ -1741,9 +1747,9 @@ const EmployeeSalaryPage: React.FC = () => {
                     [
                       payrollConfig.deductions?.taxPercentage && 'Tax',
                       payrollConfig.deductions?.insurancePercentage &&
-                        'Insurance',
+                      'Insurance',
                       payrollConfig.deductions?.providentFundPercentage &&
-                        'Provident Fund',
+                      'Provident Fund',
                     ].filter(Boolean).length
                   }
                 </Typography>
@@ -1751,7 +1757,6 @@ const EmployeeSalaryPage: React.FC = () => {
             )}
             {!selectedSalary && (
               <AppDropdown
-                label='Select Employee'
                 value={selectedEmployeeId || ''}
                 onChange={async (e: SelectChangeEvent<string | number>) => {
                   const employeeId = String(e.target.value || '');
@@ -1791,14 +1796,14 @@ const EmployeeSalaryPage: React.FC = () => {
                               ),
                               houseRent: Math.round(
                                 (config.basePayComponents.houseRent || 0) *
-                                  ratio
+                                ratio
                               ),
                               medical: Math.round(
                                 (config.basePayComponents.medical || 0) * ratio
                               ),
                               transport: Math.round(
                                 (config.basePayComponents.transport || 0) *
-                                  ratio
+                                ratio
                               ),
                             });
                           } else {
@@ -1968,21 +1973,21 @@ const EmployeeSalaryPage: React.FC = () => {
                 Total Base Salary:{' '}
                 {formatCurrency(
                   (typeof basePayComponents.basic === 'string' &&
-                  basePayComponents.basic === ''
+                    basePayComponents.basic === ''
                     ? 0
                     : basePayComponents.basic || 0) +
-                    (typeof basePayComponents.houseRent === 'string' &&
+                  (typeof basePayComponents.houseRent === 'string' &&
                     basePayComponents.houseRent === ''
-                      ? 0
-                      : basePayComponents.houseRent || 0) +
-                    (typeof basePayComponents.medical === 'string' &&
+                    ? 0
+                    : basePayComponents.houseRent || 0) +
+                  (typeof basePayComponents.medical === 'string' &&
                     basePayComponents.medical === ''
-                      ? 0
-                      : basePayComponents.medical || 0) +
-                    (typeof basePayComponents.transport === 'string' &&
+                    ? 0
+                    : basePayComponents.medical || 0) +
+                  (typeof basePayComponents.transport === 'string' &&
                     basePayComponents.transport === ''
-                      ? 0
-                      : basePayComponents.transport || 0)
+                    ? 0
+                    : basePayComponents.transport || 0)
                 )}
               </Typography>
             </Box>

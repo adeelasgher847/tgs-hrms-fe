@@ -25,6 +25,7 @@ import AppDropdown from '../common/AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
+import AppButton from '../common/AppButton';
 
 const PayrollConfiguration: React.FC = () => {
   const theme = useTheme();
@@ -403,7 +404,7 @@ const PayrollConfiguration: React.FC = () => {
       const errorMessage =
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response
-              ?.data?.message || 'Failed to save payroll configuration'
+            ?.data?.message || 'Failed to save payroll configuration'
           : 'Failed to save payroll configuration';
       setError(errorMessage);
       snackbar.error(errorMessage);
@@ -447,9 +448,9 @@ const PayrollConfiguration: React.FC = () => {
     if (
       config.deductions.taxPercentage !== deductions.taxPercentage ||
       config.deductions.insurancePercentage !==
-        deductions.insurancePercentage ||
+      deductions.insurancePercentage ||
       config.deductions.providentFundPercentage !==
-        deductions.providentFundPercentage
+      deductions.providentFundPercentage
     )
       return true;
 
@@ -463,9 +464,9 @@ const PayrollConfiguration: React.FC = () => {
     // Check leave deduction policy
     if (
       config.leaveDeductionPolicy.unpaidLeaveDeduction !==
-        leaveDeductionPolicy.unpaidLeaveDeduction ||
+      leaveDeductionPolicy.unpaidLeaveDeduction ||
       config.leaveDeductionPolicy.halfDayDeduction !==
-        leaveDeductionPolicy.halfDayDeduction
+      leaveDeductionPolicy.halfDayDeduction
     )
       return true;
 
@@ -976,9 +977,9 @@ const PayrollConfiguration: React.FC = () => {
                             color: theme.palette.primary.main,
                           },
                           '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                            {
-                              backgroundColor: theme.palette.primary.main,
-                            },
+                          {
+                            backgroundColor: theme.palette.primary.main,
+                          },
                         }}
                       />
                     }
@@ -1090,9 +1091,9 @@ const PayrollConfiguration: React.FC = () => {
                             color: theme.palette.primary.main,
                           },
                           '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                            {
-                              backgroundColor: theme.palette.primary.main,
-                            },
+                          {
+                            backgroundColor: theme.palette.primary.main,
+                          },
                         }}
                       />
                     }
@@ -1158,36 +1159,41 @@ const PayrollConfiguration: React.FC = () => {
         sx={{
           mb: 3,
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: 'flex-start',
+          gap: { xs: 2, sm: 0 },
         }}
       >
         <AppPageTitle>Payroll Configuration</AppPageTitle>
-        <Button
+        <AppButton
           onClick={handleOpenEditModal}
-          variant='outlined'
+          variantType='primary'
           startIcon={
             <Box
               component='img'
               src={Icons.edit}
               alt='Edit'
-              sx={{ width: 18, height: 18, color: theme.palette.text.primary }}
+              sx={{
+                width: 18,
+                height: 18,
+                filter: 'brightness(0) invert(1)',
+              }}
             />
           }
           sx={{
-            textTransform: 'none',
             fontWeight: 500,
-            px: 2,
-            py: 1,
-            color: theme.palette.text.primary,
+            width: { xs: '100%', sm: 'auto' },
+            backgroundColor: 'var(--primary-dark-color)',
+            color: '#fff',
             '&:hover': {
-              borderColor: theme.palette.primary.main,
-              backgroundColor: theme.palette.action.hover,
+              backgroundColor: 'var(--primary-dark-color)',
+              opacity: 0.9,
             },
           }}
         >
           Update Configuration
-        </Button>
+        </AppButton>
       </Box>
 
       <Box
@@ -1545,9 +1551,9 @@ const PayrollConfiguration: React.FC = () => {
                         color: theme.palette.primary.main,
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                        {
-                          backgroundColor: theme.palette.primary.main,
-                        },
+                      {
+                        backgroundColor: theme.palette.primary.main,
+                      },
                     }}
                   />
                 }
@@ -1641,9 +1647,9 @@ const PayrollConfiguration: React.FC = () => {
                         color: theme.palette.primary.main,
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                        {
-                          backgroundColor: theme.palette.primary.main,
-                        },
+                      {
+                        backgroundColor: theme.palette.primary.main,
+                      },
                     }}
                   />
                 }
@@ -2067,9 +2073,9 @@ const PayrollConfiguration: React.FC = () => {
                           color: theme.palette.primary.main,
                         },
                         '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                          {
-                            backgroundColor: theme.palette.primary.main,
-                          },
+                        {
+                          backgroundColor: theme.palette.primary.main,
+                        },
                       }}
                     />
                   }
@@ -2176,9 +2182,9 @@ const PayrollConfiguration: React.FC = () => {
                           color: theme.palette.primary.main,
                         },
                         '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                          {
-                            backgroundColor: theme.palette.primary.main,
-                          },
+                        {
+                          backgroundColor: theme.palette.primary.main,
+                        },
                       }}
                     />
                   }

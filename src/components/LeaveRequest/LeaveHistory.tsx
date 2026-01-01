@@ -286,6 +286,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           {!hideDropdown && (isAdmin || isManager) && (
             <AppDropdown
               label='All Employees'
+              showLabel={false}
               value={selectedEmployee || ''}
               onChange={(e: SelectChangeEvent<string | number>) =>
                 setSelectedEmployee(String(e.target.value || ''))
@@ -295,7 +296,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                 ...employeeNames.map(name => ({ value: name, label: name })),
               ]}
               placeholder='All Employees'
-              label='Employee'
               containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
             />
           )}
@@ -349,7 +349,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
       ) : (
-        <Paper elevation={1} sx={{ boxShadow: 'none', overflowX: 'auto' }}>
+        <Paper elevation={1} sx={{ boxShadow: 'none', overflowX: 'auto', backgroundColor: 'transparent' }}>
           <AppTable sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
@@ -410,7 +410,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                       label={
                         leave.status
                           ? leave.status.charAt(0).toUpperCase() +
-                            leave.status.slice(1)
+                          leave.status.slice(1)
                           : 'Unknown'
                       }
                       color={statusConfig[leave.status]?.color}
