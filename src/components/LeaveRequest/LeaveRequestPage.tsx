@@ -24,7 +24,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import HistoryIcon from '@mui/icons-material/History';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-
+import employeeApi from '../../api/employeeApi';
 import { PAGINATION } from '../../constants/appConstants';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
@@ -52,6 +52,9 @@ const LeaveRequestPage = () => {
     useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [employees, setEmployees] = useState<
+    { id: string; userId: string; name: string }[]
+  >([]);
 
   // Currently selected leave (used for dialogs like manager response)
   const selectedLeave = selectedId
@@ -215,6 +218,9 @@ const LeaveRequestPage = () => {
             status: (getString(leave.status) as Leave['status']) || 'pending',
             createdAt: leave.createdAt as string | undefined,
             updatedAt: leave.updatedAt as string | undefined,
+            documents: Array.isArray(leave.documents)
+              ? (leave.documents as string[])
+              : [],
           } as Leave;
         });
 
@@ -490,6 +496,22 @@ const LeaveRequestPage = () => {
     }
   }, [currentUserId, role, viewMode]);
 
+  useEffect(() => {
+    if (role === 'admin' || role === 'hr-admin') {
+      employeeApi.getAllEmployeesWithoutPagination().then(res => {
+        setEmployees(
+          res
+            .filter(e => e.user_id)
+            .map(e => ({
+              id: e.id,
+              userId: e.user_id!,
+              name: e.name,
+            }))
+        );
+      });
+    }
+  }, [role]);
+
   if (initialLoading)
     return (
       <Box
@@ -534,7 +556,7 @@ const LeaveRequestPage = () => {
             )}
           </Box>
 
-          {['employee', 'manager'].includes(role) && (
+          {['employee', 'manager', 'admin', 'hr-admin'].includes(role) && (
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               spacing={2}
@@ -591,9 +613,50 @@ const LeaveRequestPage = () => {
       </AppBar>
 
       <Box sx={{ py: 3 }}>
-        {['employee', 'manager'].includes(role) ? (
+        {['employee', 'manager', 'admin', 'hr-admin'].includes(role) ? (
           activeTab === 'apply' ? (
-            <LeaveForm onSubmit={handleApply} onError={handleApplyError} />
+            <LeaveForm
+              onSubmit={async formData => {
+                try {
+                  if (role === 'admin' || role === 'hr-admin') {
+                    // formData.employeeId = selected employee's EMPLOYEE id
+                    const employee = employees.find(
+                      e => e.id === formData.employeeId
+                    );
+
+                    if (!employee?.userId) {
+                      showError('Invalid employee selected');
+                      return;
+                    }
+
+                    await leaveApi.createLeaveForEmployee({
+                      employeeId: employee.userId, // ✅ user_id
+                      leaveTypeId: formData.leaveTypeId,
+                      startDate: formData.startDate,
+                      endDate: formData.endDate,
+                      reason: formData.reason,
+                      documents: formData.documents,
+                    });
+                  } else {
+                    await leaveApi.createLeave({
+                      leaveTypeId: formData.leaveTypeId,
+                      startDate: formData.startDate,
+                      endDate: formData.endDate,
+                      reason: formData.reason,
+                      documents: formData.documents,
+                    });
+                  }
+
+                  await handleApply();
+                } catch (err) {
+                  handleApplyError(getErrorMessage(err));
+                }
+              }}
+              onError={handleApplyError}
+              employees={
+                role === 'admin' || role === 'hr-admin' ? employees : undefined
+              }
+            />
           ) : (
             <>
               {role === 'manager' && (

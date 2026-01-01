@@ -12,6 +12,9 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -25,6 +28,9 @@ import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../common/AppTable';
 import AppDropdown from '../common/AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import { getIcon } from '../../assets/icons';
+import { IoCloseCircleOutline } from 'react-icons/io5';
+import LeaveForm from './LeaveForm';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
@@ -98,6 +104,10 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   const [page, setPage] = useState(1);
   const [allLeavesForFilter, setAllLeavesForFilter] = useState<Leave[]>([]);
   const [loadingAllLeaves, setLoadingAllLeaves] = useState(false);
+  const [openDocs, setOpenDocs] = useState(false);
+  const [currentDocs, setCurrentDocs] = useState<string[]>([]);
+  const [openLeaveForm, setOpenLeaveForm] = useState(false);
+  const [editingLeave, setEditingLeave] = useState<Leave | null>(null);
 
   // Reset page to 1 when employee filter changes
   useEffect(() => {
@@ -197,6 +207,16 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
   const [exporting, setExporting] = useState(false);
 
+  const handleEditLeave = (leave: Leave) => {
+    setEditingLeave(leave);
+    setOpenLeaveForm(true);
+  };
+
+  const handleCloseLeaveForm = () => {
+    setOpenLeaveForm(false);
+    setEditingLeave(null);
+  };
+
   const handleDownloadCSV = async () => {
     if (exporting) return;
 
@@ -241,6 +261,24 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
       alert('Failed to export leave history. Please try again.');
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleViewDocs = (docs: string[]) => {
+    setCurrentDocs(docs);
+    setOpenDocs(true);
+  };
+
+  const refreshLeaves = async () => {
+    if (isEmployeeFiltered && onExportAll) {
+      try {
+        const allLeaves = await onExportAll();
+        setAllLeavesForFilter(allLeaves); 
+      } catch (err) {
+        console.error('Failed to refresh leaves:', err);
+      }
+    } else if (!isEmployeeFiltered && onPageChange) {
+      onPageChange(currentPage);
     }
   };
 
@@ -361,6 +399,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                 <TableCell>To</TableCell>
                 <TableCell>Applied</TableCell>
                 <TableCell>Reason</TableCell>
+                <TableCell>Documents</TableCell>
                 <TableCell>Status</TableCell>
                 {isAdmin && <TableCell>Manager Remarks</TableCell>}
                 <TableCell>Actions</TableCell>
@@ -403,6 +442,24 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                         {leave.reason || 'N/A'}
                       </Typography>
                     </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    {leave.documents && leave.documents.length > 0 ? (
+                      <IconButton
+                        onClick={() => handleViewDocs(leave.documents)}
+                      >
+                        <img
+                          src={getIcon('password')}
+                          alt='View Documents'
+                          width={20}
+                          height={20}
+                        />
+                      </IconButton>
+                    ) : (
+                      <span style={{ fontStyle: 'italic', color: '#9e9e9e' }}>
+                        No Documents
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Chip
@@ -592,12 +649,20 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                         !isManager &&
                         onWithdraw &&
                         leave.status === 'pending' && (
-                          <Chip
-                            label='Withdraw'
-                            color='warning'
-                            clickable
-                            onClick={() => onWithdraw(leave.id)}
-                          />
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Chip
+                              label='Edit'
+                              color='primary'
+                              clickable
+                              onClick={() => handleEditLeave(leave)}
+                            />
+                            <Chip
+                              label='Withdraw'
+                              color='warning'
+                              clickable
+                              onClick={() => onWithdraw(leave.id)}
+                            />
+                          </Box>
                         )}
                     </Box>
                   </TableCell>
@@ -620,10 +685,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         }}
       >
         {(() => {
-          // When admin filters by employee:
-          // - Hide pagination if filtered records are less than or equal to page limit
-          // - Show pagination only if filtered records exceed page limit
-          // Otherwise, show pagination if there are multiple pages
           const shouldShowPagination = isEmployeeFiltered
             ? filteredTotalItems > ITEMS_PER_PAGE
             : totalPages > 1;
@@ -668,6 +729,140 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         )}
       </Box>
+      <Dialog
+        open={openDocs}
+        onClose={() => setOpenDocs(false)}
+        maxWidth='md'
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant='h6'>Uploaded Documents</Typography>
+          <IconButton onClick={() => setOpenDocs(false)}>
+            <IoCloseCircleOutline />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers>
+          {currentDocs.length === 0 ? (
+            <Typography textAlign='center' color='textSecondary'>
+              No documents uploaded
+            </Typography>
+          ) : (
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 2,
+                justifyContent: 'center',
+              }}
+            >
+              {currentDocs.map((doc, idx) => {
+                const extension = doc.split('.').pop()?.toLowerCase() || '';
+                const isImage = [
+                  'jpeg',
+                  'jpg',
+                  'png',
+                  'gif',
+                  'webp',
+                  'bmp',
+                ].includes(extension);
+
+                if (isImage) {
+                  return (
+                    <Box
+                      key={idx}
+                      sx={{
+                        width: { xs: 120, sm: 150, md: 180 },
+                        height: { xs: 120, sm: 150, md: 180 },
+                        border: '1px solid #ccc',
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        '&:hover img': { transform: 'scale(1.05)' },
+                        transition: 'all 0.2s',
+                      }}
+                      onClick={() => window.open(doc, '_blank')}
+                    >
+                      <img
+                        src={doc}
+                        alt={`Document ${idx + 1}`}
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                          objectFit: 'contain',
+                          transition: 'transform 0.2s',
+                        }}
+                      />
+                    </Box>
+                  );
+                }
+
+                // Non-image files
+                return (
+                  <Box
+                    key={idx}
+                    sx={{
+                      width: { xs: 120, sm: 150, md: 180 },
+                      height: { xs: 120, sm: 150, md: 180 },
+                      border: '1px solid #ccc',
+                      borderRadius: 2,
+                      p: 1,
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      '&:hover': { boxShadow: 3 },
+                    }}
+                    onClick={() => window.open(doc, '_blank')}
+                  >
+                    <Typography
+                      variant='body2'
+                      sx={{ mb: 1, wordBreak: 'break-word', fontWeight: 500 }}
+                    >
+                      {doc.split('/').pop()}
+                    </Typography>
+                    <Typography
+                      variant='caption'
+                      sx={{ color: '#1976d2', fontWeight: 'bold' }}
+                    >
+                      View / Download
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+      {openLeaveForm && editingLeave && (
+        <Dialog
+          open={openLeaveForm}
+          onClose={handleCloseLeaveForm}
+          maxWidth='sm'
+          fullWidth
+        >
+          <LeaveForm
+            mode='edit'
+            leaveId={editingLeave.id}
+            initialData={editingLeave}
+            onSuccess={() => {
+              refreshLeaves(); 
+              handleCloseLeaveForm();
+            }}
+            onError={msg => alert(msg)}
+          />
+        </Dialog>
+      )}
     </Box>
   );
 };
