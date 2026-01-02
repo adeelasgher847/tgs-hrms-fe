@@ -623,7 +623,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
         </Typography>
         <Stack direction={isMobile ? 'column' : 'row'} spacing={2} mb={3}>
           <AppDropdown
-            label='Department'
+            // label='Department'
+            showLabel={false}
             value={filters.departmentId}
             onChange={(e: SelectChangeEvent<string | number>) =>
               handleFilterChange(
@@ -640,7 +641,8 @@ const CrossTenantLeaveManagement: React.FC = () => {
           />
 
           <AppDropdown
-            label='Status'
+            // label='Status'
+            showLabel={false}
             value={filters.status}
             onChange={(e: SelectChangeEvent<string | number>) =>
               handleFilterChange(

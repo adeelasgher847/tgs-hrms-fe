@@ -262,7 +262,9 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   variant='outlined'
                   variantType='secondary'
                   size='small'
-                  startIcon={<GroupIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
+                  startIcon={
+                    <GroupIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                  }
                   onClick={() => handleViewMembers(team)}
                   sx={{
                     flex: 1,
@@ -363,10 +365,11 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
               },
               ...availableEmployees.map(employee => ({
                 value: employee.id,
-                label: `${employee.user
+                label: `${
+                  employee.user
                     ? `${employee.user.first_name || ''} ${employee.user.last_name || ''}`
                     : 'Unknown User'
-                  } - ${employee.designation?.title || 'N/A'}`,
+                } - ${employee.designation?.title || 'N/A'}`,
               })),
             ]}
           />

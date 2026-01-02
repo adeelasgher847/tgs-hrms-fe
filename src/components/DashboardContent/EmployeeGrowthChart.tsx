@@ -181,10 +181,12 @@ const EmployeeGrowthChart: React.FC = () => {
         borderRadius: '0.375rem',
         backgroundColor: theme.palette.background.paper,
         direction: language === 'ar' ? 'rtl' : 'ltr',
-        height: 400,
+        minHeight: 400,
+        height: { xs: 'auto', sm: 400 },
         display: 'flex',
         flexDirection: 'column',
         padding: 2,
+        overflow: 'hidden',
       }}
     >
       <Box
@@ -294,9 +296,22 @@ const EmployeeGrowthChart: React.FC = () => {
         sx={{
           flexGrow: 1,
           alignItems: 'center',
+          minHeight: { xs: 250, sm: 300 },
+          overflow: 'hidden',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
         }}
       >
-        <Chart options={options} series={series} type='line' height='100%' />
+        <Box
+          sx={{
+            width: '100%',
+            height: { xs: 250, sm: 300 },
+            '& .apexcharts-canvas': { width: '100% !important' },
+          }}
+        >
+          <Chart options={options} series={series} type='line' height={300} />
+        </Box>
       </Box>
     </Box>
   );

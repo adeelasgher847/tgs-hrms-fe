@@ -448,37 +448,44 @@ const BenefitReport: React.FC = () => {
             size='small'
           />
         </Box>
-        {isManager ? (
-          <AppButton
-            variant='contained'
-            variantType='primary'
-            onClick={handleDownload}
-            sx={{
-              borderRadius: '6px',
-              minWidth: 0,
-              padding: '6px',
-              height: 'auto',
-            }}
-            aria-label='Download CSV'
-          >
-            <FileDownloadIcon aria-hidden='true' />
-          </AppButton>
-        ) : (
-          <Tooltip title='Download CSV'>
-            <IconButton
-              color='primary'
+        <Box
+          display='flex'
+          justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
+          sx={{ width: { xs: 'auto', sm: 'auto' } }}
+        >
+          {isManager ? (
+            <AppButton
+              variant='contained'
+              variantType='primary'
               onClick={handleDownload}
               sx={{
-                backgroundColor: 'primary.main',
-                color: 'white',
                 borderRadius: '6px',
-                '&:hover': { backgroundColor: 'primary.dark' },
+                minWidth: 0,
+                padding: '6px',
+                height: 'auto',
               }}
+              aria-label='Download CSV'
             >
-              <FileDownloadIcon />
-            </IconButton>
-          </Tooltip>
-        )}
+              <FileDownloadIcon aria-hidden='true' />
+            </AppButton>
+          ) : (
+            <Tooltip title='Download CSV'>
+              <IconButton
+                color='primary'
+                onClick={handleDownload}
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  borderRadius: '6px',
+                  padding: '6px',
+                  '&:hover': { backgroundColor: 'primary.dark' },
+                }}
+              >
+                <FileDownloadIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
       </Box>
 
       {/* Table */}

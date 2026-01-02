@@ -4,15 +4,12 @@ import AppFormModal, { type FormField } from '../common/AppFormModal';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { CreateTeamDto, Manager } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
-
-
 interface CreateTeamFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: CreateTeamDto) => Promise<void>;
   darkMode?: boolean;
 }
-
 const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
   open,
   onClose,
@@ -27,14 +24,12 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [loadingManagers, setLoadingManagers] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   // Check if form has changes (for create, check if any field has content)
   const hasChanges =
     formData.name.trim() !== '' ||
     (formData.description?.trim() ?? '') !== '' ||
     formData.manager_id !== '';
   const { language } = useLanguage();
-
   const labels = {
     en: {
       title: 'Create New Team',
@@ -67,18 +62,14 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
       noManagersAvailable: 'لا يوجد مديرين متاحين',
     },
   };
-
   const lang = labels[language];
-
   // Load managers from API
   useEffect(() => {
     const loadManagers = async () => {
       if (open) {
         try {
           setLoadingManagers(true);
-
           const managersData = await teamApiService.getAvailableManagers();
-
           setManagers(managersData);
         } catch {
           setManagers([]);
@@ -87,24 +78,18 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
         }
       }
     };
-
     loadManagers();
   }, [open]);
-
-
-
   const handleSubmit = async () => {
     // Validation
     if (!formData.name.trim()) {
       setError(lang.nameRequired);
       return;
     }
-
     if (!formData.manager_id) {
       setError(lang.managerRequired);
       return;
     }
-
     try {
       setLoading(true);
       setError(null);
@@ -116,7 +101,6 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
       setLoading(false);
     }
   };
-
   const handleClose = () => {
     setFormData({
       name: '',
@@ -127,7 +111,6 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
     setLoading(false);
     onClose();
   };
-
   const fields: FormField[] = [
     {
       name: 'name',
@@ -161,15 +144,14 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
         : managers.length === 0
           ? [{ value: 'all', label: lang.noManagersAvailable }]
           : [
-            { value: 'all', label: lang.selectManager },
-            ...managers.map(manager => ({
-              value: manager.id,
-              label: `${manager.first_name} ${manager.last_name} (${manager.email})`,
-            })),
-          ],
+              { value: 'all', label: lang.selectManager },
+              ...managers.map(manager => ({
+                value: manager.id,
+                label: `${manager.first_name} ${manager.last_name} (${manager.email})`,
+              })),
+            ],
     },
   ];
-
   return (
     <AppFormModal
       open={open}
@@ -192,5 +174,4 @@ const CreateTeamForm: React.FC<CreateTeamFormProps> = ({
     </AppFormModal>
   );
 };
-
 export default CreateTeamForm;

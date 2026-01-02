@@ -752,6 +752,7 @@ const LeaveRequestPage = () => {
                   : undefined
               }
               userRole={role}
+              onRefresh={() => loadLeaves({ skipFullPageLoader: true })}
             />
           </>
         ) : (
@@ -769,6 +770,7 @@ const LeaveRequestPage = () => {
             isLoading={tableLoading}
             onExportAll={_fetchAllLeavesForExport}
             userRole={role}
+            onRefresh={() => loadLeaves({ skipFullPageLoader: true })}
           />
         )}
       </Box>

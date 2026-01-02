@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Typography } from '@mui/material';
+import { Box, TextField } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -7,9 +7,10 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 
 import AppButton from '../common/AppButton';
 import AppDropdown from '../common/AppDropdown';
+import DocumentUpload from '../common/DocumentUpload';
 import { leaveApi, type LeaveType } from '../../api/leaveApi';
 import AppPageTitle from '../common/AppPageTitle';
-import type { LeaveResponse as Leave } from '../../api/leaveApi';
+import type { Leave } from '../../type/levetypes';
 
 interface LeaveFormProps {
   /** create | edit */
@@ -52,6 +53,8 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [reason, setReason] = useState('');
   const [documents, setDocuments] = useState<File[]>([]);
+  const [existingDocuments, setExistingDocuments] = useState<string[]>([]);
+  const [documentsToRemove, setDocumentsToRemove] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   /* ------------------ PREFILL (EDIT MODE) ------------------ */
@@ -62,6 +65,14 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
       setStartDate(new Date(initialData.startDate));
       setEndDate(new Date(initialData.endDate));
       setReason(initialData.reason || '');
+      // Load existing documents if available
+      if (initialData.documents && Array.isArray(initialData.documents)) {
+        setExistingDocuments(initialData.documents as string[]);
+      }
+    } else {
+      // Reset when switching to create mode
+      setExistingDocuments([]);
+      setDocumentsToRemove([]);
     }
   }, [mode, initialData]);
 
@@ -94,21 +105,37 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
     return `${y}-${m}-${d}`;
   };
 
-  /* ------------------ FILE HANDLING ------------------ */
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-
-    const newFiles = Array.from(e.target.files);
-    setDocuments(prev => {
-      const existing = new Set(prev.map(f => f.name));
-      return [...prev, ...newFiles.filter(f => !existing.has(f.name))];
-    });
-
-    e.target.value = '';
+  /* ------------------ DOCUMENT HANDLING ------------------ */
+  const handleDocumentsChange = (data: { existing: string[]; new: File[] }) => {
+    setExistingDocuments(data.existing);
+    setDocuments(data.new);
   };
 
-  const handleRemoveFile = (index: number) => {
-    setDocuments(prev => prev.filter((_, i) => i !== index));
+  const handleDocumentRemove = (type: 'existing' | 'new', index: number) => {
+    if (type === 'existing') {
+      const docUrl = existingDocuments[index];
+      setExistingDocuments(prev => prev.filter((_, i) => i !== index));
+      setDocumentsToRemove(prev => [...prev, docUrl]);
+    } else {
+      setDocuments(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleDocumentReplace = (
+    type: 'existing' | 'new',
+    index: number,
+    file: File
+  ) => {
+    if (type === 'existing') {
+      // Remove existing document and add new file
+      const docUrl = existingDocuments[index];
+      setExistingDocuments(prev => prev.filter((_, i) => i !== index));
+      setDocumentsToRemove(prev => [...prev, docUrl]);
+      setDocuments(prev => [...prev, file]);
+    } else {
+      // Replace new file
+      setDocuments(prev => prev.map((f, i) => (i === index ? file : f)));
+    }
   };
 
   /* ------------------ SUBMIT ------------------ */
@@ -145,7 +172,24 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
         if (reason.trim() !== initialData.reason)
           payload.reason = reason.trim();
 
-        if (documents.length > 0) payload.documents = documents;
+        // Handle documents:
+        // - If new documents are added, send them (backend will replace all)
+        // - If documents were removed (existingDocuments changed), send new documents array
+        // - If all documents were removed, send empty array
+        const hasNewDocuments = documents.length > 0;
+        const hasRemovedDocuments = documentsToRemove.length > 0;
+        const allDocumentsRemoved =
+          existingDocuments.length === 0 &&
+          documentsToRemove.length > 0 &&
+          documents.length === 0;
+
+        if (hasNewDocuments || hasRemovedDocuments) {
+          // Send new documents array (backend will replace all existing documents)
+          payload.documents = documents;
+        } else if (allDocumentsRemoved) {
+          // All documents were removed, send empty array
+          payload.documents = [];
+        }
 
         if (Object.keys(payload).length === 0) {
           onError?.('No changes to update.');
@@ -208,7 +252,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
           <AppDropdown
             label='Employee'
             value={employeeId}
-            onChange={(e: SelectChangeEvent) =>
+            onChange={(e: SelectChangeEvent<string | number>) =>
               setEmployeeId(String(e.target.value))
             }
             options={employees.map(emp => ({
@@ -225,7 +269,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
         <AppDropdown
           label='Leave Type'
           value={leaveTypeId}
-          onChange={(e: SelectChangeEvent) =>
+          onChange={(e: SelectChangeEvent<string | number>) =>
             setLeaveTypeId(String(e.target.value))
           }
           options={leaveTypes.map(type => ({
@@ -242,9 +286,13 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
           label='Start Date'
           value={startDate}
           onChange={newValue => {
-            setStartDate(newValue);
-            if (newValue && endDate && newValue > endDate) {
-              setEndDate(newValue);
+            if (newValue instanceof Date) {
+              setStartDate(newValue);
+              if (newValue && endDate && newValue > endDate) {
+                setEndDate(newValue);
+              }
+            } else if (newValue === null) {
+              setStartDate(null);
             }
           }}
           minDate={getToday()}
@@ -254,7 +302,13 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
         <DatePicker
           label='End Date'
           value={endDate}
-          onChange={setEndDate}
+          onChange={newValue => {
+            if (newValue instanceof Date) {
+              setEndDate(newValue);
+            } else if (newValue === null) {
+              setEndDate(null);
+            }
+          }}
           minDate={startDate || getToday()}
           slotProps={{ textField: { fullWidth: true, required: true } }}
         />
@@ -268,53 +322,21 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
           required
         />
 
-        <Box>
-          <Typography variant='subtitle2' mb={0.5}>
-            Supporting Documents (Optional)
-          </Typography>
-
-          <TextField
-            type='file'
-            inputProps={{ multiple: true }}
-            onChange={handleFileChange}
-            fullWidth
-          />
-
-          {documents.length > 0 && (
-            <Box mt={1}>
-              {documents.map((file, index) => (
-                <Box
-                  key={`${file.name}-${index}`}
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mt: 0.5,
-                    p: 1,
-                    borderRadius: 1,
-                    backgroundColor: 'action.hover',
-                  }}
-                >
-                  <Typography variant='body2' noWrap>
-                    {file.name}
-                  </Typography>
-                  <Typography
-                    variant='body2'
-                    color='error'
-                    sx={{ cursor: 'pointer' }}
-                    onClick={() => handleRemoveFile(index)}
-                  >
-                    Remove
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          )}
-        </Box>
+        <DocumentUpload
+          label='Supporting Documents (Optional)'
+          existingDocuments={mode === 'edit' ? existingDocuments : []}
+          newDocuments={documents}
+          onDocumentsChange={handleDocumentsChange}
+          onDocumentRemove={handleDocumentRemove}
+          onDocumentReplace={handleDocumentReplace}
+          multiple
+          accept='image/*'
+        />
 
         <AppButton
           type='submit'
-          variantType='contained'
+          variant='contained'
+          variantType='primary'
           text={loading ? 'Saving...' : mode === 'edit' ? 'Update' : 'Apply'}
           disabled={loading}
         />

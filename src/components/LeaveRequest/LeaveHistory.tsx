@@ -15,12 +15,19 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import UndoIcon from '@mui/icons-material/Undo';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
@@ -32,22 +39,38 @@ import { getIcon } from '../../assets/icons';
 import { IoCloseCircleOutline } from 'react-icons/io5';
 import LeaveForm from './LeaveForm';
 import { env } from '../../config/env';
+import { authService } from '../../api/authService';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
-// Helper function to construct full URL for documents
+// Helper function to construct full URL for documents with authentication
 const getDocumentUrl = (docUrl: string): string => {
   if (!docUrl) return '';
   // If it's already an absolute URL (starts with http:// or https://), return as is
   if (docUrl.startsWith('http://') || docUrl.startsWith('https://')) {
     return docUrl;
   }
-  // If it starts with /, it's a relative path from the API base URL
+
+  // Get token for authentication
+  const token = authService.getAccessToken();
+  const timestamp = Date.now();
+
+  // Build base URL
+  let baseUrl = '';
   if (docUrl.startsWith('/')) {
-    return `${env.apiBaseUrl}${docUrl}`;
+    baseUrl = `${env.apiBaseUrl}${docUrl}`;
+  } else {
+    baseUrl = `${env.apiBaseUrl}/${docUrl}`;
   }
-  // Otherwise, assume it's a relative path and prepend the API base URL
-  return `${env.apiBaseUrl}/${docUrl}`;
+
+  // Add token and timestamp as query parameters
+  const separator = baseUrl.includes('?') ? '&' : '?';
+  const params = [`t=${timestamp}`];
+  if (token) {
+    params.push(`token=${encodeURIComponent(token)}`);
+  }
+
+  return `${baseUrl}${separator}${params.join('&')}`;
 };
 
 const statusConfig: Record<
@@ -94,6 +117,7 @@ interface LeaveHistoryProps {
   isLoading?: boolean;
   onExportAll?: () => Promise<Leave[]>;
   userRole?: string;
+  onRefresh?: () => Promise<void> | void;
 }
 
 const LeaveHistory: React.FC<LeaveHistoryProps> = ({
@@ -115,6 +139,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   isLoading = false,
   onExportAll,
   userRole,
+  onRefresh,
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [page, setPage] = useState(1);
@@ -125,6 +150,9 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   const [openLeaveForm, setOpenLeaveForm] = useState(false);
   const [editingLeave, setEditingLeave] = useState<Leave | null>(null);
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedLeaveForMenu, setSelectedLeaveForMenu] =
+    useState<Leave | null>(null);
 
   // Reset page to 1 when employee filter changes
   useEffect(() => {
@@ -287,7 +315,31 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     setOpenDocs(true);
   };
 
+  const handleMenuClick = (
+    event: React.MouseEvent<HTMLElement>,
+    leave: Leave
+  ) => {
+    setMenuAnchorEl(event.currentTarget);
+    setSelectedLeaveForMenu(leave);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+    setSelectedLeaveForMenu(null);
+  };
+
   const refreshLeaves = async () => {
+    // If parent provides a refresh callback, use it (silent reload)
+    if (onRefresh) {
+      try {
+        await onRefresh();
+        return;
+      } catch (err) {
+        console.error('Failed to refresh leaves:', err);
+      }
+    }
+
+    // Fallback to existing logic
     if (isEmployeeFiltered && onExportAll) {
       try {
         const allLeaves = await onExportAll();
@@ -405,7 +457,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
       ) : (
-        <Paper elevation={1} sx={{ boxShadow: 'none', overflowX: 'auto', backgroundColor: 'transparent' }}>
+        <Paper elevation={1} sx={{ boxShadow: 'none', overflowX: 'auto' }}>
           <AppTable sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
@@ -464,7 +516,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                   <TableCell>
                     {leave.documents && leave.documents.length > 0 ? (
                       <IconButton
-                        onClick={() => handleViewDocs(leave.documents)}
+                        onClick={() => handleViewDocs(leave.documents || [])}
                       >
                         <img
                           src={getIcon('password')}
@@ -485,7 +537,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                       label={
                         leave.status
                           ? leave.status.charAt(0).toUpperCase() +
-                          leave.status.slice(1)
+                            leave.status.slice(1)
                           : 'Unknown'
                       }
                       color={statusConfig[leave.status]?.color}
@@ -586,119 +638,227 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                           </Tooltip>
                         )}
 
-                      {isAdmin && leave.status === 'pending' && onAction && (
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                          <Chip
-                            label='Approve'
-                            color='success'
-                            clickable
-                            onClick={() => onAction(leave.id, 'approved')}
-                          />
-                          <Chip
-                            label='Reject'
-                            color='error'
-                            clickable
-                            onClick={() => onAction(leave.id, 'rejected')}
-                          />
-                          {/* Show Edit/Withdraw for all pending leaves (admin/hr-admin can manage all employee leaves) */}
-                          {onWithdraw && (
-                            <>
-                              <Chip
-                                label='Edit'
-                                color='primary'
-                                clickable
-                                onClick={() => handleEditLeave(leave)}
-                              />
-                              <Chip
-                                label='Withdraw'
-                                color='warning'
-                                clickable
-                                onClick={() => onWithdraw(leave.id)}
-                              />
-                            </>
-                          )}
-                        </Box>
-                      )}
+                      {/* Show action menu icon if there are any actions available */}
+                      {(() => {
+                        const isManagerOwnLeave =
+                          isManager &&
+                          viewMode === 'you' &&
+                          (leave.employee?.id === currentUserId ||
+                            leave.employeeId === currentUserId);
 
-                      {isManager &&
-                        viewMode === 'team' &&
-                        leave.status === 'pending' &&
-                        onManagerAction && (
-                          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                            <Chip
-                              label='Approve'
-                              color='success'
-                              clickable
-                              onClick={() =>
-                                onManagerAction(leave.id, 'approved')
+                        const hasActions =
+                          // Admin actions
+                          (isAdmin &&
+                            leave.status === 'pending' &&
+                            (onAction || onWithdraw)) ||
+                          // Manager team actions
+                          (isManager &&
+                            viewMode === 'team' &&
+                            leave.status === 'pending' &&
+                            (onManagerAction ||
+                              onManagerResponse ||
+                              onWithdraw)) ||
+                          // Manager own leave actions (edit and withdraw)
+                          (isManagerOwnLeave &&
+                            leave.status === 'pending' &&
+                            (onWithdraw || true)) || // Always allow edit for manager's own leaves
+                          // Employee actions
+                          (!isAdmin &&
+                            !isManager &&
+                            leave.status === 'pending' &&
+                            onWithdraw);
+
+                        if (!hasActions) return null;
+
+                        return (
+                          <>
+                            <IconButton
+                              size='small'
+                              onClick={e => handleMenuClick(e, leave)}
+                              aria-label={`Actions for leave ${leave.id}`}
+                              aria-haspopup='true'
+                              aria-expanded={
+                                Boolean(menuAnchorEl) &&
+                                selectedLeaveForMenu?.id === leave.id
                               }
-                            />
-                            <Chip
-                              label='Reject'
-                              color='error'
-                              clickable
-                              onClick={() =>
-                                onManagerAction(leave.id, 'rejected')
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                            <Menu
+                              anchorEl={menuAnchorEl}
+                              open={
+                                Boolean(menuAnchorEl) &&
+                                selectedLeaveForMenu?.id === leave.id
                               }
-                            />
-                          </Box>
-                        )}
+                              onClose={handleMenuClose}
+                            >
+                              {/* Admin actions for pending leaves */}
+                              {isAdmin &&
+                                leave.status === 'pending' &&
+                                onAction && (
+                                  <>
+                                    <MenuItem
+                                      onClick={() => {
+                                        onAction(leave.id, 'approved');
+                                        handleMenuClose();
+                                      }}
+                                    >
+                                      <ListItemIcon>
+                                        <CheckCircleIcon fontSize='small' />
+                                      </ListItemIcon>
+                                      <ListItemText>Approve</ListItemText>
+                                    </MenuItem>
+                                    <MenuItem
+                                      onClick={() => {
+                                        onAction(leave.id, 'rejected');
+                                        handleMenuClose();
+                                      }}
+                                    >
+                                      <ListItemIcon>
+                                        <CancelIcon fontSize='small' />
+                                      </ListItemIcon>
+                                      <ListItemText>Reject</ListItemText>
+                                    </MenuItem>
+                                  </>
+                                )}
 
-                      {isManager &&
-                        viewMode === 'team' &&
-                        leave.status === 'pending' &&
-                        !onManagerAction &&
-                        !leave.managerRemarks &&
-                        onManagerResponse && (
-                          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                            <Chip
-                              label='Manager Response'
-                              clickable
-                              onClick={() => onManagerResponse(leave.id)}
-                              sx={{
-                                fontWeight: 500,
-                                backgroundColor: 'var(--primary-dark-color)',
-                                color: '#FFFFFF',
-                                '& .MuiChip-label': { fontWeight: 500 },
-                                '&:hover': {
-                                  backgroundColor: 'var(--primary-dark-color)',
-                                },
-                              }}
-                            />
-                          </Box>
-                        )}
+                              {/* Edit option for admin on pending leaves */}
+                              {isAdmin &&
+                                leave.status === 'pending' &&
+                                onWithdraw && (
+                                  <MenuItem
+                                    onClick={() => {
+                                      handleEditLeave(leave);
+                                      handleMenuClose();
+                                    }}
+                                  >
+                                    <ListItemIcon>
+                                      <EditIcon fontSize='small' />
+                                    </ListItemIcon>
+                                    <ListItemText>Edit</ListItemText>
+                                  </MenuItem>
+                                )}
 
-                      {isManager &&
-                        viewMode === 'you' &&
-                        onWithdraw &&
-                        leave.status === 'pending' && (
-                          <Chip
-                            label='Withdraw'
-                            color='warning'
-                            clickable
-                            onClick={() => onWithdraw(leave.id)}
-                          />
-                        )}
+                              {/* Manager team actions */}
+                              {isManager &&
+                                viewMode === 'team' &&
+                                leave.status === 'pending' &&
+                                onManagerAction && (
+                                  <>
+                                    <MenuItem
+                                      onClick={() => {
+                                        onManagerAction(leave.id, 'approved');
+                                        handleMenuClose();
+                                      }}
+                                    >
+                                      <ListItemIcon>
+                                        <CheckCircleIcon fontSize='small' />
+                                      </ListItemIcon>
+                                      <ListItemText>Approve</ListItemText>
+                                    </MenuItem>
+                                    <MenuItem
+                                      onClick={() => {
+                                        onManagerAction(leave.id, 'rejected');
+                                        handleMenuClose();
+                                      }}
+                                    >
+                                      <ListItemIcon>
+                                        <CancelIcon fontSize='small' />
+                                      </ListItemIcon>
+                                      <ListItemText>Reject</ListItemText>
+                                    </MenuItem>
+                                  </>
+                                )}
 
-                      {!isAdmin &&
-                        !isManager &&
-                        onWithdraw &&
-                        leave.status === 'pending' && (
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Chip
-                              label='Edit'
-                              color='primary'
-                              clickable
-                              onClick={() => handleEditLeave(leave)}
-                            />
-                            <Chip
-                              label='Withdraw'
-                              color='warning'
-                              clickable
-                              onClick={() => onWithdraw(leave.id)}
-                            />
-                          </Box>
-                        )}
+                              {/* Manager response option */}
+                              {isManager &&
+                                viewMode === 'team' &&
+                                leave.status === 'pending' &&
+                                !onManagerAction &&
+                                !leave.managerRemarks &&
+                                onManagerResponse && (
+                                  <MenuItem
+                                    onClick={() => {
+                                      onManagerResponse(leave.id);
+                                      handleMenuClose();
+                                    }}
+                                  >
+                                    <ListItemIcon>
+                                      <EditIcon fontSize='small' />
+                                    </ListItemIcon>
+                                    <ListItemText>
+                                      Manager Response
+                                    </ListItemText>
+                                  </MenuItem>
+                                )}
+
+                              {/* Edit option for manager's own pending leaves */}
+                              {isManager &&
+                                viewMode === 'you' &&
+                                leave.status === 'pending' &&
+                                (leave.employee?.id === currentUserId ||
+                                  leave.employeeId === currentUserId) && (
+                                  <MenuItem
+                                    onClick={() => {
+                                      handleEditLeave(leave);
+                                      handleMenuClose();
+                                    }}
+                                  >
+                                    <ListItemIcon>
+                                      <EditIcon fontSize='small' />
+                                    </ListItemIcon>
+                                    <ListItemText>Edit</ListItemText>
+                                  </MenuItem>
+                                )}
+
+                              {/* Withdraw option for pending leaves */}
+                              {((isAdmin &&
+                                leave.status === 'pending' &&
+                                onWithdraw) ||
+                                (isManager &&
+                                  viewMode === 'you' &&
+                                  leave.status === 'pending' &&
+                                  onWithdraw) ||
+                                (!isAdmin &&
+                                  !isManager &&
+                                  leave.status === 'pending' &&
+                                  onWithdraw)) && (
+                                <MenuItem
+                                  onClick={() => {
+                                    if (onWithdraw) {
+                                      onWithdraw(leave.id);
+                                    }
+                                    handleMenuClose();
+                                  }}
+                                >
+                                  <ListItemIcon>
+                                    <UndoIcon fontSize='small' />
+                                  </ListItemIcon>
+                                  <ListItemText>Withdraw</ListItemText>
+                                </MenuItem>
+                              )}
+
+                              {/* Edit option for employees on pending leaves */}
+                              {!isAdmin &&
+                                !isManager &&
+                                leave.status === 'pending' &&
+                                onWithdraw && (
+                                  <MenuItem
+                                    onClick={() => {
+                                      handleEditLeave(leave);
+                                      handleMenuClose();
+                                    }}
+                                  >
+                                    <ListItemIcon>
+                                      <EditIcon fontSize='small' />
+                                    </ListItemIcon>
+                                    <ListItemText>Edit</ListItemText>
+                                  </MenuItem>
+                                )}
+                            </Menu>
+                          </>
+                        );
+                      })()}
                     </Box>
                   </TableCell>
                 </TableRow>
