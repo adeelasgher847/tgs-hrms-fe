@@ -11,6 +11,7 @@ import {
   getRoleName,
   isManager,
   isEmployee,
+  isNetworkAdmin,
 } from '../../utils/roleUtils';
 
 import {
@@ -115,21 +116,21 @@ interface SearchResult {
   path: string;
   category: string;
   type:
-    | 'route'
-    | 'employee'
-    | 'asset'
-    | 'team'
-    | 'department'
-    | 'designation'
-    | 'benefit'
-    | 'leave'
-    | 'policy'
-    | 'holiday'
-    | 'tenant'
-    | 'project'
-    | 'asset-request'
-    | 'attendance'
-    | 'payroll';
+  | 'route'
+  | 'employee'
+  | 'asset'
+  | 'team'
+  | 'department'
+  | 'designation'
+  | 'benefit'
+  | 'leave'
+  | 'policy'
+  | 'holiday'
+  | 'tenant'
+  | 'project'
+  | 'asset-request'
+  | 'attendance'
+  | 'payroll';
   id?: string;
   icon?: React.ReactNode;
   subtitle?: string;
@@ -523,6 +524,11 @@ const Navbar: React.FC<NavbarProps> = ({
     ) {
       return false;
     }
+    // Explicitly deny for network-admin
+    if (isNetworkAdmin(currentUserRole)) {
+      return false;
+    }
+
     // Leaves are part of attendance/leave-analytics
     return (
       isMenuVisibleForRole('attendance', currentUserRole) ||
@@ -631,6 +637,16 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const handleCloseTeamMembersModal = () => {
     setTeamMembersModalOpen(false);
+  };
+
+  // Helper to normalize text for search (tokenize)
+  const normalizeText = (text: string): string[] => {
+    if (!text) return [];
+    return text
+      .toLowerCase()
+      .trim()
+      .split(/[\s_-]+/)
+      .filter(word => word.length > 0);
   };
 
   // Memoized route search with relevance scoring for better matching
@@ -935,10 +951,29 @@ const Navbar: React.FC<NavbarProps> = ({
               searchParams.tenantId = currentTenantId;
             }
 
-            const apiResponse = await searchApiService.search(searchParams);
+            let apiResponse;
+
+            try {
+              // Check if user is network admin
+              // Using optional chaining and fallback to false for safety
+              const isNetAdmin = isNetworkAdmin && isNetworkAdmin(currentUserRole);
+
+              if (isNetAdmin) {
+                if (typeof searchApiService.searchNetworkAdmin === 'function') {
+                  apiResponse = await searchApiService.searchNetworkAdmin(searchParams);
+                } else {
+                  apiResponse = await searchApiService.search(searchParams);
+                }
+              } else {
+                apiResponse = await searchApiService.search(searchParams);
+              }
+            } catch {
+              // Fallback to regular search if anything goes wrong in the branch logic
+              apiResponse = await searchApiService.search(searchParams);
+            }
 
             // Map API results to SearchResult format
-            if (apiResponse.results) {
+            if (apiResponse && apiResponse.results) {
               // Employees
               if (apiResponse.results.employees) {
                 apiResponse.results.employees.forEach(item => {
@@ -1069,6 +1104,7 @@ const Navbar: React.FC<NavbarProps> = ({
     canSearchBenefits,
     canSearchLeaves,
     canSearchTenants,
+    currentUserRole,
   ]);
 
   // Handle search input change

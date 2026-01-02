@@ -335,7 +335,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                 ...employeeNames.map(name => ({ value: name, label: name })),
               ]}
               placeholder='All Employees'
-              label='Employee'
               containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
             />
           )}
@@ -450,7 +449,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                       label={
                         leave.status
                           ? leave.status.charAt(0).toUpperCase() +
-                            leave.status.slice(1)
+                          leave.status.slice(1)
                           : 'Unknown'
                       }
                       color={statusConfig[leave.status]?.color}
