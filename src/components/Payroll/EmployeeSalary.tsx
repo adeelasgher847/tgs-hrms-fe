@@ -45,6 +45,7 @@ import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
 import AppButton from '../common/AppButton';
 import AppInputField from '../common/AppInputField';
+import { max } from 'date-fns';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -826,7 +827,7 @@ const EmployeeSalaryPage: React.FC = () => {
         >
           <Typography
             variant='h4'
-            sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000' }}
+            sx={{ fontWeight: 600, color: theme.palette.text.primary }}
           >
             My Salary Structure
           </Typography>
@@ -853,13 +854,13 @@ const EmployeeSalaryPage: React.FC = () => {
           >
             <Typography
               variant='h6'
-              sx={{ mb: 2, fontWeight: 600, color: darkMode ? '#fff' : '#000' }}
+              sx={{ mb: 2, fontWeight: 600, color: theme.palette.text.primary }}
             >
               Base Salary
             </Typography>
             <Typography
               variant='h4'
-              sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+              sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
             >
               {formatCurrency(mySalary.baseSalary)}
             </Typography>
@@ -880,7 +881,7 @@ const EmployeeSalaryPage: React.FC = () => {
                 sx={{
                   mb: 2,
                   fontWeight: 600,
-                  color: darkMode ? '#fff' : '#000',
+                  color: theme.palette.text.primary,
                 }}
               >
                 Allowances
@@ -910,7 +911,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     <Typography
                       variant='subtitle2'
                       sx={{
-                        color: darkMode ? '#fff' : '#000',
+                        color: theme.palette.text.primary,
                         fontWeight: 600,
                         mb: 1,
                       }}
@@ -962,7 +963,7 @@ const EmployeeSalaryPage: React.FC = () => {
                 sx={{
                   mb: 2,
                   fontWeight: 600,
-                  color: darkMode ? '#fff' : '#000',
+                  color: theme.palette.text.primary,
                 }}
               >
                 Deductions
@@ -992,7 +993,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     <Typography
                       variant='subtitle2'
                       sx={{
-                        color: darkMode ? '#fff' : '#000',
+                        color: theme.palette.text.primary,
                         fontWeight: 600,
                         mb: 1,
                       }}
@@ -1040,7 +1041,7 @@ const EmployeeSalaryPage: React.FC = () => {
           >
             <Typography
               variant='h6'
-              sx={{ mb: 2, fontWeight: 600, color: darkMode ? '#fff' : '#000' }}
+              sx={{ mb: 2, fontWeight: 600, color: theme.palette.text.primary }}
             >
               Additional Information
             </Typography>
@@ -1060,7 +1061,7 @@ const EmployeeSalaryPage: React.FC = () => {
                 </Typography>
                 <Typography
                   variant='body1'
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 500 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 500 }}
                 >
                   {dayjs(mySalary.effectiveDate).format('MMM DD, YYYY')}
                 </Typography>
@@ -1075,7 +1076,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   </Typography>
                   <Typography
                     variant='body1'
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 500 }}
+                    sx={{ color: theme.palette.text.primary, fontWeight: 500 }}
                   >
                     {dayjs(mySalary.endDate).format('MMM DD, YYYY')}
                   </Typography>
@@ -1104,7 +1105,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   </Typography>
                   <Typography
                     variant='body1'
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                    sx={{ color: theme.palette.text.primary }}
                   >
                     {mySalary.notes}
                   </Typography>
@@ -1189,32 +1190,32 @@ const EmployeeSalaryPage: React.FC = () => {
             <TableHead>
               <TableRow>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   Employee
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   Department
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   Designation
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   Base Salary
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   Status
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   Actions
                 </TableCell>
@@ -1392,7 +1393,7 @@ const EmployeeSalaryPage: React.FC = () => {
                 </Typography>
                 <Typography
                   variant='h4'
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   {formatCurrency(selectedSalary.baseSalary)}
                 </Typography>
@@ -1403,7 +1404,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   <Box>
                     <Typography
                       variant='h6'
-                      sx={{ mb: 2, color: darkMode ? '#fff' : '#000' }}
+                      sx={{ mb: 2, color: theme.palette.text.primary }}
                     >
                       Allowances
                     </Typography>
@@ -1422,7 +1423,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           <Typography
                             variant='subtitle2'
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -1457,7 +1458,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   <Box>
                     <Typography
                       variant='h6'
-                      sx={{ mb: 2, color: darkMode ? '#fff' : '#000' }}
+                      sx={{ mb: 2, color: theme.palette.text.primary }}
                     >
                       Deductions
                     </Typography>
@@ -1476,7 +1477,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           <Typography
                             variant='subtitle2'
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -1522,7 +1523,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   </Typography>
                   <Typography
                     variant='body1'
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                    sx={{ color: theme.palette.text.primary }}
                   >
                     {dayjs(selectedSalary.effectiveDate).format('MMM DD, YYYY')}
                   </Typography>
@@ -1537,7 +1538,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     </Typography>
                     <Typography
                       variant='body1'
-                      sx={{ color: darkMode ? '#fff' : '#000' }}
+                      sx={{ color: theme.palette.text.primary }}
                     >
                       {dayjs(selectedSalary.endDate).format('MMM DD, YYYY')}
                     </Typography>
@@ -1568,7 +1569,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     </Typography>
                     <Typography
                       variant='body1'
-                      sx={{ color: darkMode ? '#fff' : '#000' }}
+                      sx={{ color: theme.palette.text.primary }}
                     >
                       {selectedSalary.notes}
                     </Typography>
@@ -1583,7 +1584,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     variant='h6'
                     sx={{
                       mb: 2,
-                      color: darkMode ? '#fff' : '#000',
+                      color: theme.palette.text.primary,
                       fontWeight: 600,
                     }}
                   >
@@ -1607,7 +1608,7 @@ const EmployeeSalaryPage: React.FC = () => {
                         <TableRow>
                           <TableCell
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -1615,7 +1616,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           </TableCell>
                           <TableCell
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -1623,7 +1624,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           </TableCell>
                           <TableCell
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -1631,7 +1632,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           </TableCell>
                           <TableCell
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -1660,7 +1661,7 @@ const EmployeeSalaryPage: React.FC = () => {
                               </TableCell>
                               <TableCell
                                 sx={{
-                                  color: darkMode ? '#fff' : '#000',
+                                  color: theme.palette.text.primary,
                                   fontWeight: 500,
                                 }}
                               >
@@ -1706,7 +1707,7 @@ const EmployeeSalaryPage: React.FC = () => {
         cancelLabel='Cancel'
         hasChanges={isFormValid() && (!selectedSalary || hasChanges())}
         maxWidth='md'
-        paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff' }}
+        paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff', width: '800px', maxWidth: '800px' }}
       >
         <Box sx={{ pr: 1 }}>
           {!selectedSalary && payrollConfig && (
@@ -1877,7 +1878,7 @@ const EmployeeSalaryPage: React.FC = () => {
                 sx={{
                   mb: 2,
                   fontWeight: 600,
-                  color: darkMode ? '#fff' : '#000',
+                  color: theme.palette.text.primary,
                 }}
               >
                 Base Pay Components
@@ -1940,7 +1941,7 @@ const EmployeeSalaryPage: React.FC = () => {
               >
                 <Typography
                   variant='h6'
-                  sx={{ color: darkMode ? '#fff' : '#000' }}
+                  sx={{ color: theme.palette.text.primary }}
                 >
                   Allowances
                 </Typography>
@@ -2030,7 +2031,7 @@ const EmployeeSalaryPage: React.FC = () => {
               >
                 <Typography
                   variant='h6'
-                  sx={{ color: darkMode ? '#fff' : '#000' }}
+                  sx={{ color: theme.palette.text.primary }}
                 >
                   Deductions
                 </Typography>

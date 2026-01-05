@@ -543,6 +543,7 @@ const LeaveRequestPage = () => {
             justifyContent: 'space-between',
             textAlign: { xs: 'start', sm: 'left' },
             gap: { xs: 1, sm: 0 },
+            color: '#fff',
           }}
         >
           <Box>
