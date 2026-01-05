@@ -26,6 +26,7 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
 import AppButton from '../common/AppButton';
+import AppInputField from '../common/AppInputField';
 
 const PayrollConfiguration: React.FC = () => {
   const theme = useTheme();
@@ -404,7 +405,7 @@ const PayrollConfiguration: React.FC = () => {
       const errorMessage =
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response
-            ?.data?.message || 'Failed to save payroll configuration'
+              ?.data?.message || 'Failed to save payroll configuration'
           : 'Failed to save payroll configuration';
       setError(errorMessage);
       snackbar.error(errorMessage);
@@ -448,9 +449,9 @@ const PayrollConfiguration: React.FC = () => {
     if (
       config.deductions.taxPercentage !== deductions.taxPercentage ||
       config.deductions.insurancePercentage !==
-      deductions.insurancePercentage ||
+        deductions.insurancePercentage ||
       config.deductions.providentFundPercentage !==
-      deductions.providentFundPercentage
+        deductions.providentFundPercentage
     )
       return true;
 
@@ -464,9 +465,9 @@ const PayrollConfiguration: React.FC = () => {
     // Check leave deduction policy
     if (
       config.leaveDeductionPolicy.unpaidLeaveDeduction !==
-      leaveDeductionPolicy.unpaidLeaveDeduction ||
+        leaveDeductionPolicy.unpaidLeaveDeduction ||
       config.leaveDeductionPolicy.halfDayDeduction !==
-      leaveDeductionPolicy.halfDayDeduction
+        leaveDeductionPolicy.halfDayDeduction
     )
       return true;
 
@@ -977,9 +978,9 @@ const PayrollConfiguration: React.FC = () => {
                             color: theme.palette.primary.main,
                           },
                           '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                          {
-                            backgroundColor: theme.palette.primary.main,
-                          },
+                            {
+                              backgroundColor: theme.palette.primary.main,
+                            },
                         }}
                       />
                     }
@@ -1091,9 +1092,9 @@ const PayrollConfiguration: React.FC = () => {
                             color: theme.palette.primary.main,
                           },
                           '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                          {
-                            backgroundColor: theme.palette.primary.main,
-                          },
+                            {
+                              backgroundColor: theme.palette.primary.main,
+                            },
                         }}
                       />
                     }
@@ -1551,9 +1552,9 @@ const PayrollConfiguration: React.FC = () => {
                         color: theme.palette.primary.main,
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                      {
-                        backgroundColor: theme.palette.primary.main,
-                      },
+                        {
+                          backgroundColor: theme.palette.primary.main,
+                        },
                     }}
                   />
                 }
@@ -1647,9 +1648,9 @@ const PayrollConfiguration: React.FC = () => {
                         color: theme.palette.primary.main,
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                      {
-                        backgroundColor: theme.palette.primary.main,
-                      },
+                        {
+                          backgroundColor: theme.palette.primary.main,
+                        },
                     }}
                   />
                 }
@@ -1708,18 +1709,12 @@ const PayrollConfiguration: React.FC = () => {
             </Alert>
           )}
 
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 3,
-              marginTop: 2,
-            }}
-          >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
+            {/* Salary Cycle */}
             <AppDropdown
               label='Salary Cycle'
               value={salaryCycle}
-              onChange={(e: SelectChangeEvent<string | number>) =>
+              onChange={e =>
                 setSalaryCycle(
                   e.target.value as 'monthly' | 'weekly' | 'biweekly'
                 )
@@ -1730,32 +1725,14 @@ const PayrollConfiguration: React.FC = () => {
               ]}
               placeholder='Salary Cycle'
               inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
-              sx={{
-                '& .MuiSelect-select': {
-                  color: theme.palette.text.primary,
-                },
-                '& .MuiSelect-icon': {
-                  color: theme.palette.text.primary,
-                },
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor: theme.palette.divider,
-                  },
-                },
-              }}
             />
 
+            {/* Base Pay */}
             <Box>
-              <Typography
-                variant='h6'
-                sx={{
-                  mb: 2,
-                  fontWeight: 600,
-                  color: theme.palette.text.primary,
-                }}
-              >
+              <Typography variant='h6' sx={{ mb: 2, fontWeight: 600 }}>
                 Base Pay Components
               </Typography>
+
               <Box
                 sx={{
                   display: 'grid',
@@ -1768,9 +1745,8 @@ const PayrollConfiguration: React.FC = () => {
                 }}
               >
                 {Object.entries(basePayComponents).map(([key, value]) => (
-                  <TextField
+                  <AppInputField
                     key={key}
-                    fullWidth
                     label={
                       key.charAt(0).toUpperCase() +
                       key.slice(1).replace(/([A-Z])/g, ' $1')
@@ -1778,33 +1754,19 @@ const PayrollConfiguration: React.FC = () => {
                     type='number'
                     inputProps={{ min: 0 }}
                     value={value}
-                    onChange={e => {
-                      const numValue = Math.max(
-                        0,
-                        parseFloat(e.target.value) || 0
-                      );
+                    onChange={e =>
                       handleBasePayChange(
                         key as keyof typeof basePayComponents,
-                        numValue
-                      );
-                    }}
-                    InputLabelProps={{
-                      sx: { color: darkMode ? '#ccc' : undefined },
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                        color: theme.palette.text.primary,
-                        '& fieldset': {
-                          borderColor: theme.palette.divider,
-                        },
-                      },
-                    }}
+                        Math.max(0, Number(e.target.value) || 0)
+                      )
+                    }
+                    inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
                   />
                 ))}
               </Box>
             </Box>
 
+            {/* Allowances */}
             <Box>
               <Box
                 sx={{
@@ -1814,194 +1776,111 @@ const PayrollConfiguration: React.FC = () => {
                   mb: 2,
                 }}
               >
-                <Typography
-                  variant='h6'
-                  sx={{
-                    fontWeight: 600,
-                    color: theme.palette.text.primary,
-                  }}
-                >
+                <Typography variant='h6' sx={{ fontWeight: 600 }}>
                   Allowances
                 </Typography>
+
                 <Button
                   variant='outlined'
                   size='small'
                   startIcon={<AddIcon />}
                   onClick={handleAddAllowance}
-                  sx={{
-                    textTransform: 'none',
-                    borderColor: theme.palette.divider,
-                    color: theme.palette.text.primary,
-                  }}
                 >
                   Add Allowance
                 </Button>
               </Box>
-              {allowances.length === 0 ? (
-                <Typography
-                  variant='body2'
+
+              {allowances.map((allowance, index) => (
+                <Box
+                  key={index}
                   sx={{
-                    color: darkMode ? '#8f8f8f' : '#666',
-                    fontStyle: 'italic',
+                    p: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    mb: 2,
+                    backgroundColor: darkMode ? '#2d2d2d' : '#f9f9f9',
                   }}
                 >
-                  No allowances added. Click "Add Allowance" to add one.
-                </Typography>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {allowances.map((allowance, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        p: 2,
-                        border: `1px solid ${theme.palette.divider}`,
-                        borderRadius: 1,
-                        backgroundColor: darkMode ? '#2d2d2d' : '#f9f9f9',
-                      }}
-                    >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      mb: 2,
+                    }}
+                  >
+                    <Typography fontWeight={600}>
+                      Allowance {index + 1}
+                    </Typography>
+
+                    <IconButton onClick={() => handleRemoveAllowance(index)}>
                       <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          mb: 2,
-                        }}
-                      >
-                        <Typography
-                          variant='subtitle2'
-                          sx={{
-                            color: theme.palette.text.primary,
-                            fontWeight: 600,
-                          }}
-                        >
-                          Allowance {index + 1}
-                        </Typography>
-                        <IconButton
-                          size='small'
-                          onClick={() => handleRemoveAllowance(index)}
-                          sx={{
-                            color: theme.palette.error.main,
-                          }}
-                        >
-                          <Box
-                            component='img'
-                            src={Icons.delete}
-                            alt='Delete'
-                            sx={{ width: 18, height: 18 }}
-                          />
-                        </IconButton>
-                      </Box>
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: {
-                            xs: '1fr',
-                            sm: 'repeat(3, 1fr)',
-                          },
-                          gap: 2,
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          label='Type'
-                          value={allowance.type}
-                          onChange={e =>
-                            handleAllowanceChange(index, 'type', e.target.value)
-                          }
-                          placeholder='e.g., travel, meal, etc.'
-                          InputLabelProps={{
-                            sx: { color: darkMode ? '#ccc' : undefined },
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                              color: theme.palette.text.primary,
-                              '& fieldset': {
-                                borderColor: theme.palette.divider,
-                              },
-                            },
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          label='Amount'
-                          type='number'
-                          inputProps={{ min: 0 }}
-                          value={allowance.amount === 0 ? '' : allowance.amount}
-                          onChange={e => {
-                            const value = e.target.value;
-                            const numValue =
-                              value === ''
-                                ? ''
-                                : Math.max(0, parseFloat(value) || 0);
-                            handleAllowanceChange(index, 'amount', numValue);
-                          }}
-                          InputLabelProps={{
-                            sx: { color: darkMode ? '#ccc' : undefined },
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                              color: theme.palette.text.primary,
-                              '& fieldset': {
-                                borderColor: theme.palette.divider,
-                              },
-                            },
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          label='Percentage (%)'
-                          type='number'
-                          inputProps={{ min: 0 }}
-                          value={
-                            allowance.percentage === 0
-                              ? ''
-                              : allowance.percentage
-                          }
-                          onChange={e => {
-                            const value = e.target.value;
-                            const numValue =
-                              value === ''
-                                ? ''
-                                : Math.max(0, parseFloat(value) || 0);
-                            handleAllowanceChange(
-                              index,
-                              'percentage',
-                              numValue
-                            );
-                          }}
-                          InputLabelProps={{
-                            sx: { color: darkMode ? '#ccc' : undefined },
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                              color: theme.palette.text.primary,
-                              '& fieldset': {
-                                borderColor: theme.palette.divider,
-                              },
-                            },
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  ))}
+                        component='img'
+                        src={Icons.delete}
+                        alt='Delete'
+                        sx={{ width: 18, height: 18 }}
+                      />
+                    </IconButton>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+                      gap: 2,
+                    }}
+                  >
+                    <AppInputField
+                      label='Type'
+                      value={allowance.type}
+                      onChange={e =>
+                        handleAllowanceChange(index, 'type', e.target.value)
+                      }
+                      inputBackgroundColor={darkMode ? '#1a1a1a' : '#fff'}
+                    />
+
+                    <AppInputField
+                      label='Amount'
+                      type='number'
+                      inputProps={{ min: 0 }}
+                      value={allowance.amount === 0 ? '' : allowance.amount}
+                      onChange={e =>
+                        handleAllowanceChange(
+                          index,
+                          'amount',
+                          Math.max(0, Number(e.target.value) || 0)
+                        )
+                      }
+                      inputBackgroundColor={darkMode ? '#1a1a1a' : '#fff'}
+                    />
+
+                    <AppInputField
+                      label='Percentage (%)'
+                      type='number'
+                      inputProps={{ min: 0 }}
+                      value={
+                        allowance.percentage === 0 ? '' : allowance.percentage
+                      }
+                      onChange={e =>
+                        handleAllowanceChange(
+                          index,
+                          'percentage',
+                          Math.max(0, Number(e.target.value) || 0)
+                        )
+                      }
+                      inputBackgroundColor={darkMode ? '#1a1a1a' : '#fff'}
+                    />
+                  </Box>
                 </Box>
-              )}
+              ))}
             </Box>
 
+            {/* Deductions */}
             <Box>
-              <Typography
-                variant='h6'
-                sx={{
-                  mb: 2,
-                  fontWeight: 600,
-                  color: theme.palette.text.primary,
-                }}
-              >
+              <Typography variant='h6' sx={{ mb: 2, fontWeight: 600 }}>
                 Deductions
               </Typography>
+
               <Box
                 sx={{
                   display: 'grid',
@@ -2010,214 +1889,51 @@ const PayrollConfiguration: React.FC = () => {
                 }}
               >
                 {Object.entries(deductions).map(([key, value]) => (
-                  <TextField
+                  <AppInputField
                     key={key}
-                    fullWidth
                     label={key
                       .replace(/([A-Z])/g, ' $1')
-                      .replace(/^./, str => str.toUpperCase())
+                      .replace(/^./, s => s.toUpperCase())
                       .replace('Percentage', ' (%)')}
                     type='number'
                     inputProps={{ min: 0 }}
                     value={value === 0 ? '' : value}
-                    onChange={e => {
-                      const inputValue = e.target.value;
-                      const numValue =
-                        inputValue === ''
-                          ? ''
-                          : Math.max(0, parseFloat(inputValue) || 0);
+                    onChange={e =>
                       handleDeductionChange(
                         key as keyof typeof deductions,
-                        numValue
-                      );
-                    }}
-                    InputLabelProps={{
-                      sx: { color: darkMode ? '#ccc' : undefined },
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                        color: theme.palette.text.primary,
-                        '& fieldset': {
-                          borderColor: theme.palette.divider,
-                        },
-                      },
-                    }}
+                        Math.max(0, Number(e.target.value) || 0)
+                      )
+                    }
+                    inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
                   />
                 ))}
               </Box>
             </Box>
 
+            {/* Leave Deduction */}
             <Box>
-              <Typography
-                variant='h6'
-                sx={{
-                  mb: 2,
-                  fontWeight: 600,
-                  color: theme.palette.text.primary,
-                }}
-              >
-                Overtime Policy
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={overtimePolicy.enabled}
-                      onChange={e =>
-                        handleOvertimeChange('enabled', e.target.checked)
-                      }
-                      sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': {
-                          color: theme.palette.primary.main,
-                        },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                        {
-                          backgroundColor: theme.palette.primary.main,
-                        },
-                      }}
-                    />
-                  }
-                  label='Enable Overtime'
-                  sx={{ color: theme.palette.text.primary }}
-                />
-                {overtimePolicy.enabled && (
-                  <Box
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-                      gap: 2,
-                    }}
-                  >
-                    <TextField
-                      fullWidth
-                      label='Rate Multiplier'
-                      type='number'
-                      inputProps={{ min: 0 }}
-                      value={
-                        overtimePolicy.rateMultiplier === 0
-                          ? ''
-                          : overtimePolicy.rateMultiplier
-                      }
-                      onChange={e => {
-                        const value = e.target.value;
-                        const numValue =
-                          value === ''
-                            ? ''
-                            : Math.max(0, parseFloat(value) || 0);
-                        handleOvertimeChange('rateMultiplier', numValue);
-                      }}
-                      InputLabelProps={{
-                        sx: { color: darkMode ? '#ccc' : undefined },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                          color: theme.palette.text.primary,
-                          '& fieldset': {
-                            borderColor: theme.palette.divider,
-                          },
-                        },
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      label='Max Hours Per Month'
-                      type='number'
-                      inputProps={{ min: 0 }}
-                      value={
-                        overtimePolicy.maxHoursPerMonth === 0
-                          ? ''
-                          : overtimePolicy.maxHoursPerMonth
-                      }
-                      onChange={e => {
-                        const value = e.target.value;
-                        const numValue =
-                          value === '' ? '' : Math.max(0, parseInt(value) || 0);
-                        handleOvertimeChange('maxHoursPerMonth', numValue);
-                      }}
-                      InputLabelProps={{
-                        sx: { color: darkMode ? '#ccc' : undefined },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                          color: theme.palette.text.primary,
-                          '& fieldset': {
-                            borderColor: theme.palette.divider,
-                          },
-                        },
-                      }}
-                    />
-                  </Box>
-                )}
-              </Box>
-            </Box>
-
-            <Box>
-              <Typography
-                variant='h6'
-                sx={{
-                  mb: 2,
-                  fontWeight: 600,
-                  color: theme.palette.text.primary,
-                }}
-              >
+              <Typography variant='h6' sx={{ mb: 2, fontWeight: 600 }}>
                 Leave Deduction Policy
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={leaveDeductionPolicy.unpaidLeaveDeduction}
-                      onChange={e =>
-                        handleLeaveDeductionChange(
-                          'unpaidLeaveDeduction',
-                          e.target.checked
-                        )
-                      }
-                      sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': {
-                          color: theme.palette.primary.main,
-                        },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                        {
-                          backgroundColor: theme.palette.primary.main,
-                        },
-                      }}
-                    />
-                  }
-                  label='Unpaid Leave Deduction'
-                  sx={{ color: theme.palette.text.primary }}
-                />
-                <TextField
-                  fullWidth
-                  label='Half Day Deduction (%)'
-                  type='number'
-                  inputProps={{ min: 0 }}
-                  value={
-                    leaveDeductionPolicy.halfDayDeduction === 0
-                      ? ''
-                      : leaveDeductionPolicy.halfDayDeduction
-                  }
-                  onChange={e => {
-                    const value = e.target.value;
-                    const numValue =
-                      value === '' ? '' : Math.max(0, parseFloat(value) || 0);
-                    handleLeaveDeductionChange('halfDayDeduction', numValue);
-                  }}
-                  sx={{
-                    maxWidth: 400,
-                    '& .MuiOutlinedInput-root': {
-                      backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                      color: theme.palette.text.primary,
-                    },
-                  }}
-                  InputLabelProps={{
-                    sx: { color: darkMode ? '#ccc' : undefined },
-                  }}
-                />
-              </Box>
+
+              <AppInputField
+                label='Half Day Deduction (%)'
+                type='number'
+                inputProps={{ min: 0 }}
+                value={
+                  leaveDeductionPolicy.halfDayDeduction === 0
+                    ? ''
+                    : leaveDeductionPolicy.halfDayDeduction
+                }
+                onChange={e =>
+                  handleLeaveDeductionChange(
+                    'halfDayDeduction',
+                    Math.max(0, Number(e.target.value) || 0)
+                  )
+                }
+                containerSx={{ maxWidth: 400 }}
+                inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
+              />
             </Box>
           </Box>
         </Box>

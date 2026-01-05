@@ -1,351 +1,297 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  Box,
+  FormControl,
+  Select,
+  MenuItem,
   Typography,
-  Checkbox,
-  ListItemText,
-  CircularProgress,
+  Box,
   useTheme,
+  type SelectProps,
 } from '@mui/material';
-import { Controller, useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import employeeApi from '../../api/employeeApi';
-import benefitsApi from '../../api/benefitApi';
-import employeeBenefitApi from '../../api/employeeBenefitApi';
-import { useErrorHandler } from '../../hooks/useErrorHandler';
-import ErrorSnackbar from '../common/ErrorSnackbar';
-import AppFormModal from '../common/AppFormModal';
-import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs from 'dayjs';
-import AppDropdown from '../common/AppDropdown';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import { Icons } from '../../assets/icons';
 
-interface Employee {
-  id: string;
-  firstName?: string;
-  lastName?: string;
-  name?: string;
+interface AppDropdownOption {
+  value: string | number;
+  label: string;
 }
 
-interface Benefit {
-  id: string;
-  name: string;
-  status?: string;
+interface AppDropdownProps
+  extends Omit<
+    SelectProps<string | number>,
+    'label' | 'onChange' | 'variant' | 'open' | 'onOpen' | 'onClose'
+  > {
+  label: string;
+  options: AppDropdownOption[];
+  value: string | number;
+  onChange: (event: SelectChangeEvent<string | number>) => void;
+  labelClassName?: string;
+  containerSx?: object;
+  placeholder?: string;
+  error?: boolean;
+  helperText?: string;
+  inputBackgroundColor?: string;
+  showLabel?: boolean;
 }
 
-interface AssignEmployeeBenefitValues {
-  employeeId: string;
-  benefitIds: string[];
-  startDate: string;
-  endDate: string;
-}
-
-const schema = yup.object({
-  employeeId: yup.string().required('Employee is required'),
-  benefitIds: yup
-    .array()
-    .min(1, 'Select at least one benefit')
-    .required('Benefits are required'),
-  startDate: yup.string().required('Start date is required'),
-  endDate: yup.string().required('End date is required'),
-});
-
-const AssignEmployeeBenefit: React.FC<{
-  open: boolean;
-  onClose: () => void;
-  onAssigned?: () => void;
-}> = ({ open, onClose, onAssigned }) => {
+const ArrowIcon = ({ open }: { open: boolean }) => {
   const theme = useTheme();
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [benefits, setBenefits] = useState<Benefit[]>([]);
-  const [assignedBenefitIds, setAssignedBenefitIds] = useState<string[]>([]);
-  const { snackbar, showError, showSuccess, showWarning, closeSnackbar } =
-    useErrorHandler();
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(false);
-
-  const {
-    control,
-    handleSubmit,
-    reset,
-    watch,
-    formState: { errors, isValid },
-  } = useForm<AssignEmployeeBenefitValues>({
-    resolver: yupResolver(schema),
-    mode: 'onChange',
-    defaultValues: {
-      employeeId: '',
-      benefitIds: [],
-      startDate: dayjs().format('YYYY-MM-DD'),
-      endDate: '',
-    },
-  });
-
-  const watchedValues = watch();
-  const selectedEmployeeId = watch('employeeId');
-  const isFormValid =
-    watchedValues.employeeId &&
-    watchedValues.benefitIds?.length > 0 &&
-    watchedValues.startDate &&
-    watchedValues.endDate &&
-    isValid;
-
-  // Fetch employees and benefits
-  useEffect(() => {
-    if (!open) return;
-
-    const fetchData = async () => {
-      try {
-        setFetching(true);
-        const [employeesData, benResp] = await Promise.all([
-          employeeApi.getAllEmployeesWithoutPagination(),
-          benefitsApi.getBenefits(null),
-        ]);
-
-        setEmployees(
-          employeesData.map(emp => ({
-            id: emp.id,
-            firstName: emp.firstName,
-            lastName: emp.lastName,
-            name: emp.name || `${emp.firstName} ${emp.lastName}`,
-          }))
-        );
-
-        const allBenefits: Benefit[] = Array.isArray(benResp)
-          ? benResp
-          : (benResp as { items?: Benefit[] })?.items || [];
-
-        setBenefits(
-          allBenefits.filter(b => b.status?.toLowerCase() === 'active')
-        );
-      } catch (err) {
-        setEmployees([]);
-        setBenefits([]);
-        showError(err);
-      } finally {
-        setFetching(false);
-      }
-    };
-
-    fetchData();
-  }, [open, showError]);
-
-  // Fetch assigned benefits for selected employee
-  useEffect(() => {
-    if (!selectedEmployeeId) {
-      setAssignedBenefitIds([]);
-      return;
-    }
-
-    let isMounted = true;
-
-    const fetchAssignedBenefits = async () => {
-      try {
-        const response = await employeeBenefitApi.getFilteredEmployeeBenefits({
-          employeeId: selectedEmployeeId,
-          page: 1,
-        });
-
-        if (!isMounted) return;
-
-        const employeeRecord = response?.find(
-          entry =>
-            entry.employeeId?.toLowerCase() === selectedEmployeeId.toLowerCase()
-        );
-
-        const benefitIds = employeeRecord?.benefits?.map(b => b.id) || [];
-        setAssignedBenefitIds(benefitIds);
-      } catch (err) {
-        if (isMounted) setAssignedBenefitIds([]);
-        showError(err);
-      }
-    };
-
-    fetchAssignedBenefits();
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedEmployeeId, showError]);
-
-  const handleFormSubmit = async (data: AssignEmployeeBenefitValues) => {
-    const duplicateBenefitIds = data.benefitIds.filter(id =>
-      assignedBenefitIds.includes(id)
-    );
-
-    if (duplicateBenefitIds.length > 0) {
-      const duplicateNames = benefits
-        .filter(b => duplicateBenefitIds.includes(b.id))
-        .map(b => b.name)
-        .join(', ');
-      showWarning(
-        duplicateNames
-          ? `${duplicateNames} already assigned to this employee.`
-          : 'Some selected benefits are already assigned.'
-      );
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await Promise.all(
-        data.benefitIds.map(benefitId =>
-          employeeBenefitApi.assignBenefit({
-            employeeId: data.employeeId,
-            benefitId,
-            startDate: data.startDate,
-            endDate: data.endDate,
-            status: 'active',
-          })
-        )
-      );
-      showSuccess('Benefits assigned successfully!');
-      reset();
-      onClose();
-      onAssigned?.();
-    } catch (err) {
-      showError(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <>
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <AppFormModal
-          open={open}
-          onClose={onClose}
-          title='Assign Benefits to Employee'
-          onSubmit={() => handleSubmit(handleFormSubmit)()}
-          isSubmitting={loading}
-          hasChanges={!!isFormValid}
-          maxWidth='sm'
-          fields={[
-            {
-              name: 'assign',
-              label: '',
-              value: '',
-              onChange: () => {},
-              component: fetching ? (
-                <Box
-                  display='flex'
-                  justifyContent='center'
-                  alignItems='center'
-                  p={5}
-                >
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  {/* Employee Dropdown */}
-                  <Controller
-                    name='employeeId'
-                    control={control}
-                    render={({ field }) => (
-                      <AppDropdown
-                        label='Select Employee'
-                        options={employees.map(emp => ({
-                          label: emp.name,
-                          value: emp.id,
-                        }))}
-                        value={field.value}
-                        onChange={field.onChange}
-                        error={!!errors.employeeId}
-                        helperText={errors.employeeId?.message}
-                      />
-                    )}
-                  />
-
-                  {/* Benefits Multi-Select */}
-                  <Controller
-                    name='benefitIds'
-                    control={control}
-                    render={({ field }) => (
-                      <AppDropdown
-                        label='Select Benefits'
-                        options={benefits.map(b => ({
-                          label: b.name,
-                          value: b.id,
-                        }))}
-                        value={field.value}
-                        onChange={e => {
-                          const val = e.target.value as string;
-                          if (field.value.includes(val)) {
-                            field.onChange(field.value.filter(v => v !== val));
-                          } else {
-                            field.onChange([...field.value, val]);
-                          }
-                        }}
-                        error={!!errors.benefitIds}
-                        helperText={errors.benefitIds?.message}
-                        showLabel
-                      />
-                    )}
-                  />
-
-                  {/* Start Date */}
-                  <Controller
-                    name='startDate'
-                    control={control}
-                    render={({ field }) => (
-                      <DatePicker
-                        label='Start Date'
-                        value={field.value ? dayjs(field.value) : null}
-                        onChange={date =>
-                          field.onChange(date ? date.format('YYYY-MM-DD') : '')
-                        }
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            error: !!errors.startDate,
-                            helperText:
-                              errors.startDate?.message ||
-                              'Enter the benefit start date',
-                          },
-                        }}
-                      />
-                    )}
-                  />
-
-                  {/* End Date */}
-                  <Controller
-                    name='endDate'
-                    control={control}
-                    render={({ field }) => (
-                      <DatePicker
-                        label='End Date'
-                        value={field.value ? dayjs(field.value) : null}
-                        onChange={date =>
-                          field.onChange(date ? date.format('YYYY-MM-DD') : '')
-                        }
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            error: !!errors.endDate,
-                            helperText:
-                              errors.endDate?.message ||
-                              'Enter the benefit end date',
-                          },
-                        }}
-                      />
-                    )}
-                  />
-                </Box>
-              ),
-            },
-          ]}
-        />
-      </LocalizationProvider>
-
-      <ErrorSnackbar
-        open={snackbar.open}
-        message={snackbar.message}
-        severity={snackbar.severity}
-        onClose={closeSnackbar}
-      />
-    </>
+    <Box
+      component='img'
+      src={Icons.arrowUp}
+      alt=''
+      sx={{
+        width: { xs: 14, sm: 16 },
+        height: { xs: 14, sm: 16 },
+        pointerEvents: 'none',
+        transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+        transition: 'transform 0.2s ease-in-out',
+        marginRight: { xs: '12px', sm: '16px' },
+        filter:
+          theme.palette.mode === 'dark'
+            ? 'brightness(0) saturate(100%) invert(56%)'
+            : 'none',
+      }}
+    />
   );
 };
 
-export default AssignEmployeeBenefit;
+const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
+  (
+    {
+      label,
+      options,
+      value,
+      onChange,
+      labelClassName = 'subheading2',
+      containerSx,
+      placeholder = 'Select...',
+      error = false,
+      helperText,
+      inputBackgroundColor,
+      showLabel = true,
+      sx,
+      ...rest
+    },
+    ref
+  ) => {
+    const theme = useTheme();
+    const [open, setOpen] = useState(false);
+
+    return (
+      <Box
+        sx={{
+          ...containerSx,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}
+      >
+        {showLabel && (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+            }}
+          >
+            <Typography
+              component='label'
+              htmlFor={
+                rest.id || (rest.name ? `dropdown-${rest.name}` : undefined)
+              }
+              className={labelClassName}
+              sx={{
+                fontWeight: 500,
+                fontSize: 'var(--subheading3-font-size)',
+                lineHeight: 'var(--subheading2-line-height)',
+                letterSpacing: 'var(--subheading2-letter-spacing)',
+                color:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.text.primary
+                    : 'var(--black-color)',
+              }}
+            >
+              {label}
+            </Typography>
+            {error && helperText && (
+              <Typography
+                sx={{
+                  fontSize: 'var(--label-font-size)',
+                  lineHeight: 'var(--label-line-height)',
+                  color: '#d32f2f',
+                  fontWeight: 400,
+                  textAlign: 'right',
+                  ml: 2,
+                }}
+              >
+                {helperText}
+              </Typography>
+            )}
+          </Box>
+        )}
+        <FormControl
+          ref={ref}
+          fullWidth
+          error={error}
+          sx={[
+            {
+              width: '100%',
+              '& .MuiOutlinedInput-root': {
+                backgroundColor:
+                  inputBackgroundColor || theme.palette.background.paper,
+                borderRadius: '12px',
+                minHeight: { xs: '40px', sm: '44px' },
+                width: '100%',
+                padding: '0 !important',
+                '& fieldset': {
+                  borderColor: error
+                    ? theme.palette.error.main
+                    : theme.palette.divider,
+                  borderWidth: '1px',
+                },
+                '&:hover fieldset': {
+                  borderColor: error
+                    ? theme.palette.error.main
+                    : theme.palette.divider,
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: error
+                    ? theme.palette.error.main
+                    : theme.palette.primary.main,
+                  borderWidth: '1px',
+                },
+              },
+              '& .MuiInputBase-input': {
+                padding: { xs: '8px 12px', sm: '10px 16px' },
+                backgroundColor: 'transparent !important',
+              },
+              '& .MuiOutlinedInput-input': {
+                backgroundColor: 'transparent !important',
+                color: theme.palette.text.primary,
+              },
+              '& .MuiOutlinedInput-input.MuiSelect-select': {
+                color: theme.palette.text.primary + ' !important',
+              },
+              '& .MuiSelect-select': {
+                color: theme.palette.text.primary,
+                fontSize: 'var(--label-font-size)',
+                lineHeight: 'var(--label-line-height)',
+                letterSpacing: 'var(--label-letter-spacing)',
+                fontWeight: 400,
+                padding: { xs: '8px 12px', sm: '10px 16px' },
+                paddingRight: { xs: '36px', sm: '40px' },
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: 'transparent !important',
+              },
+              '& .MuiSelect-icon': {
+                color: theme.palette.text.secondary,
+                right: { xs: '12px', sm: '16px' },
+              },
+            },
+            ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+          ]}
+        >
+          <Select
+            {...rest}
+            variant='outlined'
+            id={rest.id || (rest.name ? `dropdown-${rest.name}` : undefined)}
+            value={value === 'all' ? '' : value}
+            onChange={onChange}
+            displayEmpty
+            open={open}
+            onOpen={() => setOpen(true)}
+            onClose={() => setOpen(false)}
+            IconComponent={() => <ArrowIcon open={open} />}
+            renderValue={selected => {
+              if (!selected || selected === '') {
+                const allOption = options.find(opt => opt.value === 'all');
+                return allOption ? allOption.label : placeholder || '';
+              }
+              const selectedOption = options.find(
+                opt => opt.value === selected
+              );
+              return selectedOption ? selectedOption.label : '';
+            }}
+            sx={{
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: error
+                  ? `1px solid ${theme.palette.error.main}`
+                  : `1px solid ${theme.palette.divider}`,
+              },
+              '& .MuiSelect-select': {
+                backgroundColor: 'transparent !important',
+                color: theme.palette.text.primary,
+              },
+            }}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  borderRadius: '12px',
+                  mt: 1,
+                  backgroundColor: theme.palette.background.paper,
+                  '& .MuiMenuItem-root': {
+                    fontSize: 'var(--label-font-size)',
+                    lineHeight: 'var(--label-line-height)',
+                    letterSpacing: 'var(--label-letter-spacing)',
+                    color: theme.palette.text.primary,
+                    minHeight: { xs: 40, sm: 44 },
+                    backgroundColor: 'transparent !important',
+                    '&:hover': {
+                      backgroundColor: `${theme.palette.action.hover} !important`,
+                    },
+                    '&.Mui-selected': {
+                      backgroundColor: 'transparent !important',
+                      color: theme.palette.text.primary,
+                      '&:hover': {
+                        backgroundColor: `${theme.palette.action.hover} !important`,
+                      },
+                    },
+                    '&.Mui-selected.Mui-focusVisible': {
+                      backgroundColor: 'transparent !important',
+                    },
+                    '&.Mui-focusVisible': {
+                      backgroundColor: 'transparent !important',
+                    },
+                  },
+                },
+              },
+            }}
+          >
+            {options.map(option => (
+              <MenuItem
+                key={option.value}
+                value={option.value === 'all' ? '' : option.value}
+                sx={{
+                  color: theme.palette.text.primary,
+                  backgroundColor: 'transparent !important',
+                  '&.Mui-selected': {
+                    backgroundColor: 'transparent !important',
+                    color: theme.palette.text.primary,
+                    '&:hover': {
+                      backgroundColor: `${theme.palette.action.hover} !important`,
+                    },
+                  },
+                  '&.Mui-focusVisible': {
+                    backgroundColor: 'transparent !important',
+                  },
+                  '&:hover': {
+                    backgroundColor: `${theme.palette.action.hover} !important`,
+                  },
+                }}
+              >
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+    );
+  }
+);
+
+AppDropdown.displayName = 'AppDropdown';
+
+export default AppDropdown;
