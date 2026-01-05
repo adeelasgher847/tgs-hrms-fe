@@ -70,7 +70,6 @@ const SheetList: React.FC = () => {
   };
   return (
     <Box>
-      <Paper elevation={3} sx={{ boxShadow: 'none' }}>
         <AppTable>
           <TableHead>
               <TableRow>
@@ -105,7 +104,6 @@ const SheetList: React.FC = () => {
               )}
             </TableBody>
         </AppTable>
-      </Paper>
 
       {/* Pagination */}
       {totalPages > 1 && (
