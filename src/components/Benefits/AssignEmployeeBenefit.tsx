@@ -8,10 +8,10 @@ import {
   MenuItem,
   Checkbox,
   ListItemText,
-  TextField,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
-import { useForm, Controller } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import employeeApi from '../../api/employeeApi';
@@ -20,6 +20,10 @@ import employeeBenefitApi from '../../api/employeeBenefitApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppFormModal from '../common/AppFormModal';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+import { CalendarToday as CalendarIcon } from '@mui/icons-material';
 
 interface Employee {
   id: string;
@@ -56,6 +60,7 @@ const AssignEmployeeBenefit: React.FC<{
   onClose: () => void;
   onAssigned?: () => void;
 }> = ({ open, onClose, onAssigned }) => {
+  const theme = useTheme();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [assignedBenefitIds, setAssignedBenefitIds] = useState<string[]>([]);
@@ -72,16 +77,15 @@ const AssignEmployeeBenefit: React.FC<{
     formState: { errors, isValid },
   } = useForm<AssignEmployeeBenefitValues>({
     resolver: yupResolver(schema),
-    mode: 'onChange', // Validate on change to enable/disable button
+    mode: 'onChange',
     defaultValues: {
       employeeId: '',
       benefitIds: [],
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: dayjs().format('YYYY-MM-DD'),
       endDate: '',
     },
   });
 
-  // Watch all form values to check if they're filled
   const watchedValues = watch();
   const selectedEmployeeId = watch('employeeId');
   const isFormValid =
@@ -99,26 +103,25 @@ const AssignEmployeeBenefit: React.FC<{
         setFetching(true);
         const [employeesData, benResp] = await Promise.all([
           employeeApi.getAllEmployeesWithoutPagination(),
-          benefitsApi.getBenefits(null), // Pass null to get all benefits for dropdown
+          benefitsApi.getBenefits(null),
         ]);
 
-        const normalizedEmployees = employeesData.map(emp => ({
-          id: emp.id,
-          firstName: emp.firstName,
-          lastName: emp.lastName,
-          name: emp.name || `${emp.firstName} ${emp.lastName}`,
-        }));
+        setEmployees(
+          employeesData.map(emp => ({
+            id: emp.id,
+            firstName: emp.firstName,
+            lastName: emp.lastName,
+            name: emp.name || `${emp.firstName} ${emp.lastName}`,
+          }))
+        );
 
         const allBenefits: Benefit[] = Array.isArray(benResp)
           ? benResp
           : (benResp as { items?: Benefit[] })?.items || [];
 
-        const activeBenefits = allBenefits.filter(
-          (b: { status?: string }) => b.status?.toLowerCase() === 'active'
+        setBenefits(
+          allBenefits.filter(b => b.status?.toLowerCase() === 'active')
         );
-
-        setEmployees(normalizedEmployees);
-        setBenefits(activeBenefits);
       } catch (err) {
         setEmployees([]);
         setBenefits([]);
@@ -148,225 +151,228 @@ const AssignEmployeeBenefit: React.FC<{
 
         if (!isMounted) return;
 
-        const employeeRecord = response?.find(entry => {
-          if (!entry?.employeeId) return false;
-          if (entry.employeeId === selectedEmployeeId) return true;
-          return (
-            entry.employeeId.toLowerCase() === selectedEmployeeId.toLowerCase()
-          );
-        });
+        const employeeRecord = response?.find(
+          entry =>
+            entry.employeeId?.toLowerCase() === selectedEmployeeId.toLowerCase()
+        );
 
         const benefitIds = employeeRecord?.benefits?.map(b => b.id) || [];
         setAssignedBenefitIds(benefitIds);
-      } catch (error) {
+      } catch (err) {
         if (isMounted) setAssignedBenefitIds([]);
-        showError(error);
+        showError(err);
       }
     };
 
     fetchAssignedBenefits();
-
     return () => {
       isMounted = false;
     };
   }, [selectedEmployeeId, showError]);
 
   const handleFormSubmit = async (data: AssignEmployeeBenefitValues) => {
-    const duplicateBenefitIds = data.benefitIds.filter(benefitId =>
-      assignedBenefitIds.includes(benefitId)
+    const duplicateBenefitIds = data.benefitIds.filter(id =>
+      assignedBenefitIds.includes(id)
     );
 
     if (duplicateBenefitIds.length > 0) {
-      const duplicateBenefitNames = benefits
-        .filter(benefit => duplicateBenefitIds.includes(benefit.id))
-        .map(benefit => benefit.name)
+      const duplicateNames = benefits
+        .filter(b => duplicateBenefitIds.includes(b.id))
+        .map(b => b.name)
         .join(', ');
-
       showWarning(
-        duplicateBenefitNames
-          ? `${duplicateBenefitNames} already assigned to this employee.`
-          : duplicateBenefitIds.length === 1
-            ? 'Selected benefit is already assigned to this employee.'
-            : 'Some selected benefits are already assigned to this employee.'
+        duplicateNames
+          ? `${duplicateNames} already assigned to this employee.`
+          : 'Some selected benefits are already assigned.'
       );
       return;
     }
 
     try {
       setLoading(true);
-
-      const assignments = data.benefitIds.map(benefitId =>
-        employeeBenefitApi.assignBenefit({
-          employeeId: data.employeeId,
-          benefitId,
-          startDate: data.startDate,
-          endDate: data.endDate,
-          status: 'active',
-        })
+      await Promise.all(
+        data.benefitIds.map(benefitId =>
+          employeeBenefitApi.assignBenefit({
+            employeeId: data.employeeId,
+            benefitId,
+            startDate: data.startDate,
+            endDate: data.endDate,
+            status: 'active',
+          })
+        )
       );
-
-      await Promise.all(assignments);
-
       showSuccess('Benefits assigned successfully!');
       reset();
       onClose();
       onAssigned?.();
-    } catch (err: unknown) {
+    } catch (err) {
       showError(err);
     } finally {
       setLoading(false);
     }
   };
 
+  const iconColor = theme.palette.text.primary; 
+
   return (
     <>
-      <AppFormModal
-        open={open}
-        onClose={onClose}
-        title='Assign Benefits to Employee'
-        onSubmit={() => handleSubmit(handleFormSubmit)()}
-        isSubmitting={loading}
-        hasChanges={!!isFormValid}
-        maxWidth='sm'
-        fields={[
-          {
-            name: 'assign',
-            label: '',
-            value: '',
-            onChange: () => {},
-            component: fetching ? (
-              <Box
-                display='flex'
-                justifyContent='center'
-                alignItems='center'
-                p={5}
-              >
-                <CircularProgress />
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <Controller
-                  name='employeeId'
-                  control={control}
-                  render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.employeeId}>
-                      <InputLabel>Select Employee</InputLabel>
-                      <Select
-                        {...field}
-                        label='Select Employee'
-                        MenuProps={{
-                          PaperProps: {
-                            style: { maxHeight: 300, overflowY: 'auto' },
-                          },
-                        }}
-                        sx={{
-                          '& .MuiSelect-select': {
-                            display: 'flex',
-                            alignItems: 'center',
-                            height: '1.4375em',
-                            padding: '16.5px 14px',
-                          },
-                        }}
-                      >
-                        {employees.map(emp => (
-                          <MenuItem key={emp.id} value={emp.id}>
-                            {emp.name || `${emp.firstName} ${emp.lastName}`}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {errors.employeeId && (
-                        <Typography variant='caption' color='error'>
-                          {errors.employeeId.message}
-                        </Typography>
-                      )}
-                    </FormControl>
-                  )}
-                />
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <AppFormModal
+          open={open}
+          onClose={onClose}
+          title='Assign Benefits to Employee'
+          onSubmit={() => handleSubmit(handleFormSubmit)()}
+          isSubmitting={loading}
+          hasChanges={!!isFormValid}
+          maxWidth='sm'
+          fields={[
+            {
+              name: 'assign',
+              label: '',
+              value: '',
+              onChange: () => {},
+              component: fetching ? (
+                <Box
+                  display='flex'
+                  justifyContent='center'
+                  alignItems='center'
+                  p={5}
+                >
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {/* Employee Select */}
+                  <Controller
+                    name='employeeId'
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl fullWidth error={!!errors.employeeId}>
+                        <InputLabel>Select Employee</InputLabel>
+                        <Select {...field} label='Select Employee'>
+                          {employees.map(emp => (
+                            <MenuItem key={emp.id} value={emp.id}>
+                              {emp.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        {errors.employeeId && (
+                          <Typography variant='caption' color='error'>
+                            {errors.employeeId.message}
+                          </Typography>
+                        )}
+                      </FormControl>
+                    )}
+                  />
 
-                <Controller
-                  name='benefitIds'
-                  control={control}
-                  render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.benefitIds}>
-                      <InputLabel>Select Benefits</InputLabel>
-                      <Select
-                        {...field}
-                        multiple
-                        label='Select Benefits'
-                        renderValue={selected =>
-                          benefits
-                            .filter(b => selected.includes(b.id))
-                            .map(b => b.name)
-                            .join(', ')
+                  {/* Benefits Multi-Select */}
+                  <Controller
+                    name='benefitIds'
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl fullWidth error={!!errors.benefitIds}>
+                        <InputLabel>Select Benefits</InputLabel>
+                        <Select
+                          {...field}
+                          multiple
+                          renderValue={selected =>
+                            benefits
+                              .filter(b => selected.includes(b.id))
+                              .map(b => b.name)
+                              .join(', ')
+                          }
+                        >
+                          {benefits.map(b => (
+                            <MenuItem key={b.id} value={b.id}>
+                              <Checkbox checked={field.value.includes(b.id)} />
+                              <ListItemText primary={b.name} />
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        {errors.benefitIds && (
+                          <Typography variant='caption' color='error'>
+                            {errors.benefitIds.message}
+                          </Typography>
+                        )}
+                      </FormControl>
+                    )}
+                  />
+
+                  {/* Start Date */}
+                  <Controller
+                    name='startDate'
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        label='Start Date'
+                        value={field.value ? dayjs(field.value) : null}
+                        onChange={date =>
+                          field.onChange(date ? date.format('YYYY-MM-DD') : '')
                         }
-                        MenuProps={{
-                          PaperProps: {
-                            style: { maxHeight: 300, overflowY: 'auto' },
+                        slots={{ openPickerIcon: CalendarIcon }}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: !!errors.startDate,
+                            InputProps: {
+                              sx: {
+                                '& svg': { color: iconColor },
+                              },
+                            },
+                            sx: {
+                              input: { color: theme.palette.text.primary },
+                              label: { color: theme.palette.text.secondary },
+                              backgroundColor:
+                                theme.palette.mode === 'dark'
+                                  ? theme.palette.background.paper
+                                  : undefined,
+                            },
                           },
                         }}
-                        sx={{
-                          '& .MuiSelect-select': {
-                            display: 'flex',
-                            alignItems: 'center',
-                            height: '1.4375em',
-                            padding: '16.5px 14px',
+                      />
+                    )}
+                  />
+
+                  {/* End Date */}
+                  <Controller
+                    name='endDate'
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        label='End Date'
+                        value={field.value ? dayjs(field.value) : null}
+                        onChange={date =>
+                          field.onChange(date ? date.format('YYYY-MM-DD') : '')
+                        }
+                        slots={{ openPickerIcon: CalendarIcon }}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: !!errors.endDate,
+                            InputProps: {
+                              sx: {
+                                '& svg': { color: iconColor },
+                              },
+                            },
+                            sx: {
+                              input: { color: theme.palette.text.primary },
+                              label: { color: theme.palette.text.secondary },
+                              backgroundColor:
+                                theme.palette.mode === 'dark'
+                                  ? theme.palette.background.paper
+                                  : undefined,
+                            },
                           },
                         }}
-                      >
-                        {benefits.map(b => (
-                          <MenuItem key={b.id} value={b.id}>
-                            <Checkbox checked={field.value.includes(b.id)} />
-                            <ListItemText primary={b.name} />
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {errors.benefitIds && (
-                        <Typography variant='caption' color='error'>
-                          {errors.benefitIds.message}
-                        </Typography>
-                      )}
-                    </FormControl>
-                  )}
-                />
-
-                <Controller
-                  name='startDate'
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label='Start Date'
-                      type='date'
-                      fullWidth
-                      InputLabelProps={{ shrink: true }}
-                      error={!!errors.startDate}
-                      helperText={errors.startDate?.message}
-                      sx={{ mt: 1 }}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name='endDate'
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label='End Date'
-                      type='date'
-                      fullWidth
-                      InputLabelProps={{ shrink: true }}
-                      error={!!errors.endDate}
-                      helperText={errors.endDate?.message}
-                      sx={{ mt: 1 }}
-                    />
-                  )}
-                />
-              </Box>
-            ),
-          },
-        ]}
-      />
+                      />
+                    )}
+                  />
+                </Box>
+              ),
+            },
+          ]}
+        />
+      </LocalizationProvider>
 
       <ErrorSnackbar
         open={snackbar.open}
