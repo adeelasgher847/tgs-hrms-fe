@@ -42,6 +42,7 @@ import AppButton from '../common/AppButton';
 import AppDropdown from '../common/AppDropdown';
 import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
+import AppInputField from '../common/AppInputField';
 
 dayjs.extend(dayjsPluginLocalizedFormat);
 
@@ -732,7 +733,6 @@ const PayrollRecords: React.FC = () => {
             p: 3,
             backgroundColor: cardBg,
             borderRadius: 2,
-            // border: `1px solid ${theme.palette.divider}`,
           }}
         >
           <Box
@@ -784,7 +784,7 @@ const PayrollRecords: React.FC = () => {
                 </Typography>
                 <Typography
                   variant='h6'
-                  sx={{ fontWeight: 700, color: theme.palette.text.primary, }}
+                  sx={{ fontWeight: 700, color: theme.palette.text.primary }}
                 >
                   {card.value}
                 </Typography>
@@ -820,12 +820,12 @@ const PayrollRecords: React.FC = () => {
               recordEmployees.length === 0
                 ? [{ value: '', label: 'No employees for this period' }]
                 : [
-                  { value: '', label: 'All employees' },
-                  ...recordEmployees.map(emp => ({
-                    value: emp.id,
-                    label: emp.name,
-                  })),
-                ]
+                    { value: '', label: 'All employees' },
+                    ...recordEmployees.map(emp => ({
+                      value: emp.id,
+                      label: emp.name,
+                    })),
+                  ]
             }
             label='Employee'
             showLabel={false}
@@ -877,7 +877,10 @@ const PayrollRecords: React.FC = () => {
               {displayedRecords.map(record => (
                 <TableRow key={record.id} hover>
                   <TableCell>
-                    <Typography variant='subtitle2' sx={{ color: textColor }}>
+                    <Typography
+                      variant='subtitle2'
+                      sx={{ color: theme.palette.text.primary }}
+                    >
                       {record.employee?.user
                         ? `${record.employee.user.first_name} ${record.employee.user.last_name}`
                         : record.employee_id}
@@ -987,7 +990,7 @@ const PayrollRecords: React.FC = () => {
       <AppFormModal
         open={detailsOpen && !!selectedRecord}
         onClose={closeDetails}
-        onSubmit={() => { }}
+        onSubmit={() => {}}
         title='Payroll Breakdown'
         cancelLabel='Close'
         showSubmitButton={false}
@@ -1145,7 +1148,7 @@ const PayrollRecords: React.FC = () => {
                       <TableCell align='right'>
                         {formatCurrency(
                           selectedRecord.deductionsBreakdown.leaveDeductions ||
-                          0
+                            0
                         )}
                       </TableCell>
                       <TableCell align='right'>—</TableCell>
@@ -1314,10 +1317,10 @@ const PayrollRecords: React.FC = () => {
               inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
               sx={{
                 '& .MuiSelect-select': {
-                  color: effectiveDarkMode ? '#fff' : '#000',
+                  color: theme.palette.text.primary,
                 },
                 '& .MuiSelect-icon': {
-                  color: effectiveDarkMode ? '#fff' : '#000',
+                  color: theme.palette.text.primary,
                 },
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': { borderColor: theme.palette.divider },
@@ -1366,21 +1369,20 @@ const PayrollRecords: React.FC = () => {
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{
               '& .MuiSelect-select': {
-                color: effectiveDarkMode ? '#fff' : '#000',
+                color: theme.palette.text.primary,
               },
               '& .MuiSelect-icon': {
-                color: effectiveDarkMode ? '#fff' : '#000',
+                color: theme.palette.text.primary,
               },
               '& .MuiOutlinedInput-root': {
                 '& fieldset': { borderColor: theme.palette.divider },
               },
             }}
           />
-          <TextField
+          <AppInputField
             label='Year'
             type='number'
             inputProps={{ min: 0 }}
-            size='small'
             sx={{ minWidth: 140 }}
             value={generateYear === 0 ? '' : generateYear}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1399,21 +1401,21 @@ const PayrollRecords: React.FC = () => {
             options={
               employeesForGenerateDialog.length === 0
                 ? [
-                  {
-                    value: '',
-                    label:
-                      employees.length === 0
-                        ? 'No employees with salary configuration'
-                        : 'All employees are already processed',
-                  },
-                ]
+                    {
+                      value: '',
+                      label:
+                        employees.length === 0
+                          ? 'No employees with salary configuration'
+                          : 'All employees are already processed',
+                    },
+                  ]
                 : [
-                  { value: '', label: 'All employees' },
-                  ...employeesForGenerateDialog.map(emp => ({
-                    value: emp.id,
-                    label: emp.name,
-                  })),
-                ]
+                    { value: '', label: 'All employees' },
+                    ...employeesForGenerateDialog.map(emp => ({
+                      value: emp.id,
+                      label: emp.name,
+                    })),
+                  ]
             }
             placeholder={
               employeesForGenerateDialog.length === 0
@@ -1427,10 +1429,10 @@ const PayrollRecords: React.FC = () => {
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{
               '& .MuiSelect-select': {
-                color: effectiveDarkMode ? '#fff' : '#000',
+                color: theme.palette.text.primary,
               },
               '& .MuiSelect-icon': {
-                color: effectiveDarkMode ? '#fff' : '#000',
+                color: theme.palette.text.primary,
               },
               '& .MuiOutlinedInput-root': {
                 '& fieldset': { borderColor: theme.palette.divider },
