@@ -5,6 +5,7 @@ export interface CreateLeaveRequest {
   startDate: string;
   endDate: string;
   reason: string;
+  documents?: File[];
 }
 
 export interface LeaveType {
@@ -38,6 +39,23 @@ export interface LeaveResponse {
   managerRemarks?: string | null;
 }
 
+export interface CreateLeaveForEmployeeRequest {
+  employeeId: string;
+  leaveTypeId: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  documents?: File[];
+}
+
+export interface UpdateLeaveRequest {
+  leaveTypeId?: string;
+  startDate?: string;
+  endDate?: string;
+  reason?: string;
+  documents?: File[];
+}
+
 export interface LeaveWithUser extends LeaveResponse {
   user: {
     id: string;
@@ -56,9 +74,27 @@ class LeaveApiService {
   private baseUrl = '/leaves';
 
   async createLeave(data: CreateLeaveRequest): Promise<LeaveResponse> {
+    const formData = new FormData();
+
+    formData.append('leaveTypeId', data.leaveTypeId);
+    formData.append('startDate', data.startDate);
+    formData.append('endDate', data.endDate);
+    formData.append('reason', data.reason);
+
+    if (data.documents && Array.isArray(data.documents)) {
+      data.documents.forEach(file => {
+        formData.append('documents', file);
+      });
+    }
+
     const response = await axiosInstance.post<LeaveResponse>(
       this.baseUrl,
-      data
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
     );
     return response.data;
   }
@@ -182,13 +218,13 @@ class LeaveApiService {
     if (!trimmedRemarks) {
       throw new Error('Manager remarks cannot be empty');
     }
-    
+
     // Use the correct endpoint: PATCH /leaves/{id}/manager-remarks
     // Backend expects 'remarks' field in request body, but returns 'managerRemarks' in response
     const payload = {
       remarks: trimmedRemarks,
     };
-    
+
     const response = await axiosInstance.patch<LeaveResponse>(
       `${this.baseUrl}/${id}/manager-remarks`,
       payload
@@ -205,7 +241,7 @@ class LeaveApiService {
     const payload = data?.remarks?.trim()
       ? { remarks: data.remarks.trim() }
       : {};
-    
+
     const response = await axiosInstance.patch<LeaveResponse>(
       `${this.baseUrl}/${id}/approve-manager`,
       payload
@@ -223,11 +259,11 @@ class LeaveApiService {
     if (!trimmedRemarks) {
       throw new Error('Rejection remarks cannot be empty');
     }
-    
+
     const payload = {
       remarks: trimmedRemarks,
     };
-    
+
     const response = await axiosInstance.patch<LeaveResponse>(
       `${this.baseUrl}/${id}/reject-manager`,
       payload
@@ -276,6 +312,77 @@ class LeaveApiService {
     const response = await axiosInstance.get(`${this.baseUrl}/export/all`, {
       responseType: 'blob',
     });
+    return response.data;
+  }
+
+  async createLeaveForEmployee(
+    data: CreateLeaveForEmployeeRequest
+  ): Promise<LeaveResponse> {
+    const formData = new FormData();
+
+    formData.append('employeeId', data.employeeId);
+    formData.append('leaveTypeId', data.leaveTypeId);
+    formData.append('startDate', data.startDate);
+    formData.append('endDate', data.endDate);
+    formData.append('reason', data.reason);
+
+    if (data.documents && Array.isArray(data.documents)) {
+      data.documents.forEach(file => {
+        formData.append('documents', file);
+      });
+    }
+
+    const response = await axiosInstance.post<LeaveResponse>(
+      `${this.baseUrl}/for-employee`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  }
+
+  async updateLeave(
+    id: string,
+    data: UpdateLeaveRequest
+  ): Promise<LeaveResponse> {
+    const formData = new FormData();
+
+    // Append ONLY provided fields
+    if (data.leaveTypeId) {
+      formData.append('leaveTypeId', data.leaveTypeId);
+    }
+
+    if (data.startDate) {
+      formData.append('startDate', data.startDate);
+    }
+
+    if (data.endDate) {
+      formData.append('endDate', data.endDate);
+    }
+
+    if (data.reason) {
+      formData.append('reason', data.reason);
+    }
+
+    if (data.documents && Array.isArray(data.documents)) {
+      data.documents.forEach(file => {
+        formData.append('documents', file);
+      });
+    }
+
+    const response = await axiosInstance.patch<LeaveResponse>(
+      `${this.baseUrl}/${id}`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
     return response.data;
   }
 }

@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
-  TextField,
   Button,
   Paper,
   Chip,
@@ -12,6 +11,7 @@ import {
   TableBody,
   Pagination,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
 import {
   systemPerformanceApiService,
@@ -30,6 +30,7 @@ interface PromotionsListProps {
 }
 
 const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
+   const theme = useTheme();
   const [promotions, setPromotions] = useState<PromotionRecord[]>([]);
   const [stats, setStats] = useState<PromotionStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,36 +170,6 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         Promotions Tracking
       </Typography>
 
-      {/* Labels row to align with controls (hidden on small screens) */}
-      <Box
-        sx={{
-          display: { xs: 'none', sm: 'flex' },
-          gap: 1.5,
-          mb: 0.5,
-          alignItems: 'center',
-        }}
-      >
-        <Box sx={{ minWidth: 200 }}>
-          <Typography className='subheading2' sx={{ fontWeight: 500 }}>
-            Status
-          </Typography>
-        </Box>
-
-        <Box sx={{ minWidth: 200 }}>
-          <Typography className='subheading2' sx={{ fontWeight: 500 }}>
-            Start Date
-          </Typography>
-        </Box>
-
-        <Box sx={{ minWidth: 200 }}>
-          <Typography className='subheading2' sx={{ fontWeight: 500 }}>
-            End Date
-          </Typography>
-        </Box>
-
-        <Box sx={{ minWidth: 200 }} />
-      </Box>
-
       <Box
         sx={{
           display: 'flex',
@@ -210,16 +181,6 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         }}
       >
         <Box sx={{ minWidth: { xs: '100%', sm: 200 } }}>
-          <Typography
-            className='subheading2'
-            sx={{
-              fontWeight: 500,
-              display: { xs: 'block', sm: 'none' },
-              mb: 0.5,
-            }}
-          >
-            Status
-          </Typography>
           <AppDropdown
             label='Status'
             options={[
@@ -232,7 +193,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
             onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
             containerSx={{ width: '100%' }}
             size='small'
-            showLabel={false}
+
             // placeholder='Status'
           />
         </Box>
@@ -240,11 +201,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         <Box sx={{ minWidth: { xs: '100%', sm: 200 } }}>
           <Typography
             className='subheading2'
-            sx={{
-              fontWeight: 500,
-              display: { xs: 'block', sm: 'none' },
-              mb: 0.5,
-            }}
+            sx={{ fontWeight: 500, color: theme.palette.text.primary }}
           >
             Start Date
           </Typography>
@@ -258,9 +215,11 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
             }
             fullWidth
             sx={{
+              mt: 1,
               '& .MuiOutlinedInput-root': {
                 minHeight: '48px',
                 borderRadius: '12px',
+                color: theme.palette.text.primary,
               },
               '& input[type="date"]': {
                 padding: '10px 12px',
@@ -274,11 +233,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
         <Box sx={{ minWidth: { xs: '100%', sm: 200 } }}>
           <Typography
             className='subheading2'
-            sx={{
-              fontWeight: 500,
-              display: { xs: 'block', sm: 'none' },
-              mb: 0.5,
-            }}
+            sx={{ fontWeight: 500, color: theme.palette.text.primary }}
           >
             End Date
           </Typography>
@@ -290,9 +245,11 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
             onChange={e => setFilters(f => ({ ...f, endDate: e.target.value }))}
             fullWidth
             sx={{
+              mt: 1,
               '& .MuiOutlinedInput-root': {
                 minHeight: '48px',
                 borderRadius: '12px',
+                color: theme.palette.text.primary,
               },
               '& input[type="date"]': {
                 padding: '10px 12px',
@@ -303,7 +260,7 @@ const PromotionsList: React.FC<PromotionsListProps> = ({ tenantId }) => {
           />
         </Box>
 
-        <Box sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+        <Box sx={{ mt: { xs: 0, sm: 4 }, minWidth: { xs: '100%', sm: 200 } }}>
           <Button
             variant='outlined'
             onClick={() => setCurrentPage(1)}

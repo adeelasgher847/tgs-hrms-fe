@@ -1,5 +1,4 @@
 export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'withdrawn';
-
 export interface Leave {
   id: string;
   employeeId: string;
@@ -28,4 +27,5 @@ export interface Leave {
   updatedAt?: string;
   approvedAt?: string | null;
   approvedBy?: string | null;
+  documents?: string[];
 }

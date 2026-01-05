@@ -47,29 +47,15 @@ import PersonIcon from '@mui/icons-material/Person';
 import GroupIcon from '@mui/icons-material/Group';
 import TeamMembersAvatar from '../Teams/TeamMembersAvatar';
 import TeamMembersModal from '../Teams/TeamMembersModal';
-import employeeApi from '../../api/employeeApi';
-import { teamApiService } from '../../api/teamApi';
 import type { Team } from '../../api/teamApi';
-import { assetApi } from '../../api/assetApi';
 import InventoryIcon from '@mui/icons-material/Inventory';
-import BusinessIcon from '@mui/icons-material/Business';
-import WorkIcon from '@mui/icons-material/Work';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import EventIcon from '@mui/icons-material/Event';
 import DescriptionIcon from '@mui/icons-material/Description';
-import { departmentApiService } from '../../api/departmentApi';
-import { designationApiService } from '../../api/designationApi';
-import benefitsApi from '../../api/benefitApi';
-import { leaveApi } from '../../api/leaveApi';
-import { mockPolicies } from '../../Data/HrmockData';
-import { SystemTenantApi } from '../../api/systemTenantApi';
-import { isSystemAdmin } from '../../utils/auth';
 import {
   isDashboardPathAllowedForRole,
   isMenuVisibleForRole,
-  isSubMenuVisibleForRole,
 } from '../../utils/permissions';
-import { normalizeRole } from '../../utils/permissions';
 import { isSystemAdmin as roleIsSystemAdmin } from '../../utils/roleUtils';
 import { searchApiService, type SearchResultItem } from '../../api/searchApi';
 
@@ -149,177 +135,7 @@ interface SearchResult {
   subtitle?: string;
 }
 
-// Optimized helper function to normalize and split text into searchable words
-const normalizeText = (text: string): string[] => {
-  if (!text) return [];
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, ' ') // Replace special chars with spaces
-    .split(/\s+/) // Split by whitespace
-    .filter(word => word.length > 0); // Remove empty strings
-};
-
-// Enhanced search function that returns a relevance score for better matching
-interface SearchMatch {
-  matches: boolean;
-  score: number; // Higher score = better match
-}
-
-// Optimized helper function to search through all text fields of an object
-// Returns both match status and relevance score for better sorting
-const searchInObject = (
-  obj: Record<string, unknown> | unknown,
-  query: string,
-  maxDepth: number = 3,
-  currentDepth: number = 0
-): SearchMatch => {
-  if (!obj || typeof obj !== 'object' || currentDepth >= maxDepth) {
-    return { matches: false, score: 0 };
-  }
-
-  // Split query into individual words
-  const queryWords = normalizeText(query);
-  if (queryWords.length === 0) return { matches: false, score: 0 };
-
-  const visited = new WeakSet<object>(); // Prevent circular reference issues
-  const priorityTextFields: string[] = []; // High priority fields (name, title, email, etc.)
-  const secondaryTextFields: string[] = []; // Other fields
-
-  // Optimized recursive search to collect all text fields
-  const collectTextFields = (
-    value: unknown,
-    depth: number,
-    isPriority: boolean
-  ): void => {
-    if (value === null || value === undefined || depth >= maxDepth) return;
-
-    // Handle circular references for objects only
-    if (typeof value === 'object' && !Array.isArray(value)) {
-      if (visited.has(value)) return;
-      visited.add(value);
-    }
-
-    // Collect string values
-    if (typeof value === 'string' && value.trim().length > 0) {
-      if (isPriority) {
-        priorityTextFields.push(value);
-      } else {
-        secondaryTextFields.push(value);
-      }
-      return;
-    }
-
-    // Collect number values as strings
-    if (typeof value === 'number') {
-      const numStr = value.toString();
-      if (isPriority) {
-        priorityTextFields.push(numStr);
-      } else {
-        secondaryTextFields.push(numStr);
-      }
-      return;
-    }
-
-    // Skip non-objects
-    if (typeof value !== 'object') return;
-
-    // Array search
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        collectTextFields(item, depth + 1, isPriority);
-      }
-      return;
-    }
-
-    // Object search - prioritize common fields but search all
-    const valueObj = value as Record<string, unknown>;
-    const priorityFields = [
-      'name',
-      'title',
-      'label',
-      'email',
-      'phone',
-      'firstName',
-      'lastName',
-      'first_name',
-      'last_name',
-    ];
-    const secondaryFields = [
-      'description',
-      'department',
-      'designation',
-      'category',
-      'subcategory',
-      'status',
-      'type',
-      'code',
-    ];
-    const allFields = Object.keys(valueObj);
-
-    // Search priority fields first
-    for (const key of priorityFields) {
-      if (key in valueObj) {
-        collectTextFields(valueObj[key], depth + 1, true);
-      }
-    }
-
-    // Search secondary fields
-    for (const key of secondaryFields) {
-      if (key in valueObj) {
-        collectTextFields(valueObj[key], depth + 1, false);
-      }
-    }
-
-    // Then search remaining fields
-    for (const key of allFields) {
-      if (!priorityFields.includes(key) && !secondaryFields.includes(key)) {
-        collectTextFields(valueObj[key], depth + 1, false);
-      }
-    }
-  };
-
-  // Collect all text fields from the object
-  collectTextFields(obj, currentDepth, false);
-
-  // Combine priority and secondary text fields
-  const priorityText = priorityTextFields.join(' ').toLowerCase();
-  const secondaryText = secondaryTextFields.join(' ').toLowerCase();
-  const combinedText = `${priorityText} ${secondaryText}`.toLowerCase();
-
-  // Calculate relevance score
-  let score = 0;
-  let allWordsMatch = true;
-
-  // Check if all query words are found
-  for (const queryWord of queryWords) {
-    const wordRegex = new RegExp(
-      `\\b${queryWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
-      'i'
-    );
-
-    // Check priority fields first (higher score)
-    if (wordRegex.test(priorityText)) {
-      score += 10; // High score for priority field match
-    } else if (wordRegex.test(secondaryText)) {
-      score += 5; // Lower score for secondary field match
-    } else if (combinedText.includes(queryWord)) {
-      score += 2; // Lowest score for substring match
-    } else {
-      allWordsMatch = false;
-    }
-  }
-
-  // Bonus for exact match in priority fields
-  const exactQuery = query.toLowerCase().trim();
-  if (priorityText.includes(exactQuery)) {
-    score += 20; // Big bonus for exact match
-  }
-
-  return {
-    matches: allWordsMatch,
-    score: score,
-  };
-};
+// Note: `searchInObject` helper removed — searchRoutes and backend search are used instead.
 
 // Flattened list of all searchable routes - includes all menu items from sidebar
 const searchableRoutes: SearchResult[] = [
@@ -604,7 +420,8 @@ const Navbar: React.FC<NavbarProps> = ({
     if (!user) return '';
 
     // Try to get role from user object
-    const role = user.role || (user as any)?.role_name;
+    const typedUser = user as { role?: string; role_name?: string };
+    const role = typedUser.role || typedUser.role_name;
 
     if (!role) return '';
 
@@ -820,7 +637,7 @@ const Navbar: React.FC<NavbarProps> = ({
   // Only searches routes that are allowed for current user role
   const searchRoutes = React.useCallback(
     (query: string): SearchResult[] => {
-      const queryWords = normalizeText(query);
+      const queryWords = query.toLowerCase().trim().split(/\s+/);
       if (queryWords.length === 0) return [];
 
       const exactQuery = query.toLowerCase().trim();
@@ -887,7 +704,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
           // Bonus for consecutive word matches in label (phrase matching)
           if (queryWords.length > 1) {
-            const labelWords = normalizeText(label);
+            const labelWords = label.split(/\s+/);
             let consecutiveMatches = 0;
             let queryIndex = 0;
             for (
@@ -1241,7 +1058,6 @@ const Navbar: React.FC<NavbarProps> = ({
         abortControllerRef.current.abort();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     searchQuery,
     searchRoutes,

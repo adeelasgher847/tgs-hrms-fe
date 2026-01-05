@@ -7,11 +7,11 @@ import {
   TableCell,
   TableRow,
   CircularProgress,
-  MenuItem,
   Pagination,
   Tooltip,
   IconButton,
 } from '@mui/material';
+// No-op placeholder to ensure file is touched if needed
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import SummaryCard from './SummaryCard';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
@@ -402,7 +402,7 @@ const BenefitReport: React.FC = () => {
           display: 'flex',
           gap: 2,
           flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: 'start',
+          alignItems: { xs: 'stretch', sm: 'start' },
           justifyContent: 'space-between',
         }}
       >
@@ -412,7 +412,7 @@ const BenefitReport: React.FC = () => {
             gap: 2,
             flexWrap: 'wrap',
             flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'start', sm: 'start' },
+            alignItems: { xs: 'stretch', sm: 'start' },
           }}
         >
           <AppDropdown
@@ -426,7 +426,8 @@ const BenefitReport: React.FC = () => {
               setSelectedDepartment(e.target.value as string);
               setPage(1);
             }}
-            containerSx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}
+            containerSx={{ width: { xs: '100%', sm: 220 }, maxWidth: 420 }}
+            sx={{ width: '100%' }}
             size='small'
           />
 
@@ -442,41 +443,49 @@ const BenefitReport: React.FC = () => {
               setPage(1);
             }}
             disabled={!designations.length}
-            containerSx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}
+            containerSx={{ width: { xs: '100%', sm: 220 }, maxWidth: 420 }}
+            sx={{ width: '100%' }}
             size='small'
           />
         </Box>
-        {isManager ? (
-          <AppButton
-            variant='contained'
-            variantType='primary'
-            onClick={handleDownload}
-            sx={{
-              borderRadius: '6px',
-              minWidth: 0,
-              padding: '6px',
-              height: 'auto',
-            }}
-            aria-label='Download CSV'
-          >
-            <FileDownloadIcon aria-hidden='true' />
-          </AppButton>
-        ) : (
-          <Tooltip title='Download CSV'>
-            <IconButton
-              color='primary'
+        <Box
+          display='flex'
+          justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
+          sx={{ width: { xs: 'auto', sm: 'auto' } }}
+        >
+          {isManager ? (
+            <AppButton
+              variant='contained'
+              variantType='primary'
               onClick={handleDownload}
               sx={{
-                backgroundColor: 'primary.main',
-                color: 'white',
                 borderRadius: '6px',
-                '&:hover': { backgroundColor: 'primary.dark' },
+                minWidth: 0,
+                padding: '6px',
+                height: 'auto',
               }}
+              aria-label='Download CSV'
             >
-              <FileDownloadIcon />
-            </IconButton>
-          </Tooltip>
-        )}
+              <FileDownloadIcon aria-hidden='true' />
+            </AppButton>
+          ) : (
+            <Tooltip title='Download CSV'>
+              <IconButton
+                color='primary'
+                onClick={handleDownload}
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  borderRadius: '6px',
+                  padding: '6px',
+                  '&:hover': { backgroundColor: 'primary.dark' },
+                }}
+              >
+                <FileDownloadIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
       </Box>
 
       {/* Table */}

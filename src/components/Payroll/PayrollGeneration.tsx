@@ -209,7 +209,6 @@ const PayrollGeneration: React.FC = () => {
               label: option.label,
             }))}
             placeholder='Month'
-            showLabel={false}
             containerSx={{ minWidth: 160 }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{

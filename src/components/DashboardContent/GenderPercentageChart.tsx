@@ -9,7 +9,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { useOutletContext } from 'react-router-dom';
+// useOutletContext removed (darkMode not used)
 import { useLanguage } from '../../hooks/useLanguage';
 import employeeApi from '../../api/employeeApi';
 import type { GenderPercentage } from '../../api/employeeApi';
@@ -71,7 +71,6 @@ const CustomTooltip = ({
 };
 
 export default function GenderPercentageChart() {
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('lg'));

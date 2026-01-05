@@ -5,7 +5,7 @@ import {
   CircularProgress,
   useTheme,
 } from '@mui/material';
-import { useOutletContext } from 'react-router-dom';
+// useOutletContext removed (darkMode not used)
 import {
   LineChart,
   Line,
@@ -26,7 +26,6 @@ import TimeRangeSelector from '../common/TimeRangeSelector';
 export default function EmployeesInfoChart() {
   const theme = useTheme();
   const isMobile = useMediaQuery('(max-width:600px)');
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
 
   const [loading, setLoading] = useState(true);

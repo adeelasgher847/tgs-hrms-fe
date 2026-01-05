@@ -1,13 +1,4 @@
-import {
-  Box,
-  Typography,
-  MenuItem,
-  Select,
-  FormControl,
-  CircularProgress,
-  Tooltip,
-  useTheme,
-} from '@mui/material';
+import { Box, Typography, CircularProgress, useTheme } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
 import { useOutletContext } from 'react-router-dom';
@@ -17,7 +8,7 @@ import systemDashboardApiService from '../../api/systemDashboardApi';
 import { getCurrentUser } from '../../utils/auth';
 import { isSystemAdmin } from '../../utils/roleUtils';
 import AppDropdown from '../common/AppDropdown';
-import TimeRangeSelector from '../common/TimeRangeSelector';
+// using shared AppDropdown for time selector
 
 interface Tenant {
   id: string;
@@ -208,21 +199,33 @@ const TenantGrowthChart: React.FC = () => {
         </Typography>
 
         <Box display='flex' gap={2}>
-          <TimeRangeSelector
+          <AppDropdown
+            label='Year'
             value={selectedYear}
-            options={Array.from({ length: 5 }, (_, i) => selectedYear - i)}
-            onChange={val => {
-              if (val === 'all-time' || val === null) return;
-              const num =
-                typeof val === 'number' ? val : parseInt(val as string);
+            onChange={e => {
+              const v = e.target.value as string | number;
+              if (v === '' || v === 'all') return;
+              const num = typeof v === 'number' ? v : parseInt(v as string);
               if (!isNaN(num)) setSelectedYear(num);
             }}
-            allTimeLabel={language === 'ar' ? 'كل الوقت' : 'All Time'}
+            options={[
+              {
+                value: 'all',
+                label: language === 'ar' ? 'كل الوقت' : 'All Time',
+              },
+              ...Array.from({ length: 5 }, (_, i) => ({
+                value: selectedYear - i,
+                label: String(selectedYear - i),
+              })),
+            ]}
             containerSx={{ minWidth: 120 }}
-            minHeight={'48px'}
+            sx={{
+              width: { xs: '100%', sm: 120 },
+              '& .MuiOutlinedInput-root': { minHeight: '48px' },
+            }}
           />
           <AppDropdown
-            showLabel={false}
+            label='Tenant'
             value={selectedTenant}
             onChange={e => setSelectedTenant(e.target.value as string)}
             options={tenants.map(t => ({ value: t.id, label: t.name }))}

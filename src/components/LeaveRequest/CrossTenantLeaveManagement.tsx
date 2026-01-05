@@ -47,6 +47,7 @@ import { PAGINATION } from '../../constants/appConstants';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppDropdown from '../common/AppDropdown';
 import AppPageTitle from '../common/AppPageTitle';
+import AppTable from '../common/AppTable';
 
 type LeaveStatus = '' | 'pending' | 'approved' | 'rejected' | 'withdrawn';
 
@@ -569,7 +570,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
 
   const ChartSection = memo(() => (
     <Paper sx={{ p: 3, mb: 3, overflowX: 'auto', boxShadow: 'none' }}>
-      <Typography variant='subtitle1' fontWeight={600} mb={2}>
+      <Typography variant='h4' fontWeight={600} mb={2}>
         Leave Summary
       </Typography>
       <Chart
@@ -618,12 +619,13 @@ const CrossTenantLeaveManagement: React.FC = () => {
       ) => void;
     }) => (
       <Paper sx={{ p: 3, position: 'relative', boxShadow: 'none' }}>
-        <Typography variant='subtitle1' fontWeight={600} mb={2}>
+        <Typography variant='h4' fontWeight={600} mb={2}>
           Leave Management Table
         </Typography>
         <Stack direction={isMobile ? 'column' : 'row'} spacing={2} mb={3}>
           <AppDropdown
-            label='Department'
+            // label='Department'
+            showLabel={false}
             value={filters.departmentId}
             onChange={(e: SelectChangeEvent<string | number>) =>
               handleFilterChange(
@@ -632,7 +634,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
               )
             }
             placeholder='Select Department'
-            showLabel={false}
             options={[
               { value: '', label: 'All' },
               ...departments.map(dep => ({ value: dep.id, label: dep.name })),
@@ -641,13 +642,16 @@ const CrossTenantLeaveManagement: React.FC = () => {
           />
 
           <AppDropdown
-            label='Status'
+            // label='Status'
+            showLabel={false}
             value={filters.status}
             onChange={(e: SelectChangeEvent<string | number>) =>
-              handleFilterChange('status', String(e.target.value || '') as LeaveStatus)
+              handleFilterChange(
+                'status',
+                String(e.target.value || '') as LeaveStatus
+              )
             }
             placeholder='Select Status'
-            showLabel={false}
             options={[
               { value: '', label: 'All' },
               { value: 'pending', label: 'Pending' },
@@ -692,88 +696,82 @@ const CrossTenantLeaveManagement: React.FC = () => {
             <CircularProgress />
           </Box>
         )}
-        <TableContainer>
-          <Table>
-            <TableHead sx={{ backgroundColor: '#f0f0f0' }}>
-              <TableRow>
-                <TableCell>Employee</TableCell>
-                <TableCell>Department</TableCell>
-                <TableCell>Leave Type</TableCell>
-                <TableCell>Start Date</TableCell>
-                <TableCell>End Date</TableCell>
-                <TableCell>Total Days</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Reason</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {leaves.length > 0 ? (
-                leaves.map(leave => (
-                  <TableRow key={leave.id}>
-                    <TableCell>{leave.employeeName}</TableCell>
-                    <TableCell>{leave.departmentName || '-'}</TableCell>
-                    <TableCell>{leave.leaveType}</TableCell>
-                    <TableCell>{formatDate(leave.startDate)}</TableCell>
-                    <TableCell>{formatDate(leave.endDate)}</TableCell>
-                    <TableCell>{leave.totalDays}</TableCell>
-                    <TableCell
-                      sx={{
-                        color:
-                          leave.status === 'approved'
-                            ? 'green'
-                            : leave.status === 'rejected'
-                              ? 'red'
-                              : leave.status === 'withdrawn' ||
-                                  leave.status === 'cancelled'
-                                ? '#607d8b' // Blue-grey color for withdrawn status
-                                : '#ff9800',
-                        fontWeight: 600,
+        <AppTable>
+          <TableHead>
+            <TableRow>
+              <TableCell>Employee</TableCell>
+              <TableCell>Department</TableCell>
+              <TableCell>Leave Type</TableCell>
+              <TableCell>Start Date</TableCell>
+              <TableCell>End Date</TableCell>
+              <TableCell>Total Days</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Reason</TableCell>
+            </TableRow>
+          </TableHead>
+
+          <TableBody>
+            {leaves.length > 0 ? (
+              leaves.map(leave => (
+                <TableRow key={leave.id}>
+                  <TableCell>{leave.employeeName}</TableCell>
+                  <TableCell>{leave.departmentName || '-'}</TableCell>
+                  <TableCell>{leave.leaveType}</TableCell>
+                  <TableCell>{formatDate(leave.startDate)}</TableCell>
+                  <TableCell>{formatDate(leave.endDate)}</TableCell>
+                  <TableCell>{leave.totalDays}</TableCell>
+                  <TableCell
+                    sx={{
+                      color:
+                        leave.status === 'approved'
+                          ? 'green'
+                          : leave.status === 'rejected'
+                            ? 'red'
+                            : leave.status === 'withdrawn' ||
+                                leave.status === 'cancelled'
+                              ? '#607d8b'
+                              : '#ff9800',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {leave.status === 'cancelled' ? 'withdrawn' : leave.status}
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip
+                      title={leave.reason || 'N/A'}
+                      placement='top'
+                      arrow
+                      slotProps={{
+                        tooltip: {
+                          sx: { position: 'relative', left: '-115px' },
+                        },
                       }}
                     >
-                      {/* Map cancelled to withdrawn for display */}
-                      {leave.status === 'cancelled'
-                        ? 'withdrawn'
-                        : leave.status}
-                    </TableCell>
-                    <TableCell>
-                      <Tooltip
-                        title={leave.reason || 'N/A'}
-                        placement='top'
-                        arrow
-                        slotProps={{
-                          tooltip: {
-                            sx: {
-                              position: 'relative',
-                              left: '-115px',
-                            },
-                          },
+                      <Typography
+                        sx={{
+                          fontSize: 14,
+                          maxWidth: { xs: 120, sm: 200, md: 260 },
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                         }}
                       >
-                        <Typography
-                          sx={{
-                            fontSize: 14,
-                            maxWidth: { xs: 120, sm: 200, md: 260 },
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                        >
-                          {leave.reason || 'N/A'}
-                        </Typography>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} align='center'>
-                    No records found
+                        {leave.reason || 'N/A'}
+                      </Typography>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} align='center'>
+                  No records found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </AppTable>
+
         {totalPages > 1 && (
           <Box display='flex' justifyContent='center' mt={3}>
             <Pagination
@@ -824,12 +822,10 @@ const CrossTenantLeaveManagement: React.FC = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ minHeight: '100vh' }} onKeyDown={handleKeyDown}>
-        <Paper sx={{ p: 3, mb: 3, boxShadow: 'none' }}>
-          <AppPageTitle sx={{ mb: 2 }}>Tenant Leave Management</AppPageTitle>
-          <Divider sx={{ mb: 2 }} />
+        <Paper sx={{ p: 3, mb: 3, boxShadow: 'none', backgroundColor: 'transparent' }}>
+          <AppPageTitle>Tenant Leave Management</AppPageTitle>
           <Stack
             direction={isMobile ? 'column' : 'row'}
-            spacing={2}
             flexWrap='wrap'
           >
             {isSystemAdminUser && (
@@ -838,7 +834,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
               >
                 <AppDropdown
                   label='Tenant'
-                  showLabel={false}
                   value={filters.tenantId}
                   onChange={e =>
                     handleFilterChange('tenantId', String(e.target.value || ''))

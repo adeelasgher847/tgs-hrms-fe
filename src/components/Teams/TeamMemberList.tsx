@@ -20,7 +20,6 @@ import {
   InputAdornment,
 } from '@mui/material';
 import {
-  Delete as DeleteIcon,
   Person as PersonIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
@@ -29,7 +28,6 @@ import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
 import AppButton from '../common/AppButton';
-import { COLORS } from '../../constants/appConstants';
 import UserAvatar from '../common/UserAvatar';
 import AppTable from '../common/AppTable';
 import { Icons } from '../../assets/icons';

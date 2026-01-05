@@ -179,7 +179,7 @@ const AuditLogs: React.FC = () => {
               backgroundColor: 'var(--primary-dark-color)',
               color: 'white',
               borderRadius: '6px',
-              width: { xs: '100%', sm: 'auto' },
+              padding: '6px',
               '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
             }}
           >

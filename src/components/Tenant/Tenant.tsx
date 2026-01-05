@@ -21,7 +21,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
 import RestoreIcon from '@mui/icons-material/Restore';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import { getIcon } from '../../assets/icons';
 import CloseIcon from '@mui/icons-material/Close';
 import {
   SystemTenantApi,
@@ -40,6 +40,7 @@ import AppDropdown from '../common/AppDropdown';
 import { Icons } from '../../assets/icons';
 import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { PAGINATION } from '../../constants/appConstants';
+import AppPageTitle from '../common/AppPageTitle';
 
 type StatusFilterOption = 'all' | 'active' | 'suspended' | 'deleted';
 
@@ -92,6 +93,8 @@ export const TenantPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
+
+  const viewIcon = getIcon('password');
 
   const fetchTenants = useCallback(async () => {
     try {
@@ -461,15 +464,12 @@ export const TenantPage: React.FC = () => {
         gap={2}
         mb={3}
       >
-        <Typography variant='h5' fontWeight={700}>
-          Tenant Management
-        </Typography>
+        <AppPageTitle>Tenant Management</AppPageTitle>
 
         <Box display='flex' flexWrap='wrap' gap={2} alignItems='center'>
           <AppDropdown
-            label='Status'
             options={[
-              { value: 'all', label: 'All' },
+              { value: 'all', label: 'All Status' },
               { value: 'active', label: 'Active' },
               { value: 'suspended', label: 'Suspended' },
               { value: 'deleted', label: 'Deleted' },
@@ -566,10 +566,19 @@ export const TenantPage: React.FC = () => {
                     <>
                       <Tooltip title='View Details'>
                         <IconButton
+                          color='primary'
                           onClick={() => handleViewDetails(t)}
                           aria-label={`View details for tenant ${t.name}`}
                         >
-                          <VisibilityIcon aria-hidden='true' />
+                          <Box
+                            component='img'
+                            src={Icons.password}
+                            alt='View'
+                            sx={{
+                              width: { xs: 16, sm: 20 },
+                              height: { xs: 16, sm: 20 },
+                            }}
+                          />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title='Edit Tenant'>
@@ -682,7 +691,8 @@ export const TenantPage: React.FC = () => {
         onSubmit={() => setIsDetailOpen(false)}
         title={'Tenant Details'}
         submitLabel={'Close'}
-        cancelLabel={'Cancel'}
+        cancelLabel={''}
+        hideCancel={true}
         isSubmitting={false}
         hasChanges={true}
         fields={[
@@ -926,9 +936,10 @@ export const TenantPage: React.FC = () => {
             name: 'name',
             label: 'Tenant Name',
             type: 'text',
+            placeholder: 'Trans Gloal Services',
             required: true,
             value: tenantForm.name,
-            onChange: (value: string | number) =>
+            onChange: value =>
               setTenantForm(prev => ({ ...prev, name: String(value) })),
             error: undefined,
           },
@@ -937,7 +948,7 @@ export const TenantPage: React.FC = () => {
             label: 'Domain',
             type: 'text',
             value: tenantForm.domain,
-            onChange: (value: string | number) =>
+            onChange: value =>
               setTenantForm(prev => ({ ...prev, domain: String(value) })),
             placeholder: 'example.com',
           },
@@ -1032,16 +1043,18 @@ export const TenantPage: React.FC = () => {
             name: 'adminName',
             label: 'Admin Name',
             type: 'text',
+            placeholder: 'Waleed Ahmed',
             value: tenantForm.adminName,
-            onChange: (value: string | number) =>
+            onChange: value =>
               setTenantForm(prev => ({ ...prev, adminName: String(value) })),
           },
           {
             name: 'adminEmail',
             label: 'Admin Email',
             type: 'text',
+            placeholder: 'waleed@tgs.com',
             value: tenantForm.adminEmail,
-            onChange: (value: string | number) =>
+            onChange: value =>
               setTenantForm(prev => ({ ...prev, adminEmail: String(value) })),
           },
         ]}
@@ -1090,8 +1103,7 @@ export const TenantPage: React.FC = () => {
             type: 'text',
             required: true,
             value: editCompanyName,
-            onChange: (value: string | number) =>
-              setEditCompanyName(String(value)),
+            onChange: value => setEditCompanyName(String(value)),
           },
           {
             name: 'domain',
@@ -1099,7 +1111,7 @@ export const TenantPage: React.FC = () => {
             type: 'text',
             required: true,
             value: editDomain,
-            onChange: (value: string | number) => setEditDomain(String(value)),
+            onChange: value => setEditDomain(String(value)),
             placeholder: 'example.com',
           },
           {

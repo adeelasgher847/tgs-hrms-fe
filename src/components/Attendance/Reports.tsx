@@ -600,7 +600,7 @@ const Reports: React.FC = () => {
           {/* Month picker should be visible only to admin roles (hide for managers and employees) */}
           {isAdminView && (
             <TextField
-              label='Month'
+              // label='Month'
               type='month'
               size='small'
               value={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}`}
