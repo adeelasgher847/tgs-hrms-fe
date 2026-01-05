@@ -1221,7 +1221,7 @@ const EmployeeSalaryPage: React.FC = () => {
                         <Typography
                           variant='body2'
                           sx={{
-                            color: darkMode ? '#fff' : '#000',
+                            color: theme.palette.text.primary,
                             fontWeight: 500,
                           }}
                         >
@@ -1229,7 +1229,7 @@ const EmployeeSalaryPage: React.FC = () => {
                         </Typography>
                         <Typography
                           variant='caption'
-                          sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
+                          sx={{ color: theme.palette.text.secondary }}
                         >
                           {item.employee.user.email}
                         </Typography>

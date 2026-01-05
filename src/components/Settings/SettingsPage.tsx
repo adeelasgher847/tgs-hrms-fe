@@ -355,7 +355,7 @@ const SettingsPage: React.FC = () => {
                 <Typography
                   variant='h6'
                   sx={{
-                    color: darkMode ? '#fff' : '#000',
+                    color: theme.palette.text.primary,
                     fontSize: { xs: '16px', sm: '18px' },
                     fontWeight: 600,
                   }}
@@ -405,7 +405,7 @@ const SettingsPage: React.FC = () => {
                 <Typography
                   variant='body1'
                   sx={{
-                    color: darkMode ? '#fff' : '#000',
+                    color: theme.palette.text.primary,
                     fontSize: { xs: '14px', sm: '16px' },
                     fontWeight: 500,
                   }}

@@ -32,10 +32,6 @@ export function AppCard({
       }
     : {
         padding: padding !== undefined ? padding : 2,
-        boxShadow:
-          theme.palette.mode === 'dark'
-            ? '0 6px 18px rgba(255,255,255,0.08)'
-            : '0 6px 18px rgba(16,24,40,0.06)',
         borderRadius: 2,
         bgcolor: theme.palette.background.paper,
         color: theme.palette.text.primary,
