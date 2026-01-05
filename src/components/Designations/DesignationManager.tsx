@@ -905,10 +905,10 @@ export default function DesignationManager() {
                             sx={{
                               width: { xs: 16, sm: 20 },
                               height: { xs: 16, sm: 20 },
-                              filter:
-                                theme.palette.mode === 'dark'
-                                  ? 'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)'
-                                  : 'none',
+                              // filter:
+                              //   theme.palette.mode === 'dark'
+                              //     ? 'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)'
+                              //     : 'none',
                             }}
                           />
                         </IconButton>

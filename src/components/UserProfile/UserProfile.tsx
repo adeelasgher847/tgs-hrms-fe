@@ -296,6 +296,7 @@ const UserProfileComponent = React.memo(() => {
                   mb: 1,
                   textAlign: { xs: 'center', sm: 'left' },
                   fontSize: { xs: '24px', sm: '28px' },
+                  color: theme.palette.text.primary,
                 }}
               >
                 {profile.first_name} {profile.last_name}

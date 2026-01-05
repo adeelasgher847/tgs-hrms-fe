@@ -936,6 +936,7 @@ export const TenantPage: React.FC = () => {
             name: 'name',
             label: 'Tenant Name',
             type: 'text',
+            placeholder: 'Trans Gloal Services',
             required: true,
             value: tenantForm.name,
             onChange: value =>
@@ -1042,6 +1043,7 @@ export const TenantPage: React.FC = () => {
             name: 'adminName',
             label: 'Admin Name',
             type: 'text',
+            placeholder: 'Waleed Ahmed',
             value: tenantForm.adminName,
             onChange: value =>
               setTenantForm(prev => ({ ...prev, adminName: String(value) })),
@@ -1050,6 +1052,7 @@ export const TenantPage: React.FC = () => {
             name: 'adminEmail',
             label: 'Admin Email',
             type: 'text',
+            placeholder: 'waleed@tgs.com',
             value: tenantForm.adminEmail,
             onChange: value =>
               setTenantForm(prev => ({ ...prev, adminEmail: String(value) })),

@@ -253,15 +253,15 @@ const PayrollReports: React.FC = () => {
         color: textColor,
         '& .MuiButton-contained': {
           backgroundColor: 'var(--primary-dark-color)',
-          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+          // '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
         },
         '& .MuiButton-outlined': {
           borderColor: 'var(--primary-dark-color)',
           color: 'var(--primary-dark-color)',
-          '&:hover': {
-            borderColor: 'var(--primary-dark-color)',
-            backgroundColor: 'var(--primary-color)',
-          },
+          // '&:hover': {
+          //   borderColor: 'var(--primary-dark-color)',
+          //   backgroundColor: 'var(--primary-color)',
+          // },
         },
       }}
     >
@@ -350,8 +350,8 @@ const PayrollReports: React.FC = () => {
                   No department data
                 </Alert>
               ) : (
-                <Box sx={{ width: '100%', overflowX: 'auto' }}>
-                  <Box sx={{ minWidth: { xs: 520, sm: 0 } }}>
+                <Box sx={{ width: '100%', overflowX: 'auto', p: 0 }}>
+                  <Box sx={{ minWidth: { xs: 520, sm: 0 }, p: 0 }}>
                     <Chart
                       options={departmentOptions}
                       series={departmentSeries}

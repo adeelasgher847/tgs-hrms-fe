@@ -784,7 +784,7 @@ const PayrollRecords: React.FC = () => {
                 </Typography>
                 <Typography
                   variant='h6'
-                  sx={{ fontWeight: 700, color: textColor }}
+                  sx={{ fontWeight: 700, color: theme.palette.text.primary, }}
                 >
                   {card.value}
                 </Typography>

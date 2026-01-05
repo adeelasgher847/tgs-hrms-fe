@@ -21,6 +21,7 @@ import {
   Pagination,
   Alert,
 } from '@mui/material';
+import { useTheme } from '../../theme/hooks';
 import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
@@ -172,6 +173,7 @@ const RequestManagement: React.FC = () => {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
+  const { mode } = useTheme();
 
   // Get status filter based on active tab
   const getStatusFilter = (tabIndex: number): string | undefined => {
@@ -1399,7 +1401,11 @@ const RequestManagement: React.FC = () => {
         onChange: () => {},
         component: (
           <Box sx={{ mb: 1 }}>
-            <Typography fontWeight={600} className='subheading2'>
+            <Typography
+              fontWeight={600}
+              className='subheading2'
+              sx={{ color: 'text.primary' }}
+            >
               Employee Information
             </Typography>
           </Box>
@@ -1439,7 +1445,11 @@ const RequestManagement: React.FC = () => {
         onChange: () => {},
         component: (
           <Box sx={{ mt: 1 }}>
-            <Typography fontWeight={600} className='subheading2'>
+            <Typography
+              fontWeight={600}
+              className='subheading2'
+              sx={{ color: 'text.primary' }}
+            >
               Request Information
             </Typography>
           </Box>
@@ -1470,7 +1480,11 @@ const RequestManagement: React.FC = () => {
         onChange: () => {},
         component: (
           <Box sx={{ mt: 1 }}>
-            <Typography fontWeight={600} className='subheading2'>
+            <Typography
+              fontWeight={600}
+              className='subheading2'
+              sx={{ color: 'text.primary' }}
+            >
               Employee Remarks
             </Typography>
           </Box>
@@ -1496,7 +1510,11 @@ const RequestManagement: React.FC = () => {
         onChange: () => {},
         component: (
           <Box sx={{ mt: 1 }}>
-            <Typography fontWeight={600} className='subheading2'>
+            <Typography
+              fontWeight={600}
+              className='subheading2'
+              sx={{ color: 'text.primary' }}
+            >
               Processing Information
             </Typography>
           </Box>
